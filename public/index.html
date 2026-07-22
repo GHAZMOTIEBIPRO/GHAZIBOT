@@ -13,14 +13,11 @@
       <div>
         <p class="eyebrow">GHAZI MARKET RADAR</p>
         <h1>أفضل الأسهم والعقود المرشحة</h1>
-        <p class="hero-copy">وضع Swing مجاني: محفزات SEC وFDA، اتجاه السهم، جودة العقد، وسجل نتائج قابل للقياس.</p>
+        <p class="hero-copy">محفزات SEC وFDA، تحليل فني وقطاعي، وسيولة العقود — مع قياس النتائج وأسباب الرفض.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
-        <div>
-          <strong id="freshness-label">جاري تحميل البيانات…</strong>
-          <small id="last-updated">—</small>
-        </div>
+        <div><strong id="freshness-label">جاري تحميل البيانات…</strong><small id="last-updated">—</small></div>
       </div>
     </header>
 
@@ -30,58 +27,77 @@
       <article class="metric-card"><span>الأسهم المرشحة</span><strong id="stock-count">0</strong></article>
       <article class="metric-card"><span>العقود المرشحة</span><strong id="option-count">0</strong></article>
       <article class="metric-card"><span>المحفزات الرسمية</span><strong id="catalyst-count">0</strong></article>
-      <article class="metric-card"><span>إشارات تحت القياس</span><strong id="tracked-count">0</strong></article>
+      <article class="metric-card"><span>فرص مرفوضة</span><strong id="rejected-count">0</strong></article>
     </section>
 
     <section id="alerts-section" class="alerts-section hidden" aria-live="polite">
-      <h2>🚨 فرص جديدة مكتملة الشروط</h2>
-      <div id="alerts-list"></div>
+      <h2>🚨 فرص جديدة مكتملة الشروط</h2><div id="alerts-list"></div>
     </section>
 
     <nav class="tabs" aria-label="أقسام الرادار">
       <button class="tab-button active" data-tab="stocks">الأسهم</button>
       <button class="tab-button" data-tab="options">العقود</button>
       <button class="tab-button" data-tab="catalysts">الأخبار الرسمية</button>
-      <button class="tab-button" data-tab="status">الجودة والنتائج</button>
+      <button class="tab-button" data-tab="rejected">المرفوضة</button>
+      <button class="tab-button" data-tab="results">النتائج والمعايرة</button>
+      <button class="tab-button" data-tab="status">حالة المصادر</button>
     </nav>
 
     <main>
       <section id="tab-stocks" class="tab-panel active">
         <div class="section-heading">
-          <div><h2>الأسهم الأعلى تقييمًا</h2><p>CALL وPUT منفصلان، مع الدخول والهدف والإبطال وأفضل عقد متاح.</p></div>
+          <div><h2>الأسهم الأعلى تقييمًا</h2><p>الدخول والهدف والوقف والقوة النسبية مع أفضل عقد متاح.</p></div>
           <input id="stock-search" class="search-input" type="search" placeholder="ابحث عن رمز…" aria-label="بحث الأسهم">
         </div>
         <div id="stocks-grid" class="cards-grid"></div>
       </section>
 
       <section id="tab-options" class="tab-panel">
-        <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>لا يظهر العقد إلا بعد اجتياز جودة البيانات والسيولة والسبريد والاتجاه.</p></div></div>
+        <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>عقود قياسية اجتازت فلاتر الجودة والسيولة والاتجاه.</p></div></div>
         <div class="table-wrap"><table><thead><tr>
-          <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>IV</th><th>جودة البيانات</th>
+          <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>المصدر</th>
         </tr></thead><tbody id="options-body"></tbody></table></div>
       </section>
 
       <section id="tab-catalysts" class="tab-panel">
-        <div class="section-heading"><div><h2>محفزات SEC وFDA</h2><p>أخبار رسمية إيجابية وسلبية مرتبطة مباشرة بالمصدر.</p></div></div>
+        <div class="section-heading"><div><h2>محفزات SEC وFDA</h2><p>يشمل قيمة Form 4 وغرض 13D ومخاطر الطرح والتخفيف.</p></div></div>
         <div id="catalysts-list" class="catalyst-list"></div>
+      </section>
+
+      <section id="tab-rejected" class="tab-panel">
+        <div class="section-heading"><div><h2>الفرص المرفوضة</h2><p>شفافية كاملة: لماذا لم يمر السهم أو العقد إلى القائمة الرئيسية.</p></div></div>
+        <div class="table-wrap"><table><thead><tr>
+          <th>النوع</th><th>الرمز / العقد</th><th>السبب</th><th>التقييم</th><th>السعر / السبريد</th><th>المصدر</th>
+        </tr></thead><tbody id="rejected-body"></tbody></table></div>
+      </section>
+
+      <section id="tab-results" class="tab-panel">
+        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>لا تتغير الأوزان قبل اكتمال عينة كافية من الإشارات المسعرة.</p></div></div>
+        <div class="status-grid">
+          <article class="info-card"><h3>الإشارات المسعرة</h3><p id="calibration-sample">—</p></article>
+          <article class="info-card"><h3>قرار المعايرة</h3><p id="calibration-decision">—</p></article>
+          <article class="info-card"><h3>متوسط MFE</h3><p id="average-mfe">—</p></article>
+          <article class="info-card"><h3>متوسط MAE</h3><p id="average-mae">—</p></article>
+        </div>
+        <div class="table-wrap"><table><thead><tr>
+          <th>نطاق الدرجة</th><th>الإشارات</th><th>المسعرة</th><th>وصول الهدف 1</th><th>وصول الهدف 2</th><th>الوقف</th><th>MFE</th><th>MAE</th>
+        </tr></thead><tbody id="calibration-body"></tbody></table></div>
+        <p id="calibration-warning" class="reasons"></p>
       </section>
 
       <section id="tab-status" class="tab-panel">
         <div class="status-grid">
           <article class="info-card"><h3>مصدر الخيارات</h3><p id="provider-name">—</p></article>
           <article class="info-card"><h3>حجم الكون المفحوص</h3><p id="universe-size">—</p></article>
+          <article class="info-card"><h3>مصادر الكون</h3><p id="universe-sources">—</p></article>
           <article class="info-card"><h3>نسخة النموذج</h3><p id="model-version">—</p></article>
           <article class="info-card"><h3>حالة جلسة NYSE</h3><p id="session-status">—</p></article>
-          <article class="info-card wide"><h3>قياس النتائج الورقية</h3><div id="performance-summary"></div></article>
           <article class="info-card wide"><h3>أخطاء المصادر</h3><div id="errors-list"></div></article>
         </div>
       </section>
     </main>
 
-    <footer>
-      <p id="disclaimer">النتائج بحثية وليست توصية استثمارية.</p>
-      <button id="refresh-button" class="secondary-button">تحديث الآن</button>
-    </footer>
+    <footer><p id="disclaimer">النتائج بحثية وليست توصية استثمارية.</p><button id="refresh-button" class="secondary-button">تحديث الآن</button></footer>
   </div>
   <script src="./app.js" defer></script>
 </body>

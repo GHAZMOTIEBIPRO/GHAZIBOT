@@ -87,7 +87,9 @@ class Settings:
     alert_score: float = _env_float("ALERT_SCORE", 76.0)
     alert_vol_oi: float = _env_float("ALERT_VOL_OI", 2.0)
     max_workers: int = _env_int("MAX_WORKERS", 4)
-    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase1"
+    max_universe_size: int = _env_int("MAX_UNIVERSE_SIZE", 150)
+    calibration_minimum_sample: int = _env_int("CALIBRATION_MINIMUM_SAMPLE", 100)
+    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase2"
 
     # JSON is persisted by GitHub Actions across isolated runners.
     database_path: Path = Path(
@@ -98,6 +100,9 @@ class Settings:
     )
     outcome_path: Path = Path(
         os.getenv("OUTCOME_PATH", "data/live/outcomes.json")
+    )
+    calibration_path: Path = Path(
+        os.getenv("CALIBRATION_PATH", "data/live/calibration.json")
     )
 
     def validate(self) -> None:
@@ -117,3 +122,7 @@ class Settings:
             raise ValueError("Invalid option price range")
         if self.max_last_trade_age_minutes <= 0:
             raise ValueError("MAX_LAST_TRADE_AGE_MINUTES must be positive")
+        if self.max_universe_size < 20:
+            raise ValueError("MAX_UNIVERSE_SIZE must be at least 20")
+        if self.calibration_minimum_sample < 30:
+            raise ValueError("CALIBRATION_MINIMUM_SAMPLE must be at least 30")
