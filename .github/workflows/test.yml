@@ -19,5 +19,19 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - run: pip install -r requirements-dev.txt
       - run: pytest -q
+      - run: python -m py_compile export_web.py
+      - run: node --check public/app.js
+      - name: Validate JSON configuration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          json.loads(Path('vercel.json').read_text(encoding='utf-8'))
+          json.loads(Path('public/data/latest.json').read_text(encoding='utf-8'))
+          print('JSON configuration is valid')
+          PY
