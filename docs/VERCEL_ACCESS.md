@@ -18,6 +18,30 @@ Examples that should not be used as the public link:
 - `ghazibot-git-fix-data-quality-guards-...vercel.app`
 - `ghazibot-git-fix-live-scan-data-...vercel.app`
 
+## Deployment architecture
+
+The interface and the live market data now have separate update paths:
+
+1. GitHub Actions writes the newest scan to `public/data/latest.json` on `main`.
+2. The browser requests that JSON directly from GitHub's raw-content endpoint.
+3. If the GitHub request fails, the browser falls back to the copy bundled with the deployed site.
+4. Vercel rebuilds only when the interface or Vercel configuration changes.
+
+This prevents each data refresh from creating a new Vercel build. The repository-level command is configured through `vercel.json` and `scripts/vercel-ignore-build.sh`.
+
+Important limitation: Vercel's ignored-build mechanism cancels unnecessary builds, but a canceled deployment can still count toward deployment quotas. Separating the data file from the deployed interface is therefore the main quota-saving mechanism.
+
+## Why Render does not run the radar loop
+
+Render serves the static dashboard through the HTTP server in `main.py`, but it does not run a permanent background scanning thread.
+
+The scans remain in GitHub Actions because:
+
+- free Render web services can spin down after inactivity;
+- their local filesystem is ephemeral;
+- repeated background scans could duplicate alerts and API requests;
+- GitHub Actions already provides the controlled schedule and commits the result to `main`.
+
 ## Recommended protection setting
 
 Keep previews protected and leave the production domain public:
@@ -37,4 +61,4 @@ Do not disable preview protection merely to publish the application. Use the pro
 
 ## Repository status
 
-The dashboard and data-quality branches were already merged into `main` through PRs #2, #3, and #4. New public links should therefore reference the production domain only.
+The dashboard, data-quality, public-serving, and deployment-efficiency changes are maintained on `main`. New public links should reference the production domain only.
