@@ -31,7 +31,7 @@
     </section>
 
     <section id="alerts-section" class="alerts-section hidden" aria-live="polite">
-      <h2>فرص جديدة مكتملة الشروط داخل الرادار</h2><div id="alerts-list"></div>
+      <h2>🚨 فرص جديدة مكتملة الشروط</h2><div id="alerts-list"></div>
     </section>
 
     <nav class="tabs" aria-label="أقسام الرادار">
@@ -72,9 +72,11 @@
       </section>
 
       <section id="tab-results" class="tab-panel">
-        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>لا تتغير الأوزان قبل اكتمال عينة كافية من الإشارات المسعرة.</p></div></div>
+        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>لا تتغير الأوزان قبل اكتمال عينة ناضجة زمنيًا، ولا تُحتسب ملاحظة الفحص نفسه كدليل مستقل.</p></div></div>
         <div class="status-grid">
-          <article class="info-card"><h3>الإشارات المسعرة</h3><p id="calibration-sample">—</p></article>
+          <article class="info-card"><h3>الإشارات الناضجة</h3><p id="calibration-sample">—</p></article>
+          <article class="info-card"><h3>الإشارات المرصودة خامًا</h3><p id="calibration-raw-sample">—</p></article>
+          <article class="info-card"><h3>إشارات ناضجة 5 أيام</h3><p id="calibration-five-day">—</p></article>
           <article class="info-card"><h3>قرار المعايرة</h3><p id="calibration-decision">—</p></article>
           <article class="info-card"><h3>بوابة المراجعة</h3><p id="calibration-gate-status">—</p></article>
           <article class="info-card"><h3>المتبقي للعينة</h3><p id="calibration-remaining">—</p></article>
@@ -82,7 +84,7 @@
           <article class="info-card"><h3>متوسط MAE</h3><p id="average-mae">—</p></article>
         </div>
         <div class="table-wrap"><table><thead><tr>
-          <th>نطاق الدرجة</th><th>الإشارات</th><th>المسعرة</th><th>وصول الهدف 1</th><th>وصول الهدف 2</th><th>الوقف</th><th>MFE</th><th>MAE</th>
+          <th>نطاق الدرجة</th><th>الإشارات</th><th>المرصودة</th><th>الناضجة</th><th>وصول الهدف 1</th><th>وصول الهدف 2</th><th>الوقف</th><th>MFE</th><th>MAE</th>
         </tr></thead><tbody id="calibration-body"></tbody></table></div>
         <p id="calibration-warning" class="reasons"></p>
       </section>
@@ -95,7 +97,7 @@
           <article class="info-card"><h3>مصادر الكون</h3><p id="universe-sources">—</p></article>
           <article class="info-card"><h3>نسخة النموذج</h3><p id="model-version">—</p></article>
           <article class="info-card"><h3>حالة جلسة NYSE</h3><p id="session-status">—</p></article>
-          <article class="info-card wide"><h3>حالة الخدمات</h3><div id="services-status">—</div></article>
+          <article class="info-card wide"><h3>الخدمات والبيانات</h3><div id="services-status"></div></article>
           <article class="info-card wide"><h3>أخطاء المصادر</h3><div id="errors-list"></div></article>
         </div>
       </section>
