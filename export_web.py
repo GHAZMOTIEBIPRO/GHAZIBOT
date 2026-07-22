@@ -23,9 +23,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--top-stocks", type=int, default=15)
     parser.add_argument("--top-options", type=int, default=15)
     parser.add_argument("--output", default="public/data/latest.json")
-    parser.add_argument("--send-alerts", action="store_true")
-    parser.add_argument("--send-report", action="store_true")
-    parser.add_argument("--send-email", action="store_true")
     parser.add_argument("--skip-closed", action="store_true")
     parser.add_argument("--verbose", action="store_true")
     return parser
@@ -112,7 +109,6 @@ def main(argv: list[str] | None = None) -> int:
     from options_radar.journal import SignalJournal
     from options_radar.market_clock import market_clock_state
     from options_radar.providers import load_universe
-    from options_radar.reporting import dispatch_daily_report
     from options_radar.scanner import OptionsRadar
     from options_radar.settings import Settings
     from options_radar.stocks import StockRadar
@@ -135,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
             _write_atomic(
                 output,
                 {
-                    "schema_version": 3,
+                    "schema_version": 4,
                     "model_version": settings.model_version,
                     "generated_at": generated_at.isoformat(),
                     "market_regime": "closed",
@@ -166,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     options = pd.DataFrame()
     stock_rejected = pd.DataFrame()
     option_rejected = pd.DataFrame()
-    alerts: list[str] = []
+    dashboard_setups: list[str] = []
     errors: dict[str, str] = {}
     market_regime = "unknown"
     options_provider = "unknown"
@@ -201,13 +197,12 @@ def main(argv: list[str] | None = None) -> int:
         option_result = OptionsRadar(settings).scan(
             option_symbols,
             top=max(1, args.top_options),
-            send_alerts=args.send_alerts,
             output_csv="results/options_latest.csv",
             catalysts=catalysts,
         )
         options = option_result.opportunities
         option_rejected = option_result.rejected
-        alerts = option_result.alerts
+        dashboard_setups = option_result.alerts
         options_provider = option_result.provider
         if market_regime == "unknown":
             market_regime = option_result.regime
@@ -298,24 +293,11 @@ def main(argv: list[str] | None = None) -> int:
     ]
     _attach_best_option(stock_records, _best_options_by_symbol(options))
 
-    report_delivery: dict[str, Any] | str | None = None
-    if args.send_report or args.send_email:
-        try:
-            report_delivery = dispatch_daily_report(
-                settings,
-                stocks,
-                options,
-                send_email=args.send_email or args.send_report,
-                send_telegram=args.send_report,
-            )
-        except Exception as exc:
-            errors["report"] = str(exc)
-            LOGGER.exception("Daily report delivery failed")
-
     payload = {
-        "schema_version": 3,
+        "schema_version": 4,
         "model_version": settings.model_version,
         "mode": "free_swing" if settings.free_swing_mode else "custom",
+        "delivery_mode": "dashboard_only",
         "generated_at": generated_at.isoformat(),
         "generated_at_unix": int(generated_at.timestamp()),
         "market_regime": market_regime,
@@ -338,13 +320,13 @@ def main(argv: list[str] | None = None) -> int:
         "options": option_records,
         "catalysts": catalyst_records,
         "rejected": rejected_records[:250],
-        "alerts": alerts,
+        "alerts": dashboard_setups,
         "errors": errors,
-        "report_delivery": report_delivery,
         "disclaimer": (
             "وضع Swing بحثي مبني على بيانات مجانية قد تكون متأخرة أو ناقصة. "
             "النتائج المسجلة أسعار مرصودة وليست تنفيذات مؤكدة، ولا يوجد ضمان للربح. "
-            "لا تُعدّل أوزان النموذج قبل اكتمال عينة المعايرة، وتحقق من السعر الحي قبل أي أمر."
+            "المشروع يعرض النتائج داخل الصفحة فقط ولا يرسل بريدًا أو رسائل خارجية. "
+            "تحقق من السعر الحي قبل أي أمر."
         ),
     }
     _write_atomic(output, payload)
