@@ -1,9 +1,8 @@
 # Security
 
-- Never commit brokerage keys, market-data keys, Telegram bot tokens, chat IDs,
-  Discord webhooks, or `.env` files.
-- Configure credentials with GitHub Actions Repository Secrets or a local `.env`.
-- If a credential has appeared in Git history, revoke/rotate it. Deleting it from
-  the latest file is not sufficient.
-- The scanner never places trades. Keep execution in a separate least-privilege
-  service with explicit human confirmation.
+- Never commit brokerage keys, market-data keys, API tokens, or `.env` files.
+- Configure optional data-provider credentials with GitHub Actions Repository Secrets or a local `.env`.
+- The dashboard does not use email, Telegram, Discord, WhatsApp, or other outbound messaging credentials.
+- If any credential appeared in Git history, revoke or rotate it; deleting the latest line is not sufficient.
+- Public JSON contains status flags and analysis only, never credential values.
+- The scanner never places trades. Keep execution outside this repository with explicit human confirmation.
