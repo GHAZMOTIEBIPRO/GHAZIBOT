@@ -1,55 +1,69 @@
-import requests
-import datetime
+from __future__ import annotations
 
-BOT_TOKEN = 7861299512:AAGsi-9f4LSWvsP87FdKklYurzhTYYPSq5A
-CHAT_ID = 1357518677
+import argparse
+import logging
+import sys
+from pathlib import Path
 
-us_stocks = [
-    "AAPL", "MSFT", "AMZN", "GOOGL", "META", "NVDA", "TSLA", "INTC", "ADBE", "NFLX",
-    "JPM", "BAC", "GS", "V", "MA", "BRK.B", "MS",
-    "JNJ", "PFE", "MRNA", "MRK", "ABBV", "LLY",
-    "BA", "LMT", "GE", "HON",
-    "XOM", "CVX", "COP",
-    "WMT", "PG", "KO", "PEP", "MCD", "SBUX",
-    "VZ", "T", "DIS", "CMCSA",
-    "UBER", "ABNB", "ZM", "PLTR"
+import pandas as pd
+
+from options_radar.providers import load_universe
+from options_radar.scanner import OptionsRadar
+from options_radar.settings import Settings
+
+DISPLAY_COLUMNS = [
+    "symbol", "contract_symbol", "expiration", "strike", "option_type",
+    "score", "rating", "volume", "open_interest", "vol_oi", "iv",
+    "delta", "spread_pct", "aggressor_proxy", "entry_price", "target_1",
+    "target_2", "stop_price", "trade_style", "catalyst", "source",
+    "freshness_label",
 ]
 
-saudi_stocks = [
-    "الراجحي", "الأهلي", "سامبا", "الرياض", "البلاد", "الإنماء", "الجزيرة", "العربي الوطني", "السعودي الفرنسي", "الخليجية",
-    "سابك", "سابك للمغذيات الزراعية", "كيمانول", "السعودية للصناعات الأساسية (سابك)", "بترو رابغ", "نماء للكيماويات", "لازوردي",
-    "مجموعة صيدا", "الدواء", "النهدي", "العربية للخدمات الطبية", "السعودية للخدمات الطبية",
-    "الاتصالات السعودية (STC)", "موبايلي", "زين السعودية", "حلول الاتصالات", "تقنية",
-    "المراعي", "صافولا", "الأسماك", "نادك", "التنمية الزراعية", "بنده", "جرير", "العثيم",
-    "الأسمنت العربية", "اسمنت الجنوبية", "اسمنت القصيم", "اسمنت السعودية", "اسمنت ينبع",
-    "دار الأركان", "المملكة", "جبل عمر", "العقارية", "ينبع",
-    "التعاونية", "سلام", "أليانز إس إف", "ولاء", "العربية",
-    "البحري", "الخطوط السعودية", "الزاهد", "العربية للأنابيب",
-    "الكهرباء السعودية", "أكوا باور", "الطاقة", "الغاز"
-]
 
-def send_telegram(message):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message}
-    requests.post(url, json=payload)
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Source-aware scanner for liquid US option contracts."
+    )
+    parser.add_argument("--symbols", nargs="*", help="Defaults to data/universe.txt")
+    parser.add_argument("--universe", default="data/universe.txt")
+    parser.add_argument("--top", type=int, default=25)
+    parser.add_argument("--output", default="results/latest.csv")
+    parser.add_argument("--send-alerts", action="store_true")
+    parser.add_argument("--verbose", action="store_true")
+    return parser
 
-def fake_analysis(stock_name):
-    # تحاكي عملية تحليل فني وهمي لتجربة التنبيه
-    if datetime.datetime.now().second % 30 == 0:
-        return True, "RSI إيجابي + شمعة انعكاسية + حجم تداول مرتفع"
-    return False, ""
 
-def analyze_all_stocks():
-    for stock in us_stocks + saudi_stocks:
-        match, reason = fake_analysis(stock)
-        if match:
-            msg = f"""إشارة دخول مضاربية (تجريبية)
-السهم: {stock}
-نوع الصفقة: يومية / أسبوعية
-الفريم: يومي وأسبوعي
-السبب: {reason}
-التحليل تم: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"""
-            send_telegram(msg)
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    )
+    symbols = args.symbols or load_universe(args.universe)
+    result = OptionsRadar(Settings()).scan(
+        symbols=symbols,
+        top=max(1, args.top),
+        send_alerts=args.send_alerts,
+        output_csv=args.output,
+    )
+    print(f"Provider: {result.provider} | Market regime: {result.regime}")
+    if result.alerts:
+        print("\n" + "\n\n".join(result.alerts))
+    if result.opportunities.empty:
+        print("No contracts passed all filters.")
+    else:
+        columns = [c for c in DISPLAY_COLUMNS if c in result.opportunities.columns]
+        table = result.opportunities[columns].copy()
+        pd.set_option("display.max_columns", None)
+        pd.set_option("display.width", 240)
+        print(table.to_string(index=False))
+        print(f"\nCSV: {Path(args.output).resolve()}")
+    if result.errors:
+        print("\nProvider/data errors:", file=sys.stderr)
+        for symbol, error in result.errors.items():
+            print(f"- {symbol}: {error}", file=sys.stderr)
+    return 0
+
 
 if __name__ == "__main__":
-    analyze_all_stocks()
+    raise SystemExit(main())
