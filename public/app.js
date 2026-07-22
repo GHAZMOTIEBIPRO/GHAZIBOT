@@ -1,4 +1,4 @@
-const DATA_URL = "/data/latest.json";
+const DATA_URL = "./data/latest.json";
 let radarData = null;
 
 const byId = (id) => document.getElementById(id);
