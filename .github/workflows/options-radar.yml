@@ -16,9 +16,8 @@ on:
       - ".github/workflows/options-radar.yml"
   schedule:
     # Minutes 07 and 37 reduce top-of-hour scheduling congestion.
-    # The application skips holidays and times outside the NYSE regular session.
     - cron: "7,37 13-21 * * 1-5"
-    # Daily summary before the US session (15:45 Riyadh).
+    # Pre-session snapshot for the dashboard.
     - cron: "45 12 * * 1-5"
 
 concurrency:
@@ -41,16 +40,8 @@ jobs:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      SMTP_PORT: ${{ secrets.SMTP_PORT }}
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      REPORT_EMAIL_TO: ${{ secrets.REPORT_EMAIL_TO }}
       FREE_SWING_MODE: "true"
       MODEL_VERSION: "2026.07-phase2"
       MAX_UNIVERSE_SIZE: "120"
@@ -65,15 +56,13 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -r requirements.txt
-      - name: Generate website data
+      - name: Generate dashboard data
         shell: bash
         run: |
-          if [[ "${{ github.event.schedule }}" == "45 12 * * 1-5" ]]; then
-            python run_live_export.py --top-stocks 15 --top-options 15 --send-alerts --send-report --send-email
-          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
-            python run_live_export.py --top-stocks 15 --top-options 15 --send-alerts --skip-closed
+          if [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" != "45 12 * * 1-5" ]]; then
+            python run_live_export.py --top-stocks 15 --top-options 15 --skip-closed
           else
-            python run_live_export.py --top-stocks 15 --top-options 15 --send-alerts
+            python run_live_export.py --top-stocks 15 --top-options 15
           fi
       - name: Evaluate calibration review gate
         id: calibration_gate
@@ -110,13 +99,13 @@ jobs:
               '# GHAZI Market Radar',
               '',
               f"- Model: `{payload.get('model_version', 'unknown')}`",
+              f"- Delivery: **dashboard only**",
               f"- Market: **{payload.get('market_regime', 'unknown')}**",
               f"- Stocks: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
               f"- Options: **{payload.get('summary', {}).get('option_candidates', 0)}**",
               f"- Calibration: **{calibration.get('priced_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
               f"- Calibration ready: **{calibration.get('ready', False)}**",
-              f"- Alert channel ready: **{operations.get('live_alert_channel_ready', False)}**",
-              f"- Daily report ready: **{operations.get('daily_report_ready', False)}**",
+              f"- Paper tracking ready: **{operations.get('ready_for_paper_tracking', False)}**",
           ]
           Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary), encoding='utf-8')
           PY

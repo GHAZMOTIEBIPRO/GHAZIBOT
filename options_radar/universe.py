@@ -17,13 +17,27 @@ SEC_TICKERS = f"{SEC_BASE}/files/company_tickers.json"
 SEC_FEED = f"{SEC_BASE}/cgi-bin/browse-edgar"
 NASDAQ_MOVERS = "https://api.nasdaq.com/api/marketmovers"
 _SYMBOL = re.compile(r"^[A-Z][A-Z0-9.-]{0,6}$")
+_PLACEHOLDERS = {"SYMBOL", "TICKER", "N/A", "NA", "NONE", "NULL"}
 
 
 def _valid_symbol(value: str) -> bool:
     symbol = str(value or "").strip().upper()
-    if not _SYMBOL.fullmatch(symbol):
+    if not _SYMBOL.fullmatch(symbol) or symbol in _PLACEHOLDERS:
         return False
     return not any(token in symbol for token in ("/", "^", "$"))
+
+
+def _valid_mover_symbol(value: str) -> bool:
+    """Exclude common warrant/right/unit suffixes from Nasdaq discovery only."""
+
+    symbol = str(value or "").strip().upper()
+    if not _valid_symbol(symbol):
+        return False
+    if symbol.endswith(("WS", "WT")):
+        return False
+    if len(symbol) >= 4 and symbol.endswith(("W", "U", "R")):
+        return False
+    return True
 
 
 def _load_alias_symbols(path: str | Path = "data/company_aliases.json") -> list[str]:
@@ -121,7 +135,7 @@ def _walk_symbols(payload: object) -> list[str]:
     symbols: list[str] = []
     if isinstance(payload, dict):
         for key, value in payload.items():
-            if key.lower() == "symbol" and _valid_symbol(str(value)):
+            if key.lower() == "symbol" and _valid_mover_symbol(str(value)):
                 symbols.append(str(value).upper())
             else:
                 symbols.extend(_walk_symbols(value))

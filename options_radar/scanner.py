@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .advanced_signals import is_standard_occ_contract
-from .alerts import dispatch_new_alerts
+from .alerts import collect_new_setups
 from .catalysts import best_catalyst_map
 from .indicators import TechnicalSnapshot, analyze_technical, market_regime
 from .providers import get_price_history, maybe_enrich_with_alpaca, select_provider
@@ -68,7 +68,10 @@ class OptionsRadar:
             symbol = str(row.get("symbol", ""))
             if not is_standard_occ_contract(contract, symbol):
                 return "adjusted_or_nonstandard_contract"
-            if not (float(row.get("bid", 0) or 0) > 0 and float(row.get("ask", 0) or 0) > float(row.get("bid", 0) or 0)):
+            if not (
+                float(row.get("bid", 0) or 0) > 0
+                and float(row.get("ask", 0) or 0) > float(row.get("bid", 0) or 0)
+            ):
                 return "invalid_bid_ask"
             if float(row.get("spread_pct", 99) or 99) > self.settings.max_spread_pct:
                 return "spread_too_wide"
@@ -88,9 +91,20 @@ class OptionsRadar:
         frame["rejection_reason"] = frame.apply(reason, axis=1)
         rejected = frame[frame["rejection_reason"] != ""].copy()
         columns = [
-            "symbol", "contract_symbol", "expiration", "strike", "option_type",
-            "bid", "ask", "volume", "open_interest", "spread_pct",
-            "last_trade_age_minutes", "source", "freshness_label", "rejection_reason",
+            "symbol",
+            "contract_symbol",
+            "expiration",
+            "strike",
+            "option_type",
+            "bid",
+            "ask",
+            "volume",
+            "open_interest",
+            "spread_pct",
+            "last_trade_age_minutes",
+            "source",
+            "freshness_label",
+            "rejection_reason",
         ]
         return rejected[[column for column in columns if column in rejected.columns]]
 
@@ -128,7 +142,6 @@ class OptionsRadar:
         self,
         symbols: list[str],
         top: int = 25,
-        send_alerts: bool = False,
         output_csv: str | Path | None = None,
         catalysts: pd.DataFrame | None = None,
     ) -> ScanResult:
@@ -186,9 +199,7 @@ class OptionsRadar:
         )
 
         self.store.log_signals(opportunities)
-        alerts = dispatch_new_alerts(
-            opportunities, settings=self.settings, store=self.store, send=send_alerts
-        )
+        setups = collect_new_setups(opportunities, store=self.store)
         if output_csv:
             output_path = Path(output_csv)
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -196,7 +207,7 @@ class OptionsRadar:
 
         return ScanResult(
             opportunities=opportunities,
-            alerts=alerts,
+            alerts=setups,
             errors=errors,
             regime=regime,
             provider=self.provider.name,

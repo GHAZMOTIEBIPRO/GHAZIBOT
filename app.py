@@ -7,7 +7,6 @@ import streamlit as st
 
 from options_radar.catalysts import CatalystScanner
 from options_radar.providers import load_universe
-from options_radar.reporting import dispatch_daily_report
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
 from options_radar.stocks import StockRadar
@@ -16,7 +15,7 @@ st.set_page_config(page_title="GHAZI Market Radar", page_icon="📈", layout="wi
 st.title("📈 GHAZI Radar — أفضل الأسهم والعقود")
 st.caption(
     "مصادر مجانية: SEC EDGAR وopenFDA وYahoo Finance. يبدأ النظام بالمحفز، ثم يحلل السهم، "
-    "ثم يختار العقود الأعلى سيولة. لا توجد إشارة مضمونة؛ كل نتيجة تعرض سببها ومخاطرها."
+    "ثم يختار العقود الأعلى سيولة. النتائج تظهر داخل الصفحة فقط ولا توجد رسائل خارجية."
 )
 
 settings = Settings()
@@ -27,11 +26,9 @@ with st.sidebar:
     selected = st.multiselect("الأسهم المراد فحصها", defaults, default=defaults[:20])
     top_stocks = st.slider("عدد الأسهم", 3, 25, 10)
     top_options = st.slider("عدد العقود", 3, 30, 12)
-    send_alerts = st.checkbox("إرسال تنبيه Telegram للعقود الجديدة", value=False)
-    send_report = st.checkbox("إرسال التقرير بعد الفحص", value=False)
     st.divider()
     st.write("مصدر العقود:", os.getenv("OPTIONS_PROVIDER", "auto / Yahoo fallback"))
-    st.caption("البريد يعمل عند إضافة SMTP_USER وSMTP_PASSWORD وREPORT_EMAIL_TO إلى Secrets.")
+    st.caption("نمط التشغيل: صفحة الويب وسجل GitHub فقط — دون بريد أو Telegram أو Discord.")
 
 run = st.button("ابدأ فحص الأسهم والعقود", type="primary", use_container_width=True)
 if run:
@@ -57,24 +54,13 @@ if run:
             option_result = OptionsRadar(settings).scan(
                 option_symbols,
                 top=top_options,
-                send_alerts=send_alerts,
                 output_csv="results/options_latest.csv",
                 catalysts=catalysts,
             )
-            report_status = {"email": False, "telegram": False}
-            if send_report:
-                report_status = dispatch_daily_report(
-                    settings,
-                    stock_result.opportunities,
-                    option_result.opportunities,
-                    send_email=True,
-                    send_telegram=True,
-                )
             progress.progress(100, text="اكتمل الفحص")
             st.session_state["catalysts"] = catalysts
             st.session_state["stocks"] = stock_result
             st.session_state["options"] = option_result
-            st.session_state["report_status"] = report_status
         except Exception as exc:
             st.exception(exc)
 
@@ -97,21 +83,12 @@ with stocks_tab:
         c2.metric("الأسهم المرشحة", len(result.opportunities))
         c3.metric("إشارات قوية", int(result.opportunities["new_stock_setup"].sum()))
         preferred = [
-            "symbol", "score", "rating", "price", "entry_low", "entry_high",
-            "target_1", "target_2", "stop", "rsi", "relative_volume", "breakout",
-            "catalyst_score", "catalyst", "reasons", "new_stock_setup",
+            "symbol", "score", "rating", "setup_side", "entry_state", "price",
+            "entry_low", "entry_high", "target_1", "target_2", "invalidation",
+            "rsi", "relative_volume", "sector_etf", "sector_score", "catalyst", "reasons",
         ]
-        st.dataframe(
-            result.opportunities[[c for c in preferred if c in result.opportunities]],
-            use_container_width=True,
-            hide_index=True,
-        )
-        st.download_button(
-            "تنزيل الأسهم CSV",
-            result.opportunities.to_csv(index=False).encode("utf-8-sig"),
-            file_name="ghazi_top_stocks.csv",
-            mime="text/csv",
-        )
+        st.dataframe(result.opportunities[[c for c in preferred if c in result.opportunities]], use_container_width=True, hide_index=True)
+        st.download_button("تنزيل الأسهم CSV", result.opportunities.to_csv(index=False).encode("utf-8-sig"), file_name="ghazi_top_stocks.csv", mime="text/csv")
 
 with options_tab:
     result = st.session_state.get("options")
@@ -125,27 +102,17 @@ with options_tab:
         c2.metric("حالة السوق", result.regime)
         c3.metric("العقود المرشحة", len(result.opportunities))
         if result.alerts:
-            st.subheader("🚨 تنبيهات جديدة")
+            st.subheader("فرص جديدة داخل الرادار")
             for message in result.alerts:
-                st.error(message)
+                st.info(message)
         preferred = [
             "symbol", "expiration", "strike", "option_type", "score", "rating",
             "volume", "open_interest", "vol_oi", "iv", "delta", "spread_pct",
-            "aggressor_proxy", "entry_price", "target_1", "target_2", "stop_price",
-            "trade_style", "catalyst", "news_catalyst_score", "source",
-            "freshness_label", "new_setup_candidate",
+            "entry_price", "target_1", "target_2", "stop_price", "reward_risk_1",
+            "catalyst", "source", "freshness_label", "new_setup_candidate",
         ]
-        st.dataframe(
-            result.opportunities[[c for c in preferred if c in result.opportunities]],
-            use_container_width=True,
-            hide_index=True,
-        )
-        st.download_button(
-            "تنزيل العقود CSV",
-            result.opportunities.to_csv(index=False).encode("utf-8-sig"),
-            file_name="ghazi_top_options.csv",
-            mime="text/csv",
-        )
+        st.dataframe(result.opportunities[[c for c in preferred if c in result.opportunities]], use_container_width=True, hide_index=True)
+        st.download_button("تنزيل العقود CSV", result.opportunities.to_csv(index=False).encode("utf-8-sig"), file_name="ghazi_top_options.csv", mime="text/csv")
 
 with catalysts_tab:
     frame = st.session_state.get("catalysts")
@@ -156,16 +123,8 @@ with catalysts_tab:
     else:
         positive_only = st.toggle("إظهار المحفزات الإيجابية فقط", value=False)
         shown = frame[frame["score"] > 0] if positive_only else frame
-        preferred = [
-            "event_date", "symbol", "score", "category", "headline", "source",
-            "form", "evidence", "url",
-        ]
-        st.dataframe(
-            shown[[c for c in preferred if c in shown]],
-            use_container_width=True,
-            hide_index=True,
-            column_config={"url": st.column_config.LinkColumn("المصدر الرسمي")},
-        )
+        preferred = ["event_date", "symbol", "score", "category", "headline", "source", "form", "confidence", "evidence", "url"]
+        st.dataframe(shown[[c for c in preferred if c in shown]], use_container_width=True, hide_index=True, column_config={"url": st.column_config.LinkColumn("المصدر الرسمي")})
 
 with rejected_tab:
     stock_result = st.session_state.get("stocks")
@@ -176,7 +135,4 @@ with rejected_tab:
     if option_result and option_result.errors:
         st.subheader("أخطاء بيانات العقود")
         st.json(option_result.errors)
-    st.warning(
-        "بيانات Yahoo المجانية قد تكون متأخرة، وVol/OI لا يثبت وحده شراءً مؤسسيًا. "
-        "المشروع يستبعد السبريد الواسع والسيولة الضعيفة، لكن يجب التحقق من السعر الحي قبل التنفيذ."
-    )
+    st.warning("بيانات Yahoo المجانية قد تكون متأخرة، وVol/OI لا يثبت وحده شراءً مؤسسيًا. تحقق من السعر الحي قبل التنفيذ.")
