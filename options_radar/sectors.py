@@ -46,9 +46,25 @@ def _return(frame: pd.DataFrame, sessions: int) -> float:
     return float(close.iloc[-1] / close.iloc[-sessions - 1] - 1.0)
 
 
+def _neutral(etf: str = "SPY") -> dict[str, float | str]:
+    return {
+        "sector_etf": etf,
+        "stock_return_5d": 0.0,
+        "stock_return_20d": 0.0,
+        "sector_return_5d": 0.0,
+        "sector_return_20d": 0.0,
+        "relative_strength_5d": 0.0,
+        "relative_strength_20d": 0.0,
+        "sector_vs_market": 0.0,
+        "sector_score": 0.0,
+    }
+
+
 def sector_context(symbol: str, stock_history: pd.DataFrame | None = None) -> dict[str, float | str]:
     symbol = str(symbol).upper()
-    etf = SECTOR_ETFS.get(symbol, "SPY")
+    etf = SECTOR_ETFS.get(symbol)
+    if not etf:
+        return _neutral()
     try:
         stock = stock_history if stock_history is not None and not stock_history.empty else _history(symbol)
         sector = _history(etf)
@@ -65,7 +81,7 @@ def sector_context(symbol: str, stock_history: pd.DataFrame | None = None) -> di
         combined = 0.4 * rs_5 + 0.6 * rs_20 + 0.35 * sector_vs_market
         score = max(-8.0, min(8.0, combined * 120.0))
     except Exception:
-        stock_5 = stock_20 = sector_5 = sector_20 = rs_5 = rs_20 = sector_vs_market = score = 0.0
+        return _neutral(etf)
     return {
         "sector_etf": etf,
         "stock_return_5d": stock_5,
