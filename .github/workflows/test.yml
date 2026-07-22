@@ -37,7 +37,15 @@ jobs:
           path: pytest-output.txt
           if-no-files-found: ignore
           retention-days: 7
-      - run: python -m py_compile export_web.py run_live_export.py options_radar/live_scanners.py options_radar/strict_catalysts.py
+      - run: >-
+          python -m py_compile
+          export_web.py
+          run_live_export.py
+          options_radar/live_scanners.py
+          options_radar/strict_catalysts.py
+          options_radar/operations.py
+          options_radar/calibration_report.py
+          scripts/calibration_gate.py
       - run: node --check public/app.js
       - name: Validate JSON configuration
         run: |
