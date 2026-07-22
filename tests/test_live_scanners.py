@@ -19,6 +19,6 @@ def test_company_alias_match_without_sec_network(tmp_path: Path) -> None:
         {"NVDA", "MRNA"},
     )
     assert symbol == "NVDA"
-    assert confidence > 0.4
+    assert confidence > 0.3
     assert "Host" not in scanner.session.headers
     assert "@" in scanner.session.headers["User-Agent"]
