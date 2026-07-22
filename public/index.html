@@ -13,7 +13,7 @@
       <div>
         <p class="eyebrow">GHAZI MARKET RADAR</p>
         <h1>أفضل الأسهم والعقود المرشحة</h1>
-        <p class="hero-copy">محفزات SEC وFDA، تحليل فني، وسيولة العقود — في شاشة واحدة بسيطة.</p>
+        <p class="hero-copy">وضع Swing مجاني: محفزات SEC وFDA، اتجاه السهم، جودة العقد، وسجل نتائج قابل للقياس.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -26,9 +26,11 @@
 
     <section class="summary-grid" aria-label="ملخص الرادار">
       <article class="metric-card"><span>حالة السوق</span><strong id="market-regime">—</strong></article>
+      <article class="metric-card"><span>وضع النموذج</span><strong id="mode-label">—</strong></article>
       <article class="metric-card"><span>الأسهم المرشحة</span><strong id="stock-count">0</strong></article>
       <article class="metric-card"><span>العقود المرشحة</span><strong id="option-count">0</strong></article>
       <article class="metric-card"><span>المحفزات الرسمية</span><strong id="catalyst-count">0</strong></article>
+      <article class="metric-card"><span>إشارات تحت القياس</span><strong id="tracked-count">0</strong></article>
     </section>
 
     <section id="alerts-section" class="alerts-section hidden" aria-live="polite">
@@ -40,22 +42,22 @@
       <button class="tab-button active" data-tab="stocks">الأسهم</button>
       <button class="tab-button" data-tab="options">العقود</button>
       <button class="tab-button" data-tab="catalysts">الأخبار الرسمية</button>
-      <button class="tab-button" data-tab="status">حالة المصادر</button>
+      <button class="tab-button" data-tab="status">الجودة والنتائج</button>
     </nav>
 
     <main>
       <section id="tab-stocks" class="tab-panel active">
         <div class="section-heading">
-          <div><h2>الأسهم الأعلى تقييمًا</h2><p>الدخول والهدف والوقف مع أفضل عقد متاح لكل سهم.</p></div>
+          <div><h2>الأسهم الأعلى تقييمًا</h2><p>CALL وPUT منفصلان، مع الدخول والهدف والإبطال وأفضل عقد متاح.</p></div>
           <input id="stock-search" class="search-input" type="search" placeholder="ابحث عن رمز…" aria-label="بحث الأسهم">
         </div>
         <div id="stocks-grid" class="cards-grid"></div>
       </section>
 
       <section id="tab-options" class="tab-panel">
-        <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>عقود اجتازت فلاتر السيولة وVol/OI وDelta والسبريد.</p></div></div>
+        <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>لا يظهر العقد إلا بعد اجتياز جودة البيانات والسيولة والسبريد والاتجاه.</p></div></div>
         <div class="table-wrap"><table><thead><tr>
-          <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>Vol/OI</th><th>Delta</th><th>IV</th><th>المصدر</th>
+          <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>IV</th><th>جودة البيانات</th>
         </tr></thead><tbody id="options-body"></tbody></table></div>
       </section>
 
@@ -68,6 +70,9 @@
         <div class="status-grid">
           <article class="info-card"><h3>مصدر الخيارات</h3><p id="provider-name">—</p></article>
           <article class="info-card"><h3>حجم الكون المفحوص</h3><p id="universe-size">—</p></article>
+          <article class="info-card"><h3>نسخة النموذج</h3><p id="model-version">—</p></article>
+          <article class="info-card"><h3>حالة جلسة NYSE</h3><p id="session-status">—</p></article>
+          <article class="info-card wide"><h3>قياس النتائج الورقية</h3><div id="performance-summary"></div></article>
           <article class="info-card wide"><h3>أخطاء المصادر</h3><div id="errors-list"></div></article>
         </div>
       </section>

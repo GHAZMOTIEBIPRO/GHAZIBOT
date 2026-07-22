@@ -29,6 +29,18 @@ def _env_int(name: str, default: int) -> int:
         raise ValueError(f"{name} must be an integer, got {raw!r}") from exc
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or raw == "":
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"{name} must be a boolean, got {raw!r}")
+
+
 @dataclass(frozen=True)
 class Settings:
     provider: str = (os.getenv("OPTIONS_PROVIDER") or "auto").strip().lower()
@@ -54,19 +66,38 @@ class Settings:
     smtp_password: str | None = os.getenv("SMTP_PASSWORD") or None
     report_email_to: str | None = os.getenv("REPORT_EMAIL_TO") or None
     risk_free_rate: float = _env_float("RISK_FREE_RATE", 0.043)
-    min_dte: int = _env_int("MIN_DTE", 3)
-    max_dte: int = _env_int("MAX_DTE", 45)
+
+    # Free data is better suited to swing setups than low-latency 0DTE trading.
+    free_swing_mode: bool = _env_bool("FREE_SWING_MODE", True)
+    min_dte: int = _env_int("MIN_DTE", 14)
+    max_dte: int = _env_int("MAX_DTE", 60)
     min_option_volume: int = _env_int("MIN_OPTION_VOLUME", 50)
     min_open_interest: int = _env_int("MIN_OPEN_INTEREST", 100)
     max_spread_pct: float = _env_float("MAX_SPREAD_PCT", 0.20)
     min_abs_delta: float = _env_float("MIN_ABS_DELTA", 0.30)
     max_abs_delta: float = _env_float("MAX_ABS_DELTA", 0.60)
+    min_option_price: float = _env_float("MIN_OPTION_PRICE", 0.25)
+    max_option_price: float = _env_float("MAX_OPTION_PRICE", 30.0)
+    min_data_quality: float = _env_float("MIN_DATA_QUALITY", 0.50)
+    max_last_trade_age_minutes: int = _env_int(
+        "MAX_LAST_TRADE_AGE_MINUTES", 7 * 24 * 60
+    )
+
     min_score: float = _env_float("MIN_SCORE", 65.0)
     alert_score: float = _env_float("ALERT_SCORE", 76.0)
     alert_vol_oi: float = _env_float("ALERT_VOL_OI", 2.0)
     max_workers: int = _env_int("MAX_WORKERS", 4)
+    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase1"
+
+    # JSON is persisted by GitHub Actions across isolated runners.
     database_path: Path = Path(
-        os.getenv("DATABASE_PATH", "data/options_radar.sqlite3")
+        os.getenv("DATABASE_PATH", "data/live/alert_state.json")
+    )
+    signal_journal_path: Path = Path(
+        os.getenv("SIGNAL_JOURNAL_PATH", "data/live/signals.jsonl")
+    )
+    outcome_path: Path = Path(
+        os.getenv("OUTCOME_PATH", "data/live/outcomes.json")
     )
 
     def validate(self) -> None:
@@ -80,3 +111,9 @@ class Settings:
             raise ValueError("MAX_SPREAD_PCT must be between 0 and 1")
         if not 0 <= self.min_abs_delta <= self.max_abs_delta <= 1:
             raise ValueError("Invalid delta range")
+        if not 0 <= self.min_data_quality <= 1:
+            raise ValueError("MIN_DATA_QUALITY must be between 0 and 1")
+        if self.min_option_price <= 0 or self.max_option_price <= self.min_option_price:
+            raise ValueError("Invalid option price range")
+        if self.max_last_trade_age_minutes <= 0:
+            raise ValueError("MAX_LAST_TRADE_AGE_MINUTES must be positive")
