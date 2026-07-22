@@ -43,6 +43,15 @@ class Settings:
     telegram_bot_token: str | None = os.getenv("TELEGRAM_BOT_TOKEN") or None
     telegram_chat_id: str | None = os.getenv("TELEGRAM_CHAT_ID") or None
     discord_webhook_url: str | None = os.getenv("DISCORD_WEBHOOK_URL") or None
+    sec_user_agent: str = os.getenv(
+        "SEC_USER_AGENT", "GHAZI Options Radar (configure SEC_USER_AGENT)"
+    )
+    openfda_api_key: str | None = os.getenv("OPENFDA_API_KEY") or None
+    smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port: int = _env_int("SMTP_PORT", 587)
+    smtp_user: str | None = os.getenv("SMTP_USER") or None
+    smtp_password: str | None = os.getenv("SMTP_PASSWORD") or None
+    report_email_to: str | None = os.getenv("REPORT_EMAIL_TO") or None
     risk_free_rate: float = _env_float("RISK_FREE_RATE", 0.043)
     min_dte: int = _env_int("MIN_DTE", 3)
     max_dte: int = _env_int("MAX_DTE", 45)
@@ -55,11 +64,15 @@ class Settings:
     alert_score: float = _env_float("ALERT_SCORE", 76.0)
     alert_vol_oi: float = _env_float("ALERT_VOL_OI", 2.0)
     max_workers: int = _env_int("MAX_WORKERS", 4)
-    database_path: Path = Path(os.getenv("DATABASE_PATH", "data/options_radar.sqlite3"))
+    database_path: Path = Path(
+        os.getenv("DATABASE_PATH", "data/options_radar.sqlite3")
+    )
 
     def validate(self) -> None:
         if self.provider not in {"auto", "yahoo", "marketdata", "tradier"}:
-            raise ValueError("OPTIONS_PROVIDER must be auto, yahoo, marketdata, or tradier")
+            raise ValueError(
+                "OPTIONS_PROVIDER must be one of auto, yahoo, marketdata, tradier"
+            )
         if self.min_dte < 0 or self.max_dte < self.min_dte:
             raise ValueError("Invalid DTE range")
         if not 0 < self.max_spread_pct <= 1:
