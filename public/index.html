@@ -17,7 +17,11 @@
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
-        <div><strong id="freshness-label">جاري تحميل البيانات…</strong><small id="last-updated">—</small></div>
+        <div>
+          <strong id="freshness-label">جاري تحميل البيانات…</strong>
+          <small id="last-updated">وقت جلب السوق: —</small>
+          <small id="page-loaded-at">وقت فتح الصفحة: —</small>
+        </div>
       </div>
     </header>
 
@@ -25,7 +29,9 @@
       <article class="metric-card"><span>حالة السوق</span><strong id="market-regime">—</strong></article>
       <article class="metric-card"><span>وضع النموذج</span><strong id="mode-label">—</strong></article>
       <article class="metric-card"><span>الأسهم المرشحة</span><strong id="stock-count">0</strong></article>
-      <article class="metric-card"><span>العقود المرشحة</span><strong id="option-count">0</strong></article>
+      <article class="metric-card"><span>إجمالي العقود</span><strong id="option-count">0</strong></article>
+      <article class="metric-card call-card"><span>عقود CALL</span><strong id="call-count">0</strong></article>
+      <article class="metric-card put-card"><span>عقود PUT</span><strong id="put-count">0</strong></article>
       <article class="metric-card"><span>المحفزات الرسمية</span><strong id="catalyst-count">0</strong></article>
       <article class="metric-card"><span>فرص مرفوضة</span><strong id="rejected-count">0</strong></article>
     </section>
@@ -53,10 +59,21 @@
       </section>
 
       <section id="tab-options" class="tab-panel">
-        <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>عقود قياسية اجتازت فلاتر الجودة والسيولة والاتجاه.</p></div></div>
-        <div class="table-wrap"><table><thead><tr>
-          <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>المصدر</th>
-        </tr></thead><tbody id="options-body"></tbody></table></div>
+        <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>تم فصل CALL عن PUT حتى لا تختلط عليك الاتجاهات.</p></div></div>
+
+        <div class="option-section call-section">
+          <div class="option-section-heading"><h3>عقود CALL الصاعدة</h3><span id="call-section-count">0 عقد</span></div>
+          <div class="table-wrap"><table><thead><tr>
+            <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>المصدر</th>
+          </tr></thead><tbody id="call-options-body"></tbody></table></div>
+        </div>
+
+        <div class="option-section put-section">
+          <div class="option-section-heading"><h3>عقود PUT الهابطة</h3><span id="put-section-count">0 عقد</span></div>
+          <div class="table-wrap"><table><thead><tr>
+            <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>المصدر</th>
+          </tr></thead><tbody id="put-options-body"></tbody></table></div>
+        </div>
       </section>
 
       <section id="tab-catalysts" class="tab-panel">
@@ -103,7 +120,13 @@
       </section>
     </main>
 
-    <footer><p id="disclaimer">النتائج بحثية وليست توصية استثمارية.</p><button id="refresh-button" class="secondary-button">تحديث الآن</button></footer>
+    <footer>
+      <div><p id="disclaimer">النتائج بحثية وليست توصية استثمارية.</p><p id="refresh-result" class="refresh-result">زر التحميل يجلب آخر ملف منشور ويعرض وقت جلبه بدقة.</p></div>
+      <div class="footer-actions">
+        <a class="secondary-button action-link" href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/actions/workflows/options-radar.yml" target="_blank" rel="noopener">تشغيل فحص جديد عبر GitHub</a>
+        <button id="refresh-button" class="secondary-button">تحميل آخر البيانات المنشورة</button>
+      </div>
+    </footer>
   </div>
   <script src="./app.js" defer></script>
 </body>

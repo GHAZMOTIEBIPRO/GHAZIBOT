@@ -2,6 +2,7 @@ const DATA_URLS = [
   "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/main/public/data/latest.json",
   "./data/latest.json",
 ];
+const RIYADH_TIME_ZONE = "Asia/Riyadh";
 let radarData = null;
 
 const byId = (id) => document.getElementById(id);
@@ -26,15 +27,39 @@ const rejectionLabels = {
 };
 const rejectionText = (value) => String(value || "").split(",").filter(Boolean).map((x) => rejectionLabels[x] || x).join("، ");
 
+function formatRiyadhTime(value) {
+  const timestamp = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(timestamp.getTime())) return "—";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: RIYADH_TIME_ZONE,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).formatToParts(timestamp).reduce((result, part) => {
+    if (part.type !== "literal") result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+}
+
 function renderFreshness(data) {
-  const dot = byId("freshness-dot"); const label = byId("freshness-label"); const updated = byId("last-updated");
+  const dot = byId("freshness-dot");
+  const label = byId("freshness-label");
+  const updated = byId("last-updated");
+  const pageLoaded = byId("page-loaded-at");
   dot.className = "status-dot";
-  if (!data.generated_at) { dot.classList.add("stale"); label.textContent = "بانتظار أول فحص"; updated.textContent = "سيُحدّث GitHub Actions البيانات تلقائيًا"; return; }
-  const timestamp = new Date(data.generated_at); const ageMinutes = (Date.now() - timestamp.getTime()) / 60000;
+  pageLoaded.textContent = `وقت فتح الصفحة: ${formatRiyadhTime(new Date())} — الرياض`;
+  if (!data.generated_at) {
+    dot.classList.add("stale");
+    label.textContent = "بانتظار أول فحص";
+    updated.textContent = "وقت جلب السوق: غير متاح";
+    return;
+  }
+  const timestamp = new Date(data.generated_at);
+  const ageMinutes = (Date.now() - timestamp.getTime()) / 60000;
   if (ageMinutes <= 90) { dot.classList.add("fresh"); label.textContent = "البيانات حديثة"; }
   else if (ageMinutes <= 360) { dot.classList.add("stale"); label.textContent = "البيانات متأخرة"; }
   else { dot.classList.add("error"); label.textContent = "التحديث متوقف أو قديم"; }
-  updated.textContent = `آخر تحديث: ${timestamp.toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}`;
+  updated.textContent = `وقت جلب السوق: ${formatRiyadhTime(timestamp)} — الرياض`;
 }
 
 function optionMini(option) {
@@ -60,12 +85,27 @@ function renderStocks(filter = "") {
   }).join("") : '<div class="empty-state">لا توجد أسهم اجتازت الشروط في آخر فحص.</div>';
 }
 
+function optionRow(option) {
+  const type = sideLabel(option.option_type);
+  const age = Number(option.last_trade_age_minutes);
+  const ageText = Number.isFinite(age) ? `${number(age, 0)} دقيقة` : "غير متاح";
+  return `<tr><td><strong>${escapeHtml(option.symbol)} <span class="${type === "CALL" ? "call" : "put"}">${type} ${number(option.strike)}</span></strong><br><small>${escapeHtml(String(option.expiration || "").slice(0, 10))} · ${number(option.dte, 0)} DTE</small></td><td>${number(option.score, 1)}/100 · ${escapeHtml(option.rating || "—")}</td><td>${money(option.entry_price)}</td><td>${money(option.target_1)} / ${money(option.target_2)}<br><small>السهم ${money(option.underlying_target_1)} / ${money(option.underlying_target_2)}</small></td><td>${money(option.stop_price)}<br><small>إبطال السهم ${money(option.underlying_invalidation)}</small></td><td>${number(option.reward_risk_1, 2)}x / ${number(option.reward_risk_2, 2)}x</td><td>${number(option.vol_oi, 2)}x</td><td>${number(option.delta, 2)}</td><td>${escapeHtml(option.data_status || "—")}<br><small>${escapeHtml(option.source || "—")} · ${ageText}</small></td></tr>`;
+}
+
 function renderOptions() {
   const options = radarData?.options || [];
-  byId("options-body").innerHTML = options.length ? options.map((option) => {
-    const type = sideLabel(option.option_type); const age = Number(option.last_trade_age_minutes); const ageText = Number.isFinite(age) ? `${number(age, 0)} دقيقة` : "غير متاح";
-    return `<tr><td><strong>${escapeHtml(option.symbol)} <span class="${type === "CALL" ? "call" : "put"}">${type} ${number(option.strike)}</span></strong><br><small>${escapeHtml(String(option.expiration || "").slice(0, 10))} · ${number(option.dte, 0)} DTE</small></td><td>${number(option.score, 1)}/100 · ${escapeHtml(option.rating || "—")}</td><td>${money(option.entry_price)}</td><td>${money(option.target_1)} / ${money(option.target_2)}<br><small>السهم ${money(option.underlying_target_1)} / ${money(option.underlying_target_2)}</small></td><td>${money(option.stop_price)}<br><small>إبطال السهم ${money(option.underlying_invalidation)}</small></td><td>${number(option.reward_risk_1, 2)}x / ${number(option.reward_risk_2, 2)}x</td><td>${number(option.vol_oi, 2)}x</td><td>${number(option.delta, 2)}</td><td>${escapeHtml(option.data_status || "—")}<br><small>${escapeHtml(option.source || "—")} · ${ageText}</small></td></tr>`;
-  }).join("") : '<tr><td colspan="9">لا توجد عقود اجتازت جميع فلاتر الجودة والمخاطر.</td></tr>';
+  const calls = options.filter((option) => sideLabel(option.option_type) === "CALL");
+  const puts = options.filter((option) => sideLabel(option.option_type) === "PUT");
+  byId("call-count").textContent = number(calls.length, 0);
+  byId("put-count").textContent = number(puts.length, 0);
+  byId("call-section-count").textContent = `${number(calls.length, 0)} عقد`;
+  byId("put-section-count").textContent = `${number(puts.length, 0)} عقد`;
+  byId("call-options-body").innerHTML = calls.length
+    ? calls.map(optionRow).join("")
+    : '<tr><td colspan="9">لا توجد عقود CALL اجتازت جميع الفلاتر في آخر فحص.</td></tr>';
+  byId("put-options-body").innerHTML = puts.length
+    ? puts.map(optionRow).join("")
+    : '<tr><td colspan="9">لا توجد عقود PUT اجتازت الشروط في آخر فحص؛ النظام يفحص PUT لكنه لا يعرض عقدًا ضعيفًا.</td></tr>';
 }
 
 function renderCatalysts() {
@@ -109,8 +149,61 @@ function renderStatus() {
   const services = radarData?.operational_status?.services || []; byId("services-status").innerHTML = services.length ? services.map((s) => `<div class="error-line"><strong>${escapeHtml(s.name)}</strong>: ${s.configured ? "جاهز" : "يحتاج إعداد"} — ${escapeHtml(s.note || "")}</div>`).join("") : "—";
   const errors = Object.entries(radarData?.errors || {}); byId("errors-list").innerHTML = errors.length ? errors.map(([k, v]) => `<div class="error-line"><strong>${escapeHtml(k)}</strong>: ${escapeHtml(v)}</div>`).join("") : '<p>جميع المصادر المطلوبة أكملت الفحص دون أخطاء مسجلة.</p>';
 }
-function renderAll(data) { radarData = data; renderFreshness(data); byId("market-regime").textContent = regimeLabel(data.market_regime); byId("mode-label").textContent = modeLabel(data.mode); byId("stock-count").textContent = number(data.summary?.stock_candidates, 0); byId("option-count").textContent = number(data.summary?.option_candidates, 0); byId("catalyst-count").textContent = number(data.summary?.catalyst_events, 0); byId("rejected-count").textContent = number(data.summary?.rejected_opportunities, 0); byId("disclaimer").textContent = data.disclaimer || "النتائج بحثية وليست توصية استثمارية."; renderStocks(byId("stock-search").value || ""); renderOptions(); renderCatalysts(); renderRejected(); renderCalibration(); renderAlerts(); renderStatus(); }
-async function fetchRadarData() { const failures = []; for (const url of DATA_URLS) { try { const response = await fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, { cache: "no-store" }); if (!response.ok) throw new Error(`HTTP ${response.status}`); return await response.json(); } catch (error) { failures.push(`${url}: ${String(error)}`); } } throw new Error(failures.join(" | ")); }
-async function loadData() { byId("refresh-button").disabled = true; try { renderAll(await fetchRadarData()); } catch (error) { byId("freshness-dot").className = "status-dot error"; byId("freshness-label").textContent = "تعذر تحميل البيانات"; byId("last-updated").textContent = String(error); } finally { byId("refresh-button").disabled = false; } }
-document.querySelectorAll(".tab-button").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll(".tab-button").forEach((x) => x.classList.remove("active")); document.querySelectorAll(".tab-panel").forEach((x) => x.classList.remove("active")); button.classList.add("active"); byId(`tab-${button.dataset.tab}`).classList.add("active"); }));
-byId("stock-search").addEventListener("input", (event) => renderStocks(event.target.value)); byId("refresh-button").addEventListener("click", loadData); loadData(); setInterval(loadData, 5 * 60 * 1000);
+function renderAll(data) {
+  radarData = data;
+  renderFreshness(data);
+  const options = data.options || [];
+  byId("market-regime").textContent = regimeLabel(data.market_regime);
+  byId("mode-label").textContent = modeLabel(data.mode);
+  byId("stock-count").textContent = number(data.summary?.stock_candidates, 0);
+  byId("option-count").textContent = number(options.length, 0);
+  byId("catalyst-count").textContent = number(data.summary?.catalyst_events, 0);
+  byId("rejected-count").textContent = number(data.summary?.rejected_opportunities, 0);
+  byId("disclaimer").textContent = data.disclaimer || "النتائج بحثية وليست توصية استثمارية.";
+  renderStocks(byId("stock-search").value || ""); renderOptions(); renderCatalysts(); renderRejected(); renderCalibration(); renderAlerts(); renderStatus();
+}
+async function fetchRadarData() {
+  const failures = [];
+  for (const url of DATA_URLS) {
+    try {
+      const response = await fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) { failures.push(`${url}: ${String(error)}`); }
+  }
+  throw new Error(failures.join(" | "));
+}
+async function loadData(manual = false) {
+  const button = byId("refresh-button");
+  const previousGeneratedAt = radarData?.generated_at || null;
+  button.disabled = true;
+  button.textContent = "جاري التحقق…";
+  try {
+    const data = await fetchRadarData();
+    renderAll(data);
+    if (manual) {
+      const hasNewerData = previousGeneratedAt && new Date(data.generated_at) > new Date(previousGeneratedAt);
+      byId("refresh-result").textContent = hasNewerData
+        ? `تم تحميل بيانات أحدث. وقت جلب السوق: ${formatRiyadhTime(data.generated_at)} — الرياض.`
+        : `تم التحقق الآن. لا يوجد ملف أحدث؛ آخر جلب للسوق: ${formatRiyadhTime(data.generated_at)} — الرياض.`;
+    } else {
+      byId("refresh-result").textContent = `تم تحميل آخر ملف منشور. وقت جلب السوق: ${formatRiyadhTime(data.generated_at)} — الرياض.`;
+    }
+  } catch (error) {
+    byId("freshness-dot").className = "status-dot error";
+    byId("freshness-label").textContent = "تعذر تحميل البيانات";
+    byId("refresh-result").textContent = `فشل التحديث: ${String(error)}`;
+  } finally {
+    button.disabled = false;
+    button.textContent = "تحميل آخر البيانات المنشورة";
+  }
+}
+document.querySelectorAll(".tab-button").forEach((button) => button.addEventListener("click", () => {
+  document.querySelectorAll(".tab-button").forEach((x) => x.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach((x) => x.classList.remove("active"));
+  button.classList.add("active"); byId(`tab-${button.dataset.tab}`).classList.add("active");
+}));
+byId("stock-search").addEventListener("input", (event) => renderStocks(event.target.value));
+byId("refresh-button").addEventListener("click", () => loadData(true));
+loadData(false);
+setInterval(() => loadData(false), 5 * 60 * 1000);
