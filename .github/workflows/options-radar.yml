@@ -1,9 +1,12 @@
-name: Options Radar Scan
+name: GHAZI Stocks and Options Radar
 
 on:
   workflow_dispatch:
   schedule:
+    # Intraday scans. GitHub schedules use UTC and may be delayed.
     - cron: "*/15 13-21 * * 1-5"
+    # One daily report before the US session (15:45 Riyadh).
+    - cron: "45 12 * * 1-5"
 
 permissions:
   contents: read
@@ -11,7 +14,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       OPTIONS_PROVIDER: ${{ secrets.OPTIONS_PROVIDER }}
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
@@ -23,6 +26,13 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      REPORT_EMAIL_TO: ${{ secrets.REPORT_EMAIL_TO }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,12 +41,18 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -r requirements.txt
-      - name: Scan
-        run: python main.py --top 30 --output results/latest.csv --send-alerts
+      - name: Scan stocks, catalysts and options
+        shell: bash
+        run: |
+          if [[ "${{ github.event.schedule }}" == "45 12 * * 1-5" ]]; then
+            python main.py --mode all --top 15 --send-alerts --send-report --send-email
+          else
+            python main.py --mode all --top 15 --send-alerts
+          fi
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: options-radar-results
-          path: results/latest.csv
+          name: ghazi-market-radar-results
+          path: results/*.csv
           if-no-files-found: ignore
