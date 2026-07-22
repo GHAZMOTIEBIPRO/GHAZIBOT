@@ -1,4 +1,7 @@
-const DATA_URL = "./data/latest.json";
+const DATA_URLS = [
+  "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/main/public/data/latest.json",
+  "./data/latest.json",
+];
 let radarData = null;
 
 const byId = (id) => document.getElementById(id);
@@ -162,12 +165,25 @@ function renderAll(data) {
   renderStatus();
 }
 
+async function fetchRadarData() {
+  const failures = [];
+  for (const url of DATA_URLS) {
+    try {
+      const separator = url.includes("?") ? "&" : "?";
+      const response = await fetch(`${url}${separator}t=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      failures.push(`${url}: ${String(error)}`);
+    }
+  }
+  throw new Error(failures.join(" | "));
+}
+
 async function loadData() {
   byId("refresh-button").disabled = true;
   try {
-    const response = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    renderAll(await response.json());
+    renderAll(await fetchRadarData());
   } catch (error) {
     byId("freshness-dot").className = "status-dot error";
     byId("freshness-label").textContent = "تعذر تحميل البيانات";
