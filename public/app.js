@@ -27,7 +27,16 @@ const pct = (value, digits = 1) => {
   return Number.isFinite(parsed) ? `${(parsed * 100).toFixed(digits)}%` : "—";
 };
 
-const regimeLabel = (value) => ({ risk_on: "إيجابي", risk_off: "سلبي", mixed: "مختلط", pending: "بانتظار أول فحص" }[value] || value || "—");
+const regimeLabel = (value) => ({
+  risk_on: "إيجابي",
+  risk_off: "سلبي",
+  mixed: "مختلط",
+  closed: "السوق مغلق",
+  pending: "بانتظار أول فحص",
+}[value] || value || "—");
+
+const modeLabel = (value) => ({ free_swing: "Swing مجاني", custom: "إعداد مخصص" }[value] || value || "—");
+const sideLabel = (value) => String(value || "").toLowerCase() === "put" ? "PUT" : "CALL";
 
 function renderFreshness(data) {
   const dot = byId("freshness-dot");
@@ -56,13 +65,14 @@ function renderFreshness(data) {
 }
 
 function optionMini(option) {
-  if (!option) return '<div class="option-mini"><p>لم ينجح عقد مناسب في فلاتر السيولة الحالية.</p></div>';
-  const type = option.option_type === "call" ? "CALL" : "PUT";
+  if (!option) return '<div class="option-mini"><p>لم ينجح عقد مناسب في بوابة الجودة والسيولة الحالية.</p></div>';
+  const type = sideLabel(option.option_type);
   return `<div class="option-mini">
     <header><strong class="${type === "CALL" ? "call" : "put"}">${type} ${number(option.strike)}</strong><span>${escapeHtml(option.rating || "—")} · ${number(option.score, 1)}/100</span></header>
     <p>الانتهاء: ${escapeHtml(String(option.expiration || "—").slice(0, 10))}</p>
     <p>الدخول ${money(option.entry_price)} · الهدف ${money(option.target_1)} / ${money(option.target_2)} · الوقف ${money(option.stop_price)}</p>
-    <p>Vol/OI ${number(option.vol_oi, 2)}x · Delta ${number(option.delta, 2)} · السبريد ${pct(option.spread_pct)}</p>
+    <p>R/R ${number(option.reward_risk_1, 2)}x · Vol/OI ${number(option.vol_oi, 2)}x · Delta ${number(option.delta, 2)}</p>
+    <p>البيانات: ${escapeHtml(option.data_status || option.freshness_label || "—")}</p>
   </div>`;
 }
 
@@ -73,7 +83,9 @@ function renderStocks(filter = "") {
     grid.innerHTML = '<div class="empty-state">لا توجد أسهم اجتازت الشروط في آخر فحص.</div>';
     return;
   }
-  grid.innerHTML = stocks.map((stock, index) => `
+  grid.innerHTML = stocks.map((stock, index) => {
+    const side = sideLabel(stock.setup_side);
+    return `
     <article class="stock-card ${index === 0 || stock.new_stock_setup ? "top-pick" : ""}">
       <div class="card-top">
         <div><div class="symbol">${escapeHtml(stock.symbol)}</div><div class="price">السعر ${money(stock.price)}</div></div>
@@ -82,35 +94,46 @@ function renderStocks(filter = "") {
       <div class="levels">
         <div class="level"><span>الدخول</span><strong>${money(stock.entry_low)}–${money(stock.entry_high)}</strong></div>
         <div class="level"><span>الأهداف</span><strong>${money(stock.target_1)} / ${money(stock.target_2)}</strong></div>
-        <div class="level"><span>الوقف</span><strong>${money(stock.stop)}</strong></div>
+        <div class="level"><span>الإبطال</span><strong>${money(stock.invalidation ?? stock.stop)}</strong></div>
       </div>
-      <div class="chips"><span class="chip">RSI ${number(stock.rsi, 1)}</span><span class="chip">RVOL ${number(stock.relative_volume, 2)}x</span>${stock.breakout ? '<span class="chip">اختراق</span>' : ""}${stock.new_stock_setup ? '<span class="chip">فرصة جديدة</span>' : ""}</div>
+      <div class="chips">
+        <span class="chip ${side === "CALL" ? "call" : "put"}">${side}</span>
+        <span class="chip">${escapeHtml(stock.setup_status || "watchlist")}</span>
+        <span class="chip">RSI ${number(stock.rsi, 1)}</span>
+        <span class="chip">RVOL ${number(stock.relative_volume, 2)}x</span>
+        ${stock.breakout ? `<span class="chip">${side === "CALL" ? "اختراق" : "كسر دعم"}</span>` : ""}
+        ${stock.new_stock_setup ? '<span class="chip">فرصة جديدة</span>' : ""}
+      </div>
       <p class="catalyst">${escapeHtml(stock.catalyst || "لا يوجد محفز قوي حديث")}</p>
       <p class="reasons">${escapeHtml(stock.reasons || "—")}</p>
       ${stock.catalyst_url ? `<a class="source-link" href="${escapeHtml(stock.catalyst_url)}" target="_blank" rel="noopener">فتح المصدر الرسمي ↗</a>` : ""}
       ${optionMini(stock.best_option)}
-    </article>`).join("");
+    </article>`;
+  }).join("");
 }
 
 function renderOptions() {
   const body = byId("options-body");
   const options = radarData?.options || [];
   if (!options.length) {
-    body.innerHTML = '<tr><td colspan="9">لا توجد عقود اجتازت جميع الفلاتر في آخر فحص.</td></tr>';
+    body.innerHTML = '<tr><td colspan="10">لا توجد عقود اجتازت جميع فلاتر الجودة والمخاطر في آخر فحص.</td></tr>';
     return;
   }
   body.innerHTML = options.map((option) => {
-    const type = option.option_type === "call" ? "CALL" : "PUT";
+    const type = sideLabel(option.option_type);
+    const age = Number(option.last_trade_age_minutes);
+    const ageText = Number.isFinite(age) ? `${number(age, 0)} دقيقة` : "غير متاح";
     return `<tr>
       <td><strong>${escapeHtml(option.symbol)} <span class="${type === "CALL" ? "call" : "put"}">${type} ${number(option.strike)}</span></strong><br><small>${escapeHtml(String(option.expiration || "").slice(0, 10))} · ${number(option.dte, 0)} DTE</small></td>
       <td>${number(option.score, 1)}/100 · ${escapeHtml(option.rating || "—")}</td>
       <td>${money(option.entry_price)}</td>
-      <td>${money(option.target_1)} / ${money(option.target_2)}</td>
-      <td>${money(option.stop_price)}</td>
+      <td>${money(option.target_1)} / ${money(option.target_2)}<br><small>السهم ${money(option.underlying_target_1)} / ${money(option.underlying_target_2)}</small></td>
+      <td>${money(option.stop_price)}<br><small>إبطال السهم ${money(option.underlying_invalidation)}</small></td>
+      <td>${number(option.reward_risk_1, 2)}x / ${number(option.reward_risk_2, 2)}x</td>
       <td>${number(option.vol_oi, 2)}x</td>
       <td>${number(option.delta, 2)}</td>
       <td>${pct(option.iv)}</td>
-      <td>${escapeHtml(option.source || "—")}<br><small>${escapeHtml(option.freshness_label || "")}</small></td>
+      <td>${escapeHtml(option.data_status || "—")}<br><small>${escapeHtml(option.source || "—")} · عمر الصفقة ${ageText}</small></td>
     </tr>`;
   }).join("");
 }
@@ -143,6 +166,17 @@ function renderAlerts() {
 function renderStatus() {
   byId("provider-name").textContent = radarData?.options_provider || "—";
   byId("universe-size").textContent = number(radarData?.universe_size, 0);
+  byId("model-version").textContent = radarData?.model_version || "—";
+  const clock = radarData?.market_clock || {};
+  byId("session-status").textContent = clock.is_regular_open ? "مفتوحة" : clock.is_session ? "جلسة مغلقة الآن" : "عطلة سوق";
+
+  const performance = radarData?.performance || {};
+  byId("performance-summary").innerHTML = `
+    <p>الإشارات المسعرة: <strong>${number(performance.priced_signals, 0)}</strong> من ${number(performance.tracked_signals, 0)}</p>
+    <p>الهدف الأول المرصود: <strong>${number(performance.target_1_observed, 0)}</strong> · الهدف الثاني: <strong>${number(performance.target_2_observed, 0)}</strong> · الوقف المرصود: <strong>${number(performance.stop_observed, 0)}</strong></p>
+    <p>متوسط MFE: <strong>${number(performance.average_mfe_pct, 2)}%</strong> · متوسط MAE: <strong>${number(performance.average_mae_pct, 2)}%</strong></p>
+    <small>${escapeHtml(performance.measurement_note || "سيبدأ القياس بعد تسجيل أول الإشارات.")}</small>`;
+
   const errors = radarData?.errors || {};
   const entries = Object.entries(errors);
   byId("errors-list").innerHTML = entries.length
@@ -154,9 +188,11 @@ function renderAll(data) {
   radarData = data;
   renderFreshness(data);
   byId("market-regime").textContent = regimeLabel(data.market_regime);
+  byId("mode-label").textContent = modeLabel(data.mode);
   byId("stock-count").textContent = number(data.summary?.stock_candidates, 0);
   byId("option-count").textContent = number(data.summary?.option_candidates, 0);
   byId("catalyst-count").textContent = number(data.summary?.catalyst_events, 0);
+  byId("tracked-count").textContent = number(data.performance?.tracked_signals, 0);
   byId("disclaimer").textContent = data.disclaimer || "النتائج بحثية وليست توصية استثمارية.";
   renderStocks(byId("stock-search").value || "");
   renderOptions();
