@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
@@ -9,6 +9,7 @@ import pandas as pd
 from .catalysts import best_catalyst_map
 from .indicators import TechnicalSnapshot, analyze_technical, market_regime
 from .providers import get_price_history
+from .sectors import sector_context
 from .settings import Settings
 
 
@@ -17,6 +18,19 @@ class StockScanResult:
     opportunities: pd.DataFrame
     errors: dict[str, str]
     regime: str
+    rejected: pd.DataFrame = field(default_factory=pd.DataFrame)
+
+
+def _rating(score: float) -> str:
+    if score >= 90:
+        return "A+"
+    if score >= 82:
+        return "A"
+    if score >= 74:
+        return "B+"
+    if score >= 65:
+        return "B"
+    return "C"
 
 
 class StockRadar:
@@ -146,6 +160,10 @@ class StockRadar:
         catalyst_text = "لا يوجد محفز قوي حديث"
         catalyst_url = ""
         catalyst_source = ""
+        catalyst_form = ""
+        catalyst_confidence = 0.0
+        catalyst_purpose = ""
+        event_value = None
         if catalyst:
             catalyst_score = max(-25.0, min(25.0, float(catalyst.get("score", 0))))
             if catalyst_score > 0:
@@ -157,6 +175,10 @@ class StockRadar:
             catalyst_text = f"{catalyst.get('category', '')}: {catalyst.get('headline', '')}"
             catalyst_url = str(catalyst.get("url", ""))
             catalyst_source = str(catalyst.get("source", ""))
+            catalyst_form = str(catalyst.get("form", ""))
+            catalyst_confidence = float(catalyst.get("confidence", 0.5) or 0.5)
+            catalyst_purpose = str(catalyst.get("purpose", ""))
+            event_value = catalyst.get("event_value")
 
         if regime == "risk_on":
             bullish += 5
@@ -175,19 +197,41 @@ class StockRadar:
             bullish -= 6
             bearish -= 6
 
-        if technical.close > technical.resistance20 + 2.0 * technical.atr14:
-            bullish -= 10
-            bullish_reasons.append("الحركة الصاعدة ممتدة؛ الدخول متأخر")
-        if technical.close < technical.support20 - 2.0 * technical.atr14:
-            bearish -= 10
-            bearish_reasons.append("الحركة الهابطة ممتدة؛ الدخول متأخر")
+        setup_side = "call" if bullish >= bearish else "put"
+        sector = sector_context(symbol, history)
+        directional_sector_score = float(sector["sector_score"])
+        if setup_side == "put":
+            directional_sector_score *= -1.0
+        if setup_side == "call":
+            bullish += directional_sector_score
+            if directional_sector_score >= 2:
+                bullish_reasons.append(f"قوة نسبية أمام {sector['sector_etf']}")
+            elif directional_sector_score <= -2:
+                bullish_reasons.append(f"ضعف نسبي أمام {sector['sector_etf']}")
+        else:
+            bearish += directional_sector_score
+            if directional_sector_score >= 2:
+                bearish_reasons.append(f"ضعف نسبي أمام {sector['sector_etf']} يدعم PUT")
+            elif directional_sector_score <= -2:
+                bearish_reasons.append(f"القطاع أقوى من السهم الهابط")
+
+        atr = max(technical.atr14, technical.close * 0.005)
+        call_extension = (technical.close - technical.resistance20) / atr
+        put_extension = (technical.support20 - technical.close) / atr
+        too_late_call = call_extension > 2.0
+        too_late_put = put_extension > 2.0
+        if too_late_call:
+            bullish -= 12
+            bullish_reasons.append("الحركة الصاعدة ممتدة؛ فاتت منطقة الدخول")
+        if too_late_put:
+            bearish -= 12
+            bearish_reasons.append("الحركة الهابطة ممتدة؛ فاتت منطقة الدخول")
 
         setup_side = "call" if bullish >= bearish else "put"
         score = bullish if setup_side == "call" else bearish
         reasons = bullish_reasons if setup_side == "call" else bearish_reasons
         score = max(0.0, min(100.0, score))
         close_price = technical.close
-        atr = max(technical.atr14, close_price * 0.005)
 
         if setup_side == "call":
             entry_low = max(technical.ema9, close_price - 0.30 * atr)
@@ -198,6 +242,8 @@ class StockRadar:
             target_2 = close_price + 3.0 * atr
             trigger_type = "breakout" if bullish_breakout else "bullish_confirmation"
             direction_confirmed = technical.direction == "bullish"
+            too_late = too_late_call
+            distance_to_trigger_atr = (technical.resistance20 - close_price) / atr
         else:
             entry_low = close_price - 0.12 * atr
             entry_high = min(technical.ema9, close_price + 0.30 * atr)
@@ -207,6 +253,8 @@ class StockRadar:
             target_2 = close_price - 3.0 * atr
             trigger_type = "breakdown" if bearish_breakdown else "bearish_confirmation"
             direction_confirmed = technical.direction == "bearish"
+            too_late = too_late_put
+            distance_to_trigger_atr = (close_price - technical.support20) / atr
 
         entry_low, entry_high = sorted((entry_low, entry_high))
         has_directional_catalyst = catalyst_score >= 15 if setup_side == "call" else catalyst_score <= -15
@@ -214,33 +262,48 @@ class StockRadar:
         new_stock_setup = bool(
             score >= 78
             and direction_confirmed
+            and not too_late
             and (trigger_confirmed or has_directional_catalyst)
         )
         setup_status = (
             "strong_setup"
             if new_stock_setup
+            else "too_late"
+            if too_late
             else "qualified"
             if score >= 65
             else "watchlist"
         )
+        entry_state = (
+            "too_late"
+            if too_late
+            else "confirmed"
+            if trigger_confirmed
+            else "early"
+            if -0.25 <= distance_to_trigger_atr <= 0.65
+            else "waiting"
+        )
+
+        rejection_reasons: list[str] = []
+        if avg_dollar_volume < 3_000_000:
+            rejection_reasons.append("weak_stock_liquidity")
+        if too_late:
+            rejection_reasons.append("price_extended")
+        if score < 55:
+            rejection_reasons.append("score_below_minimum")
+        if catalyst_purpose == "dilution" and setup_side == "call":
+            rejection_reasons.append("dilution_conflicts_with_call")
+        rejection_reason = ",".join(rejection_reasons)
 
         return {
             "symbol": symbol,
             "score": round(score, 1),
-            "rating": (
-                "A+"
-                if score >= 90
-                else "A"
-                if score >= 82
-                else "B+"
-                if score >= 74
-                else "B"
-                if score >= 65
-                else "C"
-            ),
+            "rating": _rating(score),
             "setup_side": setup_side,
             "setup_status": setup_status,
+            "entry_state": entry_state,
             "trigger_type": trigger_type,
+            "distance_to_trigger_atr": round(distance_to_trigger_atr, 3),
             "price": round(close_price, 2),
             "entry_low": round(entry_low, 2),
             "entry_high": round(entry_high, 2),
@@ -256,10 +319,20 @@ class StockRadar:
             "catalyst_score": catalyst_score,
             "catalyst": catalyst_text,
             "catalyst_source": catalyst_source,
+            "catalyst_form": catalyst_form,
+            "catalyst_confidence": round(catalyst_confidence, 3),
+            "catalyst_purpose": catalyst_purpose,
+            "event_value": event_value,
             "catalyst_url": catalyst_url,
             "reasons": "؛ ".join(dict.fromkeys(reasons)),
             "market_regime": regime,
             "new_stock_setup": new_stock_setup,
+            "sector_etf": sector["sector_etf"],
+            "sector_score": round(float(sector["sector_score"]), 3),
+            "relative_strength_5d": round(float(sector["relative_strength_5d"]), 6),
+            "relative_strength_20d": round(float(sector["relative_strength_20d"]), 6),
+            "sector_vs_market": round(float(sector["sector_vs_market"]), 6),
+            "rejection_reason": rejection_reason,
         }
 
     def scan(
@@ -286,14 +359,21 @@ class StockRadar:
                     rows.append(self._score(symbol, technical, history, regime, catalyst_map.get(symbol)))
                 except Exception as exc:
                     errors[symbol] = str(exc)
-        frame = pd.DataFrame(rows)
-        if not frame.empty:
-            frame = frame[frame["score"] >= 55].sort_values(
+        all_frame = pd.DataFrame(rows)
+        rejected = pd.DataFrame()
+        frame = all_frame
+        if not all_frame.empty:
+            rejected = all_frame[all_frame["rejection_reason"].astype(str) != ""].copy()
+            frame = all_frame[
+                (all_frame["score"] >= 55)
+                & (all_frame["rejection_reason"].astype(str) == "")
+            ].sort_values(
                 ["score", "catalyst_score", "relative_volume"],
                 ascending=[False, False, False],
             ).head(top).reset_index(drop=True)
+            rejected = rejected.sort_values("score", ascending=False).reset_index(drop=True)
         if output_csv:
             path = Path(output_csv)
             path.parent.mkdir(parents=True, exist_ok=True)
             frame.to_csv(path, index=False)
-        return StockScanResult(frame, errors, regime)
+        return StockScanResult(frame, errors, regime, rejected)
