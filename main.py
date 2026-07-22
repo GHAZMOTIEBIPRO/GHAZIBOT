@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pandas as pd
@@ -13,6 +16,51 @@ from options_radar.reporting import dispatch_daily_report
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
 from options_radar.stocks import StockRadar
+
+
+class DashboardRequestHandler(SimpleHTTPRequestHandler):
+    """Serve the generated public dashboard with fresh JSON responses."""
+
+    def end_headers(self) -> None:
+        if self.path.startswith("/data/") or self.path.endswith("latest.json"):
+            self.send_header("Cache-Control", "no-store, max-age=0")
+        else:
+            self.send_header("Cache-Control", "public, max-age=300")
+        super().end_headers()
+
+
+def serve_dashboard() -> int:
+    """Serve public/ on the host and port required by Render web services."""
+
+    public_dir = Path(__file__).resolve().parent / "public"
+    index_file = public_dir / "index.html"
+    if not index_file.exists():
+        raise FileNotFoundError(f"Dashboard entrypoint not found: {index_file}")
+
+    raw_port = os.getenv("PORT", "10000")
+    try:
+        port = int(raw_port)
+    except ValueError as exc:
+        raise ValueError(f"PORT must be an integer, got {raw_port!r}") from exc
+
+    handler = partial(DashboardRequestHandler, directory=str(public_dir))
+    server = ThreadingHTTPServer(("0.0.0.0", port), handler)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    )
+    logging.getLogger(__name__).info(
+        "Serving GHAZI Market Radar from %s on 0.0.0.0:%s",
+        public_dir,
+        port,
+    )
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        logging.getLogger(__name__).info("Dashboard server stopped")
+    finally:
+        server.server_close()
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -115,4 +163,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    if not sys.argv[1:] and os.getenv("PORT"):
+        raise SystemExit(serve_dashboard())
     raise SystemExit(main())
