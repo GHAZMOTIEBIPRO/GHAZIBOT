@@ -1,9 +1,9 @@
 {
-  "sample_size": 42,
-  "priced_sample": 42,
+  "sample_size": 44,
+  "priced_sample": 44,
   "minimum_sample": 100,
   "calibration_ready": false,
-  "decision": "Collect 58 more priced signals before changing weights",
+  "decision": "Collect 56 more priced signals before changing weights",
   "score_bands": [
     {
       "band": "90-100",
@@ -32,18 +32,18 @@
       "target_1_rate": 0.0,
       "target_2_rate": 0.0,
       "stop_rate": 0.0,
-      "average_mfe_pct": 1.8407499999999999,
-      "average_mae_pct": -4.097466666666667
+      "average_mfe_pct": 2.349466666666667,
+      "average_mae_pct": -6.852566666666667
     },
     {
       "band": "60-69",
-      "signals": 36,
-      "priced": 36,
-      "target_1_rate": 0.05555555555555555,
+      "signals": 38,
+      "priced": 38,
+      "target_1_rate": 0.05263157894736842,
       "target_2_rate": 0.0,
       "stop_rate": 0.0,
-      "average_mfe_pct": 2.9053750000000003,
-      "average_mae_pct": -4.101375
+      "average_mfe_pct": 3.0756,
+      "average_mae_pct": -5.787505263157894
     },
     {
       "band": "0-59",
@@ -59,10 +59,10 @@
   "catalysts": [
     {
       "catalyst": "bullish EMA stack; MACD/RSI bullish momentum",
-      "signals": 30,
+      "signals": 31,
       "target_1_rate": 0.0,
       "stop_rate": 0.0,
-      "average_mfe_pct": 2.4844766666666667
+      "average_mfe_pct": 2.8821032258064516
     },
     {
       "catalyst": "bullish EMA stack",
@@ -79,18 +79,18 @@
       "average_mfe_pct": 0.34655
     },
     {
+      "catalyst": "bearish EMA stack; MACD/RSI bearish momentum",
+      "signals": 2,
+      "target_1_rate": 0.0,
+      "stop_rate": 0.0,
+      "average_mfe_pct": 0.0931
+    },
+    {
       "catalyst": "FDA approval",
       "signals": 2,
       "target_1_rate": 0.0,
       "stop_rate": 0.0,
       "average_mfe_pct": -0.6505
-    },
-    {
-      "catalyst": "bearish EMA stack; MACD/RSI bearish momentum",
-      "signals": 1,
-      "target_1_rate": 0.0,
-      "stop_rate": 0.0,
-      "average_mfe_pct": -0.3345
     }
   ],
   "warning": "Observed free-data prices do not prove trade execution or target/stop order. Do not optimize weights on a small sample."

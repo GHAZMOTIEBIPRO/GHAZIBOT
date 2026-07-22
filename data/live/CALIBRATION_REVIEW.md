@@ -2,8 +2,8 @@
 
 - **Model version:** `2026.07-phase2`
 - **Status:** **COLLECTING EVIDENCE**
-- **Priced signals:** **42/100**
-- **Decision:** Collect 58 more priced signals before changing weights
+- **Priced signals:** **44/100**
+- **Decision:** Collect 56 more priced signals before changing weights
 
 > This report does not authorize automatic score changes. It opens a review gate only. 
 > Free-data observations are not proof of executable fills or the order in which targets and stops were reached.
@@ -14,19 +14,19 @@
 |---|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 0 | 0 | — | — | — | — | — |
-| 70-79 | 6 | 6 | 0.0% | 0.0% | 0.0% | 1.84 | -4.10 |
-| 60-69 | 36 | 36 | 5.6% | 0.0% | 0.0% | 2.91 | -4.10 |
+| 70-79 | 6 | 6 | 0.0% | 0.0% | 0.0% | 2.35 | -6.85 |
+| 60-69 | 38 | 38 | 5.3% | 0.0% | 0.0% | 3.08 | -5.79 |
 | 0-59 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
 
 | Catalyst | Signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 30 | 0.0% | 0.0% | 2.48 |
+| bullish EMA stack; MACD/RSI bullish momentum | 31 | 0.0% | 0.0% | 2.88 |
 | bullish EMA stack | 7 | 28.6% | 0.0% | 6.01 |
 | FDA approval record — verify materiality | 2 | 0.0% | 0.0% | 0.35 |
+| bearish EMA stack; MACD/RSI bearish momentum | 2 | 0.0% | 0.0% | 0.09 |
 | FDA approval | 2 | 0.0% | 0.0% | -0.65 |
-| bearish EMA stack; MACD/RSI bearish momentum | 1 | 0.0% | 0.0% | -0.33 |
 
 ## Review protocol
 
