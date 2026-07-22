@@ -91,6 +91,13 @@ class ResilientCatalystScanner(CatalystScanner):
                 best_symbol, best_score = symbol, similarity
         return best_symbol, best_score
 
+    @staticmethod
+    def _entry_cik(title: str, summary: str) -> str:
+        match = re.search(r"\((\d{6,10})\)", title)
+        if not match:
+            match = re.search(r"CIK[:=\s]+(\d{6,10})", summary, flags=re.I)
+        return match.group(1).zfill(10) if match else ""
+
     def _news_is_relevant(self, symbol: str, text: str) -> bool:
         if re.search(rf"(?<![A-Z0-9]){re.escape(symbol)}(?![A-Z0-9])", text, flags=re.I):
             return True
@@ -150,6 +157,7 @@ class ResilientCatalystScanner(CatalystScanner):
             "8-K", "6-K", "SC 13D", "SC 13D/A", "4",
             "S-1", "S-1/A", "S-3", "S-3/A", "424B5",
         )
+        by_cik, _ = self._ticker_map()
 
         for form in forms:
             params = {
@@ -185,7 +193,14 @@ class ResilientCatalystScanner(CatalystScanner):
                     company_text,
                     flags=re.I,
                 )
-                symbol, similarity = self._match_symbol(company_text, allowed_symbols)
+                cik = self._entry_cik(title, summary)
+                direct = by_cik.get(cik) if cik else None
+                if direct and direct[0] in allowed_symbols:
+                    symbol, company = direct
+                    similarity = 1.0
+                else:
+                    symbol, similarity = self._match_symbol(company_text, allowed_symbols)
+                    company = self.aliases.get(symbol, company_text.strip())
                 if not symbol or similarity < 0.24:
                     continue
 
@@ -223,7 +238,7 @@ class ResilientCatalystScanner(CatalystScanner):
                 events.append(
                     CatalystEvent(
                         symbol=symbol,
-                        company=self.aliases.get(symbol, company_text.strip()),
+                        company=company,
                         event_date=updated or date.today().isoformat(),
                         category=category,
                         headline=title,
