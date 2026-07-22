@@ -9,22 +9,15 @@ from options_radar.settings import Settings
 from scripts.calibration_gate import evaluate, mark
 
 
-def test_operational_status_never_exposes_secret_values() -> None:
-    settings = Settings(
-        telegram_bot_token="super-secret-token",
-        telegram_chat_id="123",
-        smtp_user="user@example.com",
-        smtp_password="email-secret",
-        report_email_to="to@example.com",
-    )
-
-    status = build_operational_status(settings)
+def test_operational_status_is_dashboard_only() -> None:
+    status = build_operational_status(Settings())
     serialized = json.dumps(status)
 
-    assert status["live_alert_channel_ready"] is True
-    assert status["daily_report_ready"] is True
-    assert "super-secret-token" not in serialized
-    assert "email-secret" not in serialized
+    assert status["dashboard_only"] is True
+    assert status["external_notifications_enabled"] is False
+    assert "telegram" not in serialized.lower()
+    assert "smtp" not in serialized.lower()
+    assert "discord" not in serialized.lower()
 
 
 def test_calibration_markdown_opens_review_not_auto_changes() -> None:
