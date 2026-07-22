@@ -34,6 +34,7 @@ const regimeLabel = (value) => ({
 }[value] || value || "—");
 const modeLabel = (value) => ({ free_swing: "Swing مجاني", custom: "إعداد مخصص" }[value] || value || "—");
 const sideLabel = (value) => String(value || "").toLowerCase() === "put" ? "PUT" : "CALL";
+const yesNo = (value) => value ? "مفعّل" : "غير مفعّل";
 const rejectionLabels = {
   weak_stock_liquidity: "سيولة السهم ضعيفة",
   price_extended: "الحركة امتدت وفاتت منطقة الدخول",
@@ -165,9 +166,12 @@ function renderRejected() {
 
 function renderCalibration() {
   const calibration = radarData?.calibration || {};
+  const gate = radarData?.calibration_gate || {};
   const performance = radarData?.performance || {};
   byId("calibration-sample").textContent = `${number(calibration.priced_sample, 0)} / ${number(calibration.minimum_sample, 0)}`;
   byId("calibration-decision").textContent = calibration.decision || "بانتظار البيانات";
+  byId("calibration-gate-status").textContent = gate.ready ? "جاهزة للمراجعة المستقلة" : "تجميع الأدلة مستمر";
+  byId("calibration-remaining").textContent = number(gate.remaining, 0);
   byId("average-mfe").textContent = plainPct(performance.average_mfe_pct, 2);
   byId("average-mae").textContent = plainPct(performance.average_mae_pct, 2);
   byId("calibration-warning").textContent = calibration.warning || "";
@@ -196,6 +200,11 @@ function renderStatus() {
   byId("universe-sources").textContent = Object.entries(sources).map(([key, value]) => `${key}: ${number(value, 0)}`).join(" · ") || "—";
   const clock = radarData?.market_clock || {};
   byId("session-status").textContent = clock.is_regular_open ? "مفتوحة" : clock.is_session ? "جلسة مغلقة الآن" : "عطلة سوق";
+  const operations = radarData?.operational_status || {};
+  byId("alert-channel-status").textContent = yesNo(operations.live_alert_channel_ready);
+  byId("daily-report-status").textContent = yesNo(operations.daily_report_ready);
+  const missing = operations.missing_required_secrets || [];
+  byId("missing-secrets").textContent = missing.length ? missing.join(" · ") : "لا توجد إعدادات إلزامية ناقصة للقنوات المختارة";
   const entries = Object.entries(radarData?.errors || {});
   byId("errors-list").innerHTML = entries.length
     ? entries.map(([key, value]) => `<div class="error-line"><strong>${escapeHtml(key)}</strong>: ${escapeHtml(value)}</div>`).join("")
