@@ -52,19 +52,11 @@ class Settings:
     alpaca_api_key: str | None = os.getenv("ALPACA_API_KEY") or None
     alpaca_secret_key: str | None = os.getenv("ALPACA_SECRET_KEY") or None
     alpaca_options_feed: str = os.getenv("ALPACA_OPTIONS_FEED") or "indicative"
-    telegram_bot_token: str | None = os.getenv("TELEGRAM_BOT_TOKEN") or None
-    telegram_chat_id: str | None = os.getenv("TELEGRAM_CHAT_ID") or None
-    discord_webhook_url: str | None = os.getenv("DISCORD_WEBHOOK_URL") or None
     sec_user_agent: str = (
         os.getenv("SEC_USER_AGENT")
         or "GHAZI Options Radar (configure SEC_USER_AGENT)"
     )
     openfda_api_key: str | None = os.getenv("OPENFDA_API_KEY") or None
-    smtp_host: str = os.getenv("SMTP_HOST") or "smtp.gmail.com"
-    smtp_port: int = _env_int("SMTP_PORT", 587)
-    smtp_user: str | None = os.getenv("SMTP_USER") or None
-    smtp_password: str | None = os.getenv("SMTP_PASSWORD") or None
-    report_email_to: str | None = os.getenv("REPORT_EMAIL_TO") or None
     risk_free_rate: float = _env_float("RISK_FREE_RATE", 0.043)
 
     # Free data is better suited to swing setups than low-latency 0DTE trading.
@@ -91,7 +83,7 @@ class Settings:
     calibration_minimum_sample: int = _env_int("CALIBRATION_MINIMUM_SAMPLE", 100)
     model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase2"
 
-    # JSON is persisted by GitHub Actions across isolated runners.
+    # JSON evidence is persisted by GitHub Actions across isolated runners.
     database_path: Path = Path(
         os.getenv("DATABASE_PATH", "data/live/alert_state.json")
     )
