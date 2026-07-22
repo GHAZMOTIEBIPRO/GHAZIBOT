@@ -24,8 +24,20 @@ jobs:
         with:
           node-version: "22"
       - run: pip install -r requirements-dev.txt
-      - run: pytest -q
-      - run: python -m py_compile export_web.py run_live_export.py options_radar/live_scanners.py
+      - name: Run Python tests
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest -q 2>&1 | tee pytest-output.txt
+      - name: Upload pytest diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-diagnostics
+          path: pytest-output.txt
+          if-no-files-found: ignore
+          retention-days: 7
+      - run: python -m py_compile export_web.py run_live_export.py options_radar/live_scanners.py options_radar/strict_catalysts.py
       - run: node --check public/app.js
       - name: Validate JSON configuration
         run: |
