@@ -24,32 +24,38 @@ def _number(value: Any) -> str:
 
 def render_calibration_markdown(report: dict[str, Any], model_version: str) -> str:
     ready = bool(report.get("calibration_ready"))
-    priced = int(report.get("priced_sample", 0) or 0)
+    matured = int(report.get("matured_sample", report.get("priced_sample", 0)) or 0)
+    raw_priced = int(report.get("raw_priced_sample", matured) or 0)
+    five_day = int(report.get("five_day_sample", 0) or 0)
+    checkpoint = str(report.get("maturity_checkpoint", "1d"))
     minimum = int(report.get("minimum_sample", 100) or 100)
-    status = "READY FOR INDEPENDENT REVIEW" if ready else "COLLECTING EVIDENCE"
+    status = "READY FOR INDEPENDENT REVIEW" if ready else "COLLECTING MATURE EVIDENCE"
 
     lines = [
         "# GHAZI Radar — Calibration Review",
         "",
         f"- **Model version:** `{model_version}`",
         f"- **Status:** **{status}**",
-        f"- **Priced signals:** **{priced}/{minimum}**",
+        f"- **Mature signals ({checkpoint} checkpoint):** **{matured}/{minimum}**",
+        f"- **Raw priced signals:** **{raw_priced}**",
+        f"- **Five-day mature signals:** **{five_day}**",
         f"- **Decision:** {report.get('decision', '—')}",
         "",
-        "> This report does not authorize automatic score changes. It opens a review gate only. ",
-        "> Free-data observations are not proof of executable fills or the order in which targets and stops were reached.",
+        "> Same-scan observations do not count toward calibration readiness. ",
+        "> This report does not authorize automatic score changes. Free-data observations are not proof of executable fills or target/stop ordering.",
         "",
         "## Score bands",
         "",
-        "| Band | Signals | Priced | Target 1 | Target 2 | Stop | Avg MFE % | Avg MAE % |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| Band | Signals | Observed | Mature | Target 1 | Target 2 | Stop | Avg MFE % | Avg MAE % |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in report.get("score_bands", []):
         lines.append(
-            "| {band} | {signals} | {priced} | {t1} | {t2} | {stop} | {mfe} | {mae} |".format(
+            "| {band} | {signals} | {observed} | {matured} | {t1} | {t2} | {stop} | {mfe} | {mae} |".format(
                 band=row.get("band", "—"),
                 signals=int(row.get("signals", 0) or 0),
-                priced=int(row.get("priced", 0) or 0),
+                observed=int(row.get("observed", row.get("priced", 0)) or 0),
+                matured=int(row.get("matured", row.get("priced", 0)) or 0),
                 t1=_pct(row.get("target_1_rate")),
                 t2=_pct(row.get("target_2_rate")),
                 stop=_pct(row.get("stop_rate")),
@@ -62,7 +68,7 @@ def render_calibration_markdown(report: dict[str, Any], model_version: str) -> s
         "",
         "## Catalyst groups",
         "",
-        "| Catalyst | Signals | Target 1 | Stop | Avg MFE % |",
+        "| Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |",
         "|---|---:|---:|---:|---:|",
     ])
     for row in report.get("catalysts", []):

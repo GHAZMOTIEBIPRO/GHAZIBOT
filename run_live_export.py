@@ -46,16 +46,18 @@ def publish_operational_state() -> None:
         else payload.get("calibration", {})
     )
     operational = build_operational_status(settings)
+    matured = int(calibration.get("matured_sample", calibration.get("priced_sample", 0)) or 0)
+    minimum = int(calibration.get("minimum_sample", 100) or 100)
     payload["operational_status"] = operational
     payload["calibration_gate"] = {
         "ready": bool(calibration.get("calibration_ready")),
-        "priced_sample": int(calibration.get("priced_sample", 0) or 0),
-        "minimum_sample": int(calibration.get("minimum_sample", 100) or 100),
-        "remaining": max(
-            0,
-            int(calibration.get("minimum_sample", 100) or 100)
-            - int(calibration.get("priced_sample", 0) or 0),
-        ),
+        "priced_sample": matured,
+        "matured_sample": matured,
+        "raw_priced_sample": int(calibration.get("raw_priced_sample", matured) or 0),
+        "five_day_sample": int(calibration.get("five_day_sample", 0) or 0),
+        "maturity_checkpoint": str(calibration.get("maturity_checkpoint", "1d")),
+        "minimum_sample": minimum,
+        "remaining": max(0, minimum - matured),
         "review_report": "data/live/CALIBRATION_REVIEW.md",
         "automatic_weight_changes": False,
     }

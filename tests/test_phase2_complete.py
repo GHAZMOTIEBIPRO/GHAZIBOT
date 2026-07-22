@@ -142,11 +142,26 @@ def test_calibration_waits_for_minimum_sample(tmp_path) -> None:
         encoding="utf-8",
     )
     outcomes.write_text(
-        json.dumps({"signals": {"a": {"observations": 2, "mfe_pct": 20, "mae_pct": -10, "target_1_observed": True, "target_2_observed": False, "stop_observed": False}}}),
+        json.dumps(
+            {
+                "signals": {
+                    "a": {
+                        "observations": 2,
+                        "mfe_pct": 20,
+                        "mae_pct": -10,
+                        "target_1_observed": True,
+                        "target_2_observed": False,
+                        "stop_observed": False,
+                        "checkpoints": {"1d": {"price": 1.2, "return_pct": 4.0}},
+                    }
+                }
+            }
+        ),
         encoding="utf-8",
     )
     report = build_calibration_report(signals, outcomes, minimum_sample=100)
     assert report["priced_sample"] == 1
+    assert report["matured_sample"] == 1
     assert report["calibration_ready"] is False
     assert "99 more" in report["decision"]
 
