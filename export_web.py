@@ -26,6 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--send-alerts", action="store_true")
     parser.add_argument("--send-report", action="store_true")
     parser.add_argument("--send-email", action="store_true")
+    parser.add_argument(
+        "--skip-closed",
+        action="store_true",
+        help="Do not run a market scan when the NYSE regular session is closed.",
+    )
     parser.add_argument("--verbose", action="store_true")
     return parser
 
@@ -64,15 +69,40 @@ def _best_options_by_symbol(options: pd.DataFrame) -> dict[str, dict[str, Any]]:
     if options.empty or "symbol" not in options.columns:
         return {}
     ordered = options.sort_values(
-        [c for c in ["score", "vol_oi", "volume"] if c in options.columns],
+        [c for c in ["score", "reward_risk_1", "vol_oi", "volume"] if c in options.columns],
         ascending=False,
     )
     best = ordered.drop_duplicates("symbol")
     fields = [
-        "contract_symbol", "expiration", "strike", "option_type", "score", "rating",
-        "entry_price", "target_1", "target_2", "stop_price", "underlying_invalidation",
-        "volume", "open_interest", "vol_oi", "iv", "delta", "spread_pct",
-        "aggressor_proxy", "source", "freshness_label", "catalyst_url",
+        "contract_symbol",
+        "expiration",
+        "strike",
+        "option_type",
+        "score",
+        "rating",
+        "entry_price",
+        "target_1",
+        "target_2",
+        "stop_price",
+        "underlying_target_1",
+        "underlying_target_2",
+        "underlying_invalidation",
+        "risk_pct",
+        "reward_risk_1",
+        "reward_risk_2",
+        "volume",
+        "open_interest",
+        "vol_oi",
+        "iv",
+        "delta",
+        "spread_pct",
+        "aggressor_proxy",
+        "source",
+        "freshness_label",
+        "data_status",
+        "last_trade_age_minutes",
+        "model_version",
+        "catalyst_url",
     ]
     result: dict[str, dict[str, Any]] = {}
     for _, row in best.iterrows():
@@ -104,6 +134,8 @@ def main(argv: list[str] | None = None) -> int:
     # Heavy market-data modules are imported lazily so JSON helpers remain testable
     # without network-provider dependencies installed.
     from options_radar.catalysts import CatalystScanner
+    from options_radar.journal import SignalJournal
+    from options_radar.market_clock import market_clock_state
     from options_radar.providers import load_universe
     from options_radar.reporting import dispatch_daily_report
     from options_radar.scanner import OptionsRadar
@@ -118,6 +150,35 @@ def main(argv: list[str] | None = None) -> int:
 
     settings = Settings()
     settings.validate()
+    clock = market_clock_state()
+    output = Path(args.output)
+    if args.skip_closed and not clock.is_regular_open:
+        LOGGER.info(
+            "NYSE regular session is closed for %s; preserving the last published scan.",
+            clock.session_date,
+        )
+        if not output.exists():
+            generated_at = datetime.now(timezone.utc)
+            _write_atomic(
+                output,
+                {
+                    "schema_version": 2,
+                    "model_version": settings.model_version,
+                    "generated_at": generated_at.isoformat(),
+                    "market_regime": "closed",
+                    "market_clock": clock.__dict__,
+                    "summary": {},
+                    "stocks": [],
+                    "options": [],
+                    "catalysts": [],
+                    "alerts": [],
+                    "errors": {},
+                    "performance": {},
+                    "disclaimer": "السوق مغلق؛ لم يتم تنفيذ فحص جديد.",
+                },
+            )
+        return 0
+
     symbols = args.symbols or load_universe(args.universe)
     symbols = list(dict.fromkeys(str(symbol).strip().upper() for symbol in symbols if str(symbol).strip()))
 
@@ -184,22 +245,103 @@ def main(argv: list[str] | None = None) -> int:
         catalysts = catalysts.head(40)
 
     stock_columns = [
-        "symbol", "score", "rating", "price", "entry_low", "entry_high", "target_1",
-        "target_2", "stop", "rsi", "relative_volume", "avg_dollar_volume", "breakout",
-        "technical_direction", "catalyst_score", "catalyst", "catalyst_source",
-        "catalyst_url", "reasons", "market_regime", "new_stock_setup",
+        "symbol",
+        "score",
+        "rating",
+        "setup_side",
+        "setup_status",
+        "trigger_type",
+        "price",
+        "entry_low",
+        "entry_high",
+        "target_1",
+        "target_2",
+        "stop",
+        "invalidation",
+        "rsi",
+        "relative_volume",
+        "avg_dollar_volume",
+        "breakout",
+        "technical_direction",
+        "catalyst_score",
+        "catalyst",
+        "catalyst_source",
+        "catalyst_url",
+        "reasons",
+        "market_regime",
+        "new_stock_setup",
     ]
     option_columns = [
-        "symbol", "contract_symbol", "expiration", "dte", "strike", "option_type", "score",
-        "rating", "volume", "open_interest", "vol_oi", "iv", "delta", "gamma",
-        "spread_pct", "aggressor_proxy", "entry_price", "target_1", "target_2",
-        "stop_price", "underlying_invalidation", "trade_style", "catalyst", "catalyst_url",
-        "catalyst_source", "source", "freshness_label", "new_setup_candidate",
+        "symbol",
+        "contract_symbol",
+        "expiration",
+        "dte",
+        "strike",
+        "option_type",
+        "score",
+        "rating",
+        "bid",
+        "ask",
+        "last",
+        "underlying_price",
+        "volume",
+        "open_interest",
+        "vol_oi",
+        "iv",
+        "delta",
+        "gamma",
+        "theta",
+        "spread_pct",
+        "aggressor_proxy",
+        "entry_price",
+        "target_1",
+        "target_2",
+        "stop_price",
+        "underlying_target_1",
+        "underlying_target_2",
+        "underlying_invalidation",
+        "risk_pct",
+        "reward_risk_1",
+        "reward_risk_2",
+        "trade_style",
+        "catalyst",
+        "catalyst_url",
+        "catalyst_source",
+        "source",
+        "freshness_label",
+        "data_status",
+        "data_completeness",
+        "last_trade_age_minutes",
+        "model_version",
+        "new_setup_candidate",
     ]
     catalyst_columns = [
-        "symbol", "company", "event_date", "category", "headline", "score", "source",
-        "form", "url", "evidence",
+        "symbol",
+        "company",
+        "event_date",
+        "category",
+        "headline",
+        "score",
+        "source",
+        "form",
+        "url",
+        "evidence",
     ]
+
+    generated_at = datetime.now(timezone.utc)
+    journal = SignalJournal(
+        settings.signal_journal_path,
+        settings.outcome_path,
+        settings.model_version,
+    )
+    new_signals_recorded = 0
+    performance: dict[str, Any] = {}
+    try:
+        new_signals_recorded = journal.record(options, generated_at)
+        performance = journal.update_outcomes(generated_at)
+    except Exception as exc:
+        errors["journal"] = str(exc)
+        LOGGER.exception("Signal journal update failed")
 
     stock_records = _records(stocks, stock_columns)
     option_records = _records(options, option_columns)
@@ -220,12 +362,14 @@ def main(argv: list[str] | None = None) -> int:
             errors["report"] = str(exc)
             LOGGER.exception("Daily report delivery failed")
 
-    generated_at = datetime.now(timezone.utc)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "model_version": settings.model_version,
+        "mode": "free_swing" if settings.free_swing_mode else "custom",
         "generated_at": generated_at.isoformat(),
         "generated_at_unix": int(generated_at.timestamp()),
         "market_regime": market_regime,
+        "market_clock": clock.__dict__,
         "options_provider": options_provider,
         "universe_size": len(symbols),
         "summary": {
@@ -234,7 +378,9 @@ def main(argv: list[str] | None = None) -> int:
             "catalyst_events": len(catalyst_records),
             "new_stock_setups": sum(bool(row.get("new_stock_setup")) for row in stock_records),
             "new_option_setups": sum(bool(row.get("new_setup_candidate")) for row in option_records),
+            "new_signals_recorded": new_signals_recorded,
         },
+        "performance": performance,
         "stocks": stock_records,
         "options": option_records,
         "catalysts": catalyst_records,
@@ -242,18 +388,19 @@ def main(argv: list[str] | None = None) -> int:
         "errors": errors,
         "report_delivery": report_delivery,
         "disclaimer": (
-            "إشارات بحثية مبنية على بيانات مجانية قد تكون متأخرة أو ناقصة. "
-            "لا يوجد ضمان للربح، ويجب التحقق من السعر الحي قبل تنفيذ أي أمر."
+            "وضع Swing بحثي مبني على بيانات مجانية قد تكون متأخرة أو ناقصة. "
+            "النتائج المسجلة هي أسعار مرصودة وليست تنفيذات مؤكدة، ولا يوجد ضمان للربح. "
+            "تحقق من السعر الحي ومستوى إبطال السهم قبل تنفيذ أي أمر."
         ),
     }
-    output = Path(args.output)
     _write_atomic(output, payload)
     LOGGER.info(
-        "Wrote %s with %d stocks, %d options and %d catalysts",
+        "Wrote %s with %d stocks, %d options, %d catalysts and %d new journal records",
         output,
         len(stock_records),
         len(option_records),
         len(catalyst_records),
+        new_signals_recorded,
     )
     if errors:
         LOGGER.warning("Completed with %d source errors", len(errors))
