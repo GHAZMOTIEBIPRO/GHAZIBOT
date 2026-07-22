@@ -9,6 +9,7 @@ on:
       - "export_web.py"
       - "run_live_export.py"
       - "options_radar/**"
+      - "scripts/calibration_gate.py"
       - "data/universe.txt"
       - "data/company_aliases.json"
       - "requirements.txt"
@@ -26,6 +27,7 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   scan:
@@ -73,13 +75,64 @@ jobs:
           else
             python run_live_export.py --top-stocks 15 --top-options 15 --send-alerts
           fi
+      - name: Evaluate calibration review gate
+        id: calibration_gate
+        run: python scripts/calibration_gate.py
+      - name: Open one-time calibration review issue
+        if: steps.calibration_gate.outputs.should_open == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          existing_url="$(gh issue list --state open --search 'Calibration review ready in:title' --json url --jq '.[0].url // empty')"
+          if [[ -n "$existing_url" ]]; then
+            issue_url="$existing_url"
+          else
+            issue_url="$(gh issue create \
+              --title "Calibration review ready — ${{ env.MODEL_VERSION }}" \
+              --body-file data/live/CALIBRATION_REVIEW.md)"
+          fi
+          python scripts/calibration_gate.py --mark "$issue_url"
+          echo "Calibration review issue: $issue_url"
+      - name: Write workflow summary
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(Path('public/data/latest.json').read_text(encoding='utf-8'))
+          calibration = payload.get('calibration_gate', {})
+          operations = payload.get('operational_status', {})
+          summary = [
+              '# GHAZI Market Radar',
+              '',
+              f"- Model: `{payload.get('model_version', 'unknown')}`",
+              f"- Market: **{payload.get('market_regime', 'unknown')}**",
+              f"- Stocks: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
+              f"- Options: **{payload.get('summary', {}).get('option_candidates', 0)}**",
+              f"- Calibration: **{calibration.get('priced_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
+              f"- Calibration ready: **{calibration.get('ready', False)}**",
+              f"- Alert channel ready: **{operations.get('live_alert_channel_ready', False)}**",
+              f"- Daily report ready: **{operations.get('daily_report_ready', False)}**",
+          ]
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary), encoding='utf-8')
+          PY
       - name: Publish fresh dashboard data and evidence journal
         shell: bash
         run: |
           git config user.name "ghazi-radar-bot"
           git config user.email "actions@users.noreply.github.com"
           git add public/data/latest.json
-          for file in data/live/alert_state.json data/live/signals.jsonl data/live/outcomes.json data/live/calibration.json; do
+          for file in \
+            data/live/alert_state.json \
+            data/live/signals.jsonl \
+            data/live/outcomes.json \
+            data/live/calibration.json \
+            data/live/CALIBRATION_REVIEW.md \
+            data/live/calibration_issue.json; do
             if [[ -f "$file" ]]; then
               git add "$file"
             fi
@@ -101,5 +154,6 @@ jobs:
             public/data/latest.json
             data/live/*.json
             data/live/*.jsonl
+            data/live/*.md
             results/*.csv
           if-no-files-found: ignore
