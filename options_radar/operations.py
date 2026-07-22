@@ -7,7 +7,7 @@ from .settings import Settings
 
 
 @dataclass(frozen=True)
-class IntegrationStatus:
+class ServiceStatus:
     name: str
     configured: bool
     required_fields: tuple[str, ...]
@@ -20,96 +20,71 @@ class IntegrationStatus:
 
 
 def build_operational_status(settings: Settings) -> dict[str, Any]:
-    """Return a safe readiness report without exposing credential values."""
-
-    telegram_ready = bool(settings.telegram_bot_token and settings.telegram_chat_id)
-    email_ready = bool(
-        settings.smtp_host
-        and settings.smtp_port
-        and settings.smtp_user
-        and settings.smtp_password
-        and settings.report_email_to
-    )
-    discord_ready = bool(settings.discord_webhook_url)
+    """Return a public, credential-free status report for the dashboard workflow."""
 
     provider = settings.provider
     provider_ready = True
-    provider_note = "Yahoo fallback is available; data may be delayed or unofficial."
-    required: tuple[str, ...] = ()
+    provider_note = "Yahoo fallback is available; option data may be delayed or unofficial."
+    provider_required: tuple[str, ...] = ()
     if provider == "marketdata":
         provider_ready = bool(settings.marketdata_token)
-        required = ("MARKETDATA_TOKEN",)
-        provider_note = "MarketData.app token required for the selected provider."
+        provider_required = ("MARKETDATA_TOKEN",)
+        provider_note = "MarketData.app token is required for the selected provider."
     elif provider == "tradier":
         provider_ready = bool(settings.tradier_token)
-        required = ("TRADIER_TOKEN", "TRADIER_BASE_URL")
-        provider_note = "Tradier token required; sandbox data is delayed and omits Greeks."
+        provider_required = ("TRADIER_TOKEN", "TRADIER_BASE_URL")
+        provider_note = "Tradier credentials are required; sandbox data is delayed."
     elif provider == "auto":
         provider_note = (
-            "Auto mode tries configured providers and falls back to Yahoo when no paid or "
-            "brokerage credential is available."
+            "Auto mode tries configured option-data providers and otherwise uses the free "
+            "Yahoo fallback."
         )
 
-    integrations = [
-        IntegrationStatus(
+    sec_ready = "configure SEC_USER_AGENT" not in settings.sec_user_agent
+    services = [
+        ServiceStatus(
             name="options_data",
             configured=provider_ready,
-            required_fields=required,
+            required_fields=provider_required,
             note=provider_note,
         ),
-        IntegrationStatus(
-            name="telegram",
-            configured=telegram_ready,
-            required_fields=("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"),
-            note=(
-                "Instant alerts enabled."
-                if telegram_ready
-                else "Add a newly rotated bot token and chat ID to GitHub Actions secrets."
-            ),
-        ),
-        IntegrationStatus(
-            name="email",
-            configured=email_ready,
-            required_fields=("SMTP_USER", "SMTP_PASSWORD", "REPORT_EMAIL_TO"),
-            note=(
-                "Daily email report enabled."
-                if email_ready
-                else "Daily email remains disabled until SMTP credentials and recipient are added."
-            ),
-        ),
-        IntegrationStatus(
-            name="discord",
-            configured=discord_ready,
-            required_fields=("DISCORD_WEBHOOK_URL",),
-            note=(
-                "Discord alerts enabled."
-                if discord_ready
-                else "Optional; no Discord webhook configured."
-            ),
-        ),
-        IntegrationStatus(
+        ServiceStatus(
             name="sec_identity",
-            configured="configure SEC_USER_AGENT" not in settings.sec_user_agent,
+            configured=sec_ready,
             required_fields=("SEC_USER_AGENT",),
-            note="SEC requires a descriptive User-Agent and fair-access request behavior.",
+            note="SEC automated access uses a descriptive User-Agent and fair-access limits.",
+        ),
+        ServiceStatus(
+            name="openfda",
+            configured=True,
+            required_fields=(),
+            note=(
+                "openFDA works without a key within the public limit; a free key is optional."
+                if not settings.openfda_api_key
+                else "openFDA free API key configured."
+            ),
+        ),
+        ServiceStatus(
+            name="evidence_journal",
+            configured=True,
+            required_fields=(),
+            note="Signals, observations and calibration evidence are persisted by GitHub Actions.",
         ),
     ]
 
     return {
-        "ready_for_paper_tracking": provider_ready,
-        "live_alert_channel_ready": telegram_ready or discord_ready,
-        "daily_report_ready": email_ready or telegram_ready,
-        "integrations": [item.to_dict() for item in integrations],
-        "missing_required_secrets": sorted(
-            {
-                field
-                for item in integrations
-                if not item.configured and item.name in {"telegram", "email"}
-                for field in item.required_fields
-            }
-        ),
-        "security_note": (
-            "Credential values are never written to the public JSON. Store them only in GitHub "
-            "Actions secrets."
+        "dashboard_only": True,
+        "ready_for_paper_tracking": provider_ready and sec_ready,
+        "external_notifications_enabled": False,
+        "services": [item.to_dict() for item in services],
+        "configuration_warnings": [
+            field
+            for item in services
+            if not item.configured
+            for field in item.required_fields
+        ],
+        "operation_note": (
+            "The project publishes only to the dashboard and GitHub evidence journal. "
+            "Email, Telegram, Discord and automated order execution are intentionally disabled."
         ),
     }
