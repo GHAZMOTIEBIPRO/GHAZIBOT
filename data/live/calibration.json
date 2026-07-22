@@ -1,14 +1,20 @@
 {
-  "sample_size": 44,
-  "priced_sample": 44,
+  "sample_size": 45,
+  "raw_priced_sample": 45,
+  "priced_sample": 0,
+  "matured_sample": 0,
+  "five_day_sample": 0,
+  "maturity_checkpoint": "1d",
   "minimum_sample": 100,
   "calibration_ready": false,
-  "decision": "Collect 56 more priced signals before changing weights",
+  "decision": "Collect 100 more signals with a 1d checkpoint before changing weights",
   "score_bands": [
     {
       "band": "90-100",
       "signals": 0,
+      "observed": 0,
       "priced": 0,
+      "matured": 0,
       "target_1_rate": null,
       "target_2_rate": null,
       "stop_rate": null,
@@ -18,7 +24,9 @@
     {
       "band": "80-89",
       "signals": 0,
+      "observed": 0,
       "priced": 0,
+      "matured": 0,
       "target_1_rate": null,
       "target_2_rate": null,
       "stop_rate": null,
@@ -28,27 +36,33 @@
     {
       "band": "70-79",
       "signals": 6,
-      "priced": 6,
-      "target_1_rate": 0.0,
-      "target_2_rate": 0.0,
-      "stop_rate": 0.0,
-      "average_mfe_pct": 2.349466666666667,
-      "average_mae_pct": -6.852566666666667
+      "observed": 6,
+      "priced": 0,
+      "matured": 0,
+      "target_1_rate": null,
+      "target_2_rate": null,
+      "stop_rate": null,
+      "average_mfe_pct": null,
+      "average_mae_pct": null
     },
     {
       "band": "60-69",
-      "signals": 38,
-      "priced": 38,
-      "target_1_rate": 0.05263157894736842,
-      "target_2_rate": 0.0,
-      "stop_rate": 0.0,
-      "average_mfe_pct": 3.0878684210526317,
-      "average_mae_pct": -5.975373684210527
+      "signals": 39,
+      "observed": 39,
+      "priced": 0,
+      "matured": 0,
+      "target_1_rate": null,
+      "target_2_rate": null,
+      "stop_rate": null,
+      "average_mfe_pct": null,
+      "average_mae_pct": null
     },
     {
       "band": "0-59",
       "signals": 0,
+      "observed": 0,
       "priced": 0,
+      "matured": 0,
       "target_1_rate": null,
       "target_2_rate": null,
       "stop_rate": null,
@@ -56,42 +70,6 @@
       "average_mae_pct": null
     }
   ],
-  "catalysts": [
-    {
-      "catalyst": "bullish EMA stack; MACD/RSI bullish momentum",
-      "signals": 31,
-      "target_1_rate": 0.0,
-      "stop_rate": 0.0,
-      "average_mfe_pct": 2.8971419354838712
-    },
-    {
-      "catalyst": "bullish EMA stack",
-      "signals": 7,
-      "target_1_rate": 0.2857142857142857,
-      "stop_rate": 0.0,
-      "average_mfe_pct": 6.0065857142857135
-    },
-    {
-      "catalyst": "FDA approval record — verify materiality",
-      "signals": 2,
-      "target_1_rate": 0.0,
-      "stop_rate": 0.0,
-      "average_mfe_pct": 0.34655
-    },
-    {
-      "catalyst": "bearish EMA stack; MACD/RSI bearish momentum",
-      "signals": 2,
-      "target_1_rate": 0.0,
-      "stop_rate": 0.0,
-      "average_mfe_pct": 0.0931
-    },
-    {
-      "catalyst": "FDA approval",
-      "signals": 2,
-      "target_1_rate": 0.0,
-      "stop_rate": 0.0,
-      "average_mfe_pct": -0.6505
-    }
-  ],
-  "warning": "Observed free-data prices do not prove trade execution or target/stop order. Do not optimize weights on a small sample."
+  "catalysts": [],
+  "warning": "Same-scan quotes are monitoring observations, not mature evidence. The review gate counts only signals with a 1d checkpoint. Free-data prices still do not prove executable fills or target/stop ordering."
 }

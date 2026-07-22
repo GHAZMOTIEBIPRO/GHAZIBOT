@@ -1,32 +1,29 @@
 # GHAZI Radar — Calibration Review
 
 - **Model version:** `2026.07-phase2`
-- **Status:** **COLLECTING EVIDENCE**
-- **Priced signals:** **44/100**
-- **Decision:** Collect 56 more priced signals before changing weights
+- **Status:** **COLLECTING MATURE EVIDENCE**
+- **Mature signals (1d checkpoint):** **0/100**
+- **Raw priced signals:** **45**
+- **Five-day mature signals:** **0**
+- **Decision:** Collect 100 more signals with a 1d checkpoint before changing weights
 
-> This report does not authorize automatic score changes. It opens a review gate only. 
-> Free-data observations are not proof of executable fills or the order in which targets and stops were reached.
+> Same-scan observations do not count toward calibration readiness. 
+> This report does not authorize automatic score changes. Free-data observations are not proof of executable fills or target/stop ordering.
 
 ## Score bands
 
-| Band | Signals | Priced | Target 1 | Target 2 | Stop | Avg MFE % | Avg MAE % |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 90-100 | 0 | 0 | — | — | — | — | — |
-| 80-89 | 0 | 0 | — | — | — | — | — |
-| 70-79 | 6 | 6 | 0.0% | 0.0% | 0.0% | 2.35 | -6.85 |
-| 60-69 | 38 | 38 | 5.3% | 0.0% | 0.0% | 3.09 | -5.98 |
-| 0-59 | 0 | 0 | — | — | — | — | — |
+| Band | Signals | Observed | Mature | Target 1 | Target 2 | Stop | Avg MFE % | Avg MAE % |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 90-100 | 0 | 0 | 0 | — | — | — | — | — |
+| 80-89 | 0 | 0 | 0 | — | — | — | — | — |
+| 70-79 | 6 | 6 | 0 | — | — | — | — | — |
+| 60-69 | 39 | 39 | 0 | — | — | — | — | — |
+| 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
 
-| Catalyst | Signals | Target 1 | Stop | Avg MFE % |
+| Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 31 | 0.0% | 0.0% | 2.90 |
-| bullish EMA stack | 7 | 28.6% | 0.0% | 6.01 |
-| FDA approval record — verify materiality | 2 | 0.0% | 0.0% | 0.35 |
-| bearish EMA stack; MACD/RSI bearish momentum | 2 | 0.0% | 0.0% | 0.09 |
-| FDA approval | 2 | 0.0% | 0.0% | -0.65 |
 
 ## Review protocol
 
