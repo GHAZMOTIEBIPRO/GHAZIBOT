@@ -3,20 +3,24 @@ name: GHAZI Stocks and Options Radar
 on:
   workflow_dispatch:
   schedule:
-    # Intraday scans. GitHub schedules use UTC and may be delayed.
-    - cron: "*/15 13-21 * * 1-5"
-    # One daily report before the US session (15:45 Riyadh).
+    # Every 30 minutes across the US session. GitHub schedules use UTC and may be delayed.
+    - cron: "*/30 13-21 * * 1-5"
+    # Daily summary before the US session (15:45 Riyadh).
     - cron: "45 12 * * 1-5"
 
+concurrency:
+  group: ghazi-market-radar
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      OPTIONS_PROVIDER: ${{ secrets.OPTIONS_PROVIDER }}
+      OPTIONS_PROVIDER: ${{ secrets.OPTIONS_PROVIDER || 'auto' }}
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
       TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
       TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL }}
@@ -26,7 +30,7 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar contact:https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/issues' }}
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
       SMTP_HOST: ${{ secrets.SMTP_HOST }}
       SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -35,24 +39,41 @@ jobs:
       REPORT_EMAIL_TO: ${{ secrets.REPORT_EMAIL_TO }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
       - name: Install
         run: pip install -r requirements.txt
-      - name: Scan stocks, catalysts and options
+      - name: Generate website data
         shell: bash
         run: |
           if [[ "${{ github.event.schedule }}" == "45 12 * * 1-5" ]]; then
-            python main.py --mode all --top 15 --send-alerts --send-report --send-email
+            python export_web.py --top-stocks 15 --top-options 15 --send-alerts --send-report --send-email
           else
-            python main.py --mode all --top 15 --send-alerts
+            python export_web.py --top-stocks 15 --top-options 15 --send-alerts
           fi
-      - name: Upload results
+      - name: Publish fresh dashboard data
+        shell: bash
+        run: |
+          git config user.name "ghazi-radar-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/data/latest.json
+          if git diff --cached --quiet; then
+            echo "No data change to publish."
+          else
+            git commit -m "data: refresh market radar [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Upload result files
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ghazi-market-radar-results
-          path: results/*.csv
+          path: |
+            public/data/latest.json
+            results/*.csv
           if-no-files-found: ignore
