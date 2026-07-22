@@ -1,0 +1,42 @@
+name: Options Radar Scan
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 13-21 * * 1-5"
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPTIONS_PROVIDER: ${{ secrets.OPTIONS_PROVIDER }}
+      MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Scan
+        run: python main.py --top 30 --output results/latest.csv --send-alerts
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: options-radar-results
+          path: results/latest.csv
+          if-no-files-found: ignore
