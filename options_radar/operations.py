@@ -85,6 +85,6 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
         ],
         "operation_note": (
             "The project publishes only to the dashboard and GitHub evidence journal. "
-            "Email, Telegram, Discord and automated order execution are intentionally disabled."
+            "External message delivery and automated order execution are disabled."
         ),
     }
