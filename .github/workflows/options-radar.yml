@@ -2,6 +2,14 @@ name: GHAZI Stocks and Options Radar
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "export_web.py"
+      - "options_radar/**"
+      - "data/universe.txt"
+      - ".github/workflows/options-radar.yml"
   schedule:
     # Every 30 minutes across the US session. GitHub schedules use UTC and may be delayed.
     - cron: "*/30 13-21 * * 1-5"
