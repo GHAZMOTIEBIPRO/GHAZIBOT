@@ -5,12 +5,16 @@ import re
 import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date
+from dataclasses import replace
+from datetime import date, datetime, time as clock_time
 from pathlib import Path
+from typing import Iterable
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
+import yfinance as yf
 
 from .catalysts import (
     SEC_BASE,
@@ -18,22 +22,21 @@ from .catalysts import (
     CatalystEvent,
     CatalystScanner,
     _name_similarity,
+    _normalize_name,
     _score_text,
     best_catalyst_map,
 )
 from .stocks import StockRadar, StockScanResult
 
 LOGGER = logging.getLogger(__name__)
+_GENERIC_NEWS_TOKENS = {
+    "global", "technology", "technologies", "platform", "platforms", "group",
+    "markets", "market", "systems", "system", "digital", "international", "com",
+}
 
 
 class ResilientCatalystScanner(CatalystScanner):
-    """Catalyst scanner that keeps FDA/news alive when SEC blocks a shared runner IP.
-
-    SEC occasionally returns 403 to cloud-hosted runners. The base implementation
-    previously allowed the company-ticker lookup to abort every other source. This
-    class removes the forced Host header, uses an explicit contact-style user agent,
-    and falls back to a small company-alias map for matching current EDGAR feeds.
-    """
+    """Keep free catalyst sources useful when SEC blocks a shared runner IP."""
 
     def __init__(self, settings, aliases_path: str | Path = "data/company_aliases.json"):
         super().__init__(settings)
@@ -75,12 +78,26 @@ class ResilientCatalystScanner(CatalystScanner):
 
     def _match_symbol(self, raw_company: str, allowed_symbols: set[str]) -> tuple[str, float]:
         best_symbol, best_score = "", 0.0
+        normalized_raw = raw_company.lower()
         for symbol in allowed_symbols:
             company = self.aliases.get(symbol, symbol)
             similarity = _name_similarity(raw_company, company)
+            if company.lower() in normalized_raw:
+                similarity = max(similarity, 0.92)
             if similarity > best_score:
                 best_symbol, best_score = symbol, similarity
         return best_symbol, best_score
+
+    def _news_is_relevant(self, symbol: str, text: str) -> bool:
+        if re.search(rf"(?<![A-Z0-9]){re.escape(symbol)}(?![A-Z0-9])", text, flags=re.I):
+            return True
+        company = self.aliases.get(symbol, symbol)
+        company_tokens = _normalize_name(company) - _GENERIC_NEWS_TOKENS
+        text_tokens = _normalize_name(text)
+        if not company_tokens:
+            return False
+        overlap = len(company_tokens & text_tokens) / len(company_tokens)
+        return overlap >= 0.6
 
     def _sec_events(
         self,
@@ -155,9 +172,100 @@ class ResilientCatalystScanner(CatalystScanner):
                 )
         return events
 
+    def _fda_events(
+        self,
+        allowed_symbols: set[str],
+        company_names: dict[str, str],
+        lookback_days: int,
+    ) -> list[CatalystEvent]:
+        events = super()._fda_events(allowed_symbols, company_names, lookback_days)
+        return [
+            CatalystEvent(
+                symbol=event.symbol,
+                company=event.company,
+                event_date=event.event_date,
+                category="FDA approval record — verify materiality",
+                headline=event.headline,
+                score=min(event.score, 18),
+                source=event.source,
+                form=event.form,
+                url=event.url,
+                evidence=event.evidence,
+            )
+            for event in events
+        ]
+
+    def _yahoo_news_events(
+        self,
+        symbols: Iterable[str],
+        max_per_symbol: int = 4,
+    ) -> list[CatalystEvent]:
+        events: list[CatalystEvent] = []
+        for symbol in symbols:
+            try:
+                items = yf.Ticker(symbol).news or []
+            except Exception as exc:
+                LOGGER.debug("Yahoo news failed for %s: %s", symbol, exc)
+                continue
+            for item in items[:max_per_symbol]:
+                content = item.get("content") if isinstance(item, dict) else None
+                content = content if isinstance(content, dict) else item
+                title = str(content.get("title", ""))
+                summary = str(content.get("summary", ""))
+                combined = f"{title} {summary}"
+                if not self._news_is_relevant(str(symbol), combined):
+                    continue
+                score, category, evidence = _score_text(combined)
+                if score == 0:
+                    continue
+                canonical = content.get("canonicalUrl") or content.get("clickThroughUrl") or {}
+                url = canonical.get("url", "") if isinstance(canonical, dict) else str(canonical)
+                published = str(content.get("pubDate", ""))[:10] or date.today().isoformat()
+                events.append(
+                    CatalystEvent(
+                        symbol=str(symbol),
+                        company=self.aliases.get(str(symbol), str(symbol)),
+                        event_date=published,
+                        category=category,
+                        headline=title,
+                        score=max(-18, min(16, score)),
+                        source="Yahoo Finance News",
+                        form="NEWS",
+                        url=url,
+                        evidence=evidence,
+                    )
+                )
+        return events
+
 
 class PublicStockRadar(StockRadar):
     """Return a ranked watchlist even when no stock meets the strong-alert threshold."""
+
+    @staticmethod
+    def _adjust_relative_volume(technical, history: pd.DataFrame):
+        if history is None or history.empty or "Volume" not in history or len(history) < 22:
+            return technical
+        volume = pd.to_numeric(history["Volume"], errors="coerce")
+        now_et = datetime.now(ZoneInfo("America/New_York"))
+        last_date = pd.Timestamp(history.index[-1]).date()
+        current = float(volume.iloc[-1] or 0)
+        prior_average = float(volume.iloc[-21:-1].mean())
+        if prior_average <= 0:
+            return technical
+
+        adjusted = current / prior_average
+        if last_date == now_et.date() and now_et.weekday() < 5:
+            session_start = datetime.combine(now_et.date(), clock_time(9, 30), tzinfo=now_et.tzinfo)
+            session_end = datetime.combine(now_et.date(), clock_time(16, 0), tzinfo=now_et.tzinfo)
+            if session_start <= now_et < session_end:
+                elapsed = max((now_et - session_start).total_seconds() / (6.5 * 3600), 0.08)
+                adjusted = current / elapsed / prior_average
+            elif now_et < session_start and len(volume) >= 23:
+                previous = float(volume.iloc[-2] or 0)
+                previous_average = float(volume.iloc[-22:-2].mean())
+                if previous_average > 0:
+                    adjusted = previous / previous_average
+        return replace(technical, relative_volume20=max(0.0, min(adjusted, 10.0)))
 
     def scan(
         self,
@@ -182,7 +290,11 @@ class PublicStockRadar(StockRadar):
                 symbol = futures[future]
                 try:
                     technical, history = future.result()
+                    technical = self._adjust_relative_volume(technical, history)
                     row = self._score(symbol, technical, history, regime, catalyst_map.get(symbol))
+                    row["entry_low"], row["entry_high"] = sorted(
+                        (float(row["entry_low"]), float(row["entry_high"]))
+                    )
                     row["setup_status"] = (
                         "strong_setup"
                         if row["new_stock_setup"]
