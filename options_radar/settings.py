@@ -31,23 +31,24 @@ def _env_int(name: str, default: int) -> int:
 
 @dataclass(frozen=True)
 class Settings:
-    provider: str = os.getenv("OPTIONS_PROVIDER", "auto").strip().lower()
+    provider: str = (os.getenv("OPTIONS_PROVIDER") or "auto").strip().lower()
     marketdata_token: str | None = os.getenv("MARKETDATA_TOKEN") or None
     tradier_token: str | None = os.getenv("TRADIER_TOKEN") or None
-    tradier_base_url: str = os.getenv(
-        "TRADIER_BASE_URL", "https://sandbox.tradier.com"
+    tradier_base_url: str = (
+        os.getenv("TRADIER_BASE_URL") or "https://sandbox.tradier.com"
     ).rstrip("/")
     alpaca_api_key: str | None = os.getenv("ALPACA_API_KEY") or None
     alpaca_secret_key: str | None = os.getenv("ALPACA_SECRET_KEY") or None
-    alpaca_options_feed: str = os.getenv("ALPACA_OPTIONS_FEED", "indicative")
+    alpaca_options_feed: str = os.getenv("ALPACA_OPTIONS_FEED") or "indicative"
     telegram_bot_token: str | None = os.getenv("TELEGRAM_BOT_TOKEN") or None
     telegram_chat_id: str | None = os.getenv("TELEGRAM_CHAT_ID") or None
     discord_webhook_url: str | None = os.getenv("DISCORD_WEBHOOK_URL") or None
-    sec_user_agent: str = os.getenv(
-        "SEC_USER_AGENT", "GHAZI Options Radar (configure SEC_USER_AGENT)"
+    sec_user_agent: str = (
+        os.getenv("SEC_USER_AGENT")
+        or "GHAZI Options Radar (configure SEC_USER_AGENT)"
     )
     openfda_api_key: str | None = os.getenv("OPENFDA_API_KEY") or None
-    smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_host: str = os.getenv("SMTP_HOST") or "smtp.gmail.com"
     smtp_port: int = _env_int("SMTP_PORT", 587)
     smtp_user: str | None = os.getenv("SMTP_USER") or None
     smtp_password: str | None = os.getenv("SMTP_PASSWORD") or None
