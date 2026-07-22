@@ -103,7 +103,9 @@ jobs:
               f"- Market: **{payload.get('market_regime', 'unknown')}**",
               f"- Stocks: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
               f"- Options: **{payload.get('summary', {}).get('option_candidates', 0)}**",
-              f"- Calibration: **{calibration.get('priced_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
+              f"- Mature calibration sample: **{calibration.get('matured_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
+              f"- Raw priced signals: **{calibration.get('raw_priced_sample', 0)}**",
+              f"- Five-day mature signals: **{calibration.get('five_day_sample', 0)}**",
               f"- Calibration ready: **{calibration.get('ready', False)}**",
               f"- Paper tracking ready: **{operations.get('ready_for_paper_tracking', False)}**",
           ]
