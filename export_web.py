@@ -26,11 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--send-alerts", action="store_true")
     parser.add_argument("--send-report", action="store_true")
     parser.add_argument("--send-email", action="store_true")
-    parser.add_argument(
-        "--skip-closed",
-        action="store_true",
-        help="Do not run a market scan when the NYSE regular session is closed.",
-    )
+    parser.add_argument("--skip-closed", action="store_true")
     parser.add_argument("--verbose", action="store_true")
     return parser
 
@@ -50,8 +46,11 @@ def _json_value(value: Any) -> Any:
         return round(value, 6)
     if isinstance(value, (str, int, bool)):
         return value
-    if pd.isna(value):
-        return None
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
     return str(value)
 
 
@@ -74,35 +73,12 @@ def _best_options_by_symbol(options: pd.DataFrame) -> dict[str, dict[str, Any]]:
     )
     best = ordered.drop_duplicates("symbol")
     fields = [
-        "contract_symbol",
-        "expiration",
-        "strike",
-        "option_type",
-        "score",
-        "rating",
-        "entry_price",
-        "target_1",
-        "target_2",
-        "stop_price",
-        "underlying_target_1",
-        "underlying_target_2",
-        "underlying_invalidation",
-        "risk_pct",
-        "reward_risk_1",
-        "reward_risk_2",
-        "volume",
-        "open_interest",
-        "vol_oi",
-        "iv",
-        "delta",
-        "spread_pct",
-        "aggressor_proxy",
-        "source",
-        "freshness_label",
-        "data_status",
-        "last_trade_age_minutes",
-        "model_version",
-        "catalyst_url",
+        "contract_symbol", "expiration", "strike", "option_type", "score", "rating",
+        "entry_price", "target_1", "target_2", "stop_price", "underlying_target_1",
+        "underlying_target_2", "underlying_invalidation", "risk_pct", "reward_risk_1",
+        "reward_risk_2", "volume", "open_interest", "vol_oi", "iv", "delta",
+        "spread_pct", "aggressor_proxy", "source", "freshness_label", "data_status",
+        "last_trade_age_minutes", "model_version", "catalyst_url",
     ]
     result: dict[str, dict[str, Any]] = {}
     for _, row in best.iterrows():
@@ -131,8 +107,7 @@ def _write_atomic(path: Path, payload: dict[str, Any]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    # Heavy market-data modules are imported lazily so JSON helpers remain testable
-    # without network-provider dependencies installed.
+    from options_radar.calibration import build_calibration_report
     from options_radar.catalysts import CatalystScanner
     from options_radar.journal import SignalJournal
     from options_radar.market_clock import market_clock_state
@@ -141,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     from options_radar.scanner import OptionsRadar
     from options_radar.settings import Settings
     from options_radar.stocks import StockRadar
+    from options_radar.universe import build_dynamic_universe
 
     args = build_parser().parse_args(argv)
     logging.basicConfig(
@@ -153,16 +129,13 @@ def main(argv: list[str] | None = None) -> int:
     clock = market_clock_state()
     output = Path(args.output)
     if args.skip_closed and not clock.is_regular_open:
-        LOGGER.info(
-            "NYSE regular session is closed for %s; preserving the last published scan.",
-            clock.session_date,
-        )
+        LOGGER.info("NYSE session closed; preserving the last published scan")
         if not output.exists():
             generated_at = datetime.now(timezone.utc)
             _write_atomic(
                 output,
                 {
-                    "schema_version": 2,
+                    "schema_version": 3,
                     "model_version": settings.model_version,
                     "generated_at": generated_at.isoformat(),
                     "market_regime": "closed",
@@ -171,6 +144,8 @@ def main(argv: list[str] | None = None) -> int:
                     "stocks": [],
                     "options": [],
                     "catalysts": [],
+                    "rejected": [],
+                    "calibration": {},
                     "alerts": [],
                     "errors": {},
                     "performance": {},
@@ -179,12 +154,18 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
 
-    symbols = args.symbols or load_universe(args.universe)
-    symbols = list(dict.fromkeys(str(symbol).strip().upper() for symbol in symbols if str(symbol).strip()))
+    base_symbols = args.symbols or load_universe(args.universe)
+    if args.symbols:
+        symbols = list(dict.fromkeys(str(s).strip().upper() for s in base_symbols if str(s).strip()))
+        universe_sources = {"manual": len(symbols), "total": len(symbols)}
+    else:
+        symbols, universe_sources = build_dynamic_universe(base_symbols, settings)
 
     catalysts = pd.DataFrame()
     stocks = pd.DataFrame()
     options = pd.DataFrame()
+    stock_rejected = pd.DataFrame()
+    option_rejected = pd.DataFrame()
     alerts: list[str] = []
     errors: dict[str, str] = {}
     market_regime = "unknown"
@@ -192,7 +173,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         catalysts = CatalystScanner(settings).scan(symbols, lookback_days=7)
-    except Exception as exc:  # Keep the public page available with partial data.
+    except Exception as exc:
         errors["catalysts"] = str(exc)
         LOGGER.exception("Catalyst scan failed")
 
@@ -204,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
             output_csv="results/stocks_latest.csv",
         )
         stocks = stock_result.opportunities
+        stock_rejected = stock_result.rejected
         market_regime = stock_result.regime
         errors.update({f"stock:{key}": value for key, value in stock_result.errors.items()})
     except Exception as exc:
@@ -211,9 +193,9 @@ def main(argv: list[str] | None = None) -> int:
         LOGGER.exception("Stock scan failed")
 
     option_symbols = (
-        stocks["symbol"].head(max(8, args.top_options)).astype(str).tolist()
+        stocks["symbol"].head(max(10, args.top_options)).astype(str).tolist()
         if not stocks.empty and "symbol" in stocks.columns
-        else symbols[:12]
+        else symbols[:15]
     )
     try:
         option_result = OptionsRadar(settings).scan(
@@ -224,6 +206,7 @@ def main(argv: list[str] | None = None) -> int:
             catalysts=catalysts,
         )
         options = option_result.opportunities
+        option_rejected = option_result.rejected
         alerts = option_result.alerts
         options_provider = option_result.provider
         if market_regime == "unknown":
@@ -234,98 +217,46 @@ def main(argv: list[str] | None = None) -> int:
         LOGGER.exception("Options scan failed")
 
     if not catalysts.empty:
-        catalyst_sort_columns = [
-            column for column in ["event_date", "score"] if column in catalysts.columns
-        ]
+        catalyst_sort_columns = [c for c in ["event_date", "score"] if c in catalysts.columns]
         if catalyst_sort_columns:
             catalysts = catalysts.sort_values(
                 catalyst_sort_columns,
                 ascending=[False] * len(catalyst_sort_columns),
             )
-        catalysts = catalysts.head(40)
+        catalysts = catalysts.head(60)
 
     stock_columns = [
-        "symbol",
-        "score",
-        "rating",
-        "setup_side",
-        "setup_status",
-        "trigger_type",
-        "price",
-        "entry_low",
-        "entry_high",
-        "target_1",
-        "target_2",
-        "stop",
-        "invalidation",
-        "rsi",
-        "relative_volume",
-        "avg_dollar_volume",
-        "breakout",
-        "technical_direction",
-        "catalyst_score",
-        "catalyst",
-        "catalyst_source",
-        "catalyst_url",
-        "reasons",
-        "market_regime",
-        "new_stock_setup",
+        "symbol", "score", "rating", "setup_side", "setup_status", "entry_state",
+        "trigger_type", "distance_to_trigger_atr", "price", "entry_low", "entry_high",
+        "target_1", "target_2", "stop", "invalidation", "rsi", "relative_volume",
+        "avg_dollar_volume", "breakout", "technical_direction", "catalyst_score",
+        "catalyst", "catalyst_source", "catalyst_form", "catalyst_confidence",
+        "catalyst_purpose", "event_value", "catalyst_url", "reasons", "market_regime",
+        "new_stock_setup", "sector_etf", "sector_score", "relative_strength_5d",
+        "relative_strength_20d", "sector_vs_market", "rejection_reason",
     ]
     option_columns = [
-        "symbol",
-        "contract_symbol",
-        "expiration",
-        "dte",
-        "strike",
-        "option_type",
-        "score",
-        "rating",
-        "bid",
-        "ask",
-        "last",
-        "underlying_price",
-        "volume",
-        "open_interest",
-        "vol_oi",
-        "iv",
-        "delta",
-        "gamma",
-        "theta",
-        "spread_pct",
-        "aggressor_proxy",
-        "entry_price",
-        "target_1",
-        "target_2",
-        "stop_price",
-        "underlying_target_1",
-        "underlying_target_2",
-        "underlying_invalidation",
-        "risk_pct",
-        "reward_risk_1",
-        "reward_risk_2",
-        "trade_style",
-        "catalyst",
-        "catalyst_url",
-        "catalyst_source",
-        "source",
-        "freshness_label",
-        "data_status",
-        "data_completeness",
-        "last_trade_age_minutes",
-        "model_version",
-        "new_setup_candidate",
+        "symbol", "contract_symbol", "expiration", "dte", "strike", "option_type",
+        "score", "rating", "bid", "ask", "last", "underlying_price", "volume",
+        "open_interest", "vol_oi", "iv", "delta", "gamma", "theta", "spread_pct",
+        "aggressor_proxy", "entry_price", "target_1", "target_2", "stop_price",
+        "underlying_target_1", "underlying_target_2", "underlying_invalidation",
+        "risk_pct", "reward_risk_1", "reward_risk_2", "trade_style", "catalyst",
+        "catalyst_url", "catalyst_source", "source", "freshness_label", "data_status",
+        "data_completeness", "last_trade_age_minutes", "model_version", "new_setup_candidate",
     ]
     catalyst_columns = [
-        "symbol",
-        "company",
-        "event_date",
-        "category",
-        "headline",
-        "score",
-        "source",
-        "form",
-        "url",
-        "evidence",
+        "symbol", "company", "event_date", "category", "headline", "score", "source",
+        "form", "url", "evidence", "event_value", "confidence", "purpose",
+    ]
+    stock_rejected_columns = [
+        "symbol", "score", "rating", "setup_side", "setup_status", "entry_state",
+        "price", "catalyst", "sector_etf", "sector_score", "rejection_reason", "reasons",
+    ]
+    option_rejected_columns = [
+        "symbol", "contract_symbol", "expiration", "strike", "option_type", "bid", "ask",
+        "volume", "open_interest", "spread_pct", "last_trade_age_minutes", "source",
+        "freshness_label", "rejection_reason",
     ]
 
     generated_at = datetime.now(timezone.utc)
@@ -343,9 +274,28 @@ def main(argv: list[str] | None = None) -> int:
         errors["journal"] = str(exc)
         LOGGER.exception("Signal journal update failed")
 
+    calibration: dict[str, Any] = {}
+    try:
+        calibration = build_calibration_report(
+            settings.signal_journal_path,
+            settings.outcome_path,
+            settings.calibration_minimum_sample,
+        )
+        _write_atomic(settings.calibration_path, calibration)
+    except Exception as exc:
+        errors["calibration"] = str(exc)
+        LOGGER.exception("Calibration report failed")
+
     stock_records = _records(stocks, stock_columns)
     option_records = _records(options, option_columns)
     catalyst_records = _records(catalysts, catalyst_columns)
+    rejected_records = [
+        {"kind": "stock", **row}
+        for row in _records(stock_rejected, stock_rejected_columns)
+    ] + [
+        {"kind": "option", **row}
+        for row in _records(option_rejected, option_rejected_columns)
+    ]
     _attach_best_option(stock_records, _best_options_by_symbol(options))
 
     report_delivery: dict[str, Any] | str | None = None
@@ -363,7 +313,7 @@ def main(argv: list[str] | None = None) -> int:
             LOGGER.exception("Daily report delivery failed")
 
     payload = {
-        "schema_version": 2,
+        "schema_version": 3,
         "model_version": settings.model_version,
         "mode": "free_swing" if settings.free_swing_mode else "custom",
         "generated_at": generated_at.isoformat(),
@@ -372,34 +322,39 @@ def main(argv: list[str] | None = None) -> int:
         "market_clock": clock.__dict__,
         "options_provider": options_provider,
         "universe_size": len(symbols),
+        "universe_sources": universe_sources,
         "summary": {
             "stock_candidates": len(stock_records),
             "option_candidates": len(option_records),
             "catalyst_events": len(catalyst_records),
+            "rejected_opportunities": len(rejected_records),
             "new_stock_setups": sum(bool(row.get("new_stock_setup")) for row in stock_records),
             "new_option_setups": sum(bool(row.get("new_setup_candidate")) for row in option_records),
             "new_signals_recorded": new_signals_recorded,
         },
         "performance": performance,
+        "calibration": calibration,
         "stocks": stock_records,
         "options": option_records,
         "catalysts": catalyst_records,
+        "rejected": rejected_records[:250],
         "alerts": alerts,
         "errors": errors,
         "report_delivery": report_delivery,
         "disclaimer": (
             "وضع Swing بحثي مبني على بيانات مجانية قد تكون متأخرة أو ناقصة. "
-            "النتائج المسجلة هي أسعار مرصودة وليست تنفيذات مؤكدة، ولا يوجد ضمان للربح. "
-            "تحقق من السعر الحي ومستوى إبطال السهم قبل تنفيذ أي أمر."
+            "النتائج المسجلة أسعار مرصودة وليست تنفيذات مؤكدة، ولا يوجد ضمان للربح. "
+            "لا تُعدّل أوزان النموذج قبل اكتمال عينة المعايرة، وتحقق من السعر الحي قبل أي أمر."
         ),
     }
     _write_atomic(output, payload)
     LOGGER.info(
-        "Wrote %s with %d stocks, %d options, %d catalysts and %d new journal records",
+        "Wrote %s: %d stocks, %d options, %d catalysts, %d rejected and %d new signals",
         output,
         len(stock_records),
         len(option_records),
         len(catalyst_records),
+        len(rejected_records),
         new_signals_recorded,
     )
     if errors:
