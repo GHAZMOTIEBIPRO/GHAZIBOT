@@ -8,7 +8,7 @@ import pandas as pd
 def _default_confidence(source: str) -> float:
     lowered = source.lower()
     if "sec" in lowered:
-        return 0.9
+        return 1.0
     if "fda" in lowered:
         return 0.62
     if "yahoo" in lowered:
@@ -47,9 +47,13 @@ def best_catalyst_map(frame: pd.DataFrame) -> dict[str, dict]:
     result: dict[str, dict] = {}
     working = frame.copy()
     working["score"] = pd.to_numeric(working.get("score"), errors="coerce").fillna(0.0)
+    if "source" not in working:
+        working["source"] = ""
+    if "event_date" not in working:
+        working["event_date"] = ""
     if "confidence" not in working:
         working["confidence"] = [
-            _default_confidence(str(source)) for source in working.get("source", "")
+            _default_confidence(str(source)) for source in working["source"]
         ]
     else:
         working["confidence"] = pd.to_numeric(
