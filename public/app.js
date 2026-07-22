@@ -86,9 +86,19 @@ function renderRejected() {
 
 function renderCalibration() {
   const calibration = radarData?.calibration || {}; const gate = radarData?.calibration_gate || {}; const performance = radarData?.performance || {};
-  byId("calibration-sample").textContent = `${number(calibration.priced_sample, 0)} / ${number(calibration.minimum_sample, 0)}`;
-  byId("calibration-decision").textContent = calibration.decision || "بانتظار البيانات"; byId("calibration-gate-status").textContent = gate.ready ? "جاهزة للمراجعة المستقلة" : "تجميع الأدلة مستمر"; byId("calibration-remaining").textContent = number(gate.remaining, 0); byId("average-mfe").textContent = plainPct(performance.average_mfe_pct, 2); byId("average-mae").textContent = plainPct(performance.average_mae_pct, 2); byId("calibration-warning").textContent = calibration.warning || "";
-  const bands = calibration.score_bands || []; byId("calibration-body").innerHTML = bands.length ? bands.map((band) => `<tr><td>${escapeHtml(band.band)}</td><td>${number(band.signals, 0)}</td><td>${number(band.priced, 0)}</td><td>${pct(band.target_1_rate)}</td><td>${pct(band.target_2_rate)}</td><td>${pct(band.stop_rate)}</td><td>${plainPct(band.average_mfe_pct, 2)}</td><td>${plainPct(band.average_mae_pct, 2)}</td></tr>`).join("") : '<tr><td colspan="8">لم تتكوّن عينة معايرة بعد.</td></tr>';
+  const matured = calibration.matured_sample ?? calibration.priced_sample ?? 0;
+  const raw = calibration.raw_priced_sample ?? performance.priced_signals ?? matured;
+  byId("calibration-sample").textContent = `${number(matured, 0)} / ${number(calibration.minimum_sample, 0)}`;
+  byId("calibration-raw-sample").textContent = number(raw, 0);
+  byId("calibration-five-day").textContent = number(calibration.five_day_sample, 0);
+  byId("calibration-decision").textContent = calibration.decision || "بانتظار البيانات";
+  byId("calibration-gate-status").textContent = gate.ready ? "جاهزة للمراجعة المستقلة" : `تجميع أدلة ناضجة (${escapeHtml(gate.maturity_checkpoint || "1d")})`;
+  byId("calibration-remaining").textContent = number(gate.remaining, 0);
+  byId("average-mfe").textContent = plainPct(performance.average_mfe_pct, 2);
+  byId("average-mae").textContent = plainPct(performance.average_mae_pct, 2);
+  byId("calibration-warning").textContent = calibration.warning || "";
+  const bands = calibration.score_bands || [];
+  byId("calibration-body").innerHTML = bands.length ? bands.map((band) => `<tr><td>${escapeHtml(band.band)}</td><td>${number(band.signals, 0)}</td><td>${number(band.observed ?? band.priced, 0)}</td><td>${number(band.matured ?? band.priced, 0)}</td><td>${pct(band.target_1_rate)}</td><td>${pct(band.target_2_rate)}</td><td>${pct(band.stop_rate)}</td><td>${plainPct(band.average_mfe_pct, 2)}</td><td>${plainPct(band.average_mae_pct, 2)}</td></tr>`).join("") : '<tr><td colspan="9">لم تتكوّن عينة معايرة ناضجة بعد.</td></tr>';
 }
 
 function renderAlerts() { const alerts = radarData?.alerts || []; byId("alerts-section").classList.toggle("hidden", !alerts.length); byId("alerts-list").innerHTML = alerts.map((x) => `<div class="alert-item">${escapeHtml(x)}</div>`).join(""); }
