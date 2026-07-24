@@ -11,6 +11,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+from .market_bars import get_daily_history
 from .settings import Settings
 
 LOGGER = logging.getLogger(__name__)
@@ -106,10 +107,14 @@ class YahooProvider(OptionsProvider):
                     "volume": pd.to_numeric(raw["volume"], errors="coerce").fillna(0),
                     "open_interest": pd.to_numeric(raw["openInterest"], errors="coerce").fillna(0),
                     "iv": pd.to_numeric(raw["impliedVolatility"], errors="coerce"),
-                    "delta": np.nan, "gamma": np.nan, "theta": np.nan, "vega": np.nan,
+                    "delta": np.nan,
+                    "gamma": np.nan,
+                    "theta": np.nan,
+                    "vega": np.nan,
                     "underlying_price": underlying,
                     "updated_at": pd.to_datetime(raw["lastTradeDate"], utc=True, errors="coerce"),
-                    "source": "yahoo/yfinance", "data_quality": 0.52,
+                    "source": "yahoo/yfinance",
+                    "data_quality": 0.52,
                     "freshness_label": "unofficial / may be delayed",
                 })
                 df["aggressor_proxy"] = [
@@ -162,8 +167,11 @@ class MarketDataProvider(OptionsProvider):
                 row[target] = values[i] if i < len(values) else None
             row["expiration"] = pd.to_datetime(row["expiration"], errors="coerce")
             row["updated_at"] = _to_utc(row["updated_at"])
-            row.update(source="marketdata.app", data_quality=0.72,
-                       freshness_label="free plan: at least 24h delayed")
+            row.update(
+                source="marketdata.app",
+                data_quality=0.72,
+                freshness_label="free plan: at least 24h delayed",
+            )
             row["aggressor_proxy"] = _aggressor_proxy(
                 _as_float(row["last"]), _as_float(row["bid"]), _as_float(row["ask"])
             )
@@ -180,7 +188,8 @@ class TradierProvider(OptionsProvider):
         self.settings = settings
         self.session = requests.Session()
         self.session.headers.update({
-            "Authorization": f"Bearer {settings.tradier_token}", "Accept": "application/json"
+            "Authorization": f"Bearer {settings.tradier_token}",
+            "Accept": "application/json",
         })
 
     @property
@@ -202,7 +211,8 @@ class TradierProvider(OptionsProvider):
     def _underlying(self, symbol: str) -> float:
         response = self.session.get(
             f"{self.settings.tradier_base_url}/v1/markets/quotes",
-            params={"symbols": symbol, "greeks": "false"}, timeout=30,
+            params={"symbols": symbol, "greeks": "false"},
+            timeout=30,
         )
         response.raise_for_status()
         quote = response.json().get("quotes", {}).get("quote", {})
@@ -224,7 +234,8 @@ class TradierProvider(OptionsProvider):
         for expiry in expirations:
             response = self.session.get(
                 f"{self.settings.tradier_base_url}/v1/markets/options/chains",
-                params={"symbol": symbol, "expiration": expiry, "greeks": "true"}, timeout=30,
+                params={"symbol": symbol, "expiration": expiry, "greeks": "true"},
+                timeout=30,
             )
             response.raise_for_status()
             options = response.json().get("options", {}).get("option", [])
@@ -234,21 +245,77 @@ class TradierProvider(OptionsProvider):
                 greeks = item.get("greeks") or {}
                 last, bid, ask = (_as_float(item.get(k)) for k in ("last", "bid", "ask"))
                 rows.append({
-                    "contract_symbol": item.get("symbol"), "symbol": symbol,
+                    "contract_symbol": item.get("symbol"),
+                    "symbol": symbol,
                     "expiration": pd.to_datetime(item.get("expiration_date")),
                     "strike": _as_float(item.get("strike")),
                     "option_type": str(item.get("option_type", "")).lower(),
-                    "bid": bid, "ask": ask, "last": last,
+                    "bid": bid,
+                    "ask": ask,
+                    "last": last,
                     "volume": _as_int(item.get("volume")),
                     "open_interest": _as_int(item.get("open_interest")),
-                    "iv": _as_float(greeks.get("mid_iv")), "delta": _as_float(greeks.get("delta")),
-                    "gamma": _as_float(greeks.get("gamma")), "theta": _as_float(greeks.get("theta")),
-                    "vega": _as_float(greeks.get("vega")), "underlying_price": underlying,
-                    "updated_at": pd.Timestamp.now(tz="UTC"), "source": "tradier",
-                    "data_quality": quality, "freshness_label": freshness,
+                    "iv": _as_float(greeks.get("mid_iv")),
+                    "delta": _as_float(greeks.get("delta")),
+                    "gamma": _as_float(greeks.get("gamma")),
+                    "theta": _as_float(greeks.get("theta")),
+                    "vega": _as_float(greeks.get("vega")),
+                    "underlying_price": underlying,
+                    "updated_at": pd.Timestamp.now(tz="UTC"),
+                    "source": "tradier",
+                    "data_quality": quality,
+                    "freshness_label": freshness,
                     "aggressor_proxy": _aggressor_proxy(last, bid, ask),
                 })
         return pd.DataFrame(rows, columns=STANDARD_COLUMNS)
+
+
+class CompositeOptionsProvider(OptionsProvider):
+    """Merge every configured option source by OCC contract symbol.
+
+    The highest-quality row becomes the base record; missing Greeks or quote fields
+    are filled from lower-ranked sources. Provider failures are isolated per symbol.
+    """
+
+    name = "hybrid"
+
+    def __init__(self, providers: list[OptionsProvider]):
+        self.providers = providers
+
+    @staticmethod
+    def _merge(frames: list[pd.DataFrame]) -> pd.DataFrame:
+        combined = pd.concat(frames, ignore_index=True)
+        combined = combined.dropna(subset=["contract_symbol"])
+        if combined.empty:
+            return _empty_chain()
+        combined["contract_symbol"] = combined["contract_symbol"].astype(str)
+        combined["data_quality"] = pd.to_numeric(combined["data_quality"], errors="coerce").fillna(0)
+        rows: list[pd.Series] = []
+        for _, group in combined.sort_values("data_quality", ascending=False).groupby("contract_symbol", sort=False):
+            base = group.iloc[0].copy()
+            for column in STANDARD_COLUMNS:
+                value = base.get(column)
+                if pd.isna(value) or value in (None, ""):
+                    candidates = group[column].dropna() if column in group else pd.Series(dtype=object)
+                    if not candidates.empty:
+                        base[column] = candidates.iloc[0]
+            sources = list(dict.fromkeys(str(value) for value in group["source"].dropna() if str(value)))
+            freshness = list(dict.fromkeys(str(value) for value in group["freshness_label"].dropna() if str(value)))
+            base["source"] = " + ".join(sources)
+            base["freshness_label"] = " | ".join(freshness)
+            rows.append(base)
+        return pd.DataFrame(rows, columns=STANDARD_COLUMNS).reset_index(drop=True)
+
+    def get_chain(self, symbol: str, min_dte: int, max_dte: int) -> pd.DataFrame:
+        frames: list[pd.DataFrame] = []
+        for provider in self.providers:
+            try:
+                frame = provider.get_chain(symbol, min_dte, max_dte)
+                if frame is not None and not frame.empty:
+                    frames.append(frame)
+            except Exception as exc:
+                LOGGER.warning("Option source %s failed for %s: %s", provider.name, symbol, exc)
+        return self._merge(frames) if frames else _empty_chain()
 
 
 class AlpacaEnricher:
@@ -285,7 +352,9 @@ class AlpacaEnricher:
             snap = snapshots.get(str(row["contract_symbol"]))
             if not snap:
                 continue
-            quote, trade, greeks = snap.get("latestQuote") or {}, snap.get("latestTrade") or {}, snap.get("greeks") or {}
+            quote = snap.get("latestQuote") or {}
+            trade = snap.get("latestTrade") or {}
+            greeks = snap.get("greeks") or {}
             bid = _as_float(quote.get("bp"), _as_float(row["bid"]))
             ask = _as_float(quote.get("ap"), _as_float(row["ask"]))
             last = _as_float(trade.get("p"), _as_float(row["last"]))
@@ -295,8 +364,8 @@ class AlpacaEnricher:
                 out.at[idx, greek] = _as_float(greeks.get(greek), _as_float(row[greek]))
             out.at[idx, "updated_at"] = _to_utc(quote.get("t") or trade.get("t"))
             out.at[idx, "source"] = f"{row['source']} + alpaca"
-            out.at[idx, "data_quality"] = min(0.95, _as_float(row["data_quality"], 0.5) + 0.08)
-            out.at[idx, "freshness_label"] = f"{row['freshness_label']}; Alpaca {self.settings.alpaca_options_feed} enrichment"
+            out.at[idx, "data_quality"] = min(0.95, max(_as_float(row["data_quality"], 0.0), 0.82))
+            out.at[idx, "freshness_label"] = f"{row['freshness_label']} | Alpaca {self.settings.alpaca_options_feed}"
             out.at[idx, "aggressor_proxy"] = _aggressor_proxy(last, bid, ask)
         return out
 
@@ -308,11 +377,14 @@ def select_provider(settings: Settings) -> OptionsProvider:
         return TradierProvider(settings)
     if settings.provider == "yahoo":
         return YahooProvider(settings)
+
+    providers: list[OptionsProvider] = []
     if settings.tradier_token:
-        return TradierProvider(settings)
+        providers.append(TradierProvider(settings))
     if settings.marketdata_token:
-        return MarketDataProvider(settings)
-    return YahooProvider(settings)
+        providers.append(MarketDataProvider(settings))
+    providers.append(YahooProvider(settings))
+    return CompositeOptionsProvider(providers)
 
 
 def maybe_enrich_with_alpaca(settings: Settings, chain: pd.DataFrame, symbol: str) -> pd.DataFrame:
@@ -326,11 +398,22 @@ def maybe_enrich_with_alpaca(settings: Settings, chain: pd.DataFrame, symbol: st
 
 
 def get_price_history(symbol: str, period: str = "1y") -> pd.DataFrame:
-    data = yf.download(symbol, period=period, interval="1d", auto_adjust=False,
-                       progress=False, threads=False)
-    if isinstance(data.columns, pd.MultiIndex):
-        data.columns = data.columns.get_level_values(0)
-    return data.dropna(how="all")
+    settings = Settings()
+    try:
+        return get_daily_history(settings, symbol, period=period)
+    except Exception as exc:
+        LOGGER.warning("Hybrid daily history failed for %s; using Yahoo: %s", symbol, exc)
+        data = yf.download(
+            symbol,
+            period=period,
+            interval="1d",
+            auto_adjust=False,
+            progress=False,
+            threads=False,
+        )
+        if isinstance(data.columns, pd.MultiIndex):
+            data.columns = data.columns.get_level_values(0)
+        return data.dropna(how="all")
 
 
 def load_universe(path: str = "data/universe.txt") -> list[str]:
