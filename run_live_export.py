@@ -53,16 +53,35 @@ def _json_safe(value):
     return value
 
 
+def _fundamental_reason(row: dict) -> str:
+    parts: list[str] = []
+    revenue_growth = row.get("revenue_growth")
+    net_margin = row.get("net_margin")
+    operating_growth = row.get("operating_cash_flow_growth")
+    if isinstance(revenue_growth, (int, float)) and not pd.isna(revenue_growth):
+        parts.append(f"نمو الإيرادات SEC {revenue_growth * 100:+.1f}%")
+    if isinstance(net_margin, (int, float)) and not pd.isna(net_margin):
+        parts.append(f"هامش صافي SEC {net_margin * 100:.1f}%")
+    if isinstance(operating_growth, (int, float)) and not pd.isna(operating_growth):
+        parts.append(f"نمو التدفق التشغيلي SEC {operating_growth * 100:+.1f}%")
+    return "؛ ".join(parts)
+
+
 def _enrich_stocks(payload: dict, settings: Settings) -> dict[str, str]:
     records = payload.get("stocks", [])
     if not isinstance(records, list) or not records:
         return {}
     frame = pd.DataFrame(records)
     enriched, errors = enrich_stock_fundamentals(frame, settings, max_symbols=8)
-    payload["stocks"] = [
-        {str(key): _json_safe(value) for key, value in row.items()}
-        for row in enriched.to_dict(orient="records")
-    ]
+    output_records = []
+    for row in enriched.to_dict(orient="records"):
+        safe = {str(key): _json_safe(value) for key, value in row.items()}
+        summary = _fundamental_reason(safe)
+        if summary:
+            existing = str(safe.get("reasons") or "")
+            safe["reasons"] = f"{existing}؛ {summary}" if existing else summary
+        output_records.append(safe)
+    payload["stocks"] = output_records
     return errors
 
 
