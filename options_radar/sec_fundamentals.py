@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -12,6 +14,7 @@ from .settings import Settings
 LOGGER = logging.getLogger(__name__)
 SEC_TICKERS = "https://www.sec.gov/files/company_tickers.json"
 SEC_COMPANY_FACTS = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+LOCAL_CIK_MAP = Path("data/sec_cik_map.json")
 
 CONCEPTS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "revenue": (
@@ -46,15 +49,48 @@ def _headers(settings: Settings) -> dict[str, str]:
     }
 
 
+def _load_local_cik_map(path: Path = LOCAL_CIK_MAP) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        LOGGER.warning("Local SEC CIK map unavailable: %s", exc)
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    return {
+        str(ticker).upper(): str(cik).zfill(10)
+        for ticker, cik in payload.items()
+        if str(ticker).strip() and str(cik).strip()
+    }
+
+
 def _ticker_to_cik(settings: Settings) -> dict[str, str]:
-    response = requests.get(SEC_TICKERS, headers=_headers(settings), timeout=25)
-    response.raise_for_status()
-    result: dict[str, str] = {}
-    for item in response.json().values():
-        ticker = str(item.get("ticker", "")).upper()
-        cik = str(item.get("cik_str", "")).zfill(10)
-        if ticker and cik:
-            result[ticker] = cik
+    """Return a resilient ticker map.
+
+    GitHub-hosted runners can occasionally receive SEC 403 responses even when the
+    request is correctly identified. A checked-in map keeps Company Facts working;
+    the live official endpoint refreshes and expands it whenever available.
+    """
+
+    result = _load_local_cik_map()
+    try:
+        response = requests.get(SEC_TICKERS, headers=_headers(settings), timeout=25)
+        response.raise_for_status()
+        for item in response.json().values():
+            ticker = str(item.get("ticker", "")).upper()
+            cik = str(item.get("cik_str", "")).zfill(10)
+            if ticker and cik:
+                result[ticker] = cik
+    except Exception as exc:
+        LOGGER.warning(
+            "Live SEC ticker map unavailable; using %d local mappings: %s",
+            len(result),
+            exc,
+        )
+    if not result:
+        raise RuntimeError("No SEC ticker-to-CIK mappings are available")
     return result
 
 
