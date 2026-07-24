@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="رادار مجاني لترتيب الأسهم الأمريكية وعقود الخيارات وفق المحفزات الرسمية والتحليل الفني والسيولة.">
-  <meta name="ghazi-ui-build" content="2026-07-23.2">
+  <meta name="ghazi-ui-build" content="2026-07-24.3">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>GHAZI Market Radar</title>
-  <link rel="stylesheet" href="./styles.css?v=20260723-2">
+  <link rel="stylesheet" href="./styles.css?v=20260724-3">
 </head>
 <body>
   <div class="page-shell">
@@ -64,14 +64,12 @@
 
       <section id="tab-options" class="tab-panel">
         <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>تم فصل CALL عن PUT حتى لا تختلط عليك الاتجاهات.</p></div></div>
-
         <div class="option-section call-section">
           <div class="option-section-heading"><h3>عقود CALL الصاعدة</h3><span id="call-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
             <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>المصدر</th>
           </tr></thead><tbody id="call-options-body"></tbody></table></div>
         </div>
-
         <div class="option-section put-section">
           <div class="option-section-heading"><h3>عقود PUT الهابطة</h3><span id="put-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
@@ -93,7 +91,7 @@
       </section>
 
       <section id="tab-results" class="tab-panel">
-        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>لا تتغير الأوزان قبل اكتمال عينة ناضجة زمنيًا، ولا تُحتسب ملاحظة الفحص نفسه كدليل مستقل.</p></div></div>
+        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>تسلسل الهدف والوقف يُقاس بشموع 5 دقائق، واللمس داخل الشمعة نفسها يُسجل كحالة ملتبسة لا كفوز.</p></div></div>
         <div class="status-grid">
           <article class="info-card"><h3>الإشارات الناضجة</h3><p id="calibration-sample">—</p></article>
           <article class="info-card"><h3>الإشارات المرصودة خامًا</h3><p id="calibration-raw-sample">—</p></article>
@@ -103,6 +101,10 @@
           <article class="info-card"><h3>المتبقي للعينة</h3><p id="calibration-remaining">—</p></article>
           <article class="info-card"><h3>متوسط MFE</h3><p id="average-mfe">—</p></article>
           <article class="info-card"><h3>متوسط MAE</h3><p id="average-mae">—</p></article>
+          <article class="info-card"><h3>مسارات مقيمة</h3><p id="path-evaluated">—</p></article>
+          <article class="info-card"><h3>الهدف قبل الوقف</h3><p id="path-target-first">—</p></article>
+          <article class="info-card"><h3>الوقف أولًا</h3><p id="path-stop-first">—</p></article>
+          <article class="info-card"><h3>لمس ملتبس بنفس الشمعة</h3><p id="path-ambiguous">—</p></article>
         </div>
         <div class="table-wrap"><table><thead><tr>
           <th>نطاق الدرجة</th><th>الإشارات</th><th>المرصودة</th><th>الناضجة</th><th>وصول الهدف 1</th><th>وصول الهدف 2</th><th>الوقف</th><th>MFE</th><th>MAE</th>
@@ -128,7 +130,7 @@
       <div>
         <p id="disclaimer">النتائج بحثية وليست توصية استثمارية.</p>
         <p id="refresh-result" class="refresh-result">زر التحميل يجلب آخر ملف منشور ويعرض وقت جلبه بدقة.</p>
-        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-23.2</strong></p>
+        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-24.3</strong></p>
       </div>
       <div class="footer-actions">
         <a class="secondary-button action-link" href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/actions/workflows/options-radar.yml" target="_blank" rel="noopener">تشغيل فحص جديد عبر GitHub</a>
@@ -136,6 +138,6 @@
       </div>
     </footer>
   </div>
-  <script src="./app.js?v=20260723-2" defer></script>
+  <script src="./app.js?v=20260724-3" defer></script>
 </body>
 </html>
