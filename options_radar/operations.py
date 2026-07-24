@@ -43,7 +43,10 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
 
     sec_ready = "configure SEC_USER_AGENT" not in settings.sec_user_agent
     bars = configured_bar_sources(settings)
-    configured_official_bars = [item["name"] for item in bars if item["configured"] and item["name"] != "yahoo"]
+    configured_official_bars = [
+        item["name"] for item in bars
+        if item["configured"] and item["name"] != "yahoo"
+    ]
     services = [
         ServiceStatus(
             name="options_data",
@@ -77,6 +80,31 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
             note="SEC automated access uses a descriptive User-Agent and fair-access limits.",
         ),
         ServiceStatus(
+            name="sec_company_facts",
+            configured=sec_ready,
+            required_fields=("SEC_USER_AGENT",),
+            note=(
+                "Official SEC XBRL Company Facts enrich the highest-ranked stocks with "
+                "revenue, earnings, cash, assets and operating cash flow."
+            ),
+        ),
+        ServiceStatus(
+            name="treasury_yield_curve",
+            configured=True,
+            required_fields=(),
+            note="Official U.S. Treasury XML feed supplies 3m, 2y, 10y and 30y yields without an API key.",
+        ),
+        ServiceStatus(
+            name="fred_macro",
+            configured=bool(settings.fred_api_key),
+            required_fields=("FRED_API_KEY",),
+            note=(
+                "FRED VIX close and effective federal funds rate are enabled."
+                if settings.fred_api_key
+                else "Optional free FRED key not configured; Treasury macro data remains active."
+            ),
+        ),
+        ServiceStatus(
             name="openfda",
             configured=True,
             required_fields=(),
@@ -105,7 +133,7 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
         "configuration_warnings": [
             field
             for item in services
-            if not item.configured
+            if not item.configured and item.name not in {"fred_macro"}
             for field in item.required_fields
         ],
         "operation_note": (
