@@ -4,11 +4,11 @@ The radar uses only sources whose public documentation permits programmatic acce
 
 ## Enabled without private credentials
 
-- SEC EDGAR public APIs and feeds, with a descriptive User-Agent and fair-access throttling.
+- SEC EDGAR submissions, filing documents and XBRL Company Facts APIs, with a descriptive User-Agent and fair-access throttling.
 - openFDA public API.
 - Nasdaq public market-movers response as best-effort universe discovery.
 - Yahoo/yfinance as an unofficial research fallback, explicitly labelled as such.
-- U.S. Treasury public daily yield-curve feed for slow-moving macro context.
+- U.S. Treasury public daily yield-curve XML feed for slow-moving macro context.
 
 ## Optional free-account integrations
 
