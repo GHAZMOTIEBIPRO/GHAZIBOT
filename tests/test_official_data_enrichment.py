@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
+import pandas as pd
+
 from options_radar.macro import fetch_treasury_curve
-from options_radar.sec_fundamentals import _latest_metric, _ticker_to_cik
+from options_radar.sec_fundamentals import _latest_metric, _ticker_to_cik, yahoo_fundamentals
 from run_live_export import _correct_path_metrics
 
 
@@ -41,6 +43,44 @@ def test_sec_ticker_map_uses_local_fallback_when_live_endpoint_is_blocked(tmp_pa
     result = _ticker_to_cik(SimpleNamespace(sec_user_agent="test@example.com"))
     assert result["AAPL"] == "0000320193"
     assert result["NVDA"] == "0001045810"
+
+
+def test_yahoo_statement_fallback_labels_source_and_calculates_growth(monkeypatch):
+    columns = pd.to_datetime([
+        "2026-03-31", "2025-12-31", "2025-09-30", "2025-06-30", "2025-03-31"
+    ])
+    income = pd.DataFrame(
+        [
+            [125, 120, 115, 110, 100],
+            [25, 24, 23, 22, 20],
+            [1.25, 1.20, 1.15, 1.10, 1.00],
+        ],
+        index=["Total Revenue", "Net Income", "Diluted EPS"],
+        columns=columns,
+    )
+    balance = pd.DataFrame(
+        [[50, 49, 48, 47, 45], [300, 295, 290, 285, 280], [120, 119, 118, 117, 115]],
+        index=["Cash And Cash Equivalents", "Total Assets", "Total Liabilities"],
+        columns=columns,
+    )
+    cashflow = pd.DataFrame(
+        [[40, 38, 36, 34, 32]],
+        index=["Operating Cash Flow"],
+        columns=columns,
+    )
+
+    class Ticker:
+        quarterly_income_stmt = income
+        quarterly_balance_sheet = balance
+        quarterly_cashflow = cashflow
+
+    monkeypatch.setattr("options_radar.sec_fundamentals.yf.Ticker", lambda symbol: Ticker())
+    result = yahoo_fundamentals("TEST", sec_error="403")
+    assert result["fundamental_source"] == "Yahoo/yfinance statements"
+    assert result["fundamental_confidence"] == 0.45
+    assert result["revenue"] == 125
+    assert result["revenue_growth"] == 0.25
+    assert result["net_margin"] == 0.2
 
 
 def test_treasury_curve_parses_latest_row_and_slope(monkeypatch):

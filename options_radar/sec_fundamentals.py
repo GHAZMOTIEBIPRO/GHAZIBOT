@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 import requests
+import yfinance as yf
 
 from .settings import Settings
 
@@ -38,6 +39,22 @@ CONCEPTS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "liabilities": (("Liabilities", "LiabilitiesCurrent"), ("USD",)),
     "operating_cash_flow": (("NetCashProvidedByUsedInOperatingActivities",), ("USD",)),
 }
+YAHOO_LABELS: dict[str, tuple[str, ...]] = {
+    "revenue": ("Total Revenue", "Operating Revenue"),
+    "net_income": ("Net Income", "Net Income Common Stockholders"),
+    "eps_diluted": ("Diluted EPS", "Basic EPS"),
+    "cash": (
+        "Cash Cash Equivalents And Short Term Investments",
+        "Cash And Cash Equivalents",
+        "Cash Financial",
+    ),
+    "assets": ("Total Assets",),
+    "liabilities": (
+        "Total Liabilities Net Minority Interest",
+        "Total Liabilities",
+    ),
+    "operating_cash_flow": ("Operating Cash Flow", "Total Cash From Operating Activities"),
+}
 ALLOWED_FORMS = {"10-Q", "10-K", "20-F", "40-F", "6-K"}
 
 
@@ -67,12 +84,7 @@ def _load_local_cik_map(path: Path = LOCAL_CIK_MAP) -> dict[str, str]:
 
 
 def _ticker_to_cik(settings: Settings) -> dict[str, str]:
-    """Return a resilient ticker map.
-
-    GitHub-hosted runners can occasionally receive SEC 403 responses even when the
-    request is correctly identified. A checked-in map keeps Company Facts working;
-    the live official endpoint refreshes and expands it whenever available.
-    """
+    """Return a resilient ticker map using the official endpoint when reachable."""
 
     result = _load_local_cik_map()
     try:
@@ -151,6 +163,7 @@ def company_fundamentals(settings: Settings, symbol: str, cik_map: dict[str, str
     payload = response.json()
     result: dict[str, Any] = {
         "fundamental_source": "SEC Company Facts",
+        "fundamental_confidence": 0.95,
         "fundamental_cik": cik,
         "fundamental_entity": str(payload.get("entityName", "")),
     }
@@ -172,6 +185,80 @@ def company_fundamentals(settings: Settings, symbol: str, cik_map: dict[str, str
     return result
 
 
+def _statement_metric(frame: pd.DataFrame, labels: tuple[str, ...]) -> tuple[float | None, float | None, str]:
+    if frame is None or frame.empty:
+        return None, None, ""
+    for label in labels:
+        if label not in frame.index:
+            continue
+        series = pd.to_numeric(frame.loc[label], errors="coerce").dropna()
+        if series.empty:
+            continue
+        try:
+            series = series.reindex(
+                sorted(series.index, key=lambda value: pd.Timestamp(value), reverse=True)
+            )
+        except Exception:
+            pass
+        latest = float(series.iloc[0])
+        # Quarterly statements normally contain five columns. Compare the same
+        # quarter one year earlier; use the prior period only when YoY is unavailable.
+        comparison_index = 4 if len(series) >= 5 else 1
+        comparable = float(series.iloc[comparison_index]) if len(series) > comparison_index else None
+        growth = latest / comparable - 1.0 if comparable not in (None, 0) else None
+        period_value = series.index[0]
+        period = pd.Timestamp(period_value).date().isoformat() if not pd.isna(period_value) else ""
+        return latest, growth, period
+    return None, None, ""
+
+
+def yahoo_fundamentals(symbol: str, sec_error: str = "") -> dict[str, Any]:
+    """Use free Yahoo statements as a clearly labelled, unofficial fallback."""
+
+    ticker = yf.Ticker(symbol)
+    income = ticker.quarterly_income_stmt
+    balance = ticker.quarterly_balance_sheet
+    cashflow = ticker.quarterly_cashflow
+    frames = {
+        "revenue": income,
+        "net_income": income,
+        "eps_diluted": income,
+        "cash": balance,
+        "assets": balance,
+        "liabilities": balance,
+        "operating_cash_flow": cashflow,
+    }
+    result: dict[str, Any] = {
+        "fundamental_source": "Yahoo/yfinance statements",
+        "fundamental_confidence": 0.45,
+        "fundamental_note": (
+            "unofficial fallback; SEC Company Facts unavailable on the runner"
+            + (f" ({sec_error[:120]})" if sec_error else "")
+        ),
+    }
+    periods: list[str] = []
+    populated = 0
+    for name, labels in YAHOO_LABELS.items():
+        value, growth, period = _statement_metric(frames[name], labels)
+        result[name] = value
+        result[f"{name}_growth"] = growth
+        if value is not None:
+            populated += 1
+        if period:
+            periods.append(period)
+    if populated == 0:
+        return {}
+    revenue = result.get("revenue")
+    net_income = result.get("net_income")
+    result["net_margin"] = (
+        float(net_income) / float(revenue)
+        if isinstance(revenue, (int, float)) and revenue and isinstance(net_income, (int, float))
+        else None
+    )
+    result["fundamental_period"] = periods[0] if periods else ""
+    return result
+
+
 def enrich_stock_fundamentals(frame: pd.DataFrame, settings: Settings, max_symbols: int = 8) -> tuple[pd.DataFrame, dict[str, str]]:
     if frame is None or frame.empty or "symbol" not in frame.columns:
         return frame, {}
@@ -180,17 +267,30 @@ def enrich_stock_fundamentals(frame: pd.DataFrame, settings: Settings, max_symbo
     try:
         cik_map = _ticker_to_cik(settings)
     except Exception as exc:
-        return out, {"ticker_map": str(exc)}
+        cik_map = {}
+        LOGGER.warning("SEC ticker map unavailable; Yahoo statement fallback remains active: %s", exc)
     for symbol in out["symbol"].astype(str).head(max_symbols):
-        try:
-            time.sleep(0.12)
-            facts = company_fundamentals(settings, symbol, cik_map)
-            if not facts:
-                continue
-            mask = out["symbol"].astype(str).eq(symbol)
-            for key, value in facts.items():
-                out.loc[mask, key] = value
-        except Exception as exc:
-            LOGGER.debug("SEC company facts failed for %s: %s", symbol, exc)
-            errors[symbol] = str(exc)
+        facts: dict[str, Any] = {}
+        sec_error = ""
+        if symbol.upper() in cik_map:
+            try:
+                time.sleep(0.12)
+                facts = company_fundamentals(settings, symbol, cik_map)
+            except Exception as exc:
+                sec_error = str(exc)
+                LOGGER.debug("SEC Company Facts failed for %s: %s", symbol, exc)
+        if not facts:
+            try:
+                facts = yahoo_fundamentals(symbol, sec_error=sec_error)
+            except Exception as exc:
+                LOGGER.debug("Yahoo statements failed for %s: %s", symbol, exc)
+                if sec_error:
+                    errors[symbol] = f"SEC: {sec_error}; Yahoo: {exc}"
+                else:
+                    errors[symbol] = str(exc)
+        if not facts:
+            continue
+        mask = out["symbol"].astype(str).eq(symbol)
+        for key, value in facts.items():
+            out.loc[mask, key] = value
     return out, errors
