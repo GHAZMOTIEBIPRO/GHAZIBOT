@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 from options_radar.macro import fetch_treasury_curve
-from options_radar.sec_fundamentals import _latest_metric
+from options_radar.sec_fundamentals import _latest_metric, _ticker_to_cik
+from run_live_export import _correct_path_metrics
 
 
 def test_sec_latest_metric_uses_prior_matching_fiscal_period():
@@ -25,6 +27,20 @@ def test_sec_latest_metric_uses_prior_matching_fiscal_period():
     assert value == 125
     assert growth == 0.25
     assert period == "10-Q 2026-03-31"
+
+
+def test_sec_ticker_map_uses_local_fallback_when_live_endpoint_is_blocked(tmp_path, monkeypatch):
+    mapping = tmp_path / "sec_cik_map.json"
+    mapping.write_text(json.dumps({"AAPL": "320193", "NVDA": "1045810"}), encoding="utf-8")
+    monkeypatch.setattr("options_radar.sec_fundamentals.LOCAL_CIK_MAP", mapping)
+
+    def blocked(*args, **kwargs):
+        raise RuntimeError("403 forbidden")
+
+    monkeypatch.setattr("options_radar.sec_fundamentals.requests.get", blocked)
+    result = _ticker_to_cik(SimpleNamespace(sec_user_agent="test@example.com"))
+    assert result["AAPL"] == "0000320193"
+    assert result["NVDA"] == "0001045810"
 
 
 def test_treasury_curve_parses_latest_row_and_slope(monkeypatch):
@@ -53,3 +69,28 @@ def test_treasury_curve_parses_latest_row_and_slope(monkeypatch):
     assert result["treasury_10y"] == 4.35
     assert result["curve_10y_2y"] == 0.6
     assert result["curve_state"] == "normal"
+
+
+def test_legacy_path_records_without_underlying_levels_are_excluded(tmp_path):
+    outcomes = tmp_path / "outcomes.json"
+    outcomes.write_text(
+        json.dumps({
+            "signals": {
+                "legacy": {"path_status": "evaluated", "outcome_order": "open"},
+                "valid": {
+                    "path_status": "evaluated",
+                    "outcome_order": "target_1_first",
+                    "underlying_target_1": 105,
+                    "underlying_invalidation": 95,
+                },
+            }
+        }),
+        encoding="utf-8",
+    )
+    payload = {"performance": {"path_evaluated": 2}}
+    _correct_path_metrics(payload, SimpleNamespace(outcome_path=outcomes))
+    assert payload["performance"]["path_evaluated"] == 1
+    assert payload["performance"]["path_target_1_first"] == 1
+    assert payload["performance"]["legacy_paths_excluded"] == 1
+    persisted = json.loads(outcomes.read_text(encoding="utf-8"))
+    assert persisted["signals"]["legacy"]["path_status"] == "missing_levels"
