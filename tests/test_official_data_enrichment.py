@@ -7,7 +7,7 @@ import pandas as pd
 
 from options_radar.macro import fetch_treasury_curve
 from options_radar.sec_fundamentals import _latest_metric, _ticker_to_cik, yahoo_fundamentals
-from run_live_export import _correct_path_metrics
+from run_live_export import _correct_path_metrics, _fundamental_reason
 
 
 def test_sec_latest_metric_uses_prior_matching_fiscal_period():
@@ -81,6 +81,21 @@ def test_yahoo_statement_fallback_labels_source_and_calculates_growth(monkeypatc
     assert result["revenue"] == 125
     assert result["revenue_growth"] == 0.25
     assert result["net_margin"] == 0.2
+
+
+def test_fundamental_reason_identifies_unofficial_source_and_filters_outlier_margin():
+    reason = _fundamental_reason({
+        "fundamental_source": "Yahoo/yfinance statements",
+        "fundamental_confidence": 0.45,
+        "revenue_growth": 0.25,
+        "net_margin": 0.94,
+        "operating_cash_flow_growth": 0.40,
+    })
+    assert "Yahoo غير الرسمي" in reason
+    assert "SEC" not in reason
+    assert "نمو الإيرادات +25.0%" in reason
+    assert "هامش صافي" not in reason
+    assert "ثقة 45%" in reason
 
 
 def test_treasury_curve_parses_latest_row_and_slope(monkeypatch):
