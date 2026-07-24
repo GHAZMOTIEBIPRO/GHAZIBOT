@@ -53,18 +53,38 @@ def _json_safe(value):
     return value
 
 
+def _bounded(value, minimum: float, maximum: float) -> float | None:
+    if not isinstance(value, (int, float)) or pd.isna(value):
+        return None
+    numeric = float(value)
+    return numeric if minimum <= numeric <= maximum else None
+
+
 def _fundamental_reason(row: dict) -> str:
+    source = str(row.get("fundamental_source") or "")
+    if not source:
+        return ""
+    official = source == "SEC Company Facts"
+    label = "SEC الرسمي" if official else "Yahoo غير الرسمي"
+    confidence = row.get("fundamental_confidence")
+    confidence_text = (
+        f"، ثقة {float(confidence) * 100:.0f}%"
+        if isinstance(confidence, (int, float)) and not pd.isna(confidence)
+        else ""
+    )
     parts: list[str] = []
-    revenue_growth = row.get("revenue_growth")
-    net_margin = row.get("net_margin")
-    operating_growth = row.get("operating_cash_flow_growth")
-    if isinstance(revenue_growth, (int, float)) and not pd.isna(revenue_growth):
-        parts.append(f"نمو الإيرادات SEC {revenue_growth * 100:+.1f}%")
-    if isinstance(net_margin, (int, float)) and not pd.isna(net_margin):
-        parts.append(f"هامش صافي SEC {net_margin * 100:.1f}%")
-    if isinstance(operating_growth, (int, float)) and not pd.isna(operating_growth):
-        parts.append(f"نمو التدفق التشغيلي SEC {operating_growth * 100:+.1f}%")
-    return "؛ ".join(parts)
+    revenue_growth = _bounded(row.get("revenue_growth"), -2.0, 5.0)
+    net_margin = _bounded(row.get("net_margin"), -2.0, 0.80)
+    operating_growth = _bounded(row.get("operating_cash_flow_growth"), -5.0, 10.0)
+    if revenue_growth is not None:
+        parts.append(f"نمو الإيرادات {revenue_growth * 100:+.1f}%")
+    if net_margin is not None:
+        parts.append(f"هامش صافي {net_margin * 100:.1f}%")
+    if operating_growth is not None:
+        parts.append(f"نمو التدفق التشغيلي {operating_growth * 100:+.1f}%")
+    if not parts:
+        return ""
+    return f"بيانات مالية {label}{confidence_text}: " + "، ".join(parts)
 
 
 def _enrich_stocks(payload: dict, settings: Settings) -> dict[str, str]:
@@ -77,6 +97,7 @@ def _enrich_stocks(payload: dict, settings: Settings) -> dict[str, str]:
     for row in enriched.to_dict(orient="records"):
         safe = {str(key): _json_safe(value) for key, value in row.items()}
         summary = _fundamental_reason(safe)
+        safe["fundamental_summary"] = summary or None
         if summary:
             existing = str(safe.get("reasons") or "")
             safe["reasons"] = f"{existing}؛ {summary}" if existing else summary
