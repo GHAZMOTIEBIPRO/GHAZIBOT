@@ -136,7 +136,11 @@ function renderCalibration() {
   byId("calibration-remaining").textContent = number(gate.remaining, 0);
   byId("average-mfe").textContent = plainPct(performance.average_mfe_pct, 2);
   byId("average-mae").textContent = plainPct(performance.average_mae_pct, 2);
-  byId("calibration-warning").textContent = calibration.warning || "";
+  byId("path-evaluated").textContent = number(performance.path_evaluated, 0);
+  byId("path-target-first").textContent = number((Number(performance.path_target_1_first) || 0) + (Number(performance.path_target_2_first) || 0), 0);
+  byId("path-stop-first").textContent = number(performance.path_stop_first, 0);
+  byId("path-ambiguous").textContent = number(performance.path_ambiguous, 0);
+  byId("calibration-warning").textContent = calibration.warning || performance.measurement_note || "";
   const bands = calibration.score_bands || [];
   byId("calibration-body").innerHTML = bands.length ? bands.map((band) => `<tr><td>${escapeHtml(band.band)}</td><td>${number(band.signals, 0)}</td><td>${number(band.observed ?? band.priced, 0)}</td><td>${number(band.matured ?? band.priced, 0)}</td><td>${pct(band.target_1_rate)}</td><td>${pct(band.target_2_rate)}</td><td>${pct(band.stop_rate)}</td><td>${plainPct(band.average_mfe_pct, 2)}</td><td>${plainPct(band.average_mae_pct, 2)}</td></tr>`).join("") : '<tr><td colspan="9">لم تتكوّن عينة معايرة ناضجة بعد.</td></tr>';
 }
