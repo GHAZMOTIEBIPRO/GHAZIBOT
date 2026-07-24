@@ -2,10 +2,10 @@
 
 - **Model version:** `2026.07-phase2`
 - **Status:** **COLLECTING MATURE EVIDENCE**
-- **Mature signals (1d checkpoint):** **34/100**
-- **Raw priced signals:** **108**
+- **Mature signals (1d checkpoint):** **37/100**
+- **Raw priced signals:** **115**
 - **Five-day mature signals:** **0**
-- **Decision:** Collect 66 more signals with a 1d checkpoint before changing weights
+- **Decision:** Collect 63 more signals with a 1d checkpoint before changing weights
 
 > Same-scan observations do not count toward calibration readiness. 
 > This report does not authorize automatic score changes. Free-data observations are not proof of executable fills or target/stop ordering.
@@ -16,17 +16,18 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 0 | 0 | 0 | — | — | — | — | — |
-| 70-79 | 31 | 31 | 5 | 20.0% | 20.0% | 0.0% | 11.80 | -23.18 |
-| 60-69 | 77 | 77 | 29 | 17.2% | 3.4% | 3.4% | 9.01 | -19.98 |
+| 70-79 | 34 | 34 | 5 | 60.0% | 60.0% | 0.0% | 28.04 | -23.18 |
+| 60-69 | 81 | 81 | 32 | 59.4% | 46.9% | 3.1% | 24.66 | -19.12 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
 
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 24 | 0.0% | 4.2% | 5.71 |
-| bearish EMA stack; MACD/RSI bearish momentum | 7 | 57.1% | 0.0% | 20.68 |
+| bullish EMA stack; MACD/RSI bullish momentum | 25 | 56.0% | 4.0% | 26.55 |
+| bearish EMA stack; MACD/RSI bearish momentum | 7 | 57.1% | 0.0% | 21.40 |
 | bullish EMA stack | 3 | 66.7% | 0.0% | 12.91 |
+| bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 2 | 100.0% | 0.0% | 38.56 |
 
 ## Review protocol
 
