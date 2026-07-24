@@ -3,7 +3,7 @@
 - **Model version:** `2026.07-phase3`
 - **Status:** **COLLECTING MATURE EVIDENCE**
 - **Mature signals (1d checkpoint):** **45/100**
-- **Raw priced signals:** **143**
+- **Raw priced signals:** **146**
 - **Five-day mature signals:** **0**
 - **Decision:** Collect 55 more signals with a 1d checkpoint before changing weights
 
@@ -16,8 +16,8 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 0 | 0 | 0 | — | — | — | — | — |
-| 70-79 | 39 | 39 | 11 | 27.3% | 27.3% | 0.0% | 13.98 | -16.67 |
-| 60-69 | 104 | 104 | 34 | 55.9% | 44.1% | 2.9% | 23.36 | -19.69 |
+| 70-79 | 40 | 40 | 11 | 27.3% | 27.3% | 0.0% | 13.98 | -16.81 |
+| 60-69 | 106 | 106 | 34 | 55.9% | 44.1% | 2.9% | 23.36 | -19.81 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
