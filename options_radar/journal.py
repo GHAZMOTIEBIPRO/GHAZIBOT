@@ -10,6 +10,9 @@ from typing import Any
 import pandas as pd
 import yfinance as yf
 
+from .market_bars import BarResult, get_intraday_history
+from .settings import Settings
+
 LOGGER = logging.getLogger(__name__)
 CHECKPOINTS_MINUTES = {
     "30m": 30,
@@ -55,30 +58,92 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
-class SignalJournal:
-    """Append daily signal snapshots and observe subsequent option prices.
+def _timestamp(value: Any) -> pd.Timestamp | None:
+    parsed = pd.to_datetime(value, utc=True, errors="coerce")
+    return None if pd.isna(parsed) else parsed
 
-    The journal is intentionally evidence-oriented: it records every displayed
-    contract once per UTC day and labels strong/qualified/watchlist signals. It
-    does not claim execution or profit; outcome fields describe prices observed
-    during later scans.
+
+def evaluate_underlying_path(signal: dict[str, Any], bars: pd.DataFrame) -> dict[str, Any]:
+    """Determine which underlying target/stop was touched first.
+
+    Five-minute OHLC bars reduce snapshot bias. If target and stop are both touched
+    inside the same bar, ordering is unknowable and the result is marked ambiguous.
     """
+
+    if bars is None or bars.empty:
+        return {"path_status": "no_bars", "bar_resolution": "5m"}
+    signaled_at = _timestamp(signal.get("signal_time"))
+    if signaled_at is None:
+        return {"path_status": "invalid_signal_time", "bar_resolution": "5m"}
+    frame = bars.copy()
+    frame.index = pd.to_datetime(frame.index, utc=True, errors="coerce")
+    frame = frame[frame.index >= signaled_at].dropna(subset=["High", "Low"])
+    if frame.empty:
+        return {"path_status": "no_bars_after_signal", "bar_resolution": "5m"}
+
+    side = str(signal.get("option_type", "call")).lower()
+    target_1 = _safe_float(signal.get("underlying_target_1"))
+    target_2 = _safe_float(signal.get("underlying_target_2"))
+    stop = _safe_float(signal.get("underlying_invalidation"))
+
+    def first_touch(level: float | None, field: str, operator: str) -> pd.Timestamp | None:
+        if level is None:
+            return None
+        values = pd.to_numeric(frame[field], errors="coerce")
+        mask = values >= level if operator == ">=" else values <= level
+        hits = frame.index[mask.fillna(False)]
+        return hits[0] if len(hits) else None
+
+    if side == "put":
+        target_1_at = first_touch(target_1, "Low", "<=")
+        target_2_at = first_touch(target_2, "Low", "<=")
+        stop_at = first_touch(stop, "High", ">=")
+    else:
+        target_1_at = first_touch(target_1, "High", ">=")
+        target_2_at = first_touch(target_2, "High", ">=")
+        stop_at = first_touch(stop, "Low", "<=")
+
+    same_bar = stop_at is not None and target_1_at is not None and stop_at == target_1_at
+    if same_bar:
+        order = "ambiguous_same_bar"
+    elif stop_at is not None and (target_1_at is None or stop_at < target_1_at):
+        order = "stop_first"
+    elif target_2_at is not None and (stop_at is None or target_2_at < stop_at):
+        order = "target_2_first"
+    elif target_1_at is not None and (stop_at is None or target_1_at < stop_at):
+        order = "target_1_first"
+    else:
+        order = "open"
+
+    return {
+        "path_status": "evaluated",
+        "bar_resolution": "5m",
+        "first_target_1_at": target_1_at.isoformat() if target_1_at is not None else None,
+        "first_target_2_at": target_2_at.isoformat() if target_2_at is not None else None,
+        "first_stop_at": stop_at.isoformat() if stop_at is not None else None,
+        "ambiguous_same_bar": same_bar,
+        "outcome_order": order,
+        "bars_evaluated": int(len(frame)),
+    }
+
+
+class SignalJournal:
+    """Persist signals, option snapshots and path-aware underlying outcomes."""
 
     def __init__(self, signals_path: Path, outcomes_path: Path, model_version: str):
         self.signals_path = Path(signals_path)
         self.outcomes_path = Path(outcomes_path)
         self.model_version = model_version
+        self.settings = Settings()
         self.signals_path.parent.mkdir(parents=True, exist_ok=True)
         self.outcomes_path.parent.mkdir(parents=True, exist_ok=True)
 
     def _signal_id(self, row: pd.Series, generated_at: datetime) -> str:
-        key = "|".join(
-            [
-                generated_at.date().isoformat(),
-                str(row.get("contract_symbol", "")),
-                self.model_version,
-            ]
-        )
+        key = "|".join([
+            generated_at.date().isoformat(),
+            str(row.get("contract_symbol", "")),
+            self.model_version,
+        ])
         return hashlib.sha256(key.encode("utf-8")).hexdigest()[:20]
 
     @staticmethod
@@ -114,6 +179,8 @@ class SignalJournal:
                 "target_1": _safe_float(row.get("target_1")),
                 "target_2": _safe_float(row.get("target_2")),
                 "stop_price": _safe_float(row.get("stop_price")),
+                "underlying_target_1": _safe_float(row.get("underlying_target_1")),
+                "underlying_target_2": _safe_float(row.get("underlying_target_2")),
                 "underlying_invalidation": _safe_float(row.get("underlying_invalidation")),
                 "score": _safe_float(row.get("score")),
                 "rating": str(row.get("rating", "")),
@@ -139,12 +206,12 @@ class SignalJournal:
 
     def _read_outcomes(self) -> dict[str, Any]:
         if not self.outcomes_path.exists():
-            return {"schema_version": 1, "updated_at": None, "signals": {}}
+            return {"schema_version": 2, "updated_at": None, "signals": {}}
         try:
             payload = json.loads(self.outcomes_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            payload = {"schema_version": 1, "updated_at": None, "signals": {}}
-        payload.setdefault("schema_version", 1)
+            payload = {"schema_version": 2, "updated_at": None, "signals": {}}
+        payload["schema_version"] = 2
         payload.setdefault("signals", {})
         return payload
 
@@ -157,11 +224,7 @@ class SignalJournal:
             return (bid + ask) / 2.0
         return last if last is not None and last > 0 else None
 
-    def _fetch_quotes(
-        self,
-        signals: list[dict[str, Any]],
-        max_groups: int = 24,
-    ) -> dict[str, float]:
+    def _fetch_quotes(self, signals: list[dict[str, Any]], max_groups: int = 24) -> dict[str, float]:
         groups: dict[tuple[str, str], list[str]] = {}
         for signal in signals:
             symbol = str(signal.get("symbol", ""))
@@ -194,6 +257,24 @@ class SignalJournal:
                     quotes[contract] = mid
         return quotes
 
+    def _fetch_paths(self, signals: list[dict[str, Any]], now: datetime,
+                     max_symbols: int = 24) -> dict[str, BarResult]:
+        earliest: dict[str, datetime] = {}
+        for signal in signals:
+            symbol = str(signal.get("symbol", ""))
+            signaled_at = _timestamp(signal.get("signal_time"))
+            if not symbol or signaled_at is None:
+                continue
+            value = signaled_at.to_pydatetime()
+            earliest[symbol] = min(earliest.get(symbol, value), value)
+        results: dict[str, BarResult] = {}
+        for symbol, start in list(earliest.items())[:max_symbols]:
+            try:
+                results[symbol] = get_intraday_history(self.settings, symbol, start, now)
+            except Exception as exc:
+                LOGGER.debug("Intraday path failed for %s: %s", symbol, exc)
+        return results
+
     def update_outcomes(self, now: datetime | None = None) -> dict[str, Any]:
         now = now or datetime.now(timezone.utc)
         if now.tzinfo is None:
@@ -201,13 +282,10 @@ class SignalJournal:
         signals = _read_jsonl(self.signals_path)
         active: list[dict[str, Any]] = []
         for signal in reversed(signals):
-            try:
-                signaled_at = datetime.fromisoformat(str(signal["signal_time"]))
-            except (KeyError, ValueError):
+            signaled_at = _timestamp(signal.get("signal_time"))
+            if signaled_at is None:
                 continue
-            if signaled_at.tzinfo is None:
-                signaled_at = signaled_at.replace(tzinfo=timezone.utc)
-            age_days = (now - signaled_at).total_seconds() / 86400
+            age_days = (pd.Timestamp(now) - signaled_at).total_seconds() / 86400
             if -0.1 <= age_days <= 14:
                 active.append(signal)
             if len(active) >= 200:
@@ -215,15 +293,11 @@ class SignalJournal:
 
         outcomes = self._read_outcomes()
         quotes = self._fetch_quotes(active)
+        paths = self._fetch_paths(active, now)
         for signal in active:
-            contract = str(signal.get("contract_symbol", ""))
-            current = quotes.get(contract)
-            if current is None:
-                continue
             signal_id = str(signal["signal_id"])
+            contract = str(signal.get("contract_symbol", ""))
             entry = _safe_float(signal.get("entry_price"))
-            if entry is None or entry <= 0:
-                continue
             state = outcomes["signals"].setdefault(
                 signal_id,
                 {
@@ -234,17 +308,30 @@ class SignalJournal:
                     "target_1": signal.get("target_1"),
                     "target_2": signal.get("target_2"),
                     "stop_price": signal.get("stop_price"),
+                    "underlying_target_1": signal.get("underlying_target_1"),
+                    "underlying_target_2": signal.get("underlying_target_2"),
+                    "underlying_invalidation": signal.get("underlying_invalidation"),
                     "observations": 0,
-                    "max_observed": current,
-                    "min_observed": current,
                     "checkpoints": {},
                 },
             )
+
+            path = paths.get(str(signal.get("symbol", "")))
+            if path is not None:
+                state.update(evaluate_underlying_path(signal, path.frame))
+                state["path_source"] = path.source
+                state["path_freshness"] = path.freshness
+
+            current = quotes.get(contract)
+            if current is None or entry is None or entry <= 0:
+                continue
             state["observations"] = int(state.get("observations", 0)) + 1
             state["last_updated"] = now.isoformat()
             state["last_observed"] = round(current, 6)
-            state["max_observed"] = round(max(float(state.get("max_observed", current)), current), 6)
-            state["min_observed"] = round(min(float(state.get("min_observed", current)), current), 6)
+            previous_max = _safe_float(state.get("max_observed")) or current
+            previous_min = _safe_float(state.get("min_observed")) or current
+            state["max_observed"] = round(max(previous_max, current), 6)
+            state["min_observed"] = round(min(previous_min, current), 6)
             state["mfe_pct"] = round((state["max_observed"] / entry - 1.0) * 100.0, 4)
             state["mae_pct"] = round((state["min_observed"] / entry - 1.0) * 100.0, 4)
             state["target_1_observed"] = bool(
@@ -259,10 +346,10 @@ class SignalJournal:
                 _safe_float(signal.get("stop_price")) is not None
                 and state["min_observed"] <= float(signal["stop_price"])
             )
-            signaled_at = datetime.fromisoformat(str(signal["signal_time"]))
-            if signaled_at.tzinfo is None:
-                signaled_at = signaled_at.replace(tzinfo=timezone.utc)
-            elapsed_minutes = (now - signaled_at).total_seconds() / 60.0
+            signaled_at = _timestamp(signal.get("signal_time"))
+            if signaled_at is None:
+                continue
+            elapsed_minutes = (pd.Timestamp(now) - signaled_at).total_seconds() / 60.0
             checkpoints = state.setdefault("checkpoints", {})
             for label, threshold in CHECKPOINTS_MINUTES.items():
                 if elapsed_minutes >= threshold and label not in checkpoints:
@@ -279,6 +366,7 @@ class SignalJournal:
     def summary(outcomes: dict[str, Any]) -> dict[str, Any]:
         rows = list(outcomes.get("signals", {}).values())
         priced = [row for row in rows if int(row.get("observations", 0)) > 0]
+        path_rows = [row for row in rows if row.get("path_status") == "evaluated"]
         mfe = [float(row.get("mfe_pct", 0.0)) for row in priced]
         mae = [float(row.get("mae_pct", 0.0)) for row in priced]
         return {
@@ -287,9 +375,15 @@ class SignalJournal:
             "target_1_observed": sum(bool(row.get("target_1_observed")) for row in priced),
             "target_2_observed": sum(bool(row.get("target_2_observed")) for row in priced),
             "stop_observed": sum(bool(row.get("stop_observed")) for row in priced),
+            "path_evaluated": len(path_rows),
+            "path_target_1_first": sum(row.get("outcome_order") == "target_1_first" for row in path_rows),
+            "path_target_2_first": sum(row.get("outcome_order") == "target_2_first" for row in path_rows),
+            "path_stop_first": sum(row.get("outcome_order") == "stop_first" for row in path_rows),
+            "path_ambiguous": sum(row.get("outcome_order") == "ambiguous_same_bar" for row in path_rows),
             "average_mfe_pct": round(sum(mfe) / len(mfe), 4) if mfe else None,
             "average_mae_pct": round(sum(mae) / len(mae), 4) if mae else None,
             "measurement_note": (
-                "Observed free-data prices; not proof of execution or target/stop ordering."
+                "Option prices are observed snapshots. Underlying target/stop order uses "
+                "five-minute OHLC bars; same-bar touches remain ambiguous and are not wins."
             ),
         }

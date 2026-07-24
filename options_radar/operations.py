@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from .market_bars import configured_bar_sources
 from .settings import Settings
 
 
@@ -36,17 +37,38 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
         provider_note = "Tradier credentials are required; sandbox data is delayed."
     elif provider == "auto":
         provider_note = (
-            "Auto mode tries configured option-data providers and otherwise uses the free "
-            "Yahoo fallback."
+            "Auto mode merges configured Tradier and MarketData option chains and fills "
+            "missing fields from Yahoo; Alpaca can enrich quotes and Greeks."
         )
 
     sec_ready = "configure SEC_USER_AGENT" not in settings.sec_user_agent
+    bars = configured_bar_sources(settings)
+    configured_official_bars = [item["name"] for item in bars if item["configured"] and item["name"] != "yahoo"]
     services = [
         ServiceStatus(
             name="options_data",
             configured=provider_ready,
             required_fields=provider_required,
             note=provider_note,
+        ),
+        ServiceStatus(
+            name="hybrid_price_bars",
+            configured=True,
+            required_fields=(),
+            note=(
+                "Configured official/free-account bar sources: "
+                + (", ".join(configured_official_bars) if configured_official_bars else "none; Yahoo fallback active")
+                + ". Intraday path tracking uses the first successful provider."
+            ),
+        ),
+        ServiceStatus(
+            name="path_order_tracking",
+            configured=True,
+            required_fields=(),
+            note=(
+                "Five-minute underlying OHLC bars record target-first, stop-first, or "
+                "ambiguous same-bar outcomes."
+            ),
         ),
         ServiceStatus(
             name="sec_identity",
@@ -76,6 +98,9 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
         "dashboard_only": True,
         "ready_for_paper_tracking": provider_ready and sec_ready,
         "external_notifications_enabled": False,
+        "bar_sources": bars,
+        "daily_provider_order": settings.daily_provider_order,
+        "intraday_provider_order": settings.intraday_provider_order,
         "services": [item.to_dict() for item in services],
         "configuration_warnings": [
             field

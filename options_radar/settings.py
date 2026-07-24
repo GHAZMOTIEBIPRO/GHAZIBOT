@@ -52,6 +52,22 @@ class Settings:
     alpaca_api_key: str | None = os.getenv("ALPACA_API_KEY") or None
     alpaca_secret_key: str | None = os.getenv("ALPACA_SECRET_KEY") or None
     alpaca_options_feed: str = os.getenv("ALPACA_OPTIONS_FEED") or "indicative"
+    alpaca_stock_feed: str = os.getenv("ALPACA_STOCK_FEED") or "iex"
+
+    # Optional free-account bar providers. They are attempted only when configured.
+    twelve_data_api_key: str | None = os.getenv("TWELVE_DATA_API_KEY") or None
+    polygon_api_key: str | None = os.getenv("POLYGON_API_KEY") or None
+    alpha_vantage_api_key: str | None = os.getenv("ALPHA_VANTAGE_API_KEY") or None
+    fred_api_key: str | None = os.getenv("FRED_API_KEY") or None
+    daily_provider_order: str = (
+        os.getenv("DAILY_PRICE_PROVIDER_ORDER")
+        or "yahoo,tradier,alpaca,twelve_data,polygon,alpha_vantage"
+    )
+    intraday_provider_order: str = (
+        os.getenv("INTRADAY_PRICE_PROVIDER_ORDER")
+        or "tradier,alpaca,twelve_data,polygon,yahoo,alpha_vantage"
+    )
+
     sec_user_agent: str = (
         os.getenv("SEC_USER_AGENT")
         or "GHAZI Options Radar (configure SEC_USER_AGENT)"
@@ -81,7 +97,7 @@ class Settings:
     max_workers: int = _env_int("MAX_WORKERS", 4)
     max_universe_size: int = _env_int("MAX_UNIVERSE_SIZE", 150)
     calibration_minimum_sample: int = _env_int("CALIBRATION_MINIMUM_SAMPLE", 100)
-    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase2"
+    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase3"
 
     # JSON evidence is persisted by GitHub Actions across isolated runners.
     database_path: Path = Path(
@@ -118,3 +134,14 @@ class Settings:
             raise ValueError("MAX_UNIVERSE_SIZE must be at least 20")
         if self.calibration_minimum_sample < 30:
             raise ValueError("CALIBRATION_MINIMUM_SAMPLE must be at least 30")
+        allowed_bar_sources = {
+            "yahoo", "tradier", "alpaca", "twelve", "twelvedata", "twelve_data",
+            "polygon", "alpha", "alphavantage", "alpha_vantage",
+        }
+        for field_name, raw in (
+            ("DAILY_PRICE_PROVIDER_ORDER", self.daily_provider_order),
+            ("INTRADAY_PRICE_PROVIDER_ORDER", self.intraday_provider_order),
+        ):
+            unknown = [item for item in raw.split(",") if item.strip().lower() not in allowed_bar_sources]
+            if unknown:
+                raise ValueError(f"{field_name} contains unsupported providers: {unknown}")

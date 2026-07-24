@@ -37,14 +37,21 @@ jobs:
       OPTIONS_PROVIDER: ${{ secrets.OPTIONS_PROVIDER || 'auto' }}
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
       TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
-      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
-      ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED }}
+      ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
+      ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'yahoo,tradier,alpaca,twelve_data,polygon,alpha_vantage' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,yahoo,alpha_vantage' }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
       FREE_SWING_MODE: "true"
-      MODEL_VERSION: "2026.07-phase2"
+      MODEL_VERSION: "2026.07-phase3"
       MAX_UNIVERSE_SIZE: "120"
       CALIBRATION_MINIMUM_SAMPLE: "100"
     steps:
@@ -96,6 +103,7 @@ jobs:
           payload = json.loads(Path('public/data/latest.json').read_text(encoding='utf-8'))
           calibration = payload.get('calibration_gate', {})
           operations = payload.get('operational_status', {})
+          performance = payload.get('performance', {})
           summary = [
               '# GHAZI Market Radar',
               '',
@@ -104,9 +112,12 @@ jobs:
               f"- Market: **{payload.get('market_regime', 'unknown')}**",
               f"- Stocks: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
               f"- Options: **{payload.get('summary', {}).get('option_candidates', 0)}**",
+              f"- Option provider: **{payload.get('options_provider', 'unknown')}**",
               f"- Mature calibration sample: **{calibration.get('matured_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
               f"- Raw priced signals: **{calibration.get('raw_priced_sample', 0)}**",
-              f"- Five-day mature signals: **{calibration.get('five_day_sample', 0)}**",
+              f"- Path-evaluated signals: **{performance.get('path_evaluated', 0)}**",
+              f"- Stop-first paths: **{performance.get('path_stop_first', 0)}**",
+              f"- Ambiguous same-bar paths: **{performance.get('path_ambiguous', 0)}**",
               f"- Calibration ready: **{calibration.get('ready', False)}**",
               f"- Paper tracking ready: **{operations.get('ready_for_paper_tracking', False)}**",
           ]
