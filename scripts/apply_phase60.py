@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+
+# Direct execution from scripts/ must still import the repository package.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import options_radar.phase60_overlay as overlay
 from options_radar.phase60_source_network import build_source_network
@@ -12,7 +18,7 @@ overlay.build_source_network = build_source_network
 
 
 def main() -> int:
-    path = Path("public/data/latest.json")
+    path = ROOT / "public/data/latest.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
     payload = overlay.apply_phase60_overlay(payload, Settings())
     temporary = path.with_suffix(".json.tmp")
