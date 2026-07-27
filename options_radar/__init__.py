@@ -30,6 +30,12 @@ from .phase61_policy import install_phase61_policy_fix
 
 install_phase61_policy_fix()
 
+# Yahoo/YFinance remain fallback sources. They may populate Tier B watchlists,
+# but cannot promote a stock or option contract to Tier A.
+from .phase62_quality import install_phase62_quality_policy
+
+install_phase62_quality_policy()
+
 # Modules importing best_catalyst_map after package initialization receive the
 # confidence-aware selector without duplicating selection logic.
 _catalysts.best_catalyst_map = _confidence_best_catalyst_map
@@ -47,4 +53,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.2.0"
+__version__ = "6.2.1"
