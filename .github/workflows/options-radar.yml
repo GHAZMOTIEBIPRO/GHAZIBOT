@@ -3,15 +3,12 @@ name: GHAZI Stocks and Options Radar
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "export_web.py"
       - "run_live_export.py"
       - "options_radar/**"
-      - "scripts/calibration_gate.py"
-      - "scripts/prime_sec_efts.py"
-      - "scripts/apply_phase60.py"
+      - "scripts/**"
       - "data/universe.txt"
       - "data/company_aliases.json"
       - "data/manual_refresh.txt"
@@ -40,14 +37,12 @@ jobs:
       TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
       TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
-      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,finnhub,yahoo' }}
-      STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,yahoo' }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
       ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
       TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
-      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       BENZINGA_TOKEN: ${{ secrets.BENZINGA_TOKEN }}
@@ -59,6 +54,8 @@ jobs:
       REDDIT_COMMUNITIES: ${{ secrets.REDDIT_COMMUNITIES || 'options,stocks,StockMarket,wallstreetbets,thetagang,investing,SecurityAnalysis' }}
       INTELLIGENCE_MAX_SYMBOLS: ${{ secrets.INTELLIGENCE_MAX_SYMBOLS || '15' }}
       INTELLIGENCE_MAX_CONTRACTS: ${{ secrets.INTELLIGENCE_MAX_CONTRACTS || '30' }}
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,finnhub,yahoo' }}
+      STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,yahoo' }}
       DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'yahoo,tradier,alpaca,twelve_data,polygon,alpha_vantage' }}
       INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,yahoo,alpha_vantage' }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
@@ -79,24 +76,29 @@ jobs:
       FLOW_HISTORY_WORKERS: "3"
       FLOW_HISTORY_LOOKBACK_DAYS: "14"
       FLOW_TOP_PER_SIDE: "15"
-      MODD_VERSION: "2026.07-phase6.1-intelligence"
+      MODEL_VERSION: "2026.07-phase6.1-intelligence"
       MAX_UNIVERSE_SIZE: "150"
       CALIBRATION_MINIMUM_SAMPLE: "100"
       OUTCOME_MAX_AGE_DAYS: "60"
+
     steps:
-      - uses: actions/checkout4v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
+
       - name: Install
         run: pip install -r requirements.txt
-      - name: Probe and cache SEC full-text evidence
+
+      - name: Probe SEC full-text evidence
         continue-on-error: true
         run: python scripts/prime_sec_efts.py
-      - name: Generate separated stock and contract radar data
+
+      - name: Generate separated stock and contract radar
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" != "45 12 * * 1-5" ]]; then
@@ -104,11 +106,14 @@ jobs:
           else
             python run_live_export.py --top-stocks 15 --top-options 15
           fi
-      - name: Apply Phase 6.1 external intelligence and recommendation policy
+
+      - name: Apply Phase 6.1 intelligence policy
         run: python scripts/apply_phase60.py
+
       - name: Evaluate calibration review gate
         id: calibration_gate
         run: python scripts/calibration_gate.py
+
       - name: Open one-time calibration review issue
         if: steps.calibration_gate.outputs.should_open == 'true'
         env:
@@ -119,62 +124,43 @@ jobs:
           if [[ -n "$existing_url" ]]; then
             issue_url="$existing_url"
           else
-            issue_url="$(gh issue create \
-              --title "Calibration review ready — ${{ env.MODEL_VERSION }}" \
-              --body-file data/live/CALIBRATION_REVIEW.md)"
+            issue_url="$(gh issue create --title "Calibration review ready — $MODEL_VERSION" --body-file data/live/CALIBRATION_REVIEW.md)"
           fi
           python scripts/calibration_gate.py --mark "$issue_url"
-          echo "Calibration review issue: $issue_url"
+
       - name: Write workflow summary
         if: always()
-        shell: bash
         run: |
           python - <<'PY'
           import json
           import os
           from pathlib import Path
 
-          payload = json.loads(Path('public/data/latest.json').read_text(encoding='utf-8'))
-          calibration = payload.get('calibration_gate', {})
-          operations = payload.get('operational_status', {})
-          performance = payload.get('performance', {})
-          flow = payload.get('flow_summary', {})
-          network = payload.get('source_network', {}).get('summary', {})
-          intelligence = payload.get('intelligence', {}).get('summary', {})
-          efts = operations.get('sec_fulltext_status', {})
-          summary = [
+          path = Path('public/data/latest.json')
+          if not path.exists():
+              Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('# GHAZI Radar\n\nNo output file was generated.', encoding='utf-8')
+              raise SystemExit(0)
+          data = json.loads(path.read_text(encoding='utf-8'))
+          summary = data.get('summary', {})
+          intel = data.get('intelligence', {}).get('summary', {})
+          lines = [
               '# GHAZI Market Radar — Phase 6.1',
               '',
-              f"- Model: `;{payload.get('model_version', 'unknown')}`",
-              f"- Delivery: **dashboard only**",
-              f"- Market: **{payload.get('market_regime', 'unknown')}**",
-              f"- Stock candidates: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
-              f"- Strong stock recommendations: **{payload.get('summary', {}).get('stock_recommendations', 0)}**",
-              f"- Strong contract recommendations: **{payload.get('summary', {}).get('contract_recommendations', 0)}**",
-              f"- Top CALL: **{payload.get('summary', {}).get('top_call_contracts', 0)}**",
-              f"- Top PUT: **{payload.get('summary', {}).get('top_put_contracts', 0)}**",
-              f"- Active stock sources: **{network.get('active_stock_sources', 0)}**",
-              f"- Active option sources: **{network.get('active_option_sources', 0)}**",
-              f"- External intelligence sources successful: **{intelligence.get('successful_sources', 0)}**",
-              f"- Social mentions observed: **{intelligence.get('social_mentions', 0)}**",
-              f"- FINRA symbols enriched: **{intelligence.get('finra_symbols', 0)}**",
-              f"- Benzinga contract matches: **{intelligence.get('benzinga_contract_matches', 0)}**",
-              f"- Flow-qualified contracts: **{flow.get('contracts_flow_qualified', 0)}**",
-              f"- Aggressive buying: **{flow.get('aggressive_buying', 0)}**",
-              f"- High accumulation: **{flow.get('high_accumulation', 0)}**",
-              f"- Volume spikes: **{flow.get('volume_spikes', 0)}**",
-              f"- SEC full-text reachable: **{efts.get('available', False)}**",
-              f"- SEC full-text matched events: **{efts.get('event_count', 0)}**",
-              f"- Mature calibration sample: **{calibration.get('matured_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
-              f"- Raw priced signals: **{calibration.get('raw_priced_sample', 0)}**",
-              f"- Path-evaluated signals: **{performance.get('path_evaluated', 0)}**",
-              f"- Stop-first paths: **{performance.get('path_stop_first', 0)}**",
-              f"- Ambiguous same-bar paths: **{performance.get('path_ambiguous', 0)}**",
-              f"- Calibration ready: **{calibration.get('ready', False)}**",
+              f"- Model: `{data.get('model_version', 'unknown')}`",
+              f"- Stocks: **{summary.get('stock_candidates', 0)}**",
+              f"- CALL contracts: **{summary.get('top_call_contracts', 0)}**",
+              f"- PUT contracts: **{summary.get('top_put_contracts', 0)}**",
+              f"- Strong stock recommendations: **{summary.get('stock_recommendations', 0)}**",
+              f"- Strong contract recommendations: **{summary.get('contract_recommendations', 0)}**",
+              f"- External sources successful: **{intel.get('successful_sources', 0)}**",
+              f"- FINRA symbols: **{intel.get('finra_symbols', 0)}**",
+              f"- Social mentions: **{intel.get('social_mentions', 0)}**",
+              f"- Benzinga matches: **{intel.get('benzinga_contract_matches', 0)}**",
           ]
-          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary), encoding='utf-8')
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(lines), encoding='utf-8')
           PY
-      - name: Publish fresh dashboard data and evidence journal
+
+      - name: Publish dashboard data and evidence
         shell: bash
         run: |
           git config user.name "ghazi-radar-bot"
@@ -191,9 +177,7 @@ jobs:
             data/live/calibration.json \
             data/live/CALIBRATION_REVIEW.md \
             data/live/calibration_issue.json; do
-            if [[ -f "$file" ]]; then
-              git add "$file"
-            fi
+            [[ -f "$file" ]] && git add "$file"
           done
           if git diff --cached --quiet; then
             echo "No data change to publish."
@@ -202,6 +186,7 @@ jobs:
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+
       - name: Upload result files
         if: always()
         uses: actions/upload-artifact@v4
@@ -216,4 +201,4 @@ jobs:
             data/live/*.jsonl
             data/live/*.md
             results/*.csv
-          if-no-files-found: ignor
+          if-no-files-found: ignore
