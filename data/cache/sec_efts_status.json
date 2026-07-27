@@ -1,13 +1,13 @@
 {
-  "checked_at": "2026-07-27T20:15:10.494922+00:00",
+  "checked_at": "2026-07-27T20:17:56.455295+00:00",
   "available": false,
   "source": "SEC EDGAR Full-Text Search",
   "endpoint": "https://efts.sec.gov/LATEST/search-index",
   "start_date": "2026-07-13",
   "end_date": "2026-07-27",
   "event_count": 0,
-  "message": "No module named 'options_radar'",
-  "http_status": null,
-  "error_type": "ModuleNotFoundError",
-  "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 39, in main\n    from options_radar.sec_efts import discover_sec_fulltext_events\nModuleNotFoundError: No module named 'options_radar'\n"
+  "message": "403 Client Error: Forbidden for url: https://efts.sec.gov/LATEST/search-index?q=%22merger+agreement%22&forms=8-K%2C6-K%2CSC+13D%2CSC+13D%2FA&startdt=2026-07-13&enddt=2026-07-27&from=0",
+  "http_status": 403,
+  "error_type": "HTTPError",
+  "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 67, in main\n    response.raise_for_status()\n  File \"/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/requests/models.py\", line 1167, in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nrequests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://efts.sec.gov/LATEST/search-index?q=%22merger+agreement%22&forms=8-K%2C6-K%2CSC+13D%2CSC+13D%2FA&startdt=2026-07-13&enddt=2026-07-27&from=0\n"
 }
