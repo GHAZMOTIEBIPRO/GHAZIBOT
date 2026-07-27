@@ -26,7 +26,10 @@ def score_chain_with_ask_spread(
     field is then restored to the required (ask-bid)/ask definition.
     """
     ask_limit = float(getattr(settings, "max_spread_pct", 0.15))
-    mid_equivalent = (2.0 * ask_limit) / max(2.0 - ask_limit, 1e-9)
+    raw_mid_equivalent = (2.0 * ask_limit) / max(2.0 - ask_limit, 1e-9)
+    # Move by one representable float only. This admits the exact mathematical
+    # boundary without widening the economic 15% ask-based threshold.
+    mid_equivalent = float(np.nextafter(raw_mid_equivalent, np.inf))
     scoring_settings = replace(settings, max_spread_pct=mid_equivalent)
     result = _ORIGINAL_SCORE_CHAIN(
         chain,
