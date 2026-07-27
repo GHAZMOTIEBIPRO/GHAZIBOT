@@ -4,7 +4,7 @@ from typing import Any
 
 import pandas as pd
 
-from .interest_factors import finviz_style_profile
+from .interest_overlay import advanced_interest_profile
 from .live_scanners import PublicStockRadar
 from .stocks import StockRadar as BaseStockRadar
 
@@ -45,7 +45,7 @@ class InterestStockRadar(PublicStockRadar):
         catalyst: dict | None,
     ) -> dict[str, Any]:
         row = BaseStockRadar._score(symbol, technical, history, regime, catalyst)
-        profile = finviz_style_profile(history)
+        profile = advanced_interest_profile(history)
 
         side = str(row.get("setup_side", "call"))
         directional_score = float(
@@ -61,19 +61,16 @@ class InterestStockRadar(PublicStockRadar):
         )
         attention_factors = list(profile.get("attention_factors", []))
 
-        # The interest layer confirms an existing directional model; it does not
-        # independently flip CALL to PUT or vice versa.
-        interest_bonus = min(14.0, attention_score * 0.22 + directional_score * 0.36)
+        interest_bonus = min(16.0, attention_score * 0.24 + directional_score * 0.38)
         original_score = float(row.get("score", 0.0))
         adjusted_score = original_score + interest_bonus
 
         catalyst_score = float(row.get("catalyst_score", 0.0) or 0.0)
         catalyst_confidence = float(row.get("catalyst_confidence", 0.0) or 0.0)
         catalyst_source = str(row.get("catalyst_source", ""))
+        catalyst_purpose = str(row.get("catalyst_purpose", ""))
         aligned_catalyst = catalyst_score > 0 if side == "call" else catalyst_score < 0
         if aligned_catalyst and catalyst_score:
-            # Existing scoring includes the nominal catalyst score. Replace part
-            # of the unverified portion with a confidence discount.
             adjusted_score -= abs(catalyst_score) * max(0.0, 1.0 - catalyst_confidence) * 0.65
 
         adjusted_score = max(0.0, min(100.0, adjusted_score))
@@ -82,25 +79,36 @@ class InterestStockRadar(PublicStockRadar):
             and catalyst_confidence >= 0.80
             and abs(catalyst_score) >= 15
         )
-        strong_interest = attention_score >= 8 and directional_score >= 12
+        decisive_event = catalyst_purpose in {
+            "fda_regulatory_decision",
+            "definitive_merger_acquisition",
+            "clinical_readout",
+            "active_13d",
+            "material_downside",
+        }
+        strong_interest = attention_score >= 10 and directional_score >= 13
         interest_tier = (
-            "official_event"
+            "decisive_official_event"
+            if official_event and decisive_event
+            else "official_event"
             if official_event
             else "high_interest"
             if strong_interest
             else "developing"
-            if attention_score >= 5 or directional_score >= 9
+            if attention_score >= 6 or directional_score >= 10
             else "low_attention"
         )
 
         reasons = [value for value in str(row.get("reasons", "")).split("؛ ") if value]
         if attention_factors:
-            reasons.append("اهتمام سوقي: " + "، ".join(attention_factors[:3]))
+            reasons.append("اهتمام سوقي: " + "، ".join(attention_factors[:4]))
         if factors:
             label = "عوامل صعود" if side == "call" else "عوامل هبوط"
-            reasons.append(f"{label}: " + "، ".join(factors[:4]))
+            reasons.append(f"{label}: " + "، ".join(factors[:5]))
         if official_event:
             reasons.append("محفز SEC رسمي عالي الثقة")
+        if decisive_event:
+            reasons.append("نوع المحفز من العوامل الحاسمة")
 
         row["score"] = round(adjusted_score, 1)
         row["rating"] = _rating(adjusted_score)
@@ -124,7 +132,15 @@ class InterestStockRadar(PublicStockRadar):
         row["sma50"] = profile.get("sma50")
         row["sma200"] = profile.get("sma200")
         row["finviz_relative_volume"] = profile.get("finviz_relative_volume")
-        row["interest_method"] = "Finviz-style local OHLCV factors"
+        row["volume_acceleration_5d"] = profile.get("volume_acceleration_5d")
+        row["dollar_turnover_ratio"] = profile.get("dollar_turnover_ratio")
+        row["range_expansion"] = profile.get("range_expansion")
+        row["close_location"] = profile.get("close_location")
+        row["trend_quality_call"] = profile.get("trend_quality_call")
+        row["trend_quality_put"] = profile.get("trend_quality_put")
+        row["interest_method"] = profile.get(
+            "attention_method", "Finviz-style local OHLCV factors"
+        )
         row["reasons"] = "؛ ".join(dict.fromkeys(reasons))
 
         price = float(row.get("price", 0.0) or 0.0)
@@ -134,8 +150,10 @@ class InterestStockRadar(PublicStockRadar):
             rejection = _append_rejection(rejection, "sub_dollar_stock")
         elif price < 2.0 and not official_event and avg_dollar_volume < 10_000_000:
             rejection = _append_rejection(rejection, "low_price_speculation")
-        if not official_event and attention_score < 2 and adjusted_score < 58:
+        if not official_event and attention_score < 3 and adjusted_score < 60:
             rejection = _append_rejection(rejection, "insufficient_market_attention")
+        if price < 5 and float(profile.get("finviz_relative_volume", 0.0) or 0.0) >= 4 and not official_event:
+            rejection = _append_rejection(rejection, "low_price_volume_noise")
 
         if side == "put":
             target_1 = max(0.01, float(row.get("target_1", 0.01) or 0.01))
