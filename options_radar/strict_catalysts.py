@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from datetime import date, timedelta
 from typing import Iterable
 
 import pandas as pd
 
 from .live_scanners import ResilientCatalystScanner
-from .sec_efts import discover_sec_fulltext_events
+from .sec_efts import _cache_read, discover_sec_fulltext_events
 
 
 class StrictCatalystScanner(ResilientCatalystScanner):
@@ -15,15 +16,20 @@ class StrictCatalystScanner(ResilientCatalystScanner):
         symbol_list = list(dict.fromkeys(str(symbol).strip().upper() for symbol in symbols if str(symbol).strip()))
         frame = super().scan(symbol_list, lookback_days=lookback_days)
 
-        # The regular Atom feed is excellent for the newest filings but searches
-        # only a shallow latest window. EFTS searches the filing body and exhibits
-        # across the full lookback period, matching the SEC advanced-search tool.
-        efts_rows = [
-            row for row in discover_sec_fulltext_events(
+        # The dynamic-universe step normally refreshes EFTS first. Reuse that
+        # cache here to avoid querying the SEC twice in one GitHub Actions run.
+        fulltext_lookback = max(lookback_days, 14)
+        cached_start = date.today() - timedelta(days=fulltext_lookback)
+        efts_rows = _cache_read(cached_start)
+        if not efts_rows:
+            efts_rows = discover_sec_fulltext_events(
                 self.settings,
-                lookback_days=max(lookback_days, 14),
+                lookback_days=fulltext_lookback,
             )
-            if str(row.get("symbol", "")).upper() in set(symbol_list)
+        allowed = set(symbol_list)
+        efts_rows = [
+            row for row in efts_rows
+            if str(row.get("symbol", "")).upper() in allowed
         ]
         if efts_rows:
             efts_frame = pd.DataFrame(efts_rows)
