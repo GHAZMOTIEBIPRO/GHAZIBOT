@@ -47,4 +47,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.1.2"
+__version__ = "6.2.0"
