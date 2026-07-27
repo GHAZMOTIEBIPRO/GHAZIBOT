@@ -1,13 +1,13 @@
 {
-  "sample_size": 157,
-  "raw_priced_sample": 157,
-  "priced_sample": 50,
-  "matured_sample": 50,
+  "sample_size": 172,
+  "raw_priced_sample": 172,
+  "priced_sample": 106,
+  "matured_sample": 106,
   "five_day_sample": 0,
   "maturity_checkpoint": "1d",
   "minimum_sample": 100,
-  "calibration_ready": false,
-  "decision": "Collect 50 more signals with a 1d checkpoint before changing weights",
+  "calibration_ready": true,
+  "decision": "Eligible for independent score recalibration review",
   "score_bands": [
     {
       "band": "90-100",
@@ -35,27 +35,27 @@
     },
     {
       "band": "70-79",
-      "signals": 40,
-      "observed": 40,
-      "priced": 14,
-      "matured": 14,
-      "target_1_rate": 0.21428571428571427,
-      "target_2_rate": 0.21428571428571427,
+      "signals": 55,
+      "observed": 55,
+      "priced": 22,
+      "matured": 22,
+      "target_1_rate": 0.18181818181818182,
+      "target_2_rate": 0.18181818181818182,
       "stop_rate": 0.0,
-      "average_mfe_pct": 12.267735714285715,
-      "average_mae_pct": -15.185735714285714
+      "average_mfe_pct": 10.97013181818182,
+      "average_mae_pct": -12.919972727272727
     },
     {
       "band": "60-69",
       "signals": 117,
       "observed": 117,
-      "priced": 36,
-      "matured": 36,
-      "target_1_rate": 0.5277777777777778,
-      "target_2_rate": 0.4166666666666667,
-      "stop_rate": 0.027777777777777776,
-      "average_mfe_pct": 22.549580555555554,
-      "average_mae_pct": -20.901130555555554
+      "priced": 84,
+      "matured": 84,
+      "target_1_rate": 0.32142857142857145,
+      "target_2_rate": 0.2261904761904762,
+      "stop_rate": 0.011904761904761904,
+      "average_mfe_pct": 14.443723809523808,
+      "average_mae_pct": -12.745635714285713
     },
     {
       "band": "0-59",
@@ -73,31 +73,31 @@
   "catalysts": [
     {
       "catalyst": "bullish EMA stack; MACD/RSI bullish momentum",
-      "signals": 29,
-      "target_1_rate": 0.4827586206896552,
-      "stop_rate": 0.034482758620689655,
-      "average_mfe_pct": 23.701534482758618
+      "signals": 57,
+      "target_1_rate": 0.3157894736842105,
+      "stop_rate": 0.017543859649122806,
+      "average_mfe_pct": 16.194001754385962
     },
     {
       "catalyst": "bearish EMA stack; MACD/RSI bearish momentum",
-      "signals": 9,
-      "target_1_rate": 0.4444444444444444,
+      "signals": 25,
+      "target_1_rate": 0.2,
       "stop_rate": 0.0,
-      "average_mfe_pct": 17.080233333333336
+      "average_mfe_pct": 10.931311999999997
     },
     {
       "catalyst": "bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen",
-      "signals": 9,
-      "target_1_rate": 0.2222222222222222,
+      "signals": 17,
+      "target_1_rate": 0.17647058823529413,
       "stop_rate": 0.0,
-      "average_mfe_pct": 11.525077777777776
+      "average_mfe_pct": 9.355282352941176
     },
     {
       "catalyst": "bullish EMA stack",
-      "signals": 3,
-      "target_1_rate": 0.6666666666666666,
+      "signals": 7,
+      "target_1_rate": 0.7142857142857143,
       "stop_rate": 0.0,
-      "average_mfe_pct": 12.913633333333332
+      "average_mfe_pct": 14.176428571428572
     }
   ],
   "warning": "Same-scan quotes are monitoring observations, not mature evidence. The review gate counts only signals with a 1d checkpoint. Free-data prices still do not prove executable fills or target/stop ordering."
