@@ -13,6 +13,12 @@ install_trade_timestamp_normalizer()
 install_ask_spread_scoring()
 install_multi_source_fetching()
 
+# Import after Phase 6 installs its composite fetcher so Phase 6.1 wraps it
+# instead of bypassing it.
+from .phase61_sources import install_phase61_fetching
+
+install_phase61_fetching()
+
 # Modules importing best_catalyst_map after package initialization receive the
 # confidence-aware selector without duplicating selection logic.
 _catalysts.best_catalyst_map = _confidence_best_catalyst_map
@@ -30,4 +36,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.0.0"
+__version__ = "6.1.0"
