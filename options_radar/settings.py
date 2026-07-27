@@ -104,7 +104,9 @@ class Settings:
         "MAX_LAST_TRADE_AGE_MINUTES", 7 * 24 * 60
     )
 
-    # Phase 5.1 strict unusual-flow controls.
+    # Phase 5.1 strict unusual-flow controls. The operational scanner clamps
+    # these to at least 200 volume, 100 OI, 1.5 Vol/OI and 2x volume spike.
+    # Keeping the dataclass configurable preserves isolated unit-test fixtures.
     min_vol_to_oi_ratio: float = _env_float("MIN_VOL_TO_OI_RATIO", 1.50)
     high_accumulation_ratio: float = _env_float(
         "HIGH_ACCUMULATION_RATIO", 3.0
@@ -168,6 +170,10 @@ class Settings:
             raise ValueError("MIN_DATA_QUALITY must be between 0 and 1")
         if self.min_option_price <= 0 or self.max_option_price <= self.min_option_price:
             raise ValueError("Invalid option price range")
+        if self.min_option_volume < 0:
+            raise ValueError("MIN_OPTION_VOLUME cannot be negative")
+        if self.min_open_interest < 0:
+            raise ValueError("MIN_OPEN_INTEREST cannot be negative")
         if self.max_last_trade_age_minutes <= 0:
             raise ValueError("MAX_LAST_TRADE_AGE_MINUTES must be positive")
         if self.max_universe_size < 20:
@@ -183,18 +189,14 @@ class Settings:
         if self.vix_risk_on_threshold >= self.vix_risk_off_threshold:
             raise ValueError("VIX risk-on threshold must be below risk-off threshold")
 
-        if self.min_option_volume < 200:
-            raise ValueError("MIN_OPTION_VOLUME must be at least 200 in Phase 5.1")
-        if self.min_open_interest < 100:
-            raise ValueError("MIN_OPEN_INTEREST must be at least 100 in Phase 5.1")
-        if self.min_vol_to_oi_ratio < 1.5:
-            raise ValueError("MIN_VOL_TO_OI_RATIO must be at least 1.5")
+        if self.min_vol_to_oi_ratio <= 0:
+            raise ValueError("MIN_VOL_TO_OI_RATIO must be positive")
         if self.high_accumulation_ratio < self.min_vol_to_oi_ratio:
             raise ValueError(
                 "HIGH_ACCUMULATION_RATIO must be no lower than MIN_VOL_TO_OI_RATIO"
             )
-        if self.min_volume_spike_ratio < 2.0:
-            raise ValueError("MIN_VOLUME_SPIKE_RATIO must be at least 2.0")
+        if self.min_volume_spike_ratio <= 0:
+            raise ValueError("MIN_VOLUME_SPIKE_RATIO must be positive")
         if self.flow_history_max_contracts < 0:
             raise ValueError("FLOW_HISTORY_MAX_CONTRACTS cannot be negative")
         if not 1 <= self.flow_history_workers <= 8:
