@@ -93,14 +93,10 @@ def test_efts_discovery_builds_grounded_event(tmp_path, monkeypatch):
     assert "8-K items 8.01, 9.01" in event["evidence"]
 
 
-def test_dynamic_universe_prioritizes_sec_fulltext(monkeypatch):
-    monkeypatch.setattr(
-        "options_radar.universe.sec_fulltext_symbols",
-        lambda settings, lookback_days=14: ["EVENT1", "EVENT2"],
-    )
+def test_dynamic_universe_places_sec_before_general_movers(monkeypatch):
     monkeypatch.setattr(
         "options_radar.universe.sec_event_symbols",
-        lambda settings: ["LATEST"],
+        lambda settings: ["EVENT1", "EVENT2", "LATEST"],
     )
     monkeypatch.setattr(
         "options_radar.universe.nasdaq_mover_symbols",
@@ -112,10 +108,9 @@ def test_dynamic_universe_prioritizes_sec_fulltext(monkeypatch):
     )
     symbols, sources = build_dynamic_universe(
         ["BASE1", "BASE2"],
-        SimpleNamespace(max_universe_size=4),
+        SimpleNamespace(max_universe_size=6),
     )
-    assert symbols == ["EVENT1", "EVENT2", "LATEST", "MOVE1"]
-    assert sources["sec_fulltext"] == 2
+    assert symbols == ["BASE1", "BASE2", "EVENT1", "EVENT2", "LATEST", "MOVE1"]
     assert sources["sec_events"] == 3
 
 
