@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import json
+import traceback
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
 
-from options_radar.sec_efts import EFTS_URL, discover_sec_fulltext_events
-from options_radar.settings import Settings
-
 STATUS_PATH = Path("data/cache/sec_efts_status.json")
+EFTS_URL = "https://efts.sec.gov/LATEST/search-index"
 
 
 def write_status(payload: dict) -> None:
@@ -20,7 +19,6 @@ def write_status(payload: dict) -> None:
 
 
 def main() -> int:
-    settings = Settings()
     end_date = date.today()
     start_date = end_date - timedelta(days=14)
     status = {
@@ -33,7 +31,15 @@ def main() -> int:
         "event_count": 0,
         "message": "not checked",
     }
+
     try:
+        # Keep package imports inside the guarded block. SEC full-text is an
+        # optional source and must never prevent the rest of the radar from
+        # producing a dashboard when SEC or an optional import is unavailable.
+        from options_radar.sec_efts import discover_sec_fulltext_events
+        from options_radar.settings import Settings
+
+        settings = Settings()
         response = requests.get(
             EFTS_URL,
             params={
@@ -71,11 +77,13 @@ def main() -> int:
                 "http_status": getattr(getattr(exc, "response", None), "status_code", None),
                 "error_type": type(exc).__name__,
                 "message": str(exc)[:500],
+                "traceback_tail": traceback.format_exc(limit=8)[-4000:],
             }
         )
+
     write_status(status)
     print(json.dumps(status, ensure_ascii=False))
-    # The radar must continue with cached/latest-form sources when EFTS is blocked.
+    # SEC EFTS is optional. Always allow cached/latest-form/fallback sources.
     return 0
 
 
