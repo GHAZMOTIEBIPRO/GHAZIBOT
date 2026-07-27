@@ -21,9 +21,10 @@ class StrictCatalystScanner(ResilientCatalystScanner):
         fulltext_lookback = max(lookback_days, 14)
         cached_start = date.today() - timedelta(days=fulltext_lookback)
         efts_rows = _cache_read(cached_start)
-        if not efts_rows:
+        settings = getattr(self, "settings", None)
+        if not efts_rows and settings is not None:
             efts_rows = discover_sec_fulltext_events(
-                self.settings,
+                settings,
                 lookback_days=fulltext_lookback,
             )
         allowed = set(symbol_list)
