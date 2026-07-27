@@ -17,6 +17,7 @@ SEC_BASE = "https://www.sec.gov"
 SEC_TICKERS = f"{SEC_BASE}/files/company_tickers.json"
 SEC_FEED = f"{SEC_BASE}/cgi-bin/browse-edgar"
 NASDAQ_MOVERS = "https://api.nasdaq.com/api/marketmovers"
+LOCAL_CIK_MAP = Path("data/sec_cik_map.json")
 _SYMBOL = re.compile(r"^[A-Z][A-Z0-9.-]{0,6}$")
 _PLACEHOLDERS = {"SYMBOL", "TICKER", "N/A", "NA", "NONE", "NULL"}
 _LAST_SEC_COUNTS = {"sec_fulltext": 0, "sec_latest_forms": 0}
@@ -61,9 +62,30 @@ def _sec_headers(settings: Settings) -> dict[str, str]:
     }
 
 
+def _load_persistent_cik_map(path: Path = LOCAL_CIK_MAP) -> dict[str, str]:
+    """Return CIK-to-ticker mappings from the checked-in official snapshot."""
+
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    result: dict[str, str] = {}
+    for ticker, cik in payload.items():
+        symbol = str(ticker).upper()
+        cik_value = str(cik).zfill(10)
+        if _valid_symbol(symbol) and cik_value.strip("0"):
+            result[cik_value] = symbol
+    return result
+
+
 def _sec_ticker_map(settings: Settings) -> dict[str, str]:
     cache = Path("data/cache/sec_company_tickers.json")
     cache.parent.mkdir(parents=True, exist_ok=True)
+    result = _load_persistent_cik_map()
     payload: dict = {}
     try:
         response = requests.get(SEC_TICKERS, headers=_sec_headers(settings), timeout=20)
@@ -71,13 +93,16 @@ def _sec_ticker_map(settings: Settings) -> dict[str, str]:
         payload = response.json()
         cache.write_text(response.text, encoding="utf-8")
     except Exception as exc:
-        LOGGER.warning("Dynamic universe SEC ticker map unavailable: %s", exc)
+        LOGGER.warning(
+            "Dynamic universe SEC ticker map unavailable; using %d persistent mappings: %s",
+            len(result),
+            exc,
+        )
         if cache.exists():
             try:
                 payload = json.loads(cache.read_text(encoding="utf-8"))
             except Exception:
                 payload = {}
-    result: dict[str, str] = {}
     for item in payload.values():
         cik = str(item.get("cik_str", "")).zfill(10)
         ticker = str(item.get("ticker", "")).upper()
@@ -134,11 +159,7 @@ def _sec_latest_form_symbols(settings: Settings, max_per_form: int = 40) -> list
 
 
 def sec_event_symbols(settings: Settings, max_per_form: int = 40) -> list[str]:
-    """Combine full-text event discovery with the latest-form feed.
-
-    Keeping this single public function preserves the original universe API and
-    lets tests or callers replace SEC discovery without triggering live requests.
-    """
+    """Combine full-text event discovery with the latest-form feed."""
 
     fulltext = [
         symbol for symbol in sec_fulltext_symbols(settings, lookback_days=14)
@@ -168,7 +189,7 @@ def nasdaq_mover_symbols(limit: int = 60) -> list[str]:
     """Best-effort discovery from Nasdaq's public market-movers response."""
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/3.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/4.0)",
         "Accept": "application/json,text/plain,*/*",
         "Origin": "https://www.nasdaq.com",
         "Referer": "https://www.nasdaq.com/market-activity/most-active",
