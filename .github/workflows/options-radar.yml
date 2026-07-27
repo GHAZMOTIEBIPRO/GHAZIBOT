@@ -54,10 +54,10 @@ jobs:
       REDDIT_COMMUNITIES: ${{ secrets.REDDIT_COMMUNITIES || 'options,stocks,StockMarket,wallstreetbets,thetagang,investing,SecurityAnalysis' }}
       INTELLIGENCE_MAX_SYMBOLS: ${{ secrets.INTELLIGENCE_MAX_SYMBOLS || '15' }}
       INTELLIGENCE_MAX_CONTRACTS: ${{ secrets.INTELLIGENCE_MAX_CONTRACTS || '30' }}
-      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,finnhub,yahoo' }}
-      STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,yahoo' }}
-      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'yahoo,tradier,alpaca,twelve_data,polygon,alpha_vantage' }}
-      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,yahoo,alpha_vantage' }}
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+      STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
+      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
       FREE_SWING_MODE: "true"
