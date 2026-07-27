@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import json
+import sys
 import traceback
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
+
+# Direct execution as `python scripts/prime_sec_efts.py` puts only the scripts
+# directory on sys.path. Add the repository root so options_radar is importable
+# in GitHub Actions and local direct runs.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 STATUS_PATH = Path("data/cache/sec_efts_status.json")
 EFTS_URL = "https://efts.sec.gov/LATEST/search-index"
