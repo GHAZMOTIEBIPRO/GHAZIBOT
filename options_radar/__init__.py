@@ -4,10 +4,12 @@ from . import catalysts as _catalysts
 from . import sec_efts as _sec_efts
 from .catalyst_selection import best_catalyst_map as _confidence_best_catalyst_map
 from .flow_fetcher import install_trade_timestamp_normalizer
+from .flow_scoring import install_ask_spread_scoring
 from .sec_attention import precision_sec_symbols as _precision_sec_symbols
 
-# Normalize Tradier/Finnhub epoch timestamps before any scanner constructs rows.
+# Install Phase 5.1 data/scoring normalizers before scanner modules import them.
 install_trade_timestamp_normalizer()
+install_ask_spread_scoring()
 
 # Modules importing best_catalyst_map after package initialization receive the
 # confidence-aware selector without duplicating selection logic.
