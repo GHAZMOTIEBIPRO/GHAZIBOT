@@ -92,7 +92,7 @@ class Settings:
     free_swing_mode: bool = _env_bool("FREE_SWING_MODE", True)
     min_dte: int = _env_int("MIN_DTE", 14)
     max_dte: int = _env_int("MAX_DTE", 60)
-    min_option_volume: int = _env_int("MIN_OPTION_VOLUME", 50)
+    min_option_volume: int = _env_int("MIN_OPTION_VOLUME", 200)
     min_open_interest: int = _env_int("MIN_OPEN_INTEREST", 100)
     max_spread_pct: float = _env_float("MAX_SPREAD_PCT", 0.15)
     min_abs_delta: float = _env_float("MIN_ABS_DELTA", 0.30)
@@ -104,13 +104,33 @@ class Settings:
         "MAX_LAST_TRADE_AGE_MINUTES", 7 * 24 * 60
     )
 
+    # Phase 5.1 strict unusual-flow controls.
+    min_vol_to_oi_ratio: float = _env_float("MIN_VOL_TO_OI_RATIO", 1.50)
+    high_accumulation_ratio: float = _env_float(
+        "HIGH_ACCUMULATION_RATIO", 3.0
+    )
+    min_volume_spike_ratio: float = _env_float(
+        "MIN_VOLUME_SPIKE_RATIO", 2.0
+    )
+    flow_require_volume_spike: bool = _env_bool(
+        "FLOW_REQUIRE_VOLUME_SPIKE", False
+    )
+    flow_history_max_contracts: int = _env_int(
+        "FLOW_HISTORY_MAX_CONTRACTS", 45
+    )
+    flow_history_workers: int = _env_int("FLOW_HISTORY_WORKERS", 3)
+    flow_history_lookback_days: int = _env_int(
+        "FLOW_HISTORY_LOOKBACK_DAYS", 14
+    )
+    flow_top_per_side: int = _env_int("FLOW_TOP_PER_SIDE", 15)
+
     min_score: float = _env_float("MIN_SCORE", 65.0)
     alert_score: float = _env_float("ALERT_SCORE", 76.0)
     alert_vol_oi: float = _env_float("ALERT_VOL_OI", 2.0)
     max_workers: int = _env_int("MAX_WORKERS", 4)
     max_universe_size: int = _env_int("MAX_UNIVERSE_SIZE", 150)
     calibration_minimum_sample: int = _env_int("CALIBRATION_MINIMUM_SAMPLE", 100)
-    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase5-hybrid"
+    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase5.1-flow"
 
     # Market-regime and path-dependency controls.
     vix_risk_off_threshold: float = _env_float("VIX_RISK_OFF_THRESHOLD", 25.0)
@@ -139,7 +159,9 @@ class Settings:
         if self.min_dte < 0 or self.max_dte < self.min_dte:
             raise ValueError("Invalid DTE range")
         if not 0 < self.max_spread_pct <= 0.15:
-            raise ValueError("MAX_SPREAD_PCT must be greater than 0 and no more than 0.15")
+            raise ValueError(
+                "MAX_SPREAD_PCT must be greater than 0 and no more than 0.15"
+            )
         if not 0 <= self.min_abs_delta <= self.max_abs_delta <= 1:
             raise ValueError("Invalid delta range")
         if not 0 <= self.min_data_quality <= 1:
@@ -161,6 +183,27 @@ class Settings:
         if self.vix_risk_on_threshold >= self.vix_risk_off_threshold:
             raise ValueError("VIX risk-on threshold must be below risk-off threshold")
 
+        if self.min_option_volume < 200:
+            raise ValueError("MIN_OPTION_VOLUME must be at least 200 in Phase 5.1")
+        if self.min_open_interest < 100:
+            raise ValueError("MIN_OPEN_INTEREST must be at least 100 in Phase 5.1")
+        if self.min_vol_to_oi_ratio < 1.5:
+            raise ValueError("MIN_VOL_TO_OI_RATIO must be at least 1.5")
+        if self.high_accumulation_ratio < self.min_vol_to_oi_ratio:
+            raise ValueError(
+                "HIGH_ACCUMULATION_RATIO must be no lower than MIN_VOL_TO_OI_RATIO"
+            )
+        if self.min_volume_spike_ratio < 2.0:
+            raise ValueError("MIN_VOLUME_SPIKE_RATIO must be at least 2.0")
+        if self.flow_history_max_contracts < 0:
+            raise ValueError("FLOW_HISTORY_MAX_CONTRACTS cannot be negative")
+        if not 1 <= self.flow_history_workers <= 8:
+            raise ValueError("FLOW_HISTORY_WORKERS must be between 1 and 8")
+        if self.flow_history_lookback_days < 7:
+            raise ValueError("FLOW_HISTORY_LOOKBACK_DAYS must be at least 7")
+        if not 1 <= self.flow_top_per_side <= 50:
+            raise ValueError("FLOW_TOP_PER_SIDE must be between 1 and 50")
+
         phase5_stock = {"tiingo", "finnhub", "yahoo", "yfinance"}
         phase5_options = {"tradier", "finnhub", "yahoo", "yfinance"}
         for field_name, raw, allowed in (
@@ -173,11 +216,21 @@ class Settings:
                 if item.strip().lower() not in allowed
             ]
             if unknown:
-                raise ValueError(f"{field_name} contains unsupported providers: {unknown}")
+                raise ValueError(
+                    f"{field_name} contains unsupported providers: {unknown}"
+                )
 
         allowed_bar_sources = {
-            "yahoo", "tradier", "alpaca", "twelve", "twelvedata", "twelve_data",
-            "polygon", "alpha", "alphavantage", "alpha_vantage",
+            "yahoo",
+            "tradier",
+            "alpaca",
+            "twelve",
+            "twelvedata",
+            "twelve_data",
+            "polygon",
+            "alpha",
+            "alphavantage",
+            "alpha_vantage",
         }
         for field_name, raw in (
             ("DAILY_PRICE_PROVIDER_ORDER", self.daily_provider_order),
@@ -189,4 +242,6 @@ class Settings:
                 if item.strip().lower() not in allowed_bar_sources
             ]
             if unknown:
-                raise ValueError(f"{field_name} contains unsupported providers: {unknown}")
+                raise ValueError(
+                    f"{field_name} contains unsupported providers: {unknown}"
+                )
