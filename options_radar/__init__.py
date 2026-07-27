@@ -19,6 +19,12 @@ from .phase61_sources import install_phase61_fetching
 
 install_phase61_fetching()
 
+# FINRA's production Reg SHO dataset uses SIP symbol and par-quantity fields.
+# Install the corrected collector before the intelligence overlay executes.
+from .phase61_finra import install_finra_reg_sho_fix
+
+install_finra_reg_sho_fix()
+
 # Modules importing best_catalyst_map after package initialization receive the
 # confidence-aware selector without duplicating selection logic.
 _catalysts.best_catalyst_map = _confidence_best_catalyst_map
@@ -36,4 +42,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.1.0"
+__version__ = "6.1.1"
