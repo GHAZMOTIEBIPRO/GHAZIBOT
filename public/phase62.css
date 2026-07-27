@@ -1,0 +1,94 @@
+/* Phase 6.2: evidence tiers and independent SPX 0DTE panel. */
+
+.tier-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin: .75rem 0;
+  padding: .7rem .85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line, #2b3446);
+}
+.tier-banner strong { font-size: .92rem; }
+.tier-banner span { font-size: .82rem; opacity: .9; }
+.tier-a { border-color: rgba(38, 166, 91, .55) !important; }
+.tier-b { border-color: rgba(235, 174, 52, .55) !important; }
+.tier-c { border-color: rgba(152, 163, 181, .38) !important; }
+.tier-banner.tier-a { background: rgba(38, 166, 91, .12); }
+.tier-banner.tier-b { background: rgba(235, 174, 52, .12); }
+.tier-banner.tier-c { background: rgba(152, 163, 181, .08); }
+
+.tier-table-badge {
+  display: inline-flex;
+  min-width: 1.7rem;
+  height: 1.7rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  margin-inline-end: .35rem;
+  font-weight: 800;
+  border: 1px solid currentColor;
+}
+.tier-table-badge.tier-a { color: #55d58a; background: rgba(38, 166, 91, .14); }
+.tier-table-badge.tier-b { color: #f5c15f; background: rgba(235, 174, 52, .14); }
+.tier-table-badge.tier-c { color: #aeb8c7; background: rgba(152, 163, 181, .1); }
+
+.tier-missing {
+  margin: .45rem 0;
+  font-size: .78rem;
+  line-height: 1.65;
+  opacity: .88;
+}
+tr.tier-b td { background: rgba(235, 174, 52, .025); }
+tr.tier-c td { opacity: .85; }
+
+.tier-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+  margin: 1rem 0;
+}
+.tier-summary-grid .info-card p {
+  font-size: 1.65rem;
+  font-weight: 800;
+  margin: .35rem 0 0;
+}
+
+.spx-panel {
+  display: grid;
+  gap: 1rem;
+}
+.spx-status-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: .75rem;
+}
+.spx-status-grid .info-card p {
+  margin: .35rem 0 0;
+  font-weight: 750;
+}
+.spx-requirements {
+  border: 1px solid var(--line, #2b3446);
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(12, 18, 30, .42);
+}
+.spx-requirements ul {
+  margin: .5rem 0 0;
+  padding-inline-start: 1.25rem;
+  line-height: 1.9;
+}
+.spx-warning {
+  margin: 0;
+  padding: .85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(235, 174, 52, .35);
+  background: rgba(235, 174, 52, .08);
+}
+
+@media (max-width: 900px) {
+  .tier-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .spx-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tier-banner { align-items: flex-start; flex-direction: column; }
+}

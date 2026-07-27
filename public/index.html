@@ -3,22 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="راداران مستقلان للأسهم الأمريكية وعقود الخيارات، مع شبكة مصادر متعددة وتأكيد متقاطع قبل نشر التوصيات البحثية.">
-  <meta name="ghazi-ui-build" content="2026-07-27.6.0">
+  <meta name="description" content="رادار مستقل للأسهم والعقود وSPX 0DTE، مع درجات A/B/C مبنية على فئات دليل مستقلة لا على عدد أسماء المزودين.">
+  <meta name="ghazi-ui-build" content="2026-07-28.6.2">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>GHAZI Market Radar — Phase 6</title>
-  <link rel="stylesheet" href="./styles.css?v=20260727-60">
-  <link rel="stylesheet" href="./phase60.css?v=20260727-60">
+  <title>GHAZI Market Radar — Phase 6.2</title>
+  <link rel="stylesheet" href="./styles.css?v=20260728-62">
+  <link rel="stylesheet" href="./phase60.css?v=20260728-62">
+  <link rel="stylesheet" href="./phase62.css?v=20260728-62">
 </head>
 <body>
   <div class="page-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">GHAZI MARKET RADAR · PHASE 6</p>
-        <h1>رادار الأسهم ورادار العقود</h1>
-        <p class="hero-copy">فصل كامل بين تحليل السهم وتحليل العقد، وشبكة مصادر متعددة، ولا تظهر توصية بحثية قوية قبل تأكيد مصدرين مستقلين على الأقل.</p>
+        <p class="eyebrow">GHAZI MARKET RADAR · PHASE 6.2</p>
+        <h1>رادار الأسهم والعقود وSPX 0DTE</h1>
+        <p class="hero-copy">الفرص مصنفة A/B/C حسب فئات دليل مستقلة. اختلاف اسم مزود البيانات لا يُحسب تأكيدًا مستقلًا إذا كان يقدم النوع نفسه من الدليل.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -30,14 +31,18 @@
       </div>
     </header>
 
-    <section class="separation-banner" aria-label="الفصل بين الرادارين">
+    <section class="separation-banner" aria-label="الفصل بين محركات الرادار">
       <article class="separation-card">
-        <h3>رادار الأسهم — مستقل</h3>
-        <p>يفحص الاتجاه، السيولة، الحجم النسبي، المتوسطات، القوة القطاعية، المحفزات الرسمية والبيانات المالية. مناطق الدخول والأهداف والإبطال تخص السهم وحده.</p>
+        <h3>رادار الأسهم — Swing</h3>
+        <p>يفحص الاتجاه والسيولة والحجم النسبي والقوة القطاعية والمحفزات. درجة A تحتاج Quote سوقي وتأكيدا اتجاهيا من فئة مستقلة.</p>
       </article>
       <article class="separation-card">
-        <h3>رادار العقود — مستقل</h3>
-        <p>يفحص السلسلة والعقد نفسه: Bid/Ask، السبريد، الحجم، Open Interest، Vol/OI، Delta، DTE، قفزة الحجم وموضع آخر صفقة. لا يعتمد العقد لمجرد قوة السهم.</p>
+        <h3>رادار العقود — Swing</h3>
+        <p>يفحص العقد نفسه. درجة A تحتاج Quote موثوقا وFlow مستقلا مع جودة سيولة وسبريد وحداثة مناسبة.</p>
+      </article>
+      <article class="separation-card">
+        <h3>SPX 0DTE — مستقل</h3>
+        <p>محرك منفصل لـORB أول 15 دقيقة وVWAP وEMA 9/21. لا يستخدم بيانات يومية أو Yahoo لإصدار إشارة لحظية.</p>
       </article>
     </section>
 
@@ -45,13 +50,20 @@
       <article class="metric-card"><span>حالة السوق</span><strong id="market-regime">—</strong></article>
       <article class="metric-card"><span>وضع النموذج</span><strong id="mode-label">—</strong></article>
       <article class="metric-card"><span>أسهم مفحوصة مؤهلة</span><strong id="stock-count">0</strong></article>
-      <article class="metric-card"><span>توصيات رادار الأسهم</span><strong id="stock-recommendation-count">0</strong></article>
+      <article class="metric-card"><span>أسهم درجة A</span><strong id="stock-recommendation-count">0</strong></article>
       <article class="metric-card"><span>عقود مفحوصة مؤهلة</span><strong id="option-count">0</strong></article>
-      <article class="metric-card"><span>توصيات رادار العقود</span><strong id="contract-recommendation-count">0</strong></article>
-      <article class="metric-card call-card"><span>Top CALL شراء</span><strong id="call-count">0</strong></article>
-      <article class="metric-card put-card"><span>Top PUT شراء</span><strong id="put-count">0</strong></article>
+      <article class="metric-card"><span>عقود درجة A</span><strong id="contract-recommendation-count">0</strong></article>
+      <article class="metric-card call-card"><span>CALL A/B/C</span><strong id="call-count">0</strong></article>
+      <article class="metric-card put-card"><span>PUT A/B/C</span><strong id="put-count">0</strong></article>
       <article class="metric-card"><span>المحفزات الرسمية</span><strong id="catalyst-count">0</strong></article>
       <article class="metric-card"><span>فرص مرفوضة</span><strong id="rejected-count">0</strong></article>
+    </section>
+
+    <section class="tier-summary-grid" aria-label="درجات الفرص">
+      <article class="info-card tier-a"><h3>أسهم A</h3><p id="stock-tier-a">0</p></article>
+      <article class="info-card tier-b"><h3>أسهم B</h3><p id="stock-tier-b">0</p></article>
+      <article class="info-card tier-a"><h3>عقود A</h3><p id="contract-tier-a">0</p></article>
+      <article class="info-card tier-b"><h3>عقود B</h3><p id="contract-tier-b">0</p></article>
     </section>
 
     <section id="alerts-section" class="alerts-section hidden" aria-live="polite">
@@ -61,6 +73,7 @@
     <nav class="tabs" aria-label="أقسام الرادار">
       <button class="tab-button active" data-tab="stocks">رادار الأسهم</button>
       <button class="tab-button" data-tab="options">رادار العقود</button>
+      <button class="tab-button" data-tab="spx0dte">SPX 0DTE</button>
       <button class="tab-button" data-tab="sources">شبكة المصادر</button>
       <button class="tab-button" data-tab="catalysts">الأخبار الرسمية</button>
       <button class="tab-button" data-tab="rejected">المرفوضة</button>
@@ -71,30 +84,47 @@
     <main>
       <section id="tab-stocks" class="tab-panel active">
         <div class="section-heading">
-          <div><h2>رادار الأسهم المستقل</h2><p>القرار هنا مبني على السهم فقط. لا يظهر أي عقد داخل بطاقة السهم، ولا تختلط أهداف العقد بأهداف السهم.</p></div>
+          <div><h2>رادار الأسهم المستقل</h2><p>A مكتمل بحثيا، B ينتظر تأكيدا، C بياناته أو إعداده غير مكتمل. FINRA والتواصل الاجتماعي سياق فقط.</p></div>
           <input id="stock-search" class="search-input" type="search" placeholder="ابحث عن رمز…" aria-label="بحث الأسهم">
         </div>
         <div id="stocks-grid" class="cards-grid"></div>
       </section>
 
       <section id="tab-options" class="tab-panel">
-        <div class="section-heading"><div><h2>رادار العقود المستقل</h2><p>لا يظهر العقد إلا بعد اجتياز جودة العقد وتدفقه وسيولته، ثم يُخفض إلى «مراقبة فقط» إذا لم يتأكد من مصدرين مستقلين.</p></div></div>
+        <div class="section-heading"><div><h2>رادار العقود المستقل</h2><p>يعرض العقود المكتملة وقائمة القرب من الشروط بدل شاشة فارغة، مع سبب النقص ودرجة A/B/C.</p></div></div>
         <div class="option-section call-section">
-          <div class="option-section-heading"><h3>Top 15 CALL مشتراة بكثافة</h3><span id="call-section-count">0 عقد</span></div>
+          <div class="option-section-heading"><h3>عقود CALL — درجات A/B/C</h3><span id="call-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
-            <th>العقد</th><th>قرار العقد / Flow</th><th>دخول العقد</th><th>أهداف العقد</th><th>وقف العقد</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>تأكيد المصادر</th>
+            <th>العقد</th><th>الدرجة / Flow</th><th>دخول العقد</th><th>أهداف العقد</th><th>وقف العقد</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / السبريد</th><th>فئات الدليل</th>
           </tr></thead><tbody id="call-options-body"></tbody></table></div>
         </div>
         <div class="option-section put-section">
-          <div class="option-section-heading"><h3>Top 15 PUT مشتراة بكثافة</h3><span id="put-section-count">0 عقد</span></div>
+          <div class="option-section-heading"><h3>عقود PUT — درجات A/B/C</h3><span id="put-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
-            <th>العقد</th><th>قرار العقد / Flow</th><th>دخول العقد</th><th>أهداف العقد</th><th>وقف العقد</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>تأكيد المصادر</th>
+            <th>العقد</th><th>الدرجة / Flow</th><th>دخول العقد</th><th>أهداف العقد</th><th>وقف العقد</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / السبريد</th><th>فئات الدليل</th>
           </tr></thead><tbody id="put-options-body"></tbody></table></div>
         </div>
       </section>
 
+      <section id="tab-spx0dte" class="tab-panel">
+        <div class="section-heading"><div><h2>محرك SPX 0DTE المستقل</h2><p>لا يخلط عقود 0DTE مع رادار Swing ذي 14–60 DTE. لا يصدر إعدادا من دون بيانات Intraday وOptions Quote حية.</p></div></div>
+        <div class="spx-panel">
+          <div class="spx-status-grid">
+            <article class="info-card"><h3>حالة المحرك</h3><p id="spx-engine-status">—</p></article>
+            <article class="info-card"><h3>الدرجة</h3><p id="spx-tier">—</p></article>
+            <article class="info-card"><h3>الإشارة</h3><p id="spx-signal">—</p></article>
+            <article class="info-card"><h3>SPX</h3><p id="spx-spot">—</p></article>
+            <article class="info-card"><h3>نطاق ORB</h3><p id="spx-orb">—</p></article>
+            <article class="info-card"><h3>VWAP</h3><p id="spx-vwap">—</p></article>
+            <article class="info-card"><h3>انتهاء صلاحية الإشارة</h3><p id="spx-expiry">—</p></article>
+          </div>
+          <article class="spx-requirements"><h3>المتطلبات الناقصة</h3><div id="spx-missing"></div></article>
+          <p id="spx-note" class="spx-warning">محرك منفصل، بحثي فقط، ولا ينفذ أوامر.</p>
+        </div>
+      </section>
+
       <section id="tab-sources" class="tab-panel">
-        <div class="section-heading"><div><h2>شبكة المصادر والتغطية</h2><p>يعرض هذا القسم ما يعمل فعليًا، وما يحتاج مفتاحًا أو اشتراك بيانات، وأخطاء كل مزود بدل إخفائها.</p></div></div>
+        <div class="section-heading"><div><h2>شبكة المصادر والتغطية</h2><p>يعرض ما يعمل فعليا وما يحتاج مفتاحا أو اشتراكا، ويقيّم استقلال نوع الدليل لا عدد أسماء الشركات.</p></div></div>
         <div id="source-policy" class="source-policy"></div>
         <div class="source-network-summary">
           <article class="info-card"><h3>مصادر أسهم نشطة</h3><p id="active-stock-sources">0</p></article>
@@ -114,17 +144,17 @@
       </section>
 
       <section id="tab-rejected" class="tab-panel">
-        <div class="section-heading"><div><h2>الفرص المرفوضة</h2><p>شفافية كاملة: سبب رفض السهم أو العقد، والمرحلة التي رُفض عندها.</p></div></div>
+        <div class="section-heading"><div><h2>الفرص المرفوضة</h2><p>سبب الرفض والمرحلة التي رُفض عندها، مع نقل أفضل العقود القريبة إلى قائمة B/C.</p></div></div>
         <div class="table-wrap"><table><thead><tr>
           <th>النوع</th><th>الرمز / العقد</th><th>السبب</th><th>التقييم</th><th>السعر / السبريد</th><th>المصدر</th>
         </tr></thead><tbody id="rejected-body"></tbody></table></div>
       </section>
 
       <section id="tab-results" class="tab-panel">
-        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>تسلسل الهدف والوقف يُقاس زمنيًا، واللمس داخل الشمعة نفسها يُسجل كحالة ملتبسة لا كفوز.</p></div></div>
+        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>تسلسل الهدف والوقف يُقاس زمنيا، واللمس داخل الشمعة نفسها حالة ملتبسة لا فوز.</p></div></div>
         <div class="status-grid">
           <article class="info-card"><h3>الإشارات الناضجة</h3><p id="calibration-sample">—</p></article>
-          <article class="info-card"><h3>الإشارات المرصودة خامًا</h3><p id="calibration-raw-sample">—</p></article>
+          <article class="info-card"><h3>الإشارات المرصودة خاما</h3><p id="calibration-raw-sample">—</p></article>
           <article class="info-card"><h3>إشارات ناضجة 5 أيام</h3><p id="calibration-five-day">—</p></article>
           <article class="info-card"><h3>قرار المعايرة</h3><p id="calibration-decision">—</p></article>
           <article class="info-card"><h3>بوابة المراجعة</h3><p id="calibration-gate-status">—</p></article>
@@ -133,7 +163,7 @@
           <article class="info-card"><h3>متوسط MAE</h3><p id="average-mae">—</p></article>
           <article class="info-card"><h3>مسارات مقيمة</h3><p id="path-evaluated">—</p></article>
           <article class="info-card"><h3>الهدف قبل الوقف</h3><p id="path-target-first">—</p></article>
-          <article class="info-card"><h3>الوقف أولًا</h3><p id="path-stop-first">—</p></article>
+          <article class="info-card"><h3>الوقف أولا</h3><p id="path-stop-first">—</p></article>
           <article class="info-card"><h3>لمس ملتبس بنفس الشمعة</h3><p id="path-ambiguous">—</p></article>
         </div>
         <div class="table-wrap"><table><thead><tr>
@@ -158,9 +188,9 @@
 
     <footer>
       <div>
-        <p id="disclaimer">الراداران منفصلان، والنتائج بحثية وليست تنفيذًا أو ضمان ربح.</p>
+        <p id="disclaimer">الدرجات بحثية وليست أوامر شراء أو ضمان ربح.</p>
         <p id="refresh-result" class="refresh-result">زر التحميل يجلب آخر ملف منشور ويعرض وقت جلبه بدقة.</p>
-        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-27.6.0</strong></p>
+        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-28.6.2</strong></p>
       </div>
       <div class="footer-actions">
         <a class="secondary-button action-link" href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/actions/workflows/options-radar.yml" target="_blank" rel="noopener">تشغيل فحص جديد عبر GitHub</a>
@@ -168,8 +198,9 @@
       </div>
     </footer>
   </div>
-  <script src="./app.js?v=20260727-60" defer></script>
-  <script src="./phase51.js?v=20260727-60" defer></script>
-  <script src="./phase60.js?v=20260727-60" defer></script>
+  <script src="./app.js?v=20260728-62" defer></script>
+  <script src="./phase51.js?v=20260728-62" defer></script>
+  <script src="./phase60.js?v=20260728-62" defer></script>
+  <script src="./phase62.js?v=20260728-62" defer></script>
 </body>
 </html>
