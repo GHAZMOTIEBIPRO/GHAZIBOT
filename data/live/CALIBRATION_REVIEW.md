@@ -1,9 +1,9 @@
 # GHAZI Radar — Calibration Review
 
-- **Model version:** `2026.07-phase3`
+- **Model version:** `2026.07-phase4`
 - **Status:** **READY FOR INDEPENDENT REVIEW**
 - **Mature signals (1d checkpoint):** **106/100**
-- **Raw priced signals:** **172**
+- **Raw priced signals:** **187**
 - **Five-day mature signals:** **0**
 - **Decision:** Eligible for independent score recalibration review
 
@@ -16,7 +16,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 0 | 0 | 0 | — | — | — | — | — |
-| 70-79 | 55 | 55 | 22 | 18.2% | 18.2% | 0.0% | 10.97 | -12.92 |
+| 70-79 | 70 | 70 | 22 | 18.2% | 18.2% | 0.0% | 10.97 | -12.92 |
 | 60-69 | 117 | 117 | 84 | 32.1% | 22.6% | 1.2% | 14.44 | -12.75 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
