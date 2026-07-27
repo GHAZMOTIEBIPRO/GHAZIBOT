@@ -3,21 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="رادار كمي لرصد الأسهم الأمريكية وعقود الخيارات المشتراة بكثافة وفق Vol/OI وAsk-side والتدفق غير المعتاد.">
-  <meta name="ghazi-ui-build" content="2026-07-27.5.1">
+  <meta name="description" content="راداران مستقلان للأسهم الأمريكية وعقود الخيارات، مع شبكة مصادر متعددة وتأكيد متقاطع قبل نشر التوصيات البحثية.">
+  <meta name="ghazi-ui-build" content="2026-07-27.6.0">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>GHAZI Market Radar — Phase 5.1</title>
-  <link rel="stylesheet" href="./styles.css?v=20260727-51">
+  <title>GHAZI Market Radar — Phase 6</title>
+  <link rel="stylesheet" href="./styles.css?v=20260727-60">
+  <link rel="stylesheet" href="./phase60.css?v=20260727-60">
 </head>
 <body>
   <div class="page-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">GHAZI MARKET RADAR · PHASE 5.1</p>
-        <h1>العقود المشتراة بكثافة</h1>
-        <p class="hero-copy">محفزات SEC وFDA، اتجاه فني، Vol/OI، Ask-side aggression، وقفزة الحجم — مع فصل Top 15 CALL وTop 15 PUT.</p>
+        <p class="eyebrow">GHAZI MARKET RADAR · PHASE 6</p>
+        <h1>رادار الأسهم ورادار العقود</h1>
+        <p class="hero-copy">فصل كامل بين تحليل السهم وتحليل العقد، وشبكة مصادر متعددة، ولا تظهر توصية بحثية قوية قبل تأكيد مصدرين مستقلين على الأقل.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -29,11 +30,24 @@
       </div>
     </header>
 
+    <section class="separation-banner" aria-label="الفصل بين الرادارين">
+      <article class="separation-card">
+        <h3>رادار الأسهم — مستقل</h3>
+        <p>يفحص الاتجاه، السيولة، الحجم النسبي، المتوسطات، القوة القطاعية، المحفزات الرسمية والبيانات المالية. مناطق الدخول والأهداف والإبطال تخص السهم وحده.</p>
+      </article>
+      <article class="separation-card">
+        <h3>رادار العقود — مستقل</h3>
+        <p>يفحص السلسلة والعقد نفسه: Bid/Ask، السبريد، الحجم، Open Interest، Vol/OI، Delta، DTE، قفزة الحجم وموضع آخر صفقة. لا يعتمد العقد لمجرد قوة السهم.</p>
+      </article>
+    </section>
+
     <section class="summary-grid" aria-label="ملخص الرادار">
       <article class="metric-card"><span>حالة السوق</span><strong id="market-regime">—</strong></article>
       <article class="metric-card"><span>وضع النموذج</span><strong id="mode-label">—</strong></article>
-      <article class="metric-card"><span>الأسهم المرشحة</span><strong id="stock-count">0</strong></article>
-      <article class="metric-card"><span>إجمالي العقود</span><strong id="option-count">0</strong></article>
+      <article class="metric-card"><span>أسهم مفحوصة مؤهلة</span><strong id="stock-count">0</strong></article>
+      <article class="metric-card"><span>توصيات رادار الأسهم</span><strong id="stock-recommendation-count">0</strong></article>
+      <article class="metric-card"><span>عقود مفحوصة مؤهلة</span><strong id="option-count">0</strong></article>
+      <article class="metric-card"><span>توصيات رادار العقود</span><strong id="contract-recommendation-count">0</strong></article>
       <article class="metric-card call-card"><span>Top CALL شراء</span><strong id="call-count">0</strong></article>
       <article class="metric-card put-card"><span>Top PUT شراء</span><strong id="put-count">0</strong></article>
       <article class="metric-card"><span>المحفزات الرسمية</span><strong id="catalyst-count">0</strong></article>
@@ -41,12 +55,13 @@
     </section>
 
     <section id="alerts-section" class="alerts-section hidden" aria-live="polite">
-      <h2>🚨 فرص شراء غير معتادة مكتملة الشروط</h2><div id="alerts-list"></div>
+      <h2>🚨 إشارات بحثية جديدة مكتملة الشروط</h2><div id="alerts-list"></div>
     </section>
 
     <nav class="tabs" aria-label="أقسام الرادار">
-      <button class="tab-button active" data-tab="stocks">الأسهم</button>
-      <button class="tab-button" data-tab="options">تدفق العقود</button>
+      <button class="tab-button active" data-tab="stocks">رادار الأسهم</button>
+      <button class="tab-button" data-tab="options">رادار العقود</button>
+      <button class="tab-button" data-tab="sources">شبكة المصادر</button>
       <button class="tab-button" data-tab="catalysts">الأخبار الرسمية</button>
       <button class="tab-button" data-tab="rejected">المرفوضة</button>
       <button class="tab-button" data-tab="results">النتائج والمعايرة</button>
@@ -56,42 +71,57 @@
     <main>
       <section id="tab-stocks" class="tab-panel active">
         <div class="section-heading">
-          <div><h2>الأسهم الأعلى تقييمًا</h2><p>الدخول والهدف والوقف والقوة النسبية مع أفضل عقد تدفق متاح.</p></div>
+          <div><h2>رادار الأسهم المستقل</h2><p>القرار هنا مبني على السهم فقط. لا يظهر أي عقد داخل بطاقة السهم، ولا تختلط أهداف العقد بأهداف السهم.</p></div>
           <input id="stock-search" class="search-input" type="search" placeholder="ابحث عن رمز…" aria-label="بحث الأسهم">
         </div>
         <div id="stocks-grid" class="cards-grid"></div>
       </section>
 
       <section id="tab-options" class="tab-panel">
-        <div class="section-heading"><div><h2>Unusual Options Buying Flow</h2><p>لا يظهر العقد إلا بعد اجتياز الحجم وOI وVol/OI وAsk-side وDelta وDTE والسبريد.</p></div></div>
+        <div class="section-heading"><div><h2>رادار العقود المستقل</h2><p>لا يظهر العقد إلا بعد اجتياز جودة العقد وتدفقه وسيولته، ثم يُخفض إلى «مراقبة فقط» إذا لم يتأكد من مصدرين مستقلين.</p></div></div>
         <div class="option-section call-section">
           <div class="option-section-heading"><h3>Top 15 CALL مشتراة بكثافة</h3><span id="call-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
-            <th>العقد</th><th>Flow / التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>المصدر</th>
+            <th>العقد</th><th>قرار العقد / Flow</th><th>دخول العقد</th><th>أهداف العقد</th><th>وقف العقد</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>تأكيد المصادر</th>
           </tr></thead><tbody id="call-options-body"></tbody></table></div>
         </div>
         <div class="option-section put-section">
           <div class="option-section-heading"><h3>Top 15 PUT مشتراة بكثافة</h3><span id="put-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
-            <th>العقد</th><th>Flow / التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>المصدر</th>
+            <th>العقد</th><th>قرار العقد / Flow</th><th>دخول العقد</th><th>أهداف العقد</th><th>وقف العقد</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>تأكيد المصادر</th>
           </tr></thead><tbody id="put-options-body"></tbody></table></div>
         </div>
       </section>
 
+      <section id="tab-sources" class="tab-panel">
+        <div class="section-heading"><div><h2>شبكة المصادر والتغطية</h2><p>يعرض هذا القسم ما يعمل فعليًا، وما يحتاج مفتاحًا أو اشتراك بيانات، وأخطاء كل مزود بدل إخفائها.</p></div></div>
+        <div id="source-policy" class="source-policy"></div>
+        <div class="source-network-summary">
+          <article class="info-card"><h3>مصادر أسهم نشطة</h3><p id="active-stock-sources">0</p></article>
+          <article class="info-card"><h3>مصادر عقود نشطة</h3><p id="active-option-sources">0</p></article>
+          <article class="info-card"><h3>مصادر أسهم مهيأة</h3><p id="configured-stock-sources">0</p></article>
+          <article class="info-card"><h3>مصادر عقود مهيأة</h3><p id="configured-option-sources">0</p></article>
+        </div>
+        <h3>مصادر رادار الأسهم</h3>
+        <div id="stock-sources-grid" class="source-network-grid"></div>
+        <h3>مصادر رادار العقود</h3>
+        <div id="option-sources-grid" class="source-network-grid"></div>
+      </section>
+
       <section id="tab-catalysts" class="tab-panel">
-        <div class="section-heading"><div><h2>محفزات SEC وFDA</h2><p>يشمل قيمة Form 4 وغرض 13D ومخاطر الطرح والتخفيف.</p></div></div>
+        <div class="section-heading"><div><h2>محفزات SEC وFDA</h2><p>يشمل Form 4 وغرض 13D ومخاطر الطرح والتخفيف وقرارات FDA، مع إظهار المصدر والثقة.</p></div></div>
         <div id="catalysts-list" class="catalyst-list"></div>
       </section>
 
       <section id="tab-rejected" class="tab-panel">
-        <div class="section-heading"><div><h2>الفرص المرفوضة</h2><p>شفافية كاملة: عقد منخفض الحجم أو Bid-side أو ضعيف Vol/OI لا يدخل القائمة.</p></div></div>
+        <div class="section-heading"><div><h2>الفرص المرفوضة</h2><p>شفافية كاملة: سبب رفض السهم أو العقد، والمرحلة التي رُفض عندها.</p></div></div>
         <div class="table-wrap"><table><thead><tr>
           <th>النوع</th><th>الرمز / العقد</th><th>السبب</th><th>التقييم</th><th>السعر / السبريد</th><th>المصدر</th>
         </tr></thead><tbody id="rejected-body"></tbody></table></div>
       </section>
 
       <section id="tab-results" class="tab-panel">
-        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>تسلسل الهدف والوقف يُقاس بشموع 5 دقائق، واللمس داخل الشمعة نفسها يُسجل كحالة ملتبسة لا كفوز.</p></div></div>
+        <div class="section-heading"><div><h2>النتائج والمعايرة</h2><p>تسلسل الهدف والوقف يُقاس زمنيًا، واللمس داخل الشمعة نفسها يُسجل كحالة ملتبسة لا كفوز.</p></div></div>
         <div class="status-grid">
           <article class="info-card"><h3>الإشارات الناضجة</h3><p id="calibration-sample">—</p></article>
           <article class="info-card"><h3>الإشارات المرصودة خامًا</h3><p id="calibration-raw-sample">—</p></article>
@@ -114,7 +144,7 @@
 
       <section id="tab-status" class="tab-panel">
         <div class="status-grid">
-          <article class="info-card"><h3>مصدر الخيارات</h3><p id="provider-name">—</p></article>
+          <article class="info-card"><h3>مصدر الخيارات الأساسي</h3><p id="provider-name">—</p></article>
           <article class="info-card"><h3>نمط النشر</h3><p id="delivery-mode">صفحة الويب فقط</p></article>
           <article class="info-card"><h3>حجم الكون المفحوص</h3><p id="universe-size">—</p></article>
           <article class="info-card"><h3>مصادر الكون</h3><p id="universe-sources">—</p></article>
@@ -128,9 +158,9 @@
 
     <footer>
       <div>
-        <p id="disclaimer">رصد Ask-side تقديري، والنتائج بحثية وليست توصية استثمارية.</p>
+        <p id="disclaimer">الراداران منفصلان، والنتائج بحثية وليست تنفيذًا أو ضمان ربح.</p>
         <p id="refresh-result" class="refresh-result">زر التحميل يجلب آخر ملف منشور ويعرض وقت جلبه بدقة.</p>
-        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-27.5.1</strong></p>
+        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-27.6.0</strong></p>
       </div>
       <div class="footer-actions">
         <a class="secondary-button action-link" href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/actions/workflows/options-radar.yml" target="_blank" rel="noopener">تشغيل فحص جديد عبر GitHub</a>
@@ -138,7 +168,8 @@
       </div>
     </footer>
   </div>
-  <script src="./app.js?v=20260727-51" defer></script>
-  <script src="./phase51.js?v=20260727-51" defer></script>
+  <script src="./app.js?v=20260727-60" defer></script>
+  <script src="./phase51.js?v=20260727-60" defer></script>
+  <script src="./phase60.js?v=20260727-60" defer></script>
 </body>
 </html>

@@ -11,6 +11,7 @@ on:
       - "options_radar/**"
       - "scripts/calibration_gate.py"
       - "scripts/prime_sec_efts.py"
+      - "scripts/apply_phase60.py"
       - "data/universe.txt"
       - "data/company_aliases.json"
       - "data/manual_refresh.txt"
@@ -69,7 +70,7 @@ jobs:
       FLOW_HISTORY_WORKERS: "3"
       FLOW_HISTORY_LOOKBACK_DAYS: "14"
       FLOW_TOP_PER_SIDE: "15"
-      MODEL_VERSION: "2026.07-phase5.1-flow"
+      MODEL_VERSION: "2026.07-phase6-multisource"
       MAX_UNIVERSE_SIZE: "150"
       CALIBRATION_MINIMUM_SAMPLE: "100"
       OUTCOME_MAX_AGE_DAYS: "60"
@@ -84,8 +85,9 @@ jobs:
       - name: Install
         run: pip install -r requirements.txt
       - name: Probe and cache SEC full-text evidence
+        continue-on-error: true
         run: python scripts/prime_sec_efts.py
-      - name: Generate dashboard data
+      - name: Generate separated stock and contract radar data
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" != "45 12 * * 1-5" ]]; then
@@ -93,6 +95,8 @@ jobs:
           else
             python run_live_export.py --top-stocks 15 --top-options 15
           fi
+      - name: Apply Phase 6 source network and recommendation policy
+        run: python scripts/apply_phase60.py
       - name: Evaluate calibration review gate
         id: calibration_gate
         run: python scripts/calibration_gate.py
@@ -126,30 +130,33 @@ jobs:
           operations = payload.get('operational_status', {})
           performance = payload.get('performance', {})
           flow = payload.get('flow_summary', {})
+          network = payload.get('source_network', {}).get('summary', {})
           efts = operations.get('sec_fulltext_status', {})
           summary = [
-              '# GHAZI Market Radar — Phase 5.1',
+              '# GHAZI Market Radar — Phase 6',
               '',
               f"- Model: `{payload.get('model_version', 'unknown')}`",
               f"- Delivery: **dashboard only**",
               f"- Market: **{payload.get('market_regime', 'unknown')}**",
-              f"- Stocks: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
+              f"- Stock candidates: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
+              f"- Stock recommendations/watchlist: **{payload.get('summary', {}).get('stock_recommendations', 0)}**",
+              f"- Contract recommendations/watchlist: **{payload.get('summary', {}).get('contract_recommendations', 0)}**",
               f"- Top CALL: **{payload.get('summary', {}).get('top_call_contracts', 0)}**",
               f"- Top PUT: **{payload.get('summary', {}).get('top_put_contracts', 0)}**",
+              f"- Active stock sources: **{network.get('active_stock_sources', 0)}**",
+              f"- Active option sources: **{network.get('active_option_sources', 0)}**",
               f"- Flow-qualified contracts: **{flow.get('contracts_flow_qualified', 0)}**",
               f"- Aggressive buying: **{flow.get('aggressive_buying', 0)}**",
               f"- High accumulation: **{flow.get('high_accumulation', 0)}**",
               f"- Volume spikes: **{flow.get('volume_spikes', 0)}**",
               f"- SEC full-text reachable: **{efts.get('available', False)}**",
               f"- SEC full-text matched events: **{efts.get('event_count', 0)}**",
-              f"- Option provider: **{payload.get('options_provider', 'unknown')}**",
               f"- Mature calibration sample: **{calibration.get('matured_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
               f"- Raw priced signals: **{calibration.get('raw_priced_sample', 0)}**",
               f"- Path-evaluated signals: **{performance.get('path_evaluated', 0)}**",
               f"- Stop-first paths: **{performance.get('path_stop_first', 0)}**",
               f"- Ambiguous same-bar paths: **{performance.get('path_ambiguous', 0)}**",
               f"- Calibration ready: **{calibration.get('ready', False)}**",
-              f"- Paper tracking ready: **{operations.get('ready_for_paper_tracking', False)}**",
           ]
           Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary), encoding='utf-8')
           PY
@@ -162,6 +169,7 @@ jobs:
           for file in \
             data/cache/sec_efts_events.json \
             data/cache/sec_efts_status.json \
+            data/live/source_audit.json \
             data/live/alert_state.json \
             data/live/signals.jsonl \
             data/live/outcomes.json \
@@ -175,7 +183,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data change to publish."
           else
-            git commit -m "data: refresh market radar evidence [skip ci]"
+            git commit -m "data: refresh Phase 6 market radar evidence [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           fi

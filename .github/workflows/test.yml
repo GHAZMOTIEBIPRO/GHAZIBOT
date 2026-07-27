@@ -54,6 +54,9 @@ jobs:
           options_radar/scanner.py
           options_radar/scoring.py
           options_radar/phase51_export.py
+          options_radar/phase60_sources.py
+          options_radar/phase60_overlay.py
+          options_radar/phase60_source_network.py
           options_radar/live_scanners.py
           options_radar/strict_catalysts.py
           options_radar/sec_efts.py
@@ -66,11 +69,13 @@ jobs:
           options_radar/macro.py
           options_radar/sec_fundamentals.py
           scripts/prime_sec_efts.py
+          scripts/apply_phase60.py
           scripts/calibration_gate.py
       - name: Validate dashboard JavaScript
         run: |
           node --check public/app.js
           node --check public/phase51.js
+          node --check public/phase60.js
       - name: Validate JSON configuration
         run: |
           python - <<'PY'
