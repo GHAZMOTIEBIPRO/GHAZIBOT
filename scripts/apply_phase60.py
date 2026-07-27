@@ -3,14 +3,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from options_radar.phase60_overlay import apply_phase60_overlay
+import options_radar.phase60_overlay as overlay
+from options_radar.phase60_source_network import build_source_network
 from options_radar.settings import Settings
+
+# Keep stock-source and option-source audit evidence independent.
+overlay.build_source_network = build_source_network
 
 
 def main() -> int:
     path = Path("public/data/latest.json")
     payload = json.loads(path.read_text(encoding="utf-8"))
-    payload = apply_phase60_overlay(payload, Settings())
+    payload = overlay.apply_phase60_overlay(payload, Settings())
     temporary = path.with_suffix(".json.tmp")
     temporary.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False),
