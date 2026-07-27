@@ -10,15 +10,14 @@ on:
       - "run_live_export.py"
       - "options_radar/**"
       - "scripts/calibration_gate.py"
+      - "scripts/prime_sec_efts.py"
       - "data/universe.txt"
       - "data/company_aliases.json"
       - "data/manual_refresh.txt"
       - "requirements.txt"
       - ".github/workflows/options-radar.yml"
   schedule:
-    # Minutes 07 and 37 reduce top-of-hour scheduling congestion.
     - cron: "7,37 13-21 * * 1-5"
-    # Pre-session snapshot for the dashboard.
     - cron: "45 12 * * 1-5"
 
 concurrency:
@@ -64,6 +63,8 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -r requirements.txt
+      - name: Probe and cache SEC full-text evidence
+        run: python scripts/prime_sec_efts.py
       - name: Generate dashboard data
         shell: bash
         run: |
@@ -104,6 +105,7 @@ jobs:
           calibration = payload.get('calibration_gate', {})
           operations = payload.get('operational_status', {})
           performance = payload.get('performance', {})
+          efts = operations.get('sec_fulltext_status', {})
           summary = [
               '# GHAZI Market Radar',
               '',
@@ -112,6 +114,8 @@ jobs:
               f"- Market: **{payload.get('market_regime', 'unknown')}**",
               f"- Stocks: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
               f"- Options: **{payload.get('summary', {}).get('option_candidates', 0)}**",
+              f"- SEC full-text reachable: **{efts.get('available', False)}**",
+              f"- SEC full-text matched events: **{efts.get('event_count', 0)}**",
               f"- Option provider: **{payload.get('options_provider', 'unknown')}**",
               f"- Mature calibration sample: **{calibration.get('matured_sample', 0)}/{calibration.get('minimum_sample', 100)}**",
               f"- Raw priced signals: **{calibration.get('raw_priced_sample', 0)}**",
@@ -131,6 +135,7 @@ jobs:
           git add public/data/latest.json
           for file in \
             data/cache/sec_efts_events.json \
+            data/cache/sec_efts_status.json \
             data/live/alert_state.json \
             data/live/signals.jsonl \
             data/live/outcomes.json \
@@ -157,6 +162,7 @@ jobs:
           path: |
             public/data/latest.json
             data/cache/sec_efts_events.json
+            data/cache/sec_efts_status.json
             data/live/*.json
             data/live/*.jsonl
             data/live/*.md
