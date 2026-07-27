@@ -1,6 +1,6 @@
 # GHAZI Radar — Calibration Review
 
-- **Model version:** `2026.07-phase6-multisource`
+- **Model version:** `2026.07-phase6.1-intelligence`
 - **Status:** **READY FOR INDEPENDENT REVIEW**
 - **Mature signals (1d checkpoint):** **149/100**
 - **Raw priced signals:** **187**
