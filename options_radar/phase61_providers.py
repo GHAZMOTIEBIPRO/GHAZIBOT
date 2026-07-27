@@ -130,7 +130,7 @@ def polygon_option_chain(
                     "greeks_method": "provider",
                     "dte": dte,
                     "spread_pct": spread,
-                    "standard_contract": is_standard_occ_contract(contract),
+                    "standard_contract": is_standard_occ_contract(contract, symbol.upper()),
                     "quality_passed": True,
                     "rejection_reason": "",
                     "mid": mid,
