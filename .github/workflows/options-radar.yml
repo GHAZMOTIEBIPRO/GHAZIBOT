@@ -50,7 +50,7 @@ jobs:
       X_WATCH_ACCOUNTS: ${{ secrets.X_WATCH_ACCOUNTS || 'unusual_whales,spotgamma,CheddarFlow,Barchart,Benzinga,Cboe,NasdaqExchange,NYSE' }}
       REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
       REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT || 'GHAZI-Market-Radar/6.1' }}
+      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT || 'GHAZI-Market-Radar/6.2' }}
       REDDIT_COMMUNITIES: ${{ secrets.REDDIT_COMMUNITIES || 'options,stocks,StockMarket,wallstreetbets,thetagang,investing,SecurityAnalysis' }}
       INTELLIGENCE_MAX_SYMBOLS: ${{ secrets.INTELLIGENCE_MAX_SYMBOLS || '15' }}
       INTELLIGENCE_MAX_CONTRACTS: ${{ secrets.INTELLIGENCE_MAX_CONTRACTS || '30' }}
@@ -76,7 +76,7 @@ jobs:
       FLOW_HISTORY_WORKERS: "3"
       FLOW_HISTORY_LOOKBACK_DAYS: "14"
       FLOW_TOP_PER_SIDE: "15"
-      MODEL_VERSION: "2026.07-phase6.1-intelligence"
+      MODEL_VERSION: "2026.07-phase6.2-evidence-tiers"
       MAX_UNIVERSE_SIZE: "150"
       CALIBRATION_MINIMUM_SAMPLE: "100"
       OUTCOME_MAX_AGE_DAYS: "60"
@@ -107,8 +107,8 @@ jobs:
             python run_live_export.py --top-stocks 15 --top-options 15
           fi
 
-      - name: Apply Phase 6.1 intelligence policy
-        run: python scripts/apply_phase60.py
+      - name: Apply Phase 6.2 evidence tiers and SPX 0DTE status
+        run: python scripts/apply_phase62.py
 
       - name: Evaluate calibration review gate
         id: calibration_gate
@@ -143,15 +143,15 @@ jobs:
           data = json.loads(path.read_text(encoding='utf-8'))
           summary = data.get('summary', {})
           intel = data.get('intelligence', {}).get('summary', {})
+          spx = data.get('spx_0dte', {})
           lines = [
-              '# GHAZI Market Radar — Phase 6.1',
+              '# GHAZI Market Radar — Phase 6.2',
               '',
               f"- Model: `{data.get('model_version', 'unknown')}`",
-              f"- Stocks: **{summary.get('stock_candidates', 0)}**",
-              f"- CALL contracts: **{summary.get('top_call_contracts', 0)}**",
-              f"- PUT contracts: **{summary.get('top_put_contracts', 0)}**",
-              f"- Strong stock recommendations: **{summary.get('stock_recommendations', 0)}**",
-              f"- Strong contract recommendations: **{summary.get('contract_recommendations', 0)}**",
+              f"- Stocks A/B/C: **{summary.get('stock_tier_a', 0)}/{summary.get('stock_tier_b', 0)}/{summary.get('stock_tier_c', 0)}**",
+              f"- Contracts A/B/C: **{summary.get('contract_tier_a', 0)}/{summary.get('contract_tier_b', 0)}/{summary.get('contract_tier_c', 0)}**",
+              f"- Near-miss contract watchlist: **{summary.get('contract_watchlist', 0)}**",
+              f"- SPX 0DTE status: **{spx.get('status', 'unknown')}**",
               f"- External sources successful: **{intel.get('successful_sources', 0)}**",
               f"- FINRA symbols: **{intel.get('finra_symbols', 0)}**",
               f"- Social mentions: **{intel.get('social_mentions', 0)}**",
@@ -171,6 +171,7 @@ jobs:
             data/cache/sec_efts_status.json \
             data/live/source_audit.json \
             data/live/intelligence_audit.json \
+            data/live/spx_0dte_snapshot.json \
             data/live/alert_state.json \
             data/live/signals.jsonl \
             data/live/outcomes.json \
@@ -182,7 +183,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data change to publish."
           else
-            git commit -m "data: refresh Phase 6.1 market intelligence [skip ci]"
+            git commit -m "data: refresh Phase 6.2 evidence tiers [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
