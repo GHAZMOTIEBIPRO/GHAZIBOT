@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import requests
@@ -33,13 +32,15 @@ def _collect_finra_reg_sho(
     endpoint = "https://api.finra.org/data/group/OTCMarket/name/regShoDaily"
     output: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
+    end_date = date.today()
+    start_date = end_date - timedelta(days=21)
 
     for symbol in symbols[:20]:
         try:
             response = client.post(
                 endpoint,
                 json={
-                    "limit": 500,
+                    "limit": 250,
                     "fields": [
                         "tradeReportDate",
                         "securitiesInformationProcessorSymbolIdentifier",
@@ -48,6 +49,13 @@ def _collect_finra_reg_sho(
                         "totalParQuantity",
                         "marketCode",
                         "reportingFacilityCode",
+                    ],
+                    "dateRangeFilters": [
+                        {
+                            "fieldName": "tradeReportDate",
+                            "startDate": start_date.isoformat(),
+                            "endDate": end_date.isoformat(),
+                        }
                     ],
                     "compareFilters": [
                         {
@@ -97,16 +105,20 @@ def _collect_finra_reg_sho(
                 "reporting_facilities": facilities,
                 "market_codes": markets,
                 "rows_aggregated": len(latest_rows),
+                "context_only": True,
+                "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself.",
             }
         except Exception as exc:
             errors.append(f"{symbol}: {type(exc).__name__}: {exc}")
 
     audit["records"] = len(output)
     audit["success"] = bool(output)
+    audit["date_window_start"] = start_date.isoformat()
+    audit["date_window_end"] = end_date.isoformat()
     if errors:
         audit["error"] = " | ".join(errors[:5])
     elif not output:
-        audit["error"] = "FINRA returned no matching Reg SHO records"
+        audit["error"] = "FINRA returned no matching Reg SHO records in the recent date window"
     return output, audit
 
 
