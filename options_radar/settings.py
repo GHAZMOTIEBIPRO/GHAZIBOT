@@ -43,18 +43,29 @@ def _env_bool(name: str, default: bool) -> bool:
 
 @dataclass(frozen=True)
 class Settings:
+    # Legacy provider switch remains supported for Phase 4 callers.
     provider: str = (os.getenv("OPTIONS_PROVIDER") or "auto").strip().lower()
     marketdata_token: str | None = os.getenv("MARKETDATA_TOKEN") or None
     tradier_token: str | None = os.getenv("TRADIER_TOKEN") or None
     tradier_base_url: str = (
         os.getenv("TRADIER_BASE_URL") or "https://sandbox.tradier.com"
     ).rstrip("/")
+    finnhub_api_key: str | None = os.getenv("FINNHUB_API_KEY") or None
+    tiingo_api_key: str | None = os.getenv("TIINGO_API_KEY") or None
     alpaca_api_key: str | None = os.getenv("ALPACA_API_KEY") or None
     alpaca_secret_key: str | None = os.getenv("ALPACA_SECRET_KEY") or None
     alpaca_options_feed: str = os.getenv("ALPACA_OPTIONS_FEED") or "indicative"
     alpaca_stock_feed: str = os.getenv("ALPACA_STOCK_FEED") or "iex"
 
-    # Optional free-account bar providers. They are attempted only when configured.
+    # Phase 5 deterministic fallback orders.
+    stock_provider_order: str = (
+        os.getenv("STOCK_PROVIDER_ORDER") or "tiingo,finnhub,yahoo"
+    )
+    options_provider_order: str = (
+        os.getenv("OPTIONS_PROVIDER_ORDER") or "tradier,finnhub,yahoo"
+    )
+
+    # Existing optional bar providers remain available to legacy market_bars.py.
     twelve_data_api_key: str | None = os.getenv("TWELVE_DATA_API_KEY") or None
     polygon_api_key: str | None = os.getenv("POLYGON_API_KEY") or None
     alpha_vantage_api_key: str | None = os.getenv("ALPHA_VANTAGE_API_KEY") or None
@@ -70,8 +81,10 @@ class Settings:
 
     sec_user_agent: str = (
         os.getenv("SEC_USER_AGENT")
-        or "GHAZI Options Radar (configure SEC_USER_AGENT)"
+        or "GHAZI Market Radar (configure SEC_USER_AGENT with contact email)"
     )
+    sec_requests_per_second: float = _env_float("SEC_REQUESTS_PER_SECOND", 8.0)
+    request_timeout_seconds: int = _env_int("REQUEST_TIMEOUT_SECONDS", 30)
     openfda_api_key: str | None = os.getenv("OPENFDA_API_KEY") or None
     risk_free_rate: float = _env_float("RISK_FREE_RATE", 0.043)
 
@@ -79,9 +92,9 @@ class Settings:
     free_swing_mode: bool = _env_bool("FREE_SWING_MODE", True)
     min_dte: int = _env_int("MIN_DTE", 14)
     max_dte: int = _env_int("MAX_DTE", 60)
-    min_option_volume: int = _env_int("MIN_OPTION_VOLUME", 50)
+    min_option_volume: int = _env_int("MIN_OPTION_VOLUME", 200)
     min_open_interest: int = _env_int("MIN_OPEN_INTEREST", 100)
-    max_spread_pct: float = _env_float("MAX_SPREAD_PCT", 0.20)
+    max_spread_pct: float = _env_float("MAX_SPREAD_PCT", 0.15)
     min_abs_delta: float = _env_float("MIN_ABS_DELTA", 0.30)
     max_abs_delta: float = _env_float("MAX_ABS_DELTA", 0.60)
     min_option_price: float = _env_float("MIN_OPTION_PRICE", 0.25)
@@ -91,13 +104,40 @@ class Settings:
         "MAX_LAST_TRADE_AGE_MINUTES", 7 * 24 * 60
     )
 
+    # Phase 5.1 strict unusual-flow controls. The operational scanner clamps
+    # these to at least 200 volume, 100 OI, 1.5 Vol/OI and 2x volume spike.
+    # Keeping the dataclass configurable preserves isolated unit-test fixtures.
+    min_vol_to_oi_ratio: float = _env_float("MIN_VOL_TO_OI_RATIO", 1.50)
+    high_accumulation_ratio: float = _env_float(
+        "HIGH_ACCUMULATION_RATIO", 3.0
+    )
+    min_volume_spike_ratio: float = _env_float(
+        "MIN_VOLUME_SPIKE_RATIO", 2.0
+    )
+    flow_require_volume_spike: bool = _env_bool(
+        "FLOW_REQUIRE_VOLUME_SPIKE", False
+    )
+    flow_history_max_contracts: int = _env_int(
+        "FLOW_HISTORY_MAX_CONTRACTS", 45
+    )
+    flow_history_workers: int = _env_int("FLOW_HISTORY_WORKERS", 3)
+    flow_history_lookback_days: int = _env_int(
+        "FLOW_HISTORY_LOOKBACK_DAYS", 14
+    )
+    flow_top_per_side: int = _env_int("FLOW_TOP_PER_SIDE", 15)
+
     min_score: float = _env_float("MIN_SCORE", 65.0)
     alert_score: float = _env_float("ALERT_SCORE", 76.0)
     alert_vol_oi: float = _env_float("ALERT_VOL_OI", 2.0)
     max_workers: int = _env_int("MAX_WORKERS", 4)
     max_universe_size: int = _env_int("MAX_UNIVERSE_SIZE", 150)
     calibration_minimum_sample: int = _env_int("CALIBRATION_MINIMUM_SAMPLE", 100)
-    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase3"
+    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase5.1-flow"
+
+    # Market-regime and path-dependency controls.
+    vix_risk_off_threshold: float = _env_float("VIX_RISK_OFF_THRESHOLD", 25.0)
+    vix_risk_on_threshold: float = _env_float("VIX_RISK_ON_THRESHOLD", 18.0)
+    outcome_max_age_days: int = _env_int("OUTCOME_MAX_AGE_DAYS", 60)
 
     # JSON evidence is persisted by GitHub Actions across isolated runners.
     database_path: Path = Path(
@@ -120,28 +160,90 @@ class Settings:
             )
         if self.min_dte < 0 or self.max_dte < self.min_dte:
             raise ValueError("Invalid DTE range")
-        if not 0 < self.max_spread_pct <= 1:
-            raise ValueError("MAX_SPREAD_PCT must be between 0 and 1")
+        if not 0 < self.max_spread_pct <= 0.15:
+            raise ValueError(
+                "MAX_SPREAD_PCT must be greater than 0 and no more than 0.15"
+            )
         if not 0 <= self.min_abs_delta <= self.max_abs_delta <= 1:
             raise ValueError("Invalid delta range")
         if not 0 <= self.min_data_quality <= 1:
             raise ValueError("MIN_DATA_QUALITY must be between 0 and 1")
         if self.min_option_price <= 0 or self.max_option_price <= self.min_option_price:
             raise ValueError("Invalid option price range")
+        if self.min_option_volume < 0:
+            raise ValueError("MIN_OPTION_VOLUME cannot be negative")
+        if self.min_open_interest < 0:
+            raise ValueError("MIN_OPEN_INTEREST cannot be negative")
         if self.max_last_trade_age_minutes <= 0:
             raise ValueError("MAX_LAST_TRADE_AGE_MINUTES must be positive")
         if self.max_universe_size < 20:
             raise ValueError("MAX_UNIVERSE_SIZE must be at least 20")
         if self.calibration_minimum_sample < 30:
             raise ValueError("CALIBRATION_MINIMUM_SAMPLE must be at least 30")
+        if not 0 < self.sec_requests_per_second <= 10:
+            raise ValueError("SEC_REQUESTS_PER_SECOND must be between 0 and 10")
+        if self.request_timeout_seconds < 5:
+            raise ValueError("REQUEST_TIMEOUT_SECONDS must be at least 5")
+        if self.outcome_max_age_days < self.max_dte:
+            raise ValueError("OUTCOME_MAX_AGE_DAYS must cover MAX_DTE")
+        if self.vix_risk_on_threshold >= self.vix_risk_off_threshold:
+            raise ValueError("VIX risk-on threshold must be below risk-off threshold")
+
+        if self.min_vol_to_oi_ratio <= 0:
+            raise ValueError("MIN_VOL_TO_OI_RATIO must be positive")
+        if self.high_accumulation_ratio < self.min_vol_to_oi_ratio:
+            raise ValueError(
+                "HIGH_ACCUMULATION_RATIO must be no lower than MIN_VOL_TO_OI_RATIO"
+            )
+        if self.min_volume_spike_ratio <= 0:
+            raise ValueError("MIN_VOLUME_SPIKE_RATIO must be positive")
+        if self.flow_history_max_contracts < 0:
+            raise ValueError("FLOW_HISTORY_MAX_CONTRACTS cannot be negative")
+        if not 1 <= self.flow_history_workers <= 8:
+            raise ValueError("FLOW_HISTORY_WORKERS must be between 1 and 8")
+        if self.flow_history_lookback_days < 7:
+            raise ValueError("FLOW_HISTORY_LOOKBACK_DAYS must be at least 7")
+        if not 1 <= self.flow_top_per_side <= 50:
+            raise ValueError("FLOW_TOP_PER_SIDE must be between 1 and 50")
+
+        phase5_stock = {"tiingo", "finnhub", "yahoo", "yfinance"}
+        phase5_options = {"tradier", "finnhub", "yahoo", "yfinance"}
+        for field_name, raw, allowed in (
+            ("STOCK_PROVIDER_ORDER", self.stock_provider_order, phase5_stock),
+            ("OPTIONS_PROVIDER_ORDER", self.options_provider_order, phase5_options),
+        ):
+            unknown = [
+                item.strip().lower()
+                for item in raw.split(",")
+                if item.strip().lower() not in allowed
+            ]
+            if unknown:
+                raise ValueError(
+                    f"{field_name} contains unsupported providers: {unknown}"
+                )
+
         allowed_bar_sources = {
-            "yahoo", "tradier", "alpaca", "twelve", "twelvedata", "twelve_data",
-            "polygon", "alpha", "alphavantage", "alpha_vantage",
+            "yahoo",
+            "tradier",
+            "alpaca",
+            "twelve",
+            "twelvedata",
+            "twelve_data",
+            "polygon",
+            "alpha",
+            "alphavantage",
+            "alpha_vantage",
         }
         for field_name, raw in (
             ("DAILY_PRICE_PROVIDER_ORDER", self.daily_provider_order),
             ("INTRADAY_PRICE_PROVIDER_ORDER", self.intraday_provider_order),
         ):
-            unknown = [item for item in raw.split(",") if item.strip().lower() not in allowed_bar_sources]
+            unknown = [
+                item.strip().lower()
+                for item in raw.split(",")
+                if item.strip().lower() not in allowed_bar_sources
+            ]
             if unknown:
-                raise ValueError(f"{field_name} contains unsupported providers: {unknown}")
+                raise ValueError(
+                    f"{field_name} contains unsupported providers: {unknown}"
+                )

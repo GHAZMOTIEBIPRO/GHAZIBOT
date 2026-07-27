@@ -6,11 +6,20 @@ from pathlib import Path
 
 import pandas as pd
 
-# The public page should always show a ranked watchlist. Strong alert thresholds
-# remain unchanged; only display-level option filtering is relaxed for free data.
+# Phase 5.1 defaults are strict in local runs and GitHub Actions alike.
 os.environ.setdefault("MIN_SCORE", "50")
-os.environ.setdefault("MIN_OPTION_VOLUME", "25")
-os.environ.setdefault("MAX_SPREAD_PCT", "0.25")
+os.environ.setdefault("MIN_DTE", "14")
+os.environ.setdefault("MAX_DTE", "60")
+os.environ.setdefault("MIN_OPTION_VOLUME", "200")
+os.environ.setdefault("MIN_OPEN_INTEREST", "100")
+os.environ.setdefault("MAX_SPREAD_PCT", "0.15")
+os.environ.setdefault("MIN_ABS_DELTA", "0.30")
+os.environ.setdefault("MAX_ABS_DELTA", "0.60")
+os.environ.setdefault("MIN_VOL_TO_OI_RATIO", "1.50")
+os.environ.setdefault("HIGH_ACCUMULATION_RATIO", "3.00")
+os.environ.setdefault("MIN_VOLUME_SPIKE_RATIO", "2.00")
+os.environ.setdefault("FLOW_TOP_PER_SIDE", "15")
+os.environ.setdefault("MODEL_VERSION", "2026.07-phase5.1-flow")
 
 import options_radar.catalysts as catalyst_module
 import options_radar.stocks as stock_module
