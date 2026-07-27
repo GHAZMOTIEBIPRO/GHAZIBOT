@@ -11,7 +11,7 @@ def _default_confidence(source: str) -> float:
     if "precision full-text" in lowered:
         return 0.90
     if "sec" in lowered:
-        return 0.88
+        return 1.0
     if "fda" in lowered:
         return 0.62
     if "yahoo" in lowered:
@@ -77,9 +77,10 @@ def _value(row: pd.Series, key: str, default=None):
 def best_catalyst_map(frame: pd.DataFrame) -> dict[str, dict]:
     """Choose catalysts using source, confidence, materiality and freshness.
 
-    A precise fresh SEC event must outrank a generic or stale mention. Negative
-    dilution/risk evidence is combined with the best positive event so a bullish
-    headline cannot hide a contemporaneous financing risk.
+    Freshness changes which event wins the selection contest, while the final
+    event impact remains confidence weighted and backward compatible with the
+    evidence journal. Negative dilution/risk remains combined with the best
+    positive event.
     """
 
     if frame is None or frame.empty or "symbol" not in frame:
@@ -110,10 +111,10 @@ def best_catalyst_map(frame: pd.DataFrame) -> dict[str, dict]:
     working["freshness"] = [
         _freshness_multiplier(value) for value in working["event_date"]
     ]
-    working["effective_score"] = (
-        working["score"] * working["confidence"] * working["freshness"]
-    )
-    working["selection_rank"] = working["effective_score"] + [
+    working["effective_score"] = working["score"] * working["confidence"]
+    working["selection_rank"] = (
+        working["effective_score"] * working["freshness"]
+    ) + [
         _source_bonus(str(source)) for source in working["source"]
     ] + [
         _purpose_bonus(str(purpose)) for purpose in working["purpose"]
@@ -132,7 +133,7 @@ def best_catalyst_map(frame: pd.DataFrame) -> dict[str, dict]:
         )
         confidence = float(best["confidence"])
         freshness = float(best["freshness"])
-        effective_positive = max(0.0, float(best["score"]) * confidence * freshness)
+        effective_positive = max(0.0, float(best["score"]) * confidence)
         combined = max(-25.0, min(25.0, effective_positive + worst_effective))
         result[str(symbol).upper()] = {
             "score": combined,
