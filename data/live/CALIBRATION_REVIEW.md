@@ -1,6 +1,6 @@
 # GHAZI Radar — Calibration Review
 
-- **Model version:** `2026.07-phase5.1-flow`
+- **Model version:** `2026.07-phase6-multisource`
 - **Status:** **READY FOR INDEPENDENT REVIEW**
 - **Mature signals (1d checkpoint):** **149/100**
 - **Raw priced signals:** **187**
@@ -16,18 +16,18 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 0 | 0 | 0 | — | — | — | — | — |
-| 70-79 | 70 | 70 | 37 | 10.8% | 10.8% | 0.0% | 9.97 | -33.26 |
-| 60-69 | 117 | 117 | 112 | 25.9% | 18.8% | 0.9% | 18.79 | -28.19 |
+| 70-79 | 70 | 70 | 37 | 10.8% | 10.8% | 0.0% | 10.04 | -33.31 |
+| 60-69 | 117 | 117 | 112 | 25.9% | 18.8% | 0.9% | 18.86 | -28.24 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
 
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 70 | 28.6% | 1.4% | 24.17 |
+| bullish EMA stack; MACD/RSI bullish momentum | 70 | 28.6% | 1.4% | 24.26 |
 | bearish EMA stack; MACD/RSI bearish momentum | 35 | 14.3% | 0.0% | 9.49 |
 | bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 27 | 11.1% | 0.0% | 8.29 |
-| bullish EMA stack | 12 | 41.7% | 0.0% | 13.02 |
+| bullish EMA stack | 12 | 41.7% | 0.0% | 13.49 |
 | FDA approval record — verify materiality | 2 | 0.0% | 0.0% | 31.02 |
 | FDA approval | 2 | 0.0% | 0.0% | -0.65 |
 | bearish EMA stack | 1 | 0.0% | 0.0% | 7.68 |
