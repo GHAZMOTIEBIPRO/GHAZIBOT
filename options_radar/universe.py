@@ -19,6 +19,7 @@ SEC_FEED = f"{SEC_BASE}/cgi-bin/browse-edgar"
 NASDAQ_MOVERS = "https://api.nasdaq.com/api/marketmovers"
 _SYMBOL = re.compile(r"^[A-Z][A-Z0-9.-]{0,6}$")
 _PLACEHOLDERS = {"SYMBOL", "TICKER", "N/A", "NA", "NONE", "NULL"}
+_LAST_SEC_COUNTS = {"sec_fulltext": 0, "sec_latest_forms": 0}
 
 
 def _valid_symbol(value: str) -> bool:
@@ -85,7 +86,7 @@ def _sec_ticker_map(settings: Settings) -> dict[str, str]:
     return result
 
 
-def sec_event_symbols(settings: Settings, max_per_form: int = 40) -> list[str]:
+def _sec_latest_form_symbols(settings: Settings, max_per_form: int = 40) -> list[str]:
     """Discover symbols from the newest material forms as a low-latency layer."""
 
     cik_map = _sec_ticker_map(settings)
@@ -130,6 +131,23 @@ def sec_event_symbols(settings: Settings, max_per_form: int = 40) -> list[str]:
             if _valid_symbol(ticker):
                 symbols.append(ticker)
     return list(dict.fromkeys(symbols))
+
+
+def sec_event_symbols(settings: Settings, max_per_form: int = 40) -> list[str]:
+    """Combine full-text event discovery with the latest-form feed.
+
+    Keeping this single public function preserves the original universe API and
+    lets tests or callers replace SEC discovery without triggering live requests.
+    """
+
+    fulltext = [
+        symbol for symbol in sec_fulltext_symbols(settings, lookback_days=14)
+        if _valid_symbol(symbol)
+    ]
+    latest = _sec_latest_form_symbols(settings, max_per_form=max_per_form)
+    _LAST_SEC_COUNTS["sec_fulltext"] = len(set(fulltext))
+    _LAST_SEC_COUNTS["sec_latest_forms"] = len(set(latest))
+    return list(dict.fromkeys(fulltext + latest))
 
 
 def _walk_symbols(payload: object) -> list[str]:
@@ -178,21 +196,18 @@ def build_dynamic_universe(
 ) -> tuple[list[str], dict[str, int]]:
     maximum = maximum or settings.max_universe_size
     base = [str(symbol).strip().upper() for symbol in base_symbols if _valid_symbol(symbol)]
-    fulltext = [symbol for symbol in sec_fulltext_symbols(settings, lookback_days=14) if _valid_symbol(symbol)]
-    latest_forms = sec_event_symbols(settings)
+    sec = sec_event_symbols(settings)
     movers = nasdaq_mover_symbols()
     aliases = _load_alias_symbols()
 
-    # Official event discoveries receive first priority so a crowded mover list
-    # cannot push an SEC catalyst outside the maximum-universe boundary.
-    ordered = list(
-        dict.fromkeys(fulltext + latest_forms + movers + base + aliases)
-    )[:maximum]
+    # Preserve the stable base list, then place official event discoveries ahead
+    # of general market movers so event-driven candidates are not crowded out.
+    ordered = list(dict.fromkeys(base + sec + movers + aliases))[:maximum]
     return ordered, {
         "base": len(set(base)),
-        "sec_fulltext": len(set(fulltext)),
-        "sec_latest_forms": len(set(latest_forms)),
-        "sec_events": len(set(fulltext + latest_forms)),
+        "sec_fulltext": int(_LAST_SEC_COUNTS.get("sec_fulltext", 0)),
+        "sec_latest_forms": int(_LAST_SEC_COUNTS.get("sec_latest_forms", 0)),
+        "sec_events": len(set(sec)),
         "nasdaq_movers": len(set(movers)),
         "aliases": len(set(aliases)),
         "total": len(ordered),
