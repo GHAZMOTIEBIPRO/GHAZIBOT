@@ -140,8 +140,10 @@ def evaluate_spx_0dte_snapshot(
         }
 
     contract = snapshot.get("candidate_contract") or {}
-    bid = _number(contract.get("bid"), -1.0) or -1.0
-    ask = _number(contract.get("ask"), -1.0) or -1.0
+    bid = _number(contract.get("bid"), -1.0)
+    ask = _number(contract.get("ask"), -1.0)
+    bid = -1.0 if bid is None else bid
+    ask = -1.0 if ask is None else ask
     spread_pct = _number(contract.get("spread_pct"))
     if spread_pct is None and ask > 0 and bid >= 0:
         spread_pct = max(0.0, (ask - bid) / ask)
@@ -151,10 +153,12 @@ def evaluate_spx_0dte_snapshot(
     has_flow = "options_flow" in source_classes
     fresh_2m = age_minutes <= 2
     fresh_5m = age_minutes <= 5
-    if quote_valid and has_quote and has_flow and fresh_2m and (spread_pct or 1.0) <= 0.08:
+    tier_a_spread = spread_pct is not None and spread_pct <= 0.08
+    tier_b_spread = spread_pct is not None and spread_pct <= 0.12
+    if quote_valid and has_quote and has_flow and fresh_2m and tier_a_spread:
         tier = "A"
         status = "confirmed_research_setup"
-    elif quote_valid and has_quote and fresh_5m and (spread_pct or 1.0) <= 0.12:
+    elif quote_valid and has_quote and fresh_5m and tier_b_spread:
         tier = "B"
         status = "watch_pending_flow_confirmation"
     else:
