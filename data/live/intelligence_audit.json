@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T21:31:01.083810+00:00",
+  "generated_at": "2026-07-27T21:38:36.574213+00:00",
   "policy": {
     "social_is_supporting_only": true,
     "social_cannot_promote_recommendation_alone": true,
@@ -10,19 +10,19 @@
     "symbols_checked": 15,
     "contracts_checked": 0,
     "configured_sources": 1,
-    "successful_sources": 0,
+    "successful_sources": 1,
     "social_mentions": 0,
     "benzinga_contract_matches": 0,
-    "finra_symbols": 0
+    "finra_symbols": 15
   },
   "audit": [
     {
       "provider": "finra_reg_sho",
       "configured": true,
-      "success": false,
-      "records": 0,
-      "error": "HTTPError: 400 Client Error: Bad Request for url: https://api.finra.org/data/group/OTCMarket/name/regShoDaily",
-      "checked_at": "2026-07-27T21:31:00.949911+00:00"
+      "success": true,
+      "records": 15,
+      "error": null,
+      "checked_at": "2026-07-27T21:38:09.992676+00:00"
     },
     {
       "provider": "alpha_vantage_news",
@@ -30,7 +30,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-07-27T21:31:01.083671+00:00"
+      "checked_at": "2026-07-27T21:38:36.574001+00:00"
     },
     {
       "provider": "x_recent_search",
@@ -38,7 +38,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-07-27T21:31:01.083699+00:00"
+      "checked_at": "2026-07-27T21:38:36.574032+00:00"
     },
     {
       "provider": "reddit_oauth_search",
@@ -46,7 +46,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-07-27T21:31:01.083705+00:00"
+      "checked_at": "2026-07-27T21:38:36.574043+00:00"
     },
     {
       "provider": "benzinga_option_activity",
@@ -54,7 +54,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-07-27T21:31:01.083711+00:00"
+      "checked_at": "2026-07-27T21:38:36.574051+00:00"
     },
     {
       "provider": "alpaca_stock_snapshots",
@@ -62,7 +62,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-07-27T21:31:01.083716+00:00"
+      "checked_at": "2026-07-27T21:38:36.574056+00:00"
     },
     {
       "provider": "alpaca_option_snapshots",
@@ -70,15 +70,37 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-07-27T21:31:01.083718+00:00"
+      "checked_at": "2026-07-27T21:38:36.574060+00:00"
     }
   ],
   "stocks": {
     "SNXX": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-07-27",
+        "short_volume": 26015779.3,
+        "short_exempt_volume": 2993291.13,
+        "total_volume": 62179358.18,
+        "short_volume_ratio": 0.4184,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF",
+          "NYTRF"
+        ],
+        "market_codes": [
+          "B",
+          "N",
+          "Q"
+        ],
+        "rows_aggregated": 3
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -86,10 +108,30 @@
       "social_score": 0.0
     },
     "AAPL": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 4239319.81,
+        "short_exempt_volume": 9623.0,
+        "total_volume": 8402310.71,
+        "short_volume_ratio": 0.5045,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -97,10 +139,30 @@
       "social_score": 0.0
     },
     "AMGN": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 300862.25,
+        "short_exempt_volume": 714.0,
+        "total_volume": 505512.57,
+        "short_volume_ratio": 0.5952,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -108,10 +170,30 @@
       "social_score": 0.0
     },
     "JPM": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 891379.49,
+        "short_exempt_volume": 5229.0,
+        "total_volume": 2650894.84,
+        "short_volume_ratio": 0.3363,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -119,10 +201,32 @@
       "social_score": 0.0
     },
     "SNDK": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 3756172.83,
+        "short_exempt_volume": 17698.0,
+        "total_volume": 10043441.37,
+        "short_volume_ratio": 0.374,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF",
+          "NYTRF"
+        ],
+        "market_codes": [
+          "B",
+          "N",
+          "Q"
+        ],
+        "rows_aggregated": 3
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -130,10 +234,30 @@
       "social_score": 0.0
     },
     "UBER": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 2023475.55,
+        "short_exempt_volume": 188.0,
+        "total_volume": 4068150.97,
+        "short_volume_ratio": 0.4974,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -141,10 +265,30 @@
       "social_score": 0.0
     },
     "XOM": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 2814796.65,
+        "short_exempt_volume": 18332.0,
+        "total_volume": 5771965.76,
+        "short_volume_ratio": 0.4877,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -152,10 +296,30 @@
       "social_score": 0.0
     },
     "INTC": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 18482581.71,
+        "short_exempt_volume": 90032.0,
+        "total_volume": 44035096.17,
+        "short_volume_ratio": 0.4197,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -163,10 +327,30 @@
       "social_score": 0.0
     },
     "SOFI": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 9050560.74,
+        "short_exempt_volume": 37810.0,
+        "total_volume": 23984568.59,
+        "short_volume_ratio": 0.3773,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -174,10 +358,30 @@
       "social_score": 0.0
     },
     "TSLA": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 13200139.8,
+        "short_exempt_volume": 53445.25,
+        "total_volume": 28788794.22,
+        "short_volume_ratio": 0.4585,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -185,10 +389,30 @@
       "social_score": 0.0
     },
     "CRSP": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 192026.23,
+        "short_exempt_volume": 646.0,
+        "total_volume": 390477.7,
+        "short_volume_ratio": 0.4918,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -196,10 +420,30 @@
       "social_score": 0.0
     },
     "ORCL": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 3987043.1,
+        "short_exempt_volume": 39200.0,
+        "total_volume": 9208947.34,
+        "short_volume_ratio": 0.433,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -207,10 +451,30 @@
       "social_score": 0.0
     },
     "SNOW": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 888270.77,
+        "short_exempt_volume": 859.0,
+        "total_volume": 1934020.01,
+        "short_volume_ratio": 0.4593,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -218,10 +482,30 @@
       "social_score": 0.0
     },
     "MRVL": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 3358847.68,
+        "short_exempt_volume": 4515.0,
+        "total_volume": 8373249.29,
+        "short_volume_ratio": 0.4011,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
@@ -229,10 +513,30 @@
       "social_score": 0.0
     },
     "CVX": {
-      "sources": [],
-      "official_sources": [],
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
       "market_sources": [],
-      "finra": null,
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-03-25",
+        "short_volume": 999459.93,
+        "short_exempt_volume": 19992.0,
+        "total_volume": 3157237.69,
+        "short_volume_ratio": 0.3166,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF"
+        ],
+        "market_codes": [
+          "B",
+          "Q"
+        ],
+        "rows_aggregated": 2
+      },
       "news": null,
       "x": null,
       "reddit": null,
