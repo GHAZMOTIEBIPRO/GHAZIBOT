@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 from .market_bars import configured_bar_sources
 from .settings import Settings
+
+SEC_EFTS_STATUS = Path("data/cache/sec_efts_status.json")
 
 
 @dataclass(frozen=True)
@@ -18,6 +22,24 @@ class ServiceStatus:
         payload = asdict(self)
         payload["required_fields"] = list(self.required_fields)
         return payload
+
+
+def _read_sec_efts_status() -> dict[str, Any]:
+    if not SEC_EFTS_STATUS.exists():
+        return {
+            "available": False,
+            "event_count": 0,
+            "message": "No SEC full-text health check has been published yet.",
+        }
+    try:
+        payload = json.loads(SEC_EFTS_STATUS.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "available": False,
+            "event_count": 0,
+            "message": f"SEC full-text status file is invalid: {exc}",
+        }
+    return payload if isinstance(payload, dict) else {}
 
 
 def build_operational_status(settings: Settings) -> dict[str, Any]:
@@ -42,6 +64,15 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
         )
 
     sec_ready = "configure SEC_USER_AGENT" not in settings.sec_user_agent
+    sec_fulltext = _read_sec_efts_status()
+    sec_fulltext_ready = bool(sec_fulltext.get("available"))
+    sec_fulltext_note = (
+        f"SEC EFTS reachable; {int(sec_fulltext.get('event_count', 0) or 0)} matched events cached "
+        f"for {sec_fulltext.get('start_date', '—')} to {sec_fulltext.get('end_date', '—')}."
+        if sec_fulltext_ready
+        else "SEC EFTS unavailable on the current runner; latest-form and cached evidence remain active. "
+        + str(sec_fulltext.get("message", ""))[:300]
+    )
     bars = configured_bar_sources(settings)
     configured_official_bars = [
         item["name"] for item in bars
@@ -74,6 +105,12 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
             ),
         ),
         ServiceStatus(
+            name="sec_full_text_search",
+            configured=sec_fulltext_ready,
+            required_fields=(),
+            note=sec_fulltext_note,
+        ),
+        ServiceStatus(
             name="sec_identity",
             configured=sec_ready,
             required_fields=("SEC_USER_AGENT",),
@@ -84,8 +121,8 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
             configured=sec_ready,
             required_fields=("SEC_USER_AGENT",),
             note=(
-                "Official SEC XBRL Company Facts enrich the highest-ranked stocks with "
-                "revenue, earnings, cash, assets and operating cash flow."
+                "Official SEC XBRL Company Facts are attempted first; an explicitly labelled "
+                "unofficial financial-statement fallback is used when the runner is blocked."
             ),
         ),
         ServiceStatus(
@@ -130,10 +167,11 @@ def build_operational_status(settings: Settings) -> dict[str, Any]:
         "daily_provider_order": settings.daily_provider_order,
         "intraday_provider_order": settings.intraday_provider_order,
         "services": [item.to_dict() for item in services],
+        "sec_fulltext_status": sec_fulltext,
         "configuration_warnings": [
             field
             for item in services
-            if not item.configured and item.name not in {"fred_macro"}
+            if not item.configured and item.name not in {"fred_macro", "sec_full_text_search"}
             for field in item.required_fields
         ],
         "operation_note": (
