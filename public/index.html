@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="رادار مجاني لترتيب الأسهم الأمريكية وعقود الخيارات وفق المحفزات الرسمية والتحليل الفني والسيولة.">
-  <meta name="ghazi-ui-build" content="2026-07-24.3">
+  <meta name="description" content="رادار كمي لرصد الأسهم الأمريكية وعقود الخيارات المشتراة بكثافة وفق Vol/OI وAsk-side والتدفق غير المعتاد.">
+  <meta name="ghazi-ui-build" content="2026-07-27.5.1">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>GHAZI Market Radar</title>
-  <link rel="stylesheet" href="./styles.css?v=20260724-3">
+  <title>GHAZI Market Radar — Phase 5.1</title>
+  <link rel="stylesheet" href="./styles.css?v=20260727-51">
 </head>
 <body>
   <div class="page-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">GHAZI MARKET RADAR</p>
-        <h1>أفضل الأسهم والعقود المرشحة</h1>
-        <p class="hero-copy">محفزات SEC وFDA، تحليل فني وقطاعي، وسيولة العقود — مع قياس النتائج وأسباب الرفض.</p>
+        <p class="eyebrow">GHAZI MARKET RADAR · PHASE 5.1</p>
+        <h1>العقود المشتراة بكثافة</h1>
+        <p class="hero-copy">محفزات SEC وFDA، اتجاه فني، Vol/OI، Ask-side aggression، وقفزة الحجم — مع فصل Top 15 CALL وTop 15 PUT.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -34,19 +34,19 @@
       <article class="metric-card"><span>وضع النموذج</span><strong id="mode-label">—</strong></article>
       <article class="metric-card"><span>الأسهم المرشحة</span><strong id="stock-count">0</strong></article>
       <article class="metric-card"><span>إجمالي العقود</span><strong id="option-count">0</strong></article>
-      <article class="metric-card call-card"><span>عقود CALL</span><strong id="call-count">0</strong></article>
-      <article class="metric-card put-card"><span>عقود PUT</span><strong id="put-count">0</strong></article>
+      <article class="metric-card call-card"><span>Top CALL شراء</span><strong id="call-count">0</strong></article>
+      <article class="metric-card put-card"><span>Top PUT شراء</span><strong id="put-count">0</strong></article>
       <article class="metric-card"><span>المحفزات الرسمية</span><strong id="catalyst-count">0</strong></article>
       <article class="metric-card"><span>فرص مرفوضة</span><strong id="rejected-count">0</strong></article>
     </section>
 
     <section id="alerts-section" class="alerts-section hidden" aria-live="polite">
-      <h2>🚨 فرص جديدة مكتملة الشروط</h2><div id="alerts-list"></div>
+      <h2>🚨 فرص شراء غير معتادة مكتملة الشروط</h2><div id="alerts-list"></div>
     </section>
 
     <nav class="tabs" aria-label="أقسام الرادار">
       <button class="tab-button active" data-tab="stocks">الأسهم</button>
-      <button class="tab-button" data-tab="options">العقود</button>
+      <button class="tab-button" data-tab="options">تدفق العقود</button>
       <button class="tab-button" data-tab="catalysts">الأخبار الرسمية</button>
       <button class="tab-button" data-tab="rejected">المرفوضة</button>
       <button class="tab-button" data-tab="results">النتائج والمعايرة</button>
@@ -56,24 +56,24 @@
     <main>
       <section id="tab-stocks" class="tab-panel active">
         <div class="section-heading">
-          <div><h2>الأسهم الأعلى تقييمًا</h2><p>الدخول والهدف والوقف والقوة النسبية مع أفضل عقد متاح.</p></div>
+          <div><h2>الأسهم الأعلى تقييمًا</h2><p>الدخول والهدف والوقف والقوة النسبية مع أفضل عقد تدفق متاح.</p></div>
           <input id="stock-search" class="search-input" type="search" placeholder="ابحث عن رمز…" aria-label="بحث الأسهم">
         </div>
         <div id="stocks-grid" class="cards-grid"></div>
       </section>
 
       <section id="tab-options" class="tab-panel">
-        <div class="section-heading"><div><h2>أفضل عقود الخيارات</h2><p>تم فصل CALL عن PUT حتى لا تختلط عليك الاتجاهات.</p></div></div>
+        <div class="section-heading"><div><h2>Unusual Options Buying Flow</h2><p>لا يظهر العقد إلا بعد اجتياز الحجم وOI وVol/OI وAsk-side وDelta وDTE والسبريد.</p></div></div>
         <div class="option-section call-section">
-          <div class="option-section-heading"><h3>عقود CALL الصاعدة</h3><span id="call-section-count">0 عقد</span></div>
+          <div class="option-section-heading"><h3>Top 15 CALL مشتراة بكثافة</h3><span id="call-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
-            <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>المصدر</th>
+            <th>العقد</th><th>Flow / التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>المصدر</th>
           </tr></thead><tbody id="call-options-body"></tbody></table></div>
         </div>
         <div class="option-section put-section">
-          <div class="option-section-heading"><h3>عقود PUT الهابطة</h3><span id="put-section-count">0 عقد</span></div>
+          <div class="option-section-heading"><h3>Top 15 PUT مشتراة بكثافة</h3><span id="put-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
-            <th>العقد</th><th>التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI</th><th>Delta</th><th>المصدر</th>
+            <th>العقد</th><th>Flow / التقييم</th><th>الدخول</th><th>الأهداف</th><th>الوقف</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / النوع</th><th>المصدر</th>
           </tr></thead><tbody id="put-options-body"></tbody></table></div>
         </div>
       </section>
@@ -84,7 +84,7 @@
       </section>
 
       <section id="tab-rejected" class="tab-panel">
-        <div class="section-heading"><div><h2>الفرص المرفوضة</h2><p>شفافية كاملة: لماذا لم يمر السهم أو العقد إلى القائمة الرئيسية.</p></div></div>
+        <div class="section-heading"><div><h2>الفرص المرفوضة</h2><p>شفافية كاملة: عقد منخفض الحجم أو Bid-side أو ضعيف Vol/OI لا يدخل القائمة.</p></div></div>
         <div class="table-wrap"><table><thead><tr>
           <th>النوع</th><th>الرمز / العقد</th><th>السبب</th><th>التقييم</th><th>السعر / السبريد</th><th>المصدر</th>
         </tr></thead><tbody id="rejected-body"></tbody></table></div>
@@ -128,9 +128,9 @@
 
     <footer>
       <div>
-        <p id="disclaimer">النتائج بحثية وليست توصية استثمارية.</p>
+        <p id="disclaimer">رصد Ask-side تقديري، والنتائج بحثية وليست توصية استثمارية.</p>
         <p id="refresh-result" class="refresh-result">زر التحميل يجلب آخر ملف منشور ويعرض وقت جلبه بدقة.</p>
-        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-24.3</strong></p>
+        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-27.5.1</strong></p>
       </div>
       <div class="footer-actions">
         <a class="secondary-button action-link" href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/actions/workflows/options-radar.yml" target="_blank" rel="noopener">تشغيل فحص جديد عبر GitHub</a>
@@ -138,6 +138,7 @@
       </div>
     </footer>
   </div>
-  <script src="./app.js?v=20260724-3" defer></script>
+  <script src="./app.js?v=20260727-51" defer></script>
+  <script src="./phase51.js?v=20260727-51" defer></script>
 </body>
 </html>
