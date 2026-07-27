@@ -57,26 +57,28 @@ class Settings:
     alpaca_options_feed: str = os.getenv("ALPACA_OPTIONS_FEED") or "indicative"
     alpaca_stock_feed: str = os.getenv("ALPACA_STOCK_FEED") or "iex"
 
-    # Phase 5 deterministic fallback orders.
+    # Phase 6 deterministic fallback orders. Yahoo/YFinance belongs last.
     stock_provider_order: str = (
-        os.getenv("STOCK_PROVIDER_ORDER") or "tiingo,finnhub,yahoo"
+        os.getenv("STOCK_PROVIDER_ORDER")
+        or "tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
     )
     options_provider_order: str = (
-        os.getenv("OPTIONS_PROVIDER_ORDER") or "tradier,finnhub,yahoo"
+        os.getenv("OPTIONS_PROVIDER_ORDER")
+        or "tradier,marketdata,finnhub,yahoo"
     )
 
-    # Existing optional bar providers remain available to legacy market_bars.py.
+    # Existing optional bar providers remain available to market_bars.py.
     twelve_data_api_key: str | None = os.getenv("TWELVE_DATA_API_KEY") or None
     polygon_api_key: str | None = os.getenv("POLYGON_API_KEY") or None
     alpha_vantage_api_key: str | None = os.getenv("ALPHA_VANTAGE_API_KEY") or None
     fred_api_key: str | None = os.getenv("FRED_API_KEY") or None
     daily_provider_order: str = (
         os.getenv("DAILY_PRICE_PROVIDER_ORDER")
-        or "yahoo,tradier,alpaca,twelve_data,polygon,alpha_vantage"
+        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
     )
     intraday_provider_order: str = (
         os.getenv("INTRADAY_PRICE_PROVIDER_ORDER")
-        or "tradier,alpaca,twelve_data,polygon,yahoo,alpha_vantage"
+        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
     )
 
     sec_user_agent: str = (
@@ -106,7 +108,6 @@ class Settings:
 
     # Phase 5.1 strict unusual-flow controls. The operational scanner clamps
     # these to at least 200 volume, 100 OI, 1.5 Vol/OI and 2x volume spike.
-    # Keeping the dataclass configurable preserves isolated unit-test fixtures.
     min_vol_to_oi_ratio: float = _env_float("MIN_VOL_TO_OI_RATIO", 1.50)
     high_accumulation_ratio: float = _env_float(
         "HIGH_ACCUMULATION_RATIO", 3.0
@@ -132,7 +133,7 @@ class Settings:
     max_workers: int = _env_int("MAX_WORKERS", 4)
     max_universe_size: int = _env_int("MAX_UNIVERSE_SIZE", 150)
     calibration_minimum_sample: int = _env_int("CALIBRATION_MINIMUM_SAMPLE", 100)
-    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase5.1-flow"
+    model_version: str = os.getenv("MODEL_VERSION") or "2026.07-phase6.2-evidence-tiers"
 
     # Market-regime and path-dependency controls.
     vix_risk_off_threshold: float = _env_float("VIX_RISK_OFF_THRESHOLD", 25.0)
@@ -206,11 +207,34 @@ class Settings:
         if not 1 <= self.flow_top_per_side <= 50:
             raise ValueError("FLOW_TOP_PER_SIDE must be between 1 and 50")
 
-        phase5_stock = {"tiingo", "finnhub", "yahoo", "yfinance"}
-        phase5_options = {"tradier", "finnhub", "yahoo", "yfinance"}
+        # These names correspond to providers that the Phase 6 composite fetcher
+        # can attempt. Missing credentials are recorded as provider failures and
+        # do not invalidate the configuration; Yahoo remains the final fallback.
+        phase6_stock = {
+            "tiingo",
+            "finnhub",
+            "tradier",
+            "alpaca",
+            "twelve",
+            "twelvedata",
+            "twelve_data",
+            "polygon",
+            "alpha",
+            "alphavantage",
+            "alpha_vantage",
+            "yahoo",
+            "yfinance",
+        }
+        phase6_options = {
+            "tradier",
+            "marketdata",
+            "finnhub",
+            "yahoo",
+            "yfinance",
+        }
         for field_name, raw, allowed in (
-            ("STOCK_PROVIDER_ORDER", self.stock_provider_order, phase5_stock),
-            ("OPTIONS_PROVIDER_ORDER", self.options_provider_order, phase5_options),
+            ("STOCK_PROVIDER_ORDER", self.stock_provider_order, phase6_stock),
+            ("OPTIONS_PROVIDER_ORDER", self.options_provider_order, phase6_options),
         ):
             unknown = [
                 item.strip().lower()
@@ -224,6 +248,7 @@ class Settings:
 
         allowed_bar_sources = {
             "yahoo",
+            "yfinance",
             "tradier",
             "alpaca",
             "twelve",
