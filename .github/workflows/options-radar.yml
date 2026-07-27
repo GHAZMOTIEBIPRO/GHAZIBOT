@@ -37,6 +37,10 @@ jobs:
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
       TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
       TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,finnhub,yahoo' }}
+      STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,yahoo' }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
@@ -47,12 +51,28 @@ jobs:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'yahoo,tradier,alpaca,twelve_data,polygon,alpha_vantage' }}
       INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,yahoo,alpha_vantage' }}
-      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
       FREE_SWING_MODE: "true"
-      MODEL_VERSION: "2026.07-phase4"
-      MAX_UNIVERSE_SIZE: "120"
+      MIN_DTE: "14"
+      MAX_DTE: "60"
+      MIN_OPTION_VOLUME: "200"
+      MIN_OPEN_INTEREST: "100"
+      MAX_SPREAD_PCT: "0.15"
+      MIN_ABS_DELTA: "0.30"
+      MAX_ABS_DELTA: "0.60"
+      MIN_VOL_TO_OI_RATIO: "1.50"
+      HIGH_ACCUMULATION_RATIO: "3.00"
+      MIN_VOLUME_SPIKE_RATIO: "2.00"
+      FLOW_REQUIRE_VOLUME_SPIKE: "false"
+      FLOW_HISTORY_MAX_CONTRACTS: "45"
+      FLOW_HISTORY_WORKERS: "3"
+      FLOW_HISTORY_LOOKBACK_DAYS: "14"
+      FLOW_TOP_PER_SIDE: "15"
+      MODEL_VERSION: "2026.07-phase5.1-flow"
+      MAX_UNIVERSE_SIZE: "150"
       CALIBRATION_MINIMUM_SAMPLE: "100"
+      OUTCOME_MAX_AGE_DAYS: "60"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,15 +125,21 @@ jobs:
           calibration = payload.get('calibration_gate', {})
           operations = payload.get('operational_status', {})
           performance = payload.get('performance', {})
+          flow = payload.get('flow_summary', {})
           efts = operations.get('sec_fulltext_status', {})
           summary = [
-              '# GHAZI Market Radar',
+              '# GHAZI Market Radar — Phase 5.1',
               '',
               f"- Model: `{payload.get('model_version', 'unknown')}`",
               f"- Delivery: **dashboard only**",
               f"- Market: **{payload.get('market_regime', 'unknown')}**",
               f"- Stocks: **{payload.get('summary', {}).get('stock_candidates', 0)}**",
-              f"- Options: **{payload.get('summary', {}).get('option_candidates', 0)}**",
+              f"- Top CALL: **{payload.get('summary', {}).get('top_call_contracts', 0)}**",
+              f"- Top PUT: **{payload.get('summary', {}).get('top_put_contracts', 0)}**",
+              f"- Flow-qualified contracts: **{flow.get('contracts_flow_qualified', 0)}**",
+              f"- Aggressive buying: **{flow.get('aggressive_buying', 0)}**",
+              f"- High accumulation: **{flow.get('high_accumulation', 0)}**",
+              f"- Volume spikes: **{flow.get('volume_spikes', 0)}**",
               f"- SEC full-text reachable: **{efts.get('available', False)}**",
               f"- SEC full-text matched events: **{efts.get('event_count', 0)}**",
               f"- Option provider: **{payload.get('options_provider', 'unknown')}**",
