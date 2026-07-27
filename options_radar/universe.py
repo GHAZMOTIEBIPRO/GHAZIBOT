@@ -9,6 +9,7 @@ from pathlib import Path
 
 import requests
 
+from .sec_efts import sec_fulltext_symbols
 from .settings import Settings
 
 LOGGER = logging.getLogger(__name__)
@@ -85,7 +86,7 @@ def _sec_ticker_map(settings: Settings) -> dict[str, str]:
 
 
 def sec_event_symbols(settings: Settings, max_per_form: int = 40) -> list[str]:
-    """Discover symbols with fresh material SEC forms before ranking stocks."""
+    """Discover symbols from the newest material forms as a low-latency layer."""
 
     cik_map = _sec_ticker_map(settings)
     if not cik_map:
@@ -149,7 +150,7 @@ def nasdaq_mover_symbols(limit: int = 60) -> list[str]:
     """Best-effort discovery from Nasdaq's public market-movers response."""
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/2.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/3.0)",
         "Accept": "application/json,text/plain,*/*",
         "Origin": "https://www.nasdaq.com",
         "Referer": "https://www.nasdaq.com/market-activity/most-active",
@@ -177,13 +178,21 @@ def build_dynamic_universe(
 ) -> tuple[list[str], dict[str, int]]:
     maximum = maximum or settings.max_universe_size
     base = [str(symbol).strip().upper() for symbol in base_symbols if _valid_symbol(symbol)]
-    sec = sec_event_symbols(settings)
+    fulltext = [symbol for symbol in sec_fulltext_symbols(settings, lookback_days=14) if _valid_symbol(symbol)]
+    latest_forms = sec_event_symbols(settings)
     movers = nasdaq_mover_symbols()
     aliases = _load_alias_symbols()
-    ordered = list(dict.fromkeys(base + sec + movers + aliases))[:maximum]
+
+    # Official event discoveries receive first priority so a crowded mover list
+    # cannot push an SEC catalyst outside the maximum-universe boundary.
+    ordered = list(
+        dict.fromkeys(fulltext + latest_forms + movers + base + aliases)
+    )[:maximum]
     return ordered, {
         "base": len(set(base)),
-        "sec_events": len(set(sec)),
+        "sec_fulltext": len(set(fulltext)),
+        "sec_latest_forms": len(set(latest_forms)),
+        "sec_events": len(set(fulltext + latest_forms)),
         "nasdaq_movers": len(set(movers)),
         "aliases": len(set(aliases)),
         "total": len(ordered),
