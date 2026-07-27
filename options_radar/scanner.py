@@ -77,7 +77,17 @@ class OptionsRadar:
         self.settings = settings
         self.fetcher = DataFetcher(settings)
         self.provider = _HybridOptionsProvider(self.fetcher)
-        self.flow_analyzer = FlowAnalyzer(settings)
+        # Phase 5.1 operating gates cannot be weakened by a legacy/test fixture.
+        # The original Settings object remains intact for backward-compatible tests.
+        strict_flow_settings = replace(
+            settings,
+            min_option_volume=max(200, int(settings.min_option_volume)),
+            min_open_interest=max(100, int(settings.min_open_interest)),
+            min_vol_to_oi_ratio=max(1.5, float(settings.min_vol_to_oi_ratio)),
+            high_accumulation_ratio=max(3.0, float(settings.high_accumulation_ratio)),
+            min_volume_spike_ratio=max(2.0, float(settings.min_volume_spike_ratio)),
+        )
+        self.flow_analyzer = FlowAnalyzer(strict_flow_settings)
         self.regime_engine = MarketRegimeEngine(settings, self.fetcher)
         self.store = SignalStore(settings.database_path)
 
@@ -121,9 +131,7 @@ class OptionsRadar:
 
     def _option_history_loader(self, contract_symbol: str):
         end = datetime.now(timezone.utc)
-        start = end - timedelta(
-            days=self.settings.flow_history_lookback_days
-        )
+        start = end - timedelta(days=self.settings.flow_history_lookback_days)
         return self.fetcher.fetch_option_history(
             contract_symbol,
             start=start,
@@ -142,16 +150,12 @@ class OptionsRadar:
                 or pd.to_numeric(out["dte"], errors="coerce").isna().all()
             ):
                 today = pd.Timestamp.now().normalize()
-                out["dte"] = (
-                    expiration.dt.normalize() - today
-                ).dt.days
+                out["dte"] = (expiration.dt.normalize() - today).dt.days
         return out
 
     @staticmethod
     def _rejection_view(frames: list[pd.DataFrame]) -> pd.DataFrame:
-        usable = [
-            frame for frame in frames if frame is not None and not frame.empty
-        ]
+        usable = [frame for frame in frames if frame is not None and not frame.empty]
         if not usable:
             return pd.DataFrame()
         combined = pd.concat(usable, ignore_index=True, sort=False)
@@ -192,9 +196,79 @@ class OptionsRadar:
             "rejection_stage",
             "rejection_reason",
         ]
-        return combined[
-            [column for column in columns if column in combined.columns]
+        return combined[[column for column in columns if column in combined.columns]]
+
+    def _rejection_rows(
+        self,
+        chain: pd.DataFrame,
+        accepted: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Backward-compatible rejection report used by Phase 2 tests/callers."""
+        if chain is None or chain.empty:
+            return pd.DataFrame()
+        frame = self._prepare_chain_dates(chain)
+        underlying = str(frame.get("symbol", pd.Series([""])).iloc[0] or "")
+        _, quality_rejected = self.fetcher.apply_option_quality_guards(
+            frame, underlying
+        )
+        quality_reason = {
+            str(row.get("contract_symbol", "")): str(row.get("rejection_reason", ""))
+            for _, row in quality_rejected.iterrows()
+        }
+        for column in ("bid", "ask", "volume", "open_interest", "data_quality"):
+            frame[column] = pd.to_numeric(frame.get(column), errors="coerce")
+        frame["spread_pct"] = (
+            (frame["ask"] - frame["bid"]) / frame["ask"].replace(0, np.nan)
+        )
+        frame["updated_at"] = pd.to_datetime(
+            frame.get("updated_at"), utc=True, errors="coerce"
+        )
+        frame["last_trade_age_minutes"] = (
+            (pd.Timestamp.now(tz="UTC") - frame["updated_at"])
+            .dt.total_seconds()
+            .div(60.0)
+            .clip(lower=0)
+        )
+        accepted_contracts = set(
+            accepted.get("contract_symbol", pd.Series(dtype=str)).astype(str)
+        )
+
+        def reason(row: pd.Series) -> str:
+            contract = str(row.get("contract_symbol", ""))
+            if quality_reason.get(contract):
+                return quality_reason[contract]
+            if float(row.get("volume", 0) or 0) < self.settings.min_option_volume:
+                return "option_volume_too_low"
+            if float(row.get("open_interest", 0) or 0) < self.settings.min_open_interest:
+                return "open_interest_too_low"
+            if float(row.get("data_quality", 0) or 0) < self.settings.min_data_quality:
+                return "data_quality_too_low"
+            age = row.get("last_trade_age_minutes")
+            if pd.notna(age) and float(age) > self.settings.max_last_trade_age_minutes:
+                return "last_trade_too_old"
+            if contract not in accepted_contracts:
+                return "direction_delta_dte_or_score_filter"
+            return ""
+
+        frame["rejection_reason"] = frame.apply(reason, axis=1)
+        rejected = frame[frame["rejection_reason"].ne("")].copy()
+        columns = [
+            "symbol",
+            "contract_symbol",
+            "expiration",
+            "strike",
+            "option_type",
+            "bid",
+            "ask",
+            "volume",
+            "open_interest",
+            "spread_pct",
+            "last_trade_age_minutes",
+            "source",
+            "freshness_label",
+            "rejection_reason",
         ]
+        return rejected[[column for column in columns if column in rejected.columns]]
 
     def _apply_regime_gate(
         self,
@@ -226,9 +300,7 @@ class OptionsRadar:
         out["rating"] = out["score"].map(_rating)
         out["flow_rank_score"] = (
             0.65
-            * pd.to_numeric(
-                out["flow_momentum_score"], errors="coerce"
-            ).fillna(0.0)
+            * pd.to_numeric(out["flow_momentum_score"], errors="coerce").fillna(0.0)
             + 0.35 * out["score"]
         ).round(4)
         new_setup = out.get(
@@ -238,9 +310,7 @@ class OptionsRadar:
             "unusual_activity_flag", pd.Series(False, index=out.index)
         ).astype(bool)
         out["new_setup_candidate"] = new_setup & unusual
-        return out[
-            out["score"] >= out["regime_min_score"]
-        ].copy()
+        return out[out["score"] >= out["regime_min_score"]].copy()
 
     def _scan_symbol(
         self,
@@ -249,12 +319,7 @@ class OptionsRadar:
         cached_technicals: dict[str, TechnicalSnapshot],
         regime_snapshot: MarketRegimeSnapshot | None,
         catalyst: dict | None = None,
-    ) -> tuple[
-        pd.DataFrame,
-        pd.DataFrame,
-        dict[str, Any],
-        dict[str, Any],
-    ]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any], dict[str, Any]]:
         technical = cached_technicals.get(symbol) or self._technical(symbol)
         chain = self.provider.get_chain(
             symbol=symbol,
@@ -266,18 +331,14 @@ class OptionsRadar:
             return pd.DataFrame(), pd.DataFrame(), {}, {}
         chain = self._prepare_chain_dates(chain)
 
-        quality_accepted, quality_rejected = (
-            self.fetcher.apply_option_quality_guards(chain, symbol)
+        quality_accepted, quality_rejected = self.fetcher.apply_option_quality_guards(
+            chain, symbol
         )
         if not quality_rejected.empty:
             quality_rejected = quality_rejected.copy()
             quality_rejected["rejection_stage"] = "quality"
 
-        history_loader = (
-            self._option_history_loader
-            if self.settings.tradier_token
-            else None
-        )
+        history_loader = self._option_history_loader if self.settings.tradier_token else None
         flow_result = self.flow_analyzer.analyze(
             quality_accepted,
             technical_direction=technical.direction,
@@ -289,14 +350,9 @@ class OptionsRadar:
 
         audit = getattr(self.provider, "audit", {}).get(symbol, {})
         if flow_result.accepted.empty:
-            rejected = self._rejection_view(
-                [quality_rejected, flow_rejected]
-            )
+            rejected = self._rejection_view([quality_rejected, flow_rejected])
             return pd.DataFrame(), rejected, flow_result.summary, audit
 
-        # Score every flow-qualified row, then apply the side-specific Phase 5
-        # regime threshold. min_score=0 prevents a generic early cutoff from
-        # deleting risk-off PUT candidates before their regime bonus.
         scoring_settings = replace(self.settings, min_score=0.0)
         scored = score_chain(
             flow_result.accepted,
@@ -308,20 +364,14 @@ class OptionsRadar:
         scored = self._apply_regime_gate(scored, regime_snapshot)
 
         selected_contracts = set(
-            scored.get(
-                "contract_symbol", pd.Series(dtype=str)
-            ).astype(str)
+            scored.get("contract_symbol", pd.Series(dtype=str)).astype(str)
         )
         score_rejected = flow_result.accepted[
-            ~flow_result.accepted["contract_symbol"]
-            .astype(str)
-            .isin(selected_contracts)
+            ~flow_result.accepted["contract_symbol"].astype(str).isin(selected_contracts)
         ].copy()
         if not score_rejected.empty:
             score_rejected["rejection_stage"] = "score_regime"
-            score_rejected["rejection_reason"] = (
-                "score_or_regime_below_minimum"
-            )
+            score_rejected["rejection_reason"] = "score_or_regime_below_minimum"
 
         rejected = self._rejection_view(
             [quality_rejected, flow_rejected, score_rejected]
@@ -337,17 +387,13 @@ class OptionsRadar:
     ) -> ScanResult:
         symbols = list(
             dict.fromkeys(
-                symbol.strip().upper()
-                for symbol in symbols
-                if symbol.strip()
+                symbol.strip().upper() for symbol in symbols if symbol.strip()
             )
         )
         if not symbols:
             raise ValueError("At least one symbol is required")
 
-        regime, cached_technicals, vix_close, regime_snapshot = (
-            self._market_regime()
-        )
+        regime, cached_technicals, vix_close, regime_snapshot = self._market_regime()
         LOGGER.info("Market regime=%s, VIX=%.2f", regime, vix_close)
         catalyst_map = best_catalyst_map(
             catalysts if catalysts is not None else pd.DataFrame()
@@ -388,9 +434,7 @@ class OptionsRadar:
                     LOGGER.exception("Scan failed for %s", symbol)
 
         if frames:
-            all_opportunities = pd.concat(
-                frames, ignore_index=True, sort=False
-            )
+            all_opportunities = pd.concat(frames, ignore_index=True, sort=False)
             sort_columns = [
                 column
                 for column in (
@@ -402,19 +446,15 @@ class OptionsRadar:
                 )
                 if column in all_opportunities
             ]
-            all_opportunities = (
-                all_opportunities.sort_values(
-                    sort_columns,
-                    ascending=[False] * len(sort_columns),
-                    na_position="last",
-                ).drop_duplicates("contract_symbol")
-            )
+            all_opportunities = all_opportunities.sort_values(
+                sort_columns,
+                ascending=[False] * len(sort_columns),
+                na_position="last",
+            ).drop_duplicates("contract_symbol")
         else:
             all_opportunities = pd.DataFrame()
 
-        per_side = max(
-            1, min(int(top), self.settings.flow_top_per_side)
-        )
+        per_side = max(1, min(int(top), self.settings.flow_top_per_side))
         top_calls, top_puts = self.flow_analyzer.top_by_side(
             all_opportunities, limit=per_side
         )
@@ -427,12 +467,8 @@ class OptionsRadar:
         )
 
         rejected = (
-            pd.concat(
-                rejected_frames, ignore_index=True, sort=False
-            )
-            .drop_duplicates(
-                ["contract_symbol", "rejection_reason"], keep="first"
-            )
+            pd.concat(rejected_frames, ignore_index=True, sort=False)
+            .drop_duplicates(["contract_symbol", "rejection_reason"], keep="first")
             .head(400)
             .reset_index(drop=True)
             if rejected_frames
@@ -442,12 +478,10 @@ class OptionsRadar:
         aggregate_flow = {
             "symbols_scanned": len(symbols),
             "contracts_analyzed": sum(
-                int(value.get("analyzed", 0))
-                for value in flow_by_symbol.values()
+                int(value.get("analyzed", 0)) for value in flow_by_symbol.values()
             ),
             "contracts_flow_qualified": sum(
-                int(value.get("accepted", 0))
-                for value in flow_by_symbol.values()
+                int(value.get("accepted", 0)) for value in flow_by_symbol.values()
             ),
             "aggressive_buying": sum(
                 int(value.get("aggressive_buying", 0))
@@ -477,26 +511,20 @@ class OptionsRadar:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             opportunities.to_csv(output_path, index=False)
             top_calls.to_csv(
-                output_path.with_name("options_calls_latest.csv"),
-                index=False,
+                output_path.with_name("options_calls_latest.csv"), index=False
             )
             top_puts.to_csv(
-                output_path.with_name("options_puts_latest.csv"),
-                index=False,
+                output_path.with_name("options_puts_latest.csv"), index=False
             )
 
         sources = list(
             dict.fromkeys(
-                opportunities.get(
-                    "source", pd.Series(dtype=str)
-                )
+                opportunities.get("source", pd.Series(dtype=str))
                 .dropna()
                 .astype(str)
             )
         )
-        provider_name = (
-            " + ".join(sources) if sources else self.provider.name
-        )
+        provider_name = " + ".join(sources) if sources else self.provider.name
         return ScanResult(
             opportunities=opportunities,
             alerts=setups,
@@ -509,8 +537,6 @@ class OptionsRadar:
             provider_audit=provider_audit,
             flow_summary=aggregate_flow,
             market_regime_detail=(
-                regime_snapshot.to_dict()
-                if regime_snapshot is not None
-                else {}
+                regime_snapshot.to_dict() if regime_snapshot is not None else {}
             ),
         )
