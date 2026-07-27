@@ -51,7 +51,7 @@ jobs:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
       FREE_SWING_MODE: "true"
-      MODEL_VERSION: "2026.07-phase3"
+      MODEL_VERSION: "2026.07-phase4"
       MAX_UNIVERSE_SIZE: "120"
       CALIBRATION_MINIMUM_SAMPLE: "100"
     steps:
@@ -130,6 +130,7 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add public/data/latest.json
           for file in \
+            data/cache/sec_efts_events.json \
             data/live/alert_state.json \
             data/live/signals.jsonl \
             data/live/outcomes.json \
@@ -155,6 +156,7 @@ jobs:
           retention-days: 14
           path: |
             public/data/latest.json
+            data/cache/sec_efts_events.json
             data/live/*.json
             data/live/*.jsonl
             data/live/*.md
