@@ -49,18 +49,20 @@ def _downgrade_stock_a_without_primary_quote(
         has_primary_quote = _has_non_fallback_quote(sources, "stock")
         item["primary_market_quote_confirmed"] = has_primary_quote
         item["market_quote_quality"] = "primary_or_licensed" if has_primary_quote else "fallback_only"
+        missing = list(item.get("missing_confirmations") or [])
+        if not has_primary_quote:
+            missing.append("مصدر سوقي مستقل غير Yahoo/YFinance")
+        item["missing_confirmations"] = list(dict.fromkeys(missing))
         if item.get("opportunity_tier") == "A" and not has_primary_quote:
             item["opportunity_tier"] = "B"
             item["tier_label"] = phase62_policy._TIER_LABELS["B"]
             item["decision"] = "B — الإعداد قوي لكنه ينتظر سعراً سوقياً مستقلاً غير Yahoo"
-            missing = list(item.get("missing_confirmations") or [])
-            missing.append("مصدر سوقي مستقل غير Yahoo/YFinance")
-            item["missing_confirmations"] = list(dict.fromkeys(missing))
-            symbol = str(item.get("symbol") or "").upper()
-            if symbol in stocks:
-                stocks[symbol]["opportunity_tier"] = "B"
-                stocks[symbol]["tier_label"] = phase62_policy._TIER_LABELS["B"]
-                stocks[symbol]["missing_confirmations"] = item["missing_confirmations"]
+        symbol = str(item.get("symbol") or "").upper()
+        if symbol in stocks:
+            stocks[symbol]["opportunity_tier"] = item.get("opportunity_tier")
+            stocks[symbol]["tier_label"] = item.get("tier_label")
+            stocks[symbol]["missing_confirmations"] = item["missing_confirmations"]
+            stocks[symbol]["market_quote_quality"] = item["market_quote_quality"]
     return rows
 
 
@@ -73,16 +75,18 @@ def _tier_contract_with_primary_quote(
     has_primary_quote = _has_non_fallback_quote(sources, "option")
     result["primary_option_quote_confirmed"] = has_primary_quote
     result["market_quote_quality"] = "primary_or_licensed" if has_primary_quote else "fallback_only"
+    missing = list(result.get("missing_confirmations") or [])
+    if not has_primary_quote:
+        missing.append("Quote مستقل غير Yahoo/YFinance")
+    result["missing_confirmations"] = list(dict.fromkeys(missing))
     if result.get("opportunity_tier") == "A" and not has_primary_quote:
         result["opportunity_tier"] = "B"
         result["tier_label"] = phase62_policy._TIER_LABELS["B"]
         result["decision"] = "B — العقد ينتظر Quote مستقلاً غير Yahoo قبل درجة A"
-        missing = list(result.get("missing_confirmations") or [])
-        missing.append("Quote مستقل غير Yahoo/YFinance")
-        result["missing_confirmations"] = list(dict.fromkeys(missing))
-        row["opportunity_tier"] = "B"
-        row["tier_label"] = phase62_policy._TIER_LABELS["B"]
-        row["missing_confirmations"] = result["missing_confirmations"]
+    row["opportunity_tier"] = result.get("opportunity_tier")
+    row["tier_label"] = result.get("tier_label")
+    row["missing_confirmations"] = result["missing_confirmations"]
+    row["market_quote_quality"] = result["market_quote_quality"]
     return result
 
 
