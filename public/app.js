@@ -17,9 +17,17 @@ const plainPct = (value, digits = 2) => Number.isFinite(Number(value)) ? `${Numb
 const regimeLabel = (value) => ({ risk_on: "إيجابي", risk_off: "سلبي", mixed: "مختلط", closed: "السوق مغلق", pending: "بانتظار أول فحص" }[value] || value || "—");
 const modeLabel = (value) => ({ free_swing: "Swing مجاني", custom: "إعداد مخصص" }[value] || value || "—");
 const sideLabel = (value) => String(value || "").toLowerCase() === "put" ? "PUT" : "CALL";
+const interestTierLabel = (value) => ({
+  official_event: "حدث رسمي قوي",
+  high_interest: "اهتمام مرتفع",
+  developing: "اهتمام يتكوّن",
+  low_attention: "اهتمام منخفض",
+}[value] || value || "—");
 const rejectionLabels = {
   weak_stock_liquidity: "سيولة السهم ضعيفة", price_extended: "الحركة امتدت وفاتت منطقة الدخول",
   score_below_minimum: "الدرجة دون الحد الأدنى", dilution_conflicts_with_call: "طرح أو تخفيف يتعارض مع CALL",
+  sub_dollar_stock: "السهم دون دولار", low_price_speculation: "سهم منخفض السعر ومضاربي",
+  insufficient_market_attention: "عوامل الاهتمام غير كافية",
   adjusted_or_nonstandard_contract: "عقد معدل أو غير قياسي", invalid_bid_ask: "عرض وطلب غير صالحين",
   spread_too_wide: "السبريد واسع", option_volume_too_low: "حجم العقد منخفض",
   open_interest_too_low: "Open Interest منخفض", data_quality_too_low: "جودة البيانات منخفضة",
@@ -72,15 +80,32 @@ function optionMini(option) {
     <p>البيانات: ${escapeHtml(option.data_status || option.freshness_label || "—")}</p></div>`;
 }
 
+function stockInterestDetails(stock) {
+  const side = sideLabel(stock.setup_side);
+  const factors = side === "CALL" ? stock.rise_factors : stock.fall_factors;
+  const highDistance = Number(stock.distance_52w_high);
+  const lowDistance = Number(stock.distance_52w_low);
+  const location = side === "CALL" && Number.isFinite(highDistance)
+    ? `يبعد ${plainPct(Math.abs(highDistance) * 100, 1)} عن قمة 52 أسبوعًا`
+    : side === "PUT" && Number.isFinite(lowDistance)
+      ? `فوق قاع 52 أسبوعًا بـ${plainPct(lowDistance * 100, 1)}`
+      : "";
+  const parts = [factors, location].filter(Boolean);
+  return parts.length ? `<p class="reasons"><strong>عوامل الاهتمام:</strong> ${escapeHtml(parts.join("؛ "))}</p>` : "";
+}
+
 function renderStocks(filter = "") {
   const stocks = (radarData?.stocks || []).filter((stock) => String(stock.symbol || "").includes(filter.toUpperCase()));
   byId("stocks-grid").innerHTML = stocks.length ? stocks.map((stock, index) => {
     const side = sideLabel(stock.setup_side);
+    const attention = Number(stock.attention_score);
+    const directional = Number(stock.directional_interest_score);
     return `<article class="stock-card ${index === 0 || stock.new_stock_setup ? "top-pick" : ""}">
       <div class="card-top"><div><div class="symbol">${escapeHtml(stock.symbol)}</div><div class="price">السعر ${money(stock.price)}</div></div><div class="score-badge"><strong>${number(stock.score, 1)}</strong><span>${escapeHtml(stock.rating || "—")}</span></div></div>
       <div class="levels"><div class="level"><span>الدخول</span><strong>${money(stock.entry_low)}–${money(stock.entry_high)}</strong></div><div class="level"><span>الأهداف</span><strong>${money(stock.target_1)} / ${money(stock.target_2)}</strong></div><div class="level"><span>الإبطال</span><strong>${money(stock.invalidation ?? stock.stop)}</strong></div></div>
-      <div class="chips"><span class="chip ${side === "CALL" ? "call" : "put"}">${side}</span><span class="chip">${escapeHtml(stock.setup_status || "watchlist")}</span><span class="chip">${escapeHtml(stock.entry_state || "waiting")}</span><span class="chip">RSI ${number(stock.rsi, 1)}</span><span class="chip">RVOL ${number(stock.relative_volume, 2)}x</span><span class="chip">${escapeHtml(stock.sector_etf || "SPY")} RS ${plainPct((Number(stock.relative_strength_20d) || 0) * 100, 1)}</span></div>
+      <div class="chips"><span class="chip ${side === "CALL" ? "call" : "put"}">${side}</span><span class="chip">${escapeHtml(stock.setup_status || "watchlist")}</span><span class="chip">${escapeHtml(stock.entry_state || "waiting")}</span><span class="chip">${escapeHtml(interestTierLabel(stock.interest_tier))}</span>${Number.isFinite(attention) ? `<span class="chip">اهتمام ${number(attention, 1)}/25</span>` : ""}${Number.isFinite(directional) ? `<span class="chip">قوة الاتجاه ${number(directional, 1)}/25</span>` : ""}<span class="chip">RSI ${number(stock.rsi, 1)}</span><span class="chip">RVOL ${number(stock.finviz_relative_volume ?? stock.relative_volume, 2)}x</span><span class="chip">${escapeHtml(stock.sector_etf || "SPY")} RS ${plainPct((Number(stock.relative_strength_20d) || 0) * 100, 1)}</span></div>
       <p class="catalyst">${escapeHtml(stock.catalyst || "لا يوجد محفز قوي حديث")}</p><p class="reasons">${escapeHtml(stock.reasons || "—")}</p>
+      ${stockInterestDetails(stock)}
       ${stock.catalyst_url ? `<a class="source-link" href="${escapeHtml(stock.catalyst_url)}" target="_blank" rel="noopener">فتح المصدر الرسمي ↗</a>` : ""}${optionMini(stock.best_option)}</article>`;
   }).join("") : '<div class="empty-state">لا توجد أسهم اجتازت الشروط في آخر فحص.</div>';
 }

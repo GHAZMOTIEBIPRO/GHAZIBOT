@@ -7,6 +7,7 @@ on:
       - main
       - "feat/**"
       - "fix/**"
+      - "feature/**"
 
 permissions:
   contents: read
@@ -43,6 +44,9 @@ jobs:
           run_live_export.py
           options_radar/live_scanners.py
           options_radar/strict_catalysts.py
+          options_radar/sec_efts.py
+          options_radar/interest_factors.py
+          options_radar/interest_radar.py
           options_radar/operations.py
           options_radar/calibration_report.py
           options_radar/market_bars.py

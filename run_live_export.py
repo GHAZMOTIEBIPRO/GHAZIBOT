@@ -15,7 +15,7 @@ os.environ.setdefault("MAX_SPREAD_PCT", "0.25")
 import options_radar.catalysts as catalyst_module
 import options_radar.stocks as stock_module
 from options_radar.calibration_report import write_calibration_markdown
-from options_radar.live_scanners import PublicStockRadar
+from options_radar.interest_radar import InterestStockRadar
 from options_radar.macro import build_macro_context
 from options_radar.operations import build_operational_status
 from options_radar.sec_fundamentals import enrich_stock_fundamentals
@@ -23,9 +23,34 @@ from options_radar.settings import Settings
 from options_radar.strict_catalysts import StrictCatalystScanner
 
 catalyst_module.CatalystScanner = StrictCatalystScanner
-stock_module.StockRadar = PublicStockRadar
+stock_module.StockRadar = InterestStockRadar
 
 from export_web import main as export_main
+
+
+INTEREST_FIELDS = (
+    "attention_score",
+    "directional_interest_score",
+    "call_interest_score",
+    "put_interest_score",
+    "interest_tier",
+    "attention_factors",
+    "rise_factors",
+    "fall_factors",
+    "performance_day",
+    "performance_week",
+    "performance_month",
+    "performance_quarter",
+    "gap_pct",
+    "atr_pct",
+    "distance_52w_high",
+    "distance_52w_low",
+    "sma20",
+    "sma50",
+    "sma200",
+    "finviz_relative_volume",
+    "interest_method",
+)
 
 
 def _write_json_atomic(path: Path, payload: dict) -> None:
@@ -51,6 +76,31 @@ def _json_safe(value):
         except Exception:
             pass
     return value
+
+
+def _merge_interest_fields(payload: dict, csv_path: Path = Path("results/stocks_latest.csv")) -> None:
+    """Restore rich interest fields omitted by the compact core JSON exporter."""
+
+    records = payload.get("stocks", [])
+    if not isinstance(records, list) or not records or not csv_path.exists():
+        return
+    try:
+        frame = pd.read_csv(csv_path)
+    except Exception:
+        return
+    if frame.empty or "symbol" not in frame.columns:
+        return
+
+    frame["symbol"] = frame["symbol"].astype(str).str.upper()
+    lookup = frame.drop_duplicates("symbol").set_index("symbol")
+    for stock in records:
+        symbol = str(stock.get("symbol", "")).upper()
+        if not symbol or symbol not in lookup.index:
+            continue
+        row = lookup.loc[symbol]
+        for field in INTEREST_FIELDS:
+            if field in frame.columns:
+                stock[field] = _json_safe(row.get(field))
 
 
 def _bounded(value, minimum: float, maximum: float) -> float | None:
@@ -173,6 +223,7 @@ def publish_operational_state() -> None:
         else payload.get("calibration", {})
     )
     errors = payload.setdefault("errors", {})
+    _merge_interest_fields(payload)
     fundamental_errors = _enrich_stocks(payload, settings)
     errors.update({f"fundamentals:{key}": value for key, value in fundamental_errors.items()})
     macro, macro_errors = build_macro_context(settings)
