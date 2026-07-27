@@ -8,6 +8,7 @@ on:
       - "feat/**"
       - "fix/**"
       - "feature/**"
+      - "agent/**"
 
 permissions:
   contents: read
@@ -38,10 +39,19 @@ jobs:
           path: pytest-output.txt
           if-no-files-found: ignore
           retention-days: 7
-      - run: >-
+      - name: Compile Python entrypoints and engines
+        run: >-
           python -m py_compile
+          main.py
           export_web.py
           run_live_export.py
+          options_radar/hybrid_fetcher.py
+          options_radar/market_regime.py
+          options_radar/outcomes.py
+          options_radar/flow_analyzer.py
+          options_radar/scanner.py
+          options_radar/scoring.py
+          options_radar/phase51_export.py
           options_radar/live_scanners.py
           options_radar/strict_catalysts.py
           options_radar/sec_efts.py
@@ -55,7 +65,10 @@ jobs:
           options_radar/sec_fundamentals.py
           scripts/prime_sec_efts.py
           scripts/calibration_gate.py
-      - run: node --check public/app.js
+      - name: Validate dashboard JavaScript
+        run: |
+          node --check public/app.js
+          node --check public/phase51.js
       - name: Validate JSON configuration
         run: |
           python - <<'PY'
