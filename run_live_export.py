@@ -15,7 +15,7 @@ os.environ.setdefault("MAX_SPREAD_PCT", "0.25")
 import options_radar.catalysts as catalyst_module
 import options_radar.stocks as stock_module
 from options_radar.calibration_report import write_calibration_markdown
-from options_radar.live_scanners import PublicStockRadar
+from options_radar.interest_radar import InterestStockRadar
 from options_radar.macro import build_macro_context
 from options_radar.operations import build_operational_status
 from options_radar.sec_fundamentals import enrich_stock_fundamentals
@@ -23,7 +23,7 @@ from options_radar.settings import Settings
 from options_radar.strict_catalysts import StrictCatalystScanner
 
 catalyst_module.CatalystScanner = StrictCatalystScanner
-stock_module.StockRadar = PublicStockRadar
+stock_module.StockRadar = InterestStockRadar
 
 from export_web import main as export_main
 
