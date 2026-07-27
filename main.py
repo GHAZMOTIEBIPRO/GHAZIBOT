@@ -64,11 +64,19 @@ def serve_dashboard() -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Free-data scanner for US stocks, catalysts and options."
+        description=(
+            "Phase 5.1 scanner for US stocks, official catalysts, and "
+            "strict unusual options buying flow."
+        )
     )
     parser.add_argument("--symbols", nargs="*", help="Defaults to data/universe.txt")
     parser.add_argument("--universe", default="data/universe.txt")
-    parser.add_argument("--top", type=int, default=15)
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=15,
+        help="Maximum contracts per side: Top CALL and Top PUT",
+    )
     parser.add_argument(
         "--mode", choices=["all", "stocks", "options", "catalysts"], default="all"
     )
@@ -84,7 +92,7 @@ def _print_frame(name: str, frame: pd.DataFrame, output: str) -> None:
     Path(output).parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(output, index=False)
     pd.set_option("display.max_columns", None)
-    pd.set_option("display.width", 260)
+    pd.set_option("display.width", 280)
     print(frame.head(20).to_string(index=False))
     print(f"CSV: {Path(output).resolve()}")
 
@@ -120,9 +128,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.mode in {"all", "options"}:
         option_symbols = (
-            stocks["symbol"].head(max(8, args.top)).tolist()
+            stocks["symbol"].head(max(15, args.top * 2)).tolist()
             if not stocks.empty
-            else symbols[:12]
+            else symbols[: max(15, args.top * 2)]
         )
         option_result = OptionsRadar(settings).scan(
             option_symbols,
@@ -134,7 +142,17 @@ def main(argv: list[str] | None = None) -> int:
             f"Options provider: {option_result.provider} | "
             f"Market regime: {option_result.regime}"
         )
-        _print_frame("TOP OPTIONS", option_result.opportunities, "results/options_latest.csv")
+        _print_frame(
+            "TOP HEAVILY BOUGHT CALLS",
+            option_result.top_calls,
+            "results/options_calls_latest.csv",
+        )
+        _print_frame(
+            "TOP HEAVILY BOUGHT PUTS",
+            option_result.top_puts,
+            "results/options_puts_latest.csv",
+        )
+        print(f"\nFlow summary: {option_result.flow_summary}")
         if option_result.alerts:
             print("\nNew dashboard setups:\n" + "\n\n".join(option_result.alerts))
         if option_result.errors:
