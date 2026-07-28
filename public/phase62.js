@@ -160,3 +160,104 @@ renderAll = function phase62RenderAll(data) {
   phase62RenderTierSummary(data);
   phase62RenderSPX0DTE(data);
 };
+
+/* Defensive CALL/PUT separation. The OCC symbol is authoritative even when
+   option_type is missing, abbreviated, stale, or incorrect. */
+const phase62SeparatedOptionRowBase = optionRow;
+
+function phase62CanonicalContract(row) {
+  return String(row?.contract_symbol || "").replaceAll("O:", "").replaceAll(" ", "").toUpperCase();
+}
+
+function phase62ContractType(row) {
+  const contract = phase62CanonicalContract(row);
+  const match = contract.match(/\d{6}([CP])\d{8}$/i);
+  if (match) return match[1].toUpperCase() === "C" ? "CALL" : "PUT";
+  const raw = String(row?.option_type || "").trim().toLowerCase();
+  if (["call", "c", "calls"].includes(raw)) return "CALL";
+  if (["put", "p", "puts"].includes(raw)) return "PUT";
+  return "";
+}
+
+function phase62RankRows(rows) {
+  const tierScore = { A: 3, B: 2, C: 1 };
+  return [...rows].sort((left, right) => {
+    const leftTier = tierScore[String(left?.opportunity_tier || "C").toUpperCase()] || 0;
+    const rightTier = tierScore[String(right?.opportunity_tier || "C").toUpperCase()] || 0;
+    if (leftTier !== rightTier) return rightTier - leftTier;
+    return Number(right?.flow_momentum_score || 0) - Number(left?.flow_momentum_score || 0);
+  });
+}
+
+function phase62DiverseWatchRows(rows, expectedType, limit = 12) {
+  const selected = [];
+  const seen = new Set();
+  const symbolCounts = new Map();
+  const symbolExpiry = new Set();
+  for (const row of phase62RankRows(rows)) {
+    if (phase62ContractType(row) !== expectedType) continue;
+    const key = phase62CanonicalContract(row);
+    if (!key || seen.has(key)) continue;
+    const symbol = String(row?.symbol || "").toUpperCase();
+    const expiry = String(row?.expiration || "").slice(0, 10);
+    const pair = `${symbol}|${expiry}`;
+    if ((symbolCounts.get(symbol) || 0) >= 2) continue;
+    if (symbolExpiry.has(pair)) continue;
+    seen.add(key);
+    symbolExpiry.add(pair);
+    symbolCounts.set(symbol, (symbolCounts.get(symbol) || 0) + 1);
+    selected.push({ ...row, option_type: expectedType.toLowerCase() });
+    if (selected.length >= limit) break;
+  }
+  return selected;
+}
+
+function phase62MergeSideRows(strongRows, watchRows, expectedType) {
+  const merged = [];
+  const seen = new Set();
+  for (const row of [...strongRows, ...watchRows]) {
+    if (phase62ContractType(row) !== expectedType) continue;
+    const key = phase62CanonicalContract(row);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push({ ...row, option_type: expectedType.toLowerCase() });
+  }
+  return merged;
+}
+
+optionRow = function phase62SeparatedOptionRow(option) {
+  const type = phase62ContractType(option);
+  if (!type) return "";
+  return phase62SeparatedOptionRowBase({ ...option, option_type: type.toLowerCase() });
+};
+
+renderOptions = function phase62SeparatedRenderOptions() {
+  const allStrong = [
+    ...(radarData?.top_calls || []),
+    ...(radarData?.top_puts || []),
+    ...(radarData?.options || []),
+  ];
+  const fallbackWatch = radarData?.contract_watchlist || [];
+  const callWatchSource = Array.isArray(radarData?.contract_watchlist_calls)
+    ? radarData.contract_watchlist_calls
+    : fallbackWatch;
+  const putWatchSource = Array.isArray(radarData?.contract_watchlist_puts)
+    ? radarData.contract_watchlist_puts
+    : fallbackWatch;
+
+  const callWatch = phase62DiverseWatchRows(callWatchSource, "CALL", 12);
+  const putWatch = phase62DiverseWatchRows(putWatchSource, "PUT", 12);
+  const calls = phase62MergeSideRows(allStrong, callWatch, "CALL");
+  const puts = phase62MergeSideRows(allStrong, putWatch, "PUT");
+
+  byId("call-count").textContent = number(calls.length, 0);
+  byId("put-count").textContent = number(puts.length, 0);
+  byId("call-section-count").textContent = `${number(calls.length, 0)} عقد CALL مستقل`;
+  byId("put-section-count").textContent = `${number(puts.length, 0)} عقد PUT مستقل`;
+  byId("call-options-body").innerHTML = calls.length
+    ? calls.map(optionRow).join("")
+    : '<tr><td colspan="9">لا توجد عقود CALL مطابقة لاتجاه صاعد وجودة العرض الحالية.</td></tr>';
+  byId("put-options-body").innerHTML = puts.length
+    ? puts.map(optionRow).join("")
+    : '<tr><td colspan="9">لا توجد عقود PUT مطابقة لاتجاه هابط وجودة العرض الحالية.</td></tr>';
+};
