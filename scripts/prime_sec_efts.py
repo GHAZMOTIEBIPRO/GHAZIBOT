@@ -3,10 +3,8 @@ from __future__ import annotations
 import json
 import sys
 import traceback
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
-import requests
 
 # Direct execution as `python scripts/prime_sec_efts.py` puts only the scripts
 # directory on sys.path. Add the repository root so options_radar is importable
@@ -27,7 +25,7 @@ def write_status(payload: dict) -> None:
 
 
 def main() -> int:
-    end_date = date.today()
+    end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=14)
     status = {
         "checked_at": datetime.now(timezone.utc).isoformat(),
@@ -38,6 +36,12 @@ def main() -> int:
         "end_date": end_date.isoformat(),
         "event_count": 0,
         "message": "not checked",
+        "retry_policy": "429/5xx only; bounded exponential backoff; 403 is not hammered",
+        "fallbacks_active": [
+            "SEC latest-form Atom feeds",
+            "SEC submissions and Company Facts",
+            "last valid SEC EFTS event cache",
+        ],
     }
 
     try:
@@ -45,33 +49,26 @@ def main() -> int:
         # optional source and must never prevent the rest of the radar from
         # producing a dashboard when SEC or an optional import is unavailable.
         from options_radar.sec_efts import discover_sec_fulltext_events
+        from options_radar.sec_efts_resilience import request_efts_json
         from options_radar.settings import Settings
 
         settings = Settings()
-        response = requests.get(
-            EFTS_URL,
-            params={
+        payload = request_efts_json(
+            settings,
+            {
                 "q": '"merger agreement"',
                 "forms": "8-K,6-K,SC 13D,SC 13D/A",
                 "startdt": start_date.isoformat(),
                 "enddt": end_date.isoformat(),
                 "from": 0,
             },
-            headers={
-                "User-Agent": settings.sec_user_agent,
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip, deflate",
-            },
-            timeout=30,
         )
-        response.raise_for_status()
-        payload = response.json()
         total = ((payload.get("hits") or {}).get("total") or {})
         total_value = total.get("value", 0) if isinstance(total, dict) else total
         status.update(
             {
                 "available": True,
-                "http_status": response.status_code,
+                "http_status": 200,
                 "probe_hits": int(total_value or 0),
                 "message": "SEC full-text endpoint responded successfully",
             }
