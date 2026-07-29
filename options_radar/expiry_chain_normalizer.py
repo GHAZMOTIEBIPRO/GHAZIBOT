@@ -22,6 +22,18 @@ def _number(value: Any, default: float = np.nan) -> float:
     return number if math.isfinite(number) else default
 
 
+def _numeric_column(frame: pd.DataFrame, name: str) -> pd.Series:
+    if name not in frame:
+        return pd.Series(np.nan, index=frame.index, dtype=float)
+    return pd.to_numeric(frame[name], errors="coerce")
+
+
+def _datetime_column(frame: pd.DataFrame, name: str) -> pd.Series:
+    if name not in frame:
+        return pd.Series(pd.NaT, index=frame.index, dtype="datetime64[ns, UTC]")
+    return pd.to_datetime(frame[name], utc=True, errors="coerce")
+
+
 def normalize_expiry_chain(
     frame: pd.DataFrame,
     fetcher: hybrid_fetcher.DataFetcher,
@@ -40,11 +52,11 @@ def normalize_expiry_chain(
         return frame.copy() if isinstance(frame, pd.DataFrame) else pd.DataFrame()
 
     out = frame.copy()
-    expiration = pd.to_datetime(out.get("expiration"), utc=True, errors="coerce")
+    expiration = _datetime_column(out, "expiration")
     out["expiration"] = expiration
     today_utc = pd.Timestamp(datetime.now(timezone.utc)).normalize()
     computed_dte = (expiration.dt.normalize() - today_utc).dt.days
-    existing_dte = pd.to_numeric(out.get("dte"), errors="coerce")
+    existing_dte = _numeric_column(out, "dte")
     out["dte"] = existing_dte.fillna(computed_dte)
 
     for column in (
@@ -61,10 +73,10 @@ def normalize_expiry_chain(
         "vega",
         "underlying_price",
     ):
-        out[column] = pd.to_numeric(out.get(column), errors="coerce")
+        out[column] = _numeric_column(out, column)
 
     computed_spread = (out["ask"] - out["bid"]) / out["ask"].replace(0, np.nan)
-    existing_spread = pd.to_numeric(out.get("spread_pct"), errors="coerce")
+    existing_spread = _numeric_column(out, "spread_pct")
     out["spread_pct"] = existing_spread.fillna(computed_spread)
 
     if "greeks_method" not in out:
