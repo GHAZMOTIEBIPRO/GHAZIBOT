@@ -13,6 +13,18 @@ install_trade_timestamp_normalizer()
 install_ask_spread_scoring()
 install_multi_source_fetching()
 
+# Helper-only processes import the full package but do not fetch market data.
+# Preserve the scanner's non-empty source audit instead of overwriting it at exit.
+from .phase60_audit_guard import install_source_audit_guard
+
+install_source_audit_guard()
+
+# SEC full-text is optional and may be blocked on shared runner IPs. Apply bounded
+# retries for transient failures and keep official/cache fallbacks explicit.
+from .sec_efts_resilience import install_sec_efts_resilience
+
+install_sec_efts_resilience()
+
 # Import after Phase 6 installs its composite fetcher so Phase 6.1 wraps it
 # instead of bypassing it.
 from .phase61_sources import install_phase61_fetching
@@ -60,4 +72,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.2.2"
+__version__ = "6.2.3"
