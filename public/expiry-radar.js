@@ -12,7 +12,12 @@ function expiryRadarContractCard(row) {
   const missing = Array.isArray(row?.missing_confirmations) ? row.missing_confirmations : [];
   const reasons = Array.isArray(row?.reasons) ? row.reasons : [];
   const flowSources = Array.isArray(row?.flow_sources) ? row.flow_sources : [];
+  const occ = row?.occ_official_context || {};
   const sourceBadge = row?.primary_or_licensed_quote ? "Quote مرخص/أساسي" : "مصدر احتياطي";
+  const occBadge = occ?.available ? `<span class="chip">OCC رسمي ${occ?.aligned_with_contract_side ? "✓" : "سياق"}</span>` : "";
+  const occDetail = occ?.available
+    ? `<p class="catalyst">OCC رسمي (${escapeHtml(occ?.report_key || "—")}): CALL ${number(occ?.call_volume, 0)} · PUT ${number(occ?.put_volume, 0)} · Put/Call ${Number.isFinite(Number(occ?.put_call_ratio)) ? number(occ.put_call_ratio, 2) : "—"}. بيانات مجمعة وليست Quote أو Flow لحظيًا.</p>`
+    : "";
   return `<article class="stock-card ${phase62TierClass(tier)}">
     <div class="card-top">
       <div>
@@ -26,6 +31,7 @@ function expiryRadarContractCard(row) {
       <span class="chip">${number(row?.dte, 0)} DTE</span>
       <span class="chip">${escapeHtml(String(row?.expiration || "").slice(0, 10))}</span>
       <span class="chip">${escapeHtml(sourceBadge)}</span>
+      ${occBadge}
       <span class="chip">Delta ${number(row?.delta, 2)}</span>
       <span class="chip">Spread ${pct(row?.spread_pct, 1)}</span>
       <span class="chip">Vol/OI ${number(row?.vol_to_oi_ratio, 2)}x</span>
@@ -37,6 +43,7 @@ function expiryRadarContractCard(row) {
     </div>
     <p class="reasons">Vol ${number(row?.volume, 0)} · OI ${number(row?.open_interest, 0)} · آخر صفقة ${Number.isFinite(Number(row?.last_trade_age_minutes)) ? `${number(row.last_trade_age_minutes, 0)} دقيقة` : "غير متاحة"}</p>
     <p class="reasons">${escapeHtml(reasons.join(" · ") || "لا توجد أسباب ترتيب إضافية")}</p>
+    ${occDetail}
     ${flowSources.length ? `<p class="catalyst">Flow مستقل: ${flowSources.map((item) => escapeHtml(item)).join(" · ")}</p>` : ""}
     ${phase62MissingHtml(missing)}
     <p class="reasons">المصدر: ${escapeHtml(row?.source || "—")} · بحثي فقط ولا يضمن الربح.</p>
@@ -56,7 +63,7 @@ function expiryRadarSideBlock(rows, side) {
 function expiryRadarBucketBlock(key, profile) {
   const data = profile || {};
   return `<section class="expiry-bucket-block">
-    <div class="section-heading"><div><h2>${escapeHtml(expiryBucketLabels[key] || key)}</h2><p>الترتيب يجمع اتجاه السهم والسيولة والسبريد وDelta وحداثة الصفقة ونوع المصدر. درجة A تحتاج Quote مرخصًا وFlow مستقلًا.</p></div></div>
+    <div class="section-heading"><div><h2>${escapeHtml(expiryBucketLabels[key] || key)}</h2><p>الترتيب يجمع اتجاه السهم والسيولة والسبريد وDelta وحداثة الصفقة ونوع المصدر. OCC يضيف حجم CALL/PUT رسميًا كسياق مجمع فقط. درجة A تحتاج Quote مرخصًا وFlow مستقلًا.</p></div></div>
     ${expiryRadarSideBlock(data.calls, "calls")}
     ${expiryRadarSideBlock(data.puts, "puts")}
   </section>`;
