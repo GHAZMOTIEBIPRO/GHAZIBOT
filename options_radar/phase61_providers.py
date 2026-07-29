@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import numpy as np
@@ -66,7 +66,7 @@ def polygon_option_chain(
     if not token:
         raise RuntimeError("POLYGON_API_KEY is not configured")
     client = session or requests.Session()
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     params: dict[str, Any] = {
         "apiKey": token,
         "limit": 250,

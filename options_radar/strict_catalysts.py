@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
-from typing import Iterable
+from collections.abc import Iterable
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
@@ -18,7 +18,7 @@ class StrictCatalystScanner(ResilientCatalystScanner):
         frame = super().scan(symbol_list, lookback_days=lookback_days)
 
         fulltext_lookback = max(lookback_days, 30)
-        cached_start = date.today() - timedelta(days=fulltext_lookback)
+        cached_start = datetime.now(timezone.utc).date() - timedelta(days=fulltext_lookback)
         efts_rows = _cache_read(cached_start)
         settings = getattr(self, "settings", None)
         if not efts_rows and settings is not None:

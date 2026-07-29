@@ -60,14 +60,18 @@ jobs:
           options_radar/phase60_source_network.py
           options_radar/phase61_overlay.py
           options_radar/phase61_policy.py
+          options_radar/phase61_finra.py
+          options_radar/phase61_providers.py
           options_radar/phase62_policy.py
           options_radar/phase62_quality.py
           options_radar/phase62_contract_separation.py
+          options_radar/sec_attention.py
           options_radar/sec_efts.py
           options_radar/sec_efts_resilience.py
           options_radar/spx_0dte.py
           options_radar/live_scanners.py
           options_radar/strict_catalysts.py
+          options_radar/catalyst_selection.py
           options_radar/interest_factors.py
           options_radar/interest_radar.py
           options_radar/operations.py
@@ -80,13 +84,18 @@ jobs:
           scripts/apply_phase60.py
           scripts/apply_phase62.py
           scripts/calibration_gate.py
-      - name: Ruff critical SEC and source-audit gate
+      - name: Ruff critical SEC source-audit and UTC gate
         run: >-
           ruff check
           options_radar/sec_efts.py
           options_radar/sec_efts_resilience.py
+          options_radar/sec_attention.py
+          options_radar/strict_catalysts.py
+          options_radar/catalyst_selection.py
           options_radar/phase60_sources.py
           options_radar/phase60_audit_guard.py
+          options_radar/phase61_finra.py
+          options_radar/phase61_providers.py
           scripts/prime_sec_efts.py
           tests/test_sec_efts_resilience.py
           tests/test_phase60_audit_guard.py

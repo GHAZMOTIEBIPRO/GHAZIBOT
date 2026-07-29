@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import date, datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -48,10 +48,14 @@ def _purpose_bonus(purpose: str) -> float:
 def _freshness_multiplier(value) -> float:
     text = str(value or "")[:10]
     try:
-        event_date = datetime.strptime(text, "%Y-%m-%d").date()
+        event_date = (
+            datetime.strptime(text, "%Y-%m-%d")
+            .replace(tzinfo=timezone.utc)
+            .date()
+        )
     except ValueError:
         return 0.75
-    age = max(0, (date.today() - event_date).days)
+    age = max(0, (datetime.now(timezone.utc).date() - event_date).days)
     if age <= 1:
         return 1.00
     if age <= 3:

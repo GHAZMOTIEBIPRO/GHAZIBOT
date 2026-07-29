@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import requests
@@ -32,7 +32,7 @@ def _collect_finra_reg_sho(
     endpoint = "https://api.finra.org/data/group/OTCMarket/name/regShoDaily"
     output: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    end_date = date.today()
+    end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=21)
 
     for symbol in symbols[:20]:
