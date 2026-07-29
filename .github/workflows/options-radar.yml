@@ -56,6 +56,7 @@ jobs:
       INTELLIGENCE_MAX_CONTRACTS: ${{ secrets.INTELLIGENCE_MAX_CONTRACTS || '30' }}
       EXPIRY_RADAR_MAX_SYMBOLS: ${{ secrets.EXPIRY_RADAR_MAX_SYMBOLS || '8' }}
       EXPIRY_RADAR_TOP_PER_SIDE: ${{ secrets.EXPIRY_RADAR_TOP_PER_SIDE || '8' }}
+      OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
       OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
       STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
       DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
@@ -112,7 +113,7 @@ jobs:
       - name: Apply Phase 6.2 evidence tiers and SPX 0DTE status
         run: python scripts/apply_phase62.py
 
-      - name: Build daily weekly monthly expiry radar
+      - name: Build daily weekly monthly expiry radar with free OCC context
         run: python scripts/apply_expiry_radar.py
 
       - name: Evaluate calibration review gate
@@ -158,6 +159,7 @@ jobs:
               f"- Contracts A/B/C: **{summary.get('contract_tier_a', 0)}/{summary.get('contract_tier_b', 0)}/{summary.get('contract_tier_c', 0)}**",
               f"- Near-miss contract watchlist: **{summary.get('contract_watchlist', 0)}**",
               f"- Expiry radar daily/weekly/monthly: **{expiry.get('daily', 0)}/{expiry.get('weekly', 0)}/{expiry.get('monthly', 0)}**",
+              f"- OCC free official symbols/reports: **{expiry.get('occ_successful_symbols', 0)}/{expiry.get('occ_successful_reports', 0)}**",
               f"- Upside stock candidates: **{summary.get('upside_stock_candidates', 0)}**",
               f"- SPX 0DTE status: **{spx.get('status', 'unknown')}**",
               f"- External sources successful: **{intel.get('successful_sources', 0)}**",
@@ -179,6 +181,7 @@ jobs:
             data/cache/sec_efts_status.json \
             data/live/source_audit.json \
             data/live/intelligence_audit.json \
+            data/live/occ_audit.json \
             data/live/spx_0dte_snapshot.json \
             data/live/alert_state.json \
             data/live/signals.jsonl \
