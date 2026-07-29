@@ -1,13 +1,19 @@
 {
-  "checked_at": "2026-07-29T19:55:17.603593+00:00",
+  "checked_at": "2026-07-29T21:02:26.428091+00:00",
   "available": false,
   "source": "SEC EDGAR Full-Text Search",
   "endpoint": "https://efts.sec.gov/LATEST/search-index",
   "start_date": "2026-07-15",
   "end_date": "2026-07-29",
   "event_count": 0,
-  "message": "403 Client Error: Forbidden for url: https://efts.sec.gov/LATEST/search-index?q=%22merger+agreement%22&forms=8-K%2C6-K%2CSC+13D%2CSC+13D%2FA&startdt=2026-07-15&enddt=2026-07-29&from=0",
+  "message": "SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
+  "retry_policy": "429/5xx only; bounded exponential backoff; 403 is not hammered",
+  "fallbacks_active": [
+    "SEC latest-form Atom feeds",
+    "SEC submissions and Company Facts",
+    "last valid SEC EFTS event cache"
+  ],
   "http_status": 403,
   "error_type": "HTTPError",
-  "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 67, in main\n    response.raise_for_status()\n  File \"/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/requests/models.py\", line 1167, in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nrequests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://efts.sec.gov/LATEST/search-index?q=%22merger+agreement%22&forms=8-K%2C6-K%2CSC+13D%2CSC+13D%2FA&startdt=2026-07-15&enddt=2026-07-29&from=0\n"
+  "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 80, in request_efts_json\n    raise requests.HTTPError(\nrequests.exceptions.HTTPError: SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n"
 }
