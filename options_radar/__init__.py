@@ -31,6 +31,12 @@ from .phase61_sources import install_phase61_fetching
 
 install_phase61_fetching()
 
+# Provider composites can omit DTE, while Yahoo has no contract Greeks. Restore
+# DTE from expiration and label Black-Scholes estimates before expiry ranking.
+from .expiry_chain_normalizer import install_expiry_chain_normalizer
+
+install_expiry_chain_normalizer()
+
 # FINRA's production Reg SHO dataset uses SIP symbol and par-quantity fields.
 from .phase61_finra import install_finra_reg_sho_fix
 
@@ -72,4 +78,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.2.3"
+__version__ = "6.3.1"
