@@ -65,6 +65,7 @@ jobs:
           options_radar/phase62_policy.py
           options_radar/phase62_quality.py
           options_radar/phase62_contract_separation.py
+          options_radar/expiry_radar.py
           options_radar/sec_attention.py
           options_radar/sec_efts.py
           options_radar/sec_efts_resilience.py
@@ -83,8 +84,9 @@ jobs:
           scripts/prime_sec_efts.py
           scripts/apply_phase60.py
           scripts/apply_phase62.py
+          scripts/apply_expiry_radar.py
           scripts/calibration_gate.py
-      - name: Ruff critical SEC source-audit and UTC gate
+      - name: Ruff critical SEC source-audit UTC and expiry gate
         run: >-
           ruff check
           options_radar/sec_efts.py
@@ -96,9 +98,12 @@ jobs:
           options_radar/phase60_audit_guard.py
           options_radar/phase61_finra.py
           options_radar/phase61_providers.py
+          options_radar/expiry_radar.py
           scripts/prime_sec_efts.py
+          scripts/apply_expiry_radar.py
           tests/test_sec_efts_resilience.py
           tests/test_phase60_audit_guard.py
+          tests/test_expiry_radar.py
           --select E9,F,S110,DTZ
           --output-format=github
       - name: Ruff repository-wide baseline report
@@ -110,6 +115,7 @@ jobs:
           node --check public/phase51.js
           node --check public/phase60.js
           node --check public/phase62.js
+          node --check public/expiry-radar.js
       - name: Validate JSON configuration
         run: |
           python - <<'PY'
