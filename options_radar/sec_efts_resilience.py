@@ -16,7 +16,7 @@ _INSTALLED = False
 
 
 def _headers(settings: Settings) -> dict[str, str]:
-    user_agent = settings.sec_user_agent.strip()
+    user_agent = str(getattr(settings, "sec_user_agent", "GHAZI Market Radar")).strip()
     if "@" not in user_agent:
         LOGGER.warning(
             "SEC_USER_AGENT should identify the application and include a contact email"
@@ -29,8 +29,19 @@ def _headers(settings: Settings) -> dict[str, str]:
     }
 
 
-def _retry_delay(response: requests.Response, attempt: int) -> float:
-    retry_after = response.headers.get("Retry-After")
+def _status_code(response: Any) -> int:
+    """Support real requests responses and minimal legacy test doubles."""
+
+    value = getattr(response, "status_code", 200)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 200
+
+
+def _retry_delay(response: Any, attempt: int) -> float:
+    headers = getattr(response, "headers", {}) or {}
+    retry_after = headers.get("Retry-After")
     if retry_after:
         try:
             return min(30.0, max(0.0, float(retry_after)))
@@ -56,7 +67,7 @@ def request_efts_json(
     if max_attempts < 1:
         raise ValueError("max_attempts must be at least 1")
 
-    response: requests.Response | None = None
+    response: Any = None
     for attempt in range(max_attempts):
         response = requests.get(
             sec_efts.EFTS_URL,
@@ -64,18 +75,19 @@ def request_efts_json(
             headers=_headers(settings),
             timeout=timeout,
         )
-        if response.status_code == 403:
+        status_code = _status_code(response)
+        if status_code == 403:
             raise requests.HTTPError(
                 "SEC EFTS returned 403 Forbidden. The request is declared, but "
                 "the shared runner IP may be blocked; official latest-form, "
                 "submissions/Company Facts, and cached-event fallbacks remain active.",
                 response=response,
             )
-        if response.status_code in _RETRYABLE_STATUSES and attempt + 1 < max_attempts:
+        if status_code in _RETRYABLE_STATUSES and attempt + 1 < max_attempts:
             delay = _retry_delay(response, attempt)
             LOGGER.warning(
                 "SEC EFTS returned HTTP %s; retrying in %.2fs (%s/%s)",
-                response.status_code,
+                status_code,
                 delay,
                 attempt + 1,
                 max_attempts,
@@ -104,7 +116,8 @@ def _resilient_query_hits(
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     offset = 0
-    request_interval = max(0.10, 1.0 / settings.sec_requests_per_second)
+    requests_per_second = float(getattr(settings, "sec_requests_per_second", 8.0) or 8.0)
+    request_interval = max(0.10, 1.0 / max(requests_per_second, 0.1))
 
     while offset < max_results:
         payload = request_efts_json(
