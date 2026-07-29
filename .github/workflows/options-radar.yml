@@ -29,7 +29,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     env:
       OPTIONS_PROVIDER: ${{ secrets.OPTIONS_PROVIDER || 'auto' }}
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
