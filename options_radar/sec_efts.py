@@ -210,7 +210,7 @@ def discover_sec_fulltext_events(
     recent evidence from the dashboard.
     """
 
-    end_date = date.today()
+    end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=max(1, lookback_days))
     by_key: dict[tuple[str, str], dict[str, Any]] = {}
     live_successes = 0

@@ -64,11 +64,11 @@
 ### أسعار الأسهم والشموع
 
 ```dotenv
-DAILY_PRICE_PROVIDER_ORDER=yahoo,tradier,alpaca,twelve_data,polygon,alpha_vantage
-INTRADAY_PRICE_PROVIDER_ORDER=tradier,alpaca,twelve_data,polygon,yahoo,alpha_vantage
+DAILY_PRICE_PROVIDER_ORDER=tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo
+INTRADAY_PRICE_PROVIDER_ORDER=tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo
 ```
 
-الترتيب اليومي يبدأ من Yahoo لحماية حصص الخطط المجانية الصغيرة عند فحص عشرات الأسهم. التتبع الزمني يفضل المصادر الرسمية المهيأة ثم يعود إلى Yahoo.
+Yahoo يأتي أخيرًا في الترتيبين اليومي والزمني، بعد كل مصدر مهيأ. يُستخدم فقط عند غياب أو فشل بقية المصادر، ولا يُعامل كمصدر تأكيد مستقل. عند عدم توفر مفاتيح أخرى يتحول التشغيل الفعلي إلى Yahoo وحده، وتظهر هذه الحالة بوضوح داخل `operational_status` و`source_network` و`provider_audit` بدل إخفائها.
 
 ## تتبع ترتيب الهدف والوقف
 
@@ -144,7 +144,7 @@ pytest -q
 ruff check .
 ```
 
-يشمل CI اختبارات Python، تجميع الملفات، JavaScript، JSON، ومسار target/stop الزمني.
+يشمل CI اختبارات Python، تجميع الملفات، JavaScript، JSON، ومسار target/stop الزمني. كما ينفذ بوابة Ruff صارمة على ملفات SEC وتدقيق المصادر، ويعرض تقرير Ruff شاملًا غير حاجب إلى أن ينتهي تنظيف الدين التقني القديم.
 
 ## حدود لا يمكن تجميلها
 
