@@ -4,7 +4,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import requests
@@ -148,7 +148,7 @@ def discover_attention_events(
     lookback_days: int = 30,
     max_results_per_query: int = 150,
 ) -> list[dict[str, Any]]:
-    end_date = date.today()
+    end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=max(1, lookback_days))
     events: dict[tuple[str, str], dict[str, Any]] = {}
 
