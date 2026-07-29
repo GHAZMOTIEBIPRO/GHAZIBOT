@@ -3,23 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="رادار مستقل للأسهم والعقود وSPX 0DTE، مع درجات A/B/C مبنية على فئات دليل مستقلة لا على عدد أسماء المزودين.">
-  <meta name="ghazi-ui-build" content="2026-07-28.6.2">
+  <meta name="description" content="رادار مستقل للأسهم والعقود اليومية والأسبوعية والشهرية وSPX 0DTE، مع درجات A/B/C مبنية على فئات دليل مستقلة.">
+  <meta name="ghazi-ui-build" content="2026-07-30.6.3">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>GHAZI Market Radar — Phase 6.2</title>
-  <link rel="stylesheet" href="./styles.css?v=20260728-62">
-  <link rel="stylesheet" href="./phase60.css?v=20260728-62">
-  <link rel="stylesheet" href="./phase62.css?v=20260728-62">
+  <title>GHAZI Market Radar — Phase 6.3</title>
+  <link rel="stylesheet" href="./styles.css?v=20260730-63">
+  <link rel="stylesheet" href="./phase60.css?v=20260730-63">
+  <link rel="stylesheet" href="./phase62.css?v=20260730-63">
 </head>
 <body>
   <div class="page-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">GHAZI MARKET RADAR · PHASE 6.2</p>
-        <h1>رادار الأسهم والعقود وSPX 0DTE</h1>
-        <p class="hero-copy">الفرص مصنفة A/B/C حسب فئات دليل مستقلة. اختلاف اسم مزود البيانات لا يُحسب تأكيدًا مستقلًا إذا كان يقدم النوع نفسه من الدليل.</p>
+        <p class="eyebrow">GHAZI MARKET RADAR · PHASE 6.3</p>
+        <h1>رادار الأسهم والعقود حسب مدة الانتهاء</h1>
+        <p class="hero-copy">الفرص مصنفة A/B/C حسب فئات دليل مستقلة. العقود اليومية والأسبوعية والشهرية تُفحص منفصلة، ولا تُعد أي نتيجة ضمان ربح.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -37,8 +37,8 @@
         <p>يفحص الاتجاه والسيولة والحجم النسبي والقوة القطاعية والمحفزات. درجة A تحتاج Quote سوقي وتأكيدا اتجاهيا من فئة مستقلة.</p>
       </article>
       <article class="separation-card">
-        <h3>رادار العقود — Swing</h3>
-        <p>يفحص العقد نفسه. درجة A تحتاج Quote موثوقا وFlow مستقلا مع جودة سيولة وسبريد وحداثة مناسبة.</p>
+        <h3>رادار العقود — 0 إلى 45 DTE</h3>
+        <p>يفصل العقود اليومية والأسبوعية والشهرية. درجة A تحتاج Quote مرخصا وFlow مستقلا وجودة تنفيذ مناسبة.</p>
       </article>
       <article class="separation-card">
         <h3>SPX 0DTE — مستقل</h3>
@@ -55,6 +55,10 @@
       <article class="metric-card"><span>عقود درجة A</span><strong id="contract-recommendation-count">0</strong></article>
       <article class="metric-card call-card"><span>CALL A/B/C</span><strong id="call-count">0</strong></article>
       <article class="metric-card put-card"><span>PUT A/B/C</span><strong id="put-count">0</strong></article>
+      <article class="metric-card"><span>عقود يومية 0–2 DTE</span><strong id="expiry-daily-count">0</strong></article>
+      <article class="metric-card"><span>عقود أسبوعية 3–10 DTE</span><strong id="expiry-weekly-count">0</strong></article>
+      <article class="metric-card"><span>عقود شهرية 11–45 DTE</span><strong id="expiry-monthly-count">0</strong></article>
+      <article class="metric-card"><span>أسهم صاعدة مرشحة</span><strong id="upside-stock-count">0</strong></article>
       <article class="metric-card"><span>المحفزات الرسمية</span><strong id="catalyst-count">0</strong></article>
       <article class="metric-card"><span>فرص مرفوضة</span><strong id="rejected-count">0</strong></article>
     </section>
@@ -91,7 +95,7 @@
       </section>
 
       <section id="tab-options" class="tab-panel">
-        <div class="section-heading"><div><h2>رادار العقود المستقل</h2><p>يعرض العقود المكتملة وقائمة القرب من الشروط بدل شاشة فارغة، مع سبب النقص ودرجة A/B/C.</p></div></div>
+        <div class="section-heading"><div><h2>رادار العقود المستقل</h2><p>يعرض عقود Swing الحالية ثم يفرز العقود اليومية والأسبوعية والشهرية حسب السيولة والسبريد وDelta واتجاه السهم والمصدر.</p></div></div>
         <div class="option-section call-section">
           <div class="option-section-heading"><h3>عقود CALL — درجات A/B/C</h3><span id="call-section-count">0 عقد</span></div>
           <div class="table-wrap"><table><thead><tr>
@@ -104,10 +108,12 @@
             <th>العقد</th><th>الدرجة / Flow</th><th>دخول العقد</th><th>أهداف العقد</th><th>وقف العقد</th><th>R/R</th><th>Vol/OI & Spike</th><th>Delta / السبريد</th><th>فئات الدليل</th>
           </tr></thead><tbody id="put-options-body"></tbody></table></div>
         </div>
+        <div class="section-heading"><div><h2>العقود اليومية والأسبوعية والشهرية</h2><p>ترتيب بحثي فقط. الهدف والوقف خطط مخاطرة تقديرية وليسا توقعا أو ضمانا.</p></div></div>
+        <div id="expiry-radar-sections"></div>
       </section>
 
       <section id="tab-spx0dte" class="tab-panel">
-        <div class="section-heading"><div><h2>محرك SPX 0DTE المستقل</h2><p>لا يخلط عقود 0DTE مع رادار Swing ذي 14–60 DTE. لا يصدر إعدادا من دون بيانات Intraday وOptions Quote حية.</p></div></div>
+        <div class="section-heading"><div><h2>محرك SPX 0DTE المستقل</h2><p>لا يخلط عقود 0DTE مع رادار Swing. لا يصدر إعدادا من دون بيانات Intraday وOptions Quote حية.</p></div></div>
         <div class="spx-panel">
           <div class="spx-status-grid">
             <article class="info-card"><h3>حالة المحرك</h3><p id="spx-engine-status">—</p></article>
@@ -190,7 +196,7 @@
       <div>
         <p id="disclaimer">الدرجات بحثية وليست أوامر شراء أو ضمان ربح.</p>
         <p id="refresh-result" class="refresh-result">زر التحميل يجلب آخر ملف منشور ويعرض وقت جلبه بدقة.</p>
-        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-28.6.2</strong></p>
+        <p class="refresh-result"><strong>نسخة الواجهة: 2026-07-30.6.3</strong></p>
       </div>
       <div class="footer-actions">
         <a class="secondary-button action-link" href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/actions/workflows/options-radar.yml" target="_blank" rel="noopener">تشغيل فحص جديد عبر GitHub</a>
@@ -198,9 +204,9 @@
       </div>
     </footer>
   </div>
-  <script src="./app.js?v=20260728-62" defer></script>
-  <script src="./phase51.js?v=20260728-62" defer></script>
-  <script src="./phase60.js?v=20260728-62" defer></script>
-  <script src="./phase62.js?v=20260728-62" defer></script>
+  <script src="./app.js?v=20260730-63" defer></script>
+  <script src="./phase51.js?v=20260730-63" defer></script>
+  <script src="./phase60.js?v=20260730-63" defer></script>
+  <script src="./phase62.js?v=20260730-63" defer></script>
 </body>
 </html>
