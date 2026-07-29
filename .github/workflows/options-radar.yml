@@ -54,6 +54,8 @@ jobs:
       REDDIT_COMMUNITIES: ${{ secrets.REDDIT_COMMUNITIES || 'options,stocks,StockMarket,wallstreetbets,thetagang,investing,SecurityAnalysis' }}
       INTELLIGENCE_MAX_SYMBOLS: ${{ secrets.INTELLIGENCE_MAX_SYMBOLS || '15' }}
       INTELLIGENCE_MAX_CONTRACTS: ${{ secrets.INTELLIGENCE_MAX_CONTRACTS || '30' }}
+      EXPIRY_RADAR_MAX_SYMBOLS: ${{ secrets.EXPIRY_RADAR_MAX_SYMBOLS || '8' }}
+      EXPIRY_RADAR_TOP_PER_SIDE: ${{ secrets.EXPIRY_RADAR_TOP_PER_SIDE || '8' }}
       OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
       STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
       DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
@@ -110,6 +112,9 @@ jobs:
       - name: Apply Phase 6.2 evidence tiers and SPX 0DTE status
         run: python scripts/apply_phase62.py
 
+      - name: Build daily weekly monthly expiry radar
+        run: python scripts/apply_expiry_radar.py
+
       - name: Evaluate calibration review gate
         id: calibration_gate
         run: python scripts/calibration_gate.py
@@ -144,6 +149,7 @@ jobs:
           summary = data.get('summary', {})
           intel = data.get('intelligence', {}).get('summary', {})
           spx = data.get('spx_0dte', {})
+          expiry = data.get('expiry_radar', {}).get('summary', {})
           lines = [
               '# GHAZI Market Radar — Phase 6.2',
               '',
@@ -151,6 +157,8 @@ jobs:
               f"- Stocks A/B/C: **{summary.get('stock_tier_a', 0)}/{summary.get('stock_tier_b', 0)}/{summary.get('stock_tier_c', 0)}**",
               f"- Contracts A/B/C: **{summary.get('contract_tier_a', 0)}/{summary.get('contract_tier_b', 0)}/{summary.get('contract_tier_c', 0)}**",
               f"- Near-miss contract watchlist: **{summary.get('contract_watchlist', 0)}**",
+              f"- Expiry radar daily/weekly/monthly: **{expiry.get('daily', 0)}/{expiry.get('weekly', 0)}/{expiry.get('monthly', 0)}**",
+              f"- Upside stock candidates: **{summary.get('upside_stock_candidates', 0)}**",
               f"- SPX 0DTE status: **{spx.get('status', 'unknown')}**",
               f"- External sources successful: **{intel.get('successful_sources', 0)}**",
               f"- FINRA symbols: **{intel.get('finra_symbols', 0)}**",
