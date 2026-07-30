@@ -2,7 +2,7 @@
 
 - **Model version:** `2026.07-phase6.2-evidence-tiers`
 - **Status:** **READY FOR INDEPENDENT REVIEW**
-- **Mature signals (1d checkpoint):** **180/100**
+- **Mature signals (1d checkpoint):** **181/100**
 - **Raw priced signals:** **192**
 - **Five-day mature signals:** **141**
 - **Decision:** Eligible for independent score recalibration review
@@ -16,8 +16,8 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 1 | 1 | 0 | — | — | — | — | — |
-| 70-79 | 72 | 72 | 68 | 5.9% | 5.9% | 0.0% | 15.62 | -46.21 |
-| 60-69 | 119 | 119 | 112 | 25.9% | 18.8% | 0.9% | 34.12 | -41.20 |
+| 70-79 | 72 | 72 | 69 | 5.8% | 5.8% | 0.0% | 15.38 | -46.65 |
+| 60-69 | 119 | 119 | 112 | 25.9% | 18.8% | 0.9% | 34.12 | -41.27 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
@@ -32,6 +32,7 @@
 | FDA approval record — verify materiality | 2 | 0.0% | 0.0% | 126.81 |
 | FDA approval | 2 | 0.0% | 0.0% | -0.65 |
 | bearish EMA stack | 1 | 0.0% | 0.0% | 7.68 |
+| bullish EMA stack; 20-day breakout with relative volume; MACD/RSI bullish moment | 1 | 0.0% | 0.0% | -1.13 |
 
 ## Review protocol
 
