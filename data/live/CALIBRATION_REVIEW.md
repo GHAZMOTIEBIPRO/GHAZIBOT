@@ -15,16 +15,16 @@
 | Band | Signals | Observed | Mature | Target 1 | Target 2 | Stop | Avg MFE % | Avg MAE % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
-| 80-89 | 1 | 1 | 1 | 0.0% | 0.0% | 0.0% | 2.12 | -69.31 |
-| 70-79 | 72 | 72 | 69 | 5.8% | 5.8% | 0.0% | 15.38 | -59.78 |
-| 60-69 | 119 | 119 | 114 | 25.4% | 18.4% | 0.9% | 33.84 | -61.54 |
+| 80-89 | 1 | 1 | 1 | 0.0% | 0.0% | 0.0% | 2.12 | -73.15 |
+| 70-79 | 72 | 72 | 69 | 5.8% | 5.8% | 0.0% | 15.38 | -60.59 |
+| 60-69 | 119 | 119 | 114 | 25.4% | 18.4% | 0.9% | 33.90 | -61.80 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
 
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 73 | 27.4% | 1.4% | 37.66 |
+| bullish EMA stack; MACD/RSI bullish momentum | 73 | 27.4% | 1.4% | 37.76 |
 | bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 51 | 5.9% | 0.0% | 17.97 |
 | bearish EMA stack; MACD/RSI bearish momentum | 36 | 13.9% | 0.0% | 22.93 |
 | bullish EMA stack | 12 | 41.7% | 0.0% | 14.61 |
