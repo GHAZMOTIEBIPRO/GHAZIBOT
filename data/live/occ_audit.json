@@ -6,8 +6,8 @@
   "context_only": true,
   "not_live_quote": true,
   "not_options_flow": true,
-  "successful_symbols": 7,
-  "successful_reports": 7,
+  "successful_symbols": 8,
+  "successful_reports": 8,
   "audit": {
     "COIN": {
       "symbol": "COIN",
@@ -24,54 +24,30 @@
           "free_no_key": true,
           "report_key": "daily",
           "report_type": "D",
-          "report_date": "20260724",
-          "fetched_at": "2026-07-31T21:43:04.400205+00:00",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:12.817476+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 241,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 289,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 76,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 76,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 75,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 76,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 86
+              "elapsed_ms": 55
             }
           ],
-          "call_volume": 132616,
-          "put_volume": 40872,
-          "total_volume": 173488,
-          "put_call_ratio": 0.3082,
-          "rows": 108,
-          "parsed_rows": 108
+          "call_volume": 179082,
+          "put_volume": 145306,
+          "total_volume": 324388,
+          "put_call_ratio": 0.8114,
+          "rows": 99,
+          "parsed_rows": 99
         },
         "weekly": {
           "success": false,
@@ -85,39 +61,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 59,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 58,
+              "elapsed_ms": 38,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 62,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 59,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 62,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -135,181 +111,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 61,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 34,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 56,
+              "elapsed_ms": 37,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 65,
+              "elapsed_ms": 32,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 59,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            }
-          ],
-          "error": "No parseable OCC report was available in the lookback window"
-        }
-      }
-    },
-    "AMZN": {
-      "symbol": "AMZN",
-      "source": "OCC",
-      "official": true,
-      "free_no_key": true,
-      "context_only": true,
-      "successful_reports": 1,
-      "reports": {
-        "daily": {
-          "success": true,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "daily",
-          "report_type": "D",
-          "report_date": "20260730",
-          "fetched_at": "2026-07-31T21:43:07.189049+00:00",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [
-            {
-              "report_date": "20260731",
-              "status_code": 200,
-              "elapsed_ms": 56,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 79
-            }
-          ],
-          "call_volume": 84000,
-          "put_volume": 84000,
-          "total_volume": 168000,
-          "put_call_ratio": 1.0,
-          "rows": 4,
-          "parsed_rows": 4
-        },
-        "weekly": {
-          "success": false,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "weekly",
-          "report_type": "W",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [
-            {
-              "report_date": "20260731",
-              "status_code": 200,
-              "elapsed_ms": 59,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 56,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            }
-          ],
-          "error": "No parseable OCC report was available in the lookback window"
-        },
-        "monthly": {
-          "success": false,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "monthly",
-          "report_type": "M",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [
-            {
-              "report_date": "20260731",
-              "status_code": 200,
-              "elapsed_ms": 62,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 59,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -332,54 +166,30 @@
           "free_no_key": true,
           "report_key": "daily",
           "report_type": "D",
-          "report_date": "20260724",
-          "fetched_at": "2026-07-31T21:43:10.793179+00:00",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:15.623339+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 54,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 74,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 72,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 73,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 75,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 76
+              "elapsed_ms": 59
             }
           ],
-          "call_volume": 12320,
-          "put_volume": 19462,
-          "total_volume": 31782,
-          "put_call_ratio": 1.5797,
-          "rows": 73,
-          "parsed_rows": 73
+          "call_volume": 33782,
+          "put_volume": 19786,
+          "total_volume": 53568,
+          "put_call_ratio": 0.5857,
+          "rows": 106,
+          "parsed_rows": 106
         },
         "weekly": {
           "success": false,
@@ -393,39 +203,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 70,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 69,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 37,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 61,
+              "elapsed_ms": 37,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 59,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -443,39 +253,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 37,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 59,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 43,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 60,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 66,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 60,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -483,8 +293,8 @@
         }
       }
     },
-    "AMGN": {
-      "symbol": "AMGN",
+    "AMZN": {
+      "symbol": "AMZN",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
@@ -498,54 +308,30 @@
           "free_no_key": true,
           "report_key": "daily",
           "report_type": "D",
-          "report_date": "20260724",
-          "fetched_at": "2026-07-31T21:43:14.389701+00:00",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:18.423163+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 39,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 70,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 75,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 72,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 77,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 70
+              "elapsed_ms": 57
             }
           ],
-          "call_volume": 2752,
-          "put_volume": 366,
-          "total_volume": 3118,
-          "put_call_ratio": 0.133,
-          "rows": 64,
-          "parsed_rows": 64
+          "call_volume": 1499502,
+          "put_volume": 659084,
+          "total_volume": 2158586,
+          "put_call_ratio": 0.4395,
+          "rows": 113,
+          "parsed_rows": 113
         },
         "weekly": {
           "success": false,
@@ -559,39 +345,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 41,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 54,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 63,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -609,39 +395,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 34,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 59,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 53,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 53,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 56,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -649,8 +435,8 @@
         }
       }
     },
-    "META": {
-      "symbol": "META",
+    "NET": {
+      "symbol": "NET",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
@@ -664,46 +450,28 @@
           "free_no_key": true,
           "report_key": "daily",
           "report_type": "D",
-          "report_date": "20260727",
-          "fetched_at": "2026-07-31T21:43:17.799316+00:00",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:21.224635+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 34,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 62,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 71,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 72,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 76,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 76
+              "elapsed_ms": 57
             }
           ],
-          "call_volume": 384674,
-          "put_volume": 196400,
-          "total_volume": 581074,
-          "put_call_ratio": 0.5106,
+          "call_volume": 2576,
+          "put_volume": 5002,
+          "total_volume": 7578,
+          "put_call_ratio": 1.9418,
           "rows": 91,
           "parsed_rows": 91
         },
@@ -719,39 +487,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 59,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 32,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 59,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 63,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -769,39 +537,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 58,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -809,63 +577,45 @@
         }
       }
     },
-    "SNXX": {
-      "symbol": "SNXX",
+    "PLTR": {
+      "symbol": "PLTR",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
       "context_only": true,
-      "successful_reports": 0,
+      "successful_reports": 1,
       "reports": {
         "daily": {
-          "success": false,
+          "success": true,
           "source": "OCC Volume Query",
           "official": true,
           "free_no_key": true,
           "report_key": "daily",
           "report_type": "D",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:24.024797+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 37,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 76,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 71,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 85,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 74,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 82,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 55
             }
           ],
-          "error": "No parseable OCC report was available in the lookback window"
+          "call_volume": 267524,
+          "put_volume": 146210,
+          "total_volume": 413734,
+          "put_call_ratio": 0.5465,
+          "rows": 108,
+          "parsed_rows": 108
         },
         "weekly": {
           "success": false,
@@ -879,39 +629,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 34,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 69,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 63,
+              "elapsed_ms": 32,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 55,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 56,
+              "elapsed_ms": 40,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -929,39 +679,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 65,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 37,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 59,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 56,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 165,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -984,34 +734,28 @@
           "free_no_key": true,
           "report_key": "daily",
           "report_type": "D",
-          "report_date": "20260729",
-          "fetched_at": "2026-07-31T21:43:24.403823+00:00",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:26.830447+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 41,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 73,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 74
+              "elapsed_ms": 59
             }
           ],
-          "call_volume": 1281146,
-          "put_volume": 1631338,
-          "total_volume": 2912484,
-          "put_call_ratio": 1.2733,
+          "call_volume": 2040508,
+          "put_volume": 1765484,
+          "total_volume": 3805992,
+          "put_call_ratio": 0.8652,
           "rows": 108,
           "parsed_rows": 108
         },
@@ -1027,39 +771,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 56,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 61,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 59,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -1077,39 +821,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 56,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 37,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 58,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 58,
+              "elapsed_ms": 35,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 56,
+              "elapsed_ms": 37,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -1117,8 +861,8 @@
         }
       }
     },
-    "SOFI": {
-      "symbol": "SOFI",
+    "DKNG": {
+      "symbol": "DKNG",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
@@ -1132,54 +876,30 @@
           "free_no_key": true,
           "report_key": "daily",
           "report_type": "D",
-          "report_date": "20260724",
-          "fetched_at": "2026-07-31T21:43:28.009082+00:00",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:29.631944+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 34,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 56,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260730",
-              "status_code": 200,
-              "elapsed_ms": 76,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260729",
-              "status_code": 200,
-              "elapsed_ms": 77,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260728",
-              "status_code": 200,
-              "elapsed_ms": 73,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260727",
-              "status_code": 200,
-              "elapsed_ms": 75,
-              "error": "ValueError: OCC CSV contains no data rows"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 79
+              "elapsed_ms": 61
             }
           ],
-          "call_volume": 83850,
-          "put_volume": 65454,
-          "total_volume": 149304,
-          "put_call_ratio": 0.7806,
-          "rows": 73,
-          "parsed_rows": 73
+          "call_volume": 14340,
+          "put_volume": 4734,
+          "total_volume": 19074,
+          "put_call_ratio": 0.3301,
+          "rows": 74,
+          "parsed_rows": 74
         },
         "weekly": {
           "success": false,
@@ -1193,39 +913,39 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 38,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 57,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 34,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 60,
+              "elapsed_ms": 38,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 55,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 60,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC response is empty or HTML instead of CSV"
-            },
-            {
-              "report_date": "20260724",
-              "status_code": 200,
-              "elapsed_ms": 58,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -1243,39 +963,181 @@
           "not_options_flow": true,
           "attempts": [
             {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
               "report_date": "20260731",
               "status_code": 200,
-              "elapsed_ms": 58,
-              "error": "ValueError: OCC CSV contains no data rows"
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 60,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260729",
               "status_code": 200,
-              "elapsed_ms": 60,
+              "elapsed_ms": 36,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260728",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 33,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260727",
               "status_code": 200,
-              "elapsed_ms": 57,
+              "elapsed_ms": 38,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            }
+          ],
+          "error": "No parseable OCC report was available in the lookback window"
+        }
+      }
+    },
+    "CVX": {
+      "symbol": "CVX",
+      "source": "OCC",
+      "official": true,
+      "free_no_key": true,
+      "context_only": true,
+      "successful_reports": 1,
+      "reports": {
+        "daily": {
+          "success": true,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "daily",
+          "report_type": "D",
+          "report_date": "20260731",
+          "fetched_at": "2026-08-03T15:34:32.426256+00:00",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [
+            {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
+              "report_date": "20260731",
+              "status_code": 200,
+              "elapsed_ms": 52
+            }
+          ],
+          "call_volume": 28604,
+          "put_volume": 4352,
+          "total_volume": 32956,
+          "put_call_ratio": 0.1521,
+          "rows": 88,
+          "parsed_rows": 88
+        },
+        "weekly": {
+          "success": false,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "weekly",
+          "report_type": "W",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [
+            {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
+              "report_date": "20260731",
+              "status_code": 200,
+              "elapsed_ms": 58,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             },
             {
-              "report_date": "20260724",
+              "report_date": "20260730",
               "status_code": 200,
-              "elapsed_ms": 59,
+              "elapsed_ms": 32,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            },
+            {
+              "report_date": "20260729",
+              "status_code": 200,
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            },
+            {
+              "report_date": "20260728",
+              "status_code": 200,
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            },
+            {
+              "report_date": "20260727",
+              "status_code": 200,
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            }
+          ],
+          "error": "No parseable OCC report was available in the lookback window"
+        },
+        "monthly": {
+          "success": false,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "monthly",
+          "report_type": "M",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [
+            {
+              "report_date": "20260803",
+              "status_code": 200,
+              "elapsed_ms": 36,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
+              "report_date": "20260731",
+              "status_code": 200,
+              "elapsed_ms": 35,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            },
+            {
+              "report_date": "20260730",
+              "status_code": 200,
+              "elapsed_ms": 49,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            },
+            {
+              "report_date": "20260729",
+              "status_code": 200,
+              "elapsed_ms": 33,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            },
+            {
+              "report_date": "20260728",
+              "status_code": 200,
+              "elapsed_ms": 34,
+              "error": "ValueError: OCC response is empty or HTML instead of CSV"
+            },
+            {
+              "report_date": "20260727",
+              "status_code": 200,
+              "elapsed_ms": 34,
               "error": "ValueError: OCC response is empty or HTML instead of CSV"
             }
           ],

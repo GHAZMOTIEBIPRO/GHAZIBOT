@@ -4,7 +4,7 @@
 - **Status:** **READY FOR INDEPENDENT REVIEW**
 - **Mature signals (1d checkpoint):** **184/100**
 - **Raw priced signals:** **192**
-- **Five-day mature signals:** **141**
+- **Five-day mature signals:** **171**
 - **Decision:** Eligible for independent score recalibration review
 
 > Same-scan observations do not count toward calibration readiness. 
@@ -16,8 +16,8 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 1 | 1 | 1 | 0.0% | 0.0% | 0.0% | 2.12 | -73.15 |
-| 70-79 | 72 | 72 | 69 | 5.8% | 5.8% | 0.0% | 15.38 | -60.59 |
-| 60-69 | 119 | 119 | 114 | 25.4% | 18.4% | 0.9% | 33.90 | -61.80 |
+| 70-79 | 72 | 72 | 69 | 5.8% | 5.8% | 0.0% | 15.38 | -65.29 |
+| 60-69 | 119 | 119 | 114 | 25.4% | 18.4% | 0.9% | 33.90 | -64.15 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
