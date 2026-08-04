@@ -4,7 +4,7 @@
     "NET": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:15.063475+03:00",
+      "fetched_at": "2026-08-04T20:17:37.393697+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -37,7 +37,7 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 910,
+          "elapsed_ms": 1009,
           "rows": 617,
           "status_code": null,
           "error": null
@@ -59,7 +59,7 @@
     "AMZN": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:17.493698+03:00",
+      "fetched_at": "2026-08-04T20:17:39.957496+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -92,7 +92,7 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 1187,
+          "elapsed_ms": 1291,
           "rows": 978,
           "status_code": null,
           "error": null
@@ -114,7 +114,7 @@
     "ANET": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:18.964635+03:00",
+      "fetched_at": "2026-08-04T20:17:41.494271+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -147,7 +147,7 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 813,
+          "elapsed_ms": 868,
           "rows": 475,
           "status_code": null,
           "error": null
@@ -169,7 +169,7 @@
     "SNOW": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:20.697677+03:00",
+      "fetched_at": "2026-08-04T20:17:43.334157+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -202,7 +202,7 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 853,
+          "elapsed_ms": 943,
           "rows": 689,
           "status_code": null,
           "error": null
@@ -221,10 +221,10 @@
         "opra_source_active": false
       }
     },
-    "SPY": {
+    "NVO": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:25.728492+03:00",
+      "fetched_at": "2026-08-04T20:17:44.733063+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -257,14 +257,14 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 1967,
-          "rows": 2312,
+          "elapsed_ms": 908,
+          "rows": 358,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
-        "symbol": "SPY",
+        "symbol": "NVO",
         "min_dte": 0,
         "max_dte": 45,
         "successful_sources": [
@@ -272,14 +272,14 @@
         ],
         "source_count": 1,
         "cross_source_confirmed": false,
-        "contracts_after_merge": 2312,
+        "contracts_after_merge": 358,
         "opra_source_active": false
       }
     },
-    "JPM": {
+    "AMGN": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:27.374553+03:00",
+      "fetched_at": "2026-08-04T20:17:46.372065+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -312,7 +312,62 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 785,
+          "elapsed_ms": 904,
+          "rows": 536,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "AMGN",
+        "min_dte": 0,
+        "max_dte": 45,
+        "successful_sources": [
+          "yahoo"
+        ],
+        "source_count": 1,
+        "cross_source_confirmed": false,
+        "contracts_after_merge": 536,
+        "opra_source_active": false
+      }
+    },
+    "JPM": {
+      "source": "yahoo",
+      "freshness": "unofficial / may be delayed",
+      "fetched_at": "2026-08-04T20:17:48.169394+03:00",
+      "attempts": [
+        {
+          "provider": "tradier",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: TRADIER_TOKEN is not configured"
+        },
+        {
+          "provider": "marketdata",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "ValueError: MARKETDATA_TOKEN is required"
+        },
+        {
+          "provider": "finnhub",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
+        },
+        {
+          "provider": "yahoo",
+          "operation": "option_chain",
+          "success": true,
+          "elapsed_ms": 1044,
           "rows": 570,
           "status_code": null,
           "error": null
@@ -331,10 +386,10 @@
         "opra_source_active": false
       }
     },
-    "COIN": {
+    "SPY": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:29.558066+03:00",
+      "fetched_at": "2026-08-04T20:17:53.343951+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -367,14 +422,14 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 983,
-          "rows": 916,
+          "elapsed_ms": 2057,
+          "rows": 2312,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
-        "symbol": "COIN",
+        "symbol": "SPY",
         "min_dte": 0,
         "max_dte": 45,
         "successful_sources": [
@@ -382,62 +437,7 @@
         ],
         "source_count": 1,
         "cross_source_confirmed": false,
-        "contracts_after_merge": 916,
-        "opra_source_active": false
-      }
-    },
-    "AMGN": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-04T18:34:31.053486+03:00",
-      "attempts": [
-        {
-          "provider": "tradier",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: TRADIER_TOKEN is not configured"
-        },
-        {
-          "provider": "marketdata",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "ValueError: MARKETDATA_TOKEN is required"
-        },
-        {
-          "provider": "finnhub",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
-        },
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 785,
-          "rows": 536,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "AMGN",
-        "min_dte": 0,
-        "max_dte": 45,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 536,
+        "contracts_after_merge": 2312,
         "opra_source_active": false
       }
     }
