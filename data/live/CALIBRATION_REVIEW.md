@@ -16,8 +16,8 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 1 | 1 | 1 | 0.0% | 0.0% | 0.0% | 2.12 | -73.15 |
-| 70-79 | 72 | 72 | 69 | 5.8% | 5.8% | 0.0% | 21.16 | -75.46 |
-| 60-69 | 119 | 119 | 114 | 25.4% | 18.4% | 0.9% | 45.35 | -69.69 |
+| 70-79 | 72 | 72 | 69 | 5.8% | 5.8% | 0.0% | 21.27 | -75.59 |
+| 60-69 | 119 | 119 | 114 | 25.4% | 18.4% | 0.9% | 45.41 | -69.76 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
@@ -25,8 +25,8 @@
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
 | bullish EMA stack; MACD/RSI bullish momentum | 73 | 27.4% | 1.4% | 53.18 |
-| bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 51 | 5.9% | 0.0% | 18.52 |
-| bearish EMA stack; MACD/RSI bearish momentum | 36 | 13.9% | 0.0% | 23.75 |
+| bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 51 | 5.9% | 0.0% | 18.65 |
+| bearish EMA stack; MACD/RSI bearish momentum | 36 | 13.9% | 0.0% | 23.97 |
 | bullish EMA stack | 12 | 41.7% | 0.0% | 48.27 |
 | Secondary mention — Acquisition | 6 | 0.0% | 0.0% | -0.84 |
 | FDA approval record — verify materiality | 2 | 0.0% | 0.0% | 185.53 |
