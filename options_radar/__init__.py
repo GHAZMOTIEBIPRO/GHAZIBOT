@@ -31,8 +31,16 @@ from .phase61_sources import install_phase61_fetching
 
 install_phase61_fetching()
 
+# Preserve provider series/root metadata before the multi-source option frames
+# are merged. The expiry identity engine must prefer provider metadata to any
+# calendar inference when both are available.
+from .expiry_provider_metadata import install_expiry_provider_metadata
+
+install_expiry_provider_metadata()
+
 # Provider composites can omit DTE, while Yahoo has no contract Greeks. Restore
-# DTE from expiration and label Black-Scholes estimates before expiry ranking.
+# DTE from expiration, classify expiry identity, and label Black-Scholes
+# estimates before expiry ranking.
 from .expiry_chain_normalizer import install_expiry_chain_normalizer
 
 install_expiry_chain_normalizer()
@@ -78,4 +86,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.3.1"
+__version__ = "6.4.0"

@@ -1,4 +1,4 @@
-/* Phase 6.2: evidence tiers and independent SPX 0DTE panel. */
+/* Phase 6.2: evidence tiers, independent SPX 0DTE panel, and expiry identity tabs. */
 
 .tier-banner {
   display: flex;
@@ -87,8 +87,53 @@ tr.tier-c td { opacity: .85; }
   background: rgba(235, 174, 52, .08);
 }
 
+.expiry-tabs {
+  display: flex;
+  gap: .55rem;
+  overflow-x: auto;
+  padding: .25rem 0 .9rem;
+  scrollbar-width: thin;
+}
+.expiry-tab-button {
+  appearance: none;
+  border: 1px solid var(--line, #2b3446);
+  background: rgba(12, 18, 30, .55);
+  color: inherit;
+  border-radius: 999px;
+  padding: .65rem .9rem;
+  font: inherit;
+  font-size: .82rem;
+  white-space: nowrap;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+}
+.expiry-tab-button span {
+  display: inline-flex;
+  min-width: 1.45rem;
+  height: 1.45rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(152, 163, 181, .12);
+  font-size: .72rem;
+  font-weight: 800;
+}
+.expiry-tab-button.active {
+  border-color: rgba(85, 213, 138, .7);
+  background: rgba(38, 166, 91, .13);
+}
+.expiry-tab-button:focus-visible {
+  outline: 2px solid rgba(85, 213, 138, .9);
+  outline-offset: 2px;
+}
+.expiry-tab-panel[hidden] { display: none !important; }
+.expiry-tab-panels { min-height: 8rem; }
+
 @media (max-width: 900px) {
   .tier-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .spx-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tier-banner { align-items: flex-start; flex-direction: column; }
+  .expiry-tab-button { padding: .6rem .75rem; }
 }

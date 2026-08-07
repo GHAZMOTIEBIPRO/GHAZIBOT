@@ -50,7 +50,7 @@ jobs:
       X_WATCH_ACCOUNTS: ${{ secrets.X_WATCH_ACCOUNTS || 'unusual_whales,spotgamma,CheddarFlow,Barchart,Benzinga,Cboe,NasdaqExchange,NYSE' }}
       REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
       REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT || 'GHAZI-Market-Radar/6.2' }}
+      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT || 'GHAZI-Market-Radar/Omega' }}
       REDDIT_COMMUNITIES: ${{ secrets.REDDIT_COMMUNITIES || 'options,stocks,StockMarket,wallstreetbets,thetagang,investing,SecurityAnalysis' }}
       INTELLIGENCE_MAX_SYMBOLS: ${{ secrets.INTELLIGENCE_MAX_SYMBOLS || '15' }}
       INTELLIGENCE_MAX_CONTRACTS: ${{ secrets.INTELLIGENCE_MAX_CONTRACTS || '30' }}
@@ -79,7 +79,7 @@ jobs:
       FLOW_HISTORY_WORKERS: "3"
       FLOW_HISTORY_LOOKBACK_DAYS: "14"
       FLOW_TOP_PER_SIDE: "15"
-      MODEL_VERSION: "2026.07-phase6.2-evidence-tiers"
+      MODEL_VERSION: "2026.08-omega-reengineering"
       MAX_UNIVERSE_SIZE: "150"
       CALIBRATION_MINIMUM_SAMPLE: "100"
       OUTCOME_MAX_AGE_DAYS: "60"
@@ -110,18 +110,21 @@ jobs:
             python run_live_export.py --top-stocks 15 --top-options 15
           fi
 
-      - name: Apply Phase 6.2 evidence tiers and SPX 0DTE status
+      - name: Apply evidence tiers and SPX 0DTE status
         run: python scripts/apply_phase62.py
 
-      - name: Build daily weekly monthly expiry radar with free OCC context
+      - name: Build expiry identity radar with OCC context and Omega
         run: python scripts/apply_expiry_radar.py
+
+      - name: Validate Omega export contract
+        run: python scripts/validate_omega_export.py public/data/latest.json
 
       - name: Evaluate calibration review gate
         id: calibration_gate
         run: python scripts/calibration_gate.py
 
       - name: Open one-time calibration review issue
-        if: steps.calibration_gate.outputs.should_open == 'true'
+        if: github.ref == 'refs/heads/main' && steps.calibration_gate.outputs.should_open == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -130,7 +133,8 @@ jobs:
           if [[ -n "$existing_url" ]]; then
             issue_url="$existing_url"
           else
-            issue_url="$(gh issue create --title "Calibration review ready — $MODEL_VERSION" --body-file data/live/CALIBRATION_REVIEW.md)"
+            title="Calibration review ready — $MODEL_VERSION"
+            issue_url="$(gh issue create --title "$title" --body-file data/live/CALIBRATION_REVIEW.md)"
           fi
           python scripts/calibration_gate.py --mark "$issue_url"
 
@@ -144,41 +148,52 @@ jobs:
 
           path = Path('public/data/latest.json')
           if not path.exists():
-              Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('# GHAZI Radar\n\nNo output file was generated.', encoding='utf-8')
+              Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('# GHAZIBOT Ω\n\nNo output file was generated.', encoding='utf-8')
               raise SystemExit(0)
           data = json.loads(path.read_text(encoding='utf-8'))
           summary = data.get('summary', {})
           intel = data.get('intelligence', {}).get('summary', {})
           spx = data.get('spx_0dte', {})
           expiry = data.get('expiry_radar', {}).get('summary', {})
+          omega = data.get('omega', {})
+          omega_summary = omega.get('summary', {})
+          validation = omega.get('validation', {})
+          sec = data.get('sec_incremental_metrics', {})
+          health = data.get('health', {})
           lines = [
-              '# GHAZI Market Radar — Phase 6.2',
+              '# GHAZIBOT Ω — Research Radar',
               '',
               f"- Model: `{data.get('model_version', 'unknown')}`",
+              f"- Health: **{health.get('status', 'unknown')}**",
+              f"- Validation: **{validation.get('edge_status', 'EDGE NOT YET PROVEN')}**",
               f"- Stocks A/B/C: **{summary.get('stock_tier_a', 0)}/{summary.get('stock_tier_b', 0)}/{summary.get('stock_tier_c', 0)}**",
               f"- Contracts A/B/C: **{summary.get('contract_tier_a', 0)}/{summary.get('contract_tier_b', 0)}/{summary.get('contract_tier_c', 0)}**",
-              f"- Near-miss contract watchlist: **{summary.get('contract_watchlist', 0)}**",
-              f"- Expiry radar daily/weekly/monthly: **{expiry.get('daily', 0)}/{expiry.get('weekly', 0)}/{expiry.get('monthly', 0)}**",
-              f"- OCC free official symbols/reports: **{expiry.get('occ_successful_symbols', 0)}/{expiry.get('occ_successful_reports', 0)}**",
-              f"- Upside stock candidates: **{summary.get('upside_stock_candidates', 0)}**",
+              f"- Ω DAY / SWING: **{omega_summary.get('day_opportunities', 0)}/{omega_summary.get('swing_opportunities', 0)}**",
+              f"- Ω Upside / Downside: **{omega_summary.get('upside_candidates', 0)}/{omega_summary.get('downside_candidates', 0)}**",
+              f"- Catalyst clusters / duplicates collapsed: **{summary.get('catalyst_event_clusters', 0)}/{summary.get('catalyst_duplicates_collapsed', 0)}**",
+              f"- Expiry identity daily/weekly/monthly views: **{expiry.get('daily', 0)}/{expiry.get('weekly', 0)}/{expiry.get('monthly', 0)}**",
+              f"- OCC official symbols/reports: **{expiry.get('occ_successful_symbols', 0)}/{expiry.get('occ_successful_reports', 0)}**",
+              f"- SEC cache hits / doc fetches / prefilter skips: **{sec.get('cache_hits', 0)}/{sec.get('document_fetches', 0)}/{sec.get('prefilter_skips', 0)}**",
               f"- SPX 0DTE status: **{spx.get('status', 'unknown')}**",
               f"- External sources successful: **{intel.get('successful_sources', 0)}**",
-              f"- FINRA symbols: **{intel.get('finra_symbols', 0)}**",
-              f"- Social mentions: **{intel.get('social_mentions', 0)}**",
-              f"- Benzinga matches: **{intel.get('benzinga_contract_matches', 0)}**",
           ]
           Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(lines), encoding='utf-8')
           PY
 
       - name: Publish dashboard data and evidence
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config user.name "ghazi-radar-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add public/data/latest.json
           for file in \
+            public/data/latest.json \
+            public/data/health.json \
+            public/data/data-status.json \
             data/cache/sec_efts_events.json \
             data/cache/sec_efts_status.json \
+            data/cache/sec_processed_accessions.json \
+            data/cache/sec_incremental_status.json \
             data/live/source_audit.json \
             data/live/intelligence_audit.json \
             data/live/occ_audit.json \
@@ -194,7 +209,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data change to publish."
           else
-            git commit -m "data: refresh Phase 6.2 evidence tiers [skip ci]"
+            git commit -m "data: refresh GHAZIBOT Omega research state [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -203,12 +218,16 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ghazi-market-radar-results
+          name: ghazibot-omega-results
           retention-days: 14
           path: |
             public/data/latest.json
+            public/data/health.json
+            public/data/data-status.json
             data/cache/sec_efts_events.json
             data/cache/sec_efts_status.json
+            data/cache/sec_processed_accessions.json
+            data/cache/sec_incremental_status.json
             data/live/*.json
             data/live/*.jsonl
             data/live/*.md

@@ -1,0 +1,162 @@
+name: Expiry Radar Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/omega-expiry-identity-p0
+    paths:
+      - "options_radar/**"
+      - "scripts/apply_expiry_radar.py"
+      - ".github/workflows/expiry-benchmark.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPTIONS_PROVIDER: ${{ secrets.OPTIONS_PROVIDER || 'auto' }}
+      MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
+      OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+      EXPIRY_RADAR_MAX_SYMBOLS: ${{ secrets.EXPIRY_RADAR_MAX_SYMBOLS || '8' }}
+      EXPIRY_RADAR_TOP_PER_SIDE: ${{ secrets.EXPIRY_RADAR_TOP_PER_SIDE || '8' }}
+      EXPIRY_RADAR_WORKERS: "3"
+
+    steps:
+      - name: Checkout baseline main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: baseline
+
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: candidate
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: candidate/requirements.txt
+
+      - name: Install
+        run: pip install -r candidate/requirements.txt
+
+      - name: Freeze identical input snapshot
+        shell: bash
+        run: |
+          cp candidate/public/data/latest.json /tmp/expiry-input.json
+          cp /tmp/expiry-input.json baseline/public/data/latest.json
+          cp /tmp/expiry-input.json candidate/public/data/latest.json
+
+      - name: Benchmark baseline and candidate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import statistics
+          import subprocess
+          import time
+          from pathlib import Path
+
+          root = Path.cwd()
+          snapshot = Path('/tmp/expiry-input.json').read_bytes()
+          results = {}
+
+          def run_variant(name: str, directory: Path, runs: int = 2):
+              durations = []
+              outputs = []
+              for index in range(runs):
+                  (directory / 'public/data/latest.json').write_bytes(snapshot)
+                  started = time.perf_counter()
+                  proc = subprocess.run(
+                      ['python', 'scripts/apply_expiry_radar.py'],
+                      cwd=directory,
+                      text=True,
+                      capture_output=True,
+                      timeout=420,
+                  )
+                  elapsed = time.perf_counter() - started
+                  durations.append(elapsed)
+                  outputs.append({
+                      'run': index + 1,
+                      'seconds': round(elapsed, 4),
+                      'returncode': proc.returncode,
+                      'stdout_tail': proc.stdout[-1500:],
+                      'stderr_tail': proc.stderr[-1500:],
+                  })
+                  if proc.returncode != 0:
+                      raise SystemExit(
+                          f'{name} run {index + 1} failed\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}'
+                      )
+              data = json.loads((directory / 'public/data/latest.json').read_text(encoding='utf-8'))
+              radar = data.get('expiry_radar', {})
+              return {
+                  'runs_seconds': [round(x, 4) for x in durations],
+                  'median_seconds': round(statistics.median(durations), 4),
+                  'mean_seconds': round(statistics.mean(durations), 4),
+                  'symbols_scanned': radar.get('summary', {}).get('symbols_scanned'),
+                  'contracts_published': radar.get('summary', {}).get('contracts_published'),
+                  'unknown_expiry_family': radar.get('summary', {}).get('unknown_expiry_family'),
+                  'occ_successful_symbols': radar.get('summary', {}).get('occ_successful_symbols'),
+                  'internal_performance': radar.get('performance', {}),
+                  'outputs': outputs,
+              }
+
+          results['baseline_main'] = run_variant('baseline_main', root / 'baseline')
+          results['candidate'] = run_variant('candidate', root / 'candidate')
+          baseline = results['baseline_main']['median_seconds']
+          candidate = results['candidate']['median_seconds']
+          results['comparison'] = {
+              'baseline_seconds': baseline,
+              'candidate_seconds': candidate,
+              'delta_seconds': round(candidate - baseline, 4),
+              'improvement_pct': round((baseline - candidate) / baseline * 100.0, 2) if baseline else None,
+              'method': 'two sequential live-provider runs per variant using the same frozen latest.json input; median reported',
+              'warning': 'External provider/network variance remains; this is an operational benchmark, not a latency guarantee.',
+          }
+
+          out = root / 'expiry-benchmark.json'
+          out.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding='utf-8')
+          print(json.dumps(results['comparison'], ensure_ascii=False, indent=2))
+
+          summary = Path(os.environ['GITHUB_STEP_SUMMARY'])
+          lines = [
+              '# Expiry Radar Before / After',
+              '',
+              f"- Baseline main median: **{baseline:.2f}s**",
+              f"- Candidate median: **{candidate:.2f}s**",
+              f"- Delta: **{candidate - baseline:+.2f}s**",
+              f"- Improvement: **{results['comparison']['improvement_pct']:+.2f}%**",
+              '',
+              f"- Baseline runs: `{results['baseline_main']['runs_seconds']}`",
+              f"- Candidate runs: `{results['candidate']['runs_seconds']}`",
+              f"- Candidate symbols scanned: **{results['candidate']['symbols_scanned']}**",
+              f"- Candidate contracts published: **{results['candidate']['contracts_published']}**",
+              f"- Candidate unknown expiry family: **{results['candidate']['unknown_expiry_family']}**",
+              '',
+              '> Same frozen input snapshot; external providers remain live, so network/provider variance is still present.',
+          ]
+          summary.write_text('\n'.join(lines), encoding='utf-8')
+          PY
+
+      - name: Upload benchmark
+        uses: actions/upload-artifact@v4
+        with:
+          name: expiry-radar-benchmark
+          path: expiry-benchmark.json
+          retention-days: 14

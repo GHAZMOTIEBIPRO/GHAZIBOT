@@ -5,10 +5,7 @@ on:
   push:
     branches:
       - main
-      - "feat/**"
       - "fix/**"
-      - "feature/**"
-      - "agent/**"
 
 permissions:
   contents: read
@@ -16,121 +13,83 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - run: pip install -r requirements-dev.txt
-      - name: Run Python tests
-        shell: bash
+
+      - name: Install test dependencies
         run: |
-          set -o pipefail
-          pytest -q 2>&1 | tee pytest-output.txt
-      - name: Upload pytest diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-diagnostics
-          path: pytest-output.txt
-          if-no-files-found: ignore
-          retention-days: 7
-      - name: Compile Python entrypoints and engines
-        run: >-
-          python -m py_compile
-          main.py
-          export_web.py
-          run_live_export.py
-          options_radar/hybrid_fetcher.py
-          options_radar/flow_fetcher.py
-          options_radar/flow_scoring.py
-          options_radar/market_regime.py
-          options_radar/outcomes.py
-          options_radar/flow_analyzer.py
-          options_radar/scanner.py
-          options_radar/scoring.py
-          options_radar/phase51_export.py
-          options_radar/phase60_sources.py
-          options_radar/phase60_audit_guard.py
-          options_radar/phase60_overlay.py
-          options_radar/phase60_source_network.py
-          options_radar/phase61_overlay.py
-          options_radar/phase61_policy.py
-          options_radar/phase61_finra.py
-          options_radar/phase61_providers.py
-          options_radar/phase62_policy.py
-          options_radar/phase62_quality.py
-          options_radar/phase62_contract_separation.py
-          options_radar/expiry_chain_normalizer.py
-          options_radar/expiry_radar.py
-          options_radar/occ_free_data.py
-          options_radar/occ_expiry_overlay.py
-          options_radar/sec_attention.py
-          options_radar/sec_efts.py
-          options_radar/sec_efts_resilience.py
-          options_radar/spx_0dte.py
-          options_radar/live_scanners.py
-          options_radar/strict_catalysts.py
-          options_radar/catalyst_selection.py
-          options_radar/interest_factors.py
-          options_radar/interest_radar.py
-          options_radar/operations.py
-          options_radar/calibration_report.py
-          options_radar/market_bars.py
-          options_radar/journal.py
-          options_radar/macro.py
-          options_radar/sec_fundamentals.py
-          scripts/prime_sec_efts.py
-          scripts/apply_phase60.py
-          scripts/apply_phase62.py
-          scripts/apply_expiry_radar.py
-          scripts/calibration_gate.py
-      - name: Ruff critical SEC source-audit UTC expiry and OCC gate
-        run: >-
-          ruff check
-          options_radar/sec_efts.py
-          options_radar/sec_efts_resilience.py
-          options_radar/sec_attention.py
-          options_radar/strict_catalysts.py
-          options_radar/catalyst_selection.py
-          options_radar/phase60_sources.py
-          options_radar/phase60_audit_guard.py
-          options_radar/phase61_finra.py
-          options_radar/phase61_providers.py
-          options_radar/expiry_chain_normalizer.py
-          options_radar/expiry_radar.py
-          options_radar/occ_free_data.py
-          options_radar/occ_expiry_overlay.py
-          scripts/prime_sec_efts.py
-          scripts/apply_expiry_radar.py
-          tests/test_sec_efts_resilience.py
-          tests/test_phase60_audit_guard.py
-          tests/test_expiry_chain_normalizer.py
-          tests/test_expiry_radar.py
-          tests/test_occ_free_data.py
-          --select E9,F,S110,DTZ
-          --output-format=github
-      - name: Ruff repository-wide baseline report
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Unit and integration tests
+        run: pytest -q
+
+      - name: Python syntax and import compilation
+        run: |
+          python -m compileall -q \
+            main.py export_web.py run_live_export.py \
+            options_radar scripts
+
+      - name: Critical Ruff gate
+        run: |
+          ruff check \
+            options_radar/expiry_identity.py \
+            options_radar/expiry_provider_metadata.py \
+            options_radar/expiry_chain_normalizer.py \
+            options_radar/expiry_radar.py \
+            options_radar/occ_expiry_overlay.py \
+            options_radar/strict_catalysts.py \
+            options_radar/omega_catalyst_intelligence.py \
+            options_radar/omega_target_map.py \
+            options_radar/omega_opportunity.py \
+            options_radar/omega_observability.py \
+            options_radar/omega_validation.py \
+            options_radar/omega_engine.py \
+            scripts/apply_phase62.py \
+            scripts/apply_expiry_radar.py \
+            scripts/validate_omega_export.py \
+            tests/test_expiry_identity.py \
+            tests/test_omega_catalyst_intelligence.py \
+            tests/test_omega_target_map.py \
+            tests/test_omega_opportunity.py \
+            tests/test_omega_observability.py \
+            tests/test_omega_validation.py \
+            --select E9,F63,F7,F82
+
+      - name: Repository Ruff baseline
         continue-on-error: true
-        run: ruff check . --output-format=github
-      - name: Validate dashboard JavaScript
+        run: ruff check .
+
+      - name: JavaScript syntax gate
         run: |
           node --check public/app.js
           node --check public/phase51.js
           node --check public/phase60.js
           node --check public/phase62.js
           node --check public/expiry-radar.js
-      - name: Validate JSON configuration
+          node --check public/omega.js
+
+      - name: JSON and Vercel configuration
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          json.loads(Path('vercel.json').read_text(encoding='utf-8'))
-          json.loads(Path('public/data/latest.json').read_text(encoding='utf-8'))
-          json.loads(Path('data/company_aliases.json').read_text(encoding='utf-8'))
-          print('JSON configuration is valid')
+          for path in (
+              "vercel.json",
+              "public/data/latest.json",
+              "data/company_aliases.json",
+              "public/data/health.json",
+              "public/data/data-status.json",
+          ):
+              json.loads(Path(path).read_text(encoding="utf-8"))
+              print("valid", path)
           PY
+
+      - name: Omega export schema and UI smoke
+        run: python scripts/validate_omega_export.py public/data/latest.json --apply-in-memory

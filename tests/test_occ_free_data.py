@@ -6,7 +6,7 @@ from typing import Any
 import requests
 
 from options_radar.occ_expiry_overlay import apply_occ_to_expiry_radar
-from options_radar.occ_free_data import OccFreeVolumeClient, parse_occ_volume_csv
+from options_radar.occ_free_data import OccFreeVolumeClient, fetch_occ_contexts, parse_occ_volume_csv
 
 
 def test_parse_occ_aggregate_columns() -> None:
@@ -69,6 +69,48 @@ def test_occ_client_falls_back_to_previous_business_date() -> None:
     assert session.calls[1]["params"]["reportDate"] == "20260728"
 
 
+class _SelectiveOccClient:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, tuple[str, ...]]] = []
+
+    def fetch_symbol(self, symbol: str, *, report_keys=None) -> dict[str, Any]:
+        keys = tuple(sorted(report_keys or ("daily", "weekly", "monthly")))
+        self.calls.append((symbol, keys))
+        reports = {
+            key: {
+                "success": True,
+                "source": "OCC Volume Query",
+                "report_key": key,
+                "report_date": "20260729",
+                "call_volume": 100,
+                "put_volume": 400,
+                "total_volume": 500,
+                "put_call_ratio": 4.0,
+            }
+            for key in keys
+        }
+        return {"symbol": symbol, "successful_reports": len(reports), "reports": reports}
+
+
+def test_occ_context_fetch_funnel_skips_unneeded_reports_and_symbols() -> None:
+    client = _SelectiveOccClient()
+    contexts = fetch_occ_contexts(
+        ["AAPL", "MSFT", "NVDA"],
+        client=client,
+        report_keys_by_symbol={
+            "AAPL": {"weekly"},
+            "MSFT": {"monthly", "weekly"},
+        },
+    )
+    assert list(contexts) == ["AAPL", "MSFT"]
+    assert client.calls == [
+        ("AAPL", ("weekly",)),
+        ("MSFT", ("monthly", "weekly")),
+    ]
+    assert set(contexts["AAPL"]["reports"]) == {"weekly"}
+    assert set(contexts["MSFT"]["reports"]) == {"weekly", "monthly"}
+
+
 class _OccClient:
     def fetch_symbol(self, symbol: str) -> dict[str, Any]:
         reports = {
@@ -121,3 +163,5 @@ def test_occ_context_enriches_but_never_promotes_to_a() -> None:
     assert row["rank_score"] > 70.0
     assert any("OCC رسمي" in reason for reason in row["reasons"])
     assert enriched["expiry_radar"]["policy"]["occ_cannot_create_tier_a"] is True
+    assert enriched["expiry_radar"]["summary"]["occ_requested_symbols"] == 1
+    assert enriched["expiry_radar"]["summary"]["occ_requested_reports"] == 1

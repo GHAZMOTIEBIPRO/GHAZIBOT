@@ -263,10 +263,21 @@ class OccFreeVolumeClient:
             "error": "No parseable OCC report was available in the lookback window",
         }
 
-    def fetch_symbol(self, symbol: str, *, reference_date: date | None = None) -> dict[str, Any]:
+    def fetch_symbol(
+        self,
+        symbol: str,
+        *,
+        reference_date: date | None = None,
+        report_keys: set[str] | list[str] | tuple[str, ...] | None = None,
+    ) -> dict[str, Any]:
+        requested = [
+            key
+            for key in (report_keys or OCC_REPORT_TYPES.keys())
+            if key in OCC_REPORT_TYPES
+        ]
         reports = {
             key: self.fetch_report(symbol, key, reference_date=reference_date)
-            for key in OCC_REPORT_TYPES
+            for key in dict.fromkeys(requested)
         }
         successful = sum(1 for item in reports.values() if item.get("success"))
         return {
@@ -275,6 +286,7 @@ class OccFreeVolumeClient:
             "official": True,
             "free_no_key": True,
             "context_only": True,
+            "requested_reports": list(reports),
             "successful_reports": successful,
             "reports": reports,
         }
@@ -285,6 +297,7 @@ def fetch_occ_contexts(
     *,
     client: OccFreeVolumeClient | None = None,
     enabled: bool | None = None,
+    report_keys_by_symbol: dict[str, set[str] | list[str] | tuple[str, ...]] | None = None,
 ) -> dict[str, dict[str, Any]]:
     if enabled is None:
         enabled = os.getenv("OCC_FREE_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
@@ -293,5 +306,15 @@ def fetch_occ_contexts(
     active_client = client or OccFreeVolumeClient()
     output: dict[str, dict[str, Any]] = {}
     for symbol in dict.fromkeys(str(value).upper() for value in symbols if value):
-        output[symbol] = active_client.fetch_symbol(symbol)
+        requested = (report_keys_by_symbol or {}).get(symbol)
+        if report_keys_by_symbol is not None and not requested:
+            # No published contract needs OCC context for this symbol. Do not
+            # issue three aggregate reports simply because the symbol was scanned.
+            continue
+        try:
+            output[symbol] = active_client.fetch_symbol(symbol, report_keys=requested)
+        except TypeError:
+            # Backward-compatible test/custom clients may not implement the new
+            # report_keys keyword. Preserve behavior without weakening production.
+            output[symbol] = active_client.fetch_symbol(symbol)
     return output
