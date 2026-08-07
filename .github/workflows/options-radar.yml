@@ -133,7 +133,8 @@ jobs:
           if [[ -n "$existing_url" ]]; then
             issue_url="$existing_url"
           else
-            issue_url="$(gh issue create --title \"Calibration review ready — $MODEL_VERSION\" --body-file data/live/CALIBRATION_REVIEW.md)"
+            title="Calibration review ready — $MODEL_VERSION"
+            issue_url="$(gh issue create --title "$title" --body-file data/live/CALIBRATION_REVIEW.md)"
           fi
           python scripts/calibration_gate.py --mark "$issue_url"
 
