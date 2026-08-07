@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from options_radar.omega_engine import apply_omega
+from options_radar.omega_observability import write_status_files
 from options_radar.phase51_export import (
     _attach_best_option,
     _best_options_by_symbol,
@@ -37,6 +39,9 @@ def main(argv: list[str] | None = None) -> int:
 
         payload = json.loads(output.read_text(encoding="utf-8"))
         publish_phase6(payload)
+        apply_omega(payload)
+        _write_atomic(output, payload)
+        write_status_files(output, payload)
         _write_atomic(output, payload)
     return 0
 
