@@ -33,6 +33,12 @@ _PROVIDER_FAMILY_KEYS = (
 
 _OCC_SYMBOL = re.compile(r"^(?P<root>[A-Z]{1,8})\d{6}[CP]\d{8}$")
 
+# SEC Release 34-105678 approved SR-CBOE-2026-044 on 2026-06-12. It permits
+# A.M.-settled SPX Weekly Expirations on Monday-Friday (excluding the standard
+# third-Friday and EOM collision dates) and A.M.-settled SPX EOM expirations.
+# Provider/official series metadata still wins over this product-rule fallback.
+_SPX_AM_NONSTANDARD_APPROVAL = date(2026, 6, 12)
+
 
 @dataclass(frozen=True)
 class ExpiryIdentity:
@@ -250,6 +256,11 @@ def _calendar_fallback_family(
         shifted, shifted_standard = _is_holiday_shifted_friday(expiration)
         if shifted and shifted_standard:
             return "STANDARD_MONTHLY", 0.72, "calendar_holiday_shift_fallback"
+        if expiration >= _SPX_AM_NONSTANDARD_APPROVAL:
+            if _is_last_weekday(expiration):
+                return "END_OF_MONTH", 0.72, "product_rule_spx_am_eom_2026"
+            if expiration.weekday() <= 4:
+                return "WEEKLY", 0.78, "product_rule_spx_am_weekly_2026"
         return "UNKNOWN", 0.35, "calendar_fallback_unknown"
 
     if effective == "SPXW":
