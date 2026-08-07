@@ -63,6 +63,36 @@ def test_spx_standard_third_friday_is_am_settled_monthly() -> None:
     assert identity.exercise_style == "EUROPEAN"
 
 
+def test_spx_am_weekly_after_2026_approval_is_weekly() -> None:
+    identity = classify_expiry(
+        _row(
+            "2026-08-13",
+            symbol="SPX",
+            contract_symbol="SPX260813C06000000",
+            option_root="SPX",
+        ),
+        as_of=date(2026, 8, 10),
+    )
+    assert identity.expiry_family == "WEEKLY"
+    assert identity.classification_method == "product_rule_spx_am_weekly_2026"
+    assert identity.settlement_time == "AM"
+
+
+def test_spx_am_end_of_month_after_2026_approval_is_eom() -> None:
+    identity = classify_expiry(
+        _row(
+            "2026-08-31",
+            symbol="SPX",
+            contract_symbol="SPX260831C06000000",
+            option_root="SPX",
+        ),
+        as_of=date(2026, 8, 10),
+    )
+    assert identity.expiry_family == "END_OF_MONTH"
+    assert identity.classification_method == "product_rule_spx_am_eom_2026"
+    assert identity.settlement_time == "AM"
+
+
 def test_spxw_third_friday_remains_spxw_weekly_pm_settled() -> None:
     identity = classify_expiry(
         _row(
