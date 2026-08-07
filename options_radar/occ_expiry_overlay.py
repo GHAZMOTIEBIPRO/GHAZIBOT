@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+import time
 from typing import Any
 
 from .expiry_radar import apply_expiry_radar as _apply_base_expiry_radar
@@ -33,6 +34,38 @@ def _report_bucket_for_contract(row: dict[str, Any], fallback: str = "") -> str:
     if family in {"STANDARD_MONTHLY", "END_OF_MONTH", "QUARTERLY", "LEAPS"}:
         return "monthly"
     return fallback if fallback in {"daily", "weekly", "monthly"} else ""
+
+
+def _required_occ_reports(radar: dict[str, Any]) -> dict[str, set[str]]:
+    """Return the minimum OCC aggregate reports needed by published contracts.
+
+    OCC is context-only. Fetching D/W/M for every scanned symbol wastes network
+    calls and can dominate the expiry pipeline. The funnel is therefore driven
+    by contracts that survived selection, with symbols/report families deduped.
+    """
+
+    required: dict[str, set[str]] = {}
+    tabs = radar.get("tabs") or {}
+    if isinstance(tabs, dict) and tabs:
+        views = [("", item) for item in tabs.values() if isinstance(item, dict)]
+    else:
+        profiles = radar.get("profiles") or {}
+        views = [
+            (str(bucket), item)
+            for bucket, item in profiles.items()
+            if isinstance(item, dict)
+        ]
+
+    for fallback_bucket, view in views:
+        for side_key in ("calls", "puts"):
+            for row in view.get(side_key) or []:
+                if not isinstance(row, dict):
+                    continue
+                symbol = str(row.get("symbol") or "").upper()
+                bucket = _report_bucket_for_contract(row, fallback_bucket)
+                if symbol and bucket:
+                    required.setdefault(symbol, set()).add(bucket)
+    return required
 
 
 def _enrich_contract(row: dict[str, Any], report: dict[str, Any]) -> dict[str, Any]:
@@ -129,19 +162,20 @@ def apply_occ_to_expiry_radar(
     *,
     client: OccFreeVolumeClient | None = None,
 ) -> dict[str, Any]:
+    started = time.perf_counter()
     radar = payload.get("expiry_radar") or {}
     profiles = radar.get("profiles") or {}
     tabs = radar.get("tabs") or {}
-    symbols = list((radar.get("provider_audit") or {}).keys())
-    if not symbols:
-        symbols = [
-            str(row.get("symbol") or "").upper()
-            for row in payload.get("stocks", [])
-            if isinstance(row, dict)
-        ]
+    required = _required_occ_reports(radar)
+    symbols = list(required)
 
     enabled = os.getenv("OCC_FREE_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
-    contexts = fetch_occ_contexts(symbols, client=client, enabled=enabled)
+    contexts = fetch_occ_contexts(
+        symbols,
+        client=client,
+        enabled=enabled,
+        report_keys_by_symbol=required,
+    )
     successful_symbols = 0
     successful_reports = 0
     for item in contexts.values():
@@ -163,6 +197,8 @@ def apply_occ_to_expiry_radar(
         if isinstance(tab, dict):
             _enrich_view(tab, contexts)
 
+    requested_reports = sum(len(keys) for keys in required.values())
+    occ_seconds = round(time.perf_counter() - started, 4)
     radar["occ_official_context"] = {
         "enabled": enabled,
         "source": "OCC Volume Query",
@@ -171,23 +207,33 @@ def apply_occ_to_expiry_radar(
         "context_only": True,
         "not_live_quote": True,
         "not_options_flow": True,
+        "request_funnel": "published_contracts_only",
+        "requested_symbols": len(symbols),
+        "requested_reports": requested_reports,
         "successful_symbols": successful_symbols,
         "successful_reports": successful_reports,
+        "elapsed_seconds": occ_seconds,
         "audit": contexts,
     }
     summary = radar.setdefault("summary", {})
+    summary["occ_requested_symbols"] = len(symbols)
+    summary["occ_requested_reports"] = requested_reports
     summary["occ_successful_symbols"] = successful_symbols
     summary["occ_successful_reports"] = successful_reports
     policy = radar.setdefault("policy", {})
     policy["occ_is_official_market_context_only"] = True
     policy["occ_cannot_create_tier_a"] = True
     policy["occ_does_not_replace_live_quote_or_flow"] = True
+    policy["occ_fetch_funnel"] = "published contracts / needed report families only"
 
     payload["expiry_radar"] = radar
     payload.setdefault("free_source_status", {})["occ"] = {
         "enabled": enabled,
+        "requested_symbols": len(symbols),
+        "requested_reports": requested_reports,
         "successful_symbols": successful_symbols,
         "successful_reports": successful_reports,
+        "elapsed_seconds": occ_seconds,
         "source": "OCC Volume Query",
         "requires_api_key": False,
         "role": "official aggregate options volume context",
