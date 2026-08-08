@@ -2,6 +2,10 @@ name: BLACK BOX Omega Structural Explosion Discovery
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "data/structural_ping.txt"
   schedule:
     - cron: "20 12 * * 1-5"
 
