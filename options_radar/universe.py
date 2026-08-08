@@ -20,6 +20,8 @@ SEC_TICKERS = f"{SEC_BASE}/files/company_tickers.json"
 SEC_TICKERS_EXCHANGE = f"{SEC_BASE}/files/company_tickers_exchange.json"
 SEC_FEED = f"{SEC_BASE}/cgi-bin/browse-edgar"
 NASDAQ_MOVERS = "https://api.nasdaq.com/api/marketmovers"
+NASDAQ_LISTED = "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt"
+NASDAQ_OTHER_LISTED = "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt"
 ALPHA_VANTAGE = "https://www.alphavantage.co/query"
 LOCAL_CIK_MAP = Path("data/sec_cik_map.json")
 LOCAL_US_UNIVERSE = Path("data/cache/us_listed_universe.json")
@@ -60,11 +62,20 @@ def _load_alias_symbols(path: str | Path = "data/company_aliases.json") -> list[
 
 
 def _sec_headers(settings: Settings) -> dict[str, str]:
+    user_agent = getattr(
+        settings,
+        "sec_user_agent",
+        "GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com",
+    )
     return {
-        "User-Agent": settings.sec_user_agent,
+        "User-Agent": user_agent,
         "Accept-Encoding": "gzip, deflate",
         "Accept": "application/atom+xml,application/json,text/html;q=0.9,*/*;q=0.8",
     }
+
+
+def _timeout(settings: Settings, floor: int = 20) -> int:
+    return max(floor, int(getattr(settings, "request_timeout_seconds", 30) or 30))
 
 
 def _load_persistent_cik_map(path: Path = LOCAL_CIK_MAP) -> dict[str, str]:
@@ -123,20 +134,51 @@ def _is_us_exchange(exchange: str) -> bool:
     return any(token in normalized for token in ("nasdaq", "nyse", "cboe"))
 
 
-def us_listed_symbols(settings: Settings) -> list[str]:
-    """Load the broad US exchange universe from the SEC official exchange file.
+def _nasdaq_trader_symbols() -> list[str]:
+    """Official symbol-directory fallback covering Nasdaq and other US listings."""
 
-    This is the coverage universe. We do not run expensive option/history requests
-    on every name. Event and price-shock sources nominate a smaller deep-scan set.
-    """
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/5.0)"}
+    symbols: list[str] = []
+    for url, symbol_field in (
+        (NASDAQ_LISTED, "Symbol"),
+        (NASDAQ_OTHER_LISTED, "ACT Symbol"),
+    ):
+        try:
+            response = requests.get(url, headers=headers, timeout=25)
+            response.raise_for_status()
+        except Exception as exc:
+            LOGGER.debug("Nasdaq Trader symbol directory unavailable %s: %s", url, exc)
+            continue
+        lines = [line for line in response.text.splitlines() if line and not line.startswith("File Creation Time")]
+        if not lines:
+            continue
+        headers_row = lines[0].split("|")
+        for line in lines[1:]:
+            values = line.split("|")
+            if len(values) != len(headers_row):
+                continue
+            row = dict(zip(headers_row, values))
+            if str(row.get("Test Issue") or "N").upper() == "Y":
+                continue
+            if str(row.get("ETF") or "N").upper() == "Y":
+                continue
+            ticker = str(row.get(symbol_field) or "").upper()
+            if _valid_mover_symbol(ticker):
+                symbols.append(ticker)
+    return list(dict.fromkeys(symbols))
+
+
+def us_listed_symbols(settings: Settings) -> tuple[list[str], str]:
+    """Load broad US-listed common-equity coverage from official directories."""
 
     LOCAL_US_UNIVERSE.parent.mkdir(parents=True, exist_ok=True)
-    rows: list = []
+    rows: list[dict] = []
+    source = ""
     try:
         response = requests.get(
             SEC_TICKERS_EXCHANGE,
             headers=_sec_headers(settings),
-            timeout=max(20, int(settings.request_timeout_seconds)),
+            timeout=_timeout(settings),
         )
         response.raise_for_status()
         payload = response.json()
@@ -157,30 +199,44 @@ def us_listed_symbols(settings: Settings) -> list[str]:
                         "cik": item.get("cik"),
                     }
                 )
-        snapshot = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "source": "SEC company_tickers_exchange.json",
-            "count": len(rows),
-            "rows": rows,
-        }
-        LOCAL_US_UNIVERSE.write_text(
-            json.dumps(snapshot, ensure_ascii=False), encoding="utf-8"
-        )
+        if rows:
+            source = "SEC company_tickers_exchange.json"
     except Exception as exc:
-        LOGGER.warning("SEC US exchange universe unavailable; trying cache: %s", exc)
+        LOGGER.warning("SEC US exchange universe unavailable; using official fallback: %s", exc)
+
+    if not rows:
+        trader = _nasdaq_trader_symbols()
+        if trader:
+            rows = [{"ticker": symbol, "exchange": "US listed", "name": "", "cik": None} for symbol in trader]
+            source = "Nasdaq Trader Symbol Directory"
+
+    if not rows:
         try:
             snapshot = json.loads(LOCAL_US_UNIVERSE.read_text(encoding="utf-8"))
             rows = snapshot.get("rows", []) if isinstance(snapshot, dict) else []
+            source = str(snapshot.get("source") or "cached official universe") if isinstance(snapshot, dict) else "cached official universe"
         except Exception:
             rows = []
 
-    return list(
+    symbols = list(
         dict.fromkeys(
             str(row.get("ticker") or "").upper()
             for row in rows
             if isinstance(row, dict) and _valid_mover_symbol(str(row.get("ticker") or ""))
         )
     )
+    if symbols:
+        snapshot = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source": source,
+            "count": len(symbols),
+            "rows": rows,
+        }
+        try:
+            LOCAL_US_UNIVERSE.write_text(json.dumps(snapshot, ensure_ascii=False), encoding="utf-8")
+        except OSError:
+            pass
+    return symbols, source
 
 
 def _sec_latest_form_symbols(settings: Settings, max_per_form: int = 80) -> list[str]:
@@ -296,7 +352,7 @@ def nasdaq_mover_symbols(limit: int = 160) -> list[str]:
 def alpha_vantage_news_symbols(settings: Settings, limit: int = 1000) -> list[str]:
     """Pull broad market news once and extract mentioned US equity tickers."""
 
-    key = str(settings.alpha_vantage_api_key or "").strip()
+    key = str(getattr(settings, "alpha_vantage_api_key", None) or "").strip()
     if not key:
         return []
     lookback_hours = max(6, int(os.getenv("EXPLOSION_NEWS_LOOKBACK_HOURS", "48")))
@@ -313,7 +369,7 @@ def alpha_vantage_news_symbols(settings: Settings, limit: int = 1000) -> list[st
                 "time_from": time_from,
                 "apikey": key,
             },
-            timeout=max(20, int(settings.request_timeout_seconds)),
+            timeout=_timeout(settings),
         )
         response.raise_for_status()
         payload = response.json()
@@ -329,7 +385,6 @@ def alpha_vantage_news_symbols(settings: Settings, limit: int = 1000) -> list[st
             if not isinstance(row, dict):
                 continue
             ticker = str(row.get("ticker") or "").upper()
-            relevance = 0.0
             try:
                 relevance = float(row.get("relevance_score") or 0.0)
             except (TypeError, ValueError):
@@ -342,14 +397,14 @@ def alpha_vantage_news_symbols(settings: Settings, limit: int = 1000) -> list[st
 def alpha_vantage_gainer_symbols(settings: Settings) -> list[str]:
     """Use Alpha Vantage's US top-gainer feed as a second price-shock source."""
 
-    key = str(settings.alpha_vantage_api_key or "").strip()
+    key = str(getattr(settings, "alpha_vantage_api_key", None) or "").strip()
     if not key:
         return []
     try:
         response = requests.get(
             ALPHA_VANTAGE,
             params={"function": "TOP_GAINERS_LOSERS", "apikey": key},
-            timeout=max(20, int(settings.request_timeout_seconds)),
+            timeout=_timeout(settings),
         )
         response.raise_for_status()
         payload = response.json()
@@ -359,17 +414,22 @@ def alpha_vantage_gainer_symbols(settings: Settings) -> list[str]:
 
     symbols: list[str] = []
     if isinstance(payload, dict):
-        for row in payload.get("top_gainers", []) or []:
-            if isinstance(row, dict):
-                ticker = str(row.get("ticker") or "").upper()
-                if _valid_mover_symbol(ticker):
-                    symbols.append(ticker)
-        for row in payload.get("most_actively_traded", []) or []:
-            if isinstance(row, dict):
-                ticker = str(row.get("ticker") or "").upper()
-                if _valid_mover_symbol(ticker):
-                    symbols.append(ticker)
+        for group in ("top_gainers", "most_actively_traded"):
+            for row in payload.get(group, []) or []:
+                if isinstance(row, dict):
+                    ticker = str(row.get("ticker") or "").upper()
+                    if _valid_mover_symbol(ticker):
+                        symbols.append(ticker)
     return list(dict.fromkeys(symbols))
+
+
+def _full_market_enabled(settings: Settings) -> bool:
+    raw = str(os.getenv("FULL_US_MARKET_MODE", "auto")).strip().lower()
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    return int(getattr(settings, "max_universe_size", 0) or 0) >= 100
 
 
 def build_dynamic_universe(
@@ -378,26 +438,15 @@ def build_dynamic_universe(
     *,
     maximum: int | None = None,
 ) -> tuple[list[str], dict[str, int | str]]:
-    """Build the deep-scan shortlist from full-US-market discovery sources.
+    """Build a deep-scan shortlist while covering the full US-listed market."""
 
-    Coverage is broad: the SEC exchange directory defines the US-listed universe.
-    Expensive OHLCV/options work is performed only on symbols nominated by a new
-    filing, broad-market news, or abnormal market-mover feed. This is deliberate:
-    it maximizes explosion/news coverage without making thousands of per-symbol
-    API calls every run.
-    """
-
-    full_market_mode = str(os.getenv("FULL_US_MARKET_MODE", "true")).strip().lower() not in {
-        "0",
-        "false",
-        "no",
-        "off",
-    }
+    full_market_mode = _full_market_enabled(settings)
+    configured_max = int(getattr(settings, "max_universe_size", 150) or 150)
     if maximum is None:
         maximum = (
             max(100, int(os.getenv("EXPLOSION_SHORTLIST_MAX", "350")))
             if full_market_mode
-            else settings.max_universe_size
+            else configured_max
         )
 
     base = [
@@ -405,13 +454,27 @@ def build_dynamic_universe(
         for symbol in base_symbols
         if _valid_mover_symbol(str(symbol))
     ]
-    listed = us_listed_symbols(settings) if full_market_mode else []
-    listed_set = set(listed)
+    aliases = _load_alias_symbols()
     sec = sec_event_symbols(settings)
+    movers = nasdaq_mover_symbols()
+
+    if not full_market_mode:
+        ordered = list(dict.fromkeys(base + sec + movers + aliases))[:maximum]
+        return ordered, {
+            "mode": "legacy_dynamic",
+            "base": len(set(base)),
+            "sec_fulltext": int(_LAST_SEC_COUNTS.get("sec_fulltext", 0)),
+            "sec_latest_forms": int(_LAST_SEC_COUNTS.get("sec_latest_forms", 0)),
+            "sec_events": len(set(sec)),
+            "nasdaq_movers": len(set(movers)),
+            "aliases": len(set(aliases)),
+            "total": len(ordered),
+        }
+
+    listed, listing_source = us_listed_symbols(settings)
+    listed_set = set(listed)
     alpha_news = alpha_vantage_news_symbols(settings)
     alpha_gainers = alpha_vantage_gainer_symbols(settings)
-    movers = nasdaq_mover_symbols()
-    aliases = _load_alias_symbols()
 
     def allowed(symbol: str) -> bool:
         if not _valid_mover_symbol(symbol):
@@ -420,23 +483,20 @@ def build_dynamic_universe(
             return True
         return symbol in listed_set
 
-    # Priority is intentional: official filings first, then fresh broad news,
-    # then explicit gainers/abnormal activity, then legacy/manual discovery.
+    # Existing liquid leaders stay available, but new filings/news/price shocks
+    # are pulled from the full listed universe and promoted into the deep scan.
     nominated = [
         symbol
-        for symbol in (sec + alpha_news + alpha_gainers + movers + base + aliases)
+        for symbol in (base + sec + alpha_news + alpha_gainers + movers + aliases)
         if allowed(symbol)
     ]
     ordered = list(dict.fromkeys(nominated))[:maximum]
-
-    # If every live source fails, preserve legacy operation instead of publishing
-    # an empty radar. The fallback remains exchange-filtered when possible.
     if not ordered:
-        fallback = [symbol for symbol in (base + aliases) if allowed(symbol)]
-        ordered = list(dict.fromkeys(fallback))[:maximum]
+        ordered = list(dict.fromkeys(symbol for symbol in base + aliases if allowed(symbol)))[:maximum]
 
     return ordered, {
-        "mode": "full_us_event_driven" if full_market_mode else "legacy_dynamic",
+        "mode": "full_us_event_driven",
+        "listing_source": listing_source,
         "us_listed_coverage": len(listed),
         "sec_fulltext": int(_LAST_SEC_COUNTS.get("sec_fulltext", 0)),
         "sec_latest_forms": int(_LAST_SEC_COUNTS.get("sec_latest_forms", 0)),
