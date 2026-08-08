@@ -41,7 +41,7 @@ jobs:
         run: pip install 'requests>=2.32,<3.0'
 
       - name: Run Telegram pre-explosion filter
-        run: python -m options_radar.telegram_notifier --payload public/data/latest.json
+        run: python options_radar/telegram_notifier.py --payload public/data/latest.json
 
       - name: Persist Telegram alert state
         shell: bash
