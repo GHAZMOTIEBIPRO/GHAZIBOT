@@ -8,7 +8,7 @@ from options_radar.asymmetric_explosion import select_asymmetric_candidates
 
 
 class AsymmetricExplosionTests(unittest.TestCase):
-    @patch.dict(os.environ, {"TELEGRAM_MIN_ASYMMETRIC_SCORE": "70"}, clear=False)
+    @patch.dict(os.environ, {"TELEGRAM_MIN_ASYMMETRIC_SCORE": "60"}, clear=False)
     def test_rgc_like_broken_float_without_news(self):
         payload = {
             "stocks": [
