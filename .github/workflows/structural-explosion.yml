@@ -65,6 +65,35 @@ jobs:
           fi
 
       - name: Dispatch main deep radar on refreshed structural universe
+        id: deep
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run options-radar.yml --ref main
+        run: |
+          before="$(gh run list --workflow options-radar.yml --event workflow_dispatch --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          gh workflow run options-radar.yml --ref main
+          run_id=""
+          for attempt in {1..20}; do
+            sleep 3
+            latest="$(gh run list --workflow options-radar.yml --event workflow_dispatch --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            if [[ -n "$latest" && "$latest" != "0" && "$latest" != "$before" ]]; then
+              run_id="$latest"
+              break
+            fi
+          done
+          if [[ -z "$run_id" ]]; then
+            echo "Could not resolve newly dispatched deep-radar run id."
+            exit 1
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "Deep radar run id: $run_id"
+
+      - name: Wait for deep radar to finish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch "${{ steps.deep.outputs.run_id }}" --exit-status --interval 10
+
+      - name: Dispatch Telegram alerts on refreshed deep-radar payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run telegram-alerts.yml --ref main
