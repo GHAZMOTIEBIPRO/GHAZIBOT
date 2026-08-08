@@ -39,6 +39,8 @@ jobs:
       TELEGRAM_MIN_PRICE_RVOL: ${{ secrets.TELEGRAM_MIN_PRICE_RVOL || '1.8' }}
       TELEGRAM_MIN_PRICE_STOCK_SCORE: ${{ secrets.TELEGRAM_MIN_PRICE_STOCK_SCORE || '70' }}
       TELEGRAM_MIN_DOLLAR_VOLUME: ${{ secrets.TELEGRAM_MIN_DOLLAR_VOLUME || '3000000' }}
+      TELEGRAM_MIN_ASYMMETRIC_SCORE: ${{ secrets.TELEGRAM_MIN_ASYMMETRIC_SCORE || '76' }}
+      TELEGRAM_MAX_ASYMMETRIC_ALERTS: ${{ secrets.TELEGRAM_MAX_ASYMMETRIC_ALERTS || '3' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -53,23 +55,29 @@ jobs:
       - name: Install Telegram dependency
         run: pip install 'requests>=2.32,<3.0'
 
-      - name: Run Telegram pre-explosion filter
+      - name: Run Telegram pre-explosion, news-shock and early price-explosion filters
         run: python options_radar/telegram_notifier.py --payload public/data/latest.json
 
-      - name: Persist Telegram alert state
+      - name: Run RGC/BNAI asymmetric explosion detector
+        run: python options_radar/asymmetric_explosion.py --payload public/data/latest.json
+
+      - name: Persist Telegram alert states
         shell: bash
         run: |
-          if [[ ! -f data/live/telegram_alert_state.json ]]; then
-            echo "No Telegram state file to persist."
-            exit 0
-          fi
           git config user.name "black-box-omega-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/live/telegram_alert_state.json
+          files=()
+          [[ -f data/live/telegram_alert_state.json ]] && files+=(data/live/telegram_alert_state.json)
+          [[ -f data/live/asymmetric_alert_state.json ]] && files+=(data/live/asymmetric_alert_state.json)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No Telegram state files to persist."
+            exit 0
+          fi
+          git add "${files[@]}"
           if git diff --cached --quiet; then
             echo "No Telegram state change."
           else
-            git commit -m "data: update Telegram alert state [skip ci]"
+            git commit -m "data: update Telegram alert states [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
