@@ -1,0 +1,60 @@
+name: BLACK BOX Omega Structural Explosion Discovery
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 12 * * 1-5"
+
+concurrency:
+  group: black-box-omega-structural
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      STRUCTURAL_MAX_PROFILES: "90"
+      STRUCTURAL_MAX_OUTPUT: "45"
+      STRUCTURAL_PROFILE_WORKERS: "5"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install market dependencies
+        run: pip install -r requirements.txt
+
+      - name: Discover RGC/BNAI-style structural candidates across US market
+        run: python scripts/refresh_structural_universe.py
+
+      - name: Persist structural universe
+        shell: bash
+        run: |
+          git config user.name "black-box-omega-bot"
+          git config user.email "actions@users.noreply.github.com"
+          files=()
+          [[ -f data/universe.txt ]] && files+=(data/universe.txt)
+          [[ -f data/cache/structural_microfloat_candidates.json ]] && files+=(data/cache/structural_microfloat_candidates.json)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No structural files generated."
+            exit 0
+          fi
+          git add "${files[@]}"
+          if git diff --cached --quiet; then
+            echo "Structural universe unchanged."
+          else
+            git commit -m "data: refresh RGC/BNAI structural universe [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
