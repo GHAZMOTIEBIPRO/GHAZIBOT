@@ -19,6 +19,18 @@ UNIVERSE_PATH = Path("data/universe.txt")
 START_MARKER = "# BLACK BOX Ω STRUCTURAL START"
 END_MARKER = "# BLACK BOX Ω STRUCTURAL END"
 SYMBOL_RE = re.compile(r"^[A-Z][A-Z0-9.-]{0,6}$")
+NON_COMMON_NAME_TOKENS = (
+    "preferred",
+    "preference",
+    "warrant",
+    "depositary share",
+    "depositary shares",
+    "rights",
+    "units",
+    " unit ",
+    "exchange traded fund",
+    " etf",
+)
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -68,13 +80,16 @@ def _proxy_candidates(rows: list[dict[str, Any]], limit: int) -> list[dict[str, 
         symbol = str(row.get("symbol") or "").upper()
         if not _valid_symbol(symbol):
             continue
+        issue_name = str(row.get("name") or "").strip()
+        normalized_name = f" {issue_name.lower()} "
+        if any(token in normalized_name for token in NON_COMMON_NAME_TOKENS):
+            continue
         market_cap = _number(row.get("marketCap"))
         volume = _number(row.get("volume"))
         price = _number(row.get("lastsale"))
         pct = _number(row.get("pctchange"))
-        country = str(row.get("country") or "").strip().lower()
-        if country and country not in {"united states", "usa", "u.s.", "us"}:
-            continue
+        # Nasdaq's screener is already a US-LISTED universe. Do not filter by
+        # company domicile: RGC-like foreign-domiciled Nasdaq/NYSE listings are valid targets.
         if price <= 0.35 or price > 250:
             continue
         if market_cap <= 0 or market_cap > 2_000_000_000:
@@ -101,6 +116,7 @@ def _proxy_candidates(rows: list[dict[str, Any]], limit: int) -> list[dict[str, 
         candidates.append(
             {
                 "symbol": symbol,
+                "company_name": issue_name,
                 "proxy_score": proxy,
                 "nasdaq_market_cap": market_cap,
                 "nasdaq_volume": volume,
@@ -271,7 +287,7 @@ def main() -> int:
         json.dumps(
             {
                 "generated_at": datetime.now(timezone.utc).isoformat(),
-                "source": "Nasdaq full-market screener + Yahoo profile enrichment",
+                "source": "Nasdaq US-listed full-market screener + Yahoo profile enrichment",
                 "market_rows_seen": len(rows),
                 "profiles_requested": max_profiles,
                 "qualified": len(candidates),
