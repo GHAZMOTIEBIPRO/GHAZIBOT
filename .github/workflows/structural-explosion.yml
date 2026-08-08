@@ -15,6 +15,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   discover:
@@ -42,7 +43,7 @@ jobs:
       - name: Discover RGC/BNAI-style structural candidates across US market
         run: python scripts/refresh_structural_universe.py
 
-      - name: Persist structural universe and trigger main radar when changed
+      - name: Persist structural universe
         shell: bash
         run: |
           git config user.name "black-box-omega-bot"
@@ -62,3 +63,8 @@ jobs:
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+
+      - name: Dispatch main deep radar on refreshed structural universe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run options-radar.yml --ref main
