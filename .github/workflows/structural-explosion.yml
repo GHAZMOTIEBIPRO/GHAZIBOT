@@ -42,7 +42,7 @@ jobs:
       - name: Discover RGC/BNAI-style structural candidates across US market
         run: python scripts/refresh_structural_universe.py
 
-      - name: Persist structural universe
+      - name: Persist structural universe and trigger main radar when changed
         shell: bash
         run: |
           git config user.name "black-box-omega-bot"
@@ -58,7 +58,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Structural universe unchanged."
           else
-            git commit -m "data: refresh RGC/BNAI structural universe [skip ci]"
+            git commit -m "data: refresh RGC/BNAI structural universe"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
