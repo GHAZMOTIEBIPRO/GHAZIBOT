@@ -41,6 +41,7 @@ jobs:
       TELEGRAM_MIN_DOLLAR_VOLUME: ${{ secrets.TELEGRAM_MIN_DOLLAR_VOLUME || '3000000' }}
       TELEGRAM_MIN_ASYMMETRIC_SCORE: ${{ secrets.TELEGRAM_MIN_ASYMMETRIC_SCORE || '62' }}
       TELEGRAM_MAX_ASYMMETRIC_ALERTS: ${{ secrets.TELEGRAM_MAX_ASYMMETRIC_ALERTS || '3' }}
+      TELEGRAM_STATUS_INTERVAL_HOURS: ${{ secrets.TELEGRAM_STATUS_INTERVAL_HOURS || '4' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +62,9 @@ jobs:
       - name: Run RGC/BNAI asymmetric explosion detector
         run: python options_radar/asymmetric_explosion.py --payload public/data/latest.json
 
+      - name: Send radar heartbeat when no strong candidate
+        run: python options_radar/telegram_status.py --payload public/data/latest.json
+
       - name: Persist Telegram alert states
         shell: bash
         run: |
@@ -69,6 +73,7 @@ jobs:
           files=()
           [[ -f data/live/telegram_alert_state.json ]] && files+=(data/live/telegram_alert_state.json)
           [[ -f data/live/asymmetric_alert_state.json ]] && files+=(data/live/asymmetric_alert_state.json)
+          [[ -f data/live/telegram_status_state.json ]] && files+=(data/live/telegram_status_state.json)
           if [[ ${#files[@]} -eq 0 ]]; then
             echo "No Telegram state files to persist."
             exit 0
