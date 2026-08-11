@@ -2,6 +2,11 @@ name: BLACK BOX Omega Fast Explosion Radar
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "data/fast_ping.txt"
+      - ".github/workflows/fast-explosion-radar.yml"
   schedule:
     - cron: "*/20 8-12 * * 1-5"
     - cron: "*/10 13-21 * * 1-5"
