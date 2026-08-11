@@ -1,0 +1,57 @@
+name: BLACK BOX Omega Explosion Replay Lab
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 10 * * 0"
+
+concurrency:
+  group: black-box-omega-replay
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REPLAY_SYMBOLS: ${{ secrets.REPLAY_SYMBOLS || 'RGC,BNAI,ATXG,HOLO,MLGO' }}
+      REPLAY_PERIOD: ${{ secrets.REPLAY_PERIOD || '2y' }}
+      REPLAY_SIGNAL_THRESHOLD: ${{ secrets.REPLAY_SIGNAL_THRESHOLD || '60' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install research dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run hindsight-safe explosion replay
+        run: python scripts/replay_explosion_lab.py
+
+      - name: Persist calibration report
+        shell: bash
+        run: |
+          if [[ ! -f data/replay/explosion_replay_report.json ]]; then
+            echo "Replay report missing."
+            exit 1
+          fi
+          git config user.name "black-box-omega-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/replay/explosion_replay_report.json
+          if git diff --cached --quiet; then
+            echo "Replay report unchanged."
+            exit 0
+          fi
+          git commit -m "data: refresh explosion replay calibration [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
