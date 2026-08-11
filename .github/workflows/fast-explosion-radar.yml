@@ -1,0 +1,75 @@
+name: BLACK BOX Omega Fast Explosion Radar
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/20 8-12 * * 1-5"
+    - cron: "*/10 13-21 * * 1-5"
+    - cron: "*/20 22-23 * * 1-5"
+
+concurrency:
+  group: black-box-omega-fast-radar
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      OMEGA_FAST_MIN_SCORE: ${{ secrets.OMEGA_FAST_MIN_SCORE || '68' }}
+      OMEGA_FAST_MAX_ALERTS: ${{ secrets.OMEGA_FAST_MAX_ALERTS || '3' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Scan full US-listed market for early ignition, news and halts
+        run: python scripts/fast_explosion_scan.py
+
+      - name: Persist alert fingerprints only when an alert was sent
+        shell: bash
+        run: |
+          if [[ ! -f data/live/fast_alert_state.json ]]; then
+            echo "No fast alert state generated."
+            exit 0
+          fi
+          sent=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data/live/fast_alert_state.json')
+          try:
+              print(int(json.loads(p.read_text()).get('last_sent_count',0)))
+          except Exception:
+              print(0)
+          PY
+          )
+          if [[ "$sent" -le 0 ]]; then
+            echo "No new alert; keeping repository state unchanged."
+            exit 0
+          fi
+          git config user.name "black-box-omega-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/live/fast_alert_state.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "data: persist fast-radar alert fingerprints [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
