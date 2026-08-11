@@ -42,6 +42,9 @@ jobs:
       TELEGRAM_MIN_ASYMMETRIC_SCORE: ${{ secrets.TELEGRAM_MIN_ASYMMETRIC_SCORE || '62' }}
       TELEGRAM_MAX_ASYMMETRIC_ALERTS: ${{ secrets.TELEGRAM_MAX_ASYMMETRIC_ALERTS || '3' }}
       TELEGRAM_STATUS_INTERVAL_HOURS: ${{ secrets.TELEGRAM_STATUS_INTERVAL_HOURS || '4' }}
+      OMEGA_DELTA_ALERT_MIN_SCORE: ${{ secrets.OMEGA_DELTA_ALERT_MIN_SCORE || '52' }}
+      OMEGA_DELTA_MAX_ALERTS: ${{ secrets.OMEGA_DELTA_MAX_ALERTS || '3' }}
+      OMEGA_DELTA_HISTORY_LENGTH: ${{ secrets.OMEGA_DELTA_HISTORY_LENGTH || '24' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -62,27 +65,36 @@ jobs:
       - name: Run RGC/BNAI asymmetric explosion detector
         run: python options_radar/asymmetric_explosion.py --payload public/data/latest.json
 
+      - name: Run Delta and Effective Float pressure engine
+        run: python options_radar/explosion_intelligence.py --payload public/data/latest.json --send-telegram
+
       - name: Send radar heartbeat when no strong candidate
         run: python options_radar/telegram_status.py --payload public/data/latest.json
 
-      - name: Persist Telegram alert states
+      - name: Persist Telegram and Delta states
         shell: bash
         run: |
           git config user.name "black-box-omega-bot"
           git config user.email "actions@users.noreply.github.com"
           files=()
-          [[ -f data/live/telegram_alert_state.json ]] && files+=(data/live/telegram_alert_state.json)
-          [[ -f data/live/asymmetric_alert_state.json ]] && files+=(data/live/asymmetric_alert_state.json)
-          [[ -f data/live/telegram_status_state.json ]] && files+=(data/live/telegram_status_state.json)
+          for file in \
+            data/live/telegram_alert_state.json \
+            data/live/asymmetric_alert_state.json \
+            data/live/telegram_status_state.json \
+            data/live/delta_history.json \
+            data/live/delta_signals.json \
+            data/live/delta_alert_state.json; do
+            [[ -f "$file" ]] && files+=("$file")
+          done
           if [[ ${#files[@]} -eq 0 ]]; then
-            echo "No Telegram state files to persist."
+            echo "No Telegram/Delta state files to persist."
             exit 0
           fi
           git add "${files[@]}"
           if git diff --cached --quiet; then
-            echo "No Telegram state change."
+            echo "No Telegram/Delta state change."
           else
-            git commit -m "data: update Telegram alert states [skip ci]"
+            git commit -m "data: update Telegram and Delta states [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
