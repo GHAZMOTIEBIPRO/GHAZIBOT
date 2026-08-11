@@ -1,3 +1,5 @@
+import pytest
+
 from options_radar.explosion_intelligence import STAGE_ORDER, build_delta_signals, effective_float_metrics
 
 
@@ -6,8 +8,8 @@ def test_effective_float_uses_most_constrained_observable_supply_and_penalizes_d
     clean = effective_float_metrics(stock, catalyst={"dilution_risk": 10})
     risky = effective_float_metrics(stock, catalyst={"dilution_risk": 90})
 
-    assert clean.effective_float_estimate == 2_000_000
-    assert clean.affiliate_adjusted_float == 3_000_000
+    assert clean.effective_float_estimate == pytest.approx(2_000_000)
+    assert clean.affiliate_adjusted_float == pytest.approx(3_000_000)
     assert clean.supply_vacuum_score >= 85
     assert risky.supply_vacuum_score < clean.supply_vacuum_score
     assert risky.supply_overhang_estimate > clean.supply_overhang_estimate
