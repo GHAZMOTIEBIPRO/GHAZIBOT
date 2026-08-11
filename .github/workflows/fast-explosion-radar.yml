@@ -18,6 +18,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   scan:
@@ -45,8 +46,33 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
+      - name: Restore previous full-market Delta snapshot
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live
+          previous="$(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          if [[ -n "$previous" && "$previous" != "0" ]]; then
+            echo "Trying previous fast-radar run: $previous"
+            gh run download "$previous" -n fast-market-state -D data/live || true
+          fi
+          if [[ -f data/live/fast_market_state.json ]]; then
+            echo "Previous full-market Delta memory restored."
+          else
+            echo "No prior Delta artifact yet; this run will establish the baseline."
+          fi
+
       - name: Scan full US-listed market for early ignition, news and halts
         run: python scripts/fast_explosion_scan_runner.py
+
+      - name: Upload full-market Delta snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: fast-market-state
+          path: data/live/fast_market_state.json
+          if-no-files-found: error
+          retention-days: 2
 
       - name: Persist alert fingerprints only when an alert was sent
         shell: bash
