@@ -2,6 +2,11 @@ name: BLACK BOX Omega Explosion Replay Lab
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "data/replay_ping.txt"
+      - ".github/workflows/explosion-replay-lab.yml"
   schedule:
     - cron: "30 10 * * 0"
 
