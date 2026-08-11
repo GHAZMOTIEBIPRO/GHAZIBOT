@@ -46,7 +46,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Scan full US-listed market for early ignition, news and halts
-        run: python scripts/fast_explosion_scan.py
+        run: python scripts/fast_explosion_scan_runner.py
 
       - name: Persist alert fingerprints only when an alert was sent
         shell: bash
