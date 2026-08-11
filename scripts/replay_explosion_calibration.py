@@ -3,11 +3,16 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import yfinance as yf
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from scripts.replay_explosion_lab import build_replay_frame, evaluate_replay
 
@@ -35,8 +40,6 @@ def _aggregate(frames: dict[str, Any], threshold: float) -> dict[str, Any]:
     precision = tp / (tp + fp) if tp + fp else 0.0
     recall = tp / (tp + fn) if tp + fn else 0.0
     fpr = fp / (fp + tn) if fp + tn else 0.0
-    # Calibration utility deliberately values early-event recall while heavily
-    # penalizing false alarms. It is a research selector, not expected return.
     utility = recall * 0.60 + precision * 0.25 - fpr * 0.70
     return {
         "threshold": threshold,
