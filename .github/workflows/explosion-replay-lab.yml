@@ -23,8 +23,9 @@ jobs:
     timeout-minutes: 20
     env:
       REPLAY_SYMBOLS: ${{ secrets.REPLAY_SYMBOLS || 'RGC,BNAI,ATXG,HOLO,MLGO' }}
+      REPLAY_CONTROL_SYMBOLS: ${{ secrets.REPLAY_CONTROL_SYMBOLS || 'AAPL,MSFT,KO,JNJ,XOM' }}
       REPLAY_PERIOD: ${{ secrets.REPLAY_PERIOD || '2y' }}
-      REPLAY_SIGNAL_THRESHOLD: ${{ secrets.REPLAY_SIGNAL_THRESHOLD || '60' }}
+      REPLAY_THRESHOLDS: ${{ secrets.REPLAY_THRESHOLDS || '40,45,50,55,60,65,70,75,80' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -40,8 +41,8 @@ jobs:
       - name: Install research dependencies
         run: pip install -r requirements.txt
 
-      - name: Run hindsight-safe explosion replay
-        run: python scripts/replay_explosion_lab.py
+      - name: Run hindsight-safe explosion calibration
+        run: python scripts/replay_explosion_calibration.py
 
       - name: Persist calibration report
         shell: bash
