@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "data/structural_ping.txt"
+      - ".github/workflows/structural-explosion.yml"
   schedule:
     - cron: "20 12 * * 1-5"
 
@@ -41,7 +42,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Discover RGC/BNAI-style structural candidates across US market
-        run: python scripts/refresh_structural_universe.py
+        run: python scripts/refresh_structural_universe_runner.py
 
       - name: Persist structural universe
         shell: bash
