@@ -1,0 +1,471 @@
+{
+  "generated_at": "2026-08-11T10:07:46.570218+00:00",
+  "purpose": "hindsight-safe price/volume replay; catalyst/float history is not reconstructed when unavailable",
+  "score_is_probability": false,
+  "forward_label": "max close return over next 5 sessions >= 25%",
+  "threshold": 60.0,
+  "period": "2y",
+  "aggregate": {
+    "symbols": 5,
+    "valid_symbols": 5,
+    "true_positive": 28,
+    "false_positive": 168,
+    "false_negative": 283,
+    "true_negative": 2016,
+    "precision": 0.1429,
+    "recall": 0.09,
+    "false_positive_rate": 0.0769
+  },
+  "results": [
+    {
+      "symbol": "RGC",
+      "metrics": {
+        "rows": 499,
+        "threshold": 60.0,
+        "signals": 27,
+        "positive_windows": 92,
+        "true_positive": 7,
+        "false_positive": 20,
+        "false_negative": 85,
+        "true_negative": 387,
+        "precision": 0.2593,
+        "recall": 0.0761,
+        "false_positive_rate": 0.0491
+      },
+      "largest_event": {
+        "largest_up_day": "2025-06-16",
+        "largest_up_day_return_pct": 283.13,
+        "max_pre_event_score_10d": 45.63,
+        "first_signal_date_10d": null,
+        "lead_trading_days": null,
+        "caught_before_largest_day": false
+      },
+      "recent_signals": [
+        {
+          "date": "2025-12-29",
+          "score": 71.99,
+          "rvol": 2.42,
+          "volume_accel": 2.59,
+          "day_move_pct": 10.96,
+          "future_5d_max_return_pct": 40.67
+        },
+        {
+          "date": "2026-01-05",
+          "score": 64.15,
+          "rvol": 5.7,
+          "volume_accel": 8.03,
+          "day_move_pct": 31.65,
+          "future_5d_max_return_pct": 95.56
+        },
+        {
+          "date": "2026-03-09",
+          "score": 70.72,
+          "rvol": 2.77,
+          "volume_accel": 3.21,
+          "day_move_pct": 10.92,
+          "future_5d_max_return_pct": -5.37
+        },
+        {
+          "date": "2026-03-18",
+          "score": 71.8,
+          "rvol": 5.57,
+          "volume_accel": 15.76,
+          "day_move_pct": 14.85,
+          "future_5d_max_return_pct": 3.75
+        },
+        {
+          "date": "2026-04-01",
+          "score": 62.31,
+          "rvol": 9.51,
+          "volume_accel": 8.84,
+          "day_move_pct": 32.6,
+          "future_5d_max_return_pct": -8.57
+        },
+        {
+          "date": "2026-05-07",
+          "score": 86.42,
+          "rvol": 4.04,
+          "volume_accel": 6.96,
+          "day_move_pct": 14.06,
+          "future_5d_max_return_pct": -6.96
+        },
+        {
+          "date": "2026-06-24",
+          "score": 60.47,
+          "rvol": 3.11,
+          "volume_accel": 3.72,
+          "day_move_pct": -22.74,
+          "future_5d_max_return_pct": -6.19
+        },
+        {
+          "date": "2026-07-08",
+          "score": 71.16,
+          "rvol": 3.3,
+          "volume_accel": 4.81,
+          "day_move_pct": 9.08,
+          "future_5d_max_return_pct": -6.47
+        }
+      ]
+    },
+    {
+      "symbol": "BNAI",
+      "metrics": {
+        "rows": 499,
+        "threshold": 60.0,
+        "signals": 41,
+        "positive_windows": 75,
+        "true_positive": 5,
+        "false_positive": 36,
+        "false_negative": 70,
+        "true_negative": 388,
+        "precision": 0.122,
+        "recall": 0.0667,
+        "false_positive_rate": 0.0849
+      },
+      "largest_event": {
+        "largest_up_day": "2026-01-26",
+        "largest_up_day_return_pct": 276.7,
+        "max_pre_event_score_10d": 57.85,
+        "first_signal_date_10d": null,
+        "lead_trading_days": null,
+        "caught_before_largest_day": false
+      },
+      "recent_signals": [
+        {
+          "date": "2025-10-02",
+          "score": 64.25,
+          "rvol": 7.06,
+          "volume_accel": 0.01,
+          "day_move_pct": 7.9,
+          "future_5d_max_return_pct": 94.65
+        },
+        {
+          "date": "2025-10-07",
+          "score": 65.04,
+          "rvol": 10.51,
+          "volume_accel": 279.92,
+          "day_move_pct": 37.1,
+          "future_5d_max_return_pct": -15.34
+        },
+        {
+          "date": "2025-11-10",
+          "score": 60.6,
+          "rvol": 319.43,
+          "volume_accel": 932.35,
+          "day_move_pct": 28.27,
+          "future_5d_max_return_pct": -14.35
+        },
+        {
+          "date": "2026-01-02",
+          "score": 60.09,
+          "rvol": 11.92,
+          "volume_accel": 22.46,
+          "day_move_pct": 62.5,
+          "future_5d_max_return_pct": 23.87
+        },
+        {
+          "date": "2026-04-13",
+          "score": 60.04,
+          "rvol": 2.02,
+          "volume_accel": 7.87,
+          "day_move_pct": 21.14,
+          "future_5d_max_return_pct": 11.78
+        },
+        {
+          "date": "2026-04-15",
+          "score": 80.58,
+          "rvol": 3.19,
+          "volume_accel": 5.36,
+          "day_move_pct": 8.06,
+          "future_5d_max_return_pct": -31.17
+        },
+        {
+          "date": "2026-06-09",
+          "score": 76.0,
+          "rvol": 3.27,
+          "volume_accel": 42.9,
+          "day_move_pct": 4.98,
+          "future_5d_max_return_pct": 14.55
+        },
+        {
+          "date": "2026-06-26",
+          "score": 62.77,
+          "rvol": 1.21,
+          "volume_accel": 2.29,
+          "day_move_pct": 0.77,
+          "future_5d_max_return_pct": -0.82
+        }
+      ]
+    },
+    {
+      "symbol": "ATXG",
+      "metrics": {
+        "rows": 499,
+        "threshold": 60.0,
+        "signals": 48,
+        "positive_windows": 41,
+        "true_positive": 6,
+        "false_positive": 42,
+        "false_negative": 35,
+        "true_negative": 416,
+        "precision": 0.125,
+        "recall": 0.1463,
+        "false_positive_rate": 0.0917
+      },
+      "largest_event": {
+        "largest_up_day": "2025-09-22",
+        "largest_up_day_return_pct": 30.43,
+        "max_pre_event_score_10d": 82.5,
+        "first_signal_date_10d": "2025-09-08",
+        "lead_trading_days": 10,
+        "caught_before_largest_day": true
+      },
+      "recent_signals": [
+        {
+          "date": "2026-02-06",
+          "score": 60.6,
+          "rvol": 205.97,
+          "volume_accel": 26.42,
+          "day_move_pct": -5.73,
+          "future_5d_max_return_pct": 30.4
+        },
+        {
+          "date": "2026-02-10",
+          "score": 80.25,
+          "rvol": 12.95,
+          "volume_accel": 2.86,
+          "day_move_pct": 0.94,
+          "future_5d_max_return_pct": -7.93
+        },
+        {
+          "date": "2026-03-17",
+          "score": 78.65,
+          "rvol": 178.47,
+          "volume_accel": 117.0,
+          "day_move_pct": -1.17,
+          "future_5d_max_return_pct": 41.73
+        },
+        {
+          "date": "2026-04-16",
+          "score": 71.16,
+          "rvol": 7.07,
+          "volume_accel": 200.09,
+          "day_move_pct": 10.04,
+          "future_5d_max_return_pct": 25.0
+        },
+        {
+          "date": "2026-04-30",
+          "score": 76.0,
+          "rvol": 10.16,
+          "volume_accel": 2.59,
+          "day_move_pct": -1.58,
+          "future_5d_max_return_pct": 6.44
+        },
+        {
+          "date": "2026-06-08",
+          "score": 68.79,
+          "rvol": 5.23,
+          "volume_accel": 55.16,
+          "day_move_pct": -5.8,
+          "future_5d_max_return_pct": 5.94
+        },
+        {
+          "date": "2026-06-11",
+          "score": 85.73,
+          "rvol": 3.84,
+          "volume_accel": 7.97,
+          "day_move_pct": 5.73,
+          "future_5d_max_return_pct": 6.06
+        },
+        {
+          "date": "2026-07-31",
+          "score": 85.56,
+          "rvol": 111.26,
+          "volume_accel": 403.85,
+          "day_move_pct": 0.0,
+          "future_5d_max_return_pct": 11.9
+        }
+      ]
+    },
+    {
+      "symbol": "HOLO",
+      "metrics": {
+        "rows": 499,
+        "threshold": 60.0,
+        "signals": 46,
+        "positive_windows": 40,
+        "true_positive": 5,
+        "false_positive": 41,
+        "false_negative": 35,
+        "true_negative": 418,
+        "precision": 0.1087,
+        "recall": 0.125,
+        "false_positive_rate": 0.0893
+      },
+      "largest_event": {
+        "largest_up_day": "2024-12-30",
+        "largest_up_day_return_pct": 167.08,
+        "max_pre_event_score_10d": 70.87,
+        "first_signal_date_10d": "2024-12-17",
+        "lead_trading_days": 8,
+        "caught_before_largest_day": true
+      },
+      "recent_signals": [
+        {
+          "date": "2026-05-22",
+          "score": 74.18,
+          "rvol": 1.25,
+          "volume_accel": 2.12,
+          "day_move_pct": 2.16,
+          "future_5d_max_return_pct": 20.11
+        },
+        {
+          "date": "2026-05-26",
+          "score": 70.26,
+          "rvol": 1.78,
+          "volume_accel": 1.42,
+          "day_move_pct": 5.82,
+          "future_5d_max_return_pct": 13.5
+        },
+        {
+          "date": "2026-05-28",
+          "score": 79.99,
+          "rvol": 3.11,
+          "volume_accel": 3.79,
+          "day_move_pct": 14.07,
+          "future_5d_max_return_pct": -2.64
+        },
+        {
+          "date": "2026-07-10",
+          "score": 61.27,
+          "rvol": 1.98,
+          "volume_accel": 3.57,
+          "day_move_pct": -5.77,
+          "future_5d_max_return_pct": 4.76
+        },
+        {
+          "date": "2026-07-14",
+          "score": 73.93,
+          "rvol": 1.39,
+          "volume_accel": 3.4,
+          "day_move_pct": 5.52,
+          "future_5d_max_return_pct": 1.31
+        },
+        {
+          "date": "2026-07-30",
+          "score": 75.71,
+          "rvol": 1.51,
+          "volume_accel": 1.93,
+          "day_move_pct": 3.23,
+          "future_5d_max_return_pct": -1.87
+        },
+        {
+          "date": "2026-08-04",
+          "score": 60.07,
+          "rvol": 0.97,
+          "volume_accel": 3.55,
+          "day_move_pct": 4.67,
+          "future_5d_max_return_pct": 4.46
+        },
+        {
+          "date": "2026-08-07",
+          "score": 60.71,
+          "rvol": 0.91,
+          "volume_accel": 4.0,
+          "day_move_pct": 4.19,
+          "future_5d_max_return_pct": 1.55
+        }
+      ]
+    },
+    {
+      "symbol": "MLGO",
+      "metrics": {
+        "rows": 499,
+        "threshold": 60.0,
+        "signals": 34,
+        "positive_windows": 63,
+        "true_positive": 5,
+        "false_positive": 29,
+        "false_negative": 58,
+        "true_negative": 407,
+        "precision": 0.1471,
+        "recall": 0.0794,
+        "false_positive_rate": 0.0665
+      },
+      "largest_event": {
+        "largest_up_day": "2025-03-24",
+        "largest_up_day_return_pct": 455.16,
+        "max_pre_event_score_10d": 42.16,
+        "first_signal_date_10d": null,
+        "lead_trading_days": null,
+        "caught_before_largest_day": false
+      },
+      "recent_signals": [
+        {
+          "date": "2026-05-08",
+          "score": 85.16,
+          "rvol": 2.1,
+          "volume_accel": 5.52,
+          "day_move_pct": 0.97,
+          "future_5d_max_return_pct": 9.64
+        },
+        {
+          "date": "2026-05-12",
+          "score": 78.81,
+          "rvol": 1.17,
+          "volume_accel": 3.71,
+          "day_move_pct": 0.97,
+          "future_5d_max_return_pct": 9.38
+        },
+        {
+          "date": "2026-05-14",
+          "score": 88.89,
+          "rvol": 4.92,
+          "volume_accel": 10.1,
+          "day_move_pct": 13.18,
+          "future_5d_max_return_pct": 30.77
+        },
+        {
+          "date": "2026-05-15",
+          "score": 74.19,
+          "rvol": 91.49,
+          "volume_accel": 3.42,
+          "day_move_pct": -4.62,
+          "future_5d_max_return_pct": 37.1
+        },
+        {
+          "date": "2026-05-20",
+          "score": 61.53,
+          "rvol": 16.19,
+          "volume_accel": 69.81,
+          "day_move_pct": 39.95,
+          "future_5d_max_return_pct": 11.01
+        },
+        {
+          "date": "2026-07-27",
+          "score": 84.45,
+          "rvol": 2.17,
+          "volume_accel": 2.36,
+          "day_move_pct": 0.84,
+          "future_5d_max_return_pct": -1.67
+        },
+        {
+          "date": "2026-08-03",
+          "score": 69.18,
+          "rvol": 1.47,
+          "volume_accel": 1.34,
+          "day_move_pct": -0.25,
+          "future_5d_max_return_pct": 2.71
+        },
+        {
+          "date": "2026-08-07",
+          "score": 82.15,
+          "rvol": 1.4,
+          "volume_accel": 2.88,
+          "day_move_pct": 3.73,
+          "future_5d_max_return_pct": -2.16
+        }
+      ]
+    }
+  ]
+}
