@@ -46,6 +46,36 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
+      - name: Restore encrypted persistent Telegram destination
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in fast-explosion-radar.yml telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 15 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                if [[ -s telegram_runtime/connection.enc ]]; then
+                  echo "Restored Telegram destination from prior successful run $run_id."
+                  break 2
+                fi
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            if ! openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN; then
+              echo "Stored Telegram destination could not be decrypted; automatic discovery will retry."
+              rm -f telegram_runtime/connection.json
+            fi
+          fi
+
+      - name: Resolve Telegram destination once and reuse forever
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
       - name: Restore previous full-market Delta snapshot
         shell: bash
         env:
@@ -64,7 +94,14 @@ jobs:
           fi
 
       - name: Scan full US-listed market for early ignition, news and halts
-        run: python scripts/fast_explosion_scan_runner.py
+        shell: bash
+        run: |
+          if [[ "$TELEGRAM_READY" == "true" ]]; then
+            python scripts/fast_explosion_scan_runner.py
+          else
+            echo "Telegram destination not learned yet; scanning continues and delivery will activate automatically once learned."
+            python scripts/fast_explosion_scan_runner.py --no-telegram
+          fi
 
       - name: Upload full-market Delta snapshot
         uses: actions/upload-artifact@v4
@@ -73,6 +110,25 @@ jobs:
           path: data/live/fast_market_state.json
           if-no-files-found: error
           retention-days: 2
+
+      - name: Seal Telegram destination for future unattended runs
+        if: always() && env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          openssl enc -aes-256-cbc -salt -pbkdf2 \
+            -in telegram_runtime/connection.json \
+            -out telegram_runtime/connection.enc \
+            -pass env:TELEGRAM_BOT_TOKEN
+          rm -f telegram_runtime/connection.json
+
+      - name: Upload encrypted Telegram destination
+        if: always() && env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-connection
+          path: telegram_runtime/connection.enc
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Persist alert fingerprints only when an alert was sent
         shell: bash
