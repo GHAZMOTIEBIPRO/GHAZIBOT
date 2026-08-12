@@ -135,6 +135,11 @@ def _contract_score(
     flow_sources = row.get("flow_sources") if isinstance(row.get("flow_sources"), list) else []
     flow_source_bonus = 5.0 if flow_sources else 0.0
 
+    occ = row.get("occ_official_context") if isinstance(row.get("occ_official_context"), dict) else {}
+    occ_available = bool(occ.get("available"))
+    occ_aligned = bool(occ.get("aligned_with_contract_side"))
+    occ_bonus = 4.0 if occ_aligned else 0.0
+
     score = (
         0.38 * rank
         + 0.16 * dte_fit
@@ -145,12 +150,11 @@ def _contract_score(
         + tier_bonus
         + source_bonus
         + flow_source_bonus
+        + occ_bonus
         + (3.0 if official_catalyst else 0.0)
     )
     score = max(0.0, min(100.0, score))
 
-    strike = row.get("strike")
-    spot = row.get("underlying_price")
     moneyness = _number(row.get("moneyness_pct"), float("nan"))
     if math.isfinite(moneyness):
         strike_note = f"السترايك قريب من السعر الفوري بفارق {moneyness * 100:+.1f}% وDelta≈{delta:.2f}"
@@ -162,12 +166,23 @@ def _contract_score(
         if flow_sources
         else f"Volume/OI={vol_oi:.2f}×؛ لا يوجد إثبات trade-level مستقل لاتجاه المنفذ"
     )
+    if occ_available:
+        call_volume = int(_number(occ.get("call_volume")))
+        put_volume = int(_number(occ.get("put_volume")))
+        dominance = _number(occ.get("side_dominance_ratio"))
+        if occ_aligned:
+            flow_note += f"؛ OCC الرسمي يدعم الجهة إجماليًا (CALL {call_volume:,} / PUT {put_volume:,}، تفوق {dominance:.2f}×)"
+        else:
+            flow_note += f"؛ OCC الرسمي CALL {call_volume:,} / PUT {put_volume:,} دون تفوق واضح لنفس الجهة"
+
     if vol_oi < 1.0:
         risks.append("Volume/OI غير مرتفع؛ نشاط العقد ليس استثنائيًا بعد")
     if spread > 0.15:
         risks.append(f"السبريد واسع نسبيًا ({spread * 100:.1f}%)")
     if tier == "C":
         risks.append("جودة العقد C؛ مراقبة فقط")
+    if not row.get("primary_or_licensed_quote"):
+        risks.append("الـQuote الحالي غير مرخّص/أساسي؛ لا يرقى العقد إلى ثقة تنفيذية عالية")
 
     detail = {
         "score": round(score, 1),
@@ -175,11 +190,11 @@ def _contract_score(
         "strike_note": strike_note,
         "flow_note": flow_note,
         "risks": list(dict.fromkeys(risks)),
-        "strike": strike,
-        "spot": spot,
         "delta": delta if delta >= 0 else None,
         "spread_pct": spread if spread >= 0 else None,
         "vol_to_oi_ratio": vol_oi,
+        "occ_available": occ_available,
+        "occ_aligned": occ_aligned,
     }
     return score, detail
 
@@ -245,6 +260,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                     "spread_pct": row.get("spread_pct"),
                     "source": row.get("source"),
                     "flow_sources": row.get("flow_sources") or [],
+                    "occ_official_context": row.get("occ_official_context") or {},
                     "liquidity_grade": row.get("liquidity_grade"),
                     "opportunity_tier": row.get("opportunity_tier"),
                     "contract_rank": round(score, 1),
@@ -254,6 +270,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                     "flow_reason_ar": detail["flow_note"],
                     "risks_ar": detail["risks"],
                     "flow_claim": "BUYING_PRESSURE_PROXY_NOT_SWEEP_PROOF",
+                    "occ_is_context_only": True,
                     "automatic_execution": False,
                     "research_only": True,
                 }
@@ -272,12 +289,13 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
         }
 
     return {
-        "version": "2026.08-option-contract-rationale-v1",
+        "version": "2026.08-option-contract-rationale-v2",
         "policy": {
             "side_requires_direction_alignment": True,
             "strike_not_selected_by_volume_alone": True,
             "expiry_uses_dte_liquidity_and_catalyst_horizon": True,
             "volume_oi_is_activity_signal_not_direction_proof": True,
+            "occ_is_official_aggregate_context_only": True,
             "sweep_claim_requires_trade_quote_level_evidence": True,
             "automatic_execution": False,
             "research_only": True,
