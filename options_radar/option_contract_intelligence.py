@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
+_INDEX_ROOTS = {"SPX", "SPXW", "NDX", "XND", "SPY", "QQQ"}
+
 
 def _number(value: Any, default: float = 0.0) -> float:
     try:
@@ -18,9 +20,8 @@ def _contracts(payload: dict[str, Any]) -> list[dict[str, Any]]:
     all_exp = tabs.get("all_expirations") if isinstance(tabs.get("all_expirations"), dict) else {}
     rows: list[dict[str, Any]] = []
     for side in ("calls", "puts"):
-        for row in all_exp.get(side, []) if isinstance(all_exp.get(side), list) else []:
-            if isinstance(row, dict):
-                rows.append(dict(row))
+        source_rows = all_exp.get(side, []) if isinstance(all_exp.get(side), list) else []
+        rows.extend(dict(row) for row in source_rows if isinstance(row, dict))
     return rows
 
 
@@ -49,7 +50,11 @@ def _catalyst_map(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {str(symbol).upper(): row for symbol, row in by_symbol.items() if isinstance(row, dict)}
 
 
-def _preferred_side(stock: dict[str, Any], opportunity: dict[str, Any], catalyst: dict[str, Any]) -> tuple[str | None, str]:
+def _preferred_side(
+    stock: dict[str, Any],
+    opportunity: dict[str, Any],
+    catalyst: dict[str, Any],
+) -> tuple[str | None, str]:
     bias = str(catalyst.get("directional_bias") or "").lower()
     official = bool(catalyst.get("official_confirmed"))
     cause_eligible = bool(catalyst.get("primary_cause_eligible"))
@@ -88,20 +93,36 @@ def _target_dte(catalyst: dict[str, Any], opportunity: dict[str, Any]) -> tuple[
     return 21.0, "نحو 3 أسابيع كحل متوازن بين الوقت والسيولة وحساسية العقد"
 
 
+def _dte_window(target: float, symbol: str) -> tuple[float, float]:
+    """Hard horizon guard so flow strength cannot select a wildly distant expiry."""
+
+    if symbol in _INDEX_ROOTS:
+        if target <= 14:
+            return 0.0, 35.0
+        if target <= 21:
+            return 0.0, 45.0
+        return 0.0, 70.0
+    if target <= 14:
+        return 4.0, 35.0
+    if target <= 21:
+        return 7.0, 45.0
+    return 10.0, 70.0
+
+
 def _dte_score(dte: float, target: float, symbol: str) -> tuple[float, str, list[str]]:
     risks: list[str] = []
-    if dte < 0:
-        return 0.0, "تاريخ الانتهاء غير صالح", ["DTE غير صالح"]
-    if dte <= 1 and symbol not in {"SPX", "SPXW", "NDX", "XND", "SPY", "QQQ"}:
+    low, high = _dte_window(target, symbol)
+    if dte < low or dte > high:
+        return -1.0, f"DTE={int(dte)} خارج نافذة {int(low)}–{int(high)} يوم", ["تاريخ الانتهاء لا يناسب أفق الصفقة"]
+    if dte <= 1 and symbol not in _INDEX_ROOTS:
         risks.append("العقد شديد القصر؛ Theta/Gamma risk مرتفعان")
-    fit = max(0.0, 1.0 - abs(dte - target) / max(target, 10.0))
+    width = max(target - low, high - target, 10.0)
+    fit = max(0.0, 1.0 - abs(dte - target) / width)
     score = 100.0 * fit
     if dte <= 2:
         score -= 18.0
     elif dte <= 5:
         score -= 6.0
-    if dte > 60:
-        score -= 10.0
     return max(0.0, min(100.0, score)), f"DTE={int(dte)} مقابل هدف تقريبي {int(target)} يوم", risks
 
 
@@ -120,6 +141,9 @@ def _contract_score(
     rank = _number(row.get("rank_score"))
     dte = _number(row.get("dte"), -1.0)
     dte_fit, dte_note, risks = _dte_score(dte, target_dte, symbol)
+    if dte_fit < 0:
+        return -1.0, {}
+
     delta = abs(_number(row.get("delta"), -1.0))
     delta_fit = max(0.0, 1.0 - abs(delta - 0.45) / 0.25) if delta >= 0 else 0.0
     spread = _number(row.get("spread_pct"), 1.0)
@@ -141,12 +165,12 @@ def _contract_score(
     occ_bonus = 4.0 if occ_aligned else 0.0
 
     score = (
-        0.38 * rank
-        + 0.16 * dte_fit
+        0.34 * rank
+        + 0.22 * dte_fit
         + 14.0 * delta_fit
         + 10.0 * spread_fit
-        + 9.0 * flow_fit
-        + 8.0 * liquidity_fit
+        + 8.0 * flow_fit
+        + 7.0 * liquidity_fit
         + tier_bonus
         + source_bonus
         + flow_source_bonus
@@ -184,19 +208,13 @@ def _contract_score(
     if not row.get("primary_or_licensed_quote"):
         risks.append("الـQuote الحالي غير مرخّص/أساسي؛ لا يرقى العقد إلى ثقة تنفيذية عالية")
 
-    detail = {
+    return score, {
         "score": round(score, 1),
         "dte_note": dte_note,
         "strike_note": strike_note,
         "flow_note": flow_note,
         "risks": list(dict.fromkeys(risks)),
-        "delta": delta if delta >= 0 else None,
-        "spread_pct": spread if spread >= 0 else None,
-        "vol_to_oi_ratio": vol_oi,
-        "occ_available": occ_available,
-        "occ_aligned": occ_aligned,
     }
-    return score, detail
 
 
 def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any]:
@@ -212,6 +230,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             grouped.setdefault(symbol, []).append(row)
 
     by_symbol: dict[str, dict[str, Any]] = {}
+    rejected_for_horizon: dict[str, int] = {}
     for symbol, rows in grouped.items():
         stock = stocks.get(symbol, {})
         opportunity = opportunities.get(symbol, {})
@@ -222,7 +241,10 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
         target_dte, expiry_reason = _target_dte(catalyst, opportunity)
 
         ranked: list[tuple[float, dict[str, Any], dict[str, Any]]] = []
+        eligible_side = 0
         for row in rows:
+            if str(row.get("option_type") or "").lower() == side:
+                eligible_side += 1
             score, detail = _contract_score(
                 row,
                 symbol=symbol,
@@ -233,6 +255,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             if score >= 0:
                 ranked.append((score, row, detail))
         ranked.sort(key=lambda item: item[0], reverse=True)
+        rejected_for_horizon[symbol] = max(0, eligible_side - len(ranked))
         if not ranked:
             continue
 
@@ -276,24 +299,27 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                 }
             )
 
-        primary = choices[0]
         by_symbol[symbol] = {
             "symbol": symbol,
             "preferred_side": side.upper(),
             "side_reason_ar": side_reason,
+            "target_dte": target_dte,
+            "allowed_dte_window": list(_dte_window(target_dte, symbol)),
             "catalyst_verification": catalyst.get("verification_state") or "NO_OFFICIAL_CAUSE",
             "catalyst_cause_status_ar": catalyst.get("cause_status_ar") or "السبب الأساسي غير مثبت رسميًا",
-            "primary": primary,
+            "primary": choices[0],
             "alternatives": choices[1:],
             "contract_count_considered": len(ranked),
+            "contracts_rejected_for_horizon": rejected_for_horizon[symbol],
         }
 
     return {
-        "version": "2026.08-option-contract-rationale-v2",
+        "version": "2026.08-option-contract-rationale-v3",
         "policy": {
             "side_requires_direction_alignment": True,
             "strike_not_selected_by_volume_alone": True,
             "expiry_uses_dte_liquidity_and_catalyst_horizon": True,
+            "hard_dte_horizon_guard": True,
             "volume_oi_is_activity_signal_not_direction_proof": True,
             "occ_is_official_aggregate_context_only": True,
             "sweep_claim_requires_trade_quote_level_evidence": True,
@@ -302,6 +328,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
         },
         "contracts_seen": len(contracts),
         "symbols_with_contract_choice": len(by_symbol),
+        "rejected_for_horizon": rejected_for_horizon,
         "by_symbol": by_symbol,
     }
 
