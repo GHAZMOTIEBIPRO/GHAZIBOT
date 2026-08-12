@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import html
+import importlib.util
 import sys
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-import options_radar.arabic_explosion_notifier as notifier
+NOTIFIER_PATH = ROOT / "options_radar" / "arabic_explosion_notifier.py"
+SPEC = importlib.util.spec_from_file_location("black_box_arabic_explosion_notifier", NOTIFIER_PATH)
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError(f"تعذر تحميل المرسل العربي من {NOTIFIER_PATH}")
+notifier = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = notifier
+SPEC.loader.exec_module(notifier)
 
 _ORIGINAL_BUILD = notifier.build_candidates
 _ORIGINAL_FORMAT = notifier.format_candidate_message
