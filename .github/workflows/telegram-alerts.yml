@@ -111,6 +111,55 @@ jobs:
             echo "No fast-radar artifact available; deep sources will still be used."
           fi
 
+      - name: Build unified deep plus full-market payload
+        if: env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path('public/data/latest.json')
+          destination = Path('data/live/unified_alert_payload.json')
+          try:
+              payload = json.loads(source.read_text(encoding='utf-8'))
+          except Exception:
+              payload = {}
+          if not isinstance(payload, dict):
+              payload = {}
+          stocks = payload.get('stocks') if isinstance(payload.get('stocks'), list) else []
+          stocks = [row for row in stocks if isinstance(row, dict)]
+          known = {str(row.get('symbol') or '').upper() for row in stocks}
+
+          try:
+              fast = json.loads(Path('data/live/fast_explosion_scan.json').read_text(encoding='utf-8'))
+          except Exception:
+              fast = {}
+          actionable = fast.get('actionable') if isinstance(fast, dict) and isinstance(fast.get('actionable'), list) else []
+          added = 0
+          for row in actionable:
+              if not isinstance(row, dict):
+                  continue
+              symbol = str(row.get('symbol') or '').upper().strip()
+              if not symbol or symbol in known:
+                  continue
+              stocks.append({
+                  'symbol': symbol,
+                  'price': row.get('price'),
+                  'performance_day': row.get('move_pct'),
+                  'volume': row.get('volume'),
+                  'avg_dollar_volume': row.get('dollar_volume'),
+                  'score': row.get('score'),
+                  'setup_status': 'early' if str(row.get('stage') or '') in {'PRESSURE_BUILDING', 'IGNITION'} else 'confirmed',
+              })
+              known.add(symbol)
+              added += 1
+          payload['stocks'] = stocks
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+          print(f'Unified alert payload: stocks={len(stocks)} fast_only_added={added}')
+          PY
+
       - name: Refresh Delta and effective-float intelligence without direct messaging
         if: env.TELEGRAM_READY == 'true'
         continue-on-error: true
@@ -121,7 +170,7 @@ jobs:
         if: env.TELEGRAM_READY == 'true'
         run: >-
           python options_radar/arabic_explosion_notifier.py
-          --payload public/data/latest.json
+          --payload data/live/unified_alert_payload.json
           --fast data/live/fast_explosion_scan.json
           --delta data/live/delta_signals.json
           --state data/live/arabic_explosion_alert_state.json
