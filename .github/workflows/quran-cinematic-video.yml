@@ -1,0 +1,52 @@
+name: Quran Cinematic Video
+
+on:
+  push:
+    branches:
+      - agent/quran-cinematic-video
+    paths:
+      - "projects/quran-cinematic/**"
+      - ".github/workflows/quran-cinematic-video.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_SPACE: Lightricks/ltx-video-distilled
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install gradio_client
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate cinematic clips and final video
+        run: python projects/quran-cinematic/generate.py
+
+      - name: Upload final video and generation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surah-al-insan-cinematic-video
+          path: |
+            projects/quran-cinematic/output/surah_al_insan_cinematic_9x16.mp4
+            projects/quran-cinematic/output/clip_*.mp4
+            projects/quran-cinematic/output/generation_report.json
+          if-no-files-found: warn
+          retention-days: 7
