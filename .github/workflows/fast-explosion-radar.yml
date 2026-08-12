@@ -7,6 +7,8 @@ on:
     paths:
       - "data/fast_ping.txt"
       - ".github/workflows/fast-explosion-radar.yml"
+      - "scripts/fast_explosion_scan.py"
+      - "scripts/fast_explosion_scan_runner.py"
   schedule:
     - cron: "*/20 8-12 * * 1-5"
     - cron: "*/10 13-21 * * 1-5"
@@ -17,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 jobs:
@@ -25,12 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
-      OMEGA_FAST_MIN_SCORE: ${{ secrets.OMEGA_FAST_MIN_SCORE || '68' }}
-      OMEGA_FAST_MAX_ALERTS: ${{ secrets.OMEGA_FAST_MAX_ALERTS || '3' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -45,36 +43,6 @@ jobs:
 
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
-
-      - name: Restore encrypted persistent Telegram destination
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p telegram_runtime
-          for workflow in fast-explosion-radar.yml telegram-alerts.yml; do
-            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 15 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
-              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
-                if [[ -s telegram_runtime/connection.enc ]]; then
-                  echo "Restored Telegram destination from prior successful run $run_id."
-                  break 2
-                fi
-              fi
-            done
-          done
-          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
-            if ! openssl enc -d -aes-256-cbc -pbkdf2 \
-              -in telegram_runtime/connection.enc \
-              -out telegram_runtime/connection.json \
-              -pass env:TELEGRAM_BOT_TOKEN; then
-              echo "Stored Telegram destination could not be decrypted; automatic discovery will retry."
-              rm -f telegram_runtime/connection.json
-            fi
-          fi
-
-      - name: Resolve Telegram destination once and reuse forever
-        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
       - name: Restore previous full-market Delta snapshot
         shell: bash
@@ -94,69 +62,14 @@ jobs:
           fi
 
       - name: Scan full US-listed market for early ignition, news and halts
-        shell: bash
-        run: |
-          if [[ "$TELEGRAM_READY" == "true" ]]; then
-            python scripts/fast_explosion_scan_runner.py
-          else
-            echo "Telegram destination not learned yet; scanning continues and delivery will activate automatically once learned."
-            python scripts/fast_explosion_scan_runner.py --no-telegram
-          fi
+        run: python scripts/fast_explosion_scan_runner.py --no-telegram
 
-      - name: Upload full-market Delta snapshot
+      - name: Upload fast-radar evidence for unified Arabic notifier
         uses: actions/upload-artifact@v4
         with:
           name: fast-market-state
-          path: data/live/fast_market_state.json
+          path: |
+            data/live/fast_market_state.json
+            data/live/fast_explosion_scan.json
           if-no-files-found: error
           retention-days: 2
-
-      - name: Seal Telegram destination for future unattended runs
-        if: always() && env.TELEGRAM_READY == 'true'
-        shell: bash
-        run: |
-          openssl enc -aes-256-cbc -salt -pbkdf2 \
-            -in telegram_runtime/connection.json \
-            -out telegram_runtime/connection.enc \
-            -pass env:TELEGRAM_BOT_TOKEN
-          rm -f telegram_runtime/connection.json
-
-      - name: Upload encrypted Telegram destination
-        if: always() && env.TELEGRAM_READY == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: telegram-connection
-          path: telegram_runtime/connection.enc
-          if-no-files-found: error
-          retention-days: 90
-
-      - name: Persist alert fingerprints only when an alert was sent
-        shell: bash
-        run: |
-          if [[ ! -f data/live/fast_alert_state.json ]]; then
-            echo "No fast alert state generated."
-            exit 0
-          fi
-          sent=$(python - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path('data/live/fast_alert_state.json')
-          try:
-              print(int(json.loads(p.read_text()).get('last_sent_count',0)))
-          except Exception:
-              print(0)
-          PY
-          )
-          if [[ "$sent" -le 0 ]]; then
-            echo "No new alert; keeping repository state unchanged."
-            exit 0
-          fi
-          git config user.name "black-box-omega-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/live/fast_alert_state.json
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "data: persist fast-radar alert fingerprints [skip ci]"
-          git pull --rebase origin main
-          git push origin HEAD:main
