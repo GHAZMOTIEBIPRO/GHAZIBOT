@@ -9,6 +9,10 @@ on:
   workflow_run:
     workflows: ["GHAZI Stocks and Options Radar"]
     types: [completed]
+  schedule:
+    - cron: "*/20 8-12 * * 1-5"
+    - cron: "*/10 13-21 * * 1-5"
+    - cron: "*/20 22-23 * * 1-5"
 
 concurrency:
   group: black-box-omega-telegram
@@ -16,10 +20,11 @@ concurrency:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   notify:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -59,19 +64,73 @@ jobs:
       - name: Install Telegram dependency
         run: pip install 'requests>=2.32,<3.0'
 
+      - name: Restore encrypted persistent Telegram destination
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-alerts.yml fast-explosion-radar.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 15 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                if [[ -s telegram_runtime/connection.enc ]]; then
+                  echo "Restored Telegram destination from prior successful run $run_id."
+                  break 2
+                fi
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            if ! openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN; then
+              echo "Stored Telegram destination could not be decrypted; automatic discovery will retry."
+              rm -f telegram_runtime/connection.json
+            fi
+          fi
+
+      - name: Resolve Telegram destination once and reuse forever
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
       - name: Run Telegram pre-explosion, news-shock and early price-explosion filters
+        if: env.TELEGRAM_READY == 'true'
         run: python options_radar/telegram_notifier.py --payload public/data/latest.json
 
       - name: Run RGC/BNAI asymmetric explosion detector
+        if: env.TELEGRAM_READY == 'true'
         run: python options_radar/asymmetric_explosion.py --payload public/data/latest.json
 
       - name: Run Delta and Effective Float pressure engine
+        if: env.TELEGRAM_READY == 'true'
         run: python options_radar/explosion_intelligence.py --payload public/data/latest.json --send-telegram
 
       - name: Send radar heartbeat when no strong candidate
+        if: env.TELEGRAM_READY == 'true'
         run: python options_radar/telegram_status.py --payload public/data/latest.json
 
+      - name: Seal Telegram destination for future unattended runs
+        if: always() && env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          openssl enc -aes-256-cbc -salt -pbkdf2 \
+            -in telegram_runtime/connection.json \
+            -out telegram_runtime/connection.enc \
+            -pass env:TELEGRAM_BOT_TOKEN
+          rm -f telegram_runtime/connection.json
+
+      - name: Upload encrypted Telegram destination
+        if: always() && env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-connection
+          path: telegram_runtime/connection.enc
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Persist Telegram and Delta states
+        if: env.TELEGRAM_READY == 'true'
         shell: bash
         run: |
           git config user.name "black-box-omega-bot"
