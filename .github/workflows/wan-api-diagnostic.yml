@@ -1,0 +1,30 @@
+name: Wan API Diagnostic
+
+on:
+  push:
+    branches:
+      - agent/quran-cinematic-video
+    paths:
+      - "projects/quran-cinematic/diagnose_wan.py"
+      - ".github/workflows/wan-api-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install gradio_client
+      - run: python projects/quran-cinematic/diagnose_wan.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wan-api-diagnostic
+          path: projects/quran-cinematic/wan_api.json
+          if-no-files-found: error
