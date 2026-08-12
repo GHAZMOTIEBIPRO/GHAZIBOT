@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import html
+import sys
+from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import options_radar.arabic_explosion_notifier as notifier
 
