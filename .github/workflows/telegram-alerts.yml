@@ -6,8 +6,12 @@ on:
     branches: [main]
     paths:
       - "data/telegram_ping.txt"
+      - ".github/workflows/telegram-alerts.yml"
+      - "options_radar/arabic_explosion_notifier.py"
   workflow_run:
-    workflows: ["GHAZI Stocks and Options Radar"]
+    workflows:
+      - "GHAZI Stocks and Options Radar"
+      - "BLACK BOX Omega Fast Explosion Radar"
     types: [completed]
   schedule:
     - cron: "*/20 8-12 * * 1-5"
@@ -26,29 +30,15 @@ jobs:
   notify:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      TELEGRAM_MIN_EXPLOSION_RANK: ${{ secrets.TELEGRAM_MIN_EXPLOSION_RANK || '80' }}
-      TELEGRAM_MIN_EARLYNESS: ${{ secrets.TELEGRAM_MIN_EARLYNESS || '75' }}
-      TELEGRAM_MAX_DILUTION_RISK: ${{ secrets.TELEGRAM_MAX_DILUTION_RISK || '60' }}
-      TELEGRAM_MAX_RISK_PENALTY: ${{ secrets.TELEGRAM_MAX_RISK_PENALTY || '38' }}
-      TELEGRAM_MAX_ALERTS_PER_RUN: ${{ secrets.TELEGRAM_MAX_ALERTS_PER_RUN || '3' }}
-      TELEGRAM_MIN_NEWS_QUALITY: ${{ secrets.TELEGRAM_MIN_NEWS_QUALITY || '80' }}
-      TELEGRAM_MIN_NEWS_MATERIALITY: ${{ secrets.TELEGRAM_MIN_NEWS_MATERIALITY || '75' }}
-      TELEGRAM_MIN_NEWS_SOURCE_STRENGTH: ${{ secrets.TELEGRAM_MIN_NEWS_SOURCE_STRENGTH || '75' }}
-      TELEGRAM_NEWS_MAX_AGE_DAYS: ${{ secrets.TELEGRAM_NEWS_MAX_AGE_DAYS || '3' }}
-      TELEGRAM_MIN_PRICE_MOVE_PCT: ${{ secrets.TELEGRAM_MIN_PRICE_MOVE_PCT || '5' }}
-      TELEGRAM_MAX_PRICE_MOVE_PCT: ${{ secrets.TELEGRAM_MAX_PRICE_MOVE_PCT || '28' }}
-      TELEGRAM_MIN_PRICE_RVOL: ${{ secrets.TELEGRAM_MIN_PRICE_RVOL || '1.8' }}
-      TELEGRAM_MIN_PRICE_STOCK_SCORE: ${{ secrets.TELEGRAM_MIN_PRICE_STOCK_SCORE || '70' }}
-      TELEGRAM_MIN_DOLLAR_VOLUME: ${{ secrets.TELEGRAM_MIN_DOLLAR_VOLUME || '3000000' }}
-      TELEGRAM_MIN_ASYMMETRIC_SCORE: ${{ secrets.TELEGRAM_MIN_ASYMMETRIC_SCORE || '62' }}
-      TELEGRAM_MAX_ASYMMETRIC_ALERTS: ${{ secrets.TELEGRAM_MAX_ASYMMETRIC_ALERTS || '3' }}
-      TELEGRAM_STATUS_INTERVAL_HOURS: ${{ secrets.TELEGRAM_STATUS_INTERVAL_HOURS || '4' }}
-      OMEGA_DELTA_ALERT_MIN_SCORE: ${{ secrets.OMEGA_DELTA_ALERT_MIN_SCORE || '52' }}
-      OMEGA_DELTA_MAX_ALERTS: ${{ secrets.OMEGA_DELTA_MAX_ALERTS || '3' }}
+      OMEGA_ARABIC_MIN_SCORE: ${{ secrets.OMEGA_ARABIC_MIN_SCORE || '72' }}
+      OMEGA_ARABIC_MAX_ALERTS: ${{ secrets.OMEGA_ARABIC_MAX_ALERTS || '3' }}
+      OMEGA_ARABIC_MAX_DILUTION: ${{ secrets.OMEGA_ARABIC_MAX_DILUTION || '75' }}
+      OMEGA_ARABIC_MAX_CHASE_PCT: ${{ secrets.OMEGA_ARABIC_MAX_CHASE_PCT || '35' }}
+      OMEGA_ARABIC_STATUS_INTERVAL_HOURS: ${{ secrets.OMEGA_ARABIC_STATUS_INTERVAL_HOURS || '4' }}
       OMEGA_DELTA_HISTORY_LENGTH: ${{ secrets.OMEGA_DELTA_HISTORY_LENGTH || '24' }}
 
     steps:
@@ -94,21 +84,96 @@ jobs:
       - name: Resolve Telegram destination once and reuse forever
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
-      - name: Run Telegram pre-explosion, news-shock and early price-explosion filters
+      - name: Restore latest fast-radar evidence
         if: env.TELEGRAM_READY == 'true'
-        run: python options_radar/telegram_notifier.py --payload public/data/latest.json
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live
+          current_fast=""
+          if [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.name }}" == "BLACK BOX Omega Fast Explosion Radar" ]]; then
+            current_fast="${{ github.event.workflow_run.id }}"
+          fi
+          if [[ -n "$current_fast" ]]; then
+            gh run download "$current_fast" -n fast-market-state -D data/live || true
+          fi
+          if [[ ! -f data/live/fast_explosion_scan.json ]]; then
+            for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              if gh run download "$run_id" -n fast-market-state -D data/live >/dev/null 2>&1; then
+                [[ -f data/live/fast_explosion_scan.json ]] && break
+              fi
+            done
+          fi
+          if [[ -f data/live/fast_explosion_scan.json ]]; then
+            echo "Fast-radar evidence restored."
+          else
+            echo "No fast-radar artifact available; deep sources will still be used."
+          fi
 
-      - name: Run RGC/BNAI asymmetric explosion detector
+      - name: Build unified deep plus full-market payload
         if: env.TELEGRAM_READY == 'true'
-        run: python options_radar/asymmetric_explosion.py --payload public/data/latest.json
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
 
-      - name: Run Delta and Effective Float pressure engine
-        if: env.TELEGRAM_READY == 'true'
-        run: python options_radar/explosion_intelligence.py --payload public/data/latest.json --send-telegram
+          source = Path('public/data/latest.json')
+          destination = Path('data/live/unified_alert_payload.json')
+          try:
+              payload = json.loads(source.read_text(encoding='utf-8'))
+          except Exception:
+              payload = {}
+          if not isinstance(payload, dict):
+              payload = {}
+          stocks = payload.get('stocks') if isinstance(payload.get('stocks'), list) else []
+          stocks = [row for row in stocks if isinstance(row, dict)]
+          known = {str(row.get('symbol') or '').upper() for row in stocks}
 
-      - name: Send radar heartbeat when no strong candidate
+          try:
+              fast = json.loads(Path('data/live/fast_explosion_scan.json').read_text(encoding='utf-8'))
+          except Exception:
+              fast = {}
+          actionable = fast.get('actionable') if isinstance(fast, dict) and isinstance(fast.get('actionable'), list) else []
+          added = 0
+          for row in actionable:
+              if not isinstance(row, dict):
+                  continue
+              symbol = str(row.get('symbol') or '').upper().strip()
+              if not symbol or symbol in known:
+                  continue
+              stocks.append({
+                  'symbol': symbol,
+                  'price': row.get('price'),
+                  'performance_day': row.get('move_pct'),
+                  'volume': row.get('volume'),
+                  'avg_dollar_volume': row.get('dollar_volume'),
+                  'score': row.get('score'),
+                  'setup_status': 'early' if str(row.get('stage') or '') in {'PRESSURE_BUILDING', 'IGNITION'} else 'confirmed',
+              })
+              known.add(symbol)
+              added += 1
+          payload['stocks'] = stocks
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+          print(f'Unified alert payload: stocks={len(stocks)} fast_only_added={added}')
+          PY
+
+      - name: Refresh Delta and effective-float intelligence without direct messaging
         if: env.TELEGRAM_READY == 'true'
-        run: python options_radar/telegram_status.py --payload public/data/latest.json
+        continue-on-error: true
+        run: python options_radar/explosion_intelligence.py --payload public/data/latest.json
+
+      - name: Send one unified Arabic cause-based alert stream
+        id: arabic_notify
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          python options_radar/arabic_explosion_notifier.py
+          --payload data/live/unified_alert_payload.json
+          --fast data/live/fast_explosion_scan.json
+          --delta data/live/delta_signals.json
+          --state data/live/arabic_explosion_alert_state.json
 
       - name: Seal Telegram destination for future unattended runs
         if: always() && env.TELEGRAM_READY == 'true'
@@ -129,31 +194,48 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Persist Telegram and Delta states
-        if: env.TELEGRAM_READY == 'true'
+      - name: Persist unified Arabic alert and Delta states
+        if: always() && env.TELEGRAM_READY == 'true'
         shell: bash
         run: |
           git config user.name "black-box-omega-bot"
           git config user.email "actions@users.noreply.github.com"
           files=()
           for file in \
-            data/live/telegram_alert_state.json \
-            data/live/asymmetric_alert_state.json \
-            data/live/telegram_status_state.json \
+            data/live/arabic_explosion_alert_state.json \
             data/live/delta_history.json \
-            data/live/delta_signals.json \
-            data/live/delta_alert_state.json; do
+            data/live/delta_signals.json; do
             [[ -f "$file" ]] && files+=("$file")
           done
           if [[ ${#files[@]} -eq 0 ]]; then
-            echo "No Telegram/Delta state files to persist."
+            echo "No unified alert state files to persist."
             exit 0
           fi
           git add "${files[@]}"
           if git diff --cached --quiet; then
-            echo "No Telegram/Delta state change."
+            echo "No unified alert state change."
           else
-            git commit -m "data: update Telegram and Delta states [skip ci]"
+            git commit -m "data: update Arabic explosion alert state [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+
+      - name: Notify Telegram if the autonomous sender itself fails
+        if: failure() && env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import requests
+          token = os.getenv('TELEGRAM_BOT_TOKEN', '').strip()
+          chat_id = os.getenv('TELEGRAM_CHAT_ID', '').strip()
+          if token and chat_id:
+              requests.post(
+                  f'https://api.telegram.org/bot{token}/sendMessage',
+                  data={
+                      'chat_id': chat_id,
+                      'text': '⚠️ بلاك بوكس Ω — تنبيه نظام\nتعطل مسار التنبيهات الآلي في GitHub Actions. الفحص القادم سيحاول التشغيل تلقائيًا من جديد.',
+                  },
+                  timeout=20,
+              ).raise_for_status()
+          PY
