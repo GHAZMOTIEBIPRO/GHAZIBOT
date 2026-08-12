@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -18,6 +19,13 @@ from options_radar.settings import Settings
 def main() -> int:
     path = ROOT / "public/data/latest.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
+
+    # The contract-rationale engine must see a meaningful pool per symbol, not
+    # only a tiny global top-N list. Keep the public tab bounded but large
+    # enough to preserve near-horizon alternatives before selecting one contract.
+    configured_top = int(os.getenv("EXPIRY_RADAR_TOP_PER_SIDE", "8") or 8)
+    os.environ["EXPIRY_RADAR_TOP_PER_SIDE"] = str(max(40, configured_top))
+
     payload = apply_expiry_radar_with_occ(payload, Settings())
     apply_omega(payload)
     apply_option_contract_intelligence(payload)
