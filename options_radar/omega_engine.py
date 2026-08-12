@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .omega_catalyst_intelligence import build_catalyst_intelligence
+from .official_catalyst_intelligence import build_catalyst_intelligence
 from .omega_observability import apply_observability
 from .omega_opportunity import build_omega_opportunities
 from .omega_validation import build_validation_status
@@ -52,6 +52,8 @@ def apply_omega(payload: dict[str, Any]) -> dict[str, Any]:
     summary["omega_rejected"] = opportunities["summary"]["rejected"]
     summary["catalyst_event_clusters"] = catalyst_intelligence["event_clusters"]
     summary["catalyst_duplicates_collapsed"] = catalyst_intelligence["duplicates_collapsed"]
+    summary["official_confirmed_catalysts"] = catalyst_intelligence.get("official_confirmed_clusters", 0)
+    summary["attention_only_catalysts"] = catalyst_intelligence.get("attention_only_clusters", 0)
 
     apply_observability(payload)
     return payload

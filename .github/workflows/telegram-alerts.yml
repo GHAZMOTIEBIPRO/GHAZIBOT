@@ -8,6 +8,10 @@ on:
       - "data/telegram_ping.txt"
       - ".github/workflows/telegram-alerts.yml"
       - "options_radar/arabic_explosion_notifier.py"
+      - "options_radar/option_contract_intelligence.py"
+      - "options_radar/official_catalyst_intelligence.py"
+      - "options_radar/event_source_policy.py"
+      - "scripts/send_arabic_alerts_with_options.py"
   workflow_run:
     workflows:
       - "GHAZI Stocks and Options Radar"
@@ -165,11 +169,11 @@ jobs:
         continue-on-error: true
         run: python options_radar/explosion_intelligence.py --payload public/data/latest.json
 
-      - name: Send one unified Arabic cause-based alert stream
+      - name: Send one unified Arabic cause and options alert stream
         id: arabic_notify
         if: env.TELEGRAM_READY == 'true'
         run: >-
-          python options_radar/arabic_explosion_notifier.py
+          python scripts/send_arabic_alerts_with_options.py
           --payload data/live/unified_alert_payload.json
           --fast data/live/fast_explosion_scan.json
           --delta data/live/delta_signals.json
