@@ -92,3 +92,29 @@ def test_volume_oi_does_not_become_sweep_claim():
     primary = intel["by_symbol"]["TEST"]["primary"]
     assert primary["vol_to_oi_ratio"] > 1.5
     assert primary["flow_claim"] != "SWEEP_CONFIRMED"
+
+
+def test_far_expiry_cannot_win_only_because_flow_is_huge():
+    payload = _payload("bullish")
+    payload["omega"]["catalyst_intelligence"]["by_symbol"]["TEST"]["official_confirmed"] = False
+    payload["omega"]["catalyst_intelligence"]["by_symbol"]["TEST"]["primary_cause_eligible"] = False
+    payload["expiry_radar"]["tabs"]["all_expirations"]["calls"].append(
+        _contract("call", 100, 11.0, 99, delta=0.48, vol_oi=9.5, spread=0.02)
+    )
+    intel = build_option_contract_intelligence(payload)
+    item = intel["by_symbol"]["TEST"]
+    assert item["primary"]["dte"] != 100
+    assert item["allowed_dte_window"] == [7.0, 45.0]
+    assert item["contracts_rejected_for_horizon"] >= 1
+
+
+def test_only_far_expiries_means_no_contract_choice():
+    payload = _payload("bullish")
+    payload["omega"]["catalyst_intelligence"]["by_symbol"]["TEST"]["official_confirmed"] = False
+    payload["omega"]["catalyst_intelligence"]["by_symbol"]["TEST"]["primary_cause_eligible"] = False
+    payload["expiry_radar"]["tabs"]["all_expirations"]["calls"] = [
+        _contract("call", 100, 11.0, 99, delta=0.48, vol_oi=9.5, spread=0.02)
+    ]
+    intel = build_option_contract_intelligence(payload)
+    assert "TEST" not in intel["by_symbol"]
+    assert intel["rejected_for_horizon"]["TEST"] == 1
