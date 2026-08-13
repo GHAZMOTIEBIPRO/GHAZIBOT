@@ -1,0 +1,151 @@
+name: BLACK BOX Omega Adaptive Evidence Review
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/adaptive-review.yml"
+      - "options_radar/adaptive_learning.py"
+      - "options_radar/stock_outcomes.py"
+      - "scripts/run_adaptive_learning.py"
+  schedule:
+    - cron: "15 14-22 * * 1-5"
+
+concurrency:
+  group: black-box-omega-adaptive-review
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_PATH: data/live/options_alert_state.json
+      SIGNAL_JOURNAL_PATH: data/live/options_signals.jsonl
+      OUTCOME_PATH: data/live/options_outcomes.json
+      CALIBRATION_PATH: data/live/options_calibration.json
+      ADAPTIVE_LEARNING_PATH: data/live/adaptive_learning.json
+      STOCK_OUTCOME_PATH: data/live/stock_outcomes.json
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Evidence Review GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore options research evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live .restore-options
+          found=false
+          for run_id in $(gh run list --workflow options-research-enrichment.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .restore-options && mkdir -p .restore-options
+            if gh run download "$run_id" -n options-research-state -D .restore-options >/dev/null 2>&1; then
+              cp -f .restore-options/options_signals.jsonl data/live/options_signals.jsonl 2>/dev/null || true
+              cp -f .restore-options/options_outcomes.json data/live/options_outcomes.json 2>/dev/null || true
+              found=true
+              break
+            fi
+          done
+          if [[ "$found" != true ]]; then
+            for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .restore-options && mkdir -p .restore-options
+              if gh run download "$run_id" -n options-contract-state -D .restore-options >/dev/null 2>&1; then
+                cp -f .restore-options/options_signals.jsonl data/live/options_signals.jsonl 2>/dev/null || true
+                cp -f .restore-options/options_outcomes.json data/live/options_outcomes.json 2>/dev/null || true
+                break
+              fi
+            done
+          fi
+
+      - name: Restore previous evidence review
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .restore-learning data/live
+          for run_id in $(gh run list --workflow adaptive-review.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .restore-learning && mkdir -p .restore-learning
+            if gh run download "$run_id" -n adaptive-learning-state -D .restore-learning >/dev/null 2>&1; then
+              cp -f .restore-learning/adaptive_learning.json data/live/adaptive_learning.json 2>/dev/null || true
+              cp -f .restore-learning/options_outcomes.json data/live/options_outcomes.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Restore stock outcome evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .restore-stock data/live
+          for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .restore-stock && mkdir -p .restore-stock
+            if gh run download "$run_id" -n stock-radar-state -D .restore-stock >/dev/null 2>&1; then
+              cp -f .restore-stock/stock_outcomes.json data/live/stock_outcomes.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Run shadow evidence review
+        run: >-
+          python -m scripts.run_adaptive_learning
+          --output data/live/adaptive_learning.json
+          --report data/live/adaptive_learning_report.json
+          --stock-outcomes data/live/stock_outcomes.json
+
+      - name: Validate promotion guard
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          model = json.loads(Path('data/live/adaptive_learning.json').read_text(encoding='utf-8'))
+          report = json.loads(Path('data/live/adaptive_learning_report.json').read_text(encoding='utf-8'))
+          assert model['policy']['no_live_weight_change_before_minimum_sample'] is True
+          assert report['mode'] == 'SHADOW_LEARNING'
+          assert report['live_alert_weights_changed'] is False
+          assert report['promotion_gate']['requires_walk_forward_review_before_live_promotion'] is True
+          print('Adaptive evidence-review guard passed.')
+          PY
+
+      - name: Stage adaptive evidence
+        shell: bash
+        run: |
+          mkdir -p .adaptive-upload
+          for pair in \
+            "data/live/adaptive_learning.json:adaptive_learning.json" \
+            "data/live/adaptive_learning_report.json:adaptive_learning_report.json" \
+            "data/live/options_outcomes.json:options_outcomes.json"; do
+            source="${pair%%:*}"
+            target="${pair##*:}"
+            [[ -f "$source" ]] && cp -f "$source" ".adaptive-upload/$target"
+          done
+
+      - name: Upload adaptive evidence state
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-learning-state
+          path: .adaptive-upload/
+          if-no-files-found: error
+          retention-days: 90
