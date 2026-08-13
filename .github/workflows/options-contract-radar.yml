@@ -106,7 +106,7 @@ jobs:
       - name: Run independent options contract radar
         if: steps.market.outputs.open == 'true'
         run: >-
-          python scripts/run_options_radar_independent.py
+          python -m scripts.run_options_radar_independent
           --output public/data/options_latest.json
           --max-symbols "$OPTIONS_INDEPENDENT_MAX_SYMBOLS"
           --top-per-side "$OPTIONS_INDEPENDENT_TOP_PER_SIDE"
