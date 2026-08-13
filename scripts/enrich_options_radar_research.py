@@ -17,6 +17,7 @@ from options_radar.settings import Settings
 
 DEFAULT_PAYLOAD = Path("public/data/options_latest.json")
 DEFAULT_LEARNING = Path(os.getenv("ADAPTIVE_LEARNING_PATH", "data/live/adaptive_learning.json"))
+MAX_RESEARCH_SOURCE_AGE_MINUTES = 45
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -32,6 +33,19 @@ def _write(path: Path, payload: dict[str, Any]) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(path)
+
+
+def _source_age_minutes(payload: dict[str, Any], now: datetime) -> float | None:
+    text = str(payload.get("generated_at") or "").strip()
+    if not text:
+        return None
+    try:
+        generated = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if generated.tzinfo is None:
+        generated = generated.replace(tzinfo=timezone.utc)
+    return (now - generated.astimezone(timezone.utc)).total_seconds() / 60.0
 
 
 def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
@@ -67,26 +81,37 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
         payload[key] = enriched
     payload["contracts"] = contracts
 
-    generated_at = datetime.now(timezone.utc)
-    frame = pd.DataFrame(contracts)
-    recorded = SignalJournal(
-        settings.signal_journal_path,
-        settings.outcome_path,
-        settings.model_version,
-        settings=settings,
-    ).record(frame, generated_at)
+    now = datetime.now(timezone.utc)
+    source_age = _source_age_minutes(payload, now)
+    source_is_fresh = source_age is not None and -2.0 <= source_age <= MAX_RESEARCH_SOURCE_AGE_MINUTES
+    recorded = 0
+    if source_is_fresh:
+        frame = pd.DataFrame(contracts)
+        recorded = SignalJournal(
+            settings.signal_journal_path,
+            settings.outcome_path,
+            settings.model_version,
+            settings=settings,
+        ).record(frame, now)
 
     payload["adaptive_learning"] = learning.get("options", {})
     payload.setdefault("summary", {})["shadow_learning_ready"] = bool((learning.get("options") or {}).get("ready"))
     payload["summary"]["signals_recorded_this_run"] = recorded
+    payload["summary"]["research_source_age_minutes"] = round(source_age, 2) if source_age is not None else None
+    payload["summary"]["research_source_fresh"] = source_is_fresh
     payload.setdefault("flow_policy", {}).update(
         {
             "adaptive_learning_mode": "shadow_only",
             "adaptive_learning_changes_live_alerts": False,
             "trade_quote_adapter_ready": True,
             "licensed_trade_quote_feed_configured": False,
+            "stale_payload_can_create_new_learning_signal": False,
         }
     )
+    if not source_is_fresh:
+        payload.setdefault("limitations", []).append(
+            "Research enrichment saw a stale/undated source payload and deliberately recorded zero new option signals."
+        )
     payload["health"] = assess_options_health(payload)
     _write(destination, payload)
     return payload
@@ -100,6 +125,7 @@ def main() -> None:
     print(
         "Options research enrichment: "
         f"recorded={(payload.get('summary') or {}).get('signals_recorded_this_run', 0)} "
+        f"fresh={(payload.get('summary') or {}).get('research_source_fresh', False)} "
         f"learning={(payload.get('summary') or {}).get('shadow_learning_ready', False)} "
         f"health={(payload.get('health') or {}).get('status', 'UNKNOWN')}"
     )
