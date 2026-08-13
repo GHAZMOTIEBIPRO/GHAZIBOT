@@ -70,7 +70,7 @@ jobs:
 
       - name: Deep validate stock causes with official-first policy
         run: >-
-          python scripts/run_stock_radar_independent.py
+          python -m scripts.run_stock_radar_independent
           --fast data/live/fast_explosion_scan.json
           --output public/data/stocks_latest.json
 

@@ -51,7 +51,6 @@ jobs:
                 [[ -s telegram_runtime/connection.enc ]] && break 2
               fi
             done
-
           done
           if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
             openssl enc -d -aes-256-cbc -pbkdf2 \
@@ -64,6 +63,7 @@ jobs:
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
       - name: Restore independent options payload
+        id: payload
         if: env.TELEGRAM_READY == 'true'
         shell: bash
         env:
@@ -75,7 +75,7 @@ jobs:
             current="${{ github.event.workflow_run.id }}"
           fi
           if [[ -n "$current" ]]; then
-            gh run download "$current" -n independent-options-radar -D .options-payload || true
+            gh run download "$current" -n independent-options-radar -D .options-payload >/dev/null 2>&1 || true
           fi
           if [[ ! -s .options-payload/options_latest.json ]]; then
             for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
@@ -85,10 +85,16 @@ jobs:
               fi
             done
           fi
-          test -s .options-payload/options_latest.json
+          if [[ -s .options-payload/options_latest.json ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Live options payload available."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "No live options payload exists (market may be closed); Telegram will skip cleanly."
+          fi
 
       - name: Restore options Telegram state
-        if: env.TELEGRAM_READY == 'true'
+        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -105,7 +111,7 @@ jobs:
           done
 
       - name: Send options-only Arabic alerts
-        if: env.TELEGRAM_READY == 'true'
+        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready == 'true'
         run: >-
           python scripts/send_independent_path_alerts.py
           --path options
@@ -113,13 +119,17 @@ jobs:
           --state data/live/options_telegram_alert_state.json
 
       - name: Upload options Telegram state
-        if: env.TELEGRAM_READY == 'true'
+        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: options-telegram-state
           path: data/live/options_telegram_alert_state.json
           if-no-files-found: error
           retention-days: 30
+
+      - name: Closed-market or no-payload status
+        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready != 'true'
+        run: echo "Options Telegram skipped because no fresh independent options payload exists."
 
       - name: Seal Telegram destination
         if: always() && env.TELEGRAM_READY == 'true'
