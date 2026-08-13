@@ -30,6 +30,12 @@ jobs:
       - name: Unit and integration tests
         run: pytest -q
 
+      - name: Independent radar CLI import smoke
+        run: |
+          python -m scripts.run_stock_radar_independent --help >/dev/null
+          python -m scripts.run_options_radar_independent --help >/dev/null
+          python scripts/send_independent_path_alerts.py --help >/dev/null
+
       - name: Python syntax and import compilation
         run: |
           python -m compileall -q \
