@@ -44,12 +44,14 @@ def assess_options_health(payload: dict[str, Any]) -> dict[str, Any]:
     errors = payload.get("errors") if isinstance(payload.get("errors"), dict) else {}
     universe = payload.get("universe") if isinstance(payload.get("universe"), dict) else {}
     regime = payload.get("market_regime_detail") if isinstance(payload.get("market_regime_detail"), dict) else {}
+    readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
     symbols = int(summary.get("symbols_scanned", 0) or 0)
     selected = int(summary.get("contracts_selected", 0) or 0)
     official_optionability = bool(summary.get("official_optionability_verified"))
     provider = str(summary.get("provider") or "").lower()
     rank = 0
     reasons: list[str] = []
+
     if symbols <= 0:
         rank = 2
         reasons.append("Independent options universe is empty")
@@ -60,9 +62,24 @@ def assess_options_health(payload: dict[str, Any]) -> dict[str, Any]:
     if not official_optionability:
         rank = max(rank, 1)
         reasons.append("OCC optionability verification is unavailable; fallback universe is in use")
-    if "yahoo" in provider or "yfinance" in provider or not provider:
+
+    if readiness:
+        readiness_status = str(readiness.get("status") or "UNKNOWN")
+        quote_ready = bool(readiness.get("production_quote_ready"))
+        flow_ready = bool(readiness.get("production_flow_ready"))
+        if readiness_status.startswith("CRITICAL"):
+            rank = 2
+        elif not quote_ready or not flow_ready:
+            rank = max(rank, 1)
+        reasons.extend(
+            str(value)
+            for value in readiness.get("reasons", [])
+            if str(value).strip()
+        )
+    elif "yahoo" in provider or "yfinance" in provider or not provider:
         rank = max(rank, 1)
-        reasons.append("Options data is fallback/snapshot quality rather than licensed OPRA trade+quote flow")
+        reasons.append("Options data is fallback/snapshot quality rather than licensed trade+quote flow")
+
     if regime and str(regime.get("data_quality") or "complete") != "complete":
         rank = max(rank, 1)
         reasons.append("Market-regime inputs are partial")
@@ -74,12 +91,19 @@ def assess_options_health(payload: dict[str, Any]) -> dict[str, Any]:
         "status": _status(rank),
         "critical": rank >= 2,
         "degraded": rank >= 1,
-        "reasons": reasons,
+        "reasons": list(dict.fromkeys(reasons)),
         "metrics": {
             "symbols_scanned": symbols,
             "contracts_selected": selected,
             "official_optionability_verified": official_optionability,
             "provider": summary.get("provider"),
+            "provider_readiness": readiness.get("status") if readiness else None,
+            "production_quote_ready": readiness.get("production_quote_ready") if readiness else None,
+            "production_flow_ready": readiness.get("production_flow_ready") if readiness else None,
+            "usable_chains": readiness.get("usable_chains") if readiness else None,
+            "fallback_only_chains": readiness.get("fallback_only_chains") if readiness else None,
+            "live_primary_chains": readiness.get("live_primary_chains") if readiness else None,
+            "opra_chains": readiness.get("opra_chains") if readiness else None,
             "errors": len(errors),
             "attention_sources": universe.get("attention_sources", []),
         },
