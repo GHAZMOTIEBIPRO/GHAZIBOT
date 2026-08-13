@@ -2,10 +2,18 @@ name: BLACK BOX Omega Options Contract Radar
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/options-contract-radar.yml"
+      - "options_radar/optionable_universe.py"
+      - "options_radar/official_event_scan.py"
+      - "scripts/run_options_radar_independent.py"
+      - "data/options_ping.txt"
   schedule:
-    # U.S. regular session window while New York is on daylight time.
-    # The runner also checks the exchange calendar so holidays/closed periods fail quiet.
-    - cron: "*/15 13-20 * * 1-5"
+    # 13:00-21:59 UTC covers NY regular hours across both daylight and standard time.
+    # The exchange-calendar gate below is the source of truth for holidays/session state.
+    - cron: "*/15 13-21 * * 1-5"
 
 concurrency:
   group: black-box-omega-options-contract-radar
@@ -150,7 +158,6 @@ jobs:
             target="${pair##*:}"
             [[ -f "$source" ]] && cp -f "$source" ".options-state-upload/$target"
           done
-          # Always leave one manifest so the artifact exists on the first run.
           python - <<'PY'
           import json
           from datetime import datetime, timezone
