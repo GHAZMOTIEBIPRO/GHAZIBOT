@@ -7,6 +7,71 @@ def _status(rank: int) -> str:
     return {0: "HEALTHY", 1: "DEGRADED", 2: "CRITICAL"}.get(rank, "CRITICAL")
 
 
+def options_provider_readiness(payload: dict[str, Any]) -> dict[str, Any]:
+    """Classify the *actual* option-chain sources, not the pipeline name.
+
+    ``summary.provider`` is intentionally the hybrid engine identifier and is not
+    evidence of market-data entitlement. Provider readiness must be derived from
+    per-symbol ``provider_audit`` records produced by the fetcher.
+    """
+    audit = payload.get("provider_audit") if isinstance(payload.get("provider_audit"), dict) else {}
+    source_counts: dict[str, int] = {}
+    usable = 0
+    yahoo_only = 0
+    delayed_primary = 0
+    live_primary = 0
+    opra_active = 0
+    cross_source = 0
+
+    for value in audit.values():
+        if not isinstance(value, dict):
+            continue
+        source = str(value.get("source") or "").strip().lower()
+        freshness = str(value.get("freshness") or "").strip().lower()
+        if not source:
+            continue
+        usable += 1
+        source_counts[source] = source_counts.get(source, 0) + 1
+        pieces = {piece.strip() for piece in source.replace("+", "|").split("|") if piece.strip()}
+        if len(pieces) > 1:
+            cross_source += 1
+        is_yahoo = "yahoo" in source or "yfinance" in source
+        is_opra = any(token in source or token in freshness for token in ("opra", "polygon", "massive"))
+        is_tradier = "tradier" in source
+        is_delayed = any(token in freshness for token in ("delay", "delayed", "sandbox", "24h", "unofficial"))
+        is_marketdata = "marketdata" in source
+
+        if is_yahoo:
+            yahoo_only += 1
+        if is_opra:
+            opra_active += 1
+            live_primary += 1
+        elif is_tradier and not is_delayed:
+            # Explicit Tradier brokerage feed is suitable for live quote research,
+            # but it is still not labeled OPRA-confirmed flow by this system.
+            live_primary += 1
+        elif is_marketdata or is_delayed or "finnhub" in source:
+            # MarketData free tier and Tradier sandbox are delayed. Finnhub
+            # entitlement freshness is not assumed live without stronger evidence.
+            delayed_primary += 1
+
+    fallback_only = usable > 0 and yahoo_only == usable
+    production_quote_ready = live_primary > 0
+    opra_flow_ready = opra_active > 0
+    return {
+        "usable_chains": usable,
+        "source_counts": source_counts,
+        "yahoo_only_chains": yahoo_only,
+        "delayed_or_unverified_primary_chains": delayed_primary,
+        "live_primary_chains": live_primary,
+        "cross_source_chains": cross_source,
+        "opra_active_chains": opra_active,
+        "fallback_only": fallback_only,
+        "production_quote_ready": production_quote_ready,
+        "opra_flow_ready": opra_flow_ready,
+    }
+
+
 def assess_stock_health(payload: dict[str, Any]) -> dict[str, Any]:
     summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
     errors = [str(value) for value in payload.get("errors", []) if str(value).strip()]
@@ -47,7 +112,7 @@ def assess_options_health(payload: dict[str, Any]) -> dict[str, Any]:
     symbols = int(summary.get("symbols_scanned", 0) or 0)
     selected = int(summary.get("contracts_selected", 0) or 0)
     official_optionability = bool(summary.get("official_optionability_verified"))
-    provider = str(summary.get("provider") or "").lower()
+    readiness = options_provider_readiness(payload)
     rank = 0
     reasons: list[str] = []
     if symbols <= 0:
@@ -60,16 +125,26 @@ def assess_options_health(payload: dict[str, Any]) -> dict[str, Any]:
     if not official_optionability:
         rank = max(rank, 1)
         reasons.append("OCC optionability verification is unavailable; fallback universe is in use")
-    if "yahoo" in provider or "yfinance" in provider or not provider:
+    if readiness["fallback_only"]:
         rank = max(rank, 1)
-        reasons.append("Options data is fallback/snapshot quality rather than licensed OPRA trade+quote flow")
+        reasons.append(
+            "FALLBACK_ONLY: every usable option chain came from Yahoo/YFinance; production quote readiness is false"
+        )
+    elif readiness["usable_chains"] > 0 and not readiness["production_quote_ready"]:
+        rank = max(rank, 1)
+        reasons.append(
+            "Option chains are available, but only delayed or entitlement-unverified primary sources are active"
+        )
+    if not readiness["opra_flow_ready"]:
+        rank = max(rank, 1)
+        reasons.append("No OPRA-backed trade+quote source is active; sweep/aggressor flow remains unconfirmed")
     if regime and str(regime.get("data_quality") or "complete") != "complete":
         rank = max(rank, 1)
         reasons.append("Market-regime inputs are partial")
     if selected == 0 and symbols > 0:
         reasons.append("No contract passed current quality/flow/regime gates; this is not by itself a failure")
     if not reasons:
-        reasons.append("Options universe, provider and regime inputs are healthy")
+        reasons.append("Options universe, provider entitlement and regime inputs are healthy")
     return {
         "status": _status(rank),
         "critical": rank >= 2,
@@ -82,5 +157,6 @@ def assess_options_health(payload: dict[str, Any]) -> dict[str, Any]:
             "provider": summary.get("provider"),
             "errors": len(errors),
             "attention_sources": universe.get("attention_sources", []),
+            "provider_readiness": readiness,
         },
     }
