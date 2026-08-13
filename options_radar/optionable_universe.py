@@ -235,7 +235,15 @@ class IndependentOptionableUniverse:
         except OSError as exc:
             LOGGER.warning("Could not persist OCC optionable universe cache: %s", exc)
 
-    def fetch_official(self) -> tuple[list[str], list[dict[str, str]], list[str], dict[str, str], bool]:
+    def fetch_official(
+        self,
+    ) -> tuple[
+        list[str],
+        list[dict[str, str]],
+        list[str],
+        dict[str, str],
+        bool,
+    ]:
         errors: dict[str, str] = {}
         all_rows: list[dict[str, str]] = []
         successful_types: list[str] = []
@@ -262,21 +270,28 @@ class IndependentOptionableUniverse:
 
         cache = self._read_cache()
         cached_symbols = _unique(cache.get("symbols", []))
-        cached_rows = [
-            row for row in cache.get("rows", []) if isinstance(row, dict)
-        ] if isinstance(cache.get("rows"), list) else []
+        cached_rows = (
+            [row for row in cache.get("rows", []) if isinstance(row, dict)]
+            if isinstance(cache.get("rows"), list)
+            else []
+        )
         cached_types = [str(value) for value in cache.get("product_types", [])]
         if cached_symbols:
             return cached_symbols, cached_rows, cached_types, errors, True
         return [], [], [], errors, False
 
-    def fetch_cboe_attention(self, limit: int = 100) -> tuple[list[str], list[dict[str, Any]], str | None]:
+    def fetch_cboe_attention(
+        self, limit: int = 100
+    ) -> tuple[list[str], list[dict[str, Any]], str | None]:
         safe_limit = limit if limit in {10, 25, 50, 100} else 100
         try:
             response = self.session.get(
                 CBOE_MOST_ACTIVE_URL,
                 params={"mkt": "cone", "limit": safe_limit},
-                headers={"Accept": "application/json", "User-Agent": self.session.headers["User-Agent"]},
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": self.session.headers["User-Agent"],
+                },
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -309,6 +324,7 @@ class IndependentOptionableUniverse:
     ) -> OptionableUniverseResult:
         max_symbols = max(10, int(max_symbols))
         configured = _unique(configured_symbols)
+        priority = _unique(priority_symbols)
         official, occ_rows, product_types, errors, cache_used = self.fetch_official()
         official_set = set(official)
 
@@ -319,18 +335,19 @@ class IndependentOptionableUniverse:
             if cboe_error:
                 errors["cboe:most_active"] = cboe_error
 
-        # Independent selection order: options-native activity first, then core
-        # liquid products, then configured research symbols. StockRadar rankings
-        # are intentionally absent from this function and cannot influence it.
-        ordered = _unique([*attention, *priority_symbols, *configured])
         if official_set:
+            # With OCC verification available, options-native activity gets first
+            # priority, followed by the liquid core and configured research list.
+            ordered = _unique([*attention, *priority, *configured])
             selected = [symbol for symbol in ordered if symbol in official_set]
             official_verified = True
             source = "OCC DLP + Cboe options attention + configured options universe"
         else:
-            # Fail open for continuity, but fail *honestly*: no symbol is called
-            # officially verified until OCC data/cache becomes available again.
-            selected = ordered
+            # Without current/cached OCC proof, do not let a hard-coded priority
+            # list silently displace the configured research universe. Preserve
+            # live options attention first, then configured symbols, then the
+            # liquid core as a continuity fallback — all explicitly unverified.
+            selected = _unique([*attention, *configured, *priority])
             official_verified = False
             source = "configured/Cboe fallback; OCC verification unavailable"
 
