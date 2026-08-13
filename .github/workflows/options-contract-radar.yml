@@ -8,7 +8,10 @@ on:
       - ".github/workflows/options-contract-radar.yml"
       - "options_radar/optionable_universe.py"
       - "options_radar/official_event_scan.py"
+      - "options_radar/provider_readiness.py"
+      - "options_radar/runtime_hardening.py"
       - "scripts/run_options_radar_independent.py"
+      - "scripts/run_options_radar_hardened.py"
       - "data/options_ping.txt"
   schedule:
     # 13:00-21:59 UTC covers NY regular hours across both daylight and standard time.
@@ -30,10 +33,12 @@ jobs:
     env:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
       TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
       OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
       OPTIONS_INDEPENDENT_MAX_SYMBOLS: ${{ secrets.OPTIONS_INDEPENDENT_MAX_SYMBOLS || '60' }}
       OPTIONS_INDEPENDENT_TOP_PER_SIDE: ${{ secrets.OPTIONS_INDEPENDENT_TOP_PER_SIDE || '15' }}
@@ -103,10 +108,10 @@ jobs:
             fi
           done
 
-      - name: Run independent options contract radar
+      - name: Run hardened independent options contract radar
         if: steps.market.outputs.open == 'true'
         run: >-
-          python -m scripts.run_options_radar_independent
+          python -m scripts.run_options_radar_hardened
           --output public/data/options_latest.json
           --max-symbols "$OPTIONS_INDEPENDENT_MAX_SYMBOLS"
           --top-per-side "$OPTIONS_INDEPENDENT_TOP_PER_SIDE"
@@ -122,6 +127,7 @@ jobs:
           assert payload['path'] == 'options'
           assert payload['independent_from_stock_radar'] is True
           assert payload['architecture'] == 'independent_options_contract_radar_v1'
+          assert isinstance(payload.get('provider_readiness'), dict)
           policy = payload['flow_policy']
           assert policy['volume_over_oi_means_new_opening_position'] is False
           assert policy['ask_side_snapshot_means_confirmed_buyer'] is False
