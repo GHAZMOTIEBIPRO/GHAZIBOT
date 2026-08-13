@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .provider_readiness import assess_provider_readiness
+
 
 def _number(value: Any, default: float = 0.0) -> float:
     try:
@@ -57,6 +59,12 @@ def build_data_status(payload: dict[str, Any]) -> dict[str, Any]:
     omega = payload.get("omega") if isinstance(payload.get("omega"), dict) else {}
     catalyst_intelligence = omega.get("catalyst_intelligence", {}) if isinstance(omega, dict) else {}
     sec_metrics = payload.get("sec_incremental_metrics") if isinstance(payload.get("sec_incremental_metrics"), dict) else {}
+    provider_audit = payload.get("provider_audit") if isinstance(payload.get("provider_audit"), dict) else {}
+    provider_readiness = (
+        assess_provider_readiness(provider_audit).as_dict()
+        if provider_audit
+        else None
+    )
 
     stale_count = sum(_is_stale_row(row) for row in options)
     missing_expiry_family = sum(
@@ -92,6 +100,19 @@ def build_data_status(payload: dict[str, Any]) -> dict[str, Any]:
     if missing_expiry_family:
         status = "degraded" if status == "healthy" else status
         reasons.append(f"{missing_expiry_family} expiry row(s) missing family")
+    if provider_readiness:
+        readiness_status = str(provider_readiness.get("status") or "UNKNOWN")
+        if readiness_status.startswith("CRITICAL"):
+            status = "degraded" if status == "healthy" else status
+        elif not bool(provider_readiness.get("production_quote_ready")) or not bool(
+            provider_readiness.get("production_flow_ready")
+        ):
+            status = "degraded" if status == "healthy" else status
+        reasons.extend(
+            str(value)
+            for value in provider_readiness.get("reasons", [])
+            if str(value).strip()
+        )
 
     return {
         "status": status,
@@ -99,9 +120,19 @@ def build_data_status(payload: dict[str, Any]) -> dict[str, Any]:
         "dataset_age_minutes": round(generated_age, 1) if generated_age is not None else None,
         "last_successful_refresh": payload.get("generated_at") if not critical_errors else None,
         "option_provider": payload.get("options_provider"),
+        "option_provider_readiness": provider_readiness,
         "source_status": {
             "active_stock_sources": source_summary.get("active_stock_sources", 0),
             "active_option_sources": source_summary.get("active_option_sources", 0),
+            "option_provider_readiness": (
+                provider_readiness.get("status") if provider_readiness else None
+            ),
+            "production_option_quotes": (
+                provider_readiness.get("production_quote_ready") if provider_readiness else None
+            ),
+            "production_option_flow": (
+                provider_readiness.get("production_flow_ready") if provider_readiness else None
+            ),
             "sec_fulltext": (
                 payload.get("operational_status", {}).get("sec_fulltext_status")
                 if isinstance(payload.get("operational_status"), dict)
@@ -120,10 +151,16 @@ def build_data_status(payload: dict[str, Any]) -> dict[str, Any]:
             "duplicate_events_collapsed": catalyst_intelligence.get("duplicates_collapsed", 0),
             "errors": len(errors),
             "critical_errors": len(critical_errors),
+            "fallback_only_option_chains": (
+                provider_readiness.get("fallback_only_chains", 0) if provider_readiness else 0
+            ),
+            "live_primary_option_chains": (
+                provider_readiness.get("live_primary_chains", 0) if provider_readiness else 0
+            ),
         },
         "sec_incremental": sec_metrics,
         "run_duration_seconds": run_duration,
-        "reasons": reasons,
+        "reasons": list(dict.fromkeys(reasons)),
     }
 
 
@@ -131,6 +168,7 @@ def build_health(payload: dict[str, Any]) -> dict[str, Any]:
     data_status = build_data_status(payload)
     omega = payload.get("omega") if isinstance(payload.get("omega"), dict) else {}
     validation = omega.get("validation") if isinstance(omega, dict) else {}
+    readiness = data_status.get("option_provider_readiness") or {}
     return {
         "service": "GHAZIBOT",
         "status": data_status["status"],
@@ -145,6 +183,8 @@ def build_health(payload: dict[str, Any]) -> dict[str, Any]:
             ),
             "critical_pipeline_errors": data_status["quality_counts"]["critical_errors"] == 0,
             "expiry_identity_complete": data_status["quality_counts"]["missing_expiry_family"] == 0,
+            "option_quotes_production_ready": readiness.get("production_quote_ready") if readiness else None,
+            "option_flow_production_ready": readiness.get("production_flow_ready") if readiness else None,
         },
     }
 
