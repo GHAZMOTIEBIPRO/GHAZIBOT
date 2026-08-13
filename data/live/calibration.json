@@ -18,6 +18,7 @@
       "target_1_rate": null,
       "target_2_rate": null,
       "stop_rate": null,
+      "ambiguous_rate": null,
       "average_mfe_pct": null,
       "average_mae_pct": null
     },
@@ -29,7 +30,8 @@
       "matured": 1,
       "target_1_rate": 0.0,
       "target_2_rate": 0.0,
-      "stop_rate": 0.0,
+      "stop_rate": 1.0,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 2.1235,
       "average_mae_pct": -73.1535
     },
@@ -39,9 +41,10 @@
       "observed": 72,
       "priced": 69,
       "matured": 69,
-      "target_1_rate": 0.057971014492753624,
-      "target_2_rate": 0.057971014492753624,
-      "stop_rate": 0.0,
+      "target_1_rate": 0.2463768115942029,
+      "target_2_rate": 0.10144927536231885,
+      "stop_rate": 0.6666666666666666,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 21.713334782608694,
       "average_mae_pct": -83.10134637681159
     },
@@ -51,9 +54,10 @@
       "observed": 119,
       "priced": 114,
       "matured": 114,
-      "target_1_rate": 0.2543859649122807,
-      "target_2_rate": 0.18421052631578946,
-      "stop_rate": 0.008771929824561403,
+      "target_1_rate": 0.06140350877192982,
+      "target_2_rate": 0.05263157894736842,
+      "stop_rate": 0.7807017543859649,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 46.58256315789473,
       "average_mae_pct": -74.69870438596492
     },
@@ -66,6 +70,7 @@
       "target_1_rate": null,
       "target_2_rate": null,
       "stop_rate": null,
+      "ambiguous_rate": null,
       "average_mfe_pct": null,
       "average_mae_pct": null
     }
@@ -74,36 +79,41 @@
     {
       "catalyst": "bullish EMA stack; MACD/RSI bullish momentum",
       "signals": 73,
-      "target_1_rate": 0.273972602739726,
-      "stop_rate": 0.0136986301369863,
+      "target_1_rate": 0.0958904109589041,
+      "stop_rate": 0.8493150684931506,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 54.24156986301371
     },
     {
       "catalyst": "bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen",
       "signals": 51,
-      "target_1_rate": 0.058823529411764705,
-      "stop_rate": 0.0,
+      "target_1_rate": 0.21568627450980393,
+      "stop_rate": 0.5686274509803921,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 18.650860784313736
     },
     {
       "catalyst": "bearish EMA stack; MACD/RSI bearish momentum",
       "signals": 36,
-      "target_1_rate": 0.1388888888888889,
-      "stop_rate": 0.0,
+      "target_1_rate": 0.0,
+      "stop_rate": 0.8888888888888888,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 23.965180555555555
     },
     {
       "catalyst": "bullish EMA stack",
       "signals": 12,
-      "target_1_rate": 0.4166666666666667,
-      "stop_rate": 0.0,
+      "target_1_rate": 0.0,
+      "stop_rate": 0.75,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 54.22501666666667
     },
     {
       "catalyst": "Secondary mention — Acquisition",
       "signals": 6,
-      "target_1_rate": 0.0,
+      "target_1_rate": 1.0,
       "stop_rate": 0.0,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": -0.8406333333333333
     },
     {
@@ -111,29 +121,33 @@
       "signals": 2,
       "target_1_rate": 0.0,
       "stop_rate": 0.0,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 185.5304
     },
     {
       "catalyst": "FDA approval",
       "signals": 2,
       "target_1_rate": 0.0,
-      "stop_rate": 0.0,
+      "stop_rate": 1.0,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 6.956449999999999
     },
     {
       "catalyst": "bearish EMA stack",
       "signals": 1,
       "target_1_rate": 0.0,
-      "stop_rate": 0.0,
+      "stop_rate": 1.0,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": 7.6806
     },
     {
       "catalyst": "bullish EMA stack; 20-day breakout with relative volume; MACD/RSI bullish moment",
       "signals": 1,
       "target_1_rate": 0.0,
-      "stop_rate": 0.0,
+      "stop_rate": 1.0,
+      "ambiguous_rate": 0.0,
       "average_mfe_pct": -1.1299
     }
   ],
-  "warning": "Same-scan quotes are monitoring observations, not mature evidence. The review gate counts only signals with a 1d checkpoint. Free-data prices still do not prove executable fills or target/stop ordering."
+  "warning": "Same-scan quotes are monitoring observations, not mature evidence. The review gate counts only signals with a 1d checkpoint. New path-aware records keep stop-first terminal and never count same-bar ambiguity as a win. Legacy observed flags are used only when terminal_outcome is absent."
 }
