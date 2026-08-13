@@ -10,19 +10,18 @@ from typing import Any
 
 import pandas as pd
 
-# These defaults are set before importing Settings so the options path cannot
-# accidentally share StockRadar state/journals/calibration.
+# Options state is isolated before Settings is imported.
 os.environ.setdefault("DATABASE_PATH", "data/live/options_alert_state.json")
 os.environ.setdefault("SIGNAL_JOURNAL_PATH", "data/live/options_signals.jsonl")
 os.environ.setdefault("OUTCOME_PATH", "data/live/options_outcomes.json")
 os.environ.setdefault("CALIBRATION_PATH", "data/live/options_calibration.json")
 
-from options_radar.catalysts import CatalystScanner, best_catalyst_map
+from options_radar.catalysts import best_catalyst_map
 from options_radar.event_source_policy import event_source_evidence
+from options_radar.official_event_scan import scan_official_events
 from options_radar.optionable_universe import IndependentOptionableUniverse
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
-
 
 DEFAULT_INPUT = Path("data/universe.txt")
 DEFAULT_OUTPUT = Path("public/data/options_latest.json")
@@ -39,11 +38,7 @@ def _number(value: Any, default: float = 0.0) -> float:
 def _json_value(value: Any) -> Any:
     if value is None:
         return None
-    if isinstance(value, pd.Timestamp):
-        return value.isoformat()
-    if isinstance(value, datetime):
-        return value.isoformat()
-    if isinstance(value, date):
+    if isinstance(value, (pd.Timestamp, datetime, date)):
         return value.isoformat()
     try:
         if pd.isna(value):
@@ -77,10 +72,9 @@ def load_configured_universe(path: str | Path) -> list[str]:
     seen: set[str] = set()
     for raw in source.read_text(encoding="utf-8").splitlines():
         symbol = raw.split("#", 1)[0].strip().upper()
-        if not symbol or symbol in seen:
-            continue
-        seen.add(symbol)
-        output.append(symbol)
+        if symbol and symbol not in seen:
+            seen.add(symbol)
+            output.append(symbol)
     return output
 
 
@@ -90,26 +84,19 @@ def _flow_semantics(row: dict[str, Any]) -> dict[str, Any]:
     oi = _number(row.get("open_interest"))
     ratio = _number(row.get("vol_to_oi_ratio") or row.get("vol_oi"))
     spike = _number(row.get("volume_spike_ratio"))
-
-    if position == "ask":
-        pressure_ar = "تنفيذ قرب جهة العرض يوحي بضغط شراء، لكنه تقدير من Snapshot وليس إثباتًا للمنفذ"
-    elif position == "bid":
-        pressure_ar = "تنفيذ قرب جهة الطلب يوحي بضغط بيع/إغلاق، لكنه تقدير من Snapshot وليس إثباتًا للمنفذ"
-    else:
-        pressure_ar = "التنفيذ داخل السبريد لا يعطي جهة منفذ واضحة"
-
-    if oi > 0 and volume > oi:
-        oi_ar = (
-            f"حجم اليوم {volume:,.0f} أكبر من OI السابق {oi:,.0f} ({ratio:.2f}×)، "
-            "وهذا نشاط غير طبيعي فقط؛ فتح مراكز جديدة لا يتأكد إلا من تغير OI بعد التسوية"
-        )
-    else:
-        oi_ar = "Volume/OI عامل نشاط، وليس إثبات فتح أو إغلاق مركز خلال الجلسة"
-
+    pressure = {
+        "ask": "تنفيذ قرب جهة العرض يوحي بضغط شراء، لكنه تقدير من Snapshot وليس إثباتًا للمنفذ",
+        "bid": "تنفيذ قرب جهة الطلب يوحي بضغط بيع/إغلاق، لكنه تقدير من Snapshot وليس إثباتًا للمنفذ",
+    }.get(position, "التنفيذ داخل السبريد لا يعطي جهة منفذ واضحة")
+    oi_note = (
+        f"حجم اليوم {volume:,.0f} أكبر من OI السابق {oi:,.0f} ({ratio:.2f}×)، وهذا نشاط غير طبيعي فقط؛ فتح مراكز جديدة لا يتأكد إلا من تغير OI بعد التسوية"
+        if oi > 0 and volume > oi
+        else "Volume/OI عامل نشاط، وليس إثبات فتح أو إغلاق مركز خلال الجلسة"
+    )
     return {
         "execution_pressure_proxy": position,
-        "execution_pressure_note_ar": pressure_ar,
-        "volume_vs_prior_oi_note_ar": oi_ar,
+        "execution_pressure_note_ar": pressure,
+        "volume_vs_prior_oi_note_ar": oi_note,
         "volume_spike_ratio": spike if spike > 0 else None,
         "opening_position_confirmed": False,
         "sweep_confirmed": False,
@@ -128,7 +115,6 @@ def _contract_reason(row: dict[str, Any], catalyst: dict[str, Any] | None) -> li
     vol_oi = _number(row.get("vol_to_oi_ratio") or row.get("vol_oi"))
     flow_score = _number(row.get("flow_momentum_score"))
     score = _number(row.get("score"))
-
     reasons = [
         f"{side}: اتجاه الأصل الفني داخل محرك الأوبشن نفسه متوافق مع جهة العقد",
         f"الانتهاء بعد {dte} يوم ضمن نافذة الرادار المستقلة",
@@ -138,7 +124,7 @@ def _contract_reason(row: dict[str, Any], catalyst: dict[str, Any] | None) -> li
     ]
     if catalyst:
         reasons.append(
-            f"سياق الحدث: {catalyst.get('category', 'غير مصنف')} عبر {catalyst.get('source', 'مصدر غير معروف')}"
+            f"سياق رسمي: {catalyst.get('category', 'غير مصنف')} عبر {catalyst.get('source', 'مصدر رسمي غير معروف')}"
         )
     return reasons
 
@@ -150,9 +136,8 @@ def enrich_contracts(
     for raw in rows:
         row = dict(raw)
         symbol = str(row.get("symbol") or "").upper()
-        catalyst = catalyst_by_symbol.get(symbol)
         row["flow_evidence"] = _flow_semantics(row)
-        row["rationale_ar"] = _contract_reason(row, catalyst)
+        row["rationale_ar"] = _contract_reason(row, catalyst_by_symbol.get(symbol))
         row["research_only"] = True
         row["independent_from_stock_radar"] = True
         output.append(row)
@@ -187,13 +172,13 @@ def run(
     if not universe.symbols:
         raise RuntimeError("Independent options universe is empty")
 
-    # Catalysts enrich the underlying context but do not nominate the universe.
-    # The options path remains options-native even if catalyst collection fails.
+    # Official context enriches contract scoring but never nominates the options
+    # universe. Slow aggregators/social feeds are deliberately not on this path.
     try:
-        catalysts = CatalystScanner(settings).scan(universe.symbols, lookback_days=7)
+        catalysts = scan_official_events(settings, universe.symbols, lookback_days=7)
     except Exception as exc:
         catalysts = pd.DataFrame()
-        universe.errors["catalysts"] = f"{type(exc).__name__}: {exc}"
+        universe.errors["official_events"] = f"{type(exc).__name__}: {exc}"
     catalyst_map = best_catalyst_map(catalysts)
 
     result = OptionsRadar(settings).scan(
@@ -201,7 +186,6 @@ def run(
         top=top_per_side,
         catalysts=catalysts,
     )
-
     calls = enrich_contracts(_records(result.top_calls), catalyst_map)
     puts = enrich_contracts(_records(result.top_puts), catalyst_map)
     contracts = sorted(
@@ -236,15 +220,13 @@ def run(
             "sweep_claim_allowed_from_snapshot_chain": False,
             "oi_confirmation": "next-session change in OI is needed to confirm net new positioning",
             "licensed_trade_quote_requirement": "trade+quote-level data is required before labeling a sweep/aggressor as confirmed",
-            "note_ar": (
-                "الفلو دليل سياقي لا توصية مستقلة: الصفقة قد تكون فتحًا أو إغلاقًا أو Hedge أو Roll أو رجلًا من Spread."
-            ),
+            "note_ar": "الفلو دليل سياقي لا توصية مستقلة: الصفقة قد تكون فتحًا أو إغلاقًا أو Hedge أو Roll أو رجلًا من Spread.",
         },
         "contracts": contracts,
         "top_calls": calls,
         "top_puts": puts,
         "rejected": _records(result.rejected.head(250)),
-        "catalysts": _catalyst_records(catalysts),
+        "official_catalysts": _catalyst_records(catalysts),
         "provider_audit": result.provider_audit,
         "flow_summary": result.flow_summary,
         "market_regime_detail": result.market_regime_detail,
@@ -255,33 +237,20 @@ def run(
             "With Yahoo/indicative snapshots, results are research/watchlist quality and cannot prove full OPRA tape flow.",
         ],
     }
-
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     temporary.replace(destination)
     return payload
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Run the independent BLACK BOX options contract radar"
-    )
+    parser = argparse.ArgumentParser(description="Run independent BLACK BOX options contract radar")
     parser.add_argument("--universe", default=str(DEFAULT_INPUT))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
-    parser.add_argument(
-        "--max-symbols",
-        type=int,
-        default=int(os.getenv("OPTIONS_INDEPENDENT_MAX_SYMBOLS", "80")),
-    )
-    parser.add_argument(
-        "--top-per-side",
-        type=int,
-        default=int(os.getenv("OPTIONS_INDEPENDENT_TOP_PER_SIDE", "15")),
-    )
+    parser.add_argument("--max-symbols", type=int, default=int(os.getenv("OPTIONS_INDEPENDENT_MAX_SYMBOLS", "80")))
+    parser.add_argument("--top-per-side", type=int, default=int(os.getenv("OPTIONS_INDEPENDENT_TOP_PER_SIDE", "15")))
     args = parser.parse_args()
     payload = run(
         universe_path=args.universe,
