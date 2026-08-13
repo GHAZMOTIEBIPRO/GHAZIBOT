@@ -68,7 +68,10 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
 
     learning = load_learning_model(DEFAULT_LEARNING)
     regime = str((payload.get("summary") or {}).get("market_regime") or "unknown")
-    contracts = [row for row in payload.get("contracts", []) if isinstance(row, dict)]
+    source_contracts = payload.get("research_contracts")
+    if not isinstance(source_contracts, list):
+        source_contracts = payload.get("contracts", [])
+    contracts = [row for row in source_contracts if isinstance(row, dict)]
     for row in contracts:
         row.setdefault("market_regime", regime)
         row["shadow_analysis"] = {
@@ -78,9 +81,15 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
         }
 
     by_contract = {str(row.get("contract_symbol") or ""): row for row in contracts}
-    for key in ("top_calls", "top_puts"):
+    research_mode = isinstance(payload.get("research_contracts"), list)
+    top_pairs = (
+        (("research_top_calls", "research_top_calls"), ("research_top_puts", "research_top_puts"))
+        if research_mode
+        else (("top_calls", "top_calls"), ("top_puts", "top_puts"))
+    )
+    for source_key, destination_key in top_pairs:
         enriched: list[dict[str, Any]] = []
-        for raw in payload.get(key, []):
+        for raw in payload.get(source_key, []):
             if not isinstance(raw, dict):
                 continue
             row = dict(raw)
@@ -88,8 +97,11 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
             if contract in by_contract:
                 row.update(by_contract[contract])
             enriched.append(row)
-        payload[key] = enriched
-    payload["contracts"] = contracts
+        payload[destination_key] = enriched
+    if research_mode:
+        payload["research_contracts"] = contracts
+    else:
+        payload["contracts"] = contracts
 
     now = datetime.now(timezone.utc)
     source_age = _source_age_minutes(payload, now)
@@ -107,6 +119,7 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
     payload["adaptive_learning"] = learning.get("options", {})
     payload.setdefault("summary", {})["shadow_learning_ready"] = bool((learning.get("options") or {}).get("ready"))
     payload["summary"]["signals_recorded_this_run"] = recorded
+    payload["summary"]["research_contracts_available"] = len(contracts)
     payload["summary"]["research_source_age_minutes"] = round(source_age, 2) if source_age is not None else None
     payload["summary"]["research_source_fresh"] = source_is_fresh
     payload.setdefault("flow_policy", {}).update(
@@ -116,11 +129,12 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
             "trade_quote_adapter_ready": True,
             "licensed_trade_quote_feed_configured": bool(readiness["production_flow_ready"]),
             "stale_payload_can_create_new_learning_signal": False,
+            "quarantined_fallback_contracts_are_research_only": True,
         }
     )
     if not readiness["production_quote_ready"]:
         payload.setdefault("limitations", []).append(
-            "Provider audit is fallback-only/delayed; option output remains research-only and health is degraded."
+            "Provider audit is fallback-only/delayed; fallback contracts are quarantined for shadow research and cannot enter production contracts."
         )
     if not source_is_fresh:
         payload.setdefault("limitations", []).append(
@@ -139,6 +153,7 @@ def main() -> None:
     print(
         "Options research enrichment: "
         f"recorded={(payload.get('summary') or {}).get('signals_recorded_this_run', 0)} "
+        f"research={(payload.get('summary') or {}).get('research_contracts_available', 0)} "
         f"fresh={(payload.get('summary') or {}).get('research_source_fresh', False)} "
         f"learning={(payload.get('summary') or {}).get('shadow_learning_ready', False)} "
         f"provider={(payload.get('summary') or {}).get('provider_readiness', 'UNKNOWN')} "
