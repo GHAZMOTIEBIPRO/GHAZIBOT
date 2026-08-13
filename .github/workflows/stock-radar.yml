@@ -7,7 +7,10 @@ on:
     paths:
       - ".github/workflows/stock-radar.yml"
       - "scripts/run_stock_radar_independent.py"
-      - "options_radar/official_event_scan.py"
+      - "scripts/enrich_stock_radar_research.py"
+      - "options_radar/stock_outcomes.py"
+      - "options_radar/stock_decision.py"
+      - "options_radar/radar_health.py"
       - "data/stock_ping.txt"
   workflow_run:
     workflows:
@@ -32,6 +35,8 @@ jobs:
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      ADAPTIVE_LEARNING_PATH: data/live/adaptive_learning.json
+      STOCK_OUTCOME_PATH: data/live/stock_outcomes.json
 
     steps:
       - uses: actions/checkout@v4
@@ -68,13 +73,44 @@ jobs:
           fi
           test -s data/live/fast_explosion_scan.json
 
+      - name: Restore stock outcome state
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .stock-state-restore data/live
+          for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .stock-state-restore && mkdir -p .stock-state-restore
+            if gh run download "$run_id" -n stock-radar-state -D .stock-state-restore >/dev/null 2>&1; then
+              cp -f .stock-state-restore/stock_outcomes.json data/live/stock_outcomes.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Restore adaptive learning model
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .learning-restore data/live
+          for run_id in $(gh run list --workflow adaptive-review.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .learning-restore && mkdir -p .learning-restore
+            if gh run download "$run_id" -n adaptive-learning-state -D .learning-restore >/dev/null 2>&1; then
+              cp -f .learning-restore/adaptive_learning.json data/live/adaptive_learning.json 2>/dev/null || true
+              break
+            fi
+          done
+
       - name: Deep validate stock causes with official-first policy
         run: >-
           python -m scripts.run_stock_radar_independent
           --fast data/live/fast_explosion_scan.json
           --output public/data/stocks_latest.json
 
-      - name: Validate stock-path independence
+      - name: Add regime, outcome and shadow-learning evidence
+        run: python -m scripts.enrich_stock_radar_research --payload public/data/stocks_latest.json
+
+      - name: Validate stock-path independence and learning guard
         run: |
           python - <<'PY'
           import json
@@ -84,10 +120,13 @@ jobs:
           assert payload['independent_from_options_radar'] is True
           assert payload['policy']['options_flow_required'] is False
           assert payload['policy']['ludp_is_price_confirmation_not_primary_cause'] is True
+          assert payload['policy']['adaptive_learning_changes_live_alerts'] is False
           for row in payload.get('stocks', []):
               assert row.get('independent_from_options_radar') is True
               assert row.get('options_required_for_stock_signal') is False
-          print('Independent stock path validation passed.')
+              shadow = row.get('shadow_analysis') or {}
+              assert shadow.get('live_alert_eligibility_changed') is False
+          print('Independent stock path + shadow-learning guard passed.')
           PY
 
       - name: Upload independent stock radar
@@ -97,3 +136,17 @@ jobs:
           path: public/data/stocks_latest.json
           if-no-files-found: error
           retention-days: 7
+
+      - name: Stage stock learning state
+        shell: bash
+        run: |
+          mkdir -p .stock-state-upload
+          [[ -f data/live/stock_outcomes.json ]] && cp -f data/live/stock_outcomes.json .stock-state-upload/stock_outcomes.json
+
+      - name: Upload stock learning state
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-radar-state
+          path: .stock-state-upload/
+          if-no-files-found: error
+          retention-days: 30

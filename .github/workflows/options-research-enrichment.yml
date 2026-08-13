@@ -1,0 +1,161 @@
+name: BLACK BOX Omega Options Research Enrichment
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "BLACK BOX Omega Options Contract Radar"
+    types: [completed]
+
+concurrency:
+  group: black-box-omega-options-research
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  enrich:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_PATH: data/live/options_alert_state.json
+      SIGNAL_JOURNAL_PATH: data/live/options_signals.jsonl
+      OUTCOME_PATH: data/live/options_outcomes.json
+      CALIBRATION_PATH: data/live/options_calibration.json
+      ADAPTIVE_LEARNING_PATH: data/live/adaptive_learning.json
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore source options payload
+        id: payload
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .options-payload data/live
+          current=""
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            current="${{ github.event.workflow_run.id }}"
+          fi
+          found=false
+          if [[ -n "$current" ]]; then
+            if gh run download "$current" -n independent-options-radar -D .options-payload >/dev/null 2>&1; then
+              [[ -s .options-payload/options_latest.json ]] && found=true
+            fi
+          fi
+          if [[ "$found" != true ]]; then
+            for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .options-payload && mkdir -p .options-payload
+              if gh run download "$run_id" -n independent-options-radar -D .options-payload >/dev/null 2>&1; then
+                if [[ -s .options-payload/options_latest.json ]]; then
+                  found=true
+                  break
+                fi
+              fi
+            done
+          fi
+          echo "found=$found" >> "$GITHUB_OUTPUT"
+          if [[ "$found" == true ]]; then
+            cp .options-payload/options_latest.json public/data/options_latest.json
+          fi
+
+      - name: Restore latest options evidence state
+        if: steps.payload.outputs.found == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .options-state data/live
+          for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .options-state && mkdir -p .options-state
+            if gh run download "$run_id" -n options-contract-state -D .options-state >/dev/null 2>&1; then
+              cp -f .options-state/options_signals.jsonl data/live/options_signals.jsonl 2>/dev/null || true
+              cp -f .options-state/options_outcomes.json data/live/options_outcomes.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Restore adaptive model
+        if: steps.payload.outputs.found == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .learning data/live
+          for run_id in $(gh run list --workflow adaptive-review.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .learning && mkdir -p .learning
+            if gh run download "$run_id" -n adaptive-learning-state -D .learning >/dev/null 2>&1; then
+              cp -f .learning/adaptive_learning.json data/live/adaptive_learning.json 2>/dev/null || true
+              cp -f .learning/options_outcomes.json data/live/options_outcomes.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Enrich options evidence in shadow mode
+        if: steps.payload.outputs.found == 'true'
+        run: python -m scripts.enrich_options_radar_research --payload public/data/options_latest.json
+
+      - name: Validate research-only guard
+        if: steps.payload.outputs.found == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('public/data/options_latest.json').read_text(encoding='utf-8'))
+          assert payload['path'] == 'options'
+          assert payload['flow_policy']['adaptive_learning_changes_live_alerts'] is False
+          assert payload['flow_policy']['trade_quote_adapter_ready'] is True
+          for row in payload.get('contracts', []):
+              shadow = row.get('shadow_analysis') or {}
+              assert shadow.get('live_alert_eligibility_changed') is False
+          print('Options research enrichment guard passed.')
+          PY
+
+      - name: Stage research state
+        if: steps.payload.outputs.found == 'true'
+        shell: bash
+        run: |
+          mkdir -p .research-state
+          for pair in \
+            "data/live/options_signals.jsonl:options_signals.jsonl" \
+            "data/live/options_outcomes.json:options_outcomes.json"; do
+            source="${pair%%:*}"
+            target="${pair##*:}"
+            [[ -f "$source" ]] && cp -f "$source" ".research-state/$target"
+          done
+
+      - name: Upload enriched options research payload
+        if: steps.payload.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-options-research
+          path: public/data/options_latest.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload options research state
+        if: steps.payload.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: options-research-state
+          path: .research-state/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: No live options payload status
+        if: steps.payload.outputs.found != 'true'
+        run: echo "No live options payload is available; research enrichment skipped cleanly."
