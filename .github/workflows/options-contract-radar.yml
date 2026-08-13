@@ -30,6 +30,9 @@ jobs:
     env:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
       TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      # Production workflow must never silently fall back to Tradier Sandbox.
+      # If a live brokerage token is configured, use the live API explicitly.
+      TRADIER_BASE_URL: https://api.tradier.com
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
