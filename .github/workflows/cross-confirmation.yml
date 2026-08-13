@@ -1,0 +1,150 @@
+name: BLACK BOX Omega Cross Confirmation
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "BLACK BOX Omega Stock Radar"
+      - "BLACK BOX Omega Options Research Enrichment"
+    types: [completed]
+
+concurrency:
+  group: black-box-omega-cross-confirmation
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  cross-check:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Telegram dependency
+        run: pip install 'requests>=2.32,<3.0'
+
+      - name: Restore persistent Telegram destination
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in cross-confirmation.yml stock-telegram-alerts.yml options-telegram-alerts.yml telegram-alerts.yml fast-explosion-radar.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Restore latest stock and options research payloads
+        id: payloads
+        if: env.TELEGRAM_READY == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .cross/stocks .cross/options
+          stocks=false
+          options=false
+          for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .cross/stocks && mkdir -p .cross/stocks
+            if gh run download "$run_id" -n independent-stock-radar -D .cross/stocks >/dev/null 2>&1; then
+              [[ -s .cross/stocks/stocks_latest.json ]] && stocks=true && break
+            fi
+          done
+          for run_id in $(gh run list --workflow options-research-enrichment.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .cross/options && mkdir -p .cross/options
+            if gh run download "$run_id" -n independent-options-research -D .cross/options >/dev/null 2>&1; then
+              [[ -s .cross/options/options_latest.json ]] && options=true && break
+            fi
+          done
+          if [[ "$options" != true ]]; then
+            for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .cross/options && mkdir -p .cross/options
+              if gh run download "$run_id" -n independent-options-radar -D .cross/options >/dev/null 2>&1; then
+                [[ -s .cross/options/options_latest.json ]] && options=true && break
+              fi
+            done
+          fi
+          echo "stocks=$stocks" >> "$GITHUB_OUTPUT"
+          echo "options=$options" >> "$GITHUB_OUTPUT"
+
+      - name: Restore cross-confirmation state
+        if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true' && steps.payloads.outputs.options == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live .cross-state
+          for run_id in $(gh run list --workflow cross-confirmation.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .cross-state && mkdir -p .cross-state
+            if gh run download "$run_id" -n cross-confirmation-state -D .cross-state >/dev/null 2>&1; then
+              cp -f .cross-state/cross_confirmation_state.json data/live/cross_confirmation_state.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Send fresh independent cross-confirmation context
+        if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true' && steps.payloads.outputs.options == 'true'
+        run: >-
+          python scripts/send_cross_confirmation.py
+          --stocks .cross/stocks/stocks_latest.json
+          --options .cross/options/options_latest.json
+          --state data/live/cross_confirmation_state.json
+
+      - name: Upload cross-confirmation state
+        if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true' && steps.payloads.outputs.options == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-confirmation-state
+          path: data/live/cross_confirmation_state.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Missing or stale-source status
+        if: env.TELEGRAM_READY == 'true' && (steps.payloads.outputs.stocks != 'true' || steps.payloads.outputs.options != 'true')
+        run: echo "Cross-confirmation skipped because both independent payloads are not available."
+
+      - name: Seal Telegram destination
+        if: always() && env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          openssl enc -aes-256-cbc -salt -pbkdf2 \
+            -in telegram_runtime/connection.json \
+            -out telegram_runtime/connection.enc \
+            -pass env:TELEGRAM_BOT_TOKEN
+          rm -f telegram_runtime/connection.json
+
+      - name: Upload encrypted Telegram destination
+        if: always() && env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-connection
+          path: telegram_runtime/connection.enc
+          if-no-files-found: error
+          retention-days: 90
