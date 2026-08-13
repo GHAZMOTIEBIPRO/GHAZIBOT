@@ -18,13 +18,24 @@ os.environ.setdefault("CALIBRATION_PATH", "data/live/options_calibration.json")
 
 from options_radar.catalysts import best_catalyst_map
 from options_radar.event_source_policy import event_source_evidence
+from options_radar.indicators import TechnicalSnapshot, analyze_technical
 from options_radar.official_event_scan import scan_official_events
 from options_radar.optionable_universe import IndependentOptionableUniverse
+from options_radar.providers import get_price_history
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
 
 DEFAULT_INPUT = Path("data/universe.txt")
 DEFAULT_OUTPUT = Path("public/data/options_latest.json")
+
+# These aliases are used ONLY for technical bar history. Contract/underlying
+# identity remains SPX/VIX/RUT/XSP throughout option discovery and reporting.
+TECHNICAL_INDEX_ALIASES: dict[str, tuple[str, float]] = {
+    "SPX": ("^GSPC", 1.0),
+    "VIX": ("^VIX", 1.0),
+    "RUT": ("^RUT", 1.0),
+    "XSP": ("^GSPC", 0.1),
+}
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -76,6 +87,30 @@ def load_configured_universe(path: str | Path) -> list[str]:
             seen.add(symbol)
             output.append(symbol)
     return output
+
+
+def _scale_history(frame: pd.DataFrame, scale: float) -> pd.DataFrame:
+    if scale == 1.0 or frame is None or frame.empty:
+        return frame
+    out = frame.copy()
+    for column in ("Open", "High", "Low", "Close"):
+        if column in out.columns:
+            out[column] = pd.to_numeric(out[column], errors="coerce") * scale
+    return out
+
+
+class IndependentOptionsRadar(OptionsRadar):
+    """Options radar with index aliases isolated to technical-history lookup."""
+
+    def _technical(self, symbol: str) -> TechnicalSnapshot:
+        original = str(symbol or "").upper().strip()
+        history_symbol, scale = TECHNICAL_INDEX_ALIASES.get(original, (original, 1.0))
+        try:
+            history = self.fetcher.fetch_stock_bars(history_symbol, interval="1d").data
+        except Exception:
+            history = get_price_history(history_symbol, period="1y")
+        history = _scale_history(history, scale)
+        return analyze_technical(original, history)
 
 
 def _flow_semantics(row: dict[str, Any]) -> dict[str, Any]:
@@ -172,8 +207,6 @@ def run(
     if not universe.symbols:
         raise RuntimeError("Independent options universe is empty")
 
-    # Official context enriches contract scoring but never nominates the options
-    # universe. Slow aggregators/social feeds are deliberately not on this path.
     try:
         catalysts = scan_official_events(settings, universe.symbols, lookback_days=7)
     except Exception as exc:
@@ -181,7 +214,7 @@ def run(
         universe.errors["official_events"] = f"{type(exc).__name__}: {exc}"
     catalyst_map = best_catalyst_map(catalysts)
 
-    result = OptionsRadar(settings).scan(
+    result = IndependentOptionsRadar(settings).scan(
         universe.symbols,
         top=top_per_side,
         catalysts=catalysts,
