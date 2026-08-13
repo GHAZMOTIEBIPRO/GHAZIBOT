@@ -44,14 +44,24 @@ def _has_checkpoint(outcome: dict[str, Any], checkpoint: str) -> bool:
     return isinstance(checkpoints, dict) and isinstance(checkpoints.get(checkpoint), dict)
 
 
+def _terminal(outcome: dict[str, Any]) -> str | None:
+    if "terminal_outcome" not in outcome:
+        return None
+    return str(outcome.get("terminal_outcome") or "open")
+
+
 def _target_1_success(outcome: dict[str, Any]) -> bool:
-    # outcomes.py makes stop-first terminal and same-bar collisions ambiguous.
-    # A successful terminal path therefore means target 1 was reached before stop.
-    return str(outcome.get("terminal_outcome") or "open") == "success"
+    terminal = _terminal(outcome)
+    if terminal is None:
+        return bool(outcome.get("target_1_observed"))
+    return terminal == "success"
 
 
 def _target_2_success(outcome: dict[str, Any]) -> bool:
-    if str(outcome.get("terminal_outcome") or "open") != "success":
+    terminal = _terminal(outcome)
+    if terminal is None:
+        return bool(outcome.get("target_2_observed"))
+    if terminal != "success":
         return False
     if str(outcome.get("outcome_order") or "") == "target_2_first":
         return True
@@ -59,7 +69,10 @@ def _target_2_success(outcome: dict[str, Any]) -> bool:
 
 
 def _stop_failure(outcome: dict[str, Any]) -> bool:
-    return str(outcome.get("terminal_outcome") or "open") == "failed"
+    terminal = _terminal(outcome)
+    if terminal is None:
+        return bool(outcome.get("stop_observed"))
+    return terminal == "failed"
 
 
 def build_calibration_report(
@@ -71,8 +84,8 @@ def build_calibration_report(
     """Build a calibration report from temporally mature, path-aware evidence.
 
     Same-scan quotes are monitoring only. Mature evidence must have the requested
-    checkpoint. Stop-first failures remain failures even if a later snapshot
-    eventually trades above a target, and same-bar ambiguity is never a win.
+    checkpoint. New records use terminal path semantics; legacy records without a
+    terminal_outcome remain readable through their historical observed flags.
     """
 
     signals = _load_jsonl(Path(signals_path))
@@ -110,7 +123,7 @@ def build_calibration_report(
         target1 = sum(_target_1_success(row["outcome"]) for row in matured)
         target2 = sum(_target_2_success(row["outcome"]) for row in matured)
         stopped = sum(_stop_failure(row["outcome"]) for row in matured)
-        ambiguous = sum(str(row["outcome"].get("terminal_outcome") or "") == "ambiguous" for row in matured)
+        ambiguous = sum(_terminal(row["outcome"]) == "ambiguous" for row in matured)
         mfe = [float(row["outcome"].get("mfe_pct", 0) or 0) for row in matured]
         mae = [float(row["outcome"].get("mae_pct", 0) or 0) for row in matured]
         bands.append(
@@ -143,7 +156,7 @@ def build_calibration_report(
         row["signals"] = int(row["signals"]) + 1
         row["target_1"] = int(row["target_1"]) + int(_target_1_success(outcome))
         row["stops"] = int(row["stops"]) + int(_stop_failure(outcome))
-        row["ambiguous"] = int(row["ambiguous"]) + int(str(outcome.get("terminal_outcome") or "") == "ambiguous")
+        row["ambiguous"] = int(row["ambiguous"]) + int(_terminal(outcome) == "ambiguous")
         row["mfe_sum"] = float(row["mfe_sum"]) + float(outcome.get("mfe_pct", 0) or 0)
 
     catalysts = []
@@ -185,7 +198,7 @@ def build_calibration_report(
         "warning": (
             "Same-scan quotes are monitoring observations, not mature evidence. "
             f"The review gate counts only signals with a {maturity_checkpoint} checkpoint. "
-            "Stop-first is terminal and same-bar ambiguity is never counted as a win. "
-            "Free-data prices still do not prove executable fills."
+            "New path-aware records keep stop-first terminal and never count same-bar ambiguity as a win. "
+            "Legacy observed flags are used only when terminal_outcome is absent."
         ),
     }
