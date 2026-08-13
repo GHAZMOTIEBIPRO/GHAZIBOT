@@ -96,7 +96,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .learning data/live
-          for run_id in $(gh run list --workflow adaptive-learning.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+          for run_id in $(gh run list --workflow adaptive-review.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
             rm -rf .learning && mkdir -p .learning
             if gh run download "$run_id" -n adaptive-learning-state -D .learning >/dev/null 2>&1; then
               cp -f .learning/adaptive_learning.json data/live/adaptive_learning.json 2>/dev/null || true
