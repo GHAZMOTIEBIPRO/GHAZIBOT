@@ -2,6 +2,13 @@ name: BLACK BOX Omega Stock Radar
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stock-radar.yml"
+      - "scripts/run_stock_radar_independent.py"
+      - "options_radar/official_event_scan.py"
+      - "data/stock_ping.txt"
   workflow_run:
     workflows:
       - "BLACK BOX Omega Fast Explosion Radar"
@@ -17,7 +24,7 @@ permissions:
 
 jobs:
   deep-stock-validation:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
