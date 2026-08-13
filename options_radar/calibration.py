@@ -44,18 +44,35 @@ def _has_checkpoint(outcome: dict[str, Any], checkpoint: str) -> bool:
     return isinstance(checkpoints, dict) and isinstance(checkpoints.get(checkpoint), dict)
 
 
+def _target_1_success(outcome: dict[str, Any]) -> bool:
+    # outcomes.py makes stop-first terminal and same-bar collisions ambiguous.
+    # A successful terminal path therefore means target 1 was reached before stop.
+    return str(outcome.get("terminal_outcome") or "open") == "success"
+
+
+def _target_2_success(outcome: dict[str, Any]) -> bool:
+    if str(outcome.get("terminal_outcome") or "open") != "success":
+        return False
+    if str(outcome.get("outcome_order") or "") == "target_2_first":
+        return True
+    return bool(outcome.get("target_2_observed_snapshot"))
+
+
+def _stop_failure(outcome: dict[str, Any]) -> bool:
+    return str(outcome.get("terminal_outcome") or "open") == "failed"
+
+
 def build_calibration_report(
     signals_path: str | Path = "data/live/signals.jsonl",
     outcomes_path: str | Path = "data/live/outcomes.json",
     minimum_sample: int = 100,
     maturity_checkpoint: str = DEFAULT_MATURITY_CHECKPOINT,
 ) -> dict[str, Any]:
-    """Build a calibration report from temporally mature evidence only.
+    """Build a calibration report from temporally mature, path-aware evidence.
 
-    A quote observed in the same scan is useful for monitoring, but it is not an
-    independent outcome. The review gate therefore counts a signal only after the
-    configured checkpoint exists (one day by default). Five-day maturity is also
-    reported as a stronger swing-trading evidence tier.
+    Same-scan quotes are monitoring only. Mature evidence must have the requested
+    checkpoint. Stop-first failures remain failures even if a later snapshot
+    eventually trades above a target, and same-bar ambiguity is never a win.
     """
 
     signals = _load_jsonl(Path(signals_path))
@@ -90,9 +107,10 @@ def build_calibration_report(
             row for row in rows if _has_checkpoint(row["outcome"], maturity_checkpoint)
         ]
         matured_total += len(matured)
-        target1 = sum(bool(row["outcome"].get("target_1_observed")) for row in matured)
-        target2 = sum(bool(row["outcome"].get("target_2_observed")) for row in matured)
-        stopped = sum(bool(row["outcome"].get("stop_observed")) for row in matured)
+        target1 = sum(_target_1_success(row["outcome"]) for row in matured)
+        target2 = sum(_target_2_success(row["outcome"]) for row in matured)
+        stopped = sum(_stop_failure(row["outcome"]) for row in matured)
+        ambiguous = sum(str(row["outcome"].get("terminal_outcome") or "") == "ambiguous" for row in matured)
         mfe = [float(row["outcome"].get("mfe_pct", 0) or 0) for row in matured]
         mae = [float(row["outcome"].get("mae_pct", 0) or 0) for row in matured]
         bands.append(
@@ -105,6 +123,7 @@ def build_calibration_report(
                 "target_1_rate": target1 / len(matured) if matured else None,
                 "target_2_rate": target2 / len(matured) if matured else None,
                 "stop_rate": stopped / len(matured) if matured else None,
+                "ambiguous_rate": ambiguous / len(matured) if matured else None,
                 "average_mfe_pct": sum(mfe) / len(mfe) if mfe else None,
                 "average_mae_pct": sum(mae) / len(mae) if mae else None,
             }
@@ -119,11 +138,12 @@ def build_calibration_report(
         catalyst = str(signal.get("catalyst", "none")).split(":", 1)[0][:80] or "none"
         row = catalyst_summary.setdefault(
             catalyst,
-            {"signals": 0, "target_1": 0, "stops": 0, "mfe_sum": 0.0},
+            {"signals": 0, "target_1": 0, "stops": 0, "ambiguous": 0, "mfe_sum": 0.0},
         )
         row["signals"] = int(row["signals"]) + 1
-        row["target_1"] = int(row["target_1"]) + int(bool(outcome.get("target_1_observed")))
-        row["stops"] = int(row["stops"]) + int(bool(outcome.get("stop_observed")))
+        row["target_1"] = int(row["target_1"]) + int(_target_1_success(outcome))
+        row["stops"] = int(row["stops"]) + int(_stop_failure(outcome))
+        row["ambiguous"] = int(row["ambiguous"]) + int(str(outcome.get("terminal_outcome") or "") == "ambiguous")
         row["mfe_sum"] = float(row["mfe_sum"]) + float(outcome.get("mfe_pct", 0) or 0)
 
     catalysts = []
@@ -137,6 +157,7 @@ def build_calibration_report(
                 "signals": count,
                 "target_1_rate": int(row["target_1"]) / count if count else None,
                 "stop_rate": int(row["stops"]) / count if count else None,
+                "ambiguous_rate": int(row["ambiguous"]) / count if count else None,
                 "average_mfe_pct": float(row["mfe_sum"]) / count if count else None,
             }
         )
@@ -164,6 +185,7 @@ def build_calibration_report(
         "warning": (
             "Same-scan quotes are monitoring observations, not mature evidence. "
             f"The review gate counts only signals with a {maturity_checkpoint} checkpoint. "
-            "Free-data prices still do not prove executable fills or target/stop ordering."
+            "Stop-first is terminal and same-bar ambiguity is never counted as a win. "
+            "Free-data prices still do not prove executable fills."
         ),
     }
