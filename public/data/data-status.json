@@ -1,14 +1,36 @@
 {
-  "status": "healthy",
-  "generated_at": "2026-08-13T19:53:44.730663+00:00",
-  "dataset_age_minutes": 2.6,
-  "last_successful_refresh": "2026-08-13T19:53:44.730663+00:00",
+  "status": "degraded",
+  "generated_at": "2026-08-13T20:06:43.649687+00:00",
+  "dataset_age_minutes": 2.1,
+  "last_successful_refresh": "2026-08-13T20:06:43.649687+00:00",
   "option_provider": "phase5_hybrid",
+  "option_provider_readiness": {
+    "status": "FALLBACK_ONLY",
+    "production_quote_ready": false,
+    "production_flow_ready": false,
+    "usable_chains": 9,
+    "fallback_only_chains": 9,
+    "delayed_or_indicative_chains": 9,
+    "live_primary_chains": 0,
+    "cross_source_chains": 0,
+    "opra_chains": 0,
+    "sources": [
+      "yahoo"
+    ],
+    "reasons": [
+      "Only delayed, indicative, unofficial, or fallback option data is active",
+      "9 chain(s) are Yahoo/YFinance-only fallback",
+      "9 chain(s) are delayed, indicative, or unofficial"
+    ]
+  },
   "source_status": {
     "active_stock_sources": 2,
     "active_option_sources": 1,
+    "option_provider_readiness": "FALLBACK_ONLY",
+    "production_option_quotes": false,
+    "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-08-13T19:52:38.251821+00:00",
+      "checked_at": "2026-08-13T20:05:57.192480+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
@@ -37,8 +59,10 @@
     "stale_options": 0,
     "missing_expiry_family": 0,
     "duplicate_events_collapsed": 1,
-    "errors": 3,
-    "critical_errors": 0
+    "errors": 7,
+    "critical_errors": 0,
+    "fallback_only_option_chains": 9,
+    "live_primary_option_chains": 0
   },
   "sec_incremental": {
     "feeds_requested": 0,
@@ -50,8 +74,12 @@
     "prefilter_skips": 0,
     "events_emitted": 0,
     "processed_accessions": 0,
-    "updated_at": "2026-08-13T19:52:49.554532+00:00"
+    "updated_at": "2026-08-13T20:06:06.517369+00:00"
   },
   "run_duration_seconds": null,
-  "reasons": []
+  "reasons": [
+    "Only delayed, indicative, unofficial, or fallback option data is active",
+    "9 chain(s) are Yahoo/YFinance-only fallback",
+    "9 chain(s) are delayed, indicative, or unofficial"
+  ]
 }
