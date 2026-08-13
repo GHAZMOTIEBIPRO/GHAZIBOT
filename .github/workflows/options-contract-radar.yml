@@ -1,0 +1,186 @@
+name: BLACK BOX Omega Options Contract Radar
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/options-contract-radar.yml"
+      - "options_radar/optionable_universe.py"
+      - "options_radar/official_event_scan.py"
+      - "scripts/run_options_radar_independent.py"
+      - "data/options_ping.txt"
+  schedule:
+    # 13:00-21:59 UTC covers NY regular hours across both daylight and standard time.
+    # The exchange-calendar gate below is the source of truth for holidays/session state.
+    - cron: "*/15 13-21 * * 1-5"
+
+concurrency:
+  group: black-box-omega-options-contract-radar
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  scan-options:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+      OPTIONS_INDEPENDENT_MAX_SYMBOLS: ${{ secrets.OPTIONS_INDEPENDENT_MAX_SYMBOLS || '60' }}
+      OPTIONS_INDEPENDENT_TOP_PER_SIDE: ${{ secrets.OPTIONS_INDEPENDENT_TOP_PER_SIDE || '15' }}
+      DATABASE_PATH: data/live/options_alert_state.json
+      SIGNAL_JOURNAL_PATH: data/live/options_signals.jsonl
+      OUTCOME_PATH: data/live/options_outcomes.json
+      CALIBRATION_PATH: data/live/options_calibration.json
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check U.S. regular session
+        id: market
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from datetime import datetime, timezone
+          import exchange_calendars as xcals
+          import pandas as pd
+
+          if os.getenv('GITHUB_EVENT_NAME') == 'workflow_dispatch':
+              print('open=true')
+              print('reason=manual_dispatch')
+              raise SystemExit
+
+          cal = xcals.get_calendar('XNYS')
+          now = pd.Timestamp(datetime.now(timezone.utc))
+          minute = now.floor('min')
+          try:
+              is_open = bool(cal.is_open_on_minute(minute))
+          except Exception:
+              is_open = False
+          print(f"open={'true' if is_open else 'false'}")
+          print(f"reason={'regular_session' if is_open else 'market_closed'}")
+          PY
+
+      - name: Restore independent options state
+        if: steps.market.outputs.open == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live data/cache
+          for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .options-state-restore
+            mkdir -p .options-state-restore
+            if gh run download "$run_id" -n options-contract-state -D .options-state-restore >/dev/null 2>&1; then
+              cp -f .options-state-restore/options_alert_state.json data/live/options_alert_state.json 2>/dev/null || true
+              cp -f .options-state-restore/options_signals.jsonl data/live/options_signals.jsonl 2>/dev/null || true
+              cp -f .options-state-restore/options_outcomes.json data/live/options_outcomes.json 2>/dev/null || true
+              cp -f .options-state-restore/options_calibration.json data/live/options_calibration.json 2>/dev/null || true
+              cp -f .options-state-restore/occ_optionable_universe.json data/cache/occ_optionable_universe.json 2>/dev/null || true
+              echo "Restored independent options state from run $run_id."
+              break
+            fi
+          done
+
+      - name: Run independent options contract radar
+        if: steps.market.outputs.open == 'true'
+        run: >-
+          python scripts/run_options_radar_independent.py
+          --output public/data/options_latest.json
+          --max-symbols "$OPTIONS_INDEPENDENT_MAX_SYMBOLS"
+          --top-per-side "$OPTIONS_INDEPENDENT_TOP_PER_SIDE"
+
+      - name: Validate path independence and semantics
+        if: steps.market.outputs.open == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('public/data/options_latest.json').read_text(encoding='utf-8'))
+          assert payload['path'] == 'options'
+          assert payload['independent_from_stock_radar'] is True
+          assert payload['architecture'] == 'independent_options_contract_radar_v1'
+          policy = payload['flow_policy']
+          assert policy['volume_over_oi_means_new_opening_position'] is False
+          assert policy['ask_side_snapshot_means_confirmed_buyer'] is False
+          assert policy['sweep_claim_allowed_from_snapshot_chain'] is False
+          for row in payload.get('contracts', []):
+              assert row.get('independent_from_stock_radar') is True
+              evidence = row.get('flow_evidence') or {}
+              assert evidence.get('opening_position_confirmed') is False
+              assert evidence.get('sweep_confirmed') is False
+          print('Independent options path validation passed.')
+          PY
+
+      - name: Upload options radar payload
+        if: steps.market.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-options-radar
+          path: public/data/options_latest.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stage independent options state
+        if: steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p .options-state-upload
+          for pair in \
+            "data/live/options_alert_state.json:options_alert_state.json" \
+            "data/live/options_signals.jsonl:options_signals.jsonl" \
+            "data/live/options_outcomes.json:options_outcomes.json" \
+            "data/live/options_calibration.json:options_calibration.json" \
+            "data/cache/occ_optionable_universe.json:occ_optionable_universe.json"; do
+            source="${pair%%:*}"
+            target="${pair##*:}"
+            [[ -f "$source" ]] && cp -f "$source" ".options-state-upload/$target"
+          done
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          Path('.options-state-upload/manifest.json').write_text(
+              json.dumps({
+                  'path': 'options',
+                  'independent_from_stock_radar': True,
+                  'saved_at': datetime.now(timezone.utc).isoformat(),
+              }, indent=2),
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Upload independent options state
+        if: steps.market.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: options-contract-state
+          path: .options-state-upload/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Closed-market status
+        if: steps.market.outputs.open != 'true'
+        run: echo "Options radar skipped because the U.S. regular session is closed."

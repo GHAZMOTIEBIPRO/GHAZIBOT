@@ -1,0 +1,99 @@
+name: BLACK BOX Omega Stock Radar
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stock-radar.yml"
+      - "scripts/run_stock_radar_independent.py"
+      - "options_radar/official_event_scan.py"
+      - "data/stock_ping.txt"
+  workflow_run:
+    workflows:
+      - "BLACK BOX Omega Fast Explosion Radar"
+    types: [completed]
+
+concurrency:
+  group: black-box-omega-stock-radar
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deep-stock-validation:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Stock Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore fast stock discovery payload
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live
+          current=""
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            current="${{ github.event.workflow_run.id }}"
+          fi
+          if [[ -n "$current" ]]; then
+            gh run download "$current" -n fast-market-state -D data/live || true
+          fi
+          if [[ ! -f data/live/fast_explosion_scan.json ]]; then
+            for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              if gh run download "$run_id" -n fast-market-state -D data/live >/dev/null 2>&1; then
+                [[ -f data/live/fast_explosion_scan.json ]] && break
+              fi
+            done
+          fi
+          test -s data/live/fast_explosion_scan.json
+
+      - name: Deep validate stock causes with official-first policy
+        run: >-
+          python scripts/run_stock_radar_independent.py
+          --fast data/live/fast_explosion_scan.json
+          --output public/data/stocks_latest.json
+
+      - name: Validate stock-path independence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('public/data/stocks_latest.json').read_text(encoding='utf-8'))
+          assert payload['path'] == 'stocks'
+          assert payload['independent_from_options_radar'] is True
+          assert payload['policy']['options_flow_required'] is False
+          assert payload['policy']['ludp_is_price_confirmation_not_primary_cause'] is True
+          for row in payload.get('stocks', []):
+              assert row.get('independent_from_options_radar') is True
+              assert row.get('options_required_for_stock_signal') is False
+          print('Independent stock path validation passed.')
+          PY
+
+      - name: Upload independent stock radar
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-stock-radar
+          path: public/data/stocks_latest.json
+          if-no-files-found: error
+          retention-days: 7
