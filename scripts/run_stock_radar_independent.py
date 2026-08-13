@@ -3,15 +3,14 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from options_radar.catalysts import CatalystScanner
 from options_radar.official_catalyst_intelligence import build_catalyst_intelligence
+from options_radar.official_event_scan import scan_official_events
 from options_radar.settings import Settings
 
 DEFAULT_FAST = Path("data/live/fast_explosion_scan.json")
@@ -27,9 +26,8 @@ def _number(value: Any, default: float = 0.0) -> float:
 
 
 def _load(path: str | Path) -> dict[str, Any]:
-    source = Path(path)
     try:
-        payload = json.loads(source.read_text(encoding="utf-8"))
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
     return payload if isinstance(payload, dict) else {}
@@ -59,14 +57,40 @@ def _records(frame: pd.DataFrame | None) -> list[dict[str, Any]]:
     return output
 
 
+def _secondary_fast_news(actionable: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Carry fast-news attention into evidence without upgrading it to proof."""
+    rows: list[dict[str, Any]] = []
+    today = datetime.now(timezone.utc).date().isoformat()
+    for stock in actionable:
+        headline = str(stock.get("news_headline") or "").strip()
+        source = str(stock.get("news_source") or "").strip()
+        symbol = str(stock.get("symbol") or "").upper()
+        if not symbol or not headline:
+            continue
+        rows.append(
+            {
+                "symbol": symbol,
+                "company": stock.get("company_name") or symbol,
+                "event_date": today,
+                "category": "FAST_NEWS_ATTENTION",
+                "headline": headline,
+                "score": min(18.0, _number(stock.get("news_score")) / 5.0),
+                "source": source or "news aggregator",
+                "form": "NEWS",
+                "url": "",
+                "evidence": "secondary fast-news attention; requires primary/official confirmation",
+            }
+        )
+    return rows
+
+
 def _halt_map(rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
     output: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
-        if not isinstance(row, dict):
-            continue
-        symbol = str(row.get("symbol") or "").upper().strip()
-        if symbol:
-            output.setdefault(symbol, []).append(row)
+        if isinstance(row, dict):
+            symbol = str(row.get("symbol") or "").upper().strip()
+            if symbol:
+                output.setdefault(symbol, []).append(row)
     return output
 
 
@@ -76,17 +100,13 @@ def _halt_semantics(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         row = dict(raw)
         reason = str(row.get("reason") or "HALT").upper()
         if reason == "T1":
-            role = "INFORMATION_EVENT"
-            note = "News Pending: يوجد حدث معلوماتي ينتظر النشر؛ ليس اتجاهًا سعريًا بحد ذاته"
+            role, note = "INFORMATION_EVENT", "News Pending: يوجد حدث معلوماتي ينتظر النشر؛ ليس اتجاهًا سعريًا بحد ذاته"
         elif reason == "T2":
-            role = "INFORMATION_EVENT"
-            note = "News Released: الخبر نُشر والسوق ينتظر الاستئناف؛ يجب مطابقة الخبر بالمصدر الأولي"
+            role, note = "INFORMATION_EVENT", "News Released: الخبر نُشر والسوق ينتظر الاستئناف؛ يجب مطابقة الخبر بالمصدر الأولي"
         elif reason in {"LUDP", "T5"}:
-            role = "PRICE_CONFIRMATION"
-            note = "إيقاف بسبب حركة سعرية/تذبذب؛ تأكيد شدة الحركة وليس سببها الأساسي"
+            role, note = "PRICE_CONFIRMATION", "إيقاف بسبب حركة سعرية/تذبذب؛ تأكيد شدة الحركة وليس سببها الأساسي"
         else:
-            role = "MARKET_STATUS"
-            note = "حالة تشغيل سوق تحتاج تفسيرًا حسب كود الإيقاف"
+            role, note = "MARKET_STATUS", "حالة تشغيل سوق تحتاج تفسيرًا حسب كود الإيقاف"
         row["evidence_role"] = role
         row["note_ar"] = note
         output.append(row)
@@ -110,11 +130,7 @@ def _amplifiers(row: dict[str, Any]) -> list[str]:
     return output
 
 
-def run(
-    *,
-    fast_path: str | Path = DEFAULT_FAST,
-    output_path: str | Path = DEFAULT_OUTPUT,
-) -> dict[str, Any]:
+def run(*, fast_path: str | Path = DEFAULT_FAST, output_path: str | Path = DEFAULT_OUTPUT) -> dict[str, Any]:
     fast = _load(fast_path)
     actionable = [
         dict(row)
@@ -127,14 +143,16 @@ def run(
 
     settings = Settings()
     settings.validate()
-    catalyst_errors: list[str] = []
+    errors: list[str] = []
     try:
-        catalyst_frame = CatalystScanner(settings).scan(symbols, lookback_days=7)
+        official_frame = scan_official_events(settings, symbols, lookback_days=7)
     except Exception as exc:
-        catalyst_frame = pd.DataFrame()
-        catalyst_errors.append(f"{type(exc).__name__}: {exc}")
-    catalyst_rows = _records(catalyst_frame)
-    intelligence = build_catalyst_intelligence(catalyst_rows, actionable)
+        official_frame = pd.DataFrame()
+        errors.append(f"official_events: {type(exc).__name__}: {exc}")
+    official_rows = _records(official_frame)
+    secondary_rows = _secondary_fast_news(actionable)
+    all_evidence = [*official_rows, *secondary_rows]
+    intelligence = build_catalyst_intelligence(all_evidence, actionable)
     cause_by_symbol = intelligence.get("by_symbol") if isinstance(intelligence.get("by_symbol"), dict) else {}
 
     stocks: list[dict[str, Any]] = []
@@ -165,14 +183,12 @@ def run(
                 "url": None,
                 "official_confirmed": False,
             }
-
-        current_halts = _halt_semantics(halts_by_symbol.get(symbol, []))
         stocks.append(
             {
                 **raw,
                 "cause": cause_block,
                 "amplifiers": _amplifiers(raw),
-                "market_status_evidence": current_halts,
+                "market_status_evidence": _halt_semantics(halts_by_symbol.get(symbol, [])),
                 "independent_from_options_radar": True,
                 "options_required_for_stock_signal": False,
             }
@@ -190,10 +206,11 @@ def run(
             "stocks_deep_validated": len(stocks),
             "official_causes": sum(bool((row.get("cause") or {}).get("official_confirmed")) for row in stocks),
             "halt_events_seen": len(halts),
-            "news_events_seen_fast": int(_number(fast.get("news_events_seen"))),
+            "secondary_news_evidence": len(secondary_rows),
         },
         "policy": {
             "official_first": True,
+            "secondary_news_can_establish_cause": False,
             "halt_is_not_automatically_cause": True,
             "ludp_is_price_confirmation_not_primary_cause": True,
             "finviz_reddit_x_are_attention_not_proof": True,
@@ -201,16 +218,16 @@ def run(
         },
         "stocks": stocks,
         "catalyst_intelligence": intelligence,
-        "catalysts": catalyst_rows,
+        "official_catalysts": official_rows,
+        "secondary_attention": secondary_rows,
         "halts": _halt_semantics(halts),
-        "errors": catalyst_errors,
+        "errors": errors,
         "limitations": [
-            "Fast price/volume discovery and deep catalyst validation are separate stages inside the stock path.",
+            "Fast price/volume discovery and deep official-catalyst validation are separate stages inside the stock path.",
             "A price move can remain actionable while its primary cause is unknown; the bot must say so explicitly.",
             "Options data never gates or creates a stock-path signal.",
         ],
     }
-
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
