@@ -12,7 +12,7 @@ from options_radar.market_regime import MarketRegimeEngine
 from options_radar.radar_health import assess_stock_health
 from options_radar.settings import Settings
 from options_radar.stock_decision import build_stock_decision
-from options_radar.stock_outcomes import StockOutcomeTracker
+from options_radar.stock_event_outcomes import EventLevelStockOutcomeTracker
 
 DEFAULT_PAYLOAD = Path("public/data/stocks_latest.json")
 DEFAULT_LEARNING = Path(os.getenv("ADAPTIVE_LEARNING_PATH", "data/live/adaptive_learning.json"))
@@ -72,7 +72,7 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
             "mode": "SHADOW_ONLY",
         }
 
-    outcomes = StockOutcomeTracker(DEFAULT_OUTCOMES).update(
+    outcomes = EventLevelStockOutcomeTracker(DEFAULT_OUTCOMES).update(
         stocks,
         now=datetime.now(timezone.utc),
         market_regime=regime_label,
@@ -80,14 +80,20 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
     payload["market_regime"] = regime_detail
     payload["adaptive_learning"] = learning.get("stock", {})
     payload["stock_outcome_summary"] = outcomes.get("summary", {})
+    payload["stock_event_dedup"] = outcomes.get("event_dedup", {})
     payload.setdefault("summary", {})["market_regime"] = regime_label
     payload["summary"]["shadow_learning_ready"] = bool((learning.get("stock") or {}).get("ready"))
+    payload["summary"]["event_samples_after_dedup"] = int(
+        (outcomes.get("event_dedup") or {}).get("samples_after_dedup", 0) or 0
+    )
     payload.setdefault("policy", {}).update(
         {
             "adaptive_learning_mode": "shadow_only",
             "adaptive_learning_changes_live_alerts": False,
             "raw_score_preserved": True,
             "late_move_risk_is_measured": True,
+            "learning_sample_unit": "event_not_stage_snapshot",
+            "same_symbol_direction_reentry_gap_minutes": 240,
         }
     )
     payload["health"] = assess_stock_health(payload)
@@ -104,7 +110,8 @@ def main() -> None:
         "Stock research enrichment: "
         f"regime={(payload.get('summary') or {}).get('market_regime', 'unknown')} "
         f"health={(payload.get('health') or {}).get('status', 'UNKNOWN')} "
-        f"tracked={(payload.get('stock_outcome_summary') or {}).get('tracked', 0)}"
+        f"tracked={(payload.get('stock_outcome_summary') or {}).get('tracked', 0)} "
+        f"events={(payload.get('summary') or {}).get('event_samples_after_dedup', 0)}"
     )
 
 
