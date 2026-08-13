@@ -140,8 +140,11 @@ jobs:
       - name: Stage stock learning state
         shell: bash
         run: |
-          mkdir -p .stock-state-upload
-          [[ -f data/live/stock_outcomes.json ]] && cp -f data/live/stock_outcomes.json .stock-state-upload/stock_outcomes.json
+          mkdir -p .stock-state-upload data/live
+          if [[ ! -f data/live/stock_outcomes.json ]]; then
+            printf '%s\n' '{"schema_version":1,"updated_at":null,"signals":{}}' > data/live/stock_outcomes.json
+          fi
+          cp -f data/live/stock_outcomes.json .stock-state-upload/stock_outcomes.json
 
       - name: Upload stock learning state
         uses: actions/upload-artifact@v4
@@ -149,4 +152,5 @@ jobs:
           name: stock-radar-state
           path: .stock-state-upload/
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 30
