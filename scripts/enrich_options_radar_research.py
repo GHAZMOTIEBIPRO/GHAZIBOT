@@ -12,6 +12,7 @@ import pandas as pd
 from options_radar.adaptive_learning import load_learning_model
 from options_radar.adaptive_overlay import apply_options_learning
 from options_radar.outcomes import SignalJournal
+from options_radar.provider_readiness import assess_provider_readiness
 from options_radar.radar_health import assess_options_health
 from options_radar.settings import Settings
 
@@ -56,6 +57,15 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
 
     settings = Settings()
     settings.validate()
+    readiness = assess_provider_readiness(
+        payload.get("provider_audit"),
+        tradier_base_url=settings.tradier_base_url,
+    ).as_dict()
+    payload["provider_readiness"] = readiness
+    payload.setdefault("summary", {})["provider_readiness"] = readiness["status"]
+    payload["summary"]["production_quote_ready"] = readiness["production_quote_ready"]
+    payload["summary"]["production_flow_ready"] = readiness["production_flow_ready"]
+
     learning = load_learning_model(DEFAULT_LEARNING)
     regime = str((payload.get("summary") or {}).get("market_regime") or "unknown")
     contracts = [row for row in payload.get("contracts", []) if isinstance(row, dict)]
@@ -104,10 +114,14 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
             "adaptive_learning_mode": "shadow_only",
             "adaptive_learning_changes_live_alerts": False,
             "trade_quote_adapter_ready": True,
-            "licensed_trade_quote_feed_configured": False,
+            "licensed_trade_quote_feed_configured": bool(readiness["production_flow_ready"]),
             "stale_payload_can_create_new_learning_signal": False,
         }
     )
+    if not readiness["production_quote_ready"]:
+        payload.setdefault("limitations", []).append(
+            "Provider audit is fallback-only/delayed; option output remains research-only and health is degraded."
+        )
     if not source_is_fresh:
         payload.setdefault("limitations", []).append(
             "Research enrichment saw a stale/undated source payload and deliberately recorded zero new option signals."
@@ -127,6 +141,7 @@ def main() -> None:
         f"recorded={(payload.get('summary') or {}).get('signals_recorded_this_run', 0)} "
         f"fresh={(payload.get('summary') or {}).get('research_source_fresh', False)} "
         f"learning={(payload.get('summary') or {}).get('shadow_learning_ready', False)} "
+        f"provider={(payload.get('summary') or {}).get('provider_readiness', 'UNKNOWN')} "
         f"health={(payload.get('health') or {}).get('status', 'UNKNOWN')}"
     )
 
