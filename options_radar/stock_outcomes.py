@@ -14,6 +14,7 @@ STAGE_THRESHOLDS = {
     "EXPLOSION": (6.0, 6.0),
 }
 TRACKABLE_STAGES = frozenset(STAGE_THRESHOLDS)
+EVENT_REENTRY_SECONDS = 4 * 60 * 60
 
 
 def _number(value: Any, default: float | None = None) -> float | None:
@@ -28,13 +29,13 @@ def _number(value: Any, default: float | None = None) -> float | None:
 
 def _read(path: Path) -> dict[str, Any]:
     if not path.exists():
-        return {"schema_version": 1, "updated_at": None, "signals": {}}
+        return {"schema_version": 2, "updated_at": None, "signals": {}}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return {"schema_version": 1, "updated_at": None, "signals": {}}
+        return {"schema_version": 2, "updated_at": None, "signals": {}}
     if not isinstance(payload, dict):
-        return {"schema_version": 1, "updated_at": None, "signals": {}}
+        return {"schema_version": 2, "updated_at": None, "signals": {}}
     payload.setdefault("schema_version", 1)
     payload.setdefault("signals", {})
     return payload
@@ -70,6 +71,15 @@ def _band(score: float) -> str:
     return "below-72"
 
 
+def _history_item(state: dict[str, Any], observed_at: str | None = None) -> dict[str, Any]:
+    return {
+        "observed_at": observed_at or str(state.get("signal_time") or ""),
+        "stage": str(state.get("stage") or "").upper(),
+        "score": round(_number(state.get("score"), 0.0) or 0.0, 4),
+        "score_band": str(state.get("score_band") or _band(_number(state.get("score"), 0.0) or 0.0)),
+    }
+
+
 @dataclass(frozen=True)
 class StockOutcomeSummary:
     tracked: int
@@ -91,9 +101,10 @@ class StockOutcomeSummary:
 class StockOutcomeTracker:
     """Learn from repeated stock-radar snapshots without blocking the live scan.
 
-    This is deliberately snapshot-based. It records follow-through from the first
-    observed signal price and never pretends that a 10-20 minute scan cadence
-    reveals intrabar target/stop ordering.
+    One market event is one learning sample. Stage promotion or a score-band
+    change inside the same four-hour event window is recorded in ``stage_history``
+    and never creates a second sample. The original entry stage, score, price and
+    thresholds remain immutable so later information cannot leak into the entry.
     """
 
     def __init__(self, path: str | Path):
@@ -101,15 +112,8 @@ class StockOutcomeTracker:
 
     @staticmethod
     def _signal_id(row: dict[str, Any], now: datetime) -> str:
-        score = _number(row.get("score"), 0.0) or 0.0
-        key = "|".join(
-            [
-                now.date().isoformat(),
-                str(row.get("symbol") or "").upper(),
-                str(row.get("stage") or "").upper(),
-                _band(score),
-            ]
-        )
+        symbol = str(row.get("symbol") or "").upper().strip()
+        key = f"{symbol}|{now.isoformat()}"
         return hashlib.sha256(key.encode("utf-8")).hexdigest()[:20]
 
     @staticmethod
@@ -124,6 +128,26 @@ class StockOutcomeTracker:
             str(cause.get("source_tier") or "unknown")[:40],
             bool(cause.get("official_confirmed")),
         )
+
+    @staticmethod
+    def _append_stage_history(state: dict[str, Any], row: dict[str, Any], now: datetime) -> None:
+        stage = str(row.get("stage") or "").upper()
+        score = _number(row.get("score"), 0.0) or 0.0
+        item = {
+            "observed_at": now.isoformat(),
+            "stage": stage,
+            "score": round(score, 4),
+            "score_band": _band(score),
+        }
+        history = state.setdefault("stage_history", [])
+        if not isinstance(history, list):
+            history = []
+            state["stage_history"] = history
+        if not history:
+            history.append(_history_item(state))
+        last = history[-1] if isinstance(history[-1], dict) else {}
+        if last.get("stage") != item["stage"] or last.get("score_band") != item["score_band"]:
+            history.append(item)
 
     @staticmethod
     def _observe(state: dict[str, Any], price: float, now: datetime) -> None:
@@ -165,6 +189,74 @@ class StockOutcomeTracker:
             state["terminal_reason"] = "failure_threshold_observed"
             state["terminal_at"] = now.isoformat()
 
+    @staticmethod
+    def _active_event(signals: dict[str, Any], symbol: str, now: datetime) -> dict[str, Any] | None:
+        candidates: list[tuple[datetime, dict[str, Any]]] = []
+        for state in signals.values():
+            if not isinstance(state, dict) or str(state.get("symbol") or "").upper() != symbol:
+                continue
+            created = _parse_time(state.get("signal_time"))
+            if created is None:
+                continue
+            age = (now - created).total_seconds()
+            if 0 <= age < EVENT_REENTRY_SECONDS:
+                candidates.append((created, state))
+        if not candidates:
+            return None
+        candidates.sort(key=lambda pair: pair[0])
+        return candidates[0][1]
+
+    @staticmethod
+    def _dedupe_existing(signals: dict[str, Any]) -> int:
+        """Collapse legacy stage/score duplicates while preserving entry truth.
+
+        The earliest state in a four-hour cluster is canonical. We preserve its
+        entry price, stage, score, thresholds and terminal semantics. Later states
+        contribute stage history only. This intentionally avoids backfilling a
+        terminal result calculated from a later entry price.
+        """
+        rows: list[tuple[str, datetime, dict[str, Any]]] = []
+        for signal_id, state in signals.items():
+            if not isinstance(state, dict):
+                continue
+            created = _parse_time(state.get("signal_time"))
+            symbol = str(state.get("symbol") or "").upper().strip()
+            if created is not None and symbol:
+                rows.append((signal_id, created, state))
+        rows.sort(key=lambda item: (str(item[2].get("symbol") or "").upper(), item[1]))
+
+        removed = 0
+        last_by_symbol: dict[str, tuple[datetime, dict[str, Any]]] = {}
+        for signal_id, created, state in rows:
+            symbol = str(state.get("symbol") or "").upper().strip()
+            prior = last_by_symbol.get(symbol)
+            if prior is None or (created - prior[0]).total_seconds() >= EVENT_REENTRY_SECONDS:
+                history = state.setdefault("stage_history", [])
+                if not isinstance(history, list):
+                    history = []
+                    state["stage_history"] = history
+                if not history:
+                    history.append(_history_item(state))
+                last_by_symbol[symbol] = (created, state)
+                continue
+
+            canonical = prior[1]
+            history = canonical.setdefault("stage_history", [])
+            if not isinstance(history, list):
+                history = []
+                canonical["stage_history"] = history
+            if not history:
+                history.append(_history_item(canonical))
+            duplicate_history = state.get("stage_history") if isinstance(state.get("stage_history"), list) else []
+            additions = [item for item in duplicate_history if isinstance(item, dict)] or [_history_item(state)]
+            for item in additions:
+                last = history[-1] if history and isinstance(history[-1], dict) else {}
+                if last.get("stage") != item.get("stage") or last.get("score_band") != item.get("score_band"):
+                    history.append(item)
+            signals.pop(signal_id, None)
+            removed += 1
+        return removed
+
     def update(
         self,
         stocks: list[dict[str, Any]],
@@ -178,6 +270,11 @@ class StockOutcomeTracker:
         now = now.astimezone(timezone.utc)
         payload = _read(self.path)
         signals = payload.setdefault("signals", {})
+        if not isinstance(signals, dict):
+            signals = {}
+            payload["signals"] = signals
+        removed_duplicates = self._dedupe_existing(signals)
+
         by_symbol = {
             str(row.get("symbol") or "").upper(): row
             for row in stocks
@@ -192,6 +289,8 @@ class StockOutcomeTracker:
             price = _number((current or {}).get("price"), None)
             if price is not None:
                 self._observe(state, price, now)
+                if current is not None:
+                    self._append_stage_history(state, current, now)
 
         for row in stocks:
             if not isinstance(row, dict):
@@ -201,9 +300,11 @@ class StockOutcomeTracker:
             price = _number(row.get("price"), None)
             if not symbol or price is None or price <= 0 or stage not in TRACKABLE_STAGES:
                 continue
-            signal_id = self._signal_id(row, now)
-            if signal_id in signals:
+            if self._active_event(signals, symbol, now) is not None:
                 continue
+            signal_id = self._signal_id(row, now)
+            while signal_id in signals:
+                signal_id = hashlib.sha256(f"{signal_id}|{len(signals)}".encode("utf-8")).hexdigest()[:20]
             target, stop = STAGE_THRESHOLDS[stage]
             cause_category, cause_tier, official = self._cause_fields(row)
             score = _number(row.get("score"), 0.0) or 0.0
@@ -216,6 +317,7 @@ class StockOutcomeTracker:
                 "score": round(score, 4),
                 "score_band": _band(score),
                 "stage": stage,
+                "stage_history": [],
                 "market_regime": market_regime,
                 "cause_category": cause_category,
                 "cause_tier": cause_tier,
@@ -232,6 +334,7 @@ class StockOutcomeTracker:
                 "terminal_outcome": "open",
                 "measurement_basis": "repeated_radar_snapshots",
             }
+            state["stage_history"].append(_history_item(state))
             signals[signal_id] = state
 
         cutoff_seconds = 10 * 24 * 3600
@@ -240,7 +343,13 @@ class StockOutcomeTracker:
             if created is not None and (now - created).total_seconds() > cutoff_seconds:
                 signals.pop(signal_id, None)
 
+        payload["schema_version"] = 2
         payload["updated_at"] = now.isoformat()
+        payload["event_dedupe"] = {
+            "window_minutes": EVENT_REENTRY_SECONDS // 60,
+            "removed_legacy_duplicates_this_run": removed_duplicates,
+            "policy": "one_symbol_event_per_4h_preserve_original_entry",
+        }
         payload["measurement_note"] = (
             "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; "
             "therefore it is used for calibration, not executable-fill claims."
