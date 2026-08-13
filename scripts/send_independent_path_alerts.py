@@ -200,19 +200,6 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
 
 
 def send_options(payload: dict[str, Any], state: dict[str, Any]) -> int:
-    readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
-    quote_ready = readiness.get("production_quote_ready") is True
-    if not quote_ready:
-        state["last_run_at"] = datetime.now(timezone.utc).isoformat()
-        state["last_sent_count"] = 0
-        state["path"] = "options"
-        state["send_blocked"] = True
-        state["send_block_reason"] = (
-            f"provider_readiness={readiness.get('status', 'MISSING')}; "
-            "production_quote_ready is not true"
-        )
-        return 0
-
     minimum = _number(os.getenv("OPTIONS_ALERT_MIN_SCORE", "65"), 65.0)
     maximum = max(1, min(6, int(_number(os.getenv("OPTIONS_ALERT_MAX", "4"), 4))))
     rows = [row for row in payload.get("contracts", []) if isinstance(row, dict)]
@@ -253,8 +240,6 @@ def send_options(payload: dict[str, Any], state: dict[str, Any]) -> int:
     state["last_run_at"] = datetime.now(timezone.utc).isoformat()
     state["last_sent_count"] = sent
     state["path"] = "options"
-    state["send_blocked"] = False
-    state.pop("send_block_reason", None)
     return sent
 
 
