@@ -83,14 +83,34 @@ def _side_ar(side: str) -> str:
     return "CALL — اتجاه صاعد" if side.upper() == "CALL" else "PUT — اتجاه هابط"
 
 
+def _priority_ar(score: float) -> str:
+    if score >= 88:
+        return "عالية جدًا"
+    if score >= 80:
+        return "عالية"
+    if score >= 72:
+        return "متوسطة"
+    return "منخفضة"
+
+
 def _activity_ar(ratio: float) -> str:
     if ratio >= 3:
-        return "نشاط مرتفع جدًا مقارنة بالعقود المفتوحة"
+        return "نشاط مرتفع جدًا"
     if ratio >= 1:
-        return "نشاط مرتفع مقارنة بالعقود المفتوحة"
+        return "نشاط مرتفع"
     if ratio > 0:
-        return "النشاط موجود لكنه أقل من العقود المفتوحة"
-    return "لا توجد مقارنة موثوقة بين الحجم والعقود المفتوحة"
+        return "نشاط عادي إلى متوسط"
+    return "المقارنة غير متاحة"
+
+
+def _spread_ar(spread: float) -> str:
+    if spread <= 0:
+        return "غير معروف"
+    if spread <= 0.05:
+        return "ضيق وجيد"
+    if spread <= 0.10:
+        return "مقبول"
+    return "واسع — انتبه للسيولة"
 
 
 def _stock_message(row: dict[str, Any]) -> str:
@@ -103,57 +123,45 @@ def _stock_message(row: dict[str, Any]) -> str:
     cause_status = str(cause.get("status_ar") or "السبب الأساسي غير مثبت حتى الآن")
     cause_headline = str(cause.get("headline") or "").strip()
     cause_source = str(cause.get("source") or "").strip()
-    source_tier = str(cause.get("source_tier") or "").strip()
     amplifiers = [str(value) for value in row.get("amplifiers", []) if str(value).strip()]
     halts = [value for value in row.get("market_status_evidence", []) if isinstance(value, dict)]
 
-    if move > 0:
-        move_text = f"صاعد {move:+.1f}%"
-    elif move < 0:
-        move_text = f"هابط {move:+.1f}%"
-    else:
-        move_text = "بدون تغير واضح"
+    move_text = f"صاعد {move:+.1f}%" if move > 0 else (f"هابط {move:+.1f}%" if move < 0 else "بدون تغير واضح")
 
     lines = [
         "🚀 <b>بلاك بوكس Ω | تنبيه سهم</b>",
         "",
-        f"<b>{_safe(symbol)}</b> | السعر <b>${price:,.2f}</b>",
-        f"الحركة الآن: <b>{_safe(move_text)}</b>",
-        f"مرحلة الحركة: <b>{_safe(_stage_ar(stage))}</b>",
-        f"درجة الرادار: <b>{score:.0f}/100</b> <i>— درجة ترتيب وليست نسبة نجاح</i>",
+        f"<b>{_safe(symbol)}</b> | السعر <b>${price:,.2f}</b> | {_safe(move_text)}",
+        f"المرحلة: <b>{_safe(_stage_ar(stage))}</b>",
+        f"أولوية المتابعة: <b>{_safe(_priority_ar(score))}</b> | الرادار <b>{score:.0f}/100</b>",
         "",
-        "🧭 <b>الخلاصة</b>",
-        "السهم دخل قائمة المتابعة لأن سلوكه الحالي أقوى من المعتاد حسب شروط الرادار. التنبيه ليس أمر شراء؛ فائدته أن يلفت انتباهك مبكرًا لما يستحق الفحص.",
-        "",
-        "🧨 <b>لماذا ظهر؟</b>",
+        "🧨 <b>ليش ظهر؟</b>",
         f"• {_safe(cause_status)}",
     ]
     if cause_headline:
-        lines.append(f"• {_safe(cause_headline, 500)}")
+        lines.append(f"• {_safe(cause_headline, 420)}")
     if cause_source:
-        tier_text = f" — {_safe(source_tier)}" if source_tier else ""
-        lines.append(f"• المصدر: <b>{_safe(cause_source)}</b>{tier_text}")
+        lines.append(f"• المصدر: <b>{_safe(cause_source)}</b>")
     if amplifiers:
-        lines.extend(["", "🔥 <b>ما الذي يدعم الحركة؟</b>"])
-        lines.extend(f"• {_safe(item, 260)}" for item in amplifiers[:4])
+        lines.append(f"• الداعم الأبرز: {_safe(' | '.join(amplifiers[:3]), 420)}")
     if halts:
-        lines.extend(["", "⏸ <b>تنبيه حالة السوق</b>"])
-        for event in halts[:2]:
-            lines.append(f"• {_safe(event.get('reason'))}: {_safe(event.get('note_ar'), 360)}")
+        event = halts[0]
+        lines.append(f"• حالة السوق: {_safe(event.get('reason'))} — {_safe(event.get('note_ar'), 300)}")
 
-    lines.extend(["", "⚠️ <b>أهم مخاطرة في التنبيه</b>"])
+    lines.extend(["", "⚠️ <b>الخطر الأهم</b>"])
     if "غير مثبت" in cause_status or "NO_PRIMARY" in str(cause.get("status") or ""):
-        lines.append("• لا يوجد حتى الآن سبب رسمي مثبت للحركة؛ قد تكون الحركة مضاربية أو مؤقتة.")
-    if stage == "EXTENDED":
-        lines.append("• الحركة ممتدة أصلًا؛ خطر المطاردة أعلى من فرصة الدخول المبكر.")
+        lines.append("السبب الرسمي للحركة غير مثبت؛ ممكن تكون الحركة مضاربية أو قصيرة.")
+    elif stage == "EXTENDED":
+        lines.append("الحركة ممتدة أصلًا؛ المطاردة أخطر من الاكتشاف المبكر.")
     else:
-        lines.append("• القوة الحالية قد تختفي سريعًا إذا ضعف الحجم أو انعكس السعر.")
+        lines.append("القوة قد تختفي بسرعة إذا ضعف الحجم أو انعكس السعر.")
 
     lines.extend(
         [
             "",
             "👀 <b>وش أسوي الآن؟</b>",
-            "راقب استمرار الحركة والحجم والسبب قبل أي قرار. مسار الأسهم مستقل ولا يحتاج وجود أوبشن حتى يظهر السهم.",
+            "ضع السهم في المتابعة وتأكد من استمرار السعر والحجم والسبب قبل أي قرار. <i>درجة الرادار ترتيب وليست نسبة نجاح.</i>",
+            "<i>مسار الأسهم مستقل ولا يحتاج وجود أوبشن.</i>",
         ]
     )
     return "\n".join(lines)
@@ -172,7 +180,6 @@ def _option_message(row: dict[str, Any]) -> str:
     oi = int(_number(row.get("open_interest")))
     ratio = _number(row.get("vol_to_oi_ratio") or row.get("vol_oi"))
     delta = _number(row.get("delta"))
-    gamma = _number(row.get("gamma"))
     theta = _number(row.get("theta"))
     iv = _number(row.get("iv"))
     spread = _number(row.get("spread_pct"))
@@ -187,56 +194,44 @@ def _option_message(row: dict[str, Any]) -> str:
     lines = [
         "🎯 <b>بلاك بوكس Ω | تنبيه عقد أوبشن</b>",
         "",
-        f"الأصل: <b>{_safe(symbol)}</b>",
-        f"الاتجاه المرصود: <b>{_safe(_side_ar(side))}</b>",
-        f"العقد: <b>{_safe(symbol)} {side} {strike:g}</b>",
-        f"الانتهاء: <b>{_safe(expiration)}</b> | المتبقي <b>{dte} يوم</b>",
-        f"سعر العقد: <b>${bid:.2f} / ${ask:.2f}</b>" + (f" | المتوسط ≈ <b>${mid:.2f}</b>" if mid else ""),
-        f"فرق العرض والطلب: <b>{spread * 100:.1f}%</b>",
+        f"<b>{_safe(symbol)}</b> | <b>{_safe(_side_ar(side))}</b>",
+        f"العقد: <b>{_safe(symbol)} {side} {strike:g}</b> | الانتهاء <b>{_safe(expiration)}</b> | {dte} يوم",
+        f"السعر: <b>${bid:.2f} / ${ask:.2f}</b>" + (f" | وسط ≈ <b>${mid:.2f}</b>" if mid else ""),
+        f"السبريد: <b>{spread * 100:.1f}%</b> — {_safe(_spread_ar(spread))}",
+        f"أولوية المتابعة: <b>{_safe(_priority_ar(score))}</b> | العقد <b>{score:.0f}/100</b> | التدفق <b>{flow_score:.0f}/100</b>",
         "",
-        "🧭 <b>الخلاصة</b>",
-        f"العقد اجتاز شروط الرادار بدرجة <b>{score:.0f}/100</b>، ودرجة نشاط التدفق <b>{flow_score:.0f}/100</b>. هذه درجات ترتيب وليست احتمال ربح.",
-        "",
-        "📊 <b>نشاط العقد ببساطة</b>",
-        f"• حجم اليوم: <b>{volume:,}</b> عقد",
-        f"• العقود المفتوحة OI: <b>{oi:,}</b>",
-        f"• الحجم ÷ OI: <b>{ratio:.2f}×</b> — {_safe(_activity_ar(ratio))}",
-        "",
-        "🧪 <b>حساسية العقد</b>",
-        f"• دلتا: <b>{delta:+.2f}</b> — حساسية سعر العقد لحركة الأصل",
-        f"• ثيتا: <b>{theta:.4f}</b> — أثر مرور الوقت على قيمة العقد",
-        f"• غاما: <b>{gamma:.4f}</b> — سرعة تغير الدلتا",
-        f"• التذبذب الضمني IV: <b>{iv:.1%}</b>",
+        "📊 <b>ليش يستحق الانتباه؟</b>",
+        f"• الحجم <b>{volume:,}</b> مقابل OI <b>{oi:,}</b> | النسبة <b>{ratio:.2f}×</b> — {_safe(_activity_ar(ratio))}",
+        f"• دلتا <b>{delta:+.2f}</b> | ثيتا <b>{theta:.4f}</b> | IV <b>{iv:.1%}</b>",
     ]
 
-    if reasons:
-        lines.extend(["", "🧠 <b>ليش اختاره الرادار؟</b>"])
-        lines.extend(f"• {_safe(item, 390)}" for item in reasons[:4])
+    for item in reasons[:2]:
+        lines.append(f"• {_safe(item, 360)}")
 
     pressure = str(evidence.get("execution_pressure_note_ar") or "").strip()
     oi_note = str(evidence.get("volume_vs_prior_oi_note_ar") or "").strip()
-    if pressure or oi_note:
-        lines.extend(["", "🔬 <b>قراءة التدفق</b>"])
-        if pressure:
-            lines.append(f"• {_safe(pressure, 430)}")
-        if oi_note:
-            lines.append(f"• {_safe(oi_note, 430)}")
+    if pressure:
+        lines.append(f"• التدفق: {_safe(pressure, 360)}")
+    if oi_note:
+        lines.append(f"• OI: {_safe(oi_note, 360)}")
 
     if readiness:
-        lines.extend(["", "🛰 <b>جودة البيانات</b>"])
-        lines.append(f"• أسعار إنتاجية: <b>{'نعم ✅' if quote_ready else 'لا ❌'}</b>")
-        lines.append(f"• تدفق صفقات حي كامل: <b>{'نعم ✅' if flow_ready else 'غير مكتمل ⚠️'}</b>")
+        lines.extend(
+            [
+                "",
+                "🛰 <b>جودة البيانات</b>",
+                f"أسعار إنتاجية: <b>{'نعم ✅' if quote_ready else 'لا ❌'}</b> | تدفق حي كامل: <b>{'نعم ✅' if flow_ready else 'غير مكتمل ⚠️'}</b>",
+            ]
+        )
 
     lines.extend(
         [
             "",
-            "⚠️ <b>ما الذي لا نعتبره مؤكدًا؟</b>",
-            "• السويب غير مؤكد من لقطة سلسلة العقود وحدها.",
-            "• فتح مركز جديد غير مؤكد حتى يؤكده تغير العقود المفتوحة بعد التسوية.",
-            "• ارتفاع الحجم لا يثبت وحده أن المتداول اشترى العقد للمضاربة؛ قد يكون تحوطًا أو جزءًا من استراتيجية مركبة.",
+            "⚠️ <b>وش ما نعرفه يقينًا؟</b>",
+            "السويب غير مؤكد، وفتح مركز جديد غير مؤكد من الحجم وحده؛ قد يكون النشاط تحوطًا أو جزءًا من استراتيجية مركبة.",
             "",
             "👀 <b>وش أسوي الآن؟</b>",
-            "استخدم التنبيه كأولوية للمراقبة: تأكد أن اتجاه الأصل نفسه يؤيد العقد، وأن السيولة والسبريد ما تدهورت قبل أي تنفيذ.",
+            "راقب اتجاه الأصل والسيولة والسبريد قبل أي تنفيذ. <i>الدرجات ترتيب وليست نسبة نجاح.</i>",
             "<i>مسار الأوبشن مستقل ولا ينتظر إشارة من مسار الأسهم.</i>",
         ]
     )
