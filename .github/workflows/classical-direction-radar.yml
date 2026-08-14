@@ -28,9 +28,9 @@ jobs:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Classical Direction GHAZMOTIEBIPRO@users.noreply.github.com' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      CLASSICAL_DIRECTION_MAX_SYMBOLS: ${{ secrets.CLASSICAL_DIRECTION_MAX_SYMBOLS || '32' }}
+      CLASSICAL_DIRECTION_MAX_SYMBOLS: ${{ secrets.CLASSICAL_DIRECTION_MAX_SYMBOLS || '48' }}
       CLASSICAL_MIN_DOLLAR_VOLUME: ${{ secrets.CLASSICAL_MIN_DOLLAR_VOLUME || '100000000' }}
-      CLASSICAL_ALERT_MAX: ${{ secrets.CLASSICAL_ALERT_MAX || '4' }}
+      CLASSICAL_ALERT_MAX: ${{ secrets.CLASSICAL_ALERT_MAX || '3' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -96,6 +96,8 @@ jobs:
           assert policy['macd_used'] is False
           assert policy['vwap_used'] is False
           assert policy['ict_smc_used'] is False
+          assert policy['news_used_for_direction'] is False
+          assert policy['fundamentals_used_for_direction'] is False
           for row in payload.get('signals', []):
               assert row['decision'] in {'CALL', 'PUT'}
               assert row['uses_option_chain_data'] is False
