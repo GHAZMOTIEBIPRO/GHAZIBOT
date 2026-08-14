@@ -97,6 +97,7 @@ def _message(row: dict[str, Any]) -> str:
         f"السهم: <b>{_safe(symbol)}</b> | السعر: <b>${price:,.2f}</b>",
         f"القرار: <b>{decision} — {direction}</b>",
         f"قوة المتابعة: <b>{_priority_ar(row.get('priority'))}</b>",
+        f"درجة توافق الأطر: <b>{int(row.get('agreement_pct') or 0)}/100</b> (ليست نسبة نجاح)",
         f"الأفق: <b>{_safe(row.get('horizon') or '1-5 جلسات تداول')}</b>",
         "",
         "📐 <b>اتفاق الاتجاه</b>",
@@ -163,7 +164,9 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Send Arabic underlying-only classical CALL/PUT alerts")
+    parser = argparse.ArgumentParser(
+        description="Send Arabic underlying-only classical CALL/PUT alerts"
+    )
     parser.add_argument("--payload", required=True)
     parser.add_argument("--state", required=True)
     args = parser.parse_args()

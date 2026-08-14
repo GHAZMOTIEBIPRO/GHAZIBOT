@@ -249,6 +249,8 @@ class Settings:
         allowed_bar_sources = {
             "yahoo",
             "yfinance",
+            "tiingo",
+            "finnhub",
             "tradier",
             "alpaca",
             "twelve",

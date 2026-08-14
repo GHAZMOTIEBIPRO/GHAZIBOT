@@ -4,28 +4,79 @@ import argparse
 import json
 import math
 import os
-from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import yfinance as yf
 
 from options_radar.classical_stock_direction import build_direction
+from options_radar.market_bars import fetch_bars
 from options_radar.optionable_universe import IndependentOptionableUniverse
+from options_radar.settings import Settings
 
 DEFAULT_OUTPUT = Path("public/data/classical_direction_latest.json")
 
 # Curated U.S. mega/large-cap operating companies with deep underlying liquidity.
 # OCC verification is mandatory at runtime. ETFs and indexes are intentionally excluded.
 DEFAULT_COMPANIES = (
-    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "AVGO", "TSLA",
-    "BRK.B", "JPM", "V", "MA", "WMT", "LLY", "XOM", "COST",
-    "NFLX", "ORCL", "HD", "PG", "JNJ", "ABBV", "BAC", "CRM",
-    "AMD", "KO", "PEP", "MRK", "CSCO", "ACN", "MCD", "GE",
-    "CAT", "UNH", "CVX", "IBM", "QCOM", "TXN", "AMGN", "TMO",
-    "LIN", "PM", "RTX", "GS", "MS", "BLK", "C", "AXP",
-    "BA", "AMAT", "MU", "NOW", "PANW", "DIS", "UBER", "INTC",
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "AVGO",
+    "TSLA",
+    "PLTR",
+    "JPM",
+    "V",
+    "MA",
+    "WMT",
+    "LLY",
+    "XOM",
+    "COST",
+    "NFLX",
+    "ORCL",
+    "HD",
+    "PG",
+    "JNJ",
+    "ABBV",
+    "BAC",
+    "CRM",
+    "AMD",
+    "KO",
+    "PEP",
+    "MRK",
+    "CSCO",
+    "ACN",
+    "MCD",
+    "GE",
+    "CAT",
+    "UNH",
+    "CVX",
+    "IBM",
+    "QCOM",
+    "TXN",
+    "AMGN",
+    "TMO",
+    "LIN",
+    "PM",
+    "RTX",
+    "GS",
+    "MS",
+    "BLK",
+    "C",
+    "AXP",
+    "BA",
+    "AMAT",
+    "MU",
+    "NOW",
+    "PANW",
+    "DIS",
+    "UBER",
+    "INTC",
 )
 
 
@@ -41,52 +92,110 @@ def _symbols_from_env() -> list[str]:
     return output or list(DEFAULT_COMPANIES)
 
 
-def _yf_symbol(symbol: str) -> str:
-    # Yahoo uses dash notation for Berkshire class B while OCC may expose dot notation.
-    return {"BRK.B": "BRK-B"}.get(symbol.upper(), symbol.upper())
-
-
-def _extract_symbol(raw: pd.DataFrame, symbol: str) -> pd.DataFrame:
-    if raw is None or raw.empty:
+def _resample_regular_session(frame: pd.DataFrame, minutes: int) -> pd.DataFrame:
+    """Build completed New York regular-session bars from normalized 5-minute data."""
+    if frame is None or frame.empty:
         return pd.DataFrame()
-    data = raw.copy()
-    if not isinstance(data.columns, pd.MultiIndex):
-        return data
-    candidates = {symbol.upper(), _yf_symbol(symbol).upper()}
-    level0 = [str(value).upper() for value in data.columns.get_level_values(0)]
-    level1 = [str(value).upper() for value in data.columns.get_level_values(1)]
-    for target in candidates:
-        if target in level0:
-            try:
-                return data.xs(target, axis=1, level=0, drop_level=True)
-            except KeyError:
-                pass
-        if target in level1:
-            try:
-                return data.xs(target, axis=1, level=1, drop_level=True)
-            except KeyError:
-                pass
-    return pd.DataFrame()
+    data = frame.copy()
+    data.index = pd.to_datetime(data.index, utc=True, errors="coerce")
+    data = data[~data.index.isna()]
+    data = data[~data.index.duplicated(keep="last")].sort_index()
+    data = data.tz_convert("America/New_York")
+    data = data.between_time("09:30", "15:59", inclusive="both")
+    if data.empty:
+        return pd.DataFrame()
+
+    rule = f"{int(minutes)}min"
+    grouped = data.resample(
+        rule,
+        origin="start_day",
+        offset="30min",
+        label="left",
+        closed="left",
+    )
+    bars = grouped.agg(
+        {
+            "Open": "first",
+            "High": "max",
+            "Low": "min",
+            "Close": "last",
+            "Volume": "sum",
+        }
+    )
+    counts = grouped["Close"].count()
+    expected_rows = max(1, int(minutes) // 5)
+    bars = bars[counts >= expected_rows]
+    bars = bars.dropna(subset=["Open", "High", "Low", "Close"])
+
+    # A signal may only use a closed 15-minute/hourly bar, never the live partial bar.
+    now = pd.Timestamp.now(tz="America/New_York")
+    bars = bars[(bars.index + pd.Timedelta(minutes=minutes)) <= now]
+    return bars.tz_convert("UTC")
 
 
-def _download(symbols: list[str], *, period: str, interval: str) -> dict[str, pd.DataFrame]:
-    if not symbols:
-        return {}
-    yahoo_symbols = [_yf_symbol(symbol) for symbol in symbols]
-    try:
-        raw = yf.download(
-            tickers=" ".join(yahoo_symbols),
-            period=period,
-            interval=interval,
-            auto_adjust=False,
-            prepost=False,
-            progress=False,
-            threads=True,
-            group_by="ticker",
+def _fetch_symbol_frames(
+    symbol: str,
+    settings: Settings,
+    *,
+    end: datetime,
+) -> dict[str, Any]:
+    daily_result = fetch_bars(
+        settings,
+        symbol,
+        interval="1d",
+        period="2y",
+        end=end,
+    )
+    intraday_result = fetch_bars(
+        settings,
+        symbol,
+        interval="5m",
+        period="2mo",
+        start=end - timedelta(days=60),
+        end=end,
+    )
+    hourly = _resample_regular_session(intraday_result.frame, 60)
+    intraday = _resample_regular_session(intraday_result.frame, 15)
+    if len(daily_result.frame) < 220 or len(hourly) < 80 or len(intraday) < 80:
+        raise ValueError(
+            "insufficient valid bars after provider fallback: "
+            f"daily={len(daily_result.frame)}, hourly={len(hourly)}, intraday={len(intraday)}"
         )
-    except Exception:
-        return {symbol: pd.DataFrame() for symbol in symbols}
-    return {symbol: _extract_symbol(raw, symbol) for symbol in symbols}
+    return {
+        "daily": daily_result.frame,
+        "hourly": hourly,
+        "intraday": intraday,
+        "sources": {
+            "daily": daily_result.source,
+            "intraday": intraday_result.source,
+        },
+        "freshness": {
+            "daily": daily_result.freshness,
+            "intraday": intraday_result.freshness,
+        },
+    }
+
+
+def _fetch_all_frames(
+    symbols: list[str],
+    settings: Settings,
+) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    frames: dict[str, dict[str, Any]] = {}
+    errors: dict[str, str] = {}
+    workers = max(1, min(6, int(os.getenv("CLASSICAL_FETCH_WORKERS", "3"))))
+    end = datetime.now(timezone.utc)
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(_fetch_symbol_frames, symbol, settings, end=end): symbol
+            for symbol in symbols
+        }
+        for future in as_completed(futures):
+            symbol = futures[future]
+            try:
+                frames[symbol] = future.result()
+            except Exception as exc:  # noqa: BLE001 - preserve failure evidence per symbol
+                errors[symbol] = f"{type(exc).__name__}: {exc}"
+    return frames, errors
 
 
 def _avg_dollar_volume(frame: pd.DataFrame, lookback: int = 20) -> float:
@@ -116,17 +225,20 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
     else:
         symbols = []
 
-    daily = _download(symbols, period="1y", interval="1d")
-    hourly = _download(symbols, period="60d", interval="60m")
-    intraday = _download(symbols, period="10d", interval="15m")
+    settings = Settings()
+    settings.validate()
+    frames, errors = _fetch_all_frames(symbols, settings)
     min_dollar_volume = float(os.getenv("CLASSICAL_MIN_DOLLAR_VOLUME", "100000000"))
+    min_data_coverage = float(os.getenv("CLASSICAL_MIN_DATA_COVERAGE", "0.60"))
 
     signals: list[dict[str, Any]] = []
     waits: list[dict[str, Any]] = []
-    errors: dict[str, str] = {}
     for symbol in symbols:
+        bundle = frames.get(symbol)
+        if bundle is None:
+            continue
         try:
-            dollar_volume = _avg_dollar_volume(daily.get(symbol, pd.DataFrame()))
+            dollar_volume = _avg_dollar_volume(bundle["daily"])
             if dollar_volume < min_dollar_volume:
                 waits.append(
                     {
@@ -139,14 +251,16 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
                 continue
             result = build_direction(
                 symbol,
-                daily.get(symbol, pd.DataFrame()),
-                hourly.get(symbol, pd.DataFrame()),
-                intraday.get(symbol, pd.DataFrame()),
+                bundle["daily"],
+                bundle["hourly"],
+                bundle["intraday"],
             ).as_dict()
             result["avg_dollar_volume_20d"] = dollar_volume
             result["optionability_verified_by_occ"] = True
             result["signal_source"] = "UNDERLYING_CLASSICAL_TECHNICALS_ONLY"
             result["uses_option_chain_data"] = False
+            result["market_data_sources"] = bundle["sources"]
+            result["market_data_freshness"] = bundle["freshness"]
             result["rank_score"] = abs(int(result.get("agreement_score") or 0)) * 10 + min(
                 20.0,
                 math.log10(max(dollar_volume, 1.0)) * 2,
@@ -155,7 +269,7 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
                 signals.append(result)
             else:
                 waits.append(result)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - isolate one symbol from the remaining universe
             errors[symbol] = f"{type(exc).__name__}: {exc}"
 
     signals.sort(
@@ -166,6 +280,20 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
         ),
         reverse=True,
     )
+
+    evaluated = len(signals) + len(waits)
+    coverage = evaluated / len(symbols) if symbols else 0.0
+    operational_status = (
+        "READY"
+        if universe.official_verified and coverage >= min_data_coverage
+        else "DEGRADED"
+        if evaluated
+        else "FAILED"
+    )
+    source_counts: dict[str, int] = {}
+    for bundle in frames.values():
+        for source in set(bundle.get("sources", {}).values()):
+            source_counts[str(source)] = source_counts.get(str(source), 0) + 1
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -179,6 +307,10 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
             "calls": sum(row.get("decision") == "CALL" for row in signals),
             "puts": sum(row.get("decision") == "PUT" for row in signals),
             "waits": len(waits),
+            "data_errors": len(errors),
+            "data_coverage_ratio": round(coverage, 4),
+            "minimum_data_coverage_ratio": min_data_coverage,
+            "operational_status": operational_status,
             "minimum_avg_dollar_volume_20d": min_dollar_volume,
         },
         "policy": {
@@ -214,6 +346,13 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
             "occ_cache_used": universe.cache_used,
             "occ_errors": universe.errors,
         },
+        "market_data": {
+            "provider_order_daily": settings.daily_provider_order,
+            "provider_order_intraday": settings.intraday_provider_order,
+            "source_counts": source_counts,
+            "fail_closed": True,
+            "missing_data_is_wait": False,
+        },
         "signals": signals,
         "waits": waits,
         "errors": errors,
@@ -233,7 +372,9 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run underlying-only classical CALL/PUT direction radar")
+    parser = argparse.ArgumentParser(
+        description="Run underlying-only classical CALL/PUT direction radar"
+    )
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     parser.add_argument(
         "--max-symbols",
@@ -246,8 +387,16 @@ def main() -> None:
     print(
         "Classical direction radar: "
         f"verified={summary['companies_verified']} "
-        f"calls={summary['calls']} puts={summary['puts']} waits={summary['waits']}"
+        f"calls={summary['calls']} puts={summary['puts']} waits={summary['waits']} "
+        f"coverage={summary['data_coverage_ratio']:.0%} "
+        f"status={summary['operational_status']}"
     )
+    if summary["operational_status"] != "READY":
+        raise RuntimeError(
+            "Classical direction radar failed closed because valid market-data coverage "
+            f"was {summary['data_coverage_ratio']:.0%}; required "
+            f"{summary['minimum_data_coverage_ratio']:.0%}."
+        )
 
 
 if __name__ == "__main__":

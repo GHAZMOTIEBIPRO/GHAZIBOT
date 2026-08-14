@@ -4,9 +4,10 @@ import math
 
 import pandas as pd
 
+import scripts.run_classical_direction_radar as runner
+import scripts.send_classical_direction_alerts as sender
 from options_radar.classical_stock_direction import analyze_timeframe, build_direction
 from scripts.run_classical_direction_radar import DEFAULT_COMPANIES
-import scripts.send_classical_direction_alerts as sender
 
 
 def _frame(*, count: int = 260, bullish: bool = True) -> pd.DataFrame:
@@ -28,9 +29,22 @@ def _frame(*, count: int = 260, bullish: bool = True) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _flat_frame(count: int = 180) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "Open": [100.0] * count,
+            "High": [101.0] * count,
+            "Low": [99.0] * count,
+            "Close": [100.0] * count,
+            "Volume": [5_000_000] * count,
+        }
+    )
+
+
 def test_classical_engine_produces_call_when_three_timeframes_align():
     result = build_direction("AAPL", _frame(), _frame(count=180), _frame(count=180))
     assert result.decision == "CALL"
+    assert result.agreement_pct == 100
     assert result.daily.direction == "BULLISH"
     assert result.hourly.direction == "BULLISH"
     assert result.intraday.direction == "BULLISH"
@@ -44,6 +58,7 @@ def test_classical_engine_produces_put_when_three_timeframes_align():
         _frame(count=180, bullish=False),
     )
     assert result.decision == "PUT"
+    assert result.agreement_pct == 100
     assert result.daily.direction == "BEARISH"
     assert result.hourly.direction == "BEARISH"
     assert result.intraday.direction == "BEARISH"
@@ -59,6 +74,18 @@ def test_classical_engine_waits_when_hourly_conflicts_with_daily():
     assert result.decision == "WAIT"
 
 
+def test_classical_engine_requires_all_three_timeframes_to_align():
+    result = build_direction(
+        "NVDA",
+        _frame(),
+        _flat_frame(),
+        _frame(count=180),
+    )
+    assert result.hourly.direction == "NEUTRAL"
+    assert result.agreement_pct == 67
+    assert result.decision == "WAIT"
+
+
 def test_timeframe_exposes_only_classical_structure_features():
     view = analyze_timeframe(_frame(), "1D")
     assert view.trendline_bias in {"BULLISH", "BEARISH", "NEUTRAL"}
@@ -71,7 +98,38 @@ def test_company_universe_is_large_company_only_and_excludes_funds_indexes():
     forbidden = {"SPY", "QQQ", "IWM", "SPX", "VIX", "RUT", "NDX"}
     assert not forbidden.intersection(DEFAULT_COMPANIES)
     assert len(DEFAULT_COMPANIES) >= 48
-    assert {"AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "JPM", "XOM"}.issubset(DEFAULT_COMPANIES)
+    assert {"AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "JPM", "XOM"}.issubset(
+        DEFAULT_COMPANIES
+    )
+
+
+def test_intraday_resampling_uses_completed_regular_session_bars():
+    index = pd.date_range("2025-06-02 13:30:00+00:00", periods=78, freq="5min")
+    source = pd.DataFrame(
+        {
+            "Open": range(78),
+            "High": [value + 1 for value in range(78)],
+            "Low": [value - 1 for value in range(78)],
+            "Close": [value + 0.5 for value in range(78)],
+            "Volume": [1_000_000] * 78,
+        },
+        index=index,
+    )
+    bars_15m = runner._resample_regular_session(source, 15)
+    bars_60m = runner._resample_regular_session(source, 60)
+    assert len(bars_15m) == 26
+    assert len(bars_60m) == 6
+    assert bars_15m.index.tz is not None
+
+
+def test_fetch_failures_are_errors_not_waits(monkeypatch):
+    def fail(*args, **kwargs):
+        raise RuntimeError("provider unavailable")
+
+    monkeypatch.setattr(runner, "_fetch_symbol_frames", fail)
+    frames, errors = runner._fetch_all_frames(["AAPL"], runner.Settings())
+    assert frames == {}
+    assert "provider unavailable" in errors["AAPL"]
 
 
 def test_arabic_message_states_direction_and_underlying_only_method():
@@ -80,6 +138,8 @@ def test_arabic_message_states_direction_and_underlying_only_method():
     message = sender._message(row)
     assert "CALL — صعود" in message
     assert "اتفاق الاتجاه" in message
+    assert "درجة توافق الأطر" in message
+    assert "100/100" in message
     assert "تحليل السهم نفسه فقط" in message
     assert "لا يستخدم سعر العقد" in message
     assert "سترايك" in message

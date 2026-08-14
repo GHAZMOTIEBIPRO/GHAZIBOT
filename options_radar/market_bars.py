@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable
+from typing import Any
 
 import pandas as pd
 import requests
@@ -169,6 +170,76 @@ def _alpaca(settings: Settings, symbol: str, *, interval: str, start: datetime,
     return BarResult(_normalise(frame, index="timestamp"), "alpaca", f"Alpaca {settings.alpaca_stock_feed} feed")
 
 
+def _tiingo(settings: Settings, symbol: str, *, interval: str, start: datetime,
+            end: datetime) -> BarResult:
+    if not settings.tiingo_api_key:
+        raise RuntimeError("TIINGO_API_KEY is not configured")
+    headers = {
+        "Authorization": f"Token {settings.tiingo_api_key}",
+        "Content-Type": "application/json",
+    }
+    if interval == "1d":
+        url = f"https://api.tiingo.com/tiingo/daily/{symbol}/prices"
+        params = {
+            "startDate": start.date().isoformat(),
+            "endDate": end.date().isoformat(),
+            "resampleFreq": "daily",
+        }
+    else:
+        url = f"https://api.tiingo.com/iex/{symbol}/prices"
+        params = {
+            "startDate": start.isoformat(),
+            "endDate": end.isoformat(),
+            "resampleFreq": "5min",
+            "columns": "date,open,high,low,close,volume",
+        }
+    response = requests.get(url, params=params, headers=headers, timeout=30)
+    response.raise_for_status()
+    frame = pd.DataFrame(response.json() or [])
+    if not frame.empty:
+        frame = frame.rename(columns={
+            "date": "timestamp", "open": "Open", "high": "High",
+            "low": "Low", "close": "Close", "volume": "Volume",
+        })
+    return BarResult(
+        _normalise(frame, index="timestamp"),
+        "tiingo",
+        "Tiingo account feed; entitlement and delay depend on the account",
+    )
+
+
+def _finnhub(settings: Settings, symbol: str, *, interval: str, start: datetime,
+             end: datetime) -> BarResult:
+    if not settings.finnhub_api_key:
+        raise RuntimeError("FINNHUB_API_KEY is not configured")
+    response = requests.get(
+        "https://api.finnhub.io/api/v1/stock/candle",
+        params={
+            "symbol": symbol,
+            "resolution": "D" if interval == "1d" else "5",
+            "from": int(start.timestamp()),
+            "to": int(end.timestamp()),
+            "token": settings.finnhub_api_key,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict) or payload.get("s") != "ok":
+        raise RuntimeError(str((payload or {}).get("s", "invalid Finnhub response")))
+    frame = pd.DataFrame({
+        "timestamp": pd.to_datetime(payload.get("t", []), unit="s", utc=True),
+        "Open": payload.get("o", []), "High": payload.get("h", []),
+        "Low": payload.get("l", []), "Close": payload.get("c", []),
+        "Volume": payload.get("v", []),
+    })
+    return BarResult(
+        _normalise(frame, index="timestamp"),
+        "finnhub",
+        "Finnhub account feed; entitlement and delay depend on the account",
+    )
+
+
 def _twelve_data(settings: Settings, symbol: str, *, interval: str, start: datetime,
                  end: datetime) -> BarResult:
     if not settings.twelve_data_api_key:
@@ -259,6 +330,10 @@ def _provider_names(settings: Settings, *, intraday: bool) -> list[str]:
 
 def _call_provider(name: str, settings: Settings, symbol: str, *, interval: str,
                    start: datetime, end: datetime, period: str) -> BarResult:
+    if name == "tiingo":
+        return _tiingo(settings, symbol, interval=interval, start=start, end=end)
+    if name == "finnhub":
+        return _finnhub(settings, symbol, interval=interval, start=start, end=end)
     if name == "tradier":
         return _tradier(settings, symbol, interval=interval, start=start, end=end)
     if name == "alpaca":
@@ -285,7 +360,7 @@ def fetch_bars(settings: Settings, symbol: str, *, interval: str = "1d", period:
             if not result.frame.empty:
                 return result
             failures.append(f"{name}: empty")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - provider fallback must continue
             failures.append(f"{name}: {exc}")
             LOGGER.debug("Bar provider %s failed for %s: %s", name, symbol, exc)
     raise RuntimeError("All bar providers failed: " + " | ".join(failures))
@@ -303,6 +378,8 @@ def get_intraday_history(settings: Settings, symbol: str, start: datetime,
 def configured_bar_sources(settings: Settings) -> list[dict[str, Any]]:
     return [
         {"name": "yahoo", "configured": True, "role": "unofficial fallback"},
+        {"name": "tiingo", "configured": bool(settings.tiingo_api_key), "role": "official account API"},
+        {"name": "finnhub", "configured": bool(settings.finnhub_api_key), "role": "official account API"},
         {"name": "tradier", "configured": bool(settings.tradier_token), "role": "official account API"},
         {"name": "alpaca", "configured": bool(settings.alpaca_api_key and settings.alpaca_secret_key), "role": "official account API"},
         {"name": "twelve_data", "configured": bool(settings.twelve_data_api_key), "role": "optional free-account API"},
