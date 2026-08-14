@@ -16,41 +16,16 @@ from options_radar.optionable_universe import IndependentOptionableUniverse
 
 DEFAULT_OUTPUT = Path("public/data/classical_direction_latest.json")
 
-# Curated large/mega-cap U.S. companies. OCC verification is applied at runtime.
-# ETFs and indexes are intentionally excluded because this path is company-only.
+# Curated U.S. mega/large-cap operating companies with deep underlying liquidity.
+# OCC verification is mandatory at runtime. ETFs and indexes are intentionally excluded.
 DEFAULT_COMPANIES = (
-    "AAPL",
-    "MSFT",
-    "NVDA",
-    "AMZN",
-    "GOOGL",
-    "META",
-    "AVGO",
-    "TSLA",
-    "JPM",
-    "V",
-    "MA",
-    "WMT",
-    "LLY",
-    "XOM",
-    "COST",
-    "NFLX",
-    "ORCL",
-    "HD",
-    "PG",
-    "JNJ",
-    "ABBV",
-    "BAC",
-    "CRM",
-    "AMD",
-    "KO",
-    "PEP",
-    "MRK",
-    "CSCO",
-    "ACN",
-    "MCD",
-    "GE",
-    "CAT",
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "AVGO", "TSLA",
+    "BRK.B", "JPM", "V", "MA", "WMT", "LLY", "XOM", "COST",
+    "NFLX", "ORCL", "HD", "PG", "JNJ", "ABBV", "BAC", "CRM",
+    "AMD", "KO", "PEP", "MRK", "CSCO", "ACN", "MCD", "GE",
+    "CAT", "UNH", "CVX", "IBM", "QCOM", "TXN", "AMGN", "TMO",
+    "LIN", "PM", "RTX", "GS", "MS", "BLK", "C", "AXP",
+    "BA", "AMAT", "MU", "NOW", "PANW", "DIS", "UBER", "INTC",
 )
 
 
@@ -66,34 +41,41 @@ def _symbols_from_env() -> list[str]:
     return output or list(DEFAULT_COMPANIES)
 
 
+def _yf_symbol(symbol: str) -> str:
+    # Yahoo uses dash notation for Berkshire class B while OCC may expose dot notation.
+    return {"BRK.B": "BRK-B"}.get(symbol.upper(), symbol.upper())
+
+
 def _extract_symbol(raw: pd.DataFrame, symbol: str) -> pd.DataFrame:
     if raw is None or raw.empty:
         return pd.DataFrame()
     data = raw.copy()
     if not isinstance(data.columns, pd.MultiIndex):
         return data
+    candidates = {symbol.upper(), _yf_symbol(symbol).upper()}
     level0 = [str(value).upper() for value in data.columns.get_level_values(0)]
     level1 = [str(value).upper() for value in data.columns.get_level_values(1)]
-    target = symbol.upper()
-    if target in level0:
-        try:
-            return data.xs(symbol, axis=1, level=0, drop_level=True)
-        except KeyError:
-            return pd.DataFrame()
-    if target in level1:
-        try:
-            return data.xs(symbol, axis=1, level=1, drop_level=True)
-        except KeyError:
-            return pd.DataFrame()
+    for target in candidates:
+        if target in level0:
+            try:
+                return data.xs(target, axis=1, level=0, drop_level=True)
+            except KeyError:
+                pass
+        if target in level1:
+            try:
+                return data.xs(target, axis=1, level=1, drop_level=True)
+            except KeyError:
+                pass
     return pd.DataFrame()
 
 
 def _download(symbols: list[str], *, period: str, interval: str) -> dict[str, pd.DataFrame]:
     if not symbols:
         return {}
+    yahoo_symbols = [_yf_symbol(symbol) for symbol in symbols]
     try:
         raw = yf.download(
-            tickers=" ".join(symbols),
+            tickers=" ".join(yahoo_symbols),
             period=period,
             interval=interval,
             auto_adjust=False,
@@ -119,8 +101,8 @@ def _avg_dollar_volume(frame: pd.DataFrame, lookback: int = 20) -> float:
     return result if math.isfinite(result) else 0.0
 
 
-def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 32) -> dict[str, Any]:
-    requested = _symbols_from_env()[: max(10, int(max_symbols))]
+def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> dict[str, Any]:
+    requested = _symbols_from_env()[: max(12, int(max_symbols))]
     universe = IndependentOptionableUniverse().build(
         requested,
         max_symbols=len(requested),
@@ -132,8 +114,6 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 32) -> d
     if universe.official_verified:
         symbols = [symbol for symbol in requested if symbol in official_set]
     else:
-        # This path promises "large companies with listed options"; do not emit
-        # directional alerts when current/cached OCC verification is unavailable.
         symbols = []
 
     daily = _download(symbols, period="1y", interval="1d")
@@ -152,7 +132,7 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 32) -> d
                     {
                         "symbol": symbol,
                         "decision": "WAIT",
-                        "reason_ar": "تم استبعاده لأن سيولة السهم النقدية أقل من حد هذا المسار.",
+                        "reason_ar": "تم استبعاده لأن متوسط سيولة السهم النقدية أقل من الحد المطلوب للمسار.",
                         "avg_dollar_volume_20d": dollar_volume,
                     }
                 )
@@ -190,7 +170,7 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 32) -> d
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "path": "classical_direction",
-        "architecture": "underlying_only_classical_direction_v1",
+        "architecture": "underlying_only_classical_direction_v2",
         "summary": {
             "companies_requested": len(requested),
             "occ_optionability_verified": universe.official_verified,
@@ -211,13 +191,17 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 32) -> d
             "macd_used": False,
             "vwap_used": False,
             "ict_smc_used": False,
+            "news_used_for_direction": False,
+            "fundamentals_used_for_direction": False,
             "classical_inputs": [
-                "Dow trend structure",
-                "support/resistance",
+                "Dow trend structure: higher highs/lows or lower highs/lows",
+                "completed swing support/resistance",
+                "classical trendlines from swing points",
                 "simple moving averages 20/50/200",
                 "volume confirmation",
-                "breakout/breakdown",
-                "classical candlesticks",
+                "breakout/breakdown and retest",
+                "double top/double bottom",
+                "engulfing/hammer/shooting-star candles",
                 "multi-timeframe agreement 1D/1H/15m",
             ],
             "decision_values": ["CALL", "PUT", "WAIT"],
@@ -234,9 +218,10 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 32) -> d
         "waits": waits,
         "errors": errors,
         "limitations_ar": [
-            "CALL وPUT هنا يعبران عن اتجاه متوقع للسهم فقط؛ لا يتم اختيار عقد أو سترايك أو تاريخ انتهاء.",
+            "CALL وPUT هنا يعبران عن اتجاه متوقع للسهم نفسه فقط؛ لا يتم اختيار عقد أو سترايك أو تاريخ انتهاء.",
             "وجود خيارات على الشركة يتم التحقق منه عبر OCC، لكن بيانات العقود نفسها لا تدخل في القرار.",
-            "المدارس الكلاسيكية قد تتأخر عن الانعكاسات السريعة؛ لذلك يتم اشتراط اتفاق أكثر من إطار زمني.",
+            "لا يستخدم هذا المسار RSI أو MACD أو VWAP أو ICT/SMC أو اليونانيات أو تدفق الأوبشن.",
+            "إذا لم تتفق القراءة اليومية والساعة و15 دقيقة فالمخرَج WAIT ولا يرسل البوت تنبيه اتجاه.",
         ],
     }
     destination = Path(output_path)
@@ -253,7 +238,7 @@ def main() -> None:
     parser.add_argument(
         "--max-symbols",
         type=int,
-        default=int(os.getenv("CLASSICAL_DIRECTION_MAX_SYMBOLS", "32")),
+        default=int(os.getenv("CLASSICAL_DIRECTION_MAX_SYMBOLS", "48")),
     )
     args = parser.parse_args()
     payload = run(output_path=args.output, max_symbols=args.max_symbols)
