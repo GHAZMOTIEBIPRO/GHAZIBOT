@@ -92,6 +92,16 @@ def _symbols_from_env() -> list[str]:
     return output or list(DEFAULT_COMPANIES)
 
 
+def _intraday_lookback_days() -> int:
+    """Stay safely inside Yahoo's strict 60-day limit for 5-minute bars."""
+    raw = str(os.getenv("CLASSICAL_INTRADAY_LOOKBACK_DAYS") or "30").strip()
+    try:
+        days = int(raw)
+    except ValueError:
+        days = 30
+    return max(30, min(55, days))
+
+
 def _resample_regular_session(frame: pd.DataFrame, minutes: int) -> pd.DataFrame:
     """Build completed New York regular-session bars from normalized 5-minute data."""
     if frame is None or frame.empty:
@@ -151,7 +161,7 @@ def _fetch_symbol_frames(
         symbol,
         interval="5m",
         period="2mo",
-        start=end - timedelta(days=60),
+        start=end - timedelta(days=_intraday_lookback_days()),
         end=end,
     )
     hourly = _resample_regular_session(intraday_result.frame, 60)
