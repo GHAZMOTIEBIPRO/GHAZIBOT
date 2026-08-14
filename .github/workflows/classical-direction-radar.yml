@@ -9,6 +9,15 @@ on:
       - "options_radar/classical_stock_direction.py"
       - "scripts/run_classical_direction_radar.py"
       - "scripts/send_classical_direction_alerts.py"
+  pull_request:
+    paths:
+      - ".github/workflows/classical-direction-radar.yml"
+      - "options_radar/classical_stock_direction.py"
+      - "options_radar/market_bars.py"
+      - "options_radar/settings.py"
+      - "scripts/run_classical_direction_radar.py"
+      - "scripts/send_classical_direction_alerts.py"
+      - "tests/test_classical_stock_direction.py"
   schedule:
     - cron: "*/15 13-21 * * 1-5"
 
@@ -76,10 +85,10 @@ jobs:
               print('send=true')
               print('reason=manual_dispatch')
               raise SystemExit
-          if event == 'push':
+          if event in {'push', 'pull_request'}:
               print('scan=true')
               print('send=false')
-              print('reason=push_validation_only')
+              print('reason=code_validation_only')
               raise SystemExit
 
           cal = xcals.get_calendar('XNYS')
