@@ -122,6 +122,15 @@ def test_intraday_resampling_uses_completed_regular_session_bars():
     assert bars_15m.index.tz is not None
 
 
+def test_intraday_lookback_stays_inside_provider_limit(monkeypatch):
+    monkeypatch.delenv("CLASSICAL_INTRADAY_LOOKBACK_DAYS", raising=False)
+    assert runner._intraday_lookback_days() == 30
+    monkeypatch.setenv("CLASSICAL_INTRADAY_LOOKBACK_DAYS", "60")
+    assert runner._intraday_lookback_days() == 55
+    monkeypatch.setenv("CLASSICAL_INTRADAY_LOOKBACK_DAYS", "invalid")
+    assert runner._intraday_lookback_days() == 30
+
+
 def test_fetch_failures_are_errors_not_waits(monkeypatch):
     def fail(*args, **kwargs):
         raise RuntimeError("provider unavailable")
