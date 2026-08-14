@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import os
-
 import scripts.send_independent_path_alerts as sender
 
 
-def test_option_message_never_claims_sweep_or_opening_from_snapshot():
+def test_option_message_is_arabic_and_never_claims_sweep_or_opening_from_snapshot():
     row = {
         "symbol": "NVDA",
         "option_type": "call",
@@ -29,14 +27,21 @@ def test_option_message_never_claims_sweep_or_opening_from_snapshot():
             "execution_pressure_note_ar": "ضغط شراء تقديري وليس إثباتًا",
             "volume_vs_prior_oi_note_ar": "نشاط غير طبيعي فقط",
         },
+        "_provider_readiness": {
+            "production_quote_ready": True,
+            "production_flow_ready": False,
+        },
     }
     message = sender._option_message(row)
-    assert "Sweep:</b> غير مؤكد" in message
-    assert "Opening position:</b> غير مؤكد" in message
-    assert "لا ينتظر إشارة من مسار الأسهم" in message
+    assert "الاتجاه المرصود" in message
+    assert "CALL — اتجاه صاعد" in message
+    assert "السويب غير مؤكد" in message
+    assert "فتح مركز جديد غير مؤكد" in message
+    assert "وش أسوي الآن؟" in message
+    assert "مسار الأوبشن مستقل" in message
 
 
-def test_stock_message_says_options_are_not_required():
+def test_stock_message_is_actionable_arabic_and_options_are_not_required():
     row = {
         "symbol": "ABC",
         "price": 4.2,
@@ -48,16 +53,25 @@ def test_stock_message_says_options_are_not_required():
         "market_status_evidence": [],
     }
     message = sender._stock_message(row)
-    assert "مسار الأسهم" in message
-    assert "لا يحتاج وجود عقود أوبشن" in message
+    assert "تنبيه سهم" in message
+    assert "بداية انطلاقة" in message
+    assert "الخلاصة" in message
+    assert "أهم مخاطرة" in message
+    assert "وش أسوي الآن؟" in message
+    assert "مسار الأسهم مستقل" in message
 
 
-def test_options_sender_deduplicates_by_contract(monkeypatch):
+def test_options_sender_deduplicates_by_contract_when_provider_is_ready(monkeypatch):
     sent: list[str] = []
     monkeypatch.setattr(sender, "_send", sent.append)
     monkeypatch.setenv("OPTIONS_ALERT_MIN_SCORE", "65")
     payload = {
         "path": "options",
+        "provider_readiness": {
+            "status": "LIVE_QUOTES_NO_TRADE_FLOW",
+            "production_quote_ready": True,
+            "production_flow_ready": False,
+        },
         "contracts": [
             {
                 "symbol": "NVDA",
@@ -86,6 +100,32 @@ def test_options_sender_deduplicates_by_contract(monkeypatch):
     assert sender.send_options(payload, state) == 1
     assert sender.send_options(payload, state) == 0
     assert len(sent) == 1
+
+
+def test_options_sender_fails_closed_on_fallback_data(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(sender, "_send", sent.append)
+    payload = {
+        "path": "options",
+        "provider_readiness": {
+            "status": "FALLBACK_ONLY",
+            "production_quote_ready": False,
+            "production_flow_ready": False,
+        },
+        "contracts": [
+            {
+                "symbol": "NVDA",
+                "contract_symbol": "NVDA260828C00200000",
+                "option_type": "call",
+                "score": 99,
+                "flow_momentum_score": 99,
+            }
+        ],
+    }
+    state = {"sent": {}}
+    assert sender.send_options(payload, state) == 0
+    assert sent == []
+    assert state["blocked_reason"] == "FALLBACK_ONLY"
 
 
 def test_stock_sender_does_not_read_options_fields(monkeypatch):
