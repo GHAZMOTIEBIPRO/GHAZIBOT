@@ -4,6 +4,7 @@ import argparse
 import html
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -61,6 +62,37 @@ def _provider_ar(status: str) -> str:
     }.get(status, status or "غير معروف")
 
 
+def _reason_ar(reason: str) -> str:
+    text = str(reason or "").strip()
+    lowered = text.lower()
+    if "no usable option-chain source" in lowered:
+        return "لا يوجد حاليًا مصدر عقود أوبشن صالح للاستخدام."
+    if "only delayed, indicative, unofficial, or fallback option data" in lowered:
+        return "مصادر الأوبشن الحالية احتياطية أو متأخرة أو استرشادية فقط."
+    if "live option quotes are available, but trade+nbbo flow evidence is not active" in lowered:
+        return "أسعار الأوبشن حية، لكن تدفق الصفقات مع NBBO غير مفعل بالكامل."
+    if "a live trade/quote flow source is active" in lowered:
+        return "مصدر حي للصفقات والأسعار يعمل حاليًا."
+    match = re.search(r"(\d+) chain\(s\) are yahoo/yfinance-only fallback", lowered)
+    if match:
+        return f"عدد {match.group(1)} سلسلة عقود تعتمد على Yahoo/YFinance فقط كمصدر احتياطي."
+    match = re.search(r"(\d+) chain\(s\) are delayed, indicative, or unofficial", lowered)
+    if match:
+        return f"عدد {match.group(1)} سلسلة عقود بياناتها متأخرة أو استرشادية أو غير رسمية."
+    match = re.search(r"(\d+) chain\(s\) have successful cross-source retrieval", lowered)
+    if match:
+        return f"عدد {match.group(1)} سلسلة عقود تم تأكيدها من أكثر من مصدر."
+    match = re.search(r"(\d+) chain\(s\) report opra-backed evidence", lowered)
+    if match:
+        return f"عدد {match.group(1)} سلسلة عقود لديها دليل مدعوم ببيانات OPRA."
+    if lowered.startswith("streaming source active:"):
+        source = text.split(":", 1)[-1].strip()
+        return f"مصدر البث الحي النشط: {source}."
+    if any(ord(ch) > 127 for ch in text):
+        return text
+    return "يوجد سبب تقني مسجل في النظام؛ راجع السجل التفصيلي عند الحاجة."
+
+
 def maybe_send(path_name: str, payload: dict[str, Any], state: dict[str, Any]) -> bool:
     health = payload.get("health") if isinstance(payload.get("health"), dict) else {}
     current = str(health.get("status") or "UNKNOWN").upper()
@@ -105,7 +137,7 @@ def maybe_send(path_name: str, payload: dict[str, Any], state: dict[str, Any]) -
         if reasons:
             lines.extend(["", "🔎 <b>السبب</b>"])
             for reason in reasons[:4]:
-                lines.append(f"• {html.escape(reason[:360])}")
+                lines.append(f"• {html.escape(_reason_ar(reason)[:360])}")
 
         lines.extend(["", "🧭 <b>وش يعني هذا لك؟</b>"])
         if current == "HEALTHY":
