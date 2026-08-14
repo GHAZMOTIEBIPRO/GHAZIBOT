@@ -4,7 +4,7 @@ import math
 
 import pandas as pd
 
-from options_radar.classical_stock_direction import build_direction
+from options_radar.classical_stock_direction import analyze_timeframe, build_direction
 from scripts.run_classical_direction_radar import DEFAULT_COMPANIES
 import scripts.send_classical_direction_alerts as sender
 
@@ -59,20 +59,31 @@ def test_classical_engine_waits_when_hourly_conflicts_with_daily():
     assert result.decision == "WAIT"
 
 
-def test_company_universe_excludes_etfs_and_indexes():
+def test_timeframe_exposes_only_classical_structure_features():
+    view = analyze_timeframe(_frame(), "1D")
+    assert view.trendline_bias in {"BULLISH", "BEARISH", "NEUTRAL"}
+    assert view.pattern in {"DOUBLE_TOP", "DOUBLE_BOTTOM", "NONE"}
+    assert isinstance(view.breakout_retest, bool)
+    assert isinstance(view.breakdown_retest, bool)
+
+
+def test_company_universe_is_large_company_only_and_excludes_funds_indexes():
     forbidden = {"SPY", "QQQ", "IWM", "SPX", "VIX", "RUT", "NDX"}
     assert not forbidden.intersection(DEFAULT_COMPANIES)
+    assert len(DEFAULT_COMPANIES) >= 48
+    assert {"AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "JPM", "XOM"}.issubset(DEFAULT_COMPANIES)
 
 
-def test_arabic_message_states_direction_and_no_contract_selection():
+def test_arabic_message_states_direction_and_underlying_only_method():
     row = build_direction("AAPL", _frame(), _frame(count=180), _frame(count=180)).as_dict()
     row["rank_score"] = 80
     message = sender._message(row)
     assert "CALL — صعود" in message
-    assert "اتفاق المدارس الكلاسيكية" in message
-    assert "حركة السهم فقط" in message
-    assert "لا نستخدم بيانات عقد الأوبشن" in message
+    assert "اتفاق الاتجاه" in message
+    assert "تحليل السهم نفسه فقط" in message
+    assert "لا يستخدم سعر العقد" in message
     assert "سترايك" in message
+    assert "متى أتأكد ومتى ألغي الفكرة؟" in message
 
 
 def test_sender_deduplicates_same_direction(monkeypatch):
@@ -85,3 +96,11 @@ def test_sender_deduplicates_same_direction(monkeypatch):
     assert sender.send(payload, state) == 1
     assert sender.send(payload, state) == 0
     assert len(sent) == 1
+
+
+def test_sender_never_sends_wait(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(sender, "_send", sent.append)
+    payload = {"path": "classical_direction", "signals": [{"symbol": "AAPL", "decision": "WAIT"}]}
+    assert sender.send(payload, {"sent": {}}) == 0
+    assert sent == []
