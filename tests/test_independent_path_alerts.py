@@ -33,8 +33,9 @@ def test_option_message_is_arabic_and_never_claims_sweep_or_opening_from_snapsho
         },
     }
     message = sender._option_message(row)
-    assert "الاتجاه المرصود" in message
+    assert "الاتجاه المرصود" not in message
     assert "CALL — اتجاه صاعد" in message
+    assert "أولوية المتابعة" in message
     assert "السويب غير مؤكد" in message
     assert "فتح مركز جديد غير مؤكد" in message
     assert "وش أسوي الآن؟" in message
@@ -55,8 +56,8 @@ def test_stock_message_is_actionable_arabic_and_options_are_not_required():
     message = sender._stock_message(row)
     assert "تنبيه سهم" in message
     assert "بداية انطلاقة" in message
-    assert "الخلاصة" in message
-    assert "أهم مخاطرة" in message
+    assert "أولوية المتابعة" in message
+    assert "الخطر الأهم" in message
     assert "وش أسوي الآن؟" in message
     assert "مسار الأسهم مستقل" in message
 
