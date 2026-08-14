@@ -44,6 +44,23 @@ def _send(text: str) -> None:
         raise RuntimeError("Telegram rejected radar-health message")
 
 
+def _status_ar(status: str) -> str:
+    return {
+        "HEALTHY": "سليم",
+        "DEGRADED": "متدهور جزئيًا",
+        "CRITICAL": "حرج",
+    }.get(status, status)
+
+
+def _provider_ar(status: str) -> str:
+    return {
+        "CRITICAL_NO_OPTION_DATA": "لا توجد بيانات أوبشن قابلة للاستخدام",
+        "FALLBACK_ONLY": "مصدر احتياطي/متأخر فقط",
+        "LIVE_QUOTES_NO_TRADE_FLOW": "أسعار حية لكن تدفق الصفقات غير مكتمل",
+        "LIVE_FLOW_READY": "بيانات حية وتدفق صفقات جاهز",
+    }.get(status, status or "غير معروف")
+
+
 def maybe_send(path_name: str, payload: dict[str, Any], state: dict[str, Any]) -> bool:
     health = payload.get("health") if isinstance(payload.get("health"), dict) else {}
     current = str(health.get("status") or "UNKNOWN").upper()
@@ -54,22 +71,52 @@ def maybe_send(path_name: str, payload: dict[str, Any], state: dict[str, Any]) -
     changed = previous != current
     should_send = changed and (current != "HEALTHY" or previous in {"DEGRADED", "CRITICAL"})
     if should_send:
-        title = "🚨" if current == "CRITICAL" else ("⚠️" if current == "DEGRADED" else "✅")
+        icon = "🚨" if current == "CRITICAL" else ("⚠️" if current == "DEGRADED" else "✅")
         label = "مسار الأسهم" if path_name == "stocks" else "مسار عقود الأوبشن"
         reasons = [str(item) for item in health.get("reasons", []) if str(item).strip()]
+        readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
+
         lines = [
-            f"{title} <b>بلاك بوكس Ω — صحة النظام</b>",
+            f"{icon} <b>بلاك بوكس Ω | صحة البوت</b>",
             "",
-            f"{html.escape(label)}: <b>{html.escape(current)}</b>",
+            f"المسار: <b>{html.escape(label)}</b>",
+            f"الحالة الآن: <b>{html.escape(_status_ar(current))}</b>",
         ]
         if previous in RANK:
-            lines.append(f"الحالة السابقة: {html.escape(previous)}")
-        for reason in reasons[:5]:
-            lines.append(f"• {html.escape(reason[:360])}")
+            lines.append(f"الحالة السابقة: {html.escape(_status_ar(previous))}")
+
+        if path_name == "options" and readiness:
+            provider_status = str(readiness.get("status") or "")
+            quote_ready = readiness.get("production_quote_ready") is True
+            flow_ready = readiness.get("production_flow_ready") is True
+            sources = [str(value) for value in readiness.get("sources", []) if str(value).strip()]
+            lines.extend(
+                [
+                    "",
+                    "🛰 <b>وضع بيانات الأوبشن</b>",
+                    f"• المصدر: <b>{html.escape(_provider_ar(provider_status))}</b>",
+                    f"• أسعار صالحة للتنبيه الإنتاجي: <b>{'نعم ✅' if quote_ready else 'لا ❌'}</b>",
+                    f"• تدفق صفقات حي كامل: <b>{'نعم ✅' if flow_ready else 'لا/غير مكتمل ⚠️'}</b>",
+                ]
+            )
+            if sources:
+                lines.append(f"• المصادر النشطة: {html.escape(', '.join(sources[:4]))}")
+
+        if reasons:
+            lines.extend(["", "🔎 <b>السبب</b>"])
+            for reason in reasons[:4]:
+                lines.append(f"• {html.escape(reason[:360])}")
+
+        lines.extend(["", "🧭 <b>وش يعني هذا لك؟</b>"])
         if current == "HEALTHY":
-            lines.append("✅ عاد المسار إلى الحالة السليمة.")
+            lines.append("المسار عاد للعمل بصورة سليمة، ويمكنه استئناف التنبيهات وفق شروطه المعتادة.")
+        elif path_name == "options" and readiness.get("production_quote_ready") is not True:
+            lines.append("لن أعتمد عقود الأوبشن كتوصيات إنتاجية من هذا المصدر. سيستمر الجمع والبحث والتعلم فقط إلى أن تصبح البيانات الحية صالحة.")
+        elif current == "CRITICAL":
+            lines.append("المسار غير موثوق حاليًا؛ اعتبر تنبيهاته متوقفة حتى وصول رسالة تعافٍ.")
         else:
-            lines.append("ℹ️ التنبيه يصف جودة/توفر البيانات؛ لا يعني وجود فرصة سوقية.")
+            lines.append("المسار يعمل جزئيًا، لكن جودة أو توفر بعض البيانات أقل من المطلوب؛ خذ هذا في الحسبان عند قراءة أي تنبيه.")
+
         _send("\n".join(lines))
     states[path_name] = {
         "status": current,
