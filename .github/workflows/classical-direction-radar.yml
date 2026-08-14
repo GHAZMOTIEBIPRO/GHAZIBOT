@@ -9,6 +9,15 @@ on:
       - "options_radar/classical_stock_direction.py"
       - "scripts/run_classical_direction_radar.py"
       - "scripts/send_classical_direction_alerts.py"
+  pull_request:
+    paths:
+      - ".github/workflows/classical-direction-radar.yml"
+      - "options_radar/classical_stock_direction.py"
+      - "options_radar/market_bars.py"
+      - "options_radar/settings.py"
+      - "scripts/run_classical_direction_radar.py"
+      - "scripts/send_classical_direction_alerts.py"
+      - "tests/test_classical_stock_direction.py"
   schedule:
     - cron: "*/15 13-21 * * 1-5"
 
@@ -28,14 +37,28 @@ jobs:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Classical Direction GHAZMOTIEBIPRO@users.noreply.github.com' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
       CLASSICAL_DIRECTION_MAX_SYMBOLS: ${{ secrets.CLASSICAL_DIRECTION_MAX_SYMBOLS || '48' }}
       CLASSICAL_MIN_DOLLAR_VOLUME: ${{ secrets.CLASSICAL_MIN_DOLLAR_VOLUME || '100000000' }}
+      CLASSICAL_MIN_DATA_COVERAGE: ${{ secrets.CLASSICAL_MIN_DATA_COVERAGE || '0.60' }}
+      CLASSICAL_FETCH_WORKERS: ${{ secrets.CLASSICAL_FETCH_WORKERS || '3' }}
+      CLASSICAL_INTRADAY_LOOKBACK_DAYS: ${{ secrets.CLASSICAL_INTRADAY_LOOKBACK_DAYS || '30' }}
       CLASSICAL_ALERT_MAX: ${{ secrets.CLASSICAL_ALERT_MAX || '3' }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -56,9 +79,16 @@ jobs:
           import exchange_calendars as xcals
           import pandas as pd
 
-          if os.getenv('GITHUB_EVENT_NAME') == 'workflow_dispatch':
-              print('open=true')
+          event = os.getenv('GITHUB_EVENT_NAME')
+          if event == 'workflow_dispatch':
+              print('scan=true')
+              print('send=true')
               print('reason=manual_dispatch')
+              raise SystemExit
+          if event in {'push', 'pull_request'}:
+              print('scan=true')
+              print('send=false')
+              print('reason=code_validation_only')
               raise SystemExit
 
           cal = xcals.get_calendar('XNYS')
@@ -67,19 +97,20 @@ jobs:
               is_open = bool(cal.is_open_on_minute(minute))
           except Exception:
               is_open = False
-          print(f"open={'true' if is_open else 'false'}")
+          print(f"scan={'true' if is_open else 'false'}")
+          print(f"send={'true' if is_open else 'false'}")
           print(f"reason={'regular_session' if is_open else 'market_closed'}")
           PY
 
       - name: Run classical direction radar
-        if: steps.market.outputs.open == 'true'
+        if: steps.market.outputs.scan == 'true'
         run: >-
           python -m scripts.run_classical_direction_radar
           --output public/data/classical_direction_latest.json
           --max-symbols "$CLASSICAL_DIRECTION_MAX_SYMBOLS"
 
       - name: Validate classical-only semantics
-        if: steps.market.outputs.open == 'true'
+        if: steps.market.outputs.scan == 'true'
         run: |
           python - <<'PY'
           import json
@@ -98,6 +129,10 @@ jobs:
           assert policy['ict_smc_used'] is False
           assert policy['news_used_for_direction'] is False
           assert policy['fundamentals_used_for_direction'] is False
+          assert payload['summary']['operational_status'] == 'READY'
+          assert payload['summary']['data_coverage_ratio'] >= payload['summary']['minimum_data_coverage_ratio']
+          assert payload['market_data']['fail_closed'] is True
+          assert payload['market_data']['missing_data_is_wait'] is False
           for row in payload.get('signals', []):
               assert row['decision'] in {'CALL', 'PUT'}
               assert row['uses_option_chain_data'] is False
@@ -106,7 +141,7 @@ jobs:
           PY
 
       - name: Upload classical direction payload
-        if: steps.market.outputs.open == 'true'
+        if: always() && steps.market.outputs.scan == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: classical-direction-radar
@@ -115,7 +150,7 @@ jobs:
           retention-days: 14
 
       - name: Restore persistent Telegram destination
-        if: steps.market.outputs.open == 'true'
+        if: steps.market.outputs.send == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -137,11 +172,11 @@ jobs:
           fi
 
       - name: Resolve Telegram destination
-        if: steps.market.outputs.open == 'true'
+        if: steps.market.outputs.send == 'true'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
       - name: Restore classical alert state
-        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -156,14 +191,14 @@ jobs:
           done
 
       - name: Send Arabic classical direction alerts
-        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
         run: >-
           python scripts/send_classical_direction_alerts.py
           --payload public/data/classical_direction_latest.json
           --state data/live/classical_direction_alert_state.json
 
       - name: Upload classical alert state
-        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: classical-direction-state
@@ -172,7 +207,7 @@ jobs:
           retention-days: 30
 
       - name: Seal Telegram destination
-        if: always() && steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        if: always() && steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         run: |
           openssl enc -aes-256-cbc -salt -pbkdf2 \
@@ -182,7 +217,7 @@ jobs:
           rm -f telegram_runtime/connection.json
 
       - name: Upload encrypted Telegram destination
-        if: always() && steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        if: always() && steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: telegram-connection
@@ -191,5 +226,9 @@ jobs:
           retention-days: 90
 
       - name: Closed-market status
-        if: steps.market.outputs.open != 'true'
+        if: steps.market.outputs.scan != 'true'
         run: echo "Classical direction radar skipped because the U.S. regular session is closed."
+
+      - name: Push validation-only status
+        if: steps.market.outputs.scan == 'true' && steps.market.outputs.send != 'true'
+        run: echo "Classical direction radar validated without sending a pre-market Telegram alert."

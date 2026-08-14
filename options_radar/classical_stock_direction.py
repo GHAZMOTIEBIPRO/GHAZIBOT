@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass
 from typing import Any
 
-import math
 import pandas as pd
 
 
@@ -40,6 +40,7 @@ class ClassicalDirection:
     decision: str
     priority: str
     agreement_score: int
+    agreement_pct: int
     horizon: str
     price: float
     confirmation_level: float | None
@@ -88,7 +89,9 @@ def _clean_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return clean
 
 
-def _swing_points(data: pd.DataFrame, window: int = 2) -> tuple[list[tuple[int, float]], list[tuple[int, float]]]:
+def _swing_points(
+    data: pd.DataFrame, window: int = 2
+) -> tuple[list[tuple[int, float]], list[tuple[int, float]]]:
     if len(data) < 2 * window + 5:
         return [], []
     highs = data["High"]
@@ -168,9 +171,17 @@ def _candle_signal(data: pd.DataFrame) -> str:
         return "BULLISH_ENGULFING"
     if pc > po and c < o and o >= pc and c <= po:
         return "BEARISH_ENGULFING"
-    if body / candle_range <= 0.45 and lower_wick >= body * 2 and upper_wick <= max(body, candle_range * 0.2):
+    if (
+        body / candle_range <= 0.45
+        and lower_wick >= body * 2
+        and upper_wick <= max(body, candle_range * 0.2)
+    ):
         return "HAMMER"
-    if body / candle_range <= 0.45 and upper_wick >= body * 2 and lower_wick <= max(body, candle_range * 0.2):
+    if (
+        body / candle_range <= 0.45
+        and upper_wick >= body * 2
+        and lower_wick <= max(body, candle_range * 0.2)
+    ):
         return "SHOOTING_STAR"
     return "NONE"
 
@@ -339,22 +350,23 @@ def build_direction(
 
     sign = {"BULLISH": 1, "NEUTRAL": 0, "BEARISH": -1}
     agreement = sign[daily.direction] * 3 + sign[hourly.direction] * 2 + sign[intraday.direction]
+    agreement_pct = round(abs(agreement) / 6 * 100)
 
     decision = "WAIT"
     if (
         daily.direction == "BULLISH"
         and daily.score >= 3
-        and hourly.direction != "BEARISH"
+        and hourly.direction == "BULLISH"
         and intraday.direction == "BULLISH"
-        and agreement >= 4
+        and agreement == 6
     ):
         decision = "CALL"
     elif (
         daily.direction == "BEARISH"
         and daily.score <= -3
-        and hourly.direction != "BULLISH"
+        and hourly.direction == "BEARISH"
         and intraday.direction == "BEARISH"
-        and agreement <= -4
+        and agreement == -6
     ):
         decision = "PUT"
 
@@ -388,6 +400,7 @@ def build_direction(
         decision=decision,
         priority=priority,
         agreement_score=agreement,
+        agreement_pct=agreement_pct,
         horizon="1-5 جلسات تداول",
         price=intraday.close,
         confirmation_level=confirmation,
