@@ -79,6 +79,31 @@ def _send(text: str) -> None:
         raise RuntimeError("Telegram rejected cross-confirmation message")
 
 
+def _stage_ar(stage: str) -> str:
+    return {
+        "WATCH": "مراقبة",
+        "PRESSURE_BUILDING": "بناء ضغط قبل الحركة",
+        "IGNITION": "بداية انطلاقة",
+        "EXPLOSION": "حركة قوية",
+        "EXTENDED": "حركة ممتدة",
+    }.get(stage.upper(), stage or "غير مصنف")
+
+
+def _side_ar(side: str) -> str:
+    return "CALL — صعود" if side.upper() == "CALL" else "PUT — هبوط"
+
+
+def _alignment(move_pct: float, side: str) -> str:
+    side = side.upper()
+    if move_pct > 0 and side == "CALL":
+        return "متوافق ✅ — السهم صاعد والعقد CALL"
+    if move_pct < 0 and side == "PUT":
+        return "متوافق ✅ — السهم هابط والعقد PUT"
+    if move_pct == 0:
+        return "غير واضح — حركة السهم محايدة"
+    return "غير متوافق ⚠️ — اتجاه السهم والعقد لا يؤكدان بعضهما"
+
+
 def build_matches(stock_payload: dict[str, Any], options_payload: dict[str, Any]) -> list[dict[str, Any]]:
     stocks = {
         str(row.get("symbol") or "").upper(): row
@@ -131,6 +156,14 @@ def send_matches(
     now = datetime.now(timezone.utc)
     if not _fresh(stock_payload, now, freshness_minutes) or not _fresh(options_payload, now, freshness_minutes):
         return 0
+
+    readiness = options_payload.get("provider_readiness") if isinstance(options_payload.get("provider_readiness"), dict) else {}
+    if readiness.get("production_quote_ready") is not True:
+        state["last_run_at"] = now.isoformat()
+        state["last_sent_count"] = 0
+        state["blocked_reason"] = str(readiness.get("status") or "PROVIDER_NOT_READY")
+        return 0
+
     sent_map = state.setdefault("sent", {})
     sent = 0
     for match in build_matches(stock_payload, options_payload):
@@ -156,29 +189,49 @@ def send_matches(
         )
         if sent_map.get(symbol) == fp:
             continue
+
         side = str(contract.get("option_type") or "").upper()
         expiration = str(contract.get("expiration") or "")[:10]
         strike = _number(contract.get("strike"))
+        bid = _number(contract.get("bid"))
+        ask = _number(contract.get("ask"))
+        move_pct = _number(stock.get("move_pct"))
         cause = stock.get("cause") if isinstance(stock.get("cause"), dict) else {}
         cause_text = str(cause.get("status_ar") or "السبب الأساسي غير مثبت حتى الآن")
+
         text = "\n".join(
             [
-                "🔗 <b>بلاك بوكس Ω — تأكيد مزدوج مستقل</b>",
+                "🔗 <b>بلاك بوكس Ω | تأكيد مزدوج</b>",
                 "",
-                f"<b>{_safe(symbol)}</b> ظهر بشكل مستقل في مسار الأسهم ومسار الأوبشن.",
-                f"الأسهم: {_safe(stage)} | درجة الرادار {stock_score:.0f}/100",
-                f"العقد الأعلى: <b>{_safe(side)} {strike:g}</b> — {_safe(expiration)}",
-                f"درجة العقد {option_score:.0f}/100 | Flow {flow_score:.0f}/100",
-                f"السبب: {_safe(cause_text)}",
+                f"<b>{_safe(symbol)}</b> ظهر بشكل مستقل في رادار الأسهم ورادار الأوبشن.",
                 "",
-                "ℹ️ <i>هذا توافق بين مسارين مستقلين فقط؛ لا يرفع أو يخفض أهلية أي مسار ولا يثبت اتجاه صفقة الأوبشن.</i>",
+                "📈 <b>إشارة السهم</b>",
+                f"• المرحلة: <b>{_safe(_stage_ar(stage))}</b>",
+                f"• الحركة: <b>{move_pct:+.1f}%</b>",
+                f"• درجة الرادار: <b>{stock_score:.0f}/100</b>",
+                f"• السبب: {_safe(cause_text)}",
+                "",
+                "🎯 <b>إشارة العقد</b>",
+                f"• الاتجاه: <b>{_safe(_side_ar(side))}</b>",
+                f"• التنفيذ المرصود: <b>{_safe(symbol)} {side} {strike:g}</b>",
+                f"• الانتهاء: <b>{_safe(expiration)}</b>",
+                f"• Bid/Ask: <b>${bid:.2f} / ${ask:.2f}</b>",
+                f"• درجة العقد: <b>{option_score:.0f}/100</b> | التدفق: <b>{flow_score:.0f}/100</b>",
+                "",
+                "🧭 <b>هل الإشارتان متوافقتان؟</b>",
+                _safe(_alignment(move_pct, side)),
+                "",
+                "💡 <b>وش الفايدة؟</b>",
+                "ظهور الرمز في مسارين مستقلين يرفعه في أولوية المتابعة، لكنه لا يحوله إلى صفقة مضمونة ولا يلغي ضرورة فحص السعر والسيولة والسبب.",
             ]
         )
         _send(text)
         sent_map[symbol] = fp
         sent += 1
+
     state["last_run_at"] = now.isoformat()
     state["last_sent_count"] = sent
+    state.pop("blocked_reason", None)
     return sent
 
 
