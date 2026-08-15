@@ -52,15 +52,39 @@ def install_data_fabric() -> None:
     original_alpaca_enrich = AlpacaEnricher.enrich
 
     def guarded_alpaca_enrich(self: Any, chain: pd.DataFrame, symbol: str) -> pd.DataFrame:
-        """Use free Alpaca indicative data as Greek context, not a fake OPRA quote."""
+        """Use Alpaca Greeks without letting a weaker snapshot replace a better quote."""
         if chain is None or chain.empty:
             return chain
         base = chain.copy()
         out = original_alpaca_enrich(self, chain, symbol)
         feed = str(getattr(self.settings, "alpaca_options_feed", "indicative") or "indicative").lower()
+        maximum_age = float(os.getenv("DATA_FABRIC_STREAM_MAX_AGE_SECONDS", "20"))
+
         if feed == "opra":
-            if "fabric_source_tier" in out:
-                out["fabric_source_tier"] = "LIVE_OR_LICENSED"
+            # The always-on OPRA stream can be newer than the REST snapshot used
+            # solely to enrich IV/Greeks. Preserve execution quotes already marked
+            # as fresh/stream-grade and use REST only for the non-quote fields.
+            for idx, row in base.iterrows():
+                stream_grade = bool(row.get("stream_execution_grade"))
+                try:
+                    stream_age = float(row.get("stream_quote_age_seconds"))
+                except (TypeError, ValueError):
+                    stream_age = float("inf")
+                if not stream_grade or stream_age > maximum_age:
+                    continue
+                for column in (
+                    "bid",
+                    "ask",
+                    "last",
+                    "updated_at",
+                    "source",
+                    "freshness_label",
+                    "data_quality",
+                    "fabric_quote_provider",
+                    "fabric_source_tier",
+                ):
+                    if column in base and column in out:
+                        out.at[idx, column] = row.get(column)
             return out
 
         # Alpaca documents the free option feed as indicative; trades are delayed.
@@ -69,15 +93,15 @@ def install_data_fabric() -> None:
         for column in ("bid", "ask", "last", "updated_at"):
             if column in base and column in out:
                 out[column] = base[column]
-        base_quality = pd.to_numeric(base.get("data_quality"), errors="coerce").fillna(0.0)
+        quality_source = base.get("data_quality", pd.Series(0.0, index=base.index))
+        base_quality = pd.to_numeric(quality_source, errors="coerce").fillna(0.0)
         out["data_quality"] = base_quality.clip(upper=0.78)
         if "source" in base:
             out["source"] = base["source"].astype(str) + " + alpaca_indicative_greeks"
         if "freshness_label" in base:
             out["freshness_label"] = base["freshness_label"].astype(str) + " | Alpaca indicative Greeks context"
-        out["fabric_source_tier"] = out.get(
-            "fabric_source_tier", pd.Series("DELAYED_OR_INDICATIVE", index=out.index)
-        )
+        if "fabric_source_tier" not in out:
+            out["fabric_source_tier"] = "DELAYED_OR_INDICATIVE"
         return out
 
     def fabric_stock_bars(
