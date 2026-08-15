@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from options_radar.institutional_radar import assess_candidate, should_promote
 from scripts import fast_explosion_scan as base
 
 LATEST_PATH = Path("public/data/latest.json")
@@ -108,50 +109,46 @@ def _load_previous_fast_state() -> tuple[dict[str, dict], float]:
     return {str(symbol).upper(): row for symbol, row in rows.items() if isinstance(row, dict)}, age_minutes
 
 
-def _rank_market_with_delta(rows, news_events, structural):
+def _rank_market_with_institutional_engine(rows, news_events, structural):
     ranked = _original_rank_market(rows, news_events=news_events, structural=structural)
     previous, age_minutes = _load_previous_fast_state()
     raw_scores = {candidate.symbol: float(candidate.score) for candidate in ranked}
-    acceleration_count = 0
+    promoted_count = 0
 
-    if previous:
-        for candidate in ranked:
-            prior = previous.get(candidate.symbol)
-            if not prior:
-                continue
-            previous_score = base._number(prior.get("base_score"), base._number(prior.get("score")))
-            previous_move = base._number(prior.get("move_pct"))
-            previous_volume = base._number(prior.get("volume"))
-            previous_turnover = base._number(prior.get("turnover_pct"))
-            score_delta = raw_scores[candidate.symbol] - previous_score
-            move_delta = candidate.move_pct - previous_move
-            turnover_delta = candidate.turnover_pct - previous_turnover
-            volume_growth = candidate.volume / previous_volume if previous_volume > 0 else 1.0
+    for candidate in ranked:
+        prior = previous.get(candidate.symbol)
+        assessment = assess_candidate(candidate, prior)
 
-            bonus = 0.0
-            if score_delta >= 4:
-                bonus += min(6.0, score_delta * 0.35)
-            if move_delta >= 0.8:
-                bonus += min(4.0, move_delta * 0.55)
-            if turnover_delta >= 0.15:
-                bonus += min(4.0, turnover_delta * 2.5)
-            if 1.08 <= volume_growth <= 5.0:
-                bonus += min(4.0, (volume_growth - 1.0) * 12.0)
-            if candidate.supply_score >= 70 and (score_delta >= 3 or move_delta >= 0.7):
-                bonus += 2.0
+        candidate.score = assessment.score
+        candidate.stage = assessment.stage
+        candidate.institutional_confidence = assessment.confidence
+        candidate.institutional_earlyness = assessment.earlyness
+        candidate.institutional_anomaly = assessment.anomaly
+        candidate.institutional_acceleration = assessment.acceleration
+        candidate.institutional_risk_penalty = assessment.risk_penalty
+        candidate.institutional_priority = assessment.send_priority
 
-            if bonus >= 3.0:
-                candidate.score = base._clamp(candidate.score + bonus)
-                candidate.stage = base._stage(candidate.score, candidate.move_pct, candidate.turnover_pct)
-                candidate.reasons.insert(
-                    0,
-                    f"Fast Delta +{bonus:.1f} | score {previous_score:.0f}→{raw_scores[candidate.symbol]:.0f} | price Δ {move_delta:+.1f}pt",
-                )
-                acceleration_count += 1
+        summary = (
+            f"Ω Institutional {assessment.score:.0f}/100 | "
+            f"ثقة {assessment.confidence} | مبكر {assessment.earlyness:.0f} | "
+            f"شذوذ {assessment.anomaly:.0f} | تسارع {assessment.acceleration:.0f}"
+        )
+        candidate.reasons.insert(0, summary)
+        for reason in reversed(assessment.reasons[:4]):
+            candidate.reasons.insert(1, reason)
+        for blocker in assessment.blockers[:2]:
+            candidate.reasons.append(f"حاجز: {blocker}")
+
+        if prior:
+            prior_stage = str(prior.get("stage") or "WATCH")
+            prior_score = base._number(prior.get("score"))
+            if should_promote(prior_stage, assessment.stage, assessment.score - prior_score):
+                promoted_count += 1
 
     state = {
         "generated_at": base._utc_now(),
-        "source": "full-market compact inter-scan memory",
+        "source": "BLACK BOX Omega institutional-style full-market state memory",
+        "score_is_probability": False,
         "previous_snapshot_age_minutes": round(age_minutes, 2) if previous else None,
         "symbols": {
             candidate.symbol: {
@@ -162,25 +159,86 @@ def _rank_market_with_delta(rows, news_events, structural):
                 "volume": round(float(candidate.volume), 2),
                 "turnover_pct": round(float(candidate.turnover_pct), 5),
                 "supply_score": round(float(candidate.supply_score), 2),
+                "confidence": str(getattr(candidate, "institutional_confidence", "D")),
+                "earlyness": round(float(getattr(candidate, "institutional_earlyness", 0.0)), 2),
+                "anomaly": round(float(getattr(candidate, "institutional_anomaly", 0.0)), 2),
+                "acceleration": round(float(getattr(candidate, "institutional_acceleration", 0.0)), 2),
+                "risk_penalty": round(float(getattr(candidate, "institutional_risk_penalty", 0.0)), 2),
+                "send_priority": round(float(getattr(candidate, "institutional_priority", 0.0)), 2),
             }
             for candidate in ranked
         },
     }
     base._save(FAST_MARKET_STATE_PATH, state)
-    if previous:
-        print(f"Fast Delta memory: previous_age={age_minutes:.1f}m accelerated={acceleration_count}/{len(ranked)}")
-    else:
-        print(f"Fast Delta memory: baseline captured for {len(ranked)} symbols")
 
-    ranked.sort(key=lambda item: (base.STAGE_ORDER.get(item.stage, 0), item.score, item.turnover_pct), reverse=True)
+    if previous:
+        print(
+            f"Institutional memory: previous_age={age_minutes:.1f}m "
+            f"promoted={promoted_count}/{len(ranked)}"
+        )
+    else:
+        print(f"Institutional memory: baseline captured for {len(ranked)} symbols")
+
+    ranked.sort(
+        key=lambda item: (
+            base.STAGE_ORDER.get(item.stage, 0),
+            float(getattr(item, "institutional_priority", 0.0)),
+            item.score,
+            item.turnover_pct,
+        ),
+        reverse=True,
+    )
     return ranked
+
+
+def _institutional_message(candidate) -> str:
+    stage_ar = {
+        "PRESSURE_BUILDING": "تجميع ضغط / مراقبة مبكرة",
+        "IGNITION": "بداية اشتعال",
+        "EXPLOSION": "تأكيد حركة قوية",
+        "EXTENDED": "ممتد — لا مطاردة",
+    }.get(candidate.stage, "مراقبة")
+    confidence = str(getattr(candidate, "institutional_confidence", "D"))
+    earlyness = float(getattr(candidate, "institutional_earlyness", 0.0))
+    anomaly = float(getattr(candidate, "institutional_anomaly", 0.0))
+    acceleration = float(getattr(candidate, "institutional_acceleration", 0.0))
+    risk = float(getattr(candidate, "institutional_risk_penalty", 0.0))
+    reasons = "\n• ".join(candidate.reasons[:6]) or "تغيّر غير طبيعي قيد المتابعة"
+    news = f"\n\n📰 {base._safe(candidate.news_headline, 500)}" if candidate.news_headline else ""
+    emoji = "💥" if candidate.stage == "EXPLOSION" else "🔥" if candidate.stage == "IGNITION" else "🟡"
+
+    return (
+        f"{emoji} <b>BLACK BOX Ω — {base._safe(stage_ar)}</b>\n\n"
+        f"<b>{base._safe(candidate.symbol)}</b> — ${candidate.price:,.2f}\n"
+        f"Ω Score: <b>{candidate.score:.0f}/100</b> — الثقة <b>{base._safe(confidence)}</b>\n"
+        f"مبكّر: <b>{earlyness:.0f}/100</b> | شذوذ: <b>{anomaly:.0f}/100</b> | "
+        f"تسارع: <b>{acceleration:.0f}/100</b>\n"
+        f"الحركة اليوم: <b>{candidate.move_pct:+.1f}%</b> | "
+        f"Turnover: <b>{candidate.turnover_pct:.2f}%</b>\n"
+        f"خصم المخاطر: <b>{risk:.0f}</b>\n\n"
+        f"<b>ليش ظهر الآن؟</b>\n• {base._safe(reasons, 1200)}{news}\n\n"
+        f"<i>الدرجة ترتيب احتمالي للأولوية وليست نسبة نجاح أو توصية تنفيذ.</i>"
+    )
+
+
+def _institutional_should_send(candidate, sent_map) -> bool:
+    if candidate.stage in {"WATCH", "EXTENDED"}:
+        return False
+    previous = sent_map.get(candidate.symbol) if isinstance(sent_map.get(candidate.symbol), dict) else {}
+    if not previous:
+        return float(getattr(candidate, "institutional_priority", candidate.score)) >= 68.0
+    previous_stage = str(previous.get("stage") or "WATCH")
+    previous_score = base._number(previous.get("score"))
+    return should_promote(previous_stage, candidate.stage, candidate.score - previous_score)
 
 
 # Patch policy without duplicating the full scanner implementation.
 base._valid_common = _valid_common
 base.collect_fast_news = _combined_fast_news
-base.rank_market = _rank_market_with_delta
-rank_market = _rank_market_with_delta
+base.rank_market = _rank_market_with_institutional_engine
+base._candidate_message = _institutional_message
+base._should_send_candidate = _institutional_should_send
+rank_market = _rank_market_with_institutional_engine
 run = base.run
 
 
