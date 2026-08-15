@@ -49,7 +49,7 @@ def parse_occ_volume_csv(text: str) -> dict[str, Any]:
 
     call_aliases = {"call", "calls", "callvolume", "callvol", "callcontractvolume", "cvolume"}
     put_aliases = {"put", "puts", "putvolume", "putvol", "putcontractvolume", "pvolume"}
-    side_aliases = {"porc", "putcall", "callput", "optiontype", "type", "side", "cp"}
+    side_aliases = {"porc", "putcall", "callput", "optiontype", "type", "side", "cp", "pc"}
     volume_aliases = {"volume", "totalvolume", "contractvolume", "quantity", "contracts", "tradevolume"}
 
     calls = puts = 0.0
