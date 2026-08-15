@@ -13,6 +13,7 @@ on:
       - "options_radar/free_gamma_engine.py"
       - "options_radar/occ_free_context.py"
       - "options_radar/options_consensus.py"
+      - "options_radar/outcome_learning.py"
       - "scripts/run_options_radar_independent.py"
       - "scripts/run_options_radar_hardened.py"
       - "data/options_ping.txt"
@@ -47,6 +48,11 @@ jobs:
       OPTIONS_STRICT_MIN_SCORE: ${{ secrets.OPTIONS_STRICT_MIN_SCORE || '85' }}
       OPTIONS_STRICT_SIDE_EDGE: ${{ secrets.OPTIONS_STRICT_SIDE_EDGE || '6' }}
       OPTIONS_STRICT_MAX_SIGNALS: ${{ secrets.OPTIONS_STRICT_MAX_SIGNALS || '8' }}
+      OPTIONS_FREE_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_FREE_ALERT_MIN_SCORE || '87' }}
+      OPTIONS_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_ALERT_MIN_SCORE || '85' }}
+      OPTIONS_LEARNING_MAX_SYMBOLS: ${{ secrets.OPTIONS_LEARNING_MAX_SYMBOLS || '12' }}
+      OPTIONS_LEARNING_MIN_DATA_QUALITY: ${{ secrets.OPTIONS_LEARNING_MIN_DATA_QUALITY || '0.80' }}
+      CALIBRATION_MINIMUM_SAMPLE: ${{ secrets.CALIBRATION_MINIMUM_SAMPLE || '100' }}
       OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
       DATABASE_PATH: data/live/options_alert_state.json
       SIGNAL_JOURNAL_PATH: data/live/options_signals.jsonl
@@ -116,7 +122,7 @@ jobs:
           --max-symbols "$OPTIONS_INDEPENDENT_MAX_SYMBOLS"
           --top-per-side "$OPTIONS_INDEPENDENT_TOP_PER_SIDE"
 
-      - name: Validate path independence, gamma semantics and one-side policy
+      - name: Validate path independence, gamma semantics, learning and one-side policy
         if: steps.market.outputs.open == 'true'
         run: |
           python - <<'PY'
@@ -126,20 +132,25 @@ jobs:
           payload = json.loads(Path('public/data/options_latest.json').read_text(encoding='utf-8'))
           assert payload['path'] == 'options'
           assert payload['independent_from_stock_radar'] is True
-          assert payload['architecture'] == 'independent_options_contract_radar_v2_free_gamma'
+          assert payload['architecture'] == 'independent_options_contract_radar_v3_outcome_learning'
           assert isinstance(payload.get('provider_readiness'), dict)
           assert isinstance(payload.get('gamma_maps'), dict)
+          assert isinstance(payload.get('outcome_learning'), dict)
+          assert payload['outcome_learning'].get('status') != 'degraded'
+          assert int(payload['outcome_learning'].get('shadow_sample_size', 0)) >= int(payload['outcome_learning'].get('calibration_sample_size', 0))
           policy = payload['flow_policy']
           assert policy['volume_over_oi_means_new_opening_position'] is False
           assert policy['ask_side_snapshot_means_confirmed_buyer'] is False
           assert policy['sweep_claim_allowed_from_snapshot_chain'] is False
           assert 'verified dealer inventory' in policy['gamma_policy']
+          assert 'Hard blockers' in policy['learning_policy']
           research = payload.get('research_contracts') or payload.get('contracts') or []
           for row in research:
               assert row.get('independent_from_stock_radar') is True
               evidence = row.get('flow_evidence') or {}
               assert evidence.get('opening_position_confirmed') is False
               assert evidence.get('sweep_confirmed') is False
+              assert abs(float(row.get('learning_adjustment') or 0)) <= 4.0
           signals = payload.get('research_directional_signals') or payload.get('directional_signals') or []
           seen = set()
           for row in signals:
@@ -148,7 +159,12 @@ jobs:
               seen.add(symbol)
               assert row.get('direction') in {'CALL', 'PUT'}
               assert row.get('selection_policy') == 'one_side_one_contract_per_symbol_strict_consensus'
-          print('Independent options + gamma + one-side semantics passed.')
+          for path in ('data/live/options_outcomes.json', 'data/live/options_calibration.json'):
+              assert Path(path).exists(), f'missing learning state: {path}'
+          calibration = json.loads(Path('data/live/options_calibration.json').read_text(encoding='utf-8'))
+          assert int(calibration.get('shadow_sample_size', 0)) >= int(calibration.get('sample_size', 0))
+          assert float(calibration.get('max_total_adjustment', 4.0)) <= 4.0
+          print('Independent options + gamma + guarded outcome learning + one-side semantics passed.')
           PY
 
       - name: Upload options radar payload
@@ -183,6 +199,7 @@ jobs:
               json.dumps({
                   'path': 'options',
                   'independent_from_stock_radar': True,
+                  'outcome_learning': True,
                   'saved_at': datetime.now(timezone.utc).isoformat(),
               }, indent=2),
               encoding='utf-8',

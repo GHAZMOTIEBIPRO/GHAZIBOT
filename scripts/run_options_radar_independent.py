@@ -23,6 +23,7 @@ from options_radar.occ_free_context import OccDailyVolumeClient, side_alignment
 from options_radar.official_event_scan import scan_official_events
 from options_radar.optionable_universe import IndependentOptionableUniverse
 from options_radar.options_consensus import build_directional_signals
+from options_radar.outcome_learning import apply_learning_adjustments, load_calibration
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
 
@@ -285,6 +286,9 @@ def run(
         settings=settings,
         radar=radar,
     )
+    calibration = load_calibration(settings.calibration_path)
+    contracts = apply_learning_adjustments(contracts, calibration)
+
     strict_min = float(os.getenv("OPTIONS_STRICT_MIN_SCORE", "85"))
     side_edge = float(os.getenv("OPTIONS_STRICT_SIDE_EDGE", "6"))
     directional_signals = build_directional_signals(
@@ -299,7 +303,7 @@ def run(
     payload: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "path": "options",
-        "architecture": "independent_options_contract_radar_v2_free_gamma",
+        "architecture": "independent_options_contract_radar_v3_outcome_learning",
         "independent_from_stock_radar": True,
         "universe": universe.as_dict(),
         "summary": {
@@ -315,6 +319,8 @@ def run(
             "provider": result.provider,
             "market_regime": result.regime,
             "official_optionability_verified": universe.official_verified,
+            "learning_calibration_active": calibration.get("active") is True,
+            "learning_calibration_sample_size": int(_number(calibration.get("sample_size"))),
         },
         "flow_policy": {
             "volume_over_oi_means_new_opening_position": False,
@@ -324,6 +330,7 @@ def run(
             "licensed_trade_quote_requirement": "trade+quote-level data is required before labeling a sweep/aggressor as confirmed",
             "gamma_policy": "GEX is a gamma-times-OI positioning proxy. Put sign is a modeling convention, not verified dealer inventory.",
             "one_side_policy": "A symbol can emit at most one strict CALL or PUT signal and one best contract per run.",
+            "learning_policy": "Only prior 60-minute ask-to-bid outcomes can create bounded score adjustments after the minimum sample. Hard blockers always remain authoritative.",
             "note_ar": "الفلو والقاما أدلة سياقية وليسا ضمانًا: لا نثبت Sweep أو Dealer positioning من البيانات المجانية.",
         },
         "contracts": contracts,
@@ -332,6 +339,12 @@ def run(
         "directional_signals": directional_signals,
         "gamma_maps": gamma_maps,
         "occ_daily_context": occ_contexts,
+        "learning_calibration": {
+            "active": calibration.get("active") is True,
+            "sample_size": int(_number(calibration.get("sample_size"))),
+            "minimum_sample": int(_number(calibration.get("minimum_sample"))),
+            "global": calibration.get("global") or {},
+        },
         "rejected": _records(result.rejected.head(250)),
         "official_catalysts": _catalyst_records(catalysts),
         "provider_audit": result.provider_audit,
@@ -344,6 +357,7 @@ def run(
             "Free gamma uses available chain OI and reported or Black-Scholes-estimated gamma; it is not a verified dealer-position dataset.",
             "OCC daily CALL/PUT volume is official aggregate context only, not a quote, sweep feed, or proof of buy-to-open.",
             "Yahoo/Alpaca indicative inputs remain research-grade; strict free alerts are labeled accordingly and use a higher threshold.",
+            "Outcome learning stays inactive until the configured minimum sample and is capped at ±4 strict-score points.",
         ],
     }
     destination = Path(output_path)
@@ -374,6 +388,7 @@ def main() -> None:
         f"puts={payload['summary']['puts_selected']} "
         f"strict={payload['summary']['directional_signals']} "
         f"gamma={payload['summary']['gamma_symbols_analyzed']} "
+        f"learning={payload['summary']['learning_calibration_sample_size']} "
         f"official_optionability={payload['summary']['official_optionability_verified']}"
     )
 
