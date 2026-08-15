@@ -35,6 +35,19 @@ def _provider_list(raw: str) -> list[str]:
     return output
 
 
+def _ensure_dte(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame is None or frame.empty or "expiration" not in frame:
+        return frame
+    out = frame.copy()
+    current = pd.to_numeric(out.get("dte"), errors="coerce") if "dte" in out else None
+    if current is not None and not current.isna().all():
+        return out
+    expiration = pd.to_datetime(out["expiration"], errors="coerce", utc=True)
+    today = pd.Timestamp.now(tz="UTC").normalize()
+    out["dte"] = (expiration.dt.normalize() - today).dt.days
+    return out
+
+
 def install_data_fabric() -> None:
     """Replace first-success fetching with resilient multi-provider reconciliation.
 
@@ -221,14 +234,24 @@ def install_data_fabric() -> None:
         }
         loaders: dict[str, Any] = {}
         for name in order:
+            # Each network provider receives its own DataFetcher/session so parallel
+            # requests never share mutable requests.Session state.
             if name == "tradier":
-                loaders[name] = lambda: self._tradier_chain(symbol, min_days, max_days)
+                loaders[name] = lambda: hybrid.DataFetcher(self.settings)._tradier_chain(
+                    symbol, min_days, max_days
+                )
             elif name == "marketdata":
-                loaders[name] = lambda: MarketDataProvider(self.settings).get_chain(symbol, min_days, max_days)
+                loaders[name] = lambda: MarketDataProvider(self.settings).get_chain(
+                    symbol, min_days, max_days
+                )
             elif name == "finnhub":
-                loaders[name] = lambda: self._finnhub_chain(symbol, min_days, max_days)
+                loaders[name] = lambda: hybrid.DataFetcher(self.settings)._finnhub_chain(
+                    symbol, min_days, max_days
+                )
             elif name == "yahoo":
-                loaders[name] = lambda: self._yahoo_chain(symbol, min_days, max_days)
+                loaders[name] = lambda: hybrid.DataFetcher(self.settings)._yahoo_chain(
+                    symbol, min_days, max_days
+                )
 
         if not loaders:
             raise hybrid.DataUnavailableError(f"option_chain:{symbol}", [])
@@ -267,6 +290,7 @@ def install_data_fabric() -> None:
             max_quote_divergence_pct=float(os.getenv("DATA_FABRIC_MAX_OPTION_DIVERGENCE_PCT", "0.08")),
         )
         frame, stream_audit = overlay_option_chain_from_stream(frame)
+        frame = _ensure_dte(frame)
         if apply_guards:
             frame, _ = self.apply_option_quality_guards(frame, symbol)
         if frame.empty:
