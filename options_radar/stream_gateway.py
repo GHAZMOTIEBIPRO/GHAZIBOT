@@ -87,7 +87,9 @@ class SnapshotStore:
             record[event_type] = row
             record["last_event_at"] = now
             health_key = "stock_events" if asset == "stock" else "option_events"
-            self.payload["health"][health_key] = int(self.payload["health"].get(health_key, 0)) + 1
+            self.payload["health"][health_key] = int(
+                self.payload["health"].get(health_key, 0)
+            ) + 1
             self.payload["health"]["last_event_at"] = now
             self.payload["generated_at"] = now
         self.flush_if_due()
@@ -106,13 +108,20 @@ class SnapshotStore:
 
     def flush(self, force: bool = False) -> None:
         with self.lock:
-            if not force and time.monotonic() - self.last_flush_monotonic < self.flush_interval_seconds:
+            if (
+                not force
+                and time.monotonic() - self.last_flush_monotonic
+                < self.flush_interval_seconds
+            ):
                 return
             snapshot = json.loads(json.dumps(self.payload, default=str))
             self.last_flush_monotonic = time.monotonic()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix(self.path.suffix + ".tmp")
-        temporary.write_text(json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        temporary.write_text(
+            json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
         temporary.replace(self.path)
 
 
@@ -140,16 +149,30 @@ def run_alpaca_gateway(
     api_key = str(os.getenv("ALPACA_API_KEY") or "").strip()
     secret_key = str(os.getenv("ALPACA_SECRET_KEY") or "").strip()
     if not api_key or not secret_key:
-        raise RuntimeError("ALPACA_API_KEY and ALPACA_SECRET_KEY are required for streaming")
+        raise RuntimeError(
+            "ALPACA_API_KEY and ALPACA_SECRET_KEY are required for streaming"
+        )
 
     stock_feed_name = str(os.getenv("ALPACA_STOCK_FEED", "iex") or "iex").lower()
-    option_feed_name = str(os.getenv("ALPACA_OPTIONS_FEED", "indicative") or "indicative").lower()
+    option_feed_name = str(
+        os.getenv("ALPACA_OPTIONS_FEED", "indicative") or "indicative"
+    ).lower()
     stock_feed = DataFeed.SIP if stock_feed_name == "sip" else DataFeed.IEX
-    option_feed = OptionsFeed.OPRA if option_feed_name == "opra" else OptionsFeed.INDICATIVE
+    option_feed = (
+        OptionsFeed.OPRA if option_feed_name == "opra" else OptionsFeed.INDICATIVE
+    )
 
     store = SnapshotStore(Path(snapshot_path), stock_feed_name, option_feed_name)
     stop_event = threading.Event()
-    streams: list[Any] = []
+    stream_lock = threading.Lock()
+    active_streams: dict[str, Any] = {}
+
+    def set_stream(kind: str, stream: Any | None) -> None:
+        with stream_lock:
+            if stream is None:
+                active_streams.pop(kind, None)
+            else:
+                active_streams[kind] = stream
 
     async def stock_quote(event: Any) -> None:
         store.update("stock", event)
@@ -166,60 +189,112 @@ def run_alpaca_gateway(
     def run_stock() -> None:
         backoff = 1.0
         while not stop_event.is_set() and stock_symbols:
-            stream = StockDataStream(api_key, secret_key, raw_data=True, feed=stock_feed)
-            streams.append(stream)
+            stream = StockDataStream(
+                api_key,
+                secret_key,
+                raw_data=True,
+                feed=stock_feed,
+            )
+            set_stream("stock", stream)
             stream.subscribe_quotes(stock_quote, *stock_symbols)
             stream.subscribe_trades(stock_trade, *stock_symbols)
             try:
                 store.heartbeat("stock_connecting")
                 stream.run()
-                backoff = 1.0
-            except Exception as exc:
-                store.heartbeat("stock_reconnecting", f"{type(exc).__name__}: {exc}")
+                if stop_event.is_set():
+                    break
+                store.heartbeat("stock_reconnecting", "stream ended without error")
                 if stop_event.wait(backoff):
                     break
                 backoff = min(30.0, backoff * 2.0)
+            except Exception as exc:
+                store.heartbeat(
+                    "stock_reconnecting",
+                    f"{type(exc).__name__}: {exc}",
+                )
+                if stop_event.wait(backoff):
+                    break
+                backoff = min(30.0, backoff * 2.0)
+            finally:
+                set_stream("stock", None)
 
     def run_options() -> None:
         backoff = 1.0
         while not stop_event.is_set() and option_contracts:
-            stream = OptionDataStream(api_key, secret_key, raw_data=True, feed=option_feed)
-            streams.append(stream)
+            stream = OptionDataStream(
+                api_key,
+                secret_key,
+                raw_data=True,
+                feed=option_feed,
+            )
+            set_stream("options", stream)
             stream.subscribe_quotes(option_quote, *option_contracts)
             stream.subscribe_trades(option_trade, *option_contracts)
             try:
                 store.heartbeat("options_connecting")
                 stream.run()
-                backoff = 1.0
-            except Exception as exc:
-                store.heartbeat("options_reconnecting", f"{type(exc).__name__}: {exc}")
+                if stop_event.is_set():
+                    break
+                store.heartbeat("options_reconnecting", "stream ended without error")
                 if stop_event.wait(backoff):
                     break
                 backoff = min(30.0, backoff * 2.0)
+            except Exception as exc:
+                store.heartbeat(
+                    "options_reconnecting",
+                    f"{type(exc).__name__}: {exc}",
+                )
+                if stop_event.wait(backoff):
+                    break
+                backoff = min(30.0, backoff * 2.0)
+            finally:
+                set_stream("options", None)
 
     threads: list[threading.Thread] = []
     if stock_symbols:
-        threads.append(threading.Thread(target=run_stock, name="alpaca-stock-stream", daemon=True))
+        threads.append(
+            threading.Thread(
+                target=run_stock,
+                name="alpaca-stock-stream",
+                daemon=True,
+            )
+        )
     if option_contracts:
-        threads.append(threading.Thread(target=run_options, name="alpaca-option-stream", daemon=True))
+        threads.append(
+            threading.Thread(
+                target=run_options,
+                name="alpaca-option-stream",
+                daemon=True,
+            )
+        )
     if not threads:
-        raise RuntimeError("No stock symbols or option contracts were configured for streaming")
+        raise RuntimeError(
+            "No stock symbols or option contracts were configured for streaming"
+        )
 
     for thread in threads:
         thread.start()
-    store.heartbeat("running", f"stocks={len(stock_symbols)} options={len(option_contracts)}")
+    store.heartbeat(
+        "running",
+        f"stocks={len(stock_symbols)} options={len(option_contracts)}",
+    )
 
     try:
         if run_seconds > 0:
             stop_event.wait(run_seconds)
         else:
             while not stop_event.wait(5.0):
-                store.heartbeat("running", f"stocks={len(stock_symbols)} options={len(option_contracts)}")
+                store.heartbeat(
+                    "running",
+                    f"stocks={len(stock_symbols)} options={len(option_contracts)}",
+                )
     except KeyboardInterrupt:
         pass
     finally:
         stop_event.set()
-        for stream in streams:
+        with stream_lock:
+            current_streams = list(active_streams.values())
+        for stream in current_streams:
             try:
                 stream.stop()
             except Exception:
@@ -232,6 +307,12 @@ def run_alpaca_gateway(
 def configured_stream_symbols() -> tuple[list[str], list[str]]:
     # Alpaca Basic currently documents limits of 30 equity WebSocket symbols and
     # 200 option quote subscriptions. Caps here prevent accidental over-subscribe.
-    stock_symbols = _symbols(os.getenv("STREAM_STOCK_SYMBOLS", "SPY,QQQ,IWM"), 30)
-    option_contracts = _symbols(os.getenv("STREAM_OPTION_CONTRACTS", ""), 200)
+    stock_symbols = _symbols(
+        os.getenv("STREAM_STOCK_SYMBOLS", "SPY,QQQ,IWM"),
+        30,
+    )
+    option_contracts = _symbols(
+        os.getenv("STREAM_OPTION_CONTRACTS", ""),
+        200,
+    )
     return stock_symbols, option_contracts
