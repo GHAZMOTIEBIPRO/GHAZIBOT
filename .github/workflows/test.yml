@@ -36,6 +36,7 @@ jobs:
           python -m scripts.run_options_radar_independent --help >/dev/null
           python -m scripts.run_options_radar_fabric --help >/dev/null
           python -m scripts.run_stream_gateway --help >/dev/null
+          python scripts/fast_explosion_scan_fabric.py --help >/dev/null
           python scripts/send_independent_path_alerts.py --help >/dev/null
           python scripts/send_strict_options_alerts.py --help >/dev/null
 
@@ -71,6 +72,7 @@ jobs:
             options_radar/stream_gateway.py \
             options_radar/stream_overlay.py \
             options_radar/provider_readiness.py \
+            options_radar/market_clock.py \
             scripts/apply_phase62.py \
             scripts/apply_expiry_radar.py \
             scripts/validate_omega_export.py \
@@ -98,6 +100,7 @@ jobs:
             tests/test_stream_overlay.py \
             tests/test_stream_gateway.py \
             tests/test_provider_readiness_fabric.py \
+            tests/test_market_clock.py \
             tests/test_strict_options_sender.py \
             --select E9,F63,F7,F82
 
