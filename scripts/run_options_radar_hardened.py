@@ -15,26 +15,37 @@ from scripts import run_options_radar_independent as base
 def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
     if readiness.get("production_quote_ready") is True:
         payload.setdefault("summary", {})["production_alerts_blocked"] = False
+        payload["production_directional_signals"] = list(payload.get("directional_signals") or [])
+        payload["free_directional_signals"] = []
         return
 
     contracts = [row for row in payload.get("contracts", []) if isinstance(row, dict)]
     top_calls = [row for row in payload.get("top_calls", []) if isinstance(row, dict)]
     top_puts = [row for row in payload.get("top_puts", []) if isinstance(row, dict)]
+    directional = [row for row in payload.get("directional_signals", []) if isinstance(row, dict)]
+    free_directional = [row for row in directional if row.get("free_alert_eligible") is True]
     summary = payload.setdefault("summary", {})
 
     payload["research_contracts"] = contracts
     payload["research_top_calls"] = top_calls
     payload["research_top_puts"] = top_puts
+    payload["research_directional_signals"] = directional
+    payload["free_directional_signals"] = free_directional
+    payload["production_directional_signals"] = []
     payload["contracts"] = []
     payload["top_calls"] = []
     payload["top_puts"] = []
+    payload["directional_signals"] = []
 
     summary["research_contracts_selected"] = len(contracts)
     summary["research_calls_selected"] = len(top_calls)
     summary["research_puts_selected"] = len(top_puts)
+    summary["research_directional_signals"] = len(directional)
+    summary["free_directional_signals"] = len(free_directional)
     summary["contracts_selected"] = 0
     summary["calls_selected"] = 0
     summary["puts_selected"] = 0
+    summary["directional_signals"] = 0
     summary["production_alerts_blocked"] = True
     summary["production_block_reason"] = str(readiness.get("status") or "PROVIDER_NOT_READY")
 
@@ -42,11 +53,13 @@ def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
         {
             "fallback_contracts_can_enter_production_alerts": False,
             "fallback_contracts_can_enter_cross_confirmation": False,
+            "fallback_contracts_can_enter_strict_free_alerts": True,
             "fallback_contracts_remain_available_for_shadow_research": True,
+            "strict_free_alerts_are_production_signals": False,
         }
     )
     payload.setdefault("limitations", []).append(
-        "Provider readiness is not production-grade; selected contracts were quarantined into research_contracts and removed from production contracts."
+        "Provider readiness is not production-grade. Raw contracts stay quarantined; only separately labeled strict free-data directional signals may be sent when enabled."
     )
 
 
@@ -109,6 +122,7 @@ def main() -> None:
         f"symbols={summary.get('symbols_scanned', 0)} "
         f"calls={summary.get('calls_selected', 0)} "
         f"puts={summary.get('puts_selected', 0)} "
+        f"free_signals={summary.get('free_directional_signals', 0)} "
         f"research={summary.get('research_contracts_selected', 0)} "
         f"provider_readiness={summary.get('provider_readiness', 'UNKNOWN')} "
         f"blocked={summary.get('production_alerts_blocked', False)}"

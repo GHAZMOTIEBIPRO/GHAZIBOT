@@ -10,12 +10,13 @@ on:
       - "options_radar/official_event_scan.py"
       - "options_radar/provider_readiness.py"
       - "options_radar/runtime_hardening.py"
+      - "options_radar/free_gamma_engine.py"
+      - "options_radar/occ_free_context.py"
+      - "options_radar/options_consensus.py"
       - "scripts/run_options_radar_independent.py"
       - "scripts/run_options_radar_hardened.py"
       - "data/options_ping.txt"
   schedule:
-    # 13:00-21:59 UTC covers NY regular hours across both daylight and standard time.
-    # The exchange-calendar gate below is the source of truth for holidays/session state.
     - cron: "*/15 13-21 * * 1-5"
 
 concurrency:
@@ -42,6 +43,11 @@ jobs:
       OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
       OPTIONS_INDEPENDENT_MAX_SYMBOLS: ${{ secrets.OPTIONS_INDEPENDENT_MAX_SYMBOLS || '60' }}
       OPTIONS_INDEPENDENT_TOP_PER_SIDE: ${{ secrets.OPTIONS_INDEPENDENT_TOP_PER_SIDE || '15' }}
+      OPTIONS_FREE_GAMMA_MAX_SYMBOLS: ${{ secrets.OPTIONS_FREE_GAMMA_MAX_SYMBOLS || '10' }}
+      OPTIONS_STRICT_MIN_SCORE: ${{ secrets.OPTIONS_STRICT_MIN_SCORE || '85' }}
+      OPTIONS_STRICT_SIDE_EDGE: ${{ secrets.OPTIONS_STRICT_SIDE_EDGE || '6' }}
+      OPTIONS_STRICT_MAX_SIGNALS: ${{ secrets.OPTIONS_STRICT_MAX_SIGNALS || '8' }}
+      OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
       DATABASE_PATH: data/live/options_alert_state.json
       SIGNAL_JOURNAL_PATH: data/live/options_signals.jsonl
       OUTCOME_PATH: data/live/options_outcomes.json
@@ -66,15 +72,9 @@ jobs:
         shell: bash
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
-          import os
           from datetime import datetime, timezone
           import exchange_calendars as xcals
           import pandas as pd
-
-          if os.getenv('GITHUB_EVENT_NAME') == 'workflow_dispatch':
-              print('open=true')
-              print('reason=manual_dispatch')
-              raise SystemExit
 
           cal = xcals.get_calendar('XNYS')
           now = pd.Timestamp(datetime.now(timezone.utc))
@@ -116,7 +116,7 @@ jobs:
           --max-symbols "$OPTIONS_INDEPENDENT_MAX_SYMBOLS"
           --top-per-side "$OPTIONS_INDEPENDENT_TOP_PER_SIDE"
 
-      - name: Validate path independence and semantics
+      - name: Validate path independence, gamma semantics and one-side policy
         if: steps.market.outputs.open == 'true'
         run: |
           python - <<'PY'
@@ -126,18 +126,29 @@ jobs:
           payload = json.loads(Path('public/data/options_latest.json').read_text(encoding='utf-8'))
           assert payload['path'] == 'options'
           assert payload['independent_from_stock_radar'] is True
-          assert payload['architecture'] == 'independent_options_contract_radar_v1'
+          assert payload['architecture'] == 'independent_options_contract_radar_v2_free_gamma'
           assert isinstance(payload.get('provider_readiness'), dict)
+          assert isinstance(payload.get('gamma_maps'), dict)
           policy = payload['flow_policy']
           assert policy['volume_over_oi_means_new_opening_position'] is False
           assert policy['ask_side_snapshot_means_confirmed_buyer'] is False
           assert policy['sweep_claim_allowed_from_snapshot_chain'] is False
-          for row in payload.get('contracts', []):
+          assert 'verified dealer inventory' in policy['gamma_policy']
+          research = payload.get('research_contracts') or payload.get('contracts') or []
+          for row in research:
               assert row.get('independent_from_stock_radar') is True
               evidence = row.get('flow_evidence') or {}
               assert evidence.get('opening_position_confirmed') is False
               assert evidence.get('sweep_confirmed') is False
-          print('Independent options path validation passed.')
+          signals = payload.get('research_directional_signals') or payload.get('directional_signals') or []
+          seen = set()
+          for row in signals:
+              symbol = row['symbol']
+              assert symbol not in seen, f'duplicate CALL/PUT signal for {symbol}'
+              seen.add(symbol)
+              assert row.get('direction') in {'CALL', 'PUT'}
+              assert row.get('selection_policy') == 'one_side_one_contract_per_symbol_strict_consensus'
+          print('Independent options + gamma + one-side semantics passed.')
           PY
 
       - name: Upload options radar payload
@@ -190,4 +201,4 @@ jobs:
 
       - name: Closed-market status
         if: steps.market.outputs.open != 'true'
-        run: echo "Options radar skipped because the U.S. regular session is closed."
+        run: echo "Options radar skipped because the U.S. regular session is closed; manual runs cannot bypass this safety gate."

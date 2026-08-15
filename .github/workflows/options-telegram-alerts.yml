@@ -23,8 +23,10 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      OPTIONS_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_ALERT_MIN_SCORE || '65' }}
-      OPTIONS_ALERT_MAX: ${{ secrets.OPTIONS_ALERT_MAX || '4' }}
+      OPTIONS_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_ALERT_MIN_SCORE || '85' }}
+      OPTIONS_FREE_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_FREE_ALERT_MIN_SCORE || '87' }}
+      OPTIONS_FREE_ALERTS_ENABLED: ${{ secrets.OPTIONS_FREE_ALERTS_ENABLED || 'true' }}
+      OPTIONS_ALERT_MAX: ${{ secrets.OPTIONS_ALERT_MAX || '3' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +37,27 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Telegram dependency
-        run: pip install 'requests>=2.32,<3.0'
+      - name: Install Telegram and exchange-calendar dependencies
+        run: pip install 'requests>=2.32,<3.0' 'exchange-calendars>=4.13,<5.0'
+
+      - name: Check U.S. regular session before any options alert
+        id: market
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime, timezone
+          import exchange_calendars as xcals
+          import pandas as pd
+
+          cal = xcals.get_calendar('XNYS')
+          minute = pd.Timestamp(datetime.now(timezone.utc)).floor('min')
+          try:
+              is_open = bool(cal.is_open_on_minute(minute))
+          except Exception:
+              is_open = False
+          print(f"open={'true' if is_open else 'false'}")
+          print(f"reason={'regular_session' if is_open else 'market_closed'}")
+          PY
 
       - name: Restore persistent Telegram destination
         shell: bash
@@ -64,7 +85,7 @@ jobs:
 
       - name: Restore independent options payload
         id: payload
-        if: env.TELEGRAM_READY == 'true'
+        if: env.TELEGRAM_READY == 'true' && steps.market.outputs.open == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -87,14 +108,14 @@ jobs:
           fi
           if [[ -s .options-payload/options_latest.json ]]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Live options payload available."
+            echo "Options payload available."
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "No live options payload exists (market may be closed); Telegram will skip cleanly."
+            echo "No options payload exists; Telegram will skip cleanly."
           fi
 
       - name: Restore options Telegram state
-        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready == 'true'
+        if: env.TELEGRAM_READY == 'true' && steps.market.outputs.open == 'true' && steps.payload.outputs.ready == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -110,16 +131,15 @@ jobs:
             fi
           done
 
-      - name: Send options-only Arabic alerts
-        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready == 'true'
+      - name: Send strict options-only Arabic CALL or PUT alerts
+        if: env.TELEGRAM_READY == 'true' && steps.market.outputs.open == 'true' && steps.payload.outputs.ready == 'true'
         run: >-
-          python scripts/send_independent_path_alerts.py
-          --path options
+          python scripts/send_strict_options_alerts.py
           --payload .options-payload/options_latest.json
           --state data/live/options_telegram_alert_state.json
 
       - name: Upload options Telegram state
-        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready == 'true'
+        if: env.TELEGRAM_READY == 'true' && steps.market.outputs.open == 'true' && steps.payload.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: options-telegram-state
@@ -127,8 +147,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Closed-market or no-payload status
-        if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready != 'true'
+      - name: Closed-market status
+        if: env.TELEGRAM_READY == 'true' && steps.market.outputs.open != 'true'
+        run: echo "Options Telegram skipped because XNYS is not in the regular session."
+
+      - name: Open-market no-payload status
+        if: env.TELEGRAM_READY == 'true' && steps.market.outputs.open == 'true' && steps.payload.outputs.ready != 'true'
         run: echo "Options Telegram skipped because no fresh independent options payload exists."
 
       - name: Seal Telegram destination
