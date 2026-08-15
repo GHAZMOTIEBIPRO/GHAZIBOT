@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Any
 
 import pandas as pd
@@ -11,6 +11,11 @@ from .data_fabric import (
     parallel_fetch,
     reconcile_option_chains,
     reconcile_stock_bars,
+)
+from .stream_overlay import (
+    load_stream_snapshot,
+    overlay_option_chain_from_stream,
+    stock_stream_reference,
 )
 
 
@@ -147,6 +152,8 @@ def install_data_fabric() -> None:
         if frame.empty:
             raise hybrid.DataUnavailableError(f"stock_bars:{symbol}", attempts)
         selected_freshness = freshness.get(selected, "data-fabric selected feed")
+        stream_snapshot = load_stream_snapshot()
+        stream_reference = stock_stream_reference(symbol, stream_snapshot)
         return hybrid.FetchResult(
             frame,
             selected,
@@ -157,6 +164,7 @@ def install_data_fabric() -> None:
                 "symbol": symbol,
                 "interval": interval,
                 "data_fabric": audit,
+                "stream_reference": stream_reference,
                 "provider_health": health.snapshot(),
             },
         )
@@ -183,7 +191,7 @@ def install_data_fabric() -> None:
                 if "sandbox" in str(self.settings.tradier_base_url).lower()
                 else "Tradier brokerage feed"
             ),
-            "marketdata": "MarketData.app account feed; entitlement/delay apply",
+            "marketdata": "MarketData.app free/account path; current adapter labels free data at least 24h delayed",
             "finnhub": "Finnhub account entitlement",
             "yahoo": "unofficial fallback; may be delayed",
         }
@@ -234,6 +242,7 @@ def install_data_fabric() -> None:
             freshness=freshness,
             max_quote_divergence_pct=float(os.getenv("DATA_FABRIC_MAX_OPTION_DIVERGENCE_PCT", "0.08")),
         )
+        frame, stream_audit = overlay_option_chain_from_stream(frame)
         if apply_guards:
             frame, _ = self.apply_option_quality_guards(frame, symbol)
         if frame.empty:
@@ -249,10 +258,12 @@ def install_data_fabric() -> None:
             )
             raise hybrid.DataUnavailableError(f"option_chain:{symbol}", attempts)
         source = "fabric:" + "+".join(audit.get("sources") or list(frames))
+        if int(stream_audit.get("execution_quotes_replaced") or 0) > 0:
+            source += "+alpaca_opra_stream"
         return hybrid.FetchResult(
             frame.reset_index(drop=True),
             source,
-            "multi-provider exact-contract reconciliation",
+            "multi-provider exact-contract reconciliation with optional fresh stream overlay",
             hybrid._now_riyadh(),
             attempts,
             {
@@ -260,6 +271,7 @@ def install_data_fabric() -> None:
                 "min_dte": min_days,
                 "max_dte": max_days,
                 "data_fabric": audit,
+                "stream_overlay": stream_audit,
                 "provider_health": health.snapshot(),
             },
         )
