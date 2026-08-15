@@ -20,10 +20,6 @@ def _number(value: Any, default: float = 0.0) -> float:
     return number if math.isfinite(number) else default
 
 
-def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
-    return max(low, min(high, value))
-
-
 def _source_quality(source: str) -> str:
     text = source.lower()
     if "alpaca" in text and "opra" in text:
@@ -87,6 +83,7 @@ def prepare_gamma_chain(chain: pd.DataFrame, settings: Settings) -> pd.DataFrame
     if frame.empty:
         return frame
 
+    frame["gamma_estimated"] = False
     fallback_spot = float(frame["underlying_price"].dropna().median()) if frame["underlying_price"].notna().any() else 0.0
     for idx, row in frame.iterrows():
         gamma = _number(row.get("gamma"), float("nan"))
@@ -110,15 +107,12 @@ def prepare_gamma_chain(chain: pd.DataFrame, settings: Settings) -> pd.DataFrame
             if not math.isfinite(gamma):
                 frame.at[idx, "gamma"] = approx_gamma
                 frame.at[idx, "gamma_estimated"] = True
-        elif math.isfinite(gamma):
-            frame.at[idx, "gamma_estimated"] = False
 
-    frame["gamma_estimated"] = frame.get("gamma_estimated", False).fillna(False).astype(bool)
+    frame["gamma_estimated"] = frame["gamma_estimated"].fillna(False).astype(bool)
     frame["open_interest"] = frame["open_interest"].fillna(0).clip(lower=0)
     frame["gamma"] = frame["gamma"].clip(lower=0)
     frame["spot_for_gex"] = frame["underlying_price"].fillna(fallback_spot)
 
-    # Magnitude proxy: change in delta notional for a 1% underlying move.
     frame["gex_proxy"] = (
         frame["gamma"].fillna(0)
         * frame["open_interest"]
@@ -236,7 +230,6 @@ def analyze_free_gamma(
     settings: Settings,
     fetcher: Any,
 ) -> tuple[GammaMap, pd.DataFrame]:
-    """Fetch a fresh research chain, enrich free Alpaca Greeks when configured, and map gamma."""
     result = fetcher.fetch_option_chain(
         symbol,
         min_dte=settings.min_dte,
