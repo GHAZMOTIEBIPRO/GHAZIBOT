@@ -4,8 +4,9 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 _FALLBACK_TOKENS = ("yahoo", "yfinance")
-_DELAYED_TOKENS = ("sandbox", "delayed", "24h", "indicative", "unofficial")
+_DELAYED_TOKENS = ("sandbox", "delayed", "24h", "indicative", "unofficial", "may be delayed")
 _OPRA_TOKENS = ("opra", "polygon_options", "massive", "databento")
+_LIVE_TOKENS = ("brokerage feed", "real-time", "realtime", "opra", "sip")
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,55 @@ def _contains(text: str, tokens: tuple[str, ...]) -> bool:
     return any(token in lowered for token in tokens)
 
 
+def _fabric_classification(
+    raw: dict[str, Any],
+    *,
+    tradier_base_url: str,
+) -> tuple[bool, bool, bool, bool]:
+    """Return (live_quote, delayed, fallback_only, opra) for fabric metadata.
+
+    We deliberately do not assume that an account-entitlement source is live.
+    Production readiness requires an explicitly live/licensed source or a fresh
+    execution-grade OPRA stream overlay.
+    """
+    metadata = raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
+    fabric = metadata.get("data_fabric") if isinstance(metadata.get("data_fabric"), dict) else {}
+    stream = metadata.get("stream_overlay") if isinstance(metadata.get("stream_overlay"), dict) else {}
+    successes = _successful_providers(raw)
+
+    live_quote = False
+    delayed = False
+    non_fallback = 0
+    for provider in successes:
+        name = provider.lower()
+        if name in {"yahoo", "yfinance"}:
+            delayed = True
+            continue
+        non_fallback += 1
+        if name == "tradier":
+            if "sandbox" in tradier_base_url.lower():
+                delayed = True
+            else:
+                live_quote = True
+        elif name == "marketdata":
+            # Current MarketData adapter explicitly labels its free/account path
+            # as delayed. A future live adapter must advertise that separately.
+            delayed = True
+        elif name in {"databento", "massive", "polygon_options"}:
+            live_quote = True
+        else:
+            # Finnhub and other account feeds may be live depending on entitlement,
+            # but absence of an explicit live marker must not create Production.
+            pass
+
+    stream_execution = bool(stream.get("execution_grade")) and int(stream.get("execution_quotes_replaced") or 0) > 0
+    if stream_execution:
+        live_quote = True
+    opra = stream_execution or bool(fabric.get("opra_source_active"))
+    fallback_only = bool(successes) and non_fallback == 0
+    return live_quote, delayed, fallback_only, opra
+
+
 def assess_provider_readiness(
     provider_audit: dict[str, Any] | None,
     *,
@@ -75,14 +125,33 @@ def assess_provider_readiness(
                 all_sources.append(source)
         if len(successes) >= 2:
             cross_source += 1
+
+        is_fabric = source.startswith("fabric:") or isinstance(metadata.get("data_fabric"), dict)
+        if is_fabric:
+            fabric_live, fabric_delayed, fabric_fallback, fabric_opra = _fabric_classification(
+                raw,
+                tradier_base_url=tradier_base_url,
+            )
+            if fabric_fallback:
+                fallback += 1
+            if fabric_delayed:
+                delayed += 1
+            if fabric_live:
+                live_primary += 1
+            if fabric_opra:
+                opra += 1
+            continue
+
         is_fallback = bool(source) and _contains(source, _FALLBACK_TOKENS) and len(successes) <= 1
         is_delayed = _contains(f"{source} {freshness}", _DELAYED_TOKENS)
+        explicit_live = _contains(f"{source} {freshness}", _LIVE_TOKENS)
+        live_tradier_chain = "tradier" in source and "sandbox" not in tradier_base_url.lower()
         is_opra = bool(metadata.get("opra_source_active")) or _contains(source, _OPRA_TOKENS)
         if is_fallback:
             fallback += 1
         if is_delayed:
             delayed += 1
-        if source and not is_fallback and not is_delayed:
+        if source and not is_fallback and not is_delayed and (explicit_live or live_tradier_chain or is_opra):
             live_primary += 1
         if is_opra:
             opra += 1
@@ -99,7 +168,7 @@ def assess_provider_readiness(
         reasons.append("No usable option-chain source is currently producing data")
     elif not production_quote_ready:
         status = "FALLBACK_ONLY"
-        reasons.append("Only delayed, indicative, unofficial, or fallback option data is active")
+        reasons.append("Only delayed, indicative, unofficial, or unverified-entitlement option data is active")
     elif not production_flow_ready:
         status = "LIVE_QUOTES_NO_TRADE_FLOW"
         reasons.append("Live option quotes are available, but trade+NBBO flow evidence is not active")
@@ -110,7 +179,7 @@ def assess_provider_readiness(
     if fallback:
         reasons.append(f"{fallback} chain(s) are Yahoo/YFinance-only fallback")
     if delayed:
-        reasons.append(f"{delayed} chain(s) are delayed, indicative, or unofficial")
+        reasons.append(f"{delayed} chain(s) contain delayed, indicative, or unofficial sources")
     if cross_source:
         reasons.append(f"{cross_source} chain(s) have successful cross-source retrieval")
     if opra:
