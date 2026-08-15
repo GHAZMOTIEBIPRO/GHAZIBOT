@@ -173,8 +173,13 @@ def build_directional_signals(
         hard_blockers = {
             "spread_above_10pct",
             "delta_outside_strict_window",
+            "dte_outside_strict_window",
+            "option_volume_below_250",
+            "oi_below_150",
+            "vol_oi_below_1_2",
             "flow_below_62",
             "gamma_or_oi_coverage_weak",
+            "gamma_proxy_opposes_side",
             "reward_risk_below_1",
         }
         blockers = set(best.get("strict_blockers") or [])
