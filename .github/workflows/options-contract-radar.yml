@@ -72,15 +72,9 @@ jobs:
         shell: bash
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
-          import os
           from datetime import datetime, timezone
           import exchange_calendars as xcals
           import pandas as pd
-
-          if os.getenv('GITHUB_EVENT_NAME') == 'workflow_dispatch':
-              print('open=true')
-              print('reason=manual_dispatch')
-              raise SystemExit
 
           cal = xcals.get_calendar('XNYS')
           now = pd.Timestamp(datetime.now(timezone.utc))
@@ -207,4 +201,4 @@ jobs:
 
       - name: Closed-market status
         if: steps.market.outputs.open != 'true'
-        run: echo "Options radar skipped because the U.S. regular session is closed."
+        run: echo "Options radar skipped because the U.S. regular session is closed; manual runs cannot bypass this safety gate."
