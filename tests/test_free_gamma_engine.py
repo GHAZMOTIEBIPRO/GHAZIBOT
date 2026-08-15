@@ -58,3 +58,27 @@ def test_contracts_outside_configured_dte_do_not_enter_gamma_map():
     )
     prepared = prepare_gamma_chain(chain, settings)
     assert prepared["contract_symbol"].tolist() == ["VALID"]
+
+
+def test_tradier_sandbox_is_never_classified_as_strong_gamma_data():
+    settings = Settings(min_dte=7, max_dte=60)
+    chain = pd.DataFrame(
+        [
+            {
+                "contract_symbol": "T1",
+                "option_type": "call",
+                "strike": 100,
+                "expiration": _expiry(),
+                "open_interest": 1800,
+                "gamma": 0.03,
+                "delta": 0.50,
+                "iv": 0.32,
+                "underlying_price": 100,
+                "source": "tradier",
+                "freshness_label": "Tradier sandbox: delayed; Greeks unavailable",
+            }
+        ]
+    )
+    gamma_map = build_gamma_map("XYZ", chain, settings)
+    assert gamma_map.data_tier == "research_plus"
+    assert gamma_map.data_tier != "strong"
