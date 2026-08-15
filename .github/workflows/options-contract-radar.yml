@@ -51,6 +51,7 @@ jobs:
       OPTIONS_FREE_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_FREE_ALERT_MIN_SCORE || '87' }}
       OPTIONS_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_ALERT_MIN_SCORE || '85' }}
       OPTIONS_LEARNING_MAX_SYMBOLS: ${{ secrets.OPTIONS_LEARNING_MAX_SYMBOLS || '12' }}
+      OPTIONS_LEARNING_MIN_DATA_QUALITY: ${{ secrets.OPTIONS_LEARNING_MIN_DATA_QUALITY || '0.80' }}
       CALIBRATION_MINIMUM_SAMPLE: ${{ secrets.CALIBRATION_MINIMUM_SAMPLE || '100' }}
       OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
       DATABASE_PATH: data/live/options_alert_state.json
@@ -136,6 +137,7 @@ jobs:
           assert isinstance(payload.get('gamma_maps'), dict)
           assert isinstance(payload.get('outcome_learning'), dict)
           assert payload['outcome_learning'].get('status') != 'degraded'
+          assert int(payload['outcome_learning'].get('shadow_sample_size', 0)) >= int(payload['outcome_learning'].get('calibration_sample_size', 0))
           policy = payload['flow_policy']
           assert policy['volume_over_oi_means_new_opening_position'] is False
           assert policy['ask_side_snapshot_means_confirmed_buyer'] is False
@@ -159,7 +161,10 @@ jobs:
               assert row.get('selection_policy') == 'one_side_one_contract_per_symbol_strict_consensus'
           for path in ('data/live/options_outcomes.json', 'data/live/options_calibration.json'):
               assert Path(path).exists(), f'missing learning state: {path}'
-          print('Independent options + gamma + outcome learning + one-side semantics passed.')
+          calibration = json.loads(Path('data/live/options_calibration.json').read_text(encoding='utf-8'))
+          assert int(calibration.get('shadow_sample_size', 0)) >= int(calibration.get('sample_size', 0))
+          assert float(calibration.get('max_total_adjustment', 4.0)) <= 4.0
+          print('Independent options + gamma + guarded outcome learning + one-side semantics passed.')
           PY
 
       - name: Upload options radar payload
