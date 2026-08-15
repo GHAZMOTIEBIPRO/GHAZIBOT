@@ -9,9 +9,10 @@ on:
       - ".github/workflows/fast-explosion-radar.yml"
       - "scripts/fast_explosion_scan.py"
       - "scripts/fast_explosion_scan_runner.py"
+      - "options_radar/institutional_radar.py"
   schedule:
     - cron: "*/20 8-12 * * 1-5"
-    - cron: "*/10 13-21 * * 1-5"
+    - cron: "*/5 13-21 * * 1-5"
     - cron: "*/20 22-23 * * 1-5"
 
 concurrency:
@@ -44,7 +45,7 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
-      - name: Restore previous full-market Delta snapshot
+      - name: Restore previous full-market institutional snapshot
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -56,12 +57,12 @@ jobs:
             gh run download "$previous" -n fast-market-state -D data/live || true
           fi
           if [[ -f data/live/fast_market_state.json ]]; then
-            echo "Previous full-market Delta memory restored."
+            echo "Previous institutional full-market state restored."
           else
-            echo "No prior Delta artifact yet; this run will establish the baseline."
+            echo "No prior state yet; this run will establish the baseline."
           fi
 
-      - name: Scan full US-listed market for early ignition, news and halts
+      - name: Scan full US-listed market with institutional anomaly engine
         run: python scripts/fast_explosion_scan_runner.py --no-telegram
 
       - name: Upload fast-radar evidence for unified Arabic notifier
