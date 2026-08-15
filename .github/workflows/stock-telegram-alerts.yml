@@ -39,24 +39,16 @@ jobs:
       - name: Install Telegram and exchange-calendar dependencies
         run: pip install 'requests>=2.32,<3.0' 'exchange-calendars>=4.5,<5.0'
 
-      - name: Check U.S. trading day before any stock alert
+      - name: Check U.S. stock market activity window before any stock alert
         id: market_day
         shell: bash
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
-          from datetime import datetime
-          from zoneinfo import ZoneInfo
-          import exchange_calendars as xcals
-          import pandas as pd
-
-          cal = xcals.get_calendar('XNYS')
-          ny_date = datetime.now(ZoneInfo('America/New_York')).date()
-          try:
-              is_session = bool(cal.is_session(pd.Timestamp(ny_date)))
-          except Exception:
-              is_session = False
-          print(f"open={'true' if is_session else 'false'}")
-          print(f"date={ny_date.isoformat()}")
+          from options_radar.market_clock import market_clock_state
+          state = market_clock_state()
+          print(f"open={'true' if state.is_extended_activity_open else 'false'}")
+          print(f"date={state.session_date}")
+          print(f"reason={state.reason}")
           PY
 
       - name: Restore persistent Telegram destination
@@ -166,7 +158,7 @@ jobs:
 
       - name: Closed-market status
         if: steps.market_day.outputs.open != 'true'
-        run: echo "Stock Telegram skipped because today is not an XNYS trading day; stale payload fallback is forbidden."
+        run: echo "Stock Telegram skipped because New York is outside the 04:00-20:00 stock activity window or today is not an XNYS trading day; stale payload fallback is forbidden."
 
       - name: Seal Telegram destination
         if: always() && steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
