@@ -45,6 +45,11 @@ def score_contract_strict(row: dict[str, Any]) -> tuple[float, list[str], list[s
     oi_coverage = _number(row.get("oi_coverage_pct"))
     occ = row.get("occ_side_context") if isinstance(row.get("occ_side_context"), dict) else {}
     occ_bonus = _number(occ.get("bonus"))
+    learning = (
+        max(-4.0, min(4.0, _number(row.get("learning_adjustment"))))
+        if row.get("learning_active") is True
+        else 0.0
+    )
 
     rr_fit = _clamp((rr - 0.8) / 1.2 * 100.0)
     gamma_fit = _clamp(gamma_concentration * 3.0 + max(0.0, gamma_alignment) * 35.0)
@@ -59,6 +64,7 @@ def score_contract_strict(row: dict[str, Any]) -> tuple[float, list[str], list[s
         + liquidity_fit * 0.10
         + rr_fit * 0.06
         + occ_bonus
+        + learning
     )
 
     blockers: list[str] = []
@@ -112,6 +118,8 @@ def score_contract_strict(row: dict[str, Any]) -> tuple[float, list[str], list[s
         reasons.append(f"OCC daily volume aligned {occ.get('dominance_ratio')}x")
     if rr >= 1.2:
         reasons.append(f"R/R {rr:.2f}")
+    if abs(learning) >= 0.05:
+        reasons.append(f"validated learning adjustment {learning:+.2f}")
     return round(strict, 2), reasons, blockers
 
 
@@ -125,7 +133,8 @@ def build_directional_signals(
     """Choose exactly one CALL or PUT side per symbol, then one best contract.
 
     This layer never turns an ambiguous symbol into a signal. It is deliberately
-    selective: zero signals is a valid result.
+    selective: zero signals is a valid result. Learned adjustments are bounded
+    and can never override the hard execution/risk blockers below.
     """
     by_symbol: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for raw in contracts:
