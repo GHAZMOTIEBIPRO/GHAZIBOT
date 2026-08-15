@@ -5,6 +5,14 @@ import json
 import os
 from pathlib import Path
 
+# Keep the options learning state isolated even for local/manual runs.
+os.environ.setdefault("DATABASE_PATH", "data/live/options_alert_state.json")
+os.environ.setdefault("SIGNAL_JOURNAL_PATH", "data/live/options_signals.jsonl")
+os.environ.setdefault("OUTCOME_PATH", "data/live/options_outcomes.json")
+os.environ.setdefault("CALIBRATION_PATH", "data/live/options_calibration.json")
+
+from options_radar.hybrid_fetcher import DataFetcher
+from options_radar.outcome_learning import update_outcome_learning
 from options_radar.provider_readiness import assess_provider_readiness
 from options_radar.runtime_hardening import install_options_radar_hardening
 from options_radar.settings import Settings
@@ -63,6 +71,30 @@ def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
     )
 
 
+def _run_learning(payload: dict, settings: Settings) -> None:
+    try:
+        learning = update_outcome_learning(
+            payload,
+            settings=settings,
+            fetcher=DataFetcher(settings),
+        )
+        payload["outcome_learning"] = learning
+        summary = payload.setdefault("summary", {})
+        summary["learning_tracked_new"] = int(learning.get("tracked_new", 0))
+        summary["learning_open_signals"] = int(learning.get("open_signals", 0))
+        summary["learning_observations_updated"] = int(learning.get("observations_updated", 0))
+        summary["learning_calibration_active"] = bool(learning.get("calibration_active"))
+        summary["learning_calibration_sample_size"] = int(learning.get("calibration_sample_size", 0))
+    except Exception as exc:
+        payload.setdefault("errors", {})["outcome_learning"] = f"{type(exc).__name__}: {exc}"
+        payload["outcome_learning"] = {
+            "status": "degraded",
+            "calibration_active": False,
+            "error": f"{type(exc).__name__}: {exc}",
+            "policy": "Learning failure never blocks the independent options radar or weakens hard gates.",
+        }
+
+
 def run(
     *,
     universe_path: str | Path = base.DEFAULT_INPUT,
@@ -87,6 +119,8 @@ def run(
     payload["summary"]["production_quote_ready"] = readiness["production_quote_ready"]
     payload["summary"]["production_flow_ready"] = readiness["production_flow_ready"]
     _quarantine_research_contracts(payload, readiness)
+    _run_learning(payload, settings)
+
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
@@ -124,6 +158,7 @@ def main() -> None:
         f"puts={summary.get('puts_selected', 0)} "
         f"free_signals={summary.get('free_directional_signals', 0)} "
         f"research={summary.get('research_contracts_selected', 0)} "
+        f"learning_samples={summary.get('learning_calibration_sample_size', 0)} "
         f"provider_readiness={summary.get('provider_readiness', 'UNKNOWN')} "
         f"blocked={summary.get('production_alerts_blocked', False)}"
     )
