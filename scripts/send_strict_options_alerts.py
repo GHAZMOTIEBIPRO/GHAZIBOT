@@ -48,6 +48,20 @@ def _fingerprint(parts: list[Any]) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
 
 
+def _payload_age_minutes(payload: dict[str, Any]) -> float | None:
+    generated = str(payload.get("generated_at") or "").strip()
+    if not generated:
+        return None
+    try:
+        timestamp = datetime.fromisoformat(generated.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=timezone.utc)
+    age = (datetime.now(timezone.utc) - timestamp.astimezone(timezone.utc)).total_seconds() / 60.0
+    return max(0.0, age)
+
+
 def _send(text: str) -> None:
     token = str(os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     chat_id = str(os.getenv("TELEGRAM_CHAT_ID") or "").strip()
@@ -93,6 +107,7 @@ def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> st
     gamma_align = _number(row.get("gamma_context_alignment"))
     gamma_coverage = _number(row.get("gamma_coverage_pct"))
     oi_coverage = _number(row.get("oi_coverage_pct"))
+    contract_symbol = str(row.get("contract_symbol") or "").upper().strip()
     occ = row.get("occ_side_context") if isinstance(row.get("occ_side_context"), dict) else {}
     reasons = [str(value) for value in row.get("strict_reasons", []) if str(value).strip()]
     emoji = "🟢" if direction == "CALL" else "🔴"
@@ -103,18 +118,24 @@ def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> st
         "",
         f"<b>{_safe(symbol)}</b> | القرار: <b>{_safe(direction)}</b>",
         f"العقد: <b>{_safe(symbol)} {strike:g}{'C' if direction == 'CALL' else 'P'}</b> | {expiration} | {dte} DTE",
-        f"Bid/Ask: <b>${bid:.2f} / ${ask:.2f}</b> | السبريد <b>{spread * 100:.1f}%</b>",
-        f"الفلتر الصارم: <b>{strict:.0f}/100</b> | Flow <b>{flow:.0f}/100</b> | R/R <b>{rr:.2f}</b>",
-        "",
-        "🧲 <b>القاما / GEX Proxy</b>",
-        f"السياق: <b>{_safe(gamma_context)}</b> | توافق الجهة <b>{gamma_align:+.2f}</b>",
-        f"Call Wall: <b>{_safe(call_wall)}</b> | Put Wall: <b>{_safe(put_wall)}</b>",
-        f"تغطية Gamma/OI: <b>{gamma_coverage:.0f}% / {oi_coverage:.0f}%</b>",
-        "",
-        "📊 <b>العقد</b>",
-        f"Delta <b>{delta:+.2f}</b> | Gamma <b>{gamma:.5f}</b> | IV <b>{iv:.1%}</b>",
-        f"Volume <b>{volume:,}</b> | OI <b>{oi:,}</b> | Vol/OI <b>{vol_oi:.2f}×</b>",
     ]
+    if contract_symbol:
+        lines.append(f"OCC Symbol: <code>{_safe(contract_symbol, 120)}</code>")
+    lines.extend(
+        [
+            f"Bid/Ask: <b>${bid:.2f} / ${ask:.2f}</b> | السبريد <b>{spread * 100:.1f}%</b>",
+            f"الفلتر الصارم: <b>{strict:.0f}/100</b> | Flow <b>{flow:.0f}/100</b> | R/R <b>{rr:.2f}</b>",
+            "",
+            "🧲 <b>القاما / GEX Proxy</b>",
+            f"السياق: <b>{_safe(gamma_context)}</b> | توافق الجهة <b>{gamma_align:+.2f}</b>",
+            f"Call Wall: <b>{_safe(call_wall)}</b> | Put Wall: <b>{_safe(put_wall)}</b>",
+            f"تغطية Gamma/OI: <b>{gamma_coverage:.0f}% / {oi_coverage:.0f}%</b>",
+            "",
+            "📊 <b>العقد</b>",
+            f"Delta <b>{delta:+.2f}</b> | Gamma <b>{gamma:.5f}</b> | IV <b>{iv:.1%}</b>",
+            f"Volume <b>{volume:,}</b> | OI <b>{oi:,}</b> | Vol/OI <b>{vol_oi:.2f}×</b>",
+        ]
+    )
     if occ.get("available") is True:
         lines.append(
             f"OCC رسمي يومي: CALL <b>{int(_number(occ.get('call_volume'))):,}</b> / PUT <b>{int(_number(occ.get('put_volume'))):,}</b> | توافق الجهة <b>{_safe(occ.get('dominance_ratio'))}×</b>"
@@ -150,6 +171,21 @@ def select_rows(payload: dict[str, Any]) -> tuple[str, list[dict[str, Any]], dic
 
 
 def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
+    age_minutes = _payload_age_minutes(payload)
+    max_age = _number(os.getenv("OPTIONS_PAYLOAD_MAX_AGE_MINUTES", "45"), 45.0)
+    if age_minutes is None or age_minutes > max_age:
+        state.update(
+            {
+                "last_run_at": datetime.now(timezone.utc).isoformat(),
+                "last_sent_count": 0,
+                "path": "options",
+                "mode": "stale_blocked",
+                "payload_age_minutes": age_minutes,
+                "blocked_reason": "MISSING_OR_STALE_OPTIONS_PAYLOAD",
+            }
+        )
+        return 0
+
     mode, rows, readiness = select_rows(payload)
     if mode == "blocked":
         state.update(
@@ -158,6 +194,7 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
                 "last_sent_count": 0,
                 "path": "options",
                 "mode": mode,
+                "payload_age_minutes": round(age_minutes, 2),
                 "blocked_reason": str(readiness.get("status") or "PROVIDER_NOT_READY"),
             }
         )
@@ -211,6 +248,7 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
             "path": "options",
             "mode": mode,
             "minimum_score": minimum,
+            "payload_age_minutes": round(age_minutes, 2),
         }
     )
     state.pop("blocked_reason", None)
