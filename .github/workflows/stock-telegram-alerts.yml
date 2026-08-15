@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
-          from options_radar.market_clock import market_clock_state
+          from market_runtime_clock import market_clock_state
           state = market_clock_state()
           print(f"open={'true' if state.is_extended_activity_open else 'false'}")
           print(f"date={state.session_date}")
