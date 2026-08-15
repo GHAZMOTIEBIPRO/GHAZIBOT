@@ -20,21 +20,6 @@ def _number(value: Any, default: float = 0.0) -> float:
     return number if math.isfinite(number) else default
 
 
-def _source_quality(description: str) -> str:
-    text = description.lower()
-    if "alpaca" in text and "opra" in text:
-        return "licensed_or_opra"
-    if "tradier" in text and "sandbox" not in text:
-        return "brokerage"
-    if "marketdata" in text:
-        return "delayed_structured"
-    if "alpaca" in text:
-        return "indicative"
-    if "yahoo" in text or "yfinance" in text:
-        return "unofficial"
-    return "unknown"
-
-
 @dataclass(frozen=True)
 class GammaMap:
     symbol: str
@@ -194,16 +179,18 @@ def build_gamma_map(symbol: str, chain: pd.DataFrame, settings: Settings) -> Gam
 
     sources = list(dict.fromkeys(frame.get("source", pd.Series(dtype=str)).dropna().astype(str)))
     freshness = list(dict.fromkeys(frame.get("freshness_label", pd.Series(dtype=str)).dropna().astype(str)))
-    descriptors = [*sources, *freshness]
-    tiers = {_source_quality(value) for value in descriptors}
-    if "licensed_or_opra" in tiers or "brokerage" in tiers:
+    source_text = " | ".join([*sources, *freshness])
+    descriptor = source_text.lower()
+    delayed_or_sandbox = any(token in descriptor for token in ("sandbox", "delayed", "at least 24h", "indicative"))
+    if "alpaca" in descriptor and "opra" in descriptor and not delayed_or_sandbox:
         data_tier = "strong"
-    elif "delayed_structured" in tiers or "indicative" in tiers:
+    elif "tradier" in descriptor and not delayed_or_sandbox:
+        data_tier = "strong"
+    elif any(token in descriptor for token in ("marketdata", "alpaca", "tradier", "sandbox", "delayed", "indicative")):
         data_tier = "research_plus"
     else:
         data_tier = "research"
 
-    source_text = " | ".join([*sources, *freshness])
     note = (
         f"GEX proxy from gamma×OI; gamma coverage {gamma_coverage:.0f}%, OI coverage {oi_coverage:.0f}%, "
         f"estimated gamma share {estimated_gamma_pct:.0f}%. This is a positioning proxy, not verified dealer inventory. "
