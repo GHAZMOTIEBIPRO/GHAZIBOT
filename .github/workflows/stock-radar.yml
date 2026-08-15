@@ -51,7 +51,28 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
+      - name: Check U.S. trading day before stock validation
+        id: market_day
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          import exchange_calendars as xcals
+          import pandas as pd
+
+          cal = xcals.get_calendar('XNYS')
+          ny_date = datetime.now(ZoneInfo('America/New_York')).date()
+          try:
+              is_session = bool(cal.is_session(pd.Timestamp(ny_date)))
+          except Exception:
+              is_session = False
+          print(f"open={'true' if is_session else 'false'}")
+          print(f"date={ny_date.isoformat()}")
+          PY
+
       - name: Restore fast stock discovery payload
+        if: steps.market_day.outputs.open == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -74,6 +95,7 @@ jobs:
           test -s data/live/fast_explosion_scan.json
 
       - name: Restore stock outcome state
+        if: steps.market_day.outputs.open == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -88,6 +110,7 @@ jobs:
           done
 
       - name: Restore adaptive learning model
+        if: steps.market_day.outputs.open == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -102,15 +125,18 @@ jobs:
           done
 
       - name: Deep validate stock causes with official-first policy
+        if: steps.market_day.outputs.open == 'true'
         run: >-
           python -m scripts.run_stock_radar_independent
           --fast data/live/fast_explosion_scan.json
           --output public/data/stocks_latest.json
 
       - name: Add regime, outcome and shadow-learning evidence
+        if: steps.market_day.outputs.open == 'true'
         run: python -m scripts.enrich_stock_radar_research --payload public/data/stocks_latest.json
 
       - name: Validate stock-path independence and learning guard
+        if: steps.market_day.outputs.open == 'true'
         run: |
           python - <<'PY'
           import json
@@ -130,6 +156,7 @@ jobs:
           PY
 
       - name: Upload independent stock radar
+        if: steps.market_day.outputs.open == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: independent-stock-radar
@@ -138,6 +165,7 @@ jobs:
           retention-days: 7
 
       - name: Stage stock learning state
+        if: steps.market_day.outputs.open == 'true'
         shell: bash
         run: |
           mkdir -p .stock-state-upload data/live
@@ -147,6 +175,7 @@ jobs:
           cp -f data/live/stock_outcomes.json .stock-state-upload/stock_outcomes.json
 
       - name: Upload stock learning state
+        if: steps.market_day.outputs.open == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: stock-radar-state
@@ -154,3 +183,7 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 30
+
+      - name: Closed-market status
+        if: steps.market_day.outputs.open != 'true'
+        run: echo "Stock radar skipped because today is not an XNYS trading day; no historical fast-radar artifact will be promoted as fresh discovery."
