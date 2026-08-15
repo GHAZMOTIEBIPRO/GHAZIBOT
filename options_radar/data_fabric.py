@@ -105,7 +105,7 @@ class ProviderHealthRegistry:
         self.path = Path(path)
         self.failure_threshold = max(2, int(failure_threshold))
         self.cool_down = timedelta(minutes=max(5, int(cool_down_minutes)))
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._state = self._load()
 
     def _load(self) -> dict[str, Any]:
@@ -132,8 +132,9 @@ class ProviderHealthRegistry:
 
     def allowed(self, provider: str, operation: str, now: datetime | None = None) -> bool:
         now = _utc(now)
-        row = self._state.get("providers", {}).get(self._key(provider, operation), {})
-        opened_at = row.get("circuit_opened_at") if isinstance(row, dict) else None
+        with self._lock:
+            row = self._state.get("providers", {}).get(self._key(provider, operation), {})
+            opened_at = row.get("circuit_opened_at") if isinstance(row, dict) else None
         if not opened_at:
             return True
         try:
@@ -181,7 +182,8 @@ class ProviderHealthRegistry:
             self._save()
 
     def snapshot(self) -> dict[str, Any]:
-        return json.loads(json.dumps(self._state))
+        with self._lock:
+            return json.loads(json.dumps(self._state))
 
 
 def parallel_fetch(
@@ -408,10 +410,9 @@ def reconcile_stock_bars(
         "tiingo": 0.84,
         "finnhub": 0.80,
         "twelve_data": 0.70,
-        "polygon": 0.68,
+        "polygon_massive": 0.68,
         "alpha_vantage": 0.62,
         "yahoo": 0.52,
-        "yfinance": 0.52,
     }
     for provider, frame in frames.items():
         if frame is None or frame.empty or "Close" not in frame:
@@ -420,13 +421,12 @@ def reconcile_stock_bars(
         if clean.empty:
             continue
         latest = clean.iloc[-1]
-        latest_at = clean.index[-1]
         candidates.append(
             {
                 "provider": provider,
                 "frame": clean,
                 "close": _number(latest.get("Close")),
-                "latest_at": pd.to_datetime(latest_at, utc=True, errors="coerce"),
+                "latest_at": pd.to_datetime(clean.index[-1], utc=True, errors="coerce"),
                 "quality": static_quality.get(_provider_family(provider), 0.60),
                 "rows": len(clean),
             }
@@ -459,9 +459,22 @@ def reconcile_stock_bars(
     return chosen["frame"], chosen["provider"], audit
 
 
+_HEALTH_SINGLETON_LOCK = threading.Lock()
+_HEALTH_SINGLETONS: dict[tuple[str, int, int], ProviderHealthRegistry] = {}
+
+
 def health_from_env() -> ProviderHealthRegistry:
-    return ProviderHealthRegistry(
-        Path(os.getenv("DATA_FABRIC_HEALTH_PATH", "data/live/provider_health.json")),
-        failure_threshold=int(os.getenv("DATA_FABRIC_CIRCUIT_FAILURES", "3")),
-        cool_down_minutes=int(os.getenv("DATA_FABRIC_CIRCUIT_MINUTES", "20")),
-    )
+    path = Path(os.getenv("DATA_FABRIC_HEALTH_PATH", "data/live/provider_health.json"))
+    failure_threshold = int(os.getenv("DATA_FABRIC_CIRCUIT_FAILURES", "3"))
+    cool_down_minutes = int(os.getenv("DATA_FABRIC_CIRCUIT_MINUTES", "20"))
+    key = (str(path.resolve()), failure_threshold, cool_down_minutes)
+    with _HEALTH_SINGLETON_LOCK:
+        registry = _HEALTH_SINGLETONS.get(key)
+        if registry is None:
+            registry = ProviderHealthRegistry(
+                path,
+                failure_threshold=failure_threshold,
+                cool_down_minutes=cool_down_minutes,
+            )
+            _HEALTH_SINGLETONS[key] = registry
+        return registry
