@@ -20,8 +20,8 @@ def _number(value: Any, default: float = 0.0) -> float:
     return number if math.isfinite(number) else default
 
 
-def _source_quality(source: str) -> str:
-    text = source.lower()
+def _source_quality(description: str) -> str:
+    text = description.lower()
     if "alpaca" in text and "opra" in text:
         return "licensed_or_opra"
     if "tradier" in text and "sandbox" not in text:
@@ -44,6 +44,7 @@ class GammaMap:
     contracts_with_oi: int
     gamma_coverage_pct: float
     oi_coverage_pct: float
+    estimated_gamma_pct: float
     call_gex_proxy: float
     put_gex_proxy: float
     signed_gex_proxy: float
@@ -76,14 +77,19 @@ def prepare_gamma_chain(chain: pd.DataFrame, settings: Settings) -> pd.DataFrame
         if column not in frame:
             frame[column] = np.nan
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
-    frame["expiration"] = pd.to_datetime(frame.get("expiration"), errors="coerce")
+
+    frame["expiration"] = pd.to_datetime(frame.get("expiration"), errors="coerce", utc=True).dt.tz_convert(None)
     today = pd.Timestamp.now().normalize()
     frame["dte"] = (frame["expiration"].dt.normalize() - today).dt.days
     frame = frame[frame["dte"].between(settings.min_dte, settings.max_dte)].copy()
     if frame.empty:
         return frame
 
-    frame["gamma_estimated"] = False
+    if "gamma_estimated" in frame:
+        frame["gamma_estimated"] = frame["gamma_estimated"].fillna(False).astype(bool)
+    else:
+        frame["gamma_estimated"] = False
+
     fallback_spot = float(frame["underlying_price"].dropna().median()) if frame["underlying_price"].notna().any() else 0.0
     for idx, row in frame.iterrows():
         gamma = _number(row.get("gamma"), float("nan"))
@@ -112,7 +118,6 @@ def prepare_gamma_chain(chain: pd.DataFrame, settings: Settings) -> pd.DataFrame
     frame["open_interest"] = frame["open_interest"].fillna(0).clip(lower=0)
     frame["gamma"] = frame["gamma"].clip(lower=0)
     frame["spot_for_gex"] = frame["underlying_price"].fillna(fallback_spot)
-
     frame["gex_proxy"] = (
         frame["gamma"].fillna(0)
         * frame["open_interest"]
@@ -131,19 +136,21 @@ def build_gamma_map(symbol: str, chain: pd.DataFrame, settings: Settings) -> Gam
         return GammaMap(
             symbol=symbol.upper(), spot=0.0, contracts_seen=0, contracts_with_gamma=0,
             contracts_with_oi=0, gamma_coverage_pct=0.0, oi_coverage_pct=0.0,
-            call_gex_proxy=0.0, put_gex_proxy=0.0, signed_gex_proxy=0.0,
-            call_share_pct=0.0, put_share_pct=0.0, call_wall=None, put_wall=None,
-            nearest_gamma_strike=None, gamma_balance=0.0, context="NO_DATA",
-            data_tier="unavailable", source_note="No usable option chain in configured DTE window.",
-            by_strike=(),
+            estimated_gamma_pct=0.0, call_gex_proxy=0.0, put_gex_proxy=0.0,
+            signed_gex_proxy=0.0, call_share_pct=0.0, put_share_pct=0.0,
+            call_wall=None, put_wall=None, nearest_gamma_strike=None, gamma_balance=0.0,
+            context="NO_DATA", data_tier="unavailable",
+            source_note="No usable option chain in configured DTE window.", by_strike=(),
         )
 
     spot = _number(frame["spot_for_gex"].replace(0, np.nan).dropna().median()) if frame["spot_for_gex"].notna().any() else 0.0
     gamma_ok = frame["gamma"].notna() & (frame["gamma"] > 0)
     oi_ok = frame["open_interest"].fillna(0) > 0
     contracts_seen = len(frame)
-    gamma_coverage = 100.0 * float(gamma_ok.sum()) / max(contracts_seen, 1)
+    gamma_count = int(gamma_ok.sum())
+    gamma_coverage = 100.0 * gamma_count / max(contracts_seen, 1)
     oi_coverage = 100.0 * float(oi_ok.sum()) / max(contracts_seen, 1)
+    estimated_gamma_pct = 100.0 * float((frame["gamma_estimated"] & gamma_ok).sum()) / max(gamma_count, 1)
 
     side = frame["option_type"].astype(str).str.lower()
     call_total = float(frame.loc[side.eq("call"), "gex_proxy"].sum())
@@ -185,8 +192,10 @@ def build_gamma_map(symbol: str, chain: pd.DataFrame, settings: Settings) -> Gam
     else:
         context = "BALANCED_PROXY"
 
-    source_text = " | ".join(dict.fromkeys(frame.get("source", pd.Series(dtype=str)).dropna().astype(str)))
-    tiers = {_source_quality(value) for value in frame.get("source", pd.Series(dtype=str)).dropna().astype(str)}
+    sources = list(dict.fromkeys(frame.get("source", pd.Series(dtype=str)).dropna().astype(str)))
+    freshness = list(dict.fromkeys(frame.get("freshness_label", pd.Series(dtype=str)).dropna().astype(str)))
+    descriptors = [*sources, *freshness]
+    tiers = {_source_quality(value) for value in descriptors}
     if "licensed_or_opra" in tiers or "brokerage" in tiers:
         data_tier = "strong"
     elif "delayed_structured" in tiers or "indicative" in tiers:
@@ -194,33 +203,22 @@ def build_gamma_map(symbol: str, chain: pd.DataFrame, settings: Settings) -> Gam
     else:
         data_tier = "research"
 
-    estimated_ratio = 100.0 * float(frame["gamma_estimated"].sum()) / max(int(gamma_ok.sum()), 1)
+    source_text = " | ".join([*sources, *freshness])
     note = (
         f"GEX proxy from gamma×OI; gamma coverage {gamma_coverage:.0f}%, OI coverage {oi_coverage:.0f}%, "
-        f"estimated gamma share {estimated_ratio:.0f}%. This is a positioning proxy, not verified dealer inventory. "
+        f"estimated gamma share {estimated_gamma_pct:.0f}%. This is a positioning proxy, not verified dealer inventory. "
         f"Sources: {source_text or 'unknown'}."
     )
     return GammaMap(
-        symbol=symbol.upper(),
-        spot=round(spot, 4),
-        contracts_seen=contracts_seen,
-        contracts_with_gamma=int(gamma_ok.sum()),
-        contracts_with_oi=int(oi_ok.sum()),
-        gamma_coverage_pct=round(gamma_coverage, 2),
-        oi_coverage_pct=round(oi_coverage, 2),
-        call_gex_proxy=round(call_total, 2),
-        put_gex_proxy=round(put_total, 2),
-        signed_gex_proxy=round(signed, 2),
-        call_share_pct=round(call_share, 2),
-        put_share_pct=round(put_share, 2),
-        call_wall=call_wall,
-        put_wall=put_wall,
-        nearest_gamma_strike=nearest,
-        gamma_balance=round(balance, 5),
-        context=context,
-        data_tier=data_tier,
-        source_note=note,
-        by_strike=tuple(strike_rows[:30]),
+        symbol=symbol.upper(), spot=round(spot, 4), contracts_seen=contracts_seen,
+        contracts_with_gamma=gamma_count, contracts_with_oi=int(oi_ok.sum()),
+        gamma_coverage_pct=round(gamma_coverage, 2), oi_coverage_pct=round(oi_coverage, 2),
+        estimated_gamma_pct=round(estimated_gamma_pct, 2), call_gex_proxy=round(call_total, 2),
+        put_gex_proxy=round(put_total, 2), signed_gex_proxy=round(signed, 2),
+        call_share_pct=round(call_share, 2), put_share_pct=round(put_share, 2),
+        call_wall=call_wall, put_wall=put_wall, nearest_gamma_strike=nearest,
+        gamma_balance=round(balance, 5), context=context, data_tier=data_tier,
+        source_note=note, by_strike=tuple(strike_rows[:30]),
     )
 
 
@@ -263,4 +261,5 @@ def contract_gamma_metrics(row: dict[str, Any], gamma_map: dict[str, Any]) -> di
         "put_wall": gamma_map.get("put_wall"),
         "gamma_coverage_pct": _number(gamma_map.get("gamma_coverage_pct")),
         "oi_coverage_pct": _number(gamma_map.get("oi_coverage_pct")),
+        "estimated_gamma_pct": _number(gamma_map.get("estimated_gamma_pct")),
     }
