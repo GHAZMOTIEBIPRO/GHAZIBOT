@@ -75,8 +75,10 @@ def load_calibration(path: Path | str) -> dict[str, Any]:
             "schema_version": SCHEMA_VERSION,
             "active": False,
             "sample_size": 0,
+            "shadow_sample_size": 0,
             "minimum_sample": 0,
             "global": {},
+            "global_shadow": {},
             "features": {},
         },
     )
@@ -175,6 +177,22 @@ def _quote(row: dict[str, Any], *, entry: bool) -> tuple[float, str] | None:
     return None
 
 
+def _training_quote_eligible(row: dict[str, Any]) -> bool:
+    minimum_quality = _number(os.getenv("OPTIONS_LEARNING_MIN_DATA_QUALITY", "0.80"), 0.80)
+    quality = _number(row.get("data_quality"))
+    descriptor = f"{row.get('source') or ''} {row.get('freshness_label') or ''}".lower()
+    blocked_tokens = (
+        "sandbox",
+        "delayed",
+        "unofficial",
+        "indicative",
+        "at least 24",
+        "24h",
+        "24 h",
+    )
+    return quality >= minimum_quality and not any(token in descriptor for token in blocked_tokens)
+
+
 def _signal_id(row: dict[str, Any], created_at: datetime) -> str:
     contract = str(row.get("contract_symbol") or "").upper().replace(" ", "")
     direction = str(row.get("direction_label") or row.get("direction") or row.get("option_type") or "").upper()
@@ -247,6 +265,7 @@ def _start_signals(
         entry_price, quote_method = quote
         close_at = _session_close(now)
         feature_snapshot = _features(row)
+        training_eligible = quote_method == "ask_to_bid" and _training_quote_eligible(row)
         signals[signal_id] = {
             "signal_id": signal_id,
             "created_at": now.isoformat(),
@@ -260,6 +279,7 @@ def _start_signals(
             "strike": _number(row.get("strike")),
             "entry_price": round(entry_price, 6),
             "entry_quote_method": quote_method,
+            "entry_training_eligible": training_eligible,
             "entry_bid": _number(row.get("bid")),
             "entry_ask": _number(row.get("ask")),
             "entry_last": _number(row.get("last")),
@@ -281,6 +301,7 @@ def _start_signals(
                 "contract_symbol": contract,
                 "entry_price": round(entry_price, 6),
                 "quote_method": quote_method,
+                "training_eligible": training_eligible,
                 "strict_score": strict,
                 "features": feature_snapshot,
             }
@@ -324,6 +345,7 @@ def _observation(signal: dict[str, Any], row: dict[str, Any], now: datetime) -> 
         "mark": round(mark, 6),
         "return_pct": round(return_pct, 4),
         "quote_method": method,
+        "training_quote_eligible": method == "ask_to_bid" and _training_quote_eligible(row),
         "source": str(row.get("source") or ""),
         "freshness_label": str(row.get("freshness_label") or ""),
         "data_quality": round(_number(row.get("data_quality")), 4),
@@ -363,6 +385,7 @@ def _apply_observation(
                     "checkpoint": label,
                     "return_pct": observation.get("return_pct"),
                     "quote_method": observation.get("quote_method"),
+                    "training_quote_eligible": observation.get("training_quote_eligible"),
                 }
             )
         elif age_minutes > target + tolerance:
@@ -382,6 +405,7 @@ def _apply_observation(
                     "checkpoint": "eod",
                     "return_pct": observation.get("return_pct"),
                     "quote_method": observation.get("quote_method"),
+                    "training_quote_eligible": observation.get("training_quote_eligible"),
                 }
             )
     if "eod" in checkpoints or age_minutes > 24 * 60:
@@ -401,6 +425,7 @@ def _stats(values: list[float]) -> dict[str, Any]:
 
 
 def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, Any]:
+    shadow_records: list[tuple[dict[str, Any], float]] = []
     records: list[tuple[dict[str, Any], float]] = []
     signals = state.get("signals") if isinstance(state.get("signals"), dict) else {}
     for signal in signals.values():
@@ -410,14 +435,18 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
         features = signal.get("features") if isinstance(signal.get("features"), dict) else {}
         if not isinstance(checkpoint, dict) or not features:
             continue
-        # Only executable ask-to-bid observations train the adaptive layer.
         if checkpoint.get("quote_method") != "ask_to_bid" or signal.get("entry_quote_method") != "ask_to_bid":
             continue
         value = _number(checkpoint.get("return_pct"), float("nan"))
-        if math.isfinite(value):
+        if not math.isfinite(value):
+            continue
+        shadow_records.append((features, value))
+        if signal.get("entry_training_eligible") is True and checkpoint.get("training_quote_eligible") is True:
             records.append((features, value))
 
+    shadow_returns = [value for _, value in shadow_records]
     returns = [value for _, value in records]
+    global_shadow_stats = _stats(shadow_returns)
     global_stats = _stats(returns)
     active = len(records) >= minimum_sample
     min_group = max(20, min(40, math.ceil(minimum_sample / 3)))
@@ -450,11 +479,14 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "active": active,
         "sample_size": len(records),
+        "shadow_sample_size": len(shadow_records),
         "minimum_sample": minimum_sample,
         "training_checkpoint": "60m",
         "training_quote_method": "ask_to_bid",
+        "training_data_policy": "Entry and 60m quote must be non-delayed/non-sandbox/non-indicative with configured minimum data quality.",
         "max_total_adjustment": MAX_LEARNING_ADJUSTMENT,
         "global": global_stats,
+        "global_shadow": global_shadow_stats,
         "features": feature_output,
         "policy": "Bayesian-shrunk bounded score adjustment; never bypasses hard execution/risk blockers.",
     }
@@ -520,8 +552,10 @@ def update_outcome_learning(
             observation = _observation(signal, row, now)
             if observation is None:
                 continue
+            before = len(signal.get("observations") or [])
             new_events = _apply_observation(signal, observation, now)
-            if new_events or not signal.get("observations"):
+            after = len(signal.get("observations") or [])
+            if after > before:
                 observed += 1
             events.extend(new_events)
 
@@ -548,7 +582,9 @@ def update_outcome_learning(
         "errors": errors,
         "calibration_active": calibration.get("active") is True,
         "calibration_sample_size": int(_number(calibration.get("sample_size"))),
+        "shadow_sample_size": int(_number(calibration.get("shadow_sample_size"))),
         "calibration_minimum_sample": int(_number(calibration.get("minimum_sample"))),
         "global_60m": calibration.get("global") or {},
-        "policy": "Shadow learning only; bounded adjustments activate after minimum OOS samples and cannot bypass hard blockers.",
+        "global_shadow_60m": calibration.get("global_shadow") or {},
+        "policy": "Shadow outcomes include free data, but score learning activates only from timely eligible quotes; hard blockers always win.",
     }
