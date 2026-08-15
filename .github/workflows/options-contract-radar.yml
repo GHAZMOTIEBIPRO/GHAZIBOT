@@ -14,8 +14,12 @@ on:
       - "options_radar/occ_free_context.py"
       - "options_radar/options_consensus.py"
       - "options_radar/outcome_learning.py"
+      - "options_radar/data_fabric.py"
+      - "options_radar/data_fabric_runtime.py"
+      - "options_radar/stream_overlay.py"
       - "scripts/run_options_radar_independent.py"
       - "scripts/run_options_radar_hardened.py"
+      - "scripts/run_options_radar_fabric.py"
       - "data/options_ping.txt"
   schedule:
     - cron: "*/15 13-21 * * 1-5"
@@ -38,10 +42,17 @@ jobs:
       TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
       MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
+      ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
       OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,tiingo,finnhub,twelve_data,polygon,alpha_vantage,yahoo' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,tiingo,finnhub,twelve_data,polygon,alpha_vantage,yahoo' }}
       OPTIONS_INDEPENDENT_MAX_SYMBOLS: ${{ secrets.OPTIONS_INDEPENDENT_MAX_SYMBOLS || '60' }}
       OPTIONS_INDEPENDENT_TOP_PER_SIDE: ${{ secrets.OPTIONS_INDEPENDENT_TOP_PER_SIDE || '15' }}
       OPTIONS_FREE_GAMMA_MAX_SYMBOLS: ${{ secrets.OPTIONS_FREE_GAMMA_MAX_SYMBOLS || '10' }}
@@ -54,6 +65,14 @@ jobs:
       OPTIONS_LEARNING_MIN_DATA_QUALITY: ${{ secrets.OPTIONS_LEARNING_MIN_DATA_QUALITY || '0.80' }}
       CALIBRATION_MINIMUM_SAMPLE: ${{ secrets.CALIBRATION_MINIMUM_SAMPLE || '100' }}
       OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
+      DATA_FABRIC_HEALTH_PATH: data/live/provider_health.json
+      DATA_FABRIC_MAX_WORKERS: ${{ secrets.DATA_FABRIC_MAX_WORKERS || '5' }}
+      DATA_FABRIC_CIRCUIT_FAILURES: ${{ secrets.DATA_FABRIC_CIRCUIT_FAILURES || '3' }}
+      DATA_FABRIC_CIRCUIT_MINUTES: ${{ secrets.DATA_FABRIC_CIRCUIT_MINUTES || '20' }}
+      DATA_FABRIC_MAX_OPTION_DIVERGENCE_PCT: ${{ secrets.DATA_FABRIC_MAX_OPTION_DIVERGENCE_PCT || '0.08' }}
+      DATA_FABRIC_MAX_STOCK_DIVERGENCE_PCT: ${{ secrets.DATA_FABRIC_MAX_STOCK_DIVERGENCE_PCT || '0.025' }}
+      DATA_FABRIC_STREAM_SNAPSHOT: data/live/stream_snapshot.json
+      DATA_FABRIC_STREAM_MAX_AGE_SECONDS: ${{ secrets.DATA_FABRIC_STREAM_MAX_AGE_SECONDS || '20' }}
       DATABASE_PATH: data/live/options_alert_state.json
       SIGNAL_JOURNAL_PATH: data/live/options_signals.jsonl
       OUTCOME_PATH: data/live/options_outcomes.json
@@ -93,7 +112,7 @@ jobs:
           print(f"reason={'regular_session' if is_open else 'market_closed'}")
           PY
 
-      - name: Restore independent options state
+      - name: Restore independent options state and provider health
         if: steps.market.outputs.open == 'true'
         shell: bash
         env:
@@ -108,21 +127,22 @@ jobs:
               cp -f .options-state-restore/options_signals.jsonl data/live/options_signals.jsonl 2>/dev/null || true
               cp -f .options-state-restore/options_outcomes.json data/live/options_outcomes.json 2>/dev/null || true
               cp -f .options-state-restore/options_calibration.json data/live/options_calibration.json 2>/dev/null || true
+              cp -f .options-state-restore/provider_health.json data/live/provider_health.json 2>/dev/null || true
               cp -f .options-state-restore/occ_optionable_universe.json data/cache/occ_optionable_universe.json 2>/dev/null || true
               echo "Restored independent options state from run $run_id."
               break
             fi
           done
 
-      - name: Run hardened independent options contract radar
+      - name: Run hardened options contract radar through data fabric
         if: steps.market.outputs.open == 'true'
         run: >-
-          python -m scripts.run_options_radar_hardened
+          python -m scripts.run_options_radar_fabric
           --output public/data/options_latest.json
           --max-symbols "$OPTIONS_INDEPENDENT_MAX_SYMBOLS"
           --top-per-side "$OPTIONS_INDEPENDENT_TOP_PER_SIDE"
 
-      - name: Validate path independence, gamma semantics, learning and one-side policy
+      - name: Validate path independence, data fabric, gamma, learning and one-side policy
         if: steps.market.outputs.open == 'true'
         run: |
           python - <<'PY'
@@ -144,6 +164,11 @@ jobs:
           assert policy['sweep_claim_allowed_from_snapshot_chain'] is False
           assert 'verified dealer inventory' in policy['gamma_policy']
           assert 'Hard blockers' in policy['learning_policy']
+          for audit in (payload.get('provider_audit') or {}).values():
+              if isinstance(audit, dict) and str(audit.get('source') or '').startswith('fabric:'):
+                  metadata = audit.get('metadata') or {}
+                  assert isinstance(metadata.get('data_fabric'), dict)
+                  assert isinstance(metadata.get('provider_health'), dict)
           research = payload.get('research_contracts') or payload.get('contracts') or []
           for row in research:
               assert row.get('independent_from_stock_radar') is True
@@ -151,6 +176,9 @@ jobs:
               assert evidence.get('opening_position_confirmed') is False
               assert evidence.get('sweep_confirmed') is False
               assert abs(float(row.get('learning_adjustment') or 0)) <= 4.0
+              if int(row.get('fabric_independent_source_count') or 0) >= 2:
+                  assert 'fabric_quote_divergence_pct' in row
+                  assert 'fabric_consensus_pass' in row
           signals = payload.get('research_directional_signals') or payload.get('directional_signals') or []
           seen = set()
           for row in signals:
@@ -159,12 +187,13 @@ jobs:
               seen.add(symbol)
               assert row.get('direction') in {'CALL', 'PUT'}
               assert row.get('selection_policy') == 'one_side_one_contract_per_symbol_strict_consensus'
+              assert 'provider_quote_disagreement' not in set(row.get('strict_blockers') or [])
           for path in ('data/live/options_outcomes.json', 'data/live/options_calibration.json'):
               assert Path(path).exists(), f'missing learning state: {path}'
           calibration = json.loads(Path('data/live/options_calibration.json').read_text(encoding='utf-8'))
           assert int(calibration.get('shadow_sample_size', 0)) >= int(calibration.get('sample_size', 0))
           assert float(calibration.get('max_total_adjustment', 4.0)) <= 4.0
-          print('Independent options + gamma + guarded outcome learning + one-side semantics passed.')
+          print('Independent options + data fabric + gamma + guarded learning passed.')
           PY
 
       - name: Upload options radar payload
@@ -186,6 +215,7 @@ jobs:
             "data/live/options_signals.jsonl:options_signals.jsonl" \
             "data/live/options_outcomes.json:options_outcomes.json" \
             "data/live/options_calibration.json:options_calibration.json" \
+            "data/live/provider_health.json:provider_health.json" \
             "data/cache/occ_optionable_universe.json:occ_optionable_universe.json"; do
             source="${pair%%:*}"
             target="${pair##*:}"
@@ -199,6 +229,7 @@ jobs:
               json.dumps({
                   'path': 'options',
                   'independent_from_stock_radar': True,
+                  'data_fabric': True,
                   'outcome_learning': True,
                   'saved_at': datetime.now(timezone.utc).isoformat(),
               }, indent=2),
