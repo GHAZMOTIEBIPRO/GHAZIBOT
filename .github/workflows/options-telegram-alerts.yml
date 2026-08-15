@@ -23,8 +23,10 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      OPTIONS_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_ALERT_MIN_SCORE || '65' }}
-      OPTIONS_ALERT_MAX: ${{ secrets.OPTIONS_ALERT_MAX || '4' }}
+      OPTIONS_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_ALERT_MIN_SCORE || '85' }}
+      OPTIONS_FREE_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_FREE_ALERT_MIN_SCORE || '87' }}
+      OPTIONS_FREE_ALERTS_ENABLED: ${{ secrets.OPTIONS_FREE_ALERTS_ENABLED || 'true' }}
+      OPTIONS_ALERT_MAX: ${{ secrets.OPTIONS_ALERT_MAX || '3' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -87,10 +89,10 @@ jobs:
           fi
           if [[ -s .options-payload/options_latest.json ]]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Live options payload available."
+            echo "Options payload available."
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "No live options payload exists (market may be closed); Telegram will skip cleanly."
+            echo "No options payload exists; Telegram will skip cleanly."
           fi
 
       - name: Restore options Telegram state
@@ -110,11 +112,10 @@ jobs:
             fi
           done
 
-      - name: Send options-only Arabic alerts
+      - name: Send strict options-only Arabic CALL or PUT alerts
         if: env.TELEGRAM_READY == 'true' && steps.payload.outputs.ready == 'true'
         run: >-
-          python scripts/send_independent_path_alerts.py
-          --path options
+          python scripts/send_strict_options_alerts.py
           --payload .options-payload/options_latest.json
           --state data/live/options_telegram_alert_state.json
 
