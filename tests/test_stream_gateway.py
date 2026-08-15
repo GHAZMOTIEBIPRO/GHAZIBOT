@@ -64,15 +64,37 @@ def test_watchdog_only_restarts_active_stale_streams():
 
 
 def test_snapshot_store_records_source_lag_gap_and_reconnect_metrics(tmp_path, monkeypatch):
-    clock = iter([100.0, 100.0, 107.5, 107.5])
-    monkeypatch.setattr("options_radar.stream_gateway.time.monotonic", lambda: next(clock))
+    monotonic_now = [100.0]
+    monkeypatch.setattr(
+        "options_radar.stream_gateway.time.monotonic",
+        lambda: monotonic_now[0],
+    )
     path = tmp_path / "stream.json"
-    store = SnapshotStore(path, "iex", "indicative", flush_interval_seconds=999, gap_warn_seconds=5)
+    store = SnapshotStore(
+        path,
+        "iex",
+        "indicative",
+        flush_interval_seconds=999,
+        gap_warn_seconds=5,
+    )
     store.mark_connecting("stock")
 
     event_time = datetime.now(timezone.utc) - timedelta(seconds=2)
-    store.update("stock", {"S": "SPY", "T": "q", "t": event_time.isoformat(), "bp": 100, "ap": 101})
-    store.update("stock", {"S": "SPY", "T": "q", "t": datetime.now(timezone.utc).isoformat(), "bp": 100.5, "ap": 101.5})
+    store.update(
+        "stock",
+        {"S": "SPY", "T": "q", "t": event_time.isoformat(), "bp": 100, "ap": 101},
+    )
+    monotonic_now[0] = 107.5
+    store.update(
+        "stock",
+        {
+            "S": "SPY",
+            "T": "q",
+            "t": datetime.now(timezone.utc).isoformat(),
+            "bp": 100.5,
+            "ap": 101.5,
+        },
+    )
     store.record_reconnect("stock", "transport reset")
     store.record_reconnect("stock", "stale", watchdog=True)
     store.flush(force=True)
