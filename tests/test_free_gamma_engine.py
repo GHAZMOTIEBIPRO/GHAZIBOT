@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import numpy as np
 import pandas as pd
 
@@ -27,6 +25,7 @@ def test_gamma_map_finds_call_and_put_walls_without_claiming_dealer_inventory():
     assert gamma_map.call_gex_proxy > gamma_map.put_gex_proxy
     assert gamma_map.context == "CALL_HEAVY_PROXY"
     assert gamma_map.data_tier == "research"
+    assert gamma_map.estimated_gamma_pct == 0
     assert "not verified dealer inventory" in gamma_map.source_note
 
 
@@ -43,6 +42,10 @@ def test_missing_gamma_is_estimated_but_missing_oi_is_never_invented():
     assert prepared["gamma_estimated"].all()
     assert prepared.loc[prepared["contract_symbol"] == "B", "open_interest"].iloc[0] == 0
     assert prepared.loc[prepared["contract_symbol"] == "B", "gex_proxy"].iloc[0] == 0
+
+    gamma_map = build_gamma_map("XYZ", prepared, settings)
+    assert gamma_map.estimated_gamma_pct == 100
+    assert "estimated gamma share 100%" in gamma_map.source_note
 
 
 def test_contracts_outside_configured_dte_do_not_enter_gamma_map():
