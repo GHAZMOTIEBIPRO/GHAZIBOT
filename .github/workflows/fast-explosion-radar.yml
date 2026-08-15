@@ -9,7 +9,11 @@ on:
       - ".github/workflows/fast-explosion-radar.yml"
       - "scripts/fast_explosion_scan.py"
       - "scripts/fast_explosion_scan_runner.py"
+      - "scripts/fast_explosion_scan_fabric.py"
       - "options_radar/institutional_radar.py"
+      - "options_radar/data_fabric.py"
+      - "options_radar/data_fabric_runtime.py"
+      - "options_radar/stream_overlay.py"
   schedule:
     - cron: "*/20 8-12 * * 1-5"
     - cron: "*/5 13-21 * * 1-5"
@@ -26,10 +30,28 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     env:
-      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,tiingo,finnhub,twelve_data,polygon,alpha_vantage,yahoo' }}
+      DATA_FABRIC_HEALTH_PATH: data/live/provider_health.json
+      DATA_FABRIC_MAX_WORKERS: ${{ secrets.DATA_FABRIC_MAX_WORKERS || '5' }}
+      DATA_FABRIC_CIRCUIT_FAILURES: ${{ secrets.DATA_FABRIC_CIRCUIT_FAILURES || '3' }}
+      DATA_FABRIC_CIRCUIT_MINUTES: ${{ secrets.DATA_FABRIC_CIRCUIT_MINUTES || '20' }}
+      DATA_FABRIC_MAX_STOCK_DIVERGENCE_PCT: ${{ secrets.DATA_FABRIC_MAX_STOCK_DIVERGENCE_PCT || '0.025' }}
+      DATA_FABRIC_STOCK_VALIDATION_TOP: ${{ secrets.DATA_FABRIC_STOCK_VALIDATION_TOP || '12' }}
+      DATA_FABRIC_STOCK_DISCOVERY_DIVERGENCE_PCT: ${{ secrets.DATA_FABRIC_STOCK_DISCOVERY_DIVERGENCE_PCT || '0.08' }}
+      DATA_FABRIC_STREAM_SNAPSHOT: data/live/stream_snapshot.json
+      DATA_FABRIC_STREAM_MAX_AGE_SECONDS: ${{ secrets.DATA_FABRIC_STREAM_MAX_AGE_SECONDS || '20' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +67,28 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
-      - name: Restore previous full-market institutional snapshot
+      - name: Check U.S. trading day
+        id: market_day
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          import exchange_calendars as xcals
+          import pandas as pd
+
+          cal = xcals.get_calendar('XNYS')
+          ny_date = datetime.now(ZoneInfo('America/New_York')).date()
+          try:
+              is_session = bool(cal.is_session(pd.Timestamp(ny_date)))
+          except Exception:
+              is_session = False
+          print(f"open={'true' if is_session else 'false'}")
+          print(f"date={ny_date.isoformat()}")
+          PY
+
+      - name: Restore previous full-market institutional snapshot and provider health
+        if: steps.market_day.outputs.open == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,16 +104,26 @@ jobs:
           else
             echo "No prior state yet; this run will establish the baseline."
           fi
+          if [[ -f data/live/provider_health.json ]]; then
+            echo "Previous provider-health circuit state restored."
+          fi
 
-      - name: Scan full US-listed market with institutional anomaly engine
-        run: python scripts/fast_explosion_scan_runner.py --no-telegram
+      - name: Scan full US-listed market with institutional engine and data fabric
+        if: steps.market_day.outputs.open == 'true'
+        run: python scripts/fast_explosion_scan_fabric.py --no-telegram
 
       - name: Upload fast-radar evidence for unified Arabic notifier
+        if: steps.market_day.outputs.open == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fast-market-state
           path: |
             data/live/fast_market_state.json
             data/live/fast_explosion_scan.json
-          if-no-files-found: error
+            data/live/provider_health.json
+          if-no-files-found: warn
           retention-days: 2
+
+      - name: Closed-market status
+        if: steps.market_day.outputs.open != 'true'
+        run: echo "Fast stock radar skipped because today is not an XNYS trading day; stale weekend data will not seed discovery or learning."
