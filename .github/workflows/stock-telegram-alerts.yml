@@ -42,14 +42,7 @@ jobs:
       - name: Check U.S. stock market activity window before any stock alert
         id: market_day
         shell: bash
-        run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          from options_radar.market_clock import market_clock_state
-          state = market_clock_state()
-          print(f"open={'true' if state.is_extended_activity_open else 'false'}")
-          print(f"date={state.session_date}")
-          print(f"reason={state.reason}")
-          PY
+        run: python scripts/market_clock_gate.py --mode extended >> "$GITHUB_OUTPUT"
 
       - name: Restore persistent Telegram destination
         if: steps.market_day.outputs.open == 'true'
