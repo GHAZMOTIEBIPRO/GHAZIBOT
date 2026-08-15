@@ -39,9 +39,9 @@ def _signal(**overrides):
         "gamma_concentration_pct": 16,
         "vol_to_oi_ratio": 2.4,
         "flow_momentum_score": 88,
-        "data_quality": 0.72,
-        "source": "test",
-        "freshness_label": "test quote",
+        "data_quality": 0.90,
+        "source": "test-brokerage",
+        "freshness_label": "brokerage feed",
         "free_alert_eligible": True,
     }
     row.update(overrides)
@@ -62,6 +62,9 @@ class FakeFetcher:
         self.ask = 5.10
         self.last = 5.00
         self.calls = 0
+        self.source = "fake-brokerage"
+        self.freshness = "brokerage feed"
+        self.quality = 0.90
 
     def fetch_option_chain(self, symbol, **kwargs):
         self.calls += 1
@@ -73,9 +76,9 @@ class FakeFetcher:
                     "bid": self.bid,
                     "ask": self.ask,
                     "last": self.last,
-                    "source": "fake",
-                    "freshness_label": "live-test",
-                    "data_quality": 0.9,
+                    "source": self.source,
+                    "freshness_label": self.freshness,
+                    "data_quality": self.quality,
                 }
             ]
         )
@@ -89,6 +92,27 @@ def _settings(tmp_path, minimum=100):
         calibration_path=tmp_path / "calibration.json",
         calibration_minimum_sample=minimum,
     )
+
+
+def _historical_signal(return_pct, *, delta=0.40, eligible=True):
+    return {
+        "entry_quote_method": "ask_to_bid",
+        "entry_training_eligible": eligible,
+        "features": {
+            "delta": delta,
+            "dte": 28,
+            "gamma_context_alignment": 0.2,
+            "vol_to_oi_ratio": 2.2,
+            "spread_pct": 0.04,
+        },
+        "checkpoints": {
+            "60m": {
+                "quote_method": "ask_to_bid",
+                "training_quote_eligible": eligible,
+                "return_pct": return_pct,
+            }
+        },
+    }
 
 
 def test_learning_tracks_once_and_records_15m_checkpoint(tmp_path, monkeypatch):
@@ -113,61 +137,56 @@ def test_learning_tracks_once_and_records_15m_checkpoint(tmp_path, monkeypatch):
         now=created_at + timedelta(minutes=15),
     )
     assert second["tracked_new"] == 0
+    assert second["observations_updated"] == 1
 
     state = json.loads(settings.outcome_path.read_text(encoding="utf-8"))
     assert len(state["signals"]) == 1
     signal = next(iter(state["signals"].values()))
     assert signal["entry_quote_method"] == "ask_to_bid"
+    assert signal["entry_training_eligible"] is True
     assert signal["entry_price"] == 5.10
     assert "15m" in signal["checkpoints"]
     assert signal["checkpoints"]["15m"]["return_pct"] > 0
+    assert signal["checkpoints"]["15m"]["training_quote_eligible"] is True
     journal = settings.signal_journal_path.read_text(encoding="utf-8").splitlines()
     assert sum('"event": "signal_created"' in line for line in journal) == 1
     assert any('"checkpoint": "15m"' in line for line in journal)
 
 
 def test_calibration_stays_inactive_below_minimum_sample():
-    state = {"signals": {}}
-    for index in range(25):
-        state["signals"][str(index)] = {
-            "entry_quote_method": "ask_to_bid",
-            "features": {
-                "delta": 0.40,
-                "dte": 28,
-                "gamma_context_alignment": 0.2,
-                "vol_to_oi_ratio": 2.2,
-                "spread_pct": 0.04,
-            },
-            "checkpoints": {"60m": {"quote_method": "ask_to_bid", "return_pct": 10}},
-        }
+    state = {"signals": {str(index): _historical_signal(10) for index in range(25)}}
     calibration = build_calibration(state, minimum_sample=100)
     assert calibration["active"] is False
     assert calibration["sample_size"] == 25
+    assert calibration["shadow_sample_size"] == 25
     rows = apply_learning_adjustments([_signal()], calibration)
     assert rows[0]["learning_adjustment"] == 0
     assert rows[0]["learning_active"] is False
+
+
+def test_delayed_quotes_are_shadow_stats_but_never_training_samples():
+    state = {
+        "signals": {
+            str(index): _historical_signal(12, eligible=False)
+            for index in range(120)
+        }
+    }
+    calibration = build_calibration(state, minimum_sample=100)
+    assert calibration["active"] is False
+    assert calibration["sample_size"] == 0
+    assert calibration["shadow_sample_size"] == 120
+    assert calibration["global_shadow"]["mean_return_pct"] == 12
 
 
 def test_calibration_activates_with_shrinkage_and_bounded_adjustment():
     state = {"signals": {}}
     for index in range(120):
         strong = index < 60
-        state["signals"][str(index)] = {
-            "entry_quote_method": "ask_to_bid",
-            "features": {
-                "delta": 0.38 if strong else 0.58,
-                "dte": 28,
-                "gamma_context_alignment": 0.2,
-                "vol_to_oi_ratio": 2.2,
-                "spread_pct": 0.04,
-            },
-            "checkpoints": {
-                "60m": {
-                    "quote_method": "ask_to_bid",
-                    "return_pct": 20 if strong else -10,
-                }
-            },
-        }
+        state["signals"][str(index)] = _historical_signal(
+            20 if strong else -10,
+            delta=0.38 if strong else 0.58,
+            eligible=True,
+        )
     calibration = build_calibration(state, minimum_sample=100)
     assert calibration["active"] is True
     assert calibration["sample_size"] == 120
