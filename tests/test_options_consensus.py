@@ -66,3 +66,32 @@ def test_ambiguous_call_put_edge_produces_no_signal():
     )
     signals = build_directional_signals([call, put], minimum_score=80, minimum_side_edge=6)
     assert signals == []
+
+
+def test_low_volume_oi_and_vol_oi_are_hard_blockers_even_with_high_base_score():
+    thin = _row("call", volume=120, open_interest=80, vol_to_oi_ratio=0.8, score=100, flow_momentum_score=100)
+    strict, _, blockers = score_contract_strict(thin)
+    assert "option_volume_below_250" in blockers
+    assert "oi_below_150" in blockers
+    assert "vol_oi_below_1_2" in blockers
+    assert build_directional_signals([thin], minimum_score=60) == []
+
+
+def test_dte_outside_strict_window_is_hard_blocker():
+    near_expiry = _row("call", dte=3, score=100, flow_momentum_score=100)
+    strict, _, blockers = score_contract_strict(near_expiry)
+    assert "dte_outside_strict_window" in blockers
+    assert build_directional_signals([near_expiry], minimum_score=60) == []
+
+
+def test_gamma_proxy_opposition_is_hard_blocker():
+    opposed = _row(
+        "call",
+        gamma_context_alignment=-0.40,
+        occ_side_context={"available": False, "bonus": 0},
+        score=100,
+        flow_momentum_score=100,
+    )
+    strict, _, blockers = score_contract_strict(opposed)
+    assert "gamma_proxy_opposes_side" in blockers
+    assert build_directional_signals([opposed], minimum_score=60) == []
