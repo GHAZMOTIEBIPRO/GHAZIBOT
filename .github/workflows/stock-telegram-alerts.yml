@@ -25,6 +25,7 @@ jobs:
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       STOCK_ALERT_MIN_SCORE: ${{ secrets.STOCK_ALERT_MIN_SCORE || '72' }}
       STOCK_ALERT_MAX: ${{ secrets.STOCK_ALERT_MAX || '3' }}
+      STOCK_PAYLOAD_MAX_AGE_MINUTES: ${{ secrets.STOCK_PAYLOAD_MAX_AGE_MINUTES || '90' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -35,10 +36,31 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Telegram dependency
-        run: pip install 'requests>=2.32,<3.0'
+      - name: Install Telegram and exchange-calendar dependencies
+        run: pip install 'requests>=2.32,<3.0' 'exchange-calendars>=4.5,<5.0'
+
+      - name: Check U.S. trading day before any stock alert
+        id: market_day
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          import exchange_calendars as xcals
+          import pandas as pd
+
+          cal = xcals.get_calendar('XNYS')
+          ny_date = datetime.now(ZoneInfo('America/New_York')).date()
+          try:
+              is_session = bool(cal.is_session(pd.Timestamp(ny_date)))
+          except Exception:
+              is_session = False
+          print(f"open={'true' if is_session else 'false'}")
+          print(f"date={ny_date.isoformat()}")
+          PY
 
       - name: Restore persistent Telegram destination
+        if: steps.market_day.outputs.open == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -60,10 +82,11 @@ jobs:
           fi
 
       - name: Resolve Telegram destination
+        if: steps.market_day.outputs.open == 'true'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
-      - name: Restore independent stock payload
-        if: env.TELEGRAM_READY == 'true'
+      - name: Restore fresh independent stock payload
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,7 +99,10 @@ jobs:
           if [[ -n "$current" ]]; then
             gh run download "$current" -n independent-stock-radar -D .stock-payload || true
           fi
-          if [[ ! -s .stock-payload/stocks_latest.json ]]; then
+          # A workflow_run must use its own artifact. Only a manual dispatch may
+          # fall back to a recent successful payload, and age validation below
+          # still applies before Telegram is allowed to send.
+          if [[ -z "$current" && ! -s .stock-payload/stocks_latest.json ]]; then
             for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               rm -rf .stock-payload && mkdir -p .stock-payload
               if gh run download "$run_id" -n independent-stock-radar -D .stock-payload >/dev/null 2>&1; then
@@ -85,9 +111,27 @@ jobs:
             done
           fi
           test -s .stock-payload/stocks_latest.json
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          payload = json.loads(Path('.stock-payload/stocks_latest.json').read_text(encoding='utf-8'))
+          raw = str(payload.get('generated_at') or '').replace('Z', '+00:00')
+          if not raw:
+              raise SystemExit('Stock payload has no generated_at; Telegram send blocked.')
+          stamp = datetime.fromisoformat(raw)
+          if stamp.tzinfo is None:
+              stamp = stamp.replace(tzinfo=timezone.utc)
+          age = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+          maximum = float(os.getenv('STOCK_PAYLOAD_MAX_AGE_MINUTES', '90'))
+          if age < -5 or age > maximum:
+              raise SystemExit(f'Stock payload age {age:.1f}m exceeds safe maximum {maximum:.1f}m; Telegram send blocked.')
+          print(f'Fresh stock payload accepted: age={age:.1f}m max={maximum:.1f}m')
+          PY
 
       - name: Restore stock Telegram state
-        if: env.TELEGRAM_READY == 'true'
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -104,7 +148,7 @@ jobs:
           done
 
       - name: Send stock-only Arabic alerts
-        if: env.TELEGRAM_READY == 'true'
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         run: >-
           python scripts/send_independent_path_alerts.py
           --path stocks
@@ -112,7 +156,7 @@ jobs:
           --state data/live/stock_alert_state.json
 
       - name: Upload stock Telegram state
-        if: env.TELEGRAM_READY == 'true'
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: stock-telegram-state
@@ -120,8 +164,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Closed-market status
+        if: steps.market_day.outputs.open != 'true'
+        run: echo "Stock Telegram skipped because today is not an XNYS trading day; stale payload fallback is forbidden."
+
       - name: Seal Telegram destination
-        if: always() && env.TELEGRAM_READY == 'true'
+        if: always() && steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         run: |
           openssl enc -aes-256-cbc -salt -pbkdf2 \
@@ -131,7 +179,7 @@ jobs:
           rm -f telegram_runtime/connection.json
 
       - name: Upload encrypted Telegram destination
-        if: always() && env.TELEGRAM_READY == 'true'
+        if: always() && steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: telegram-connection

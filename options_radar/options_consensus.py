@@ -50,10 +50,24 @@ def score_contract_strict(row: dict[str, Any]) -> tuple[float, list[str], list[s
         if row.get("learning_active") is True
         else 0.0
     )
+    fabric_sources = int(
+        _number(
+            row.get("fabric_independent_source_count")
+            or row.get("fabric_source_count")
+        )
+    )
+    fabric_divergence = _number(row.get("fabric_quote_divergence_pct"))
+    fabric_consensus_pass = row.get("fabric_consensus_pass") is not False
+    stream_execution_grade = row.get("stream_execution_grade") is True
+    stream_quote_age = _number(row.get("stream_quote_age_seconds"), float("inf"))
 
     rr_fit = _clamp((rr - 0.8) / 1.2 * 100.0)
     gamma_fit = _clamp(gamma_concentration * 3.0 + max(0.0, gamma_alignment) * 35.0)
-    liquidity_fit = _clamp(min(volume / 1500.0, 1.0) * 45.0 + min(oi / 3000.0, 1.0) * 35.0 + min(vol_oi / 3.0, 1.0) * 20.0)
+    liquidity_fit = _clamp(
+        min(volume / 1500.0, 1.0) * 45.0
+        + min(oi / 3000.0, 1.0) * 35.0
+        + min(vol_oi / 3.0, 1.0) * 20.0
+    )
 
     strict = (
         score * 0.30
@@ -69,6 +83,25 @@ def score_contract_strict(row: dict[str, Any]) -> tuple[float, list[str], list[s
 
     blockers: list[str] = []
     reasons: list[str] = []
+
+    # Cross-provider agreement can add only a small bonus. Disagreement between
+    # two independent sources is a hard execution-data blocker, not something a
+    # high model score or learned adjustment can override.
+    if fabric_sources >= 2 and fabric_consensus_pass and fabric_divergence <= 0.03:
+        strict += 2.0
+        reasons.append(
+            f"provider quote agreement {fabric_sources} sources / divergence {fabric_divergence * 100:.1f}%"
+        )
+    elif fabric_sources >= 2 and (
+        not fabric_consensus_pass or fabric_divergence > 0.08
+    ):
+        strict -= 12.0
+        blockers.append("provider_quote_disagreement")
+
+    if stream_execution_grade and stream_quote_age <= 20.0:
+        strict += 2.0
+        reasons.append(f"fresh OPRA stream quote {stream_quote_age:.0f}s")
+
     if spread > 0.10:
         strict -= 9.0
         blockers.append("spread_above_10pct")
@@ -157,14 +190,24 @@ def build_directional_signals(
         for row in rows:
             side_rows[str(row.get("option_type") or "").lower()].append(row)
         for side in side_rows:
-            side_rows[side].sort(key=lambda item: (_number(item.get("strict_score")), _number(item.get("flow_momentum_score"))), reverse=True)
+            side_rows[side].sort(
+                key=lambda item: (
+                    _number(item.get("strict_score")),
+                    _number(item.get("flow_momentum_score")),
+                ),
+                reverse=True,
+            )
 
         def side_score(side: str) -> float:
             candidates = side_rows[side][:2]
             if not candidates:
                 return 0.0
             best = _number(candidates[0].get("strict_score"))
-            second = _number(candidates[1].get("strict_score")) if len(candidates) > 1 else best - 5.0
+            second = (
+                _number(candidates[1].get("strict_score"))
+                if len(candidates) > 1
+                else best - 5.0
+            )
             return best * 0.78 + second * 0.22
 
         call_score = side_score("call")
@@ -180,6 +223,7 @@ def build_directional_signals(
             continue
         strict = _number(best.get("strict_score"))
         hard_blockers = {
+            "provider_quote_disagreement",
             "spread_above_10pct",
             "delta_outside_strict_window",
             "dte_outside_strict_window",
@@ -206,7 +250,9 @@ def build_directional_signals(
         signal["opposite_side_score"] = round(loser_score, 2)
         signal["side_edge"] = round(edge, 2)
         signal["signal_grade"] = _grade(strict)
-        signal["free_alert_eligible"] = strict >= minimum_score and signal["signal_grade"] in {"A", "A+"}
+        signal["free_alert_eligible"] = (
+            strict >= minimum_score and signal["signal_grade"] in {"A", "A+"}
+        )
         signal["selection_policy"] = "one_side_one_contract_per_symbol_strict_consensus"
         signals.append(signal)
 
