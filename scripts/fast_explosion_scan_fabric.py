@@ -50,9 +50,15 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
         if frame is None or frame.empty:
             raise RuntimeError("empty reconciled stock bars")
         latest = float(pd.to_numeric(frame["Close"], errors="coerce").dropna().iloc[-1])
-        audit = (result.metadata or {}).get("data_fabric", {}) if hasattr(result, "metadata") else {}
+        metadata = result.metadata or {} if hasattr(result, "metadata") else {}
+        audit = metadata.get("data_fabric", {}) if isinstance(metadata, dict) else {}
+        stream = metadata.get("stream_reference") if isinstance(metadata, dict) else None
         candidate_price = _number(getattr(candidate, "price", 0.0))
-        divergence = abs(candidate_price - latest) / latest if latest > 0 and candidate_price > 0 else 0.0
+        divergence = (
+            abs(candidate_price - latest) / latest
+            if latest > 0 and candidate_price > 0
+            else 0.0
+        )
         return candidate.symbol, {
             "available": True,
             "selected_source": result.source,
@@ -62,6 +68,7 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
             "fabric_latest_close": round(latest, 6),
             "nasdaq_vs_fabric_divergence_pct": round(divergence, 6),
             "selected_close_divergence_pct": audit.get("selected_close_divergence_pct"),
+            "stream_reference": stream if isinstance(stream, dict) else None,
             "health_checked": True,
         }
     except Exception as exc:
@@ -83,7 +90,16 @@ def _persist_validation(ranked: list[Any]) -> None:
         validation = getattr(candidate, "data_fabric_validation", None)
         if isinstance(row, dict) and isinstance(validation, dict):
             row["data_fabric_validation"] = validation
-            row["send_priority"] = round(float(getattr(candidate, "institutional_priority", row.get("send_priority", 0.0))), 2)
+            row["send_priority"] = round(
+                float(
+                    getattr(
+                        candidate,
+                        "institutional_priority",
+                        row.get("send_priority", 0.0),
+                    )
+                ),
+                2,
+            )
     payload["data_fabric"] = {
         "enabled": True,
         "validation_scope": "top institutional stock candidates only",
@@ -98,7 +114,10 @@ def _rank_market_with_fabric(rows, news_events, structural):
     if not ranked:
         return ranked
 
-    maximum = max(3, min(30, int(os.getenv("DATA_FABRIC_STOCK_VALIDATION_TOP", "12"))))
+    maximum = max(
+        3,
+        min(30, int(os.getenv("DATA_FABRIC_STOCK_VALIDATION_TOP", "12"))),
+    )
     selected = sorted(
         ranked,
         key=lambda item: (
@@ -112,12 +131,19 @@ def _rank_market_with_fabric(rows, news_events, structural):
     validations: dict[str, dict[str, Any]] = {}
     workers = max(1, min(4, len(selected)))
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {executor.submit(_validate_candidate, fetcher, candidate): candidate.symbol for candidate in selected}
+        futures = {
+            executor.submit(_validate_candidate, fetcher, candidate): candidate.symbol
+            for candidate in selected
+        }
         for future in as_completed(futures):
             symbol, validation = future.result()
             validations[symbol] = validation
 
     regular = _regular_session_open()
+    discovery_divergence = max(
+        0.05,
+        float(os.getenv("DATA_FABRIC_STOCK_DISCOVERY_DIVERGENCE_PCT", "0.08")),
+    )
     for candidate in ranked:
         validation = validations.get(candidate.symbol)
         if validation is None:
@@ -131,14 +157,51 @@ def _rank_market_with_fabric(rows, news_events, structural):
         divergence = _number(validation.get("nasdaq_vs_fabric_divergence_pct"))
         consensus = bool(validation.get("fabric_consensus_pass", True))
         if sources >= 2 and consensus:
-            candidate.reasons.insert(1, f"Data Fabric: توافق {sources} مصادر مستقلة")
-            candidate.institutional_priority = min(100.0, float(getattr(candidate, "institutional_priority", candidate.score)) + 2.0)
-        if regular and sources >= 2 and divergence > 0.05:
-            candidate.reasons.append(f"حاجز بيانات: Nasdaq/Fabric مختلفان {divergence * 100:.1f}%")
-            candidate.institutional_priority = max(0.0, float(getattr(candidate, "institutional_priority", candidate.score)) - 18.0)
+            candidate.reasons.insert(
+                1,
+                f"Data Fabric: توافق {sources} مصادر مستقلة",
+            )
+            candidate.institutional_priority = min(
+                100.0,
+                float(
+                    getattr(
+                        candidate,
+                        "institutional_priority",
+                        candidate.score,
+                    )
+                )
+                + 2.0,
+            )
+        if regular and sources >= 2 and divergence > discovery_divergence:
+            candidate.reasons.append(
+                f"تحذير بيانات: Nasdaq/Fabric مختلفان {divergence * 100:.1f}%"
+            )
+            # Microcaps can move several percent inside one 5-minute bucket. This
+            # is a strong penalty, not an automatic invalidation of the stock path.
+            candidate.institutional_priority = max(
+                0.0,
+                float(
+                    getattr(
+                        candidate,
+                        "institutional_priority",
+                        candidate.score,
+                    )
+                )
+                - 12.0,
+            )
         elif sources >= 2 and not consensus:
             candidate.reasons.append("حاجز بيانات: اختلاف واضح بين مزودي الأسعار")
-            candidate.institutional_priority = max(0.0, float(getattr(candidate, "institutional_priority", candidate.score)) - 10.0)
+            candidate.institutional_priority = max(
+                0.0,
+                float(
+                    getattr(
+                        candidate,
+                        "institutional_priority",
+                        candidate.score,
+                    )
+                )
+                - 10.0,
+            )
 
     _persist_validation(ranked)
     ranked.sort(
