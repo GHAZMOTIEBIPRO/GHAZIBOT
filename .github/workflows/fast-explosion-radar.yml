@@ -13,6 +13,7 @@ on:
       - "options_radar/institutional_radar.py"
       - "options_radar/data_fabric.py"
       - "options_radar/data_fabric_runtime.py"
+      - "options_radar/market_clock.py"
       - "options_radar/stream_overlay.py"
   schedule:
     - cron: "*/20 8-12 * * 1-5"
@@ -67,24 +68,16 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
-      - name: Check U.S. trading day
+      - name: Check U.S. stock market activity window
         id: market_day
         shell: bash
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
-          from datetime import datetime
-          from zoneinfo import ZoneInfo
-          import exchange_calendars as xcals
-          import pandas as pd
-
-          cal = xcals.get_calendar('XNYS')
-          ny_date = datetime.now(ZoneInfo('America/New_York')).date()
-          try:
-              is_session = bool(cal.is_session(pd.Timestamp(ny_date)))
-          except Exception:
-              is_session = False
-          print(f"open={'true' if is_session else 'false'}")
-          print(f"date={ny_date.isoformat()}")
+          from options_radar.market_clock import market_clock_state
+          state = market_clock_state()
+          print(f"open={'true' if state.is_extended_activity_open else 'false'}")
+          print(f"date={state.session_date}")
+          print(f"reason={state.reason}")
           PY
 
       - name: Restore previous full-market institutional snapshot and provider health
@@ -126,4 +119,4 @@ jobs:
 
       - name: Closed-market status
         if: steps.market_day.outputs.open != 'true'
-        run: echo "Fast stock radar skipped because today is not an XNYS trading day; stale weekend data will not seed discovery or learning."
+        run: echo "Fast stock radar skipped because New York is outside the 04:00-20:00 stock activity window or today is not an XNYS trading day; stale data will not seed discovery or learning."
