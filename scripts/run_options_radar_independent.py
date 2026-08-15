@@ -18,8 +18,11 @@ os.environ.setdefault("CALIBRATION_PATH", "data/live/options_calibration.json")
 
 from options_radar.catalysts import best_catalyst_map
 from options_radar.event_source_policy import event_source_evidence
+from options_radar.free_gamma_engine import analyze_free_gamma, contract_gamma_metrics
+from options_radar.occ_free_context import OccDailyVolumeClient, side_alignment
 from options_radar.official_event_scan import scan_official_events
 from options_radar.optionable_universe import IndependentOptionableUniverse
+from options_radar.options_consensus import build_directional_signals
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
 
@@ -151,6 +154,86 @@ def _catalyst_records(frame: pd.DataFrame) -> list[dict[str, Any]]:
     return records
 
 
+def _gamma_candidate_symbols(contracts: list[dict[str, Any]], maximum: int) -> list[str]:
+    ranked = sorted(
+        contracts,
+        key=lambda row: (
+            _number(row.get("flow_rank_score")),
+            _number(row.get("flow_momentum_score")),
+            _number(row.get("score")),
+        ),
+        reverse=True,
+    )
+    symbols: list[str] = []
+    for row in ranked:
+        symbol = str(row.get("symbol") or "").upper().strip()
+        if symbol and symbol not in symbols:
+            symbols.append(symbol)
+        if len(symbols) >= maximum:
+            break
+    return symbols
+
+
+def _attach_gamma_and_occ(
+    contracts: list[dict[str, Any]],
+    *,
+    settings: Settings,
+    radar: OptionsRadar,
+) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any], dict[str, str]]:
+    max_symbols = max(1, min(20, int(os.getenv("OPTIONS_FREE_GAMMA_MAX_SYMBOLS", "10"))))
+    symbols = _gamma_candidate_symbols(contracts, max_symbols)
+    gamma_maps: dict[str, Any] = {}
+    occ_contexts: dict[str, Any] = {}
+    errors: dict[str, str] = {}
+    occ_enabled = os.getenv("OCC_FREE_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
+    occ_client = OccDailyVolumeClient(timeout=min(20, settings.request_timeout_seconds)) if occ_enabled else None
+
+    for symbol in symbols:
+        try:
+            gamma_map, _ = analyze_free_gamma(symbol, settings=settings, fetcher=radar.fetcher)
+            gamma_maps[symbol] = gamma_map.as_dict()
+        except Exception as exc:
+            errors[f"gamma:{symbol}"] = f"{type(exc).__name__}: {exc}"
+            gamma_maps[symbol] = {
+                "symbol": symbol,
+                "context": "ERROR",
+                "data_tier": "unavailable",
+                "gamma_coverage_pct": 0.0,
+                "oi_coverage_pct": 0.0,
+                "by_strike": [],
+            }
+        if occ_client is not None:
+            try:
+                occ_contexts[symbol] = occ_client.fetch(symbol)
+            except Exception as exc:
+                errors[f"occ:{symbol}"] = f"{type(exc).__name__}: {exc}"
+                occ_contexts[symbol] = {"success": False, "source": "OCC Volume Query", "error": str(exc)}
+
+    enriched: list[dict[str, Any]] = []
+    for raw in contracts:
+        row = dict(raw)
+        symbol = str(row.get("symbol") or "").upper().strip()
+        side = str(row.get("option_type") or "").lower()
+        gamma_map = gamma_maps.get(symbol)
+        if isinstance(gamma_map, dict):
+            row.update(contract_gamma_metrics(row, gamma_map))
+        else:
+            row.update(
+                {
+                    "gamma_concentration_pct": 0.0,
+                    "gamma_context_alignment": 0.0,
+                    "gamma_context": "NOT_ANALYZED",
+                    "gamma_data_tier": "unavailable",
+                    "gamma_coverage_pct": 0.0,
+                    "oi_coverage_pct": 0.0,
+                }
+            )
+        context = occ_contexts.get(symbol)
+        row["occ_side_context"] = side_alignment(context, side) if isinstance(context, dict) else {"available": False, "bonus": 0.0}
+        enriched.append(row)
+    return enriched, gamma_maps, occ_contexts, errors
+
+
 def run(
     *,
     universe_path: str | Path = DEFAULT_INPUT,
@@ -172,8 +255,6 @@ def run(
     if not universe.symbols:
         raise RuntimeError("Independent options universe is empty")
 
-    # Official context enriches contract scoring but never nominates the options
-    # universe. Slow aggregators/social feeds are deliberately not on this path.
     try:
         catalysts = scan_official_events(settings, universe.symbols, lookback_days=7)
     except Exception as exc:
@@ -181,14 +262,15 @@ def run(
         universe.errors["official_events"] = f"{type(exc).__name__}: {exc}"
     catalyst_map = best_catalyst_map(catalysts)
 
-    result = OptionsRadar(settings).scan(
+    radar = OptionsRadar(settings)
+    result = radar.scan(
         universe.symbols,
         top=top_per_side,
         catalysts=catalysts,
     )
     calls = enrich_contracts(_records(result.top_calls), catalyst_map)
     puts = enrich_contracts(_records(result.top_puts), catalyst_map)
-    contracts = sorted(
+    raw_contracts = sorted(
         [*calls, *puts],
         key=lambda row: (
             _number(row.get("flow_rank_score")),
@@ -198,17 +280,37 @@ def run(
         reverse=True,
     )
 
+    contracts, gamma_maps, occ_contexts, context_errors = _attach_gamma_and_occ(
+        raw_contracts,
+        settings=settings,
+        radar=radar,
+    )
+    strict_min = float(os.getenv("OPTIONS_STRICT_MIN_SCORE", "85"))
+    side_edge = float(os.getenv("OPTIONS_STRICT_SIDE_EDGE", "6"))
+    directional_signals = build_directional_signals(
+        contracts,
+        minimum_score=strict_min,
+        minimum_side_edge=side_edge,
+        max_signals=max(1, min(12, int(os.getenv("OPTIONS_STRICT_MAX_SIGNALS", "8")))),
+    )
+    top_calls = [row for row in contracts if str(row.get("option_type") or "").lower() == "call"]
+    top_puts = [row for row in contracts if str(row.get("option_type") or "").lower() == "put"]
+
     payload: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "path": "options",
-        "architecture": "independent_options_contract_radar_v1",
+        "architecture": "independent_options_contract_radar_v2_free_gamma",
         "independent_from_stock_radar": True,
         "universe": universe.as_dict(),
         "summary": {
             "symbols_scanned": len(universe.symbols),
             "contracts_selected": len(contracts),
-            "calls_selected": len(calls),
-            "puts_selected": len(puts),
+            "calls_selected": len(top_calls),
+            "puts_selected": len(top_puts),
+            "directional_signals": len(directional_signals),
+            "free_alert_eligible": sum(1 for row in directional_signals if row.get("free_alert_eligible") is True),
+            "gamma_symbols_analyzed": len(gamma_maps),
+            "occ_symbols_checked": len(occ_contexts),
             "contracts_rejected_reported": len(result.rejected),
             "provider": result.provider,
             "market_regime": result.regime,
@@ -220,21 +322,28 @@ def run(
             "sweep_claim_allowed_from_snapshot_chain": False,
             "oi_confirmation": "next-session change in OI is needed to confirm net new positioning",
             "licensed_trade_quote_requirement": "trade+quote-level data is required before labeling a sweep/aggressor as confirmed",
-            "note_ar": "الفلو دليل سياقي لا توصية مستقلة: الصفقة قد تكون فتحًا أو إغلاقًا أو Hedge أو Roll أو رجلًا من Spread.",
+            "gamma_policy": "GEX is a gamma-times-OI positioning proxy. Put sign is a modeling convention, not verified dealer inventory.",
+            "one_side_policy": "A symbol can emit at most one strict CALL or PUT signal and one best contract per run.",
+            "note_ar": "الفلو والقاما أدلة سياقية وليسا ضمانًا: لا نثبت Sweep أو Dealer positioning من البيانات المجانية.",
         },
         "contracts": contracts,
-        "top_calls": calls,
-        "top_puts": puts,
+        "top_calls": top_calls,
+        "top_puts": top_puts,
+        "directional_signals": directional_signals,
+        "gamma_maps": gamma_maps,
+        "occ_daily_context": occ_contexts,
         "rejected": _records(result.rejected.head(250)),
         "official_catalysts": _catalyst_records(catalysts),
         "provider_audit": result.provider_audit,
         "flow_summary": result.flow_summary,
         "market_regime_detail": result.market_regime_detail,
-        "errors": {**universe.errors, **result.errors},
+        "errors": {**universe.errors, **result.errors, **context_errors},
         "limitations": [
             *universe.limitations,
-            "This path discovers contracts independently; StockRadar output is never an input to universe selection or contract scoring.",
-            "With Yahoo/indicative snapshots, results are research/watchlist quality and cannot prove full OPRA tape flow.",
+            "StockRadar output is never an input to this options universe or contract scoring.",
+            "Free gamma uses available chain OI and reported or Black-Scholes-estimated gamma; it is not a verified dealer-position dataset.",
+            "OCC daily CALL/PUT volume is official aggregate context only, not a quote, sweep feed, or proof of buy-to-open.",
+            "Yahoo/Alpaca indicative inputs remain research-grade; strict free alerts are labeled accordingly and use a higher threshold.",
         ],
     }
     destination = Path(output_path)
@@ -263,6 +372,8 @@ def main() -> None:
         f"symbols={payload['summary']['symbols_scanned']} "
         f"calls={payload['summary']['calls_selected']} "
         f"puts={payload['summary']['puts_selected']} "
+        f"strict={payload['summary']['directional_signals']} "
+        f"gamma={payload['summary']['gamma_symbols_analyzed']} "
         f"official_optionability={payload['summary']['official_optionability_verified']}"
     )
 
