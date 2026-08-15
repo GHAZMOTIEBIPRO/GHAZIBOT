@@ -2,15 +2,21 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
-import exchange_calendars as xcals
 import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from options_radar.data_fabric_runtime import install_data_fabric
 from options_radar.hybrid_fetcher import DataFetcher
+from options_radar.market_clock import market_clock_state
 from options_radar.settings import Settings
 
 # Install data acquisition before the institutional runner creates any fetchers.
@@ -21,10 +27,8 @@ _original_rank = runner._rank_market_with_institutional_engine
 
 
 def _regular_session_open(now: datetime | None = None) -> bool:
-    now = now or datetime.now(timezone.utc)
     try:
-        cal = xcals.get_calendar("XNYS")
-        return bool(cal.is_open_on_minute(pd.Timestamp(now).floor("min")))
+        return bool(market_clock_state(now).is_regular_open)
     except Exception:
         return False
 
