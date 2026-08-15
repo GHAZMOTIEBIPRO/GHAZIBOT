@@ -37,6 +37,7 @@ jobs:
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
       ADAPTIVE_LEARNING_PATH: data/live/adaptive_learning.json
       STOCK_OUTCOME_PATH: data/live/stock_outcomes.json
+      STOCK_DISCOVERY_MAX_AGE_MINUTES: ${{ secrets.STOCK_DISCOVERY_MAX_AGE_MINUTES || '90' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +72,7 @@ jobs:
           print(f"date={ny_date.isoformat()}")
           PY
 
-      - name: Restore fast stock discovery payload
+      - name: Restore fresh stock discovery payload
         if: steps.market_day.outputs.open == 'true'
         shell: bash
         env:
@@ -85,7 +86,9 @@ jobs:
           if [[ -n "$current" ]]; then
             gh run download "$current" -n fast-market-state -D data/live || true
           fi
-          if [[ ! -f data/live/fast_explosion_scan.json ]]; then
+          # Never replace a missing artifact from the triggering workflow_run with
+          # an older successful run. Historical fallback is manual/push research only.
+          if [[ -z "$current" && ! -f data/live/fast_explosion_scan.json ]]; then
             for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               if gh run download "$run_id" -n fast-market-state -D data/live >/dev/null 2>&1; then
                 [[ -f data/live/fast_explosion_scan.json ]] && break
@@ -93,6 +96,24 @@ jobs:
             done
           fi
           test -s data/live/fast_explosion_scan.json
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          payload = json.loads(Path('data/live/fast_explosion_scan.json').read_text(encoding='utf-8'))
+          raw = str(payload.get('generated_at') or '').replace('Z', '+00:00')
+          if not raw:
+              raise SystemExit('Fast stock discovery has no generated_at; refusing stale fallback.')
+          stamp = datetime.fromisoformat(raw)
+          if stamp.tzinfo is None:
+              stamp = stamp.replace(tzinfo=timezone.utc)
+          age = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+          maximum = float(os.getenv('STOCK_DISCOVERY_MAX_AGE_MINUTES', '90'))
+          if age < -5 or age > maximum:
+              raise SystemExit(f'Fast stock discovery age {age:.1f}m exceeds safe maximum {maximum:.1f}m.')
+          print(f'Fresh stock discovery accepted: age={age:.1f}m max={maximum:.1f}m')
+          PY
 
       - name: Restore stock outcome state
         if: steps.market_day.outputs.open == 'true'
