@@ -1,20 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass
+from datetime import datetime, time, timezone
+from zoneinfo import ZoneInfo
 
 import exchange_calendars as xcals
 import pandas as pd
+
+NY_TZ = ZoneInfo("America/New_York")
 
 
 @dataclass(frozen=True)
 class MarketClockState:
     checked_at: str
+    checked_at_new_york: str
     session_date: str
     is_session: bool
     is_regular_open: bool
+    is_extended_activity_open: bool
     regular_open: str | None
     regular_close: str | None
+    reason: str
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
 
 
 def market_clock_state(now: datetime | None = None) -> MarketClockState:
@@ -25,10 +34,28 @@ def market_clock_state(now: datetime | None = None) -> MarketClockState:
         timestamp = timestamp.tz_convert("UTC")
 
     calendar = xcals.get_calendar("XNYS")
-    session_date = timestamp.tz_convert("America/New_York").date()
+    ny_timestamp = timestamp.tz_convert(NY_TZ)
+    session_date = ny_timestamp.date()
     session_label = pd.Timestamp(session_date)
-    is_session = bool(calendar.is_session(session_label))
-    is_open = bool(calendar.is_open_on_minute(timestamp, ignore_breaks=True))
+    try:
+        is_session = bool(calendar.is_session(session_label))
+    except Exception:
+        is_session = False
+    try:
+        is_open = bool(
+            calendar.is_open_on_minute(timestamp.floor("min"), ignore_breaks=True)
+        ) if is_session else False
+    except Exception:
+        is_open = False
+
+    local_clock = ny_timestamp.time().replace(tzinfo=None)
+    # Practical U.S. equity market-data activity window. This is intentionally
+    # wider than the XNYS regular session so stock discovery can operate during
+    # pre-market and after-hours, while refusing late-night/weekend stale scans.
+    extended_open = bool(
+        is_session and time(4, 0) <= local_clock <= time(20, 0)
+    )
+
     regular_open: str | None = None
     regular_close: str | None = None
     if is_session:
@@ -37,14 +64,30 @@ def market_clock_state(now: datetime | None = None) -> MarketClockState:
             row = schedule.iloc[0]
             open_value = row.get("open")
             close_value = row.get("close")
-            regular_open = None if pd.isna(open_value) else pd.Timestamp(open_value).isoformat()
-            regular_close = None if pd.isna(close_value) else pd.Timestamp(close_value).isoformat()
+            regular_open = (
+                None if pd.isna(open_value) else pd.Timestamp(open_value).isoformat()
+            )
+            regular_close = (
+                None if pd.isna(close_value) else pd.Timestamp(close_value).isoformat()
+            )
+
+    if is_open:
+        reason = "regular_session"
+    elif extended_open:
+        reason = "extended_activity_window"
+    elif not is_session:
+        reason = "non_trading_day"
+    else:
+        reason = "outside_extended_activity_window"
 
     return MarketClockState(
         checked_at=timestamp.isoformat(),
+        checked_at_new_york=ny_timestamp.isoformat(),
         session_date=session_date.isoformat(),
         is_session=is_session,
         is_regular_open=is_open,
+        is_extended_activity_open=extended_open,
         regular_open=regular_open,
         regular_close=regular_close,
+        reason=reason,
     )
