@@ -34,6 +34,18 @@ def test_send_success_returns_message_id(monkeypatch):
     assert result.message_id == 77
     assert result.attempts == 1
     assert len(calls) == 1
+    assert calls[0][0][0].endswith("/sendMessage")
+
+
+def test_send_can_be_silent_without_changing_delivery(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        transport.requests,
+        "post",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or FakeResponse(),
+    )
+    transport.send_html_message("quiet", token="token", chat_id="chat", disable_notification=True)
+    assert calls[0][1]["data"]["disable_notification"] == "true"
 
 
 def test_429_honors_retry_after_then_succeeds(monkeypatch):
@@ -108,6 +120,63 @@ def test_message_over_telegram_limit_is_blocked_before_network(monkeypatch):
     assert called is False
 
 
+def test_edit_message_uses_existing_message_id(monkeypatch):
+    calls = []
+
+    def fake_post(*args, **kwargs):
+        calls.append((args, kwargs))
+        return FakeResponse(payload={"ok": True, "result": {"message_id": 77}})
+
+    monkeypatch.setattr(transport.requests, "post", fake_post)
+    result = transport.edit_html_message(77, "updated", token="token", chat_id="chat")
+    assert result.message_id == 77
+    assert result.attempts == 1
+    assert result.unchanged is False
+    assert calls[0][0][0].endswith("/editMessageText")
+    assert calls[0][1]["data"]["message_id"] == 77
+
+
+def test_edit_429_honors_retry_after(monkeypatch):
+    responses = [
+        FakeResponse(status_code=429, payload={"ok": False, "parameters": {"retry_after": 3}}),
+        FakeResponse(payload={"ok": True, "result": {"message_id": 8}}),
+    ]
+    sleeps = []
+    monkeypatch.setattr(transport.requests, "post", lambda *a, **k: responses.pop(0))
+    monkeypatch.setattr(transport.time, "sleep", lambda seconds: sleeps.append(seconds))
+    result = transport.edit_html_message(8, "confirm", token="token", chat_id="chat")
+    assert result.attempts == 2
+    assert sleeps == [3.0]
+
+
+def test_edit_not_modified_is_success(monkeypatch):
+    monkeypatch.setattr(
+        transport.requests,
+        "post",
+        lambda *a, **k: FakeResponse(
+            status_code=400,
+            payload={"ok": False, "description": "Bad Request: message is not modified"},
+        ),
+    )
+    result = transport.edit_html_message(33, "same", token="token", chat_id="chat")
+    assert result.message_id == 33
+    assert result.unchanged is True
+
+
+def test_edit_timeout_is_not_blindly_retried(monkeypatch):
+    calls = 0
+
+    def fail(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        raise requests.Timeout("ambiguous edit")
+
+    monkeypatch.setattr(transport.requests, "post", fail)
+    with pytest.raises(requests.Timeout):
+        transport.edit_html_message(9, "edit", token="token", chat_id="chat")
+    assert calls == 1
+
+
 def test_missing_destination_fails_closed(monkeypatch):
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
@@ -172,3 +241,13 @@ def test_notifier_workflows_do_not_upload_connection_every_run():
     keeper = (root / ".github" / "workflows" / "telegram-connection-keeper.yml").read_text(encoding="utf-8")
     assert "Upload one centralized Telegram destination" in keeper
     assert "from scripts.telegram_transport import verify_bot" in keeper
+
+
+def test_latency_sensitive_crons_avoid_top_of_hour():
+    root = Path(__file__).resolve().parents[1]
+    fast = (root / ".github" / "workflows" / "fast-explosion-radar.yml").read_text(encoding="utf-8")
+    options = (root / ".github" / "workflows" / "options-contract-radar.yml").read_text(encoding="utf-8")
+    assert 'cron: "*/5 ' not in fast
+    assert 'cron: "*/15 ' not in options
+    assert 'cron: "2-57/5 13-21 * * 1-5"' in fast
+    assert 'cron: "3,18,33,48 13-21 * * 1-5"' in options
