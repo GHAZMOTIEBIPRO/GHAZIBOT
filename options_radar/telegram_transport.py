@@ -8,6 +8,7 @@ from typing import Any
 import requests
 
 TELEGRAM_TIMEOUT_SECONDS = 20
+TELEGRAM_TEXT_MAX_CHARS = 4096
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
@@ -64,6 +65,10 @@ def send_html_message(
         raise RuntimeError("Telegram destination is not ready")
     if not text.strip():
         raise ValueError("Telegram message is empty")
+    if len(text) > TELEGRAM_TEXT_MAX_CHARS:
+        raise ValueError(
+            f"Telegram message exceeds {TELEGRAM_TEXT_MAX_CHARS} characters; refusing partial alert"
+        )
     if max_attempts < 1:
         raise ValueError("max_attempts must be >= 1")
 
