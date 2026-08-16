@@ -85,8 +85,6 @@ jobs:
           if [[ -n "$current" ]]; then
             gh run download "$current" -n fast-market-state -D data/live || true
           fi
-          # Never replace a missing artifact from the triggering workflow_run with
-          # an older successful run. Historical fallback is manual/push research only.
           if [[ -z "$current" && ! -f data/live/fast_explosion_scan.json ]]; then
             for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               if gh run download "$run_id" -n fast-market-state -D data/live >/dev/null 2>&1; then
@@ -184,6 +182,26 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Stage stock learning state
+        if: steps.market_day.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p .stock-state-upload data/live
+          if [[ ! -f data/live/stock_outcomes.json ]]; then
+            printf '%s\n' '{"schema_version":1,"updated_at":null,"signals":{}}' > data/live/stock_outcomes.json
+          fi
+          cp -f data/live/stock_outcomes.json .stock-state-upload/stock_outcomes.json
+
+      - name: Upload stock learning state
+        if: steps.market_day.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-radar-state
+          path: .stock-state-upload/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 30
+
       - name: Restore centralized Telegram destination for direct delivery
         if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_CHAT_ID == ''
         shell: bash
@@ -230,7 +248,7 @@ jobs:
             done
           done
 
-      - name: Send qualified stock alert directly after validation
+      - name: Send qualified stock alert directly after persisted validation
         if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         run: >-
           python -m scripts.send_independent_path_alerts
@@ -245,26 +263,6 @@ jobs:
           name: stock-telegram-state
           path: data/live/stock_alert_state.json
           if-no-files-found: warn
-          retention-days: 30
-
-      - name: Stage stock learning state
-        if: steps.market_day.outputs.open == 'true'
-        shell: bash
-        run: |
-          mkdir -p .stock-state-upload data/live
-          if [[ ! -f data/live/stock_outcomes.json ]]; then
-            printf '%s\n' '{"schema_version":1,"updated_at":null,"signals":{}}' > data/live/stock_outcomes.json
-          fi
-          cp -f data/live/stock_outcomes.json .stock-state-upload/stock_outcomes.json
-
-      - name: Upload stock learning state
-        if: steps.market_day.outputs.open == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: stock-radar-state
-          path: .stock-state-upload/
-          if-no-files-found: error
-          include-hidden-files: true
           retention-days: 30
 
       - name: Closed-market status
