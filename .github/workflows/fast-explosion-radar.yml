@@ -33,11 +33,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
       TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
       TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
-      ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
+      # Free Autonomy invariant: never let a stale repository secret select SIP.
+      ALPACA_STOCK_FEED: iex
       TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
       FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
       TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
