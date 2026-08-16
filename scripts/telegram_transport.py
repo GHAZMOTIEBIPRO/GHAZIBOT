@@ -18,6 +18,13 @@ class TelegramSendResult:
     attempts: int
 
 
+@dataclass(frozen=True)
+class TelegramEditResult:
+    message_id: int | None
+    attempts: int
+    unchanged: bool = False
+
+
 def _telegram_url(token: str, method: str) -> str:
     return f"https://api.telegram.org/bot{token}/{method}"
 
@@ -44,6 +51,32 @@ def _retry_after_seconds(response: requests.Response, attempt: int) -> float:
     return min(8.0, 0.8 * (2**attempt))
 
 
+def _credentials(token: str | None, chat_id: str | None) -> tuple[str, str]:
+    bot_token = str(token or os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+    destination = str(chat_id or os.getenv("TELEGRAM_CHAT_ID") or "").strip()
+    if not bot_token or not destination:
+        raise RuntimeError("Telegram destination is not ready")
+    return bot_token, destination
+
+
+def _validate_text(text: str) -> None:
+    if not text.strip():
+        raise ValueError("Telegram message is empty")
+    if len(text) > TELEGRAM_TEXT_MAX_CHARS:
+        raise ValueError(
+            f"Telegram message exceeds {TELEGRAM_TEXT_MAX_CHARS} characters; refusing partial alert"
+        )
+
+
+def _message_id(body: Any) -> int | None:
+    result = body.get("result") if isinstance(body, dict) and isinstance(body.get("result"), dict) else {}
+    value = result.get("message_id")
+    try:
+        return int(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def send_html_message(
     text: str,
     *,
@@ -51,6 +84,7 @@ def send_html_message(
     chat_id: str | None = None,
     max_attempts: int = 3,
     timeout: int = TELEGRAM_TIMEOUT_SECONDS,
+    disable_notification: bool = False,
 ) -> TelegramSendResult:
     """Send one Telegram message with bounded retries on explicit server/rate failures.
 
@@ -59,16 +93,8 @@ def send_html_message(
     Dedupe is therefore kept in the higher-level alert state as the primary guard.
     """
 
-    bot_token = str(token or os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
-    destination = str(chat_id or os.getenv("TELEGRAM_CHAT_ID") or "").strip()
-    if not bot_token or not destination:
-        raise RuntimeError("Telegram destination is not ready")
-    if not text.strip():
-        raise ValueError("Telegram message is empty")
-    if len(text) > TELEGRAM_TEXT_MAX_CHARS:
-        raise ValueError(
-            f"Telegram message exceeds {TELEGRAM_TEXT_MAX_CHARS} characters; refusing partial alert"
-        )
+    bot_token, destination = _credentials(token, chat_id)
+    _validate_text(text)
     if max_attempts < 1:
         raise ValueError("max_attempts must be >= 1")
 
@@ -82,6 +108,7 @@ def send_html_message(
                     "text": text,
                     "parse_mode": "HTML",
                     "disable_web_page_preview": "true",
+                    "disable_notification": "true" if disable_notification else "false",
                 },
                 timeout=timeout,
             )
@@ -97,18 +124,75 @@ def send_html_message(
         body: Any = response.json()
         if not isinstance(body, dict) or body.get("ok") is not True:
             raise RuntimeError("Telegram rejected message")
-        result = body.get("result") if isinstance(body.get("result"), dict) else {}
-        message_id = result.get("message_id")
-        try:
-            message_id = int(message_id) if message_id is not None else None
-        except (TypeError, ValueError):
-            message_id = None
-        return TelegramSendResult(message_id=message_id, attempts=attempt + 1)
+        return TelegramSendResult(message_id=_message_id(body), attempts=attempt + 1)
 
     if response is None:
         raise RuntimeError("Telegram request did not execute")
     response.raise_for_status()
     raise RuntimeError("Telegram send exhausted retries")
+
+
+def edit_html_message(
+    message_id: int,
+    text: str,
+    *,
+    token: str | None = None,
+    chat_id: str | None = None,
+    max_attempts: int = 3,
+    timeout: int = TELEGRAM_TIMEOUT_SECONDS,
+) -> TelegramEditResult:
+    """Edit one bot-authored Telegram message instead of creating notification spam."""
+
+    bot_token, destination = _credentials(token, chat_id)
+    _validate_text(text)
+    if int(message_id) <= 0:
+        raise ValueError("message_id must be positive")
+    if max_attempts < 1:
+        raise ValueError("max_attempts must be >= 1")
+
+    response: requests.Response | None = None
+    for attempt in range(max_attempts):
+        try:
+            response = requests.post(
+                _telegram_url(bot_token, "editMessageText"),
+                data={
+                    "chat_id": destination,
+                    "message_id": int(message_id),
+                    "text": text,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": "true",
+                },
+                timeout=timeout,
+            )
+        except (requests.ConnectionError, requests.Timeout):
+            # Edit outcome can also be ambiguous; never blindly repeat after transport loss.
+            raise
+
+        if response.status_code in _RETRYABLE_STATUS and attempt + 1 < max_attempts:
+            time.sleep(_retry_after_seconds(response, attempt))
+            continue
+
+        try:
+            body: Any = response.json()
+        except ValueError:
+            body = {}
+        description = str(body.get("description") or "").lower() if isinstance(body, dict) else ""
+        if response.status_code == 400 and "message is not modified" in description:
+            return TelegramEditResult(message_id=int(message_id), attempts=attempt + 1, unchanged=True)
+
+        response.raise_for_status()
+        if not isinstance(body, dict) or body.get("ok") is not True:
+            raise RuntimeError("Telegram rejected message edit")
+        return TelegramEditResult(
+            message_id=_message_id(body) or int(message_id),
+            attempts=attempt + 1,
+            unchanged=False,
+        )
+
+    if response is None:
+        raise RuntimeError("Telegram edit request did not execute")
+    response.raise_for_status()
+    raise RuntimeError("Telegram edit exhausted retries")
 
 
 def verify_bot(token: str | None = None, timeout: int = 12) -> dict[str, Any]:
