@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -14,7 +13,7 @@ AUDIT_SCHEMA_VERSION = 1
 AUDIT_HORIZON_MINUTES = 24 * 60
 MAX_AUDIT_RECORDS = 10_000
 CHECKPOINT_MINUTES = {"15m": 15, "60m": 60, "1d": 24 * 60}
-CHECKPOINT_MAX_LAG_MINUTES = {"15m": 10, "60m": 15, "1d": 72 * 60}
+CHECKPOINT_MAX_LAG_MINUTES = {"15m": 10, "60m": 15, "1d": 15}
 FINAL_AUDIT_STATUSES = frozenset({"success", "failed", "ambiguous", "non_decisive"})
 
 
@@ -235,11 +234,15 @@ def evaluate_stock_event_from_bars(
 
     horizon_target = created + timedelta(minutes=AUDIT_HORIZON_MINUTES)
     one_day = checkpoints.get("1d") if isinstance(checkpoints.get("1d"), dict) else None
-    if one_day:
-        horizon_stamp = pd.Timestamp(one_day["observed_at"])
-        horizon = frame[frame.index <= horizon_stamp]
+    qualified_1d = bool(one_day and one_day.get("coverage_qualified") is True)
+    # Never scan materially beyond the one-day horizon. A qualified 1d bar may
+    # start a few minutes after the exact target time, so only that strict
+    # tolerance is permitted; weekend/overnight gaps remain pending.
+    if qualified_1d:
+        horizon_end = pd.Timestamp(one_day["observed_at"])
     else:
-        horizon = frame[frame.index <= pd.Timestamp(min(current, horizon_target))]
+        horizon_end = pd.Timestamp(min(current, horizon_target))
+    horizon = frame[frame.index <= horizon_end]
 
     terminal_status = "pending"
     terminal_reason = "one_day_horizon_not_complete"
@@ -273,7 +276,7 @@ def evaluate_stock_event_from_bars(
             terminal_reason = "stop_touched_first_in_observed_5m_sequence"
         break
 
-    if terminal_status == "pending" and one_day and one_day.get("coverage_qualified") is True:
+    if terminal_status == "pending" and qualified_1d:
         terminal_status = "non_decisive"
         terminal_reason = "no_target_or_stop_touch_through_qualified_1d_checkpoint"
 
@@ -309,6 +312,7 @@ def evaluate_stock_event_from_bars(
                 "same_bar_target_stop": "ambiguous",
                 "pre_signal_bar_excluded": True,
                 "intrabar_order_claimed": False,
+                "one_day_max_lag_minutes": CHECKPOINT_MAX_LAG_MINUTES["1d"],
             },
         }
     )
@@ -349,6 +353,7 @@ class StockAuditCoverage:
 
 def coverage_summary(records: dict[str, dict[str, Any]]) -> StockAuditCoverage:
     rows = [row for row in records.values() if isinstance(row, dict)]
+
     def covered(label: str) -> int:
         return sum(bool((row.get("coverage") or {}).get(label)) for row in rows)
 
@@ -469,7 +474,14 @@ class StockOutcomeBackfillAuditor:
         audit["records"] = records
         return updated
 
-    def finalise(self, audit: dict[str, Any], *, now: datetime, attempted_symbols: int, errors: dict[str, str]) -> dict[str, Any]:
+    def finalise(
+        self,
+        audit: dict[str, Any],
+        *,
+        now: datetime,
+        attempted_symbols: int,
+        errors: dict[str, str],
+    ) -> dict[str, Any]:
         records = audit.get("records") if isinstance(audit.get("records"), dict) else {}
         coverage = coverage_summary(records)
         audit.update(
@@ -487,8 +499,10 @@ class StockOutcomeBackfillAuditor:
                 "promotion_gate": {
                     "minimum_60m_coverage_pct": 90.0,
                     "minimum_independent_sessions": 10,
-                    "coverage_ready": coverage.records >= 20
-                    and coverage.covered_60m / max(1, coverage.records) >= 0.90,
+                    # The runner must add the independent-session count before
+                    # coverage can be declared ready. Direct module use is fail-closed.
+                    "coverage_ready": False,
+                    "independent_session_gate_pending": True,
                     "walk_forward_required_after_coverage": True,
                     "live_promotion_allowed": False,
                 },
