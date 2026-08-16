@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import requests
 
-from options_radar import telegram_transport as transport
+from scripts import telegram_transport as transport
 
 
 class FakeResponse:
@@ -151,7 +151,9 @@ def test_bootstrap_masks_destination_before_export(monkeypatch, tmp_path, capsys
 
     output = capsys.readouterr().out.splitlines()
     assert f"::add-mask::{destination}" in output
-    assert f"TELEGRAM_CHAT_ID={destination}" in env_file.read_text(encoding="utf-8")
+    exported = env_file.read_text(encoding="utf-8")
+    assert f"TELEGRAM_CHAT_ID={destination}" in exported
+    assert "PYTHONPATH=" in exported
 
 
 def test_notifier_workflows_do_not_upload_connection_every_run():
@@ -169,4 +171,4 @@ def test_notifier_workflows_do_not_upload_connection_every_run():
 
     keeper = (root / ".github" / "workflows" / "telegram-connection-keeper.yml").read_text(encoding="utf-8")
     assert "Upload one centralized Telegram destination" in keeper
-    assert "verify_bot" in keeper
+    assert "from scripts.telegram_transport import verify_bot" in keeper
