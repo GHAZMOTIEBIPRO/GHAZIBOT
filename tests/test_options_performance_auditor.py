@@ -186,6 +186,8 @@ def test_workflow_is_free_independent_and_restores_only_options_learning_state()
     root = Path(__file__).resolve().parents[1]
     text = (root / ".github" / "workflows" / "options-performance-auditor.yml").read_text(encoding="utf-8")
     assert 'cron: "37 22 * * 1-5"' in text
+    assert "push:" in text
+    assert "branches: [main]" in text
     assert "options-contract-radar.yml" in text
     assert "options-contract-state" in text
     assert "options_outcomes.json" in text
@@ -193,5 +195,7 @@ def test_workflow_is_free_independent_and_restores_only_options_learning_state()
     assert "PAID_MARKET_DATA_ALLOWED: \"false\"" in text
     assert "stock-radar.yml" not in text
     assert "--send" in text
+    assert '"${GITHUB_EVENT_NAME:-}" != "push"' in text
+    assert "github.event_name != 'push'" in text
     assert "options-performance-audit" in text
     assert "No persisted options outcome state exists yet" in text
