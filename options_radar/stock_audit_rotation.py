@@ -7,7 +7,7 @@ from typing import Any
 from options_radar.market_clock import market_clock_state
 
 FINAL_TERMINAL = frozenset({"success", "failed", "ambiguous", "non_decisive"})
-INVALID_SESSION = "invalid_session"
+INVALID_SESSION_CLASSIFICATION = "invalid_session"
 DEFAULT_RETRY_COOLDOWN_HOURS = 18
 
 
@@ -35,8 +35,9 @@ def migrate_and_classify_records(audit: dict[str, Any]) -> dict[str, Any]:
     """Migrate old audit state and quarantine signals outside valid market activity.
 
     Invalid-session rows remain visible as operational evidence but are excluded
-    from performance coverage. They are never deleted or silently converted into
-    wins/losses.
+    from performance coverage. Their outcome status is `unavailable`; the reason
+    is carried separately in `audit_classification` to avoid inventing a new
+    market outcome category.
     """
 
     records = audit.get("records") if isinstance(audit.get("records"), dict) else {}
@@ -53,7 +54,8 @@ def migrate_and_classify_records(audit: dict[str, Any]) -> dict[str, Any]:
         if created is None:
             row["signal_session_valid"] = False
             row["signal_session_reason"] = "invalid_signal_time"
-            row["audit_status"] = INVALID_SESSION
+            row["audit_classification"] = INVALID_SESSION_CLASSIFICATION
+            row["audit_status"] = "unavailable"
             row["audit_reason"] = "invalid_signal_session:invalid_signal_time"
             continue
 
@@ -62,9 +64,12 @@ def migrate_and_classify_records(audit: dict[str, Any]) -> dict[str, Any]:
         row["signal_session_reason"] = clock.reason
         row["signal_session_date"] = clock.session_date
         if not clock.is_extended_activity_open:
-            row["audit_status"] = INVALID_SESSION
+            row["audit_classification"] = INVALID_SESSION_CLASSIFICATION
+            row["audit_status"] = "unavailable"
             row["audit_reason"] = f"invalid_signal_session:{clock.reason}"
             row["decision_authority"] = False
+        elif row.get("audit_classification") == INVALID_SESSION_CLASSIFICATION:
+            row.pop("audit_classification", None)
     audit["records"] = records
     return audit
 
@@ -213,8 +218,10 @@ def recalculate_fair_coverage(audit: dict[str, Any]) -> dict[str, Any]:
     )
     audit["coverage"] = coverage.as_dict()
     audit["invalid_session_policy"] = {
+        "classification": INVALID_SESSION_CLASSIFICATION,
         "tracked_as_operational_defect": True,
         "excluded_from_performance_denominator": True,
+        "stored_audit_status": "unavailable",
         "deleted": False,
     }
     return audit
