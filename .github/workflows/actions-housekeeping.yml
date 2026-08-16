@@ -8,7 +8,7 @@ on:
       - ".github/workflows/actions-housekeeping.yml"
       - "scripts/prune_actions_artifacts.py"
   schedule:
-    - cron: "33 3 * * *"
+    - cron: "33 */4 * * *"
 
 concurrency:
   group: black-box-omega-actions-housekeeping
@@ -25,7 +25,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       ACTIONS_ARTIFACT_KEEP_PER_NAME: "3"
-      ACTIONS_ARTIFACT_MIN_AGE_HOURS: "6"
+      ACTIONS_ARTIFACT_MIN_AGE_HOURS: "1"
       ACTIONS_ARTIFACT_MAX_DELETIONS: "400"
       ACTIONS_ARTIFACT_DRY_RUN: "false"
 
