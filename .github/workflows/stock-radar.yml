@@ -236,8 +236,10 @@ jobs:
         run: |
           mkdir -p data/live .stock-telegram-restore
           printf '{"sent":{}}\n' > data/live/stock_alert_state.json
+          # Delivery state is valid evidence even when a prior run failed after
+          # sending one message. Core market/learning state above remains success-only.
           for workflow in stock-radar.yml stock-telegram-alerts.yml; do
-            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               rm -rf .stock-telegram-restore && mkdir -p .stock-telegram-restore
               if gh run download "$run_id" -n stock-telegram-state -D .stock-telegram-restore >/dev/null 2>&1; then
                 if [[ -s .stock-telegram-restore/stock_alert_state.json ]]; then
