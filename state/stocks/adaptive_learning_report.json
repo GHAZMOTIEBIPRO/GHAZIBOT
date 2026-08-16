@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-16T23:27:44.074737+00:00",
+  "generated_at": "2026-08-16T23:46:26.023816+00:00",
   "mode": "SHADOW_LEARNING",
   "live_alert_weights_changed": false,
   "free_autonomy": {
@@ -14,6 +14,7 @@
     "restored": [],
     "preserved_local": [
       "data/live/stock_outcomes.json",
+      "data/live/stock_outcome_archive.json",
       "data/live/adaptive_learning.json"
     ],
     "error": ""
@@ -22,8 +23,17 @@
     "records": 68,
     "successes": 54,
     "failures": 14,
-    "added_this_pass": 68,
+    "added_this_pass": 0,
     "updated_this_pass": 0
+  },
+  "stock_outcome_audit": {
+    "available": false,
+    "coverage_60m_pct": 0.0,
+    "independent_60m_sessions": 0,
+    "decisive": 0,
+    "ambiguous": 0,
+    "non_decisive": 0,
+    "coverage_ready": false
   },
   "option_outcome_summary": {
     "tracked_signals": 8,
@@ -121,7 +131,7 @@
   },
   "model": {
     "schema_version": 1,
-    "generated_at": "2026-08-16T23:27:44.073787+00:00",
+    "generated_at": "2026-08-16T23:46:26.022863+00:00",
     "policy": {
       "no_live_weight_change_before_minimum_sample": true,
       "stock_min_matured": 60,
@@ -240,7 +250,13 @@
   "errors": [],
   "promotion_gate": {
     "stock_ready": true,
+    "stock_model_sample_ready": true,
+    "stock_outcome_audit_coverage_ready": false,
+    "stock_ready_for_walk_forward": false,
+    "stock_walk_forward_passed": false,
+    "stock_ready_for_live_promotion": false,
     "options_ready": false,
+    "requires_outcome_audit_before_walk_forward": true,
     "requires_walk_forward_review_before_live_promotion": true
   }
 }
