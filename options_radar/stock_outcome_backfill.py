@@ -209,6 +209,15 @@ def evaluate_stock_event_from_bars(
         return record
 
     frame = _normalise_bars(bars)
+    if frame.empty:
+        record.update(
+            {
+                "audit_status": "unavailable",
+                "audit_reason": "no_post_signal_5m_bars",
+                "audited_at": current.isoformat(),
+            }
+        )
+        return record
     frame = frame[frame.index >= pd.Timestamp(created)]
     if frame.empty:
         record.update(
