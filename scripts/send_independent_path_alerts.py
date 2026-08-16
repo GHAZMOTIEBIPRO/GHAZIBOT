@@ -279,8 +279,13 @@ def main() -> None:
     if payload.get("path") != expected:
         raise RuntimeError(f"Expected {expected} payload, got {payload.get('path')!r}")
 
-    sent = send_stocks(payload, state) if args.path == "stocks" else send_options(payload, state)
-    _save(args.state, state)
+    sent = 0
+    try:
+        sent = send_stocks(payload, state) if args.path == "stocks" else send_options(payload, state)
+    finally:
+        # Save successful messages even if a later send fails. This preserves
+        # idempotency across retries and prevents duplicate already-sent alerts.
+        _save(args.state, state)
     print(f"Independent Telegram sender: path={args.path} sent={sent}")
 
 
