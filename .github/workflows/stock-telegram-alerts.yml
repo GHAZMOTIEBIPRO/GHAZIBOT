@@ -1,14 +1,14 @@
-name: BLACK BOX Omega Stock Telegram Alerts
+name: BLACK BOX Omega Stock Telegram Alerts - Manual Fallback
+
+# Production delivery now happens directly inside stock-radar.yml after the
+# stock payload passes validation. This workflow is intentionally manual-only
+# so it cannot add a second workflow_run queue hop or duplicate a direct alert.
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - "BLACK BOX Omega Stock Radar"
-    types: [completed]
 
 concurrency:
-  group: black-box-omega-stock-telegram
+  group: black-box-omega-stock-telegram-fallback
   cancel-in-progress: true
 
 permissions:
@@ -16,8 +16,7 @@ permissions:
   actions: read
 
 jobs:
-  notify-stock:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+  notify-stock-fallback:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -39,7 +38,7 @@ jobs:
       - name: Install Telegram and exchange-calendar dependencies
         run: pip install 'requests>=2.32,<3.0' 'exchange-calendars>=4.5,<5.0'
 
-      - name: Check U.S. stock market activity window before any stock alert
+      - name: Check U.S. stock market activity window before fallback alert
         id: market_day
         shell: bash
         run: python scripts/market_clock_gate.py --mode extended >> "$GITHUB_OUTPUT"
@@ -51,7 +50,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p telegram_runtime
-          for workflow in telegram-connection-keeper.yml stock-telegram-alerts.yml options-telegram-alerts.yml telegram-alerts.yml; do
+          for workflow in telegram-connection-keeper.yml stock-radar.yml stock-telegram-alerts.yml; do
             for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
               if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
@@ -70,31 +69,19 @@ jobs:
         if: steps.market_day.outputs.open == 'true'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
-      - name: Restore fresh independent stock payload
+      - name: Restore latest validated stock payload
         if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .stock-payload data/live
-          current=""
-          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            current="${{ github.event.workflow_run.id }}"
-          fi
-          if [[ -n "$current" ]]; then
-            gh run download "$current" -n independent-stock-radar -D .stock-payload || true
-          fi
-          # A workflow_run must use its own artifact. Only a manual dispatch may
-          # fall back to a recent successful payload, and age validation below
-          # still applies before Telegram is allowed to send.
-          if [[ -z "$current" && ! -s .stock-payload/stocks_latest.json ]]; then
-            for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-              rm -rf .stock-payload && mkdir -p .stock-payload
-              if gh run download "$run_id" -n independent-stock-radar -D .stock-payload >/dev/null 2>&1; then
-                [[ -s .stock-payload/stocks_latest.json ]] && break
-              fi
-            done
-          fi
+          for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .stock-payload && mkdir -p .stock-payload
+            if gh run download "$run_id" -n independent-stock-radar -D .stock-payload >/dev/null 2>&1; then
+              [[ -s .stock-payload/stocks_latest.json ]] && break
+            fi
+          done
           test -s .stock-payload/stocks_latest.json
           python - <<'PY'
           import json, os
@@ -104,51 +91,54 @@ jobs:
           payload = json.loads(Path('.stock-payload/stocks_latest.json').read_text(encoding='utf-8'))
           raw = str(payload.get('generated_at') or '').replace('Z', '+00:00')
           if not raw:
-              raise SystemExit('Stock payload has no generated_at; Telegram send blocked.')
+              raise SystemExit('Stock payload has no generated_at; fallback send blocked.')
           stamp = datetime.fromisoformat(raw)
           if stamp.tzinfo is None:
               stamp = stamp.replace(tzinfo=timezone.utc)
           age = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
           maximum = float(os.getenv('STOCK_PAYLOAD_MAX_AGE_MINUTES', '90'))
           if age < -5 or age > maximum:
-              raise SystemExit(f'Stock payload age {age:.1f}m exceeds safe maximum {maximum:.1f}m; Telegram send blocked.')
-          print(f'Fresh stock payload accepted: age={age:.1f}m max={maximum:.1f}m')
+              raise SystemExit(f'Stock payload age {age:.1f}m exceeds safe maximum {maximum:.1f}m; fallback blocked.')
+          print(f'Fresh stock payload accepted for manual fallback: age={age:.1f}m')
           PY
 
-      - name: Restore stock Telegram state
+      - name: Restore latest direct stock Telegram state
         if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p .stock-state
-          for run_id in $(gh run list --workflow stock-telegram-alerts.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-            rm -rf .stock-state && mkdir -p .stock-state
-            if gh run download "$run_id" -n stock-telegram-state -D .stock-state >/dev/null 2>&1; then
-              if [[ -s .stock-state/stock_alert_state.json ]]; then
-                cp .stock-state/stock_alert_state.json data/live/stock_alert_state.json
-                break
+          mkdir -p data/live .stock-state
+          printf '{"sent":{}}\n' > data/live/stock_alert_state.json
+          for workflow in stock-radar.yml stock-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .stock-state && mkdir -p .stock-state
+              if gh run download "$run_id" -n stock-telegram-state -D .stock-state >/dev/null 2>&1; then
+                if [[ -s .stock-state/stock_alert_state.json ]]; then
+                  cp .stock-state/stock_alert_state.json data/live/stock_alert_state.json
+                  break 2
+                fi
               fi
-            fi
+            done
           done
 
-      - name: Send stock-only Arabic alerts
+      - name: Send manual fallback stock alert
         if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         run: >-
-          python scripts/send_independent_path_alerts.py
+          python -m scripts.send_independent_path_alerts
           --path stocks
           --payload .stock-payload/stocks_latest.json
           --state data/live/stock_alert_state.json
 
-      - name: Upload stock Telegram state
-        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+      - name: Upload fallback stock Telegram state
+        if: always() && steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: stock-telegram-state
           path: data/live/stock_alert_state.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Closed-market status
         if: steps.market_day.outputs.open != 'true'
-        run: echo "Stock Telegram skipped because New York is outside the 04:00-20:00 stock activity window or today is not an XNYS trading day; stale payload fallback is forbidden."
+        run: echo "Manual stock Telegram fallback skipped because the U.S. stock activity window is closed."
