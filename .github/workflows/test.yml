@@ -43,6 +43,7 @@ jobs:
           python -m scripts.send_cross_confirmation --help >/dev/null
           python -m scripts.send_radar_health --help >/dev/null
           python -m scripts.send_classical_direction_alerts --help >/dev/null
+          python -m scripts.options_performance_auditor --help >/dev/null
           python scripts/telegram_connection_bootstrap.py --help >/dev/null
 
       - name: Python syntax and import compilation
@@ -97,6 +98,7 @@ jobs:
             scripts/send_cross_confirmation.py \
             scripts/send_radar_health.py \
             scripts/send_classical_direction_alerts.py \
+            scripts/options_performance_auditor.py \
             tests/test_optionable_universe.py \
             tests/test_independent_path_alerts.py \
             tests/test_expiry_identity.py \
@@ -118,6 +120,7 @@ jobs:
             tests/test_strict_options_sender.py \
             tests/test_telegram_transport.py \
             tests/test_cross_confirmation.py \
+            tests/test_options_performance_auditor.py \
             --select E9,F63,F7,F82
 
       - name: Repository Ruff baseline
