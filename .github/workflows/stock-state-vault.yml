@@ -1,0 +1,238 @@
+name: BLACK BOX Omega Durable Stock Evidence Vault
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stock-state-vault.yml"
+      - "options_radar/stock_outcome_archive.py"
+      - "options_radar/durable_stock_state.py"
+  workflow_run:
+    workflows:
+      - "BLACK BOX Omega Stock Radar"
+      - "BLACK BOX Omega Adaptive Evidence Review"
+    types: [completed]
+
+concurrency:
+  group: black-box-omega-durable-stock-evidence-vault
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  persist:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out durable state branch
+        uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve source workflow
+        id: source
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            if [[ "$SOURCE_WORKFLOW_NAME" == "BLACK BOX Omega Adaptive Evidence Review" ]]; then
+              echo "kind=adaptive" >> "$GITHUB_OUTPUT"
+            else
+              echo "kind=stock" >> "$GITHUB_OUTPUT"
+            fi
+            echo "run_ids=$SOURCE_RUN_ID" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=stock" >> "$GITHUB_OUTPUT"
+            run_ids="$(gh run list --workflow stock-radar.yml --status success --branch main --limit 20 --json databaseId --jq 'map(.databaseId) | join(" ")' 2>/dev/null || true)"
+            echo "run_ids=$run_ids" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download validated evidence artifact
+        id: artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KIND: ${{ steps.source.outputs.kind }}
+          RUN_IDS: ${{ steps.source.outputs.run_ids }}
+        run: |
+          set -u
+          found=false
+          selected=0
+          rm -rf .incoming
+          mkdir -p .incoming
+
+          if [[ "$KIND" == "adaptive" ]]; then
+            artifact_name="adaptive-learning-state"
+          else
+            artifact_name="stock-radar-state"
+          fi
+
+          for run_id in $RUN_IDS; do
+            rm -rf .incoming
+            mkdir -p .incoming
+            if ! gh run download "$run_id" -n "$artifact_name" -D .incoming >/dev/null 2>&1; then
+              continue
+            fi
+            if [[ "$KIND" == "adaptive" ]]; then
+              if [[ -s .incoming/stock_outcome_archive.json && -s .incoming/adaptive_learning.json ]]; then
+                found=true
+                selected="$run_id"
+                break
+              fi
+            else
+              if [[ -s .incoming/stock_outcomes.json ]]; then
+                found=true
+                selected="$run_id"
+                break
+              fi
+            fi
+          done
+
+          echo "found=$found" >> "$GITHUB_OUTPUT"
+          echo "source_run_id=$selected" >> "$GITHUB_OUTPUT"
+          echo "kind=$KIND" >> "$GITHUB_OUTPUT"
+
+      - name: Validate stock evidence before persistence
+        if: steps.artifact.outputs.found == 'true'
+        shell: bash
+        env:
+          KIND: ${{ steps.artifact.outputs.kind }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path('.incoming')
+          kind = os.environ['KIND']
+          forbidden = ('token', 'secret', 'api_key', 'authorization', 'password', 'credential')
+
+          def load_json(name):
+              value = json.loads((root / name).read_text(encoding='utf-8'))
+              assert isinstance(value, dict), f'{name} must contain an object'
+              return value
+
+          def reject_secrets(value, path='root'):
+              if isinstance(value, dict):
+                  for key, child in value.items():
+                      lowered = str(key).lower()
+                      assert not any(part in lowered for part in forbidden), f'forbidden secret-like key at {path}.{key}'
+                      reject_secrets(child, f'{path}.{key}')
+              elif isinstance(value, list):
+                  for index, child in enumerate(value):
+                      reject_secrets(child, f'{path}[{index}]')
+
+          if kind == 'adaptive':
+              archive = load_json('stock_outcome_archive.json')
+              model = load_json('adaptive_learning.json')
+              reject_secrets(archive)
+              reject_secrets(model)
+              records = archive.get('records') if isinstance(archive.get('records'), dict) else {}
+              assert archive.get('decision_authority') is False
+              assert archive.get('mode') == 'EVENT_LEVEL_DECISIVE_ARCHIVE'
+              assert len(records) <= int(archive.get('maximum_records', 10000))
+              for signal_id, row in records.items():
+                  assert isinstance(row, dict)
+                  assert str(row.get('signal_id') or signal_id)
+                  assert row.get('terminal_outcome') in {'success', 'failed'}
+                  assert '60m' in (row.get('checkpoints') or {})
+                  assert row.get('event_level_deduped') is True
+              policy = model.get('policy') if isinstance(model.get('policy'), dict) else {}
+              assert policy.get('no_live_weight_change_before_minimum_sample') is True
+              assert policy.get('stock_event_identity_deduped') is True
+              assert policy.get('stock_learning_uses_durable_event_archive') is True
+              report_path = root / 'adaptive_learning_report.json'
+              if report_path.exists() and report_path.stat().st_size:
+                  report = load_json('adaptive_learning_report.json')
+                  reject_secrets(report)
+                  assert report.get('mode') == 'SHADOW_LEARNING'
+                  assert report.get('live_alert_weights_changed') is False
+          else:
+              outcomes = load_json('stock_outcomes.json')
+              reject_secrets(outcomes)
+              signals = outcomes.get('signals') if isinstance(outcomes.get('signals'), dict) else {}
+              assert len(signals) <= 10000
+              dedup = outcomes.get('event_dedup') if isinstance(outcomes.get('event_dedup'), dict) else {}
+              if dedup:
+                  assert dedup.get('mode') == 'same_symbol_direction_within_4h'
+
+          print(f'Durable stock evidence validation passed for {kind}.')
+          PY
+
+      - name: Persist stock evidence to bot-state
+        if: steps.artifact.outputs.found == 'true'
+        shell: bash
+        env:
+          KIND: ${{ steps.artifact.outputs.kind }}
+          SOURCE_RUN_ID: ${{ steps.artifact.outputs.source_run_id }}
+        run: |
+          set -euo pipefail
+          git config user.name "BLACK BOX Omega State Vault"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          mkdir -p state/stocks
+
+          if [[ "$KIND" == "adaptive" ]]; then
+            cp -f .incoming/stock_outcome_archive.json state/stocks/stock_outcome_archive.json
+            cp -f .incoming/adaptive_learning.json state/stocks/adaptive_learning.json
+            if [[ -s .incoming/adaptive_learning_report.json ]]; then
+              cp -f .incoming/adaptive_learning_report.json state/stocks/adaptive_learning_report.json
+            fi
+          else
+            cp -f .incoming/stock_outcomes.json state/stocks/stock_outcomes.json
+          fi
+
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          Path('state/stocks/manifest.json').write_text(
+              json.dumps({
+                  'schema_version': 1,
+                  'last_source_kind': os.environ['KIND'],
+                  'last_source_run_id': int(os.environ['SOURCE_RUN_ID']),
+                  'saved_at': datetime.now(timezone.utc).isoformat(),
+                  'contains_secrets': False,
+                  'decision_authority': False,
+              }, indent=2),
+              encoding='utf-8',
+          )
+          PY
+
+          git add state/stocks/
+          if git diff --cached --quiet; then
+            echo "Durable stock evidence unchanged; no commit required."
+            exit 0
+          fi
+          git commit -m "state: persist stock $KIND run $SOURCE_RUN_ID [skip ci]"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              echo "Durable stock evidence persisted on attempt $attempt."
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Failed to persist durable stock evidence after retries."
+          exit 1
+
+      - name: No eligible stock evidence artifact
+        if: steps.artifact.outputs.found != 'true'
+        run: echo "No eligible stock evidence artifact was produced by the source run; durable stock vault remains unchanged."
