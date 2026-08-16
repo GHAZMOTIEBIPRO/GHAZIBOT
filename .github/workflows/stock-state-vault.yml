@@ -7,11 +7,13 @@ on:
     paths:
       - ".github/workflows/stock-state-vault.yml"
       - "options_radar/stock_outcome_archive.py"
+      - "options_radar/stock_outcome_backfill.py"
       - "options_radar/durable_stock_state.py"
   workflow_run:
     workflows:
       - "BLACK BOX Omega Stock Radar"
       - "BLACK BOX Omega Adaptive Evidence Review"
+      - "BLACK BOX Omega Stock Outcome Auditor"
     types: [completed]
 
 concurrency:
@@ -54,6 +56,8 @@ jobs:
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
             if [[ "$SOURCE_WORKFLOW_NAME" == "BLACK BOX Omega Adaptive Evidence Review" ]]; then
               echo "kind=adaptive" >> "$GITHUB_OUTPUT"
+            elif [[ "$SOURCE_WORKFLOW_NAME" == "BLACK BOX Omega Stock Outcome Auditor" ]]; then
+              echo "kind=audit" >> "$GITHUB_OUTPUT"
             else
               echo "kind=stock" >> "$GITHUB_OUTPUT"
             fi
@@ -80,6 +84,8 @@ jobs:
 
           if [[ "$KIND" == "adaptive" ]]; then
             artifact_name="adaptive-learning-state"
+          elif [[ "$KIND" == "audit" ]]; then
+            artifact_name="stock-outcome-audit-state"
           else
             artifact_name="stock-radar-state"
           fi
@@ -92,6 +98,12 @@ jobs:
             fi
             if [[ "$KIND" == "adaptive" ]]; then
               if [[ -s .incoming/stock_outcome_archive.json && -s .incoming/adaptive_learning.json ]]; then
+                found=true
+                selected="$run_id"
+                break
+              fi
+            elif [[ "$KIND" == "audit" ]]; then
+              if [[ -s .incoming/stock_outcome_audit.json ]]; then
                 found=true
                 selected="$run_id"
                 break
@@ -164,6 +176,25 @@ jobs:
                   reject_secrets(report)
                   assert report.get('mode') == 'SHADOW_LEARNING'
                   assert report.get('live_alert_weights_changed') is False
+          elif kind == 'audit':
+              audit = load_json('stock_outcome_audit.json')
+              reject_secrets(audit)
+              records = audit.get('records') if isinstance(audit.get('records'), dict) else {}
+              coverage = audit.get('coverage') if isinstance(audit.get('coverage'), dict) else {}
+              gate = audit.get('promotion_gate') if isinstance(audit.get('promotion_gate'), dict) else {}
+              assert audit.get('mode') == 'HISTORICAL_5M_OUTCOME_AUDIT'
+              assert audit.get('decision_authority') is False
+              assert audit.get('live_alert_weights_changed') is False
+              assert ((audit.get('free_autonomy') or {}).get('paid_market_data_allowed')) is False
+              assert ((audit.get('free_autonomy') or {}).get('audit_provider_order')) == ['yahoo']
+              assert int(coverage.get('covered_60m', 0)) <= int(coverage.get('records', 0))
+              assert gate.get('walk_forward_required_after_coverage') is True
+              assert gate.get('live_promotion_allowed') is False
+              for signal_id, row in records.items():
+                  assert isinstance(row, dict)
+                  assert str(row.get('signal_id') or signal_id)
+                  assert row.get('decision_authority') is False
+                  assert row.get('audit_status') in {'success', 'failed', 'ambiguous', 'non_decisive', 'pending', 'unavailable'}
           else:
               outcomes = load_json('stock_outcomes.json')
               reject_secrets(outcomes)
@@ -194,6 +225,8 @@ jobs:
             if [[ -s .incoming/adaptive_learning_report.json ]]; then
               cp -f .incoming/adaptive_learning_report.json state/stocks/adaptive_learning_report.json
             fi
+          elif [[ "$KIND" == "audit" ]]; then
+            cp -f .incoming/stock_outcome_audit.json state/stocks/stock_outcome_audit.json
           else
             cp -f .incoming/stock_outcomes.json state/stocks/stock_outcomes.json
           fi
