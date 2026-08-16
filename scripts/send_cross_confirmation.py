@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from options_radar.telegram_transport import send_html_message
+from scripts.telegram_transport import send_html_message
 
 
 def _number(value: Any, default: float = 0.0) -> float:
