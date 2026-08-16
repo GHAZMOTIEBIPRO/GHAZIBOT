@@ -10,6 +10,7 @@ REMOTE_REF = f"refs/remotes/origin/{STATE_BRANCH}"
 DURABLE_STOCK_FILES = (
     ("state/stocks/stock_outcomes.json", "data/live/stock_outcomes.json"),
     ("state/stocks/stock_outcome_archive.json", "data/live/stock_outcome_archive.json"),
+    ("state/stocks/stock_outcome_audit.json", "data/live/stock_outcome_audit.json"),
     ("state/stocks/adaptive_learning.json", "data/live/adaptive_learning.json"),
 )
 

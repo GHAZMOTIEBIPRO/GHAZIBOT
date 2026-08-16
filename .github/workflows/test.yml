@@ -45,6 +45,7 @@ jobs:
           python -m scripts.send_classical_direction_alerts --help >/dev/null
           python -m scripts.options_performance_auditor --help >/dev/null
           python -m scripts.run_adaptive_learning --help >/dev/null
+          python -m scripts.run_stock_outcome_audit --help >/dev/null
           python scripts/telegram_connection_bootstrap.py --help >/dev/null
 
       - name: Python syntax and import compilation
@@ -77,6 +78,7 @@ jobs:
             options_radar/durable_state.py \
             options_radar/durable_stock_state.py \
             options_radar/stock_outcome_archive.py \
+            options_radar/stock_outcome_backfill.py \
             options_radar/adaptive_learning.py \
             options_radar/data_fabric.py \
             options_radar/data_fabric_runtime.py \
@@ -98,6 +100,7 @@ jobs:
             scripts/run_stock_radar_independent.py \
             scripts/enrich_stock_radar_research.py \
             scripts/run_adaptive_learning.py \
+            scripts/run_stock_outcome_audit.py \
             scripts/telegram_connection_bootstrap.py \
             scripts/telegram_transport.py \
             scripts/send_independent_path_alerts.py \
@@ -120,6 +123,7 @@ jobs:
             tests/test_outcome_learning.py \
             tests/test_durable_options_state.py \
             tests/test_stock_outcome_archive.py \
+            tests/test_stock_outcome_backfill.py \
             tests/test_data_fabric.py \
             tests/test_stream_overlay.py \
             tests/test_stream_gateway.py \
