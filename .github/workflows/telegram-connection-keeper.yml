@@ -1,0 +1,99 @@
+name: BLACK BOX Omega Telegram Connection Keeper
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/telegram-connection-keeper.yml"
+      - "scripts/telegram_connection_bootstrap.py"
+      - "options_radar/telegram_transport.py"
+  schedule:
+    - cron: "17 4 * * 0"
+
+concurrency:
+  group: black-box-omega-telegram-connection
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  keep-telegram-connection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Telegram dependency
+        run: pip install 'requests>=2.32,<3.0'
+
+      - name: Restore one existing private Telegram destination
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          # Prefer the centralized keeper. Legacy workflows are migration fallback only.
+          for workflow in telegram-connection-keeper.yml stock-telegram-alerts.yml options-telegram-alerts.yml classical-direction-radar.yml radar-health.yml cross-confirmation.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve and mask Telegram destination
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Verify Telegram Bot API identity
+        if: env.TELEGRAM_READY == 'true'
+        run: |
+          python - <<'PY'
+          from options_radar.telegram_transport import verify_bot
+          health = verify_bot()
+          if health.get('ok') is not True:
+              raise SystemExit(f"Telegram Bot API verification failed: {health.get('reason', 'unknown')}")
+          print(f"Telegram Bot API healthy; username={health.get('username') or 'unknown'}")
+          PY
+
+      - name: Seal centralized Telegram destination
+        if: env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          openssl enc -aes-256-cbc -salt -pbkdf2 \
+            -in telegram_runtime/connection.json \
+            -out telegram_runtime/connection.enc \
+            -pass env:TELEGRAM_BOT_TOKEN
+          rm -f telegram_runtime/connection.json
+
+      - name: Upload one centralized Telegram destination
+        if: env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-connection
+          path: telegram_runtime/connection.enc
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Destination not ready status
+        if: env.TELEGRAM_READY != 'true'
+        run: echo "Telegram destination is not ready; send /start once or configure TELEGRAM_CHAT_ID secret."
