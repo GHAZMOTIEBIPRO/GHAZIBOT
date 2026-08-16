@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-16T23:27:44.073787+00:00",
+  "policy": {
+    "no_live_weight_change_before_minimum_sample": true,
+    "stock_min_matured": 60,
+    "options_min_decisive": 100,
+    "stock_adjustment_cap": 8.0,
+    "options_adjustment_cap": 6.0,
+    "same_scan_observation_is_not_independent_evidence": true,
+    "stock_event_identity_deduped": true,
+    "stock_learning_uses_durable_event_archive": true,
+    "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": true
+  },
+  "stock": {
+    "ready": true,
+    "matured_decisive": 68,
+    "minimum_required": 60,
+    "baseline_success_rate": 0.7941,
+    "score_bands": {
+      "80-89": {
+        "sample": 23,
+        "successes": 18,
+        "failures": 5,
+        "success_rate": 0.7826,
+        "eligible": true,
+        "score_adjustment": 0.0
+      },
+      "72-79": {
+        "sample": 17,
+        "successes": 14,
+        "failures": 3,
+        "success_rate": 0.8235,
+        "eligible": false,
+        "score_adjustment": 0.0
+      },
+      "below-72": {
+        "sample": 11,
+        "successes": 8,
+        "failures": 3,
+        "success_rate": 0.7273,
+        "eligible": false,
+        "score_adjustment": 0.0
+      },
+      "90-100": {
+        "sample": 17,
+        "successes": 14,
+        "failures": 3,
+        "success_rate": 0.8235,
+        "eligible": false,
+        "score_adjustment": 0.0
+      }
+    },
+    "stages": {
+      "EXPLOSION": {
+        "sample": 57,
+        "successes": 44,
+        "failures": 13,
+        "success_rate": 0.7719,
+        "eligible": true,
+        "score_adjustment": 0.0
+      },
+      "IGNITION": {
+        "sample": 5,
+        "successes": 5,
+        "failures": 0,
+        "success_rate": 1.0,
+        "eligible": false,
+        "score_adjustment": 0.0
+      },
+      "PRESSURE_BUILDING": {
+        "sample": 6,
+        "successes": 5,
+        "failures": 1,
+        "success_rate": 0.8333,
+        "eligible": false,
+        "score_adjustment": 0.0
+      }
+    },
+    "regimes": {
+      "risk_on": {
+        "sample": 67,
+        "successes": 54,
+        "failures": 13,
+        "success_rate": 0.806,
+        "eligible": true,
+        "score_adjustment": 0.0
+      },
+      "unknown": {
+        "sample": 1,
+        "successes": 0,
+        "failures": 1,
+        "success_rate": 0.0,
+        "eligible": false,
+        "score_adjustment": 0.0
+      }
+    },
+    "cause_tiers": {
+      "unknown": {
+        "sample": 68,
+        "successes": 54,
+        "failures": 14,
+        "success_rate": 0.7941,
+        "eligible": true,
+        "score_adjustment": 0.0
+      }
+    }
+  },
+  "options": {
+    "ready": false,
+    "matured_decisive": 0,
+    "minimum_required": 100,
+    "baseline_success_rate": null,
+    "score_bands": {},
+    "regimes": {},
+    "sides": {}
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "generated_at": "2026-08-16T23:27:44.074737+00:00",
+  "mode": "SHADOW_LEARNING",
+  "live_alert_weights_changed": false,
+  "free_autonomy": {
+    "enabled": true,
+    "stock_feed": "iex",
+    "option_feed": "indicative",
+    "paid_market_data_allowed": false
+  },
+  "durable_stock_state": {
+    "attempted": true,
+    "branch_available": true,
+    "restored": [],
+    "preserved_local": [
+      "data/live/stock_outcomes.json",
+      "data/live/adaptive_learning.json"
+    ],
+    "error": ""
+  },
+  "stock_archive_summary": {
+    "records": 68,
+    "successes": 54,
+    "failures": 14,
+    "added_this_pass": 68,
+    "updated_this_pass": 0
+  },
+  "option_outcome_summary": {
+    "tracked_signals": 8,
+    "priced_signals": 8,
+    "path_evaluated": 8,
+    "successful": 0,
+    "stopped_out": 0,
+    "ambiguous": 0,
+    "open": 8,
+    "option_contract_basis": 0,
+    "underlying_proxy_basis": 8,
+    "average_mfe_pct": 5.5249,
+    "average_mae_pct": -1.6232,
+    "measurement_note": "Path-dependent paper tracking. Contract OHLC is preferred; underlying OHLC is a documented fallback. Stop-first is terminal. Same-bar stop/target is ambiguous and never counted as a win."
+  },
+  "calibration": {
+    "sample_size": 0,
+    "raw_priced_sample": 0,
+    "priced_sample": 0,
+    "matured_sample": 0,
+    "five_day_sample": 0,
+    "maturity_checkpoint": "1d",
+    "minimum_sample": 100,
+    "calibration_ready": false,
+    "decision": "Collect 100 more signals with a 1d checkpoint before changing weights",
+    "score_bands": [
+      {
+        "band": "90-100",
+        "signals": 0,
+        "observed": 0,
+        "priced": 0,
+        "matured": 0,
+        "target_1_rate": null,
+        "target_2_rate": null,
+        "stop_rate": null,
+        "ambiguous_rate": null,
+        "average_mfe_pct": null,
+        "average_mae_pct": null
+      },
+      {
+        "band": "80-89",
+        "signals": 0,
+        "observed": 0,
+        "priced": 0,
+        "matured": 0,
+        "target_1_rate": null,
+        "target_2_rate": null,
+        "stop_rate": null,
+        "ambiguous_rate": null,
+        "average_mfe_pct": null,
+        "average_mae_pct": null
+      },
+      {
+        "band": "70-79",
+        "signals": 0,
+        "observed": 0,
+        "priced": 0,
+        "matured": 0,
+        "target_1_rate": null,
+        "target_2_rate": null,
+        "stop_rate": null,
+        "ambiguous_rate": null,
+        "average_mfe_pct": null,
+        "average_mae_pct": null
+      },
+      {
+        "band": "60-69",
+        "signals": 0,
+        "observed": 0,
+        "priced": 0,
+        "matured": 0,
+        "target_1_rate": null,
+        "target_2_rate": null,
+        "stop_rate": null,
+        "ambiguous_rate": null,
+        "average_mfe_pct": null,
+        "average_mae_pct": null
+      },
+      {
+        "band": "0-59",
+        "signals": 0,
+        "observed": 0,
+        "priced": 0,
+        "matured": 0,
+        "target_1_rate": null,
+        "target_2_rate": null,
+        "stop_rate": null,
+        "ambiguous_rate": null,
+        "average_mfe_pct": null,
+        "average_mae_pct": null
+      }
+    ],
+    "catalysts": [],
+    "warning": "Same-scan quotes are monitoring observations, not mature evidence. The review gate counts only signals with a 1d checkpoint. New path-aware records keep stop-first terminal and never count same-bar ambiguity as a win. Legacy observed flags are used only when terminal_outcome is absent."
+  },
+  "model": {
+    "schema_version": 1,
+    "generated_at": "2026-08-16T23:27:44.073787+00:00",
+    "policy": {
+      "no_live_weight_change_before_minimum_sample": true,
+      "stock_min_matured": 60,
+      "options_min_decisive": 100,
+      "stock_adjustment_cap": 8.0,
+      "options_adjustment_cap": 6.0,
+      "same_scan_observation_is_not_independent_evidence": true,
+      "stock_event_identity_deduped": true,
+      "stock_learning_uses_durable_event_archive": true,
+      "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": true
+    },
+    "stock": {
+      "ready": true,
+      "matured_decisive": 68,
+      "minimum_required": 60,
+      "baseline_success_rate": 0.7941,
+      "score_bands": {
+        "80-89": {
+          "sample": 23,
+          "successes": 18,
+          "failures": 5,
+          "success_rate": 0.7826,
+          "eligible": true,
+          "score_adjustment": 0.0
+        },
+        "72-79": {
+          "sample": 17,
+          "successes": 14,
+          "failures": 3,
+          "success_rate": 0.8235,
+          "eligible": false,
+          "score_adjustment": 0.0
+        },
+        "below-72": {
+          "sample": 11,
+          "successes": 8,
+          "failures": 3,
+          "success_rate": 0.7273,
+          "eligible": false,
+          "score_adjustment": 0.0
+        },
+        "90-100": {
+          "sample": 17,
+          "successes": 14,
+          "failures": 3,
+          "success_rate": 0.8235,
+          "eligible": false,
+          "score_adjustment": 0.0
+        }
+      },
+      "stages": {
+        "EXPLOSION": {
+          "sample": 57,
+          "successes": 44,
+          "failures": 13,
+          "success_rate": 0.7719,
+          "eligible": true,
+          "score_adjustment": 0.0
+        },
+        "IGNITION": {
+          "sample": 5,
+          "successes": 5,
+          "failures": 0,
+          "success_rate": 1.0,
+          "eligible": false,
+          "score_adjustment": 0.0
+        },
+        "PRESSURE_BUILDING": {
+          "sample": 6,
+          "successes": 5,
+          "failures": 1,
+          "success_rate": 0.8333,
+          "eligible": false,
+          "score_adjustment": 0.0
+        }
+      },
+      "regimes": {
+        "risk_on": {
+          "sample": 67,
+          "successes": 54,
+          "failures": 13,
+          "success_rate": 0.806,
+          "eligible": true,
+          "score_adjustment": 0.0
+        },
+        "unknown": {
+          "sample": 1,
+          "successes": 0,
+          "failures": 1,
+          "success_rate": 0.0,
+          "eligible": false,
+          "score_adjustment": 0.0
+        }
+      },
+      "cause_tiers": {
+        "unknown": {
+          "sample": 68,
+          "successes": 54,
+          "failures": 14,
+          "success_rate": 0.7941,
+          "eligible": true,
+          "score_adjustment": 0.0
+        }
+      }
+    },
+    "options": {
+      "ready": false,
+      "matured_decisive": 0,
+      "minimum_required": 100,
+      "baseline_success_rate": null,
+      "score_bands": {},
+      "regimes": {},
+      "sides": {}
+    }
+  },
+  "errors": [],
+  "promotion_gate": {
+    "stock_ready": true,
+    "options_ready": false,
+    "requires_walk_forward_review_before_live_promotion": true
+  }
+}
