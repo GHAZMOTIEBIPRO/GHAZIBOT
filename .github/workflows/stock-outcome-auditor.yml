@@ -1,0 +1,119 @@
+name: BLACK BOX Omega Stock Outcome Auditor
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stock-outcome-auditor.yml"
+      - "options_radar/stock_outcome_backfill.py"
+      - "options_radar/durable_stock_state.py"
+      - "scripts/run_stock_outcome_audit.py"
+  schedule:
+    # Always after the regular XNYS close in both DST and standard time.
+    - cron: "12 22 * * 1-5"
+
+concurrency:
+  group: black-box-omega-stock-outcome-auditor
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+      STOCK_OUTCOME_PATH: data/live/stock_outcomes.json
+      STOCK_OUTCOME_AUDIT_PATH: data/live/stock_outcome_audit.json
+      STOCK_OUTCOME_AUDIT_MAX_SYMBOLS: "40"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run free historical stock outcome audit
+        run: >-
+          python -m scripts.run_stock_outcome_audit
+          --stock-outcomes "$STOCK_OUTCOME_PATH"
+          --audit "$STOCK_OUTCOME_AUDIT_PATH"
+          --max-symbols "$STOCK_OUTCOME_AUDIT_MAX_SYMBOLS"
+
+      - name: Validate coverage, bias and no-promotion guards
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          audit = json.loads(Path('data/live/stock_outcome_audit.json').read_text(encoding='utf-8'))
+          assert audit['mode'] == 'HISTORICAL_5M_OUTCOME_AUDIT'
+          assert audit['decision_authority'] is False
+          assert audit['live_alert_weights_changed'] is False
+          assert audit['free_autonomy']['paid_market_data_allowed'] is False
+          assert audit['free_autonomy']['audit_provider_order'] == ['yahoo']
+          assert audit['provider_policy'].startswith('free research fallback only')
+          assert 'unofficial research data' in audit['source_policy']
+
+          coverage = audit['coverage']
+          assert int(coverage['covered_60m']) <= int(coverage['records'])
+          assert int(coverage['decisive']) + int(coverage['ambiguous']) + int(coverage['non_decisive']) + int(coverage['pending']) + int(coverage['unavailable']) == int(coverage['records'])
+          assert 0 <= float(coverage['coverage_60m_pct']) <= 100
+          assert isinstance(coverage['independent_60m_session_dates'], list)
+          assert int(coverage['independent_60m_sessions']) == len(coverage['independent_60m_session_dates'])
+
+          bias = audit['bias_guard']
+          assert bias['survivorship_bias_addressed_by_following_disappeared_signals'] is True
+          assert bias['non_decisive_events_remain_in_denominator'] is True
+          assert bias['ambiguous_same_bar_events_remain_in_denominator'] is True
+          assert bias['independent_session_gate_required'] is True
+          assert bias['existing_79pct_snapshot_rate_is_not_treated_as_accuracy'] is True
+
+          gate = audit['promotion_gate']
+          assert float(gate['minimum_60m_coverage_pct']) >= 90
+          assert int(gate['minimum_independent_sessions']) >= 10
+          assert gate['walk_forward_required_after_coverage'] is True
+          assert gate['live_promotion_allowed'] is False
+
+          for row in (audit.get('records') or {}).values():
+              assert row.get('decision_authority') is False
+              policy = row.get('measurement_policy')
+              if isinstance(policy, dict):
+                  assert policy['same_bar_target_stop'] == 'ambiguous'
+                  assert policy['pre_signal_bar_excluded'] is True
+                  assert policy['intrabar_order_claimed'] is False
+              status = row.get('audit_status')
+              assert status in {'success', 'failed', 'ambiguous', 'non_decisive', 'pending', 'unavailable'}
+
+          print('Stock outcome audit safety and coverage validation passed.')
+          PY
+
+      - name: Stage audit state
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p .stock-audit-upload
+          cp -f data/live/stock_outcome_audit.json .stock-audit-upload/stock_outcome_audit.json 2>/dev/null || true
+
+      - name: Upload stock outcome audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-outcome-audit-state
+          path: .stock-audit-upload/
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 90
