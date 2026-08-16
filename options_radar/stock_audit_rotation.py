@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import pandas as pd
+
 from options_radar.market_clock import market_clock_state
+from options_radar.stock_outcome_backfill import evaluate_stock_event_from_bars
 
 FINAL_TERMINAL = frozenset({"success", "failed", "ambiguous", "non_decisive"})
 INVALID_SESSION_CLASSIFICATION = "invalid_session"
@@ -88,11 +91,7 @@ def fair_symbols_needing_backfill(
     maximum_symbols: int,
     retry_cooldown_hours: int = DEFAULT_RETRY_COOLDOWN_HOURS,
 ) -> list[str]:
-    """Prefer never-attempted symbols, then cooled-down retries.
-
-    Terminal decisive/ambiguous/non-decisive events leave the queue immediately;
-    a missing 1d checkpoint cannot make a resolved event monopolize future slots.
-    """
+    """Prefer never-attempted symbols, then cooled-down retries."""
 
     current = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
     cooldown = timedelta(hours=max(1, int(retry_cooldown_hours)))
@@ -110,7 +109,6 @@ def fair_symbols_needing_backfill(
         attempts = max(0, _int(row.get("audit_attempt_count")))
         last_attempt = _parse_time(row.get("audit_last_attempt_at"))
         coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
-
         if attempts <= 0:
             tier = 0
         else:
@@ -125,6 +123,51 @@ def fair_symbols_needing_backfill(
 
     ordered = sorted(candidates, key=lambda symbol: (*candidates[symbol], symbol))
     return ordered[: max(1, int(maximum_symbols))]
+
+
+def apply_symbol_bars_fair(
+    audit: dict[str, Any],
+    *,
+    symbol: str,
+    bars: pd.DataFrame,
+    now: datetime,
+    source: str,
+) -> int:
+    """Evaluate only unresolved rows for a fetched symbol."""
+
+    records = audit.get("records") if isinstance(audit.get("records"), dict) else {}
+    updated = 0
+    for signal_id, row in list(records.items()):
+        if not isinstance(row, dict) or str(row.get("symbol") or "").upper() != symbol.upper():
+            continue
+        if not _needs_more_evidence(row):
+            continue
+        evaluated = evaluate_stock_event_from_bars(row, bars, now=now, source=source)
+        for key in (
+            "snapshot_terminal_outcome",
+            "snapshot_terminal_reason",
+            "snapshot_terminal_at",
+            "audit_attempt_count",
+            "audit_last_attempt_at",
+            "audit_last_attempt_result",
+            "audit_last_attempt_error",
+            "signal_session_valid",
+            "signal_session_reason",
+            "signal_session_date",
+        ):
+            if key in row:
+                evaluated[key] = row[key]
+        snapshot = str(evaluated.get("snapshot_terminal_outcome") or "open")
+        audited = str(evaluated.get("audit_status") or "pending")
+        evaluated["snapshot_discrepancy"] = (
+            snapshot in {"success", "failed"}
+            and audited in {"success", "failed"}
+            and snapshot != audited
+        )
+        records[signal_id] = evaluated
+        updated += 1
+    audit["records"] = records
+    return updated
 
 
 def mark_symbol_attempt(
