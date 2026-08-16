@@ -3,7 +3,9 @@ name: BLACK BOX Omega Radar Health
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/15 13-22 * * 1-5"
+    # Keep the same 15-minute cadence but avoid the top of the hour, where
+    # scheduled GitHub Actions are more likely to queue under platform load.
+    - cron: "11,26,41,56 13-22 * * 1-5"
 
 concurrency:
   group: black-box-omega-radar-health
@@ -20,6 +22,7 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      FREE_AUTONOMY_MODE: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -30,18 +33,23 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Telegram dependency
-        run: pip install 'requests>=2.32,<3.0'
+      - name: Install lightweight health dependencies
+        run: pip install 'requests>=2.32,<3.0' 'exchange-calendars>=4.13,<5.0'
+
+      - name: Check U.S. regular session before health alerts
+        id: market
+        shell: bash
+        run: python scripts/market_clock_gate.py --mode regular >> "$GITHUB_OUTPUT"
 
       - name: Restore centralized Telegram destination
-        if: env.TELEGRAM_CHAT_ID == ''
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_CHAT_ID == ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p telegram_runtime
-          for workflow in telegram-connection-keeper.yml radar-health.yml stock-telegram-alerts.yml options-telegram-alerts.yml cross-confirmation.yml telegram-alerts.yml; do
-            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+          for workflow in telegram-connection-keeper.yml radar-health.yml stock-radar.yml options-contract-radar.yml stock-telegram-alerts.yml options-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
               if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
                 [[ -s telegram_runtime/connection.enc ]] && break 2
@@ -56,41 +64,128 @@ jobs:
           fi
 
       - name: Resolve Telegram destination
+        if: steps.market.outputs.open == 'true'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
-      - name: Restore latest health payloads
+      - name: Inspect latest radar runs and restore validated payloads
         id: payloads
-        if: env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .health/stocks .health/options
-          stocks=false
-          options=false
-          for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-            rm -rf .health/stocks && mkdir -p .health/stocks
-            if gh run download "$run_id" -n independent-stock-radar -D .health/stocks >/dev/null 2>&1; then
-              [[ -s .health/stocks/stocks_latest.json ]] && stocks=true && break
+
+          restore_or_synthesize() {
+            workflow="$1"
+            artifact="$2"
+            destination="$3"
+            filename="$4"
+            path_name="$5"
+
+            rm -rf "$destination" && mkdir -p "$destination"
+            latest="$(gh run list --workflow "$workflow" --status completed --branch main --limit 1 --json databaseId,conclusion --jq '.[0] // {}' 2>/dev/null || echo '{}')"
+            latest_id="$(printf '%s' "$latest" | jq -r '.databaseId // 0')"
+            latest_conclusion="$(printf '%s' "$latest" | jq -r '.conclusion // "missing"')"
+
+            if [[ "$latest_id" != "0" && "$latest_conclusion" == "success" ]]; then
+              gh run download "$latest_id" -n "$artifact" -D "$destination" >/dev/null 2>&1 || true
             fi
-          done
-          for run_id in $(gh run list --workflow options-research-enrichment.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-            rm -rf .health/options && mkdir -p .health/options
-            if gh run download "$run_id" -n independent-options-research -D .health/options >/dev/null 2>&1; then
-              [[ -s .health/options/options_latest.json ]] && options=true && break
+
+            # A successful closed-market/push run can legitimately have no radar
+            # artifact. In that case find the latest successful run that actually
+            # produced one. A failed latest run is never hidden by an older payload.
+            if [[ "$latest_conclusion" == "success" && ! -s "$destination/$filename" ]]; then
+              for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+                rm -rf "$destination" && mkdir -p "$destination"
+                if gh run download "$run_id" -n "$artifact" -D "$destination" >/dev/null 2>&1; then
+                  [[ -s "$destination/$filename" ]] && break
+                fi
+              done
             fi
-          done
-          echo "stocks=$stocks" >> "$GITHUB_OUTPUT"
-          echo "options=$options" >> "$GITHUB_OUTPUT"
+
+            if [[ "$latest_conclusion" != "success" ]]; then
+              python - "$destination/$filename" "$path_name" "$latest_conclusion" <<'PY'
+          import json, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+          output, path_name, conclusion = sys.argv[1:]
+          payload = {
+              "path": path_name,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "health": {
+                  "status": "CRITICAL",
+                  "reasons": [f"آخر تشغيل لمسار {path_name} انتهى بالحالة: {conclusion}; البوت اكتشف العطل تلقائيًا."],
+              },
+          }
+          Path(output).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+          PY
+            fi
+
+            if [[ ! -s "$destination/$filename" ]]; then
+              python - "$destination/$filename" "$path_name" <<'PY'
+          import json, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+          output, path_name = sys.argv[1:]
+          payload = {
+              "path": path_name,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "health": {
+                  "status": "CRITICAL",
+                  "reasons": [f"لم يجد البوت أي نتيجة حديثة لمسار {path_name}; تم اكتشاف المشكلة تلقائيًا."],
+              },
+          }
+          Path(output).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+          PY
+            fi
+          }
+
+          restore_or_synthesize stock-radar.yml independent-stock-radar .health/stocks stocks_latest.json stocks
+          restore_or_synthesize options-contract-radar.yml independent-options-radar .health/options options_latest.json options
+
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          def guard(path: str, maximum_minutes: float) -> None:
+              file = Path(path)
+              payload = json.loads(file.read_text(encoding='utf-8'))
+              health = payload.get('health') if isinstance(payload.get('health'), dict) else {}
+              # Synthetic CRITICAL payloads above are current by construction.
+              if str(health.get('status') or '').upper() == 'CRITICAL':
+                  return
+              raw = str(payload.get('generated_at') or '').replace('Z', '+00:00')
+              try:
+                  stamp = datetime.fromisoformat(raw)
+                  if stamp.tzinfo is None:
+                      stamp = stamp.replace(tzinfo=timezone.utc)
+                  age = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+              except Exception:
+                  age = maximum_minutes + 1
+              if age < -5 or age > maximum_minutes:
+                  payload['health'] = {
+                      'status': 'CRITICAL',
+                      'reasons': [f'آخر نتيجة موثقة للمسار قديمة ({age:.1f} دقيقة)؛ البوت اكتشف انقطاع التحديث تلقائيًا.'],
+                  }
+                  file.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+
+          guard('.health/stocks/stocks_latest.json', 45.0)
+          guard('.health/options/options_latest.json', 45.0)
+          PY
+
+          echo "stocks=true" >> "$GITHUB_OUTPUT"
+          echo "options=true" >> "$GITHUB_OUTPUT"
 
       - name: Restore radar health state
-        if: env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p data/live .health-state
-          for run_id in $(gh run list --workflow radar-health.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+          for run_id in $(gh run list --workflow radar-health.yml --status completed --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
             rm -rf .health-state && mkdir -p .health-state
             if gh run download "$run_id" -n radar-health-state -D .health-state >/dev/null 2>&1; then
               cp -f .health-state/radar_health_state.json data/live/radar_health_state.json 2>/dev/null || true
@@ -99,7 +194,7 @@ jobs:
           done
 
       - name: Check stock health transition
-        if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true'
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true'
         run: >-
           python scripts/send_radar_health.py
           --path stocks
@@ -107,7 +202,7 @@ jobs:
           --state data/live/radar_health_state.json
 
       - name: Check options health transition
-        if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.options == 'true'
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true' && steps.payloads.outputs.options == 'true'
         run: >-
           python scripts/send_radar_health.py
           --path options
@@ -115,10 +210,14 @@ jobs:
           --state data/live/radar_health_state.json
 
       - name: Upload radar health state
-        if: env.TELEGRAM_READY == 'true'
+        if: always() && steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: radar-health-state
           path: data/live/radar_health_state.json
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Closed-market health status
+        if: steps.market.outputs.open != 'true'
+        run: echo "Radar health is quiet because XNYS regular session is closed."
