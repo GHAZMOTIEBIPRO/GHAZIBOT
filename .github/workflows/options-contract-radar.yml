@@ -20,6 +20,9 @@ on:
       - "scripts/run_options_radar_independent.py"
       - "scripts/run_options_radar_hardened.py"
       - "scripts/run_options_radar_fabric.py"
+      - "scripts/send_strict_options_alerts.py"
+      - "scripts/telegram_connection_bootstrap.py"
+      - "scripts/telegram_transport.py"
       - "data/options_ping.txt"
   schedule:
     - cron: "3,18,33,48 13-21 * * 1-5"
@@ -61,6 +64,9 @@ jobs:
       OPTIONS_STRICT_MAX_SIGNALS: ${{ secrets.OPTIONS_STRICT_MAX_SIGNALS || '8' }}
       OPTIONS_FREE_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_FREE_ALERT_MIN_SCORE || '87' }}
       OPTIONS_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_ALERT_MIN_SCORE || '85' }}
+      OPTIONS_FREE_ALERTS_ENABLED: ${{ secrets.OPTIONS_FREE_ALERTS_ENABLED || 'true' }}
+      OPTIONS_ALERT_MAX: ${{ secrets.OPTIONS_ALERT_MAX || '3' }}
+      OPTIONS_PAYLOAD_MAX_AGE_MINUTES: ${{ secrets.OPTIONS_PAYLOAD_MAX_AGE_MINUTES || '45' }}
       OPTIONS_LEARNING_MAX_SYMBOLS: ${{ secrets.OPTIONS_LEARNING_MAX_SYMBOLS || '12' }}
       OPTIONS_LEARNING_MIN_DATA_QUALITY: ${{ secrets.OPTIONS_LEARNING_MIN_DATA_QUALITY || '0.80' }}
       CALIBRATION_MINIMUM_SAMPLE: ${{ secrets.CALIBRATION_MINIMUM_SAMPLE || '100' }}
@@ -77,6 +83,8 @@ jobs:
       SIGNAL_JOURNAL_PATH: data/live/options_signals.jsonl
       OUTCOME_PATH: data/live/options_outcomes.json
       CALIBRATION_PATH: data/live/options_calibration.json
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -204,6 +212,68 @@ jobs:
           path: public/data/options_latest.json
           if-no-files-found: error
           retention-days: 7
+
+      - name: Restore centralized Telegram destination for direct delivery
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml options-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination for direct delivery
+        if: steps.market.outputs.open == 'true'
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Restore direct options Telegram dedupe state
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live .options-telegram-restore
+          printf '{"sent":{}}\n' > data/live/options_telegram_alert_state.json
+          for workflow in options-contract-radar.yml options-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .options-telegram-restore && mkdir -p .options-telegram-restore
+              if gh run download "$run_id" -n options-telegram-state -D .options-telegram-restore >/dev/null 2>&1; then
+                if [[ -s .options-telegram-restore/options_alert_state.json ]]; then
+                  cp .options-telegram-restore/options_alert_state.json data/live/options_telegram_alert_state.json
+                  break 2
+                fi
+              fi
+            done
+          done
+
+      - name: Send strict option alert directly after validation
+        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_strict_options_alerts
+          --payload public/data/options_latest.json
+          --state data/live/options_telegram_alert_state.json
+
+      - name: Upload direct options Telegram state
+        if: always() && steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: options-telegram-state
+          path: data/live/options_telegram_alert_state.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Stage independent options state
         if: steps.market.outputs.open == 'true'
