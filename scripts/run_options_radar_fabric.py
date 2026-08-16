@@ -1,9 +1,22 @@
 from __future__ import annotations
 
 from options_radar.data_fabric_runtime import install_data_fabric
+from options_radar.free_autonomy import enforce_free_autonomy_environment
 
 
 def main() -> None:
+    # Enforce zero-cost feeds before Settings or any data client is imported.
+    # This prevents stale SIP/OPRA environment values from silently turning the
+    # autonomous path into a paid dependency.
+    free_status = enforce_free_autonomy_environment()
+    print(
+        "Free autonomy: "
+        f"enabled={free_status.enabled} "
+        f"stock_feed={free_status.stock_stream_feed} "
+        f"option_feed={free_status.option_stream_feed} "
+        f"paid_allowed={free_status.paid_market_data_allowed}"
+    )
+
     # Install acquisition-only hardening before importing the hardened runner so
     # every DataFetcher created by the options path uses the same fabric.
     install_data_fabric()
