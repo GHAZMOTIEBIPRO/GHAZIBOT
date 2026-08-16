@@ -60,3 +60,18 @@ def test_direct_delivery_restores_old_state_during_migration():
     options = _workflow("options-contract-radar.yml")
     assert "for workflow in stock-radar.yml stock-telegram-alerts.yml" in stock
     assert "for workflow in options-contract-radar.yml options-telegram-alerts.yml" in options
+
+
+def test_delivery_state_accepts_completed_runs_but_core_state_remains_success_only():
+    stock = _workflow("stock-radar.yml")
+    options = _workflow("options-contract-radar.yml")
+
+    # Telegram delivery state is idempotency evidence. A failed run may still
+    # contain valid state for messages delivered before a later send failed.
+    assert 'gh run list --workflow "$workflow" --status completed --branch main' in stock
+    assert 'gh run list --workflow "$workflow" --status completed --branch main' in options
+
+    # Core learning/market state must remain stricter and only restore from
+    # successful runs, so Telegram reliability can never weaken analysis state.
+    assert "gh run list --workflow stock-radar.yml --status success --branch main" in stock
+    assert "gh run list --workflow options-contract-radar.yml --status success --branch main" in options
