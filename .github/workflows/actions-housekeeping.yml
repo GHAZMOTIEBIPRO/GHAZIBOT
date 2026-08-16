@@ -1,0 +1,42 @@
+name: BLACK BOX Omega Actions Housekeeping
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/actions-housekeeping.yml"
+      - "scripts/prune_actions_artifacts.py"
+  schedule:
+    - cron: "33 3 * * *"
+
+concurrency:
+  group: black-box-omega-actions-housekeeping
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  prune-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ACTIONS_ARTIFACT_KEEP_PER_NAME: "3"
+      ACTIONS_ARTIFACT_MIN_AGE_HOURS: "6"
+      ACTIONS_ARTIFACT_MAX_DELETIONS: "400"
+      ACTIONS_ARTIFACT_DRY_RUN: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prune duplicate historical artifacts
+        run: python scripts/prune_actions_artifacts.py
