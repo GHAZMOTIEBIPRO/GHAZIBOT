@@ -2,6 +2,11 @@ name: BLACK BOX Omega Options Performance Auditor
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/options-performance-auditor.yml"
+      - "scripts/options_performance_auditor.py"
   schedule:
     # 22:37 UTC is after the regular XNYS close in both DST and standard time.
     # The audit runs on weekdays; unchanged/holiday data stays silent.
@@ -75,7 +80,7 @@ jobs:
           done
 
       - name: Restore centralized Telegram destination
-        if: steps.learning_state.outputs.found == 'true' && env.TELEGRAM_CHAT_ID == ''
+        if: steps.learning_state.outputs.found == 'true' && env.TELEGRAM_CHAT_ID == '' && github.event_name != 'push'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -97,7 +102,7 @@ jobs:
           fi
 
       - name: Resolve Telegram destination
-        if: steps.learning_state.outputs.found == 'true'
+        if: steps.learning_state.outputs.found == 'true' && github.event_name != 'push'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
       - name: Build silent audit and send only milestone/weekly report
@@ -111,7 +116,7 @@ jobs:
             --output public/data/options_performance_report.json
             --state data/live/options_performance_report_state.json
           )
-          if [[ "${TELEGRAM_READY:-false}" == "true" ]]; then
+          if [[ "${GITHUB_EVENT_NAME:-}" != "push" && "${TELEGRAM_READY:-false}" == "true" ]]; then
             args+=(--send)
           fi
           python -m scripts.options_performance_auditor "${args[@]}"
