@@ -240,8 +240,13 @@ def main() -> None:
         raise RuntimeError("Expected independent options payload")
     if not isinstance(state, dict):
         state = {"sent": {}}
-    sent = send(payload, state)
-    _save(args.state, state)
+    sent = 0
+    try:
+        sent = send(payload, state)
+    finally:
+        # Persist successful sends even if a later message fails, so the next
+        # run cannot duplicate already-delivered alerts.
+        _save(args.state, state)
     print(f"Strict options Telegram sender: sent={sent} mode={state.get('mode')} min={state.get('minimum_score')}")
 
 

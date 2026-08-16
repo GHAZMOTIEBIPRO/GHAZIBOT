@@ -8,6 +8,9 @@ on:
       - ".github/workflows/stock-radar.yml"
       - "scripts/run_stock_radar_independent.py"
       - "scripts/enrich_stock_radar_research.py"
+      - "scripts/send_independent_path_alerts.py"
+      - "scripts/telegram_connection_bootstrap.py"
+      - "scripts/telegram_transport.py"
       - "options_radar/stock_outcomes.py"
       - "options_radar/stock_decision.py"
       - "options_radar/radar_health.py"
@@ -38,6 +41,10 @@ jobs:
       ADAPTIVE_LEARNING_PATH: data/live/adaptive_learning.json
       STOCK_OUTCOME_PATH: data/live/stock_outcomes.json
       STOCK_DISCOVERY_MAX_AGE_MINUTES: ${{ secrets.STOCK_DISCOVERY_MAX_AGE_MINUTES || '90' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      STOCK_ALERT_MIN_SCORE: ${{ secrets.STOCK_ALERT_MIN_SCORE || '72' }}
+      STOCK_ALERT_MAX: ${{ secrets.STOCK_ALERT_MAX || '3' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -78,8 +85,6 @@ jobs:
           if [[ -n "$current" ]]; then
             gh run download "$current" -n fast-market-state -D data/live || true
           fi
-          # Never replace a missing artifact from the triggering workflow_run with
-          # an older successful run. Historical fallback is manual/push research only.
           if [[ -z "$current" && ! -f data/live/fast_explosion_scan.json ]]; then
             for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               if gh run download "$run_id" -n fast-market-state -D data/live >/dev/null 2>&1; then
@@ -195,6 +200,71 @@ jobs:
           path: .stock-state-upload/
           if-no-files-found: error
           include-hidden-files: true
+          retention-days: 30
+
+      - name: Restore centralized Telegram destination for direct delivery
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml stock-radar.yml stock-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination for direct delivery
+        if: steps.market_day.outputs.open == 'true'
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Restore direct stock Telegram dedupe state
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live .stock-telegram-restore
+          printf '{"sent":{}}\n' > data/live/stock_alert_state.json
+          # Delivery state is valid evidence even when a prior run failed after
+          # sending one message. Core market/learning state above remains success-only.
+          for workflow in stock-radar.yml stock-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .stock-telegram-restore && mkdir -p .stock-telegram-restore
+              if gh run download "$run_id" -n stock-telegram-state -D .stock-telegram-restore >/dev/null 2>&1; then
+                if [[ -s .stock-telegram-restore/stock_alert_state.json ]]; then
+                  cp .stock-telegram-restore/stock_alert_state.json data/live/stock_alert_state.json
+                  break 2
+                fi
+              fi
+            done
+          done
+
+      - name: Send qualified stock alert directly after persisted validation
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_independent_path_alerts
+          --path stocks
+          --payload public/data/stocks_latest.json
+          --state data/live/stock_alert_state.json
+
+      - name: Upload direct stock Telegram state
+        if: always() && steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-telegram-state
+          path: data/live/stock_alert_state.json
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Closed-market status
