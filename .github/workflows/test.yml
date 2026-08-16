@@ -38,8 +38,12 @@ jobs:
           python -m scripts.run_stream_gateway --help >/dev/null
           python scripts/fast_explosion_scan_fabric.py --help >/dev/null
           python scripts/market_clock_gate.py --help >/dev/null
-          python scripts/send_independent_path_alerts.py --help >/dev/null
-          python scripts/send_strict_options_alerts.py --help >/dev/null
+          python -m scripts.send_independent_path_alerts --help >/dev/null
+          python -m scripts.send_strict_options_alerts --help >/dev/null
+          python -m scripts.send_cross_confirmation --help >/dev/null
+          python -m scripts.send_radar_health --help >/dev/null
+          python -m scripts.send_classical_direction_alerts --help >/dev/null
+          python scripts/telegram_connection_bootstrap.py --help >/dev/null
 
       - name: Python syntax and import compilation
         run: |
@@ -74,6 +78,7 @@ jobs:
             options_radar/stream_overlay.py \
             options_radar/provider_readiness.py \
             options_radar/market_clock.py \
+            options_radar/telegram_transport.py \
             scripts/apply_phase62.py \
             scripts/apply_expiry_radar.py \
             scripts/validate_omega_export.py \
@@ -85,8 +90,12 @@ jobs:
             scripts/market_clock_gate.py \
             scripts/prune_actions_artifacts.py \
             scripts/run_stock_radar_independent.py \
+            scripts/telegram_connection_bootstrap.py \
             scripts/send_independent_path_alerts.py \
             scripts/send_strict_options_alerts.py \
+            scripts/send_cross_confirmation.py \
+            scripts/send_radar_health.py \
+            scripts/send_classical_direction_alerts.py \
             tests/test_optionable_universe.py \
             tests/test_independent_path_alerts.py \
             tests/test_expiry_identity.py \
@@ -106,6 +115,7 @@ jobs:
             tests/test_market_clock.py \
             tests/test_prune_actions_artifacts.py \
             tests/test_strict_options_sender.py \
+            tests/test_telegram_transport.py \
             --select E9,F63,F7,F82
 
       - name: Repository Ruff baseline

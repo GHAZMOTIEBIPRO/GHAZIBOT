@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import requests
+from options_radar.telegram_transport import send_html_message
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -44,24 +44,7 @@ def _safe(value: Any, limit: int = 700) -> str:
 
 
 def _send(text: str) -> None:
-    token = str(os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
-    chat_id = str(os.getenv("TELEGRAM_CHAT_ID") or "").strip()
-    if not token or not chat_id:
-        raise RuntimeError("Telegram destination is not ready")
-    response = requests.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        data={
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": "true",
-        },
-        timeout=20,
-    )
-    response.raise_for_status()
-    body = response.json()
-    if not body.get("ok"):
-        raise RuntimeError(f"Telegram rejected message: {body}")
+    send_html_message(text)
 
 
 def _fingerprint(parts: list[Any]) -> str:

@@ -3,13 +3,12 @@ from __future__ import annotations
 import argparse
 import html
 import json
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import requests
+from options_radar.telegram_transport import send_html_message
 
 RANK = {"HEALTHY": 0, "DEGRADED": 1, "CRITICAL": 2}
 
@@ -31,18 +30,7 @@ def _save(path: str | Path, payload: dict[str, Any]) -> None:
 
 
 def _send(text: str) -> None:
-    token = str(os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
-    chat_id = str(os.getenv("TELEGRAM_CHAT_ID") or "").strip()
-    if not token or not chat_id:
-        raise RuntimeError("Telegram destination is not ready")
-    response = requests.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        data={"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": "true"},
-        timeout=20,
-    )
-    response.raise_for_status()
-    if not response.json().get("ok"):
-        raise RuntimeError("Telegram rejected radar-health message")
+    send_html_message(text)
 
 
 def _status_ar(status: str) -> str:
