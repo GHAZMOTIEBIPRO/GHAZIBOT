@@ -8,6 +8,14 @@ def _workflow(name: str) -> str:
     return (root / ".github" / "workflows" / name).read_text(encoding="utf-8")
 
 
+def test_fast_stock_radar_is_locked_to_free_iex():
+    text = _workflow("fast-explosion-radar.yml")
+    assert 'FREE_AUTONOMY_MODE: "true"' in text
+    assert 'PAID_MARKET_DATA_ALLOWED: "false"' in text
+    assert "ALPACA_STOCK_FEED: iex" in text
+    assert "secrets.ALPACA_STOCK_FEED" not in text
+
+
 def test_health_watches_actual_stock_and_options_radar():
     text = _workflow("radar-health.yml")
     assert "stock-radar.yml" in text
@@ -28,7 +36,7 @@ def test_health_is_transition_based_and_market_gated():
 def test_health_does_not_hide_failed_latest_run_behind_old_success():
     text = _workflow("radar-health.yml")
     assert "--status completed --branch main --limit 1" in text
-    assert 'latest_conclusion' in text
+    assert "latest_conclusion" in text
     assert '"status": "CRITICAL"' in text
     assert "آخر تشغيل لمسار" in text
 
