@@ -46,6 +46,12 @@ def _write_github_env(key: str, value: str) -> None:
         handle.write(f"{key}={value}\n")
 
 
+def _mask_github_value(value: str) -> None:
+    # GitHub recognizes this workflow command and redacts later log appearances.
+    if value:
+        print(f"::add-mask::{value}")
+
+
 def _discover_from_updates(token: str) -> str:
     response = requests.get(_telegram_url(token, "getUpdates"), timeout=TIMEOUT)
     response.raise_for_status()
@@ -99,6 +105,8 @@ def bootstrap(connection_path: Path) -> int:
         _write_github_env("TELEGRAM_READY", "false")
         return 0
 
+    # Mask before exporting to GITHUB_ENV so the destination never appears in later env dumps.
+    _mask_github_value(chat_id)
     _write_json(
         connection_path,
         {
@@ -109,7 +117,7 @@ def bootstrap(connection_path: Path) -> int:
     )
     _write_github_env("TELEGRAM_CHAT_ID", chat_id)
     _write_github_env("TELEGRAM_READY", "true")
-    print(f"Telegram bootstrap: destination ready via {source}; chat id retained in a private Actions artifact.")
+    print(f"Telegram bootstrap: destination ready via {source}; destination value is masked in Actions logs.")
     return 0
 
 
