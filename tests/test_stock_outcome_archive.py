@@ -182,6 +182,7 @@ def test_durable_stock_restore_preserves_hot_files(tmp_path, monkeypatch):
     remote = {
         "state/stocks/stock_outcomes.json": b'{"signals":{"old":{}}}',
         "state/stocks/stock_outcome_archive.json": b'{"records":{"a":{}}}',
+        "state/stocks/stock_outcome_audit.json": b'{"records":{"audit":{}}}',
         "state/stocks/adaptive_learning.json": b'{"stock":{"ready":false}}',
     }
 
@@ -196,7 +197,8 @@ def test_durable_stock_restore_preserves_hot_files(tmp_path, monkeypatch):
     assert "data/live/stock_outcomes.json" in status.preserved_local
     assert "data/live/stock_outcomes.json" not in status.restored
     assert json.loads(hot.read_text())["signals"] == {"hot": {}}
-    assert len(status.restored) == 2
+    assert len(status.restored) == 3
+    assert "data/live/stock_outcome_audit.json" in status.restored
 
 
 def test_stock_vault_and_adaptive_workflow_preserve_shadow_only_policy():
@@ -207,9 +209,11 @@ def test_stock_vault_and_adaptive_workflow_preserve_shadow_only_policy():
 
     assert "BLACK BOX Omega Stock Radar" in vault
     assert "BLACK BOX Omega Adaptive Evidence Review" in vault
+    assert "BLACK BOX Omega Stock Outcome Auditor" in vault
     assert "ref: bot-state" in vault
     assert "contents: write" in vault
     assert "stock_outcome_archive.json" in vault
+    assert "stock_outcome_audit.json" in vault
     assert "adaptive_learning.json" in vault
     assert "[skip ci]" in vault
     assert "git pull --rebase origin bot-state" in vault
