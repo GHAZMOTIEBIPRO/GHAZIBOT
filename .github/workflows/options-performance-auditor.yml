@@ -1,0 +1,162 @@
+name: BLACK BOX Omega Options Performance Auditor
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/options-performance-auditor.yml"
+      - "scripts/options_performance_auditor.py"
+  schedule:
+    # 22:37 UTC is after the regular XNYS close in both DST and standard time.
+    # The audit runs on weekdays; unchanged/holiday data stays silent.
+    - cron: "37 22 * * 1-5"
+
+concurrency:
+  group: black-box-omega-options-performance-auditor
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install lightweight report dependency
+        run: pip install 'requests>=2.32,<3.0'
+
+      - name: Restore latest independent options outcome state
+        id: learning_state
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live .options-learning-restore
+          found=false
+          for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .options-learning-restore && mkdir -p .options-learning-restore
+            if gh run download "$run_id" -n options-contract-state -D .options-learning-restore >/dev/null 2>&1; then
+              if [[ -s .options-learning-restore/options_outcomes.json && -s .options-learning-restore/options_calibration.json ]]; then
+                cp -f .options-learning-restore/options_outcomes.json data/live/options_outcomes.json
+                cp -f .options-learning-restore/options_calibration.json data/live/options_calibration.json
+                found=true
+                echo "Restored options outcome/calibration state from run $run_id."
+                break
+              fi
+            fi
+          done
+          echo "found=$found" >> "$GITHUB_OUTPUT"
+
+      - name: Restore previous performance notification state
+        if: steps.learning_state.outputs.found == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .performance-restore data/live
+          for run_id in $(gh run list --workflow options-performance-auditor.yml --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .performance-restore && mkdir -p .performance-restore
+            if gh run download "$run_id" -n options-performance-audit -D .performance-restore >/dev/null 2>&1; then
+              cp -f .performance-restore/options_performance_report_state.json data/live/options_performance_report_state.json 2>/dev/null || true
+              [[ -s data/live/options_performance_report_state.json ]] && break
+            fi
+          done
+
+      - name: Restore centralized Telegram destination
+        if: steps.learning_state.outputs.found == 'true' && env.TELEGRAM_CHAT_ID == '' && github.event_name != 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-performance-auditor.yml options-contract-radar.yml options-telegram-alerts.yml radar-health.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination
+        if: steps.learning_state.outputs.found == 'true' && github.event_name != 'push'
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Build silent audit and send only milestone/weekly report
+        if: steps.learning_state.outputs.found == 'true'
+        shell: bash
+        run: |
+          mkdir -p public/data data/live
+          args=(
+            --outcomes data/live/options_outcomes.json
+            --calibration data/live/options_calibration.json
+            --output public/data/options_performance_report.json
+            --state data/live/options_performance_report_state.json
+          )
+          if [[ "${GITHUB_EVENT_NAME:-}" != "push" && "${TELEGRAM_READY:-false}" == "true" ]]; then
+            args+=(--send)
+          fi
+          python -m scripts.options_performance_auditor "${args[@]}"
+
+      - name: Validate auditor independence and evidence language
+        if: steps.learning_state.outputs.found == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('public/data/options_performance_report.json').read_text(encoding='utf-8'))
+          assert report['path'] == 'options_performance_auditor'
+          assert report['independent_from_stock_radar'] is True
+          assert report['decision_authority'] is False
+          assert report['interpretation_policy']['metric_name'] == 'positive outcome rate, not predictive accuracy'
+          assert report['interpretation_policy']['execution_model'].startswith('long option entry at ask')
+          assert report['interpretation_policy']['risk_policy'].endswith('strict execution or risk blockers')
+          assert int(report['calibration']['training_sample_size']) <= int(report['calibration']['shadow_sample_size'])
+          assert float(report['calibration']['max_total_adjustment']) <= 4.0
+          print('Options performance auditor safety validation passed.')
+          PY
+
+      - name: Stage performance audit artifact
+        if: always() && steps.learning_state.outputs.found == 'true'
+        shell: bash
+        run: |
+          mkdir -p .performance-upload
+          cp -f public/data/options_performance_report.json .performance-upload/options_performance_report.json 2>/dev/null || true
+          cp -f data/live/options_performance_report_state.json .performance-upload/options_performance_report_state.json 2>/dev/null || true
+
+      - name: Upload performance audit and notification state
+        if: always() && steps.learning_state.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: options-performance-audit
+          path: .performance-upload/
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 30
+
+      - name: No learning state yet
+        if: steps.learning_state.outputs.found != 'true'
+        run: echo "No persisted options outcome state exists yet; auditor remains silent without inventing performance data."
