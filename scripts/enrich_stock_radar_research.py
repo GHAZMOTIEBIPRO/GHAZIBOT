@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from options_radar.adaptive_learning import load_learning_model
+from options_radar.durable_stock_state import restore_missing_durable_stock_state
 from options_radar.market_regime import MarketRegimeEngine
 from options_radar.radar_health import assess_stock_health
 from options_radar.settings import Settings
@@ -40,9 +41,13 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
     if payload.get("path") != "stocks":
         raise RuntimeError("Expected independent stock payload")
 
+    errors = payload.setdefault("errors", [])
+    durable = restore_missing_durable_stock_state()
+    if durable.error:
+        errors.append(f"durable_stock_state: {durable.error}")
+
     settings = Settings()
     settings.validate()
-    errors = payload.setdefault("errors", [])
     try:
         regime = MarketRegimeEngine(settings).evaluate()
         regime_label = regime.label
@@ -81,6 +86,12 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
     payload["adaptive_learning"] = learning.get("stock", {})
     payload["stock_outcome_summary"] = outcomes.get("summary", {})
     payload["stock_event_dedup"] = outcomes.get("event_dedup", {})
+    payload["durable_stock_state"] = {
+        "attempted": durable.attempted,
+        "branch_available": durable.branch_available,
+        "restored": list(durable.restored),
+        "preserved_local": list(durable.preserved_local),
+    }
     payload.setdefault("summary", {})["market_regime"] = regime_label
     payload["summary"]["shadow_learning_ready"] = bool((learning.get("stock") or {}).get("ready"))
     payload["summary"]["event_samples_after_dedup"] = int(
@@ -94,6 +105,7 @@ def enrich(payload_path: str | Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
             "late_move_risk_is_measured": True,
             "learning_sample_unit": "event_not_stage_snapshot",
             "same_symbol_direction_reentry_gap_minutes": 240,
+            "durable_stock_state_is_fallback_only": True,
         }
     )
     payload["health"] = assess_stock_health(payload)

@@ -70,11 +70,33 @@ def _rate_adjustment(rate: float, baseline: float, *, scale: float, cap: float) 
     return round(max(-cap, min(cap, delta * scale)), 2)
 
 
-def _stock_records(stock_state: dict[str, Any]) -> list[dict[str, Any]]:
-    rows = [row for row in (stock_state.get("signals") or {}).values() if isinstance(row, dict)]
+def _stock_records(
+    stock_state: dict[str, Any],
+    stock_archive: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Return decisive stock events once, preferring current richer state by ID."""
+
+    by_id: dict[str, dict[str, Any]] = {}
+    archived = stock_archive.get("records") if isinstance(stock_archive, dict) else {}
+    archived = archived if isinstance(archived, dict) else {}
+    for key, row in archived.items():
+        if not isinstance(row, dict):
+            continue
+        signal_id = str(row.get("signal_id") or key).strip()
+        if signal_id:
+            by_id[signal_id] = row
+
+    current = stock_state.get("signals") if isinstance(stock_state.get("signals"), dict) else {}
+    for key, row in current.items():
+        if not isinstance(row, dict):
+            continue
+        signal_id = str(row.get("signal_id") or key).strip()
+        if signal_id:
+            by_id[signal_id] = row
+
     return [
         row
-        for row in rows
+        for row in by_id.values()
         if isinstance(row.get("checkpoints"), dict)
         and "60m" in row["checkpoints"]
         and row.get("terminal_outcome") in {"success", "failed"}
@@ -134,12 +156,17 @@ def build_learning_model(
     stock_outcomes_path: str | Path,
     options_signals_path: str | Path,
     options_outcomes_path: str | Path,
+    stock_archive_path: str | Path | None = None,
 ) -> dict[str, Any]:
     stock_state = _load(stock_outcomes_path, {"signals": {}})
+    stock_archive = _load(stock_archive_path, {"records": {}}) if stock_archive_path else {"records": {}}
     options_signals = _load_jsonl(options_signals_path)
     options_outcomes = _load(options_outcomes_path, {"signals": {}})
 
-    stock_rows = _stock_records(stock_state if isinstance(stock_state, dict) else {})
+    stock_rows = _stock_records(
+        stock_state if isinstance(stock_state, dict) else {},
+        stock_archive if isinstance(stock_archive, dict) else {},
+    )
     option_rows = _options_records(options_signals, options_outcomes if isinstance(options_outcomes, dict) else {})
 
     stock_success = sum(row.get("terminal_outcome") == "success" for row in stock_rows)
@@ -157,7 +184,9 @@ def build_learning_model(
         "baseline_success_rate": round(stock_baseline, 4) if stock_rows else None,
         "score_bands": _cohort_stats(
             stock_rows,
-            lambda row: row.get("score_band") or score_band(row.get("score")),
+            lambda row: row.get("entry_score_band")
+            or row.get("score_band")
+            or score_band(row.get("entry_score", row.get("score"))),
             baseline=stock_baseline,
             minimum=STOCK_MIN_COHORT,
             scale=18.0,
@@ -165,7 +194,7 @@ def build_learning_model(
         ),
         "stages": _cohort_stats(
             stock_rows,
-            lambda row: row.get("stage"),
+            lambda row: row.get("entry_stage") or row.get("stage"),
             baseline=stock_baseline,
             minimum=STOCK_MIN_COHORT,
             scale=12.0,
@@ -230,6 +259,8 @@ def build_learning_model(
             "stock_adjustment_cap": MAX_STOCK_ADJUSTMENT,
             "options_adjustment_cap": MAX_OPTIONS_ADJUSTMENT,
             "same_scan_observation_is_not_independent_evidence": True,
+            "stock_event_identity_deduped": True,
+            "stock_learning_uses_durable_event_archive": stock_archive_path is not None,
             "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": True,
         },
         "stock": stock,
