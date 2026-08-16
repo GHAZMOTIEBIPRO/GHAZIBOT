@@ -59,14 +59,15 @@ jobs:
           print(f"reason={'regular_session' if is_open else 'market_closed'}")
           PY
 
-      - name: Restore persistent Telegram destination
+      - name: Restore centralized Telegram destination
+        if: env.TELEGRAM_CHAT_ID == ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p telegram_runtime
-          for workflow in options-telegram-alerts.yml stock-telegram-alerts.yml telegram-alerts.yml fast-explosion-radar.yml; do
-            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+          for workflow in telegram-connection-keeper.yml options-telegram-alerts.yml stock-telegram-alerts.yml telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
               if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
                 [[ -s telegram_runtime/connection.enc ]] && break 2
@@ -154,22 +155,3 @@ jobs:
       - name: Open-market no-payload status
         if: env.TELEGRAM_READY == 'true' && steps.market.outputs.open == 'true' && steps.payload.outputs.ready != 'true'
         run: echo "Options Telegram skipped because no fresh independent options payload exists."
-
-      - name: Seal Telegram destination
-        if: always() && env.TELEGRAM_READY == 'true'
-        shell: bash
-        run: |
-          openssl enc -aes-256-cbc -salt -pbkdf2 \
-            -in telegram_runtime/connection.json \
-            -out telegram_runtime/connection.enc \
-            -pass env:TELEGRAM_BOT_TOKEN
-          rm -f telegram_runtime/connection.json
-
-      - name: Upload encrypted Telegram destination
-        if: always() && env.TELEGRAM_READY == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: telegram-connection
-          path: telegram_runtime/connection.enc
-          if-no-files-found: error
-          retention-days: 90
