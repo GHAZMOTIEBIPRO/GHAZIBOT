@@ -3,7 +3,7 @@ from __future__ import annotations
 import scripts.send_independent_path_alerts as sender
 
 
-def test_option_message_is_arabic_and_never_claims_sweep_or_opening_from_snapshot():
+def test_option_message_is_compact_and_never_claims_sweep_or_opening_from_snapshot():
     row = {
         "symbol": "NVDA",
         "option_type": "call",
@@ -28,21 +28,21 @@ def test_option_message_is_arabic_and_never_claims_sweep_or_opening_from_snapsho
             "volume_vs_prior_oi_note_ar": "نشاط غير طبيعي فقط",
         },
         "_provider_readiness": {
+            "status": "LIVE_QUOTES_NO_TRADE_FLOW",
             "production_quote_ready": True,
             "production_flow_ready": False,
         },
     }
     message = sender._option_message(row)
-    assert "الاتجاه المرصود" not in message
-    assert "CALL — اتجاه صاعد" in message
-    assert "أولوية المتابعة" in message
-    assert "السويب غير مؤكد" in message
-    assert "فتح مركز جديد غير مؤكد" in message
-    assert "وش أسوي الآن؟" in message
+    assert "NVDA CALL ↑" in message
+    assert "200C" in message
+    assert "B/A" in message
+    assert "السويب/فتح مركز جديد غير مؤكد" in message
     assert "مسار الأوبشن مستقل" in message
+    assert len(message) < 1000
 
 
-def test_stock_message_is_actionable_arabic_and_options_are_not_required():
+def test_stock_message_is_compact_actionable_and_options_are_not_required():
     row = {
         "symbol": "ABC",
         "price": 4.2,
@@ -54,17 +54,21 @@ def test_stock_message_is_actionable_arabic_and_options_are_not_required():
         "market_status_evidence": [],
     }
     message = sender._stock_message(row)
-    assert "تنبيه سهم" in message
+    assert "Ω | ABC" in message
     assert "بداية انطلاقة" in message
-    assert "أولوية المتابعة" in message
-    assert "الخطر الأهم" in message
-    assert "وش أسوي الآن؟" in message
+    assert "$4.20" in message
+    assert "السبب:" in message
     assert "مسار الأسهم مستقل" in message
+    assert len(message) < 900
 
 
-def test_options_sender_deduplicates_by_contract_when_provider_is_ready(monkeypatch):
+def test_options_sender_deduplicates_and_records_message_registry(monkeypatch):
     sent: list[str] = []
-    monkeypatch.setattr(sender, "_send", sent.append)
+
+    class Result:
+        message_id = 1234
+
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text) or Result())
     monkeypatch.setenv("OPTIONS_ALERT_MIN_SCORE", "65")
     payload = {
         "path": "options",
@@ -101,11 +105,15 @@ def test_options_sender_deduplicates_by_contract_when_provider_is_ready(monkeypa
     assert sender.send_options(payload, state) == 1
     assert sender.send_options(payload, state) == 0
     assert len(sent) == 1
+    record = state["sent"]["NVDA260828C00200000"]
+    assert record["message_id"] == 1234
+    assert record["symbol"] == "NVDA"
+    assert state["state_schema"] == "telegram_message_registry_v1"
 
 
 def test_options_sender_fails_closed_on_fallback_data(monkeypatch):
     sent: list[str] = []
-    monkeypatch.setattr(sender, "_send", sent.append)
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
     payload = {
         "path": "options",
         "provider_readiness": {
@@ -129,9 +137,13 @@ def test_options_sender_fails_closed_on_fallback_data(monkeypatch):
     assert state["blocked_reason"] == "FALLBACK_ONLY"
 
 
-def test_stock_sender_does_not_read_options_fields(monkeypatch):
+def test_stock_sender_does_not_read_options_fields_and_records_message_id(monkeypatch):
     sent: list[str] = []
-    monkeypatch.setattr(sender, "_send", sent.append)
+
+    class Result:
+        message_id = 55
+
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text) or Result())
     monkeypatch.setenv("STOCK_ALERT_MIN_SCORE", "72")
     payload = {
         "path": "stocks",
@@ -150,3 +162,27 @@ def test_stock_sender_does_not_read_options_fields(monkeypatch):
     state = {"sent": {}}
     assert sender.send_stocks(payload, state) == 1
     assert len(sent) == 1
+    assert state["sent"]["XYZ"]["message_id"] == 55
+    assert state["sent"]["XYZ"]["kind"] == "stocks"
+
+
+def test_old_string_fingerprint_state_migrates_cleanly(monkeypatch):
+    sent = []
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
+    monkeypatch.setenv("STOCK_ALERT_MIN_SCORE", "72")
+    payload = {
+        "path": "stocks",
+        "stocks": [
+            {
+                "symbol": "XYZ",
+                "price": 5,
+                "move_pct": 8,
+                "stage": "IGNITION",
+                "score": 80,
+                "cause": {"status": "NEW", "status_ar": "خبر جديد"},
+            }
+        ],
+    }
+    state = {"sent": {"XYZ": "legacy-fingerprint"}}
+    assert sender.send_stocks(payload, state) == 1
+    assert isinstance(state["sent"]["XYZ"], dict)

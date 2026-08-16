@@ -110,13 +110,43 @@ jobs:
             fi
           done
 
-      - name: Send fresh independent cross-confirmation context
+      - name: Restore opportunity Telegram message registries
+        if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true' && steps.payloads.outputs.options == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .cross/stock-alert-state .cross/options-alert-state
+          printf '{"sent":{}}\n' > .cross/stock-alert-state/stock_alert_state.json
+          printf '{"sent":{}}\n' > .cross/options-alert-state/options_alert_state.json
+          for run_id in $(gh run list --workflow stock-telegram-alerts.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .cross/stock-download && mkdir -p .cross/stock-download
+            if gh run download "$run_id" -n stock-telegram-state -D .cross/stock-download >/dev/null 2>&1; then
+              if [[ -s .cross/stock-download/stock_alert_state.json ]]; then
+                cp .cross/stock-download/stock_alert_state.json .cross/stock-alert-state/stock_alert_state.json
+                break
+              fi
+            fi
+          done
+          for run_id in $(gh run list --workflow options-telegram-alerts.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .cross/options-download && mkdir -p .cross/options-download
+            if gh run download "$run_id" -n options-telegram-state -D .cross/options-download >/dev/null 2>&1; then
+              if [[ -s .cross/options-download/options_alert_state.json ]]; then
+                cp .cross/options-download/options_alert_state.json .cross/options-alert-state/options_alert_state.json
+                break
+              fi
+            fi
+          done
+
+      - name: Fold fresh cross-confirmation into existing opportunity message
         if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true' && steps.payloads.outputs.options == 'true'
         run: >-
           python scripts/send_cross_confirmation.py
           --stocks .cross/stocks/stocks_latest.json
           --options .cross/options/options_latest.json
           --state data/live/cross_confirmation_state.json
+          --stock-alert-state .cross/stock-alert-state/stock_alert_state.json
+          --options-alert-state .cross/options-alert-state/options_alert_state.json
 
       - name: Upload cross-confirmation state
         if: env.TELEGRAM_READY == 'true' && steps.payloads.outputs.stocks == 'true' && steps.payloads.outputs.options == 'true'

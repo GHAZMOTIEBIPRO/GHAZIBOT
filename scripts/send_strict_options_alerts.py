@@ -36,7 +36,7 @@ def _save(path: str | Path, payload: Any) -> None:
     temporary.replace(destination)
 
 
-def _safe(value: Any, limit: int = 700) -> str:
+def _safe(value: Any, limit: int = 360) -> str:
     text = str(value or "").strip()
     if len(text) > limit:
         text = text[: limit - 1].rstrip() + "…"
@@ -62,8 +62,14 @@ def _payload_age_minutes(payload: dict[str, Any]) -> float | None:
     return max(0.0, age)
 
 
-def _send(text: str) -> None:
-    send_html_message(text)
+def _send(text: str):
+    return send_html_message(text)
+
+
+def _stored_fingerprint(value: Any) -> str:
+    if isinstance(value, dict):
+        return str(value.get("fingerprint") or "")
+    return str(value or "")
 
 
 def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> str:
@@ -78,65 +84,37 @@ def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> st
     strict = _number(row.get("strict_score"))
     grade = str(row.get("signal_grade") or row.get("strict_grade") or "")
     delta = _number(row.get("delta"))
-    gamma = _number(row.get("gamma"))
     iv = _number(row.get("iv"))
-    volume = int(_number(row.get("volume")))
-    oi = int(_number(row.get("open_interest")))
     vol_oi = _number(row.get("vol_to_oi_ratio") or row.get("vol_oi"))
     flow = _number(row.get("flow_momentum_score"))
     rr = _number(row.get("reward_risk_1"))
     call_wall = row.get("call_wall")
     put_wall = row.get("put_wall")
     gamma_context = str(row.get("gamma_context") or "غير متاح")
-    gamma_align = _number(row.get("gamma_context_alignment"))
     gamma_coverage = _number(row.get("gamma_coverage_pct"))
     oi_coverage = _number(row.get("oi_coverage_pct"))
-    contract_symbol = str(row.get("contract_symbol") or "").upper().strip()
     occ = row.get("occ_side_context") if isinstance(row.get("occ_side_context"), dict) else {}
     reasons = [str(value) for value in row.get("strict_reasons", []) if str(value).strip()]
     emoji = "🟢" if direction == "CALL" else "🔴"
-    mode_text = "بيانات إنتاجية" if mode == "production" else "بيانات مجانية — فلتر صارم"
+    side_letter = "C" if direction == "CALL" else "P"
+    mode_text = "إنتاجي" if mode == "production" else "مجاني/صارم"
 
     lines = [
-        f"{emoji} <b>BLACK BOX Ω — {direction} {grade}</b>",
-        "",
-        f"<b>{_safe(symbol)}</b> | القرار: <b>{_safe(direction)}</b>",
-        f"العقد: <b>{_safe(symbol)} {strike:g}{'C' if direction == 'CALL' else 'P'}</b> | {expiration} | {dte} DTE",
+        f"{emoji} <b>Ω | {symbol} {direction} {grade} | {strict:.0f}/100</b>",
+        f"🎯 <b>{strike:g}{side_letter} • {expiration} • {dte}D</b> | B/A <b>${bid:.2f}/${ask:.2f}</b> | Spr <b>{spread * 100:.1f}%</b>",
+        f"⚡ Flow <b>{flow:.0f}</b> | R/R <b>{rr:.2f}</b> | Δ <b>{delta:+.2f}</b> | IV <b>{iv:.0%}</b> | V/OI <b>{vol_oi:.2f}×</b>",
+        f"🧲 GEX <b>{_safe(gamma_context, 80)}</b> | CW <b>{_safe(call_wall, 40)}</b> | PW <b>{_safe(put_wall, 40)}</b> | Γ/OI <b>{gamma_coverage:.0f}/{oi_coverage:.0f}%</b>",
     ]
-    if contract_symbol:
-        lines.append(f"OCC Symbol: <code>{_safe(contract_symbol, 120)}</code>")
-    lines.extend(
-        [
-            f"Bid/Ask: <b>${bid:.2f} / ${ask:.2f}</b> | السبريد <b>{spread * 100:.1f}%</b>",
-            f"الفلتر الصارم: <b>{strict:.0f}/100</b> | Flow <b>{flow:.0f}/100</b> | R/R <b>{rr:.2f}</b>",
-            "",
-            "🧲 <b>القاما / GEX Proxy</b>",
-            f"السياق: <b>{_safe(gamma_context)}</b> | توافق الجهة <b>{gamma_align:+.2f}</b>",
-            f"Call Wall: <b>{_safe(call_wall)}</b> | Put Wall: <b>{_safe(put_wall)}</b>",
-            f"تغطية Gamma/OI: <b>{gamma_coverage:.0f}% / {oi_coverage:.0f}%</b>",
-            "",
-            "📊 <b>العقد</b>",
-            f"Delta <b>{delta:+.2f}</b> | Gamma <b>{gamma:.5f}</b> | IV <b>{iv:.1%}</b>",
-            f"Volume <b>{volume:,}</b> | OI <b>{oi:,}</b> | Vol/OI <b>{vol_oi:.2f}×</b>",
-        ]
-    )
     if occ.get("available") is True:
         lines.append(
-            f"OCC رسمي يومي: CALL <b>{int(_number(occ.get('call_volume'))):,}</b> / PUT <b>{int(_number(occ.get('put_volume'))):,}</b> | توافق الجهة <b>{_safe(occ.get('dominance_ratio'))}×</b>"
+            f"🏛 OCC C/P <b>{int(_number(occ.get('call_volume'))):,}/{int(_number(occ.get('put_volume'))):,}</b> | {_safe(occ.get('dominance_ratio'), 30)}×"
         )
     if reasons:
-        lines.extend(["", "✅ <b>سبب الاختيار</b>"])
-        for reason in reasons[:4]:
-            lines.append(f"• {_safe(reason, 300)}")
-
+        lines.append(f"✅ {_safe(' | '.join(reasons[:2]), 520)}")
     lines.extend(
         [
-            "",
-            f"🛰 <b>{_safe(mode_text)}</b>",
-            f"حالة المزود: <b>{_safe(readiness.get('status') or 'UNKNOWN')}</b>",
-            "",
-            "⚠️ <i>GEX هنا Proxy مبني على Gamma×OI وليس كشفًا مؤكدًا لمراكز صناع السوق. CALL/PUT ترشيح احتمالي عالي الصرامة وليس ضمان ربح.</i>",
-            "<i>مسار الأوبشن مستقل عن رادار الأسهم؛ لا يلغي ولا ينتظر إشارات الأسهم.</i>",
+            f"🛰 <b>{mode_text}</b> • {_safe(readiness.get('status') or 'UNKNOWN', 80)}",
+            "⚠️ <i>GEX Proxy والترشيح احتمالي؛ مسار الأوبشن مستقل عن الأسهم.</i>",
         ]
     )
     return "\n".join(lines)
@@ -218,10 +196,21 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
             [symbol, direction, contract, round(strict / 3) * 3, round(_number(row.get("ask")), 2)]
         )
         key = f"{symbol}:{direction}"
-        if sent_map.get(key) == fp:
+        if _stored_fingerprint(sent_map.get(key)) == fp:
             continue
-        _send(_message(row, mode=mode, readiness=readiness))
-        sent_map[key] = fp
+        text = _message(row, mode=mode, readiness=readiness)
+        result = _send(text)
+        message_id = getattr(result, "message_id", None)
+        sent_map[key] = {
+            "fingerprint": fp,
+            "message_id": message_id,
+            "text": text,
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "symbol": symbol,
+            "direction": direction,
+            "contract_symbol": contract,
+            "kind": "options",
+        }
         sent_symbols.add(symbol)
         sent += 1
 
@@ -233,6 +222,7 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
             "mode": mode,
             "minimum_score": minimum,
             "payload_age_minutes": round(age_minutes, 2),
+            "state_schema": "telegram_message_registry_v1",
         }
     )
     state.pop("blocked_reason", None)

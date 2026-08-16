@@ -48,9 +48,9 @@ def _payload(row=None):
     }
 
 
-def test_free_mode_can_send_only_separately_qualified_signal(monkeypatch):
+def test_free_mode_sends_one_compact_qualified_card(monkeypatch):
     sent = []
-    monkeypatch.setattr(sender, "_send", sent.append)
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
     monkeypatch.setenv("OPTIONS_FREE_ALERTS_ENABLED", "true")
     monkeypatch.setenv("OPTIONS_FREE_ALERT_MIN_SCORE", "87")
     payload = _payload()
@@ -58,17 +58,47 @@ def test_free_mode_can_send_only_separately_qualified_signal(monkeypatch):
     count = sender.send(payload, state)
     assert count == 1
     assert state["mode"] == "free"
-    assert "بيانات مجانية" in sent[0]
+    assert "مجاني/صارم" in sent[0]
     assert "CALL A+" in sent[0]
-    assert "XYZ260918C00100000" in sent[0]
+    assert "100C" in sent[0]
+    assert "B/A" in sent[0]
+    assert "GEX" in sent[0]
+    assert len(sent[0]) < 1200
+
+    record = state["sent"]["XYZ:CALL"]
+    assert isinstance(record, dict)
+    assert record["symbol"] == "XYZ"
+    assert record["direction"] == "CALL"
+    assert record["contract_symbol"] == "XYZ260918C00100000"
+    assert record["text"] == sent[0]
+    assert state["state_schema"] == "telegram_message_registry_v1"
 
     count_again = sender.send(payload, state)
     assert count_again == 0
 
 
+def test_sender_records_real_telegram_message_id(monkeypatch):
+    class Result:
+        message_id = 987
+
+    monkeypatch.setattr(sender, "_send", lambda text: Result())
+    state = {"sent": {}}
+    assert sender.send(_payload(), state) == 1
+    assert state["sent"]["XYZ:CALL"]["message_id"] == 987
+
+
+def test_old_string_state_remains_backward_compatible(monkeypatch):
+    sent = []
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
+    state = {"sent": {"XYZ:CALL": "old-fingerprint"}}
+    assert sender.send(_payload(), state) == 1
+    assert len(sent) == 1
+    assert isinstance(state["sent"]["XYZ:CALL"], dict)
+
+
 def test_free_mode_rejects_non_a_signal(monkeypatch):
     sent = []
-    monkeypatch.setattr(sender, "_send", sent.append)
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
     row = _signal()
     row["signal_grade"] = "B+"
     assert sender.send(_payload(row), {"sent": {}}) == 0
@@ -84,7 +114,7 @@ def test_disabled_free_mode_stays_blocked(monkeypatch):
 
 def test_stale_payload_is_blocked_before_any_send(monkeypatch):
     sent = []
-    monkeypatch.setattr(sender, "_send", sent.append)
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
     monkeypatch.setenv("OPTIONS_PAYLOAD_MAX_AGE_MINUTES", "45")
     payload = _payload()
     payload["generated_at"] = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
@@ -97,7 +127,7 @@ def test_stale_payload_is_blocked_before_any_send(monkeypatch):
 
 def test_missing_payload_timestamp_is_blocked(monkeypatch):
     sent = []
-    monkeypatch.setattr(sender, "_send", sent.append)
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
     payload = _payload()
     payload.pop("generated_at")
     state = {"sent": {}}

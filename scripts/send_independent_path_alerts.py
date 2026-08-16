@@ -36,15 +36,15 @@ def _save(path: str | Path, payload: Any) -> None:
     temporary.replace(destination)
 
 
-def _safe(value: Any, limit: int = 700) -> str:
+def _safe(value: Any, limit: int = 360) -> str:
     text = str(value or "").strip()
     if len(text) > limit:
         text = text[: limit - 1].rstrip() + "…"
     return html.escape(text)
 
 
-def _send(text: str) -> None:
-    send_html_message(text)
+def _send(text: str):
+    return send_html_message(text)
 
 
 def _fingerprint(parts: list[Any]) -> str:
@@ -52,18 +52,24 @@ def _fingerprint(parts: list[Any]) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
 
 
+def _stored_fingerprint(value: Any) -> str:
+    if isinstance(value, dict):
+        return str(value.get("fingerprint") or "")
+    return str(value or "")
+
+
 def _stage_ar(stage: str) -> str:
     return {
         "WATCH": "مراقبة",
-        "PRESSURE_BUILDING": "بناء ضغط قبل الحركة",
+        "PRESSURE_BUILDING": "بناء ضغط",
         "IGNITION": "بداية انطلاقة",
         "EXPLOSION": "حركة قوية",
-        "EXTENDED": "حركة ممتدة ومتأخرة",
+        "EXTENDED": "ممتدة/متأخرة",
     }.get(stage.upper(), stage or "غير مصنف")
 
 
 def _side_ar(side: str) -> str:
-    return "CALL — اتجاه صاعد" if side.upper() == "CALL" else "PUT — اتجاه هابط"
+    return "CALL ↑" if side.upper() == "CALL" else "PUT ↓"
 
 
 def _priority_ar(score: float) -> str:
@@ -76,26 +82,6 @@ def _priority_ar(score: float) -> str:
     return "منخفضة"
 
 
-def _activity_ar(ratio: float) -> str:
-    if ratio >= 3:
-        return "نشاط مرتفع جدًا"
-    if ratio >= 1:
-        return "نشاط مرتفع"
-    if ratio > 0:
-        return "نشاط عادي إلى متوسط"
-    return "المقارنة غير متاحة"
-
-
-def _spread_ar(spread: float) -> str:
-    if spread <= 0:
-        return "غير معروف"
-    if spread <= 0.05:
-        return "ضيق وجيد"
-    if spread <= 0.10:
-        return "مقبول"
-    return "واسع — انتبه للسيولة"
-
-
 def _stock_message(row: dict[str, Any]) -> str:
     symbol = str(row.get("symbol") or "").upper()
     score = _number(row.get("score"))
@@ -103,48 +89,35 @@ def _stock_message(row: dict[str, Any]) -> str:
     move = _number(row.get("move_pct"))
     stage = str(row.get("stage") or "WATCH").upper()
     cause = row.get("cause") if isinstance(row.get("cause"), dict) else {}
-    cause_status = str(cause.get("status_ar") or "السبب الأساسي غير مثبت حتى الآن")
+    cause_status = str(cause.get("status_ar") or "السبب الأساسي غير مثبت")
     cause_headline = str(cause.get("headline") or "").strip()
-    cause_source = str(cause.get("source") or "").strip()
     amplifiers = [str(value) for value in row.get("amplifiers", []) if str(value).strip()]
     halts = [value for value in row.get("market_status_evidence", []) if isinstance(value, dict)]
-
-    move_text = f"صاعد {move:+.1f}%" if move > 0 else (f"هابط {move:+.1f}%" if move < 0 else "بدون تغير واضح")
+    arrow = "↑" if move > 0 else ("↓" if move < 0 else "↔")
 
     lines = [
-        "🚀 <b>بلاك بوكس Ω | تنبيه سهم</b>",
-        "",
-        f"<b>{_safe(symbol)}</b> | السعر <b>${price:,.2f}</b> | {_safe(move_text)}",
-        f"المرحلة: <b>{_safe(_stage_ar(stage))}</b>",
-        f"أولوية المتابعة: <b>{_safe(_priority_ar(score))}</b> | الرادار <b>{score:.0f}/100</b>",
-        "",
-        "🧨 <b>ليش ظهر؟</b>",
-        f"• {_safe(cause_status)}",
+        f"🚀 <b>Ω | {symbol} | {_safe(_stage_ar(stage), 60)} | {score:.0f}/100</b>",
+        f"💵 <b>${price:,.2f}</b> | {arrow} <b>{move:+.1f}%</b> | أولوية <b>{_safe(_priority_ar(score), 40)}</b>",
+        f"🧨 <b>السبب:</b> {_safe(cause_status, 220)}",
     ]
     if cause_headline:
-        lines.append(f"• {_safe(cause_headline, 420)}")
-    if cause_source:
-        lines.append(f"• المصدر: <b>{_safe(cause_source)}</b>")
+        lines.append(f"📰 {_safe(cause_headline, 320)}")
     if amplifiers:
-        lines.append(f"• الداعم الأبرز: {_safe(' | '.join(amplifiers[:3]), 420)}")
+        lines.append(f"⚡ <b>دعم:</b> {_safe(' | '.join(amplifiers[:2]), 240)}")
     if halts:
         event = halts[0]
-        lines.append(f"• حالة السوق: {_safe(event.get('reason'))} — {_safe(event.get('note_ar'), 300)}")
+        lines.append(f"⏸ {_safe(event.get('reason'), 80)} | {_safe(event.get('note_ar'), 180)}")
 
-    lines.extend(["", "⚠️ <b>الخطر الأهم</b>"])
     if "غير مثبت" in cause_status or "NO_PRIMARY" in str(cause.get("status") or ""):
-        lines.append("السبب الرسمي للحركة غير مثبت؛ ممكن تكون الحركة مضاربية أو قصيرة.")
+        risk = "السبب الرسمي غير مثبت؛ راقب استمرار السعر والحجم."
     elif stage == "EXTENDED":
-        lines.append("الحركة ممتدة أصلًا؛ المطاردة أخطر من الاكتشاف المبكر.")
+        risk = "الحركة ممتدة؛ المطاردة أعلى مخاطرة."
     else:
-        lines.append("القوة قد تختفي بسرعة إذا ضعف الحجم أو انعكس السعر.")
-
+        risk = "تضعف الفكرة إذا اختفى الحجم أو انعكس السعر."
     lines.extend(
         [
-            "",
-            "👀 <b>وش أسوي الآن؟</b>",
-            "ضع السهم في المتابعة وتأكد من استمرار السعر والحجم والسبب قبل أي قرار. <i>درجة الرادار ترتيب وليست نسبة نجاح.</i>",
-            "<i>مسار الأسهم مستقل ولا يحتاج وجود أوبشن.</i>",
+            f"⚠️ {_safe(risk, 220)}",
+            "<i>درجة الرادار ترتيب وليست نسبة نجاح؛ مسار الأسهم مستقل عن الأوبشن.</i>",
         ]
     )
     return "\n".join(lines)
@@ -158,7 +131,6 @@ def _option_message(row: dict[str, Any]) -> str:
     strike = _number(row.get("strike"))
     bid = _number(row.get("bid"))
     ask = _number(row.get("ask"))
-    mid = (bid + ask) / 2 if bid > 0 and ask > 0 else 0.0
     volume = int(_number(row.get("volume")))
     oi = int(_number(row.get("open_interest")))
     ratio = _number(row.get("vol_to_oi_ratio") or row.get("vol_oi"))
@@ -168,57 +140,35 @@ def _option_message(row: dict[str, Any]) -> str:
     spread = _number(row.get("spread_pct"))
     score = _number(row.get("score"))
     flow_score = _number(row.get("flow_momentum_score"))
-    evidence = row.get("flow_evidence") if isinstance(row.get("flow_evidence"), dict) else {}
     reasons = [str(value) for value in row.get("rationale_ar", []) if str(value).strip()]
     readiness = row.get("_provider_readiness") if isinstance(row.get("_provider_readiness"), dict) else {}
-    quote_ready = readiness.get("production_quote_ready") is True
-    flow_ready = readiness.get("production_flow_ready") is True
+    icon = "🟢" if side == "CALL" else "🔴"
 
     lines = [
-        "🎯 <b>بلاك بوكس Ω | تنبيه عقد أوبشن</b>",
-        "",
-        f"<b>{_safe(symbol)}</b> | <b>{_safe(_side_ar(side))}</b>",
-        f"العقد: <b>{_safe(symbol)} {side} {strike:g}</b> | الانتهاء <b>{_safe(expiration)}</b> | {dte} يوم",
-        f"السعر: <b>${bid:.2f} / ${ask:.2f}</b>" + (f" | وسط ≈ <b>${mid:.2f}</b>" if mid else ""),
-        f"السبريد: <b>{spread * 100:.1f}%</b> — {_safe(_spread_ar(spread))}",
-        f"أولوية المتابعة: <b>{_safe(_priority_ar(score))}</b> | العقد <b>{score:.0f}/100</b> | التدفق <b>{flow_score:.0f}/100</b>",
-        "",
-        "📊 <b>ليش يستحق الانتباه؟</b>",
-        f"• الحجم <b>{volume:,}</b> مقابل OI <b>{oi:,}</b> | النسبة <b>{ratio:.2f}×</b> — {_safe(_activity_ar(ratio))}",
-        f"• دلتا <b>{delta:+.2f}</b> | ثيتا <b>{theta:.4f}</b> | IV <b>{iv:.1%}</b>",
+        f"{icon} <b>Ω | {symbol} {_side_ar(side)} | {score:.0f}/100</b>",
+        f"🎯 <b>{strike:g}{'C' if side == 'CALL' else 'P'} • {expiration} • {dte}D</b> | B/A <b>${bid:.2f}/${ask:.2f}</b> | Spr <b>{spread * 100:.1f}%</b>",
+        f"⚡ Flow <b>{flow_score:.0f}</b> | Δ <b>{delta:+.2f}</b> | Θ <b>{theta:.3f}</b> | IV <b>{iv:.0%}</b> | V/OI <b>{ratio:.2f}×</b>",
+        f"📊 Vol/OI <b>{volume:,}/{oi:,}</b> | بيانات <b>{_safe(readiness.get('status') or 'UNKNOWN', 80)}</b>",
     ]
-
-    for item in reasons[:2]:
-        lines.append(f"• {_safe(item, 360)}")
-
-    pressure = str(evidence.get("execution_pressure_note_ar") or "").strip()
-    oi_note = str(evidence.get("volume_vs_prior_oi_note_ar") or "").strip()
-    if pressure:
-        lines.append(f"• التدفق: {_safe(pressure, 360)}")
-    if oi_note:
-        lines.append(f"• OI: {_safe(oi_note, 360)}")
-
-    if readiness:
-        lines.extend(
-            [
-                "",
-                "🛰 <b>جودة البيانات</b>",
-                f"أسعار إنتاجية: <b>{'نعم ✅' if quote_ready else 'لا ❌'}</b> | تدفق حي كامل: <b>{'نعم ✅' if flow_ready else 'غير مكتمل ⚠️'}</b>",
-            ]
-        )
-
+    if reasons:
+        lines.append(f"✅ {_safe(' | '.join(reasons[:2]), 420)}")
     lines.extend(
         [
-            "",
-            "⚠️ <b>وش ما نعرفه يقينًا؟</b>",
-            "السويب غير مؤكد، وفتح مركز جديد غير مؤكد من الحجم وحده؛ قد يكون النشاط تحوطًا أو جزءًا من استراتيجية مركبة.",
-            "",
-            "👀 <b>وش أسوي الآن؟</b>",
-            "راقب اتجاه الأصل والسيولة والسبريد قبل أي تنفيذ. <i>الدرجات ترتيب وليست نسبة نجاح.</i>",
-            "<i>مسار الأوبشن مستقل ولا ينتظر إشارة من مسار الأسهم.</i>",
+            "⚠️ <i>السويب/فتح مركز جديد غير مؤكد من Snapshot وحده.</i>",
+            "<i>مسار الأوبشن مستقل عن رادار الأسهم.</i>",
         ]
     )
     return "\n".join(lines)
+
+
+def _record(fp: str, text: str, result: Any, **extra: Any) -> dict[str, Any]:
+    return {
+        "fingerprint": fp,
+        "message_id": getattr(result, "message_id", None),
+        "text": text,
+        "sent_at": datetime.now(timezone.utc).isoformat(),
+        **extra,
+    }
 
 
 def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
@@ -238,14 +188,16 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
         symbol = str(row.get("symbol") or "").upper()
         cause = row.get("cause") if isinstance(row.get("cause"), dict) else {}
         fp = _fingerprint([symbol, stage, round(score / 4) * 4, cause.get("status"), cause.get("headline")])
-        if sent_map.get(symbol) == fp:
+        if _stored_fingerprint(sent_map.get(symbol)) == fp:
             continue
-        _send(_stock_message(row))
-        sent_map[symbol] = fp
+        text = _stock_message(row)
+        result = _send(text)
+        sent_map[symbol] = _record(fp, text, result, symbol=symbol, kind="stocks", stage=stage)
         sent += 1
     state["last_run_at"] = datetime.now(timezone.utc).isoformat()
     state["last_sent_count"] = sent
     state["path"] = "stocks"
+    state["state_schema"] = "telegram_message_registry_v1"
     return sent
 
 
@@ -288,16 +240,26 @@ def send_options(payload: dict[str, Any], state: dict[str, Any]) -> int:
                 round(_number(row.get("ask")), 2),
             ]
         )
-        if sent_map.get(contract) == fp:
+        if _stored_fingerprint(sent_map.get(contract)) == fp:
             continue
         message_row = dict(row)
         message_row["_provider_readiness"] = readiness
-        _send(_option_message(message_row))
-        sent_map[contract] = fp
+        text = _option_message(message_row)
+        result = _send(text)
+        sent_map[contract] = _record(
+            fp,
+            text,
+            result,
+            symbol=str(row.get("symbol") or "").upper(),
+            direction=str(row.get("option_type") or "").upper(),
+            contract_symbol=contract,
+            kind="options",
+        )
         sent += 1
     state["last_run_at"] = datetime.now(timezone.utc).isoformat()
     state["last_sent_count"] = sent
     state["path"] = "options"
+    state["state_schema"] = "telegram_message_registry_v1"
     state.pop("blocked_reason", None)
     return sent
 

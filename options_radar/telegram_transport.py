@@ -6,7 +6,9 @@ from __future__ import annotations
 from scripts.telegram_transport import (
     TELEGRAM_TEXT_MAX_CHARS,
     TELEGRAM_TIMEOUT_SECONDS,
+    TelegramEditResult,
     TelegramSendResult,
+    edit_html_message,
     send_html_message,
     verify_bot,
 )
@@ -14,7 +16,9 @@ from scripts.telegram_transport import (
 __all__ = [
     "TELEGRAM_TEXT_MAX_CHARS",
     "TELEGRAM_TIMEOUT_SECONDS",
+    "TelegramEditResult",
     "TelegramSendResult",
+    "edit_html_message",
     "send_html_message",
     "verify_bot",
 ]

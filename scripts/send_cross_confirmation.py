@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from scripts.telegram_transport import send_html_message
+from scripts.telegram_transport import TELEGRAM_TEXT_MAX_CHARS, edit_html_message
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -63,33 +63,25 @@ def _fingerprint(values: list[Any]) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
 
 
-def _send(text: str) -> None:
-    send_html_message(text)
-
-
 def _stage_ar(stage: str) -> str:
     return {
         "WATCH": "مراقبة",
-        "PRESSURE_BUILDING": "بناء ضغط قبل الحركة",
+        "PRESSURE_BUILDING": "بناء ضغط",
         "IGNITION": "بداية انطلاقة",
         "EXPLOSION": "حركة قوية",
-        "EXTENDED": "حركة ممتدة",
+        "EXTENDED": "ممتدة",
     }.get(stage.upper(), stage or "غير مصنف")
-
-
-def _side_ar(side: str) -> str:
-    return "CALL — صعود" if side.upper() == "CALL" else "PUT — هبوط"
 
 
 def _alignment(move_pct: float, side: str) -> str:
     side = side.upper()
     if move_pct > 0 and side == "CALL":
-        return "متوافق ✅ — السهم صاعد والعقد CALL"
+        return "متوافق ✅"
     if move_pct < 0 and side == "PUT":
-        return "متوافق ✅ — السهم هابط والعقد PUT"
+        return "متوافق ✅"
     if move_pct == 0:
-        return "غير واضح — حركة السهم محايدة"
-    return "غير متوافق ⚠️ — اتجاه السهم والعقد لا يؤكدان بعضهما"
+        return "محايد ⚪"
+    return "غير متوافق ⚠️"
 
 
 def build_matches(stock_payload: dict[str, Any], options_payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -118,19 +110,52 @@ def build_matches(stock_payload: dict[str, Any], options_payload: dict[str, Any]
             ),
             reverse=True,
         )
-        if not contracts:
-            continue
-        contract = contracts[0]
-        matches.append(
-            {
-                "symbol": symbol,
-                "stock": stock,
-                "contract": contract,
-                "combined_rank": _number(stock.get("score")) + _number(contract.get("flow_momentum_score")),
-            }
-        )
+        if contracts:
+            matches.append(
+                {
+                    "symbol": symbol,
+                    "stock": stock,
+                    "contract": contracts[0],
+                    "combined_rank": _number(stock.get("score")) + _number(contracts[0].get("flow_momentum_score")),
+                }
+            )
     matches.sort(key=lambda row: row["combined_rank"], reverse=True)
     return matches
+
+
+def _record_for_symbol(symbol: str, stock_state: dict[str, Any], options_state: dict[str, Any]) -> dict[str, Any] | None:
+    # Prefer the richer strict-options card when it exists; otherwise update the stock card.
+    option_records: list[dict[str, Any]] = []
+    for key, value in (options_state.get("sent") or {}).items():
+        if not isinstance(value, dict):
+            continue
+        record_symbol = str(value.get("symbol") or "").upper()
+        if record_symbol == symbol or str(key).upper().startswith(f"{symbol}:"):
+            if value.get("message_id") and value.get("text"):
+                option_records.append(value)
+    if option_records:
+        option_records.sort(key=lambda value: str(value.get("sent_at") or ""), reverse=True)
+        return option_records[0]
+
+    stock_record = (stock_state.get("sent") or {}).get(symbol)
+    if isinstance(stock_record, dict) and stock_record.get("message_id") and stock_record.get("text"):
+        return stock_record
+    return None
+
+
+def _confirmation_note(stock: dict[str, Any], contract: dict[str, Any]) -> str:
+    stage = str(stock.get("stage") or "WATCH").upper()
+    stock_score = _number(stock.get("score"))
+    move_pct = _number(stock.get("move_pct"))
+    side = str(contract.get("option_type") or "").upper()
+    flow_score = _number(contract.get("flow_momentum_score"))
+    option_score = _number(contract.get("score"))
+    return (
+        "🔗 <b>تأكيد مستقل:</b> "
+        f"السهم {_safe(_stage_ar(stage))} {move_pct:+.1f}%/{stock_score:.0f} + "
+        f"الأوبشن {_safe(side)} {option_score:.0f} (Flow {flow_score:.0f}) — "
+        f"<b>{_safe(_alignment(move_pct, side))}</b>"
+    )
 
 
 def send_matches(
@@ -138,6 +163,8 @@ def send_matches(
     options_payload: dict[str, Any],
     state: dict[str, Any],
     *,
+    stock_alert_state: dict[str, Any] | None = None,
+    options_alert_state: dict[str, Any] | None = None,
     freshness_minutes: int = 45,
     maximum: int = 2,
 ) -> int:
@@ -152,10 +179,13 @@ def send_matches(
         state["blocked_reason"] = str(readiness.get("status") or "PROVIDER_NOT_READY")
         return 0
 
+    stock_alert_state = stock_alert_state or {}
+    options_alert_state = options_alert_state or {}
     sent_map = state.setdefault("sent", {})
-    sent = 0
+    updated = 0
+    no_registry = 0
     for match in build_matches(stock_payload, options_payload):
-        if sent >= maximum:
+        if updated >= maximum:
             break
         stock = match["stock"]
         contract = match["contract"]
@@ -175,66 +205,62 @@ def send_matches(
                 round(flow_score / 5) * 5,
             ]
         )
-        if sent_map.get(symbol) == fp:
+        prior = sent_map.get(symbol)
+        prior_fp = str(prior.get("fingerprint") or "") if isinstance(prior, dict) else str(prior or "")
+        if prior_fp == fp:
             continue
 
-        side = str(contract.get("option_type") or "").upper()
-        expiration = str(contract.get("expiration") or "")[:10]
-        strike = _number(contract.get("strike"))
-        bid = _number(contract.get("bid"))
-        ask = _number(contract.get("ask"))
-        move_pct = _number(stock.get("move_pct"))
-        cause = stock.get("cause") if isinstance(stock.get("cause"), dict) else {}
-        cause_text = str(cause.get("status_ar") or "السبب الأساسي غير مثبت حتى الآن")
-
-        text = "\n".join(
-            [
-                "🔗 <b>بلاك بوكس Ω | تأكيد مزدوج</b>",
-                "",
-                f"<b>{_safe(symbol)}</b> ظهر بشكل مستقل في رادار الأسهم ورادار الأوبشن.",
-                "",
-                "📈 <b>إشارة السهم</b>",
-                f"• المرحلة: <b>{_safe(_stage_ar(stage))}</b>",
-                f"• الحركة: <b>{move_pct:+.1f}%</b>",
-                f"• درجة الرادار: <b>{stock_score:.0f}/100</b>",
-                f"• السبب: {_safe(cause_text)}",
-                "",
-                "🎯 <b>إشارة العقد</b>",
-                f"• الاتجاه: <b>{_safe(_side_ar(side))}</b>",
-                f"• التنفيذ المرصود: <b>{_safe(symbol)} {side} {strike:g}</b>",
-                f"• الانتهاء: <b>{_safe(expiration)}</b>",
-                f"• Bid/Ask: <b>${bid:.2f} / ${ask:.2f}</b>",
-                f"• درجة العقد: <b>{option_score:.0f}/100</b> | التدفق: <b>{flow_score:.0f}/100</b>",
-                "",
-                "🧭 <b>هل الإشارتان متوافقتان؟</b>",
-                _safe(_alignment(move_pct, side)),
-                "",
-                "💡 <b>وش الفايدة؟</b>",
-                "ظهور الرمز في مسارين مستقلين يرفعه في أولوية المتابعة، لكنه لا يحوله إلى صفقة مضمونة ولا يلغي ضرورة فحص السعر والسيولة والسبب.",
-            ]
-        )
-        _send(text)
-        sent_map[symbol] = fp
-        sent += 1
+        record = _record_for_symbol(symbol, stock_alert_state, options_alert_state)
+        if record is None:
+            # One-message policy: never create a third cross-confirmation message.
+            no_registry += 1
+            continue
+        note = _confirmation_note(stock, contract)
+        base_text = str(record.get("text") or "").strip()
+        new_text = f"{base_text}\n{note}".strip()
+        if len(new_text) > TELEGRAM_TEXT_MAX_CHARS:
+            no_registry += 1
+            continue
+        result = edit_html_message(int(record["message_id"]), new_text)
+        sent_map[symbol] = {
+            "fingerprint": fp,
+            "message_id": int(record["message_id"]),
+            "edited_at": now.isoformat(),
+            "telegram_edit_attempts": result.attempts,
+        }
+        updated += 1
 
     state["last_run_at"] = now.isoformat()
-    state["last_sent_count"] = sent
+    state["last_sent_count"] = 0
+    state["last_edited_count"] = updated
+    state["skipped_without_message_registry"] = no_registry
+    state["delivery_policy"] = "edit_existing_opportunity_message_only"
     state.pop("blocked_reason", None)
-    return sent
+    return updated
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Send independent stock/options cross-confirmation context")
+    parser = argparse.ArgumentParser(description="Fold independent stock/options confirmation into an existing Telegram alert")
     parser.add_argument("--stocks", required=True)
     parser.add_argument("--options", required=True)
     parser.add_argument("--state", required=True)
+    parser.add_argument("--stock-alert-state", required=False, default="")
+    parser.add_argument("--options-alert-state", required=False, default="")
     args = parser.parse_args()
     stocks = _load(args.stocks)
     options = _load(args.options)
     state = _load(args.state) or {"sent": {}}
-    sent = send_matches(stocks, options, state)
+    stock_alert_state = _load(args.stock_alert_state) if args.stock_alert_state else {}
+    options_alert_state = _load(args.options_alert_state) if args.options_alert_state else {}
+    updated = send_matches(
+        stocks,
+        options,
+        state,
+        stock_alert_state=stock_alert_state,
+        options_alert_state=options_alert_state,
+    )
     _save(args.state, state)
-    print(f"Cross-confirmation sender: sent={sent}")
+    print(f"Cross-confirmation editor: updated={updated}")
 
 
 if __name__ == "__main__":
