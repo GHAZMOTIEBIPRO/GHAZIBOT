@@ -73,9 +73,7 @@ def _needs_more_evidence(row: dict[str, Any]) -> bool:
     if row.get("signal_session_valid") is False:
         return False
     status = str(row.get("audit_status") or "pending")
-    if status in FINAL_TERMINAL:
-        return False
-    return True
+    return status not in FINAL_TERMINAL
 
 
 def fair_symbols_needing_backfill(
@@ -113,8 +111,6 @@ def fair_symbols_needing_backfill(
         else:
             if last_attempt is not None and current - last_attempt < cooldown:
                 continue
-            # Missing 60m evidence is more important than an already-covered
-            # event that only waits for the strict 1d checkpoint.
             tier = 1 if coverage.get("60m") is not True else 2
 
         priority = (tier, created, attempts)
@@ -135,14 +131,15 @@ def mark_symbol_attempt(
     error: str = "",
 ) -> None:
     records = audit.get("records") if isinstance(audit.get("records"), dict) else {}
-    stamp = now.astimezone(timezone.utc).isoformat() if now.tzinfo else now.replace(tzinfo=timezone.utc).isoformat()
+    current = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    stamp = current.isoformat()
     for row in records.values():
         if not isinstance(row, dict) or str(row.get("symbol") or "").upper() != symbol.upper():
             continue
-        if not _needs_more_evidence(row) and row.get("audit_status") != "pending":
-            # Terminal rows may have just been resolved by this attempt. Preserve
-            # the attempt metadata anyway, but never requeue them later.
-            pass
+        audited_at = _parse_time(row.get("audited_at"))
+        touched_now = audited_at is not None and abs((audited_at - current).total_seconds()) <= 1
+        if not _needs_more_evidence(row) and not touched_now:
+            continue
         row["audit_attempt_count"] = max(0, _int(row.get("audit_attempt_count"))) + 1
         row["audit_last_attempt_at"] = stamp
         row["audit_last_attempt_result"] = str(result)
