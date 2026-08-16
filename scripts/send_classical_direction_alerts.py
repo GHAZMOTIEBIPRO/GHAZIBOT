@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import requests
+from options_radar.telegram_transport import send_html_message
 
 
 def _load(path: str | Path, default: Any) -> Any:
@@ -32,23 +32,7 @@ def _safe(value: Any) -> str:
 
 
 def _send(text: str) -> None:
-    token = str(os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
-    chat_id = str(os.getenv("TELEGRAM_CHAT_ID") or "").strip()
-    if not token or not chat_id:
-        raise RuntimeError("Telegram destination is not ready")
-    response = requests.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        data={
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": "true",
-        },
-        timeout=20,
-    )
-    response.raise_for_status()
-    if not response.json().get("ok"):
-        raise RuntimeError("Telegram rejected classical-direction message")
+    send_html_message(text)
 
 
 def _fingerprint(row: dict[str, Any]) -> str:
