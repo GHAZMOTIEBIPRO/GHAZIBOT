@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 import requests
@@ -109,7 +108,9 @@ def test_message_over_telegram_limit_is_blocked_before_network(monkeypatch):
     assert called is False
 
 
-def test_missing_destination_fails_closed():
+def test_missing_destination_fails_closed(monkeypatch):
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
     with pytest.raises(RuntimeError, match="not ready"):
         transport.send_html_message("hello", token="", chat_id="")
 
@@ -149,8 +150,7 @@ def test_bootstrap_masks_destination_before_export(monkeypatch, tmp_path, capsys
     assert bootstrap.bootstrap(connection) == 0
 
     output = capsys.readouterr().out.splitlines()
-    mask_index = output.index(f"::add-mask::{destination}")
-    assert mask_index >= 0
+    assert f"::add-mask::{destination}" in output
     assert f"TELEGRAM_CHAT_ID={destination}" in env_file.read_text(encoding="utf-8")
 
 
