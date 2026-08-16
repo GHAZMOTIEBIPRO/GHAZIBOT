@@ -289,8 +289,10 @@ jobs:
         run: |
           mkdir -p data/live .options-telegram-restore
           printf '{"sent":{}}\n' > data/live/options_telegram_alert_state.json
+          # Delivery state can be valid even if a prior run failed after one
+          # successful Telegram POST. Market/learning state above remains success-only.
           for workflow in options-contract-radar.yml options-telegram-alerts.yml; do
-            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               rm -rf .options-telegram-restore && mkdir -p .options-telegram-restore
               if gh run download "$run_id" -n options-telegram-state -D .options-telegram-restore >/dev/null 2>&1; then
                 if [[ -s .options-telegram-restore/options_alert_state.json ]]; then
