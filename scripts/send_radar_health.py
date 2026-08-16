@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from options_radar.telegram_transport import send_html_message
+from scripts.telegram_transport import send_html_message
 
 RANK = {"HEALTHY": 0, "DEGRADED": 1, "CRITICAL": 2}
 
