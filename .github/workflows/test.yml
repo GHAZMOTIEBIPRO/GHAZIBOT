@@ -38,8 +38,11 @@ jobs:
           python -m scripts.run_stream_gateway --help >/dev/null
           python scripts/fast_explosion_scan_fabric.py --help >/dev/null
           python scripts/market_clock_gate.py --help >/dev/null
-          python scripts/send_independent_path_alerts.py --help >/dev/null
-          python scripts/send_strict_options_alerts.py --help >/dev/null
+          python -m scripts.send_independent_path_alerts --help >/dev/null
+          python -m scripts.send_strict_options_alerts --help >/dev/null
+          python -m scripts.send_cross_confirmation --help >/dev/null
+          python -m scripts.send_radar_health --help >/dev/null
+          python -m scripts.send_classical_direction_alerts --help >/dev/null
           python scripts/telegram_connection_bootstrap.py --help >/dev/null
 
       - name: Python syntax and import compilation
