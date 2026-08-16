@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: bot-state
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: true
 
       - uses: actions/setup-python@v5
@@ -238,7 +238,17 @@ jobs:
             exit 0
           fi
           git commit -m "state: persist $KIND run $SOURCE_RUN_ID [skip ci]"
-          git push origin HEAD:bot-state
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              echo "Durable options state persisted on attempt $attempt."
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Failed to persist durable options state after retries."
+          exit 1
 
       - name: No eligible state artifact
         if: steps.artifact.outputs.found != 'true'
