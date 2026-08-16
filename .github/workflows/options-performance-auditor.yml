@@ -34,6 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 1
 
       - uses: actions/setup-python@v5
         with:
@@ -50,19 +51,53 @@ jobs:
         run: |
           mkdir -p data/live .options-learning-restore
           found=false
-          for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-            rm -rf .options-learning-restore && mkdir -p .options-learning-restore
-            if gh run download "$run_id" -n options-contract-state -D .options-learning-restore >/dev/null 2>&1; then
-              if [[ -s .options-learning-restore/options_outcomes.json && -s .options-learning-restore/options_calibration.json ]]; then
-                cp -f .options-learning-restore/options_outcomes.json data/live/options_outcomes.json
-                cp -f .options-learning-restore/options_calibration.json data/live/options_calibration.json
-                found=true
-                echo "Restored options outcome/calibration state from run $run_id."
-                break
-              fi
+          source=none
+
+          if git fetch origin bot-state:refs/remotes/origin/bot-state --depth=1 --quiet 2>/dev/null; then
+            rm -f .options-learning-restore/durable_outcomes.json .options-learning-restore/durable_calibration.json
+            if git show origin/bot-state:state/options/options_outcomes.json > .options-learning-restore/durable_outcomes.json 2>/dev/null \
+              && git show origin/bot-state:state/options/options_calibration.json > .options-learning-restore/durable_calibration.json 2>/dev/null \
+              && [[ -s .options-learning-restore/durable_outcomes.json && -s .options-learning-restore/durable_calibration.json ]]; then
+              cp -f .options-learning-restore/durable_outcomes.json data/live/options_outcomes.json
+              cp -f .options-learning-restore/durable_calibration.json data/live/options_calibration.json
+              found=true
+              source=bot-state
+              echo "Restored outcome/calibration state from durable bot-state branch."
             fi
-          done
+          fi
+
+          if [[ "$found" != "true" ]]; then
+            for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 20 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .options-learning-restore/artifact && mkdir -p .options-learning-restore/artifact
+              if gh run download "$run_id" -n options-contract-state -D .options-learning-restore/artifact >/dev/null 2>&1; then
+                if [[ -s .options-learning-restore/artifact/options_outcomes.json && -s .options-learning-restore/artifact/options_calibration.json ]]; then
+                  cp -f .options-learning-restore/artifact/options_outcomes.json data/live/options_outcomes.json
+                  cp -f .options-learning-restore/artifact/options_calibration.json data/live/options_calibration.json
+                  found=true
+                  source="artifact:$run_id"
+                  echo "Restored outcome/calibration state from artifact run $run_id."
+                  break
+                fi
+              fi
+            done
+          fi
+
+          if [[ "$found" == "true" ]]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          outcomes = json.loads(Path('data/live/options_outcomes.json').read_text(encoding='utf-8'))
+          calibration = json.loads(Path('data/live/options_calibration.json').read_text(encoding='utf-8'))
+          assert isinstance(outcomes, dict) and isinstance(outcomes.get('signals', {}), dict)
+          assert isinstance(calibration, dict)
+          assert int(calibration.get('shadow_sample_size', 0)) >= int(calibration.get('sample_size', 0))
+          assert float(calibration.get('max_total_adjustment', 4.0)) <= 4.0
+          print('Restored learning state passed integrity checks.')
+          PY
+          fi
+
           echo "found=$found" >> "$GITHUB_OUTPUT"
+          echo "source=$source" >> "$GITHUB_OUTPUT"
 
       - name: Restore previous performance notification state
         if: steps.learning_state.outputs.found == 'true'
@@ -71,13 +106,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .performance-restore data/live
-          for run_id in $(gh run list --workflow options-performance-auditor.yml --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-            rm -rf .performance-restore && mkdir -p .performance-restore
-            if gh run download "$run_id" -n options-performance-audit -D .performance-restore >/dev/null 2>&1; then
-              cp -f .performance-restore/options_performance_report_state.json data/live/options_performance_report_state.json 2>/dev/null || true
-              [[ -s data/live/options_performance_report_state.json ]] && break
-            fi
-          done
+          restored=false
+
+          if git show origin/bot-state:state/performance/options_performance_report_state.json > .performance-restore/durable_state.json 2>/dev/null \
+            && [[ -s .performance-restore/durable_state.json ]]; then
+            cp -f .performance-restore/durable_state.json data/live/options_performance_report_state.json
+            restored=true
+            echo "Restored performance notification state from durable bot-state branch."
+          fi
+
+          if [[ "$restored" != "true" ]]; then
+            for run_id in $(gh run list --workflow options-performance-auditor.yml --status completed --branch main --limit 20 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .performance-restore/artifact && mkdir -p .performance-restore/artifact
+              if gh run download "$run_id" -n options-performance-audit -D .performance-restore/artifact >/dev/null 2>&1; then
+                cp -f .performance-restore/artifact/options_performance_report_state.json data/live/options_performance_report_state.json 2>/dev/null || true
+                if [[ -s data/live/options_performance_report_state.json ]]; then
+                  restored=true
+                  echo "Restored performance notification state from artifact run $run_id."
+                  break
+                fi
+              fi
+            done
+          fi
 
       - name: Restore centralized Telegram destination
         if: steps.learning_state.outputs.found == 'true' && env.TELEGRAM_CHAT_ID == '' && github.event_name != 'push'
