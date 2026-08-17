@@ -72,6 +72,8 @@ def _archive_record(state: dict[str, Any]) -> dict[str, Any]:
         "cause_category": state.get("cause_category"),
         "cause_tier": state.get("cause_tier"),
         "official_cause": bool(state.get("official_cause")),
+        "entry_evidence_state": state.get("entry_evidence_state", "LEGACY_UNKNOWN"),
+        "entry_cause_status": state.get("entry_cause_status", "LEGACY_UNKNOWN"),
         "follow_through_target_pct": state.get("follow_through_target_pct"),
         "failure_threshold_pct": state.get("failure_threshold_pct"),
         "terminal_outcome": state.get("terminal_outcome"),
@@ -178,7 +180,8 @@ def update_stock_outcome_archive(
         "maximum_records": limit,
         "measurement_note": (
             "Historical research archive of deduplicated stock events. Entries require a 60m checkpoint "
-            "and a decisive success/failed terminal outcome. Snapshot evidence does not reconstruct intrabar order."
+            "and a decisive success/failed terminal outcome. Entry catalyst evidence is frozen when available; "
+            "legacy rows remain explicitly LEGACY_UNKNOWN rather than being backfilled with future information."
         ),
         "records": records,
         "summary": summary.as_dict(),
