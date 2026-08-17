@@ -1,4 +1,5 @@
 const DATA_URLS = [
+  "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/latest.json",
   "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/main/public/data/latest.json",
   "./data/latest.json",
 ];
