@@ -216,6 +216,14 @@ def build_learning_model(
             scale=10.0,
             cap=2.0,
         ),
+        "evidence_states": _cohort_stats(
+            stock_rows,
+            lambda row: row.get("entry_evidence_state", "LEGACY_UNKNOWN"),
+            baseline=stock_baseline,
+            minimum=15,
+            scale=10.0,
+            cap=2.0,
+        ),
     }
 
     options = {
@@ -261,6 +269,8 @@ def build_learning_model(
             "same_scan_observation_is_not_independent_evidence": True,
             "stock_event_identity_deduped": True,
             "stock_learning_uses_durable_event_archive": stock_archive_path is not None,
+            "entry_evidence_state_frozen": True,
+            "entry_evidence_state_is_research_only_until_walk_forward": True,
             "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": True,
         },
         "stock": stock,
