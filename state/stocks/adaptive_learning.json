@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-17T20:45:17.055200+00:00",
+  "generated_at": "2026-08-17T21:39:35.331622+00:00",
   "policy": {
     "no_live_weight_change_before_minimum_sample": true,
     "stock_min_matured": 60,
@@ -10,6 +10,8 @@
     "same_scan_observation_is_not_independent_evidence": true,
     "stock_event_identity_deduped": true,
     "stock_learning_uses_durable_event_archive": true,
+    "entry_evidence_state_frozen": true,
+    "entry_evidence_state_is_research_only_until_walk_forward": true,
     "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": true
   },
   "stock": {
@@ -97,6 +99,16 @@
     },
     "cause_tiers": {
       "unknown": {
+        "sample": 72,
+        "successes": 57,
+        "failures": 15,
+        "success_rate": 0.7917,
+        "eligible": true,
+        "score_adjustment": 0.0
+      }
+    },
+    "evidence_states": {
+      "LEGACY_UNKNOWN": {
         "sample": 72,
         "successes": 57,
         "failures": 15,
