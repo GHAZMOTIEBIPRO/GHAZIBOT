@@ -15,12 +15,16 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from options_radar.data_fabric_runtime import install_data_fabric
+from options_radar.data_fabric_singleflight import install_data_fabric_singleflight
 from options_radar.hybrid_fetcher import DataFetcher
 from options_radar.market_clock import market_clock_state
 from options_radar.settings import Settings
 
 # Install data acquisition before the institutional runner creates any fetchers.
+# Single-flight only shares concurrently overlapping identical fetches; it does
+# not keep a completed stock response as a cross-request cache.
 install_data_fabric()
+install_data_fabric_singleflight()
 from scripts import fast_explosion_scan_runner as runner  # noqa: E402
 
 _original_rank = runner._rank_market_with_institutional_engine
