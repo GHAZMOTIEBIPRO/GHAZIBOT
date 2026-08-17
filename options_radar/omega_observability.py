@@ -169,11 +169,14 @@ def build_health(payload: dict[str, Any]) -> dict[str, Any]:
     omega = payload.get("omega") if isinstance(payload.get("omega"), dict) else {}
     validation = omega.get("validation") if isinstance(omega, dict) else {}
     readiness = data_status.get("option_provider_readiness") or {}
+    critical_error_count = int(data_status["quality_counts"]["critical_errors"])
+    critical_pipeline_ok = critical_error_count == 0
     return {
         "service": "GHAZIBOT",
         "status": data_status["status"],
         "generated_at": payload.get("generated_at"),
         "schema_version": payload.get("schema_version"),
+        "health_schema_version": 2,
         "model_version": payload.get("model_version"),
         "research_status": validation.get("edge_status", "EDGE NOT YET PROVEN"),
         "checks": {
@@ -181,10 +184,17 @@ def build_health(payload: dict[str, Any]) -> dict[str, Any]:
                 data_status["dataset_age_minutes"] is None
                 or data_status["dataset_age_minutes"] <= 180
             ),
-            "critical_pipeline_errors": data_status["quality_counts"]["critical_errors"] == 0,
+            "critical_pipeline_ok": critical_pipeline_ok,
+            "critical_pipeline_error_count": critical_error_count,
+            "critical_pipeline_errors": critical_pipeline_ok,
             "expiry_identity_complete": data_status["quality_counts"]["missing_expiry_family"] == 0,
             "option_quotes_production_ready": readiness.get("production_quote_ready") if readiness else None,
             "option_flow_production_ready": readiness.get("production_flow_ready") if readiness else None,
+        },
+        "check_contract": {
+            "critical_pipeline_ok": "true means zero critical stock/options/catalyst/export pipeline errors",
+            "critical_pipeline_error_count": "integer count of critical pipeline errors",
+            "critical_pipeline_errors": "deprecated compatibility alias; true also means zero critical errors",
         },
     }
 
