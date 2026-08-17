@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from options_radar.data_fabric_runtime import install_data_fabric
+from options_radar.data_fabric_singleflight import install_data_fabric_singleflight
 from options_radar.durable_state import restore_missing_durable_options_state
 from options_radar.free_autonomy import enforce_free_autonomy_environment
 
@@ -33,8 +34,11 @@ def main() -> None:
         print(f"Durable options state fallback unavailable: {durable.error}")
 
     # Install acquisition-only hardening before importing the hardened runner so
-    # every DataFetcher created by the options path uses the same fabric.
+    # every DataFetcher created by the options path uses the same fabric. The
+    # single-flight layer collapses only overlapping identical calls; it does not
+    # retain an option quote after the original request completes.
     install_data_fabric()
+    install_data_fabric_singleflight()
     from scripts.run_options_radar_hardened import main as hardened_main
 
     hardened_main()
