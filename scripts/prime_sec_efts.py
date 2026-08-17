@@ -36,7 +36,7 @@ def main() -> int:
         "end_date": end_date.isoformat(),
         "event_count": 0,
         "message": "not checked",
-        "retry_policy": "429/5xx only; bounded exponential backoff; 403 is not hammered",
+        "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
         "fallbacks_active": [
             "SEC latest-form Atom feeds",
             "SEC submissions and Company Facts",
@@ -69,6 +69,7 @@ def main() -> int:
             {
                 "available": True,
                 "http_status": 200,
+                "circuit_state": "closed",
                 "probe_hits": int(total_value or 0),
                 "message": "SEC full-text endpoint responded successfully",
             }
@@ -76,15 +77,23 @@ def main() -> int:
         events = discover_sec_fulltext_events(settings, lookback_days=14)
         status["event_count"] = len(events)
     except Exception as exc:
+        response_status = getattr(getattr(exc, "response", None), "status_code", None)
+        http_status = getattr(exc, "http_status", response_status)
         status.update(
             {
                 "available": False,
-                "http_status": getattr(getattr(exc, "response", None), "status_code", None),
+                "http_status": http_status,
                 "error_type": type(exc).__name__,
                 "message": str(exc)[:500],
                 "traceback_tail": traceback.format_exc(limit=8)[-4000:],
             }
         )
+        retry_after = getattr(exc, "retry_after", None)
+        if retry_after is not None:
+            status["circuit_state"] = "open"
+            status["circuit_retry_after"] = retry_after.isoformat()
+        elif http_status == 403:
+            status["circuit_state"] = "open"
 
     write_status(status)
     print(json.dumps(status, ensure_ascii=False))
