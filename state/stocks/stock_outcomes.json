@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-17T16:00:16.785275+00:00",
+  "updated_at": "2026-08-17T16:25:12.500389+00:00",
   "signals": {
     "f19745c89262b8663b00": {
       "signal_id": "f19745c89262b8663b00",
@@ -15491,13 +15491,24 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 1,
-      "last_observed_at": "2026-08-17T14:57:46.390997+00:00",
-      "last_price": 7.1001,
-      "last_directional_return_pct": 0.0,
-      "mfe_pct": 0.0,
+      "observations": 2,
+      "last_observed_at": "2026-08-17T16:25:12.500389+00:00",
+      "last_price": 7.15,
+      "last_directional_return_pct": 0.7028,
+      "mfe_pct": 0.7028,
       "mae_pct": 0.0,
-      "checkpoints": {},
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-17T16:25:12.500389+00:00",
+          "price": 7.15,
+          "directional_return_pct": 0.7028
+        },
+        "60m": {
+          "observed_at": "2026-08-17T16:25:12.500389+00:00",
+          "price": 7.15,
+          "directional_return_pct": 0.7028
+        }
+      },
       "terminal_outcome": "open",
       "measurement_basis": "repeated_radar_snapshots",
       "entry_stage": "PRESSURE_BUILDING",
@@ -15527,13 +15538,19 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 1,
-      "last_observed_at": "2026-08-17T15:44:27.798348+00:00",
-      "last_price": 4.0001,
-      "last_directional_return_pct": 0.0,
+      "observations": 2,
+      "last_observed_at": "2026-08-17T16:25:12.500389+00:00",
+      "last_price": 3.935,
+      "last_directional_return_pct": -1.6275,
       "mfe_pct": 0.0,
-      "mae_pct": 0.0,
-      "checkpoints": {},
+      "mae_pct": -1.6275,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-17T16:25:12.500389+00:00",
+          "price": 3.935,
+          "directional_return_pct": -1.6275
+        }
+      },
       "terminal_outcome": "open",
       "measurement_basis": "repeated_radar_snapshots",
       "entry_stage": "PRESSURE_BUILDING",
@@ -15563,10 +15580,10 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 2,
-      "last_observed_at": "2026-08-17T16:00:16.785275+00:00",
-      "last_price": 4.22,
-      "last_directional_return_pct": -3.211,
+      "observations": 3,
+      "last_observed_at": "2026-08-17T16:25:12.500389+00:00",
+      "last_price": 4.26,
+      "last_directional_return_pct": -2.2936,
       "mfe_pct": 0.0,
       "mae_pct": -3.211,
       "checkpoints": {
@@ -15630,7 +15647,7 @@
   "measurement_note": "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; therefore it is used for calibration, not executable-fill claims.",
   "summary": {
     "tracked": 328,
-    "matured_60m": 201,
+    "matured_60m": 202,
     "successes": 57,
     "failures": 15,
     "open": 252
