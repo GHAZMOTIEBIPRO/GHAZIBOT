@@ -35,14 +35,51 @@ def test_runtime_state_round_trip_uses_explicit_allowlist(tmp_path) -> None:
     assert json.loads(signals.read_text(encoding="utf-8"))["signal_id"] == "abc"
 
 
-def test_runtime_state_rejects_secret_like_json_keys(tmp_path) -> None:
+def test_runtime_state_rejects_secret_like_json_values(tmp_path) -> None:
     repo = tmp_path / "repo"
     vault = tmp_path / "vault"
     latest = repo / "public/data/latest.json"
     latest.parent.mkdir(parents=True)
     latest.write_text(json.dumps({"api_key": "must-not-persist"}), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="secret-like key"):
+    with pytest.raises(ValueError, match=r"secret-like value.*\$\.api_key"):
+        publish_runtime_state(repo_root=repo, vault_root=vault)
+
+
+def test_runtime_state_allows_safe_secret_status_metadata(tmp_path) -> None:
+    repo = tmp_path / "repo"
+    vault = tmp_path / "vault"
+    latest = repo / "public/data/latest.json"
+    latest.parent.mkdir(parents=True)
+    latest.write_text(
+        json.dumps(
+            {
+                "providers": {
+                    "tradier": {
+                        "token_configured": False,
+                        "credential_status": "not_configured",
+                        "api_key_present": False,
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = publish_runtime_state(repo_root=repo, vault_root=vault)
+    assert result["published"] == 1
+    persisted = json.loads((vault / "public/data/latest.json").read_text(encoding="utf-8"))
+    assert persisted["providers"]["tradier"]["token_configured"] is False
+
+
+def test_runtime_state_still_rejects_secret_string_in_status_named_field(tmp_path) -> None:
+    repo = tmp_path / "repo"
+    vault = tmp_path / "vault"
+    latest = repo / "public/data/latest.json"
+    latest.parent.mkdir(parents=True)
+    latest.write_text(json.dumps({"credential_status": "sk-live-real-secret-value"}), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"secret-like value.*credential_status"):
         publish_runtime_state(repo_root=repo, vault_root=vault)
 
 
