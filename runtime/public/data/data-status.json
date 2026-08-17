@@ -1,16 +1,16 @@
 {
   "status": "degraded",
-  "generated_at": "2026-08-17T22:35:38.316674+00:00",
-  "dataset_age_minutes": 3.0,
-  "last_successful_refresh": "2026-08-17T22:35:38.316674+00:00",
+  "generated_at": "2026-08-17T22:41:50.972011+00:00",
+  "dataset_age_minutes": 2.4,
+  "last_successful_refresh": "2026-08-17T22:41:50.972011+00:00",
   "option_provider": "phase5_hybrid",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
     "production_quote_ready": false,
     "production_flow_ready": false,
-    "usable_chains": 12,
-    "fallback_only_chains": 12,
-    "delayed_or_indicative_chains": 12,
+    "usable_chains": 13,
+    "fallback_only_chains": 13,
+    "delayed_or_indicative_chains": 13,
     "live_primary_chains": 0,
     "cross_source_chains": 0,
     "opra_chains": 0,
@@ -19,8 +19,8 @@
     ],
     "reasons": [
       "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-      "12 chain(s) are Yahoo/YFinance-only fallback",
-      "12 chain(s) contain delayed, indicative, or unofficial sources"
+      "13 chain(s) are Yahoo/YFinance-only fallback",
+      "13 chain(s) contain delayed, indicative, or unofficial sources"
     ]
   },
   "source_status": {
@@ -30,15 +30,15 @@
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-08-17T22:34:30.525357+00:00",
+      "checked_at": "2026-08-17T22:40:51.205537+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
       "start_date": "2026-08-03",
       "end_date": "2026-08-17",
       "event_count": 0,
-      "message": "SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
-      "retry_policy": "429/5xx only; bounded exponential backoff; 403 is not hammered",
+      "message": "SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
+      "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
       "fallbacks_active": [
         "SEC latest-form Atom feeds",
         "SEC submissions and Company Facts",
@@ -46,7 +46,8 @@
       ],
       "http_status": 403,
       "error_type": "HTTPError",
-      "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 80, in request_efts_json\n    raise requests.HTTPError(\nrequests.exceptions.HTTPError: SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n"
+      "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 200, in request_efts_json\n    raise requests.HTTPError(\nrequests.exceptions.HTTPError: SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n",
+      "circuit_state": "open"
     }
   },
   "row_counts": {
@@ -59,9 +60,9 @@
     "stale_options": 0,
     "missing_expiry_family": 0,
     "duplicate_events_collapsed": 0,
-    "errors": 5,
+    "errors": 4,
     "critical_errors": 0,
-    "fallback_only_option_chains": 12,
+    "fallback_only_option_chains": 13,
     "live_primary_option_chains": 0
   },
   "sec_incremental": {
@@ -74,12 +75,12 @@
     "prefilter_skips": 0,
     "events_emitted": 0,
     "processed_accessions": 0,
-    "updated_at": "2026-08-17T22:34:40.545881+00:00"
+    "updated_at": "2026-08-17T22:41:02.227762+00:00"
   },
   "run_duration_seconds": null,
   "reasons": [
     "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-    "12 chain(s) are Yahoo/YFinance-only fallback",
-    "12 chain(s) contain delayed, indicative, or unofficial sources"
+    "13 chain(s) are Yahoo/YFinance-only fallback",
+    "13 chain(s) contain delayed, indicative, or unofficial sources"
   ]
 }
