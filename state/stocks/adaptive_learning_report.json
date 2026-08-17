@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T17:46:32.350927+00:00",
+  "generated_at": "2026-08-17T18:58:47.173662+00:00",
   "mode": "SHADOW_LEARNING",
   "live_alert_weights_changed": false,
   "free_autonomy": {
@@ -12,20 +12,21 @@
     "attempted": true,
     "branch_available": true,
     "restored": [
+      "data/live/stock_outcome_audit.json"
+    ],
+    "preserved_local": [
       "data/live/stock_outcomes.json",
       "data/live/stock_outcome_archive.json",
-      "data/live/stock_outcome_audit.json",
       "data/live/adaptive_learning.json"
     ],
-    "preserved_local": [],
     "error": ""
   },
   "stock_archive_summary": {
     "records": 72,
     "successes": 57,
     "failures": 15,
-    "added_this_pass": 4,
-    "updated_this_pass": 5
+    "added_this_pass": 0,
+    "updated_this_pass": 0
   },
   "stock_outcome_audit": {
     "available": true,
@@ -37,22 +38,22 @@
     "coverage_ready": false
   },
   "option_outcome_summary": {
-    "tracked_signals": 0,
-    "priced_signals": 0,
-    "path_evaluated": 0,
+    "tracked_signals": 5,
+    "priced_signals": 5,
+    "path_evaluated": 5,
     "successful": 0,
     "stopped_out": 0,
     "ambiguous": 0,
-    "open": 0,
+    "open": 5,
     "option_contract_basis": 0,
-    "underlying_proxy_basis": 0,
-    "average_mfe_pct": null,
-    "average_mae_pct": null,
+    "underlying_proxy_basis": 5,
+    "average_mfe_pct": 0.3372,
+    "average_mae_pct": 0.3372,
     "measurement_note": "Path-dependent paper tracking. Contract OHLC is preferred; underlying OHLC is a documented fallback. Stop-first is terminal. Same-bar stop/target is ambiguous and never counted as a win."
   },
   "calibration": {
-    "sample_size": 0,
-    "raw_priced_sample": 0,
+    "sample_size": 5,
+    "raw_priced_sample": 5,
     "priced_sample": 0,
     "matured_sample": 0,
     "five_day_sample": 0,
@@ -89,8 +90,8 @@
       },
       {
         "band": "70-79",
-        "signals": 0,
-        "observed": 0,
+        "signals": 5,
+        "observed": 5,
         "priced": 0,
         "matured": 0,
         "target_1_rate": null,
@@ -132,7 +133,7 @@
   },
   "model": {
     "schema_version": 1,
-    "generated_at": "2026-08-17T17:46:32.350148+00:00",
+    "generated_at": "2026-08-17T18:58:47.172478+00:00",
     "policy": {
       "no_live_weight_change_before_minimum_sample": true,
       "stock_min_matured": 60,
