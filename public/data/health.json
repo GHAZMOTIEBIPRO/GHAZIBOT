@@ -1,15 +1,23 @@
 {
   "service": "GHAZIBOT",
   "status": "degraded",
-  "generated_at": "2026-08-17T21:19:54.832397+00:00",
+  "generated_at": "2026-08-17T21:26:59.680513+00:00",
   "schema_version": 6,
+  "health_schema_version": 2,
   "model_version": "2026.07-phase6.2-evidence-tiers",
   "research_status": "EDGE NOT YET PROVEN",
   "checks": {
     "dataset_fresh": true,
+    "critical_pipeline_ok": true,
+    "critical_pipeline_error_count": 0,
     "critical_pipeline_errors": true,
     "expiry_identity_complete": true,
     "option_quotes_production_ready": false,
     "option_flow_production_ready": false
+  },
+  "check_contract": {
+    "critical_pipeline_ok": "true means zero critical stock/options/catalyst/export pipeline errors",
+    "critical_pipeline_error_count": "integer count of critical pipeline errors",
+    "critical_pipeline_errors": "deprecated compatibility alias; true also means zero critical errors"
   }
 }
