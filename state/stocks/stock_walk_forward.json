@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "mode": "EXPANDING_SESSION_WALK_FORWARD",
+  "decision_authority": false,
+  "live_alert_weights_changed": false,
+  "live_promotion_allowed": false,
+  "data_policy": {
+    "source": "stock_outcome_audit",
+    "requires_signal_session_valid": true,
+    "requires_qualified_60m": true,
+    "decisive_only_for_binary_ranking_metrics": true,
+    "random_split_allowed": false,
+    "future_session_training_allowed": false
+  },
+  "methodology": {
+    "minimum_coverage_60m_pct": 90.0,
+    "minimum_independent_sessions": 10,
+    "minimum_train_sessions": 6,
+    "minimum_train_records": 60,
+    "minimum_oos_sessions": 4,
+    "minimum_oos_records": 40,
+    "candidate_adjustment_cap": 8.0,
+    "candidate_policy": "shadow replica of current cohort-relative stock adjustment; entry evidence state remains research-only"
+  },
+  "gate": {
+    "coverage_60m_pct": 38.41,
+    "independent_60m_sessions": 3,
+    "upstream_coverage_ready": false,
+    "ready": false
+  },
+  "research_passed": false,
+  "status": "NOT_READY",
+  "reasons": [
+    "60m coverage 38.41% < 90%",
+    "independent sessions 3 < 10",
+    "upstream outcome-audit promotion gate is closed"
+  ],
+  "folds": [],
+  "metrics": {
+    "oos_records": 0,
+    "oos_sessions": 0
+  }
+}
