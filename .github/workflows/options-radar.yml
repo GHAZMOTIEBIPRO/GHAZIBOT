@@ -97,6 +97,18 @@ jobs:
       - name: Install
         run: pip install -r requirements.txt
 
+      - name: Restore runtime state from durable bot-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .bot-state
+          if git fetch origin bot-state:refs/heads/bot-state-runtime >/dev/null 2>&1; then
+            git worktree add .bot-state bot-state-runtime
+            python -m scripts.runtime_state_vault restore --repo-root . --vault-root .bot-state/runtime
+          else
+            echo "Durable runtime state unavailable; bootstrapping from checked-in research state."
+          fi
+
       - name: Probe SEC full-text evidence
         continue-on-error: true
         run: python scripts/prime_sec_efts.py
@@ -180,39 +192,38 @@ jobs:
           Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(lines), encoding='utf-8')
           PY
 
-      - name: Publish dashboard data and evidence
+      - name: Persist dashboard and research runtime state to bot-state
         if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
-          git config user.name "ghazi-radar-bot"
-          git config user.email "actions@users.noreply.github.com"
-          for file in \
-            public/data/latest.json \
-            public/data/health.json \
-            public/data/data-status.json \
-            data/cache/sec_efts_events.json \
-            data/cache/sec_efts_status.json \
-            data/cache/sec_processed_accessions.json \
-            data/cache/sec_incremental_status.json \
-            data/live/source_audit.json \
-            data/live/intelligence_audit.json \
-            data/live/occ_audit.json \
-            data/live/spx_0dte_snapshot.json \
-            data/live/alert_state.json \
-            data/live/signals.jsonl \
-            data/live/outcomes.json \
-            data/live/calibration.json \
-            data/live/CALIBRATION_REVIEW.md \
-            data/live/calibration_issue.json; do
-            [[ -f "$file" ]] && git add "$file"
-          done
-          if git diff --cached --quiet; then
-            echo "No data change to publish."
-          else
-            git commit -m "data: refresh GHAZIBOT Omega research state [skip ci]"
-            git pull --rebase origin main
-            git push origin HEAD:main
+          set -euo pipefail
+          if [[ ! -e .bot-state/.git ]]; then
+            git fetch origin bot-state:refs/heads/bot-state-runtime
+            git worktree add .bot-state bot-state-runtime
           fi
+
+          python -m scripts.runtime_state_vault publish --repo-root . --vault-root .bot-state/runtime
+          git -C .bot-state config user.name "BLACK BOX Omega Runtime Vault"
+          git -C .bot-state config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git -C .bot-state add runtime
+
+          if git -C .bot-state diff --cached --quiet; then
+            echo "Runtime state unchanged."
+            exit 0
+          fi
+
+          git -C .bot-state commit -m "state: refresh GHAZIBOT runtime research [skip ci]"
+          for attempt in 1 2 3; do
+            if git -C .bot-state pull --rebase origin bot-state \
+              && git -C .bot-state push origin HEAD:bot-state; then
+              echo "Runtime state persisted on attempt $attempt."
+              exit 0
+            fi
+            git -C .bot-state rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Failed to persist runtime state after retries."
+          exit 1
 
       - name: Upload result files
         if: always()
