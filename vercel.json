@@ -3,6 +3,15 @@
   "outputDirectory": "public",
   "cleanUrls": true,
   "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "*": false
+    }
+  },
+  "github": {
+    "silent": true
+  },
   "rewrites": [
     {
       "source": "/health",
