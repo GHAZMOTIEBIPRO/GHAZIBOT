@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-17T13:35:09.155542+00:00",
+  "updated_at": "2026-08-17T14:04:40.570469+00:00",
   "signals": {
     "f19745c89262b8663b00": {
       "signal_id": "f19745c89262b8663b00",
@@ -6473,11 +6473,11 @@
       "official_cause": false,
       "follow_through_target_pct": 6.0,
       "failure_threshold_pct": 6.0,
-      "observations": 11,
-      "last_observed_at": "2026-08-14T13:20:16.942626+00:00",
-      "last_price": 4.92,
-      "last_directional_return_pct": 0.0,
-      "mfe_pct": 0.0,
+      "observations": 12,
+      "last_observed_at": "2026-08-17T14:04:40.570469+00:00",
+      "last_price": 5.75,
+      "last_directional_return_pct": 16.8699,
+      "mfe_pct": 16.8699,
       "mae_pct": 0.0,
       "checkpoints": {
         "15m": {
@@ -6489,9 +6489,14 @@
           "observed_at": "2026-08-13T22:06:16.200682+00:00",
           "price": 4.92,
           "directional_return_pct": 0.0
+        },
+        "1d": {
+          "observed_at": "2026-08-17T14:04:40.570469+00:00",
+          "price": 5.75,
+          "directional_return_pct": 16.8699
         }
       },
-      "terminal_outcome": "open",
+      "terminal_outcome": "success",
       "measurement_basis": "repeated_radar_snapshots",
       "entry_stage": "EXPLOSION",
       "entry_score": 76.8002,
@@ -6512,7 +6517,9 @@
       ],
       "latest_stage": "EXPLOSION",
       "latest_score": 66.72,
-      "latest_score_band": "below-72"
+      "latest_score_band": "below-72",
+      "terminal_reason": "follow_through_target_observed",
+      "terminal_at": "2026-08-17T14:04:40.570469+00:00"
     },
     "2258b1645168582d2219": {
       "signal_id": "2258b1645168582d2219",
@@ -8643,11 +8650,11 @@
       "official_cause": false,
       "follow_through_target_pct": 6.0,
       "failure_threshold_pct": 6.0,
-      "observations": 5,
-      "last_observed_at": "2026-08-14T13:20:16.942626+00:00",
-      "last_price": 4.92,
-      "last_directional_return_pct": 0.0,
-      "mfe_pct": 0.0,
+      "observations": 6,
+      "last_observed_at": "2026-08-17T14:04:40.570469+00:00",
+      "last_price": 5.75,
+      "last_directional_return_pct": 16.8699,
+      "mfe_pct": 16.8699,
       "mae_pct": 0.0,
       "checkpoints": {
         "15m": {
@@ -8659,9 +8666,14 @@
           "observed_at": "2026-08-14T10:20:07.348721+00:00",
           "price": 4.92,
           "directional_return_pct": 0.0
+        },
+        "1d": {
+          "observed_at": "2026-08-17T14:04:40.570469+00:00",
+          "price": 5.75,
+          "directional_return_pct": 16.8699
         }
       },
-      "terminal_outcome": "open",
+      "terminal_outcome": "success",
       "measurement_basis": "repeated_radar_snapshots",
       "entry_stage": "EXPLOSION",
       "entry_score": 66.72,
@@ -8673,7 +8685,9 @@
           "score": 66.72,
           "score_band": "below-72"
         }
-      ]
+      ],
+      "terminal_reason": "follow_through_target_observed",
+      "terminal_at": "2026-08-17T14:04:40.570469+00:00"
     },
     "afec17d8443cacc169d3": {
       "signal_id": "afec17d8443cacc169d3",
@@ -15037,20 +15051,128 @@
           "score_band": "below-72"
         }
       ]
+    },
+    "5f292b886203e048eaa7": {
+      "signal_id": "5f292b886203e048eaa7",
+      "signal_time": "2026-08-17T14:04:40.570469+00:00",
+      "symbol": "AGPU",
+      "direction": "up",
+      "entry_price": 8.77,
+      "score": 66.65,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-08-17T14:04:40.570469+00:00",
+      "last_price": 8.77,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 66.65,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-08-17T14:04:40.570469+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 66.65,
+          "score_band": "below-72"
+        }
+      ]
+    },
+    "e17338f42d2880841cb7": {
+      "signal_id": "e17338f42d2880841cb7",
+      "signal_time": "2026-08-17T14:04:40.570469+00:00",
+      "symbol": "CRGO",
+      "direction": "up",
+      "entry_price": 1.51,
+      "score": 66.47,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-08-17T14:04:40.570469+00:00",
+      "last_price": 1.51,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 66.47,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-08-17T14:04:40.570469+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 66.47,
+          "score_band": "below-72"
+        }
+      ]
+    },
+    "29d8ca97dde7c4e96cfa": {
+      "signal_id": "29d8ca97dde7c4e96cfa",
+      "signal_time": "2026-08-17T14:04:40.570469+00:00",
+      "symbol": "FIEE",
+      "direction": "up",
+      "entry_price": 5.75,
+      "score": 64.44,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-08-17T14:04:40.570469+00:00",
+      "last_price": 5.75,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 64.44,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-08-17T14:04:40.570469+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 64.44,
+          "score_band": "below-72"
+        }
+      ]
     }
   },
   "measurement_note": "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; therefore it is used for calibration, not executable-fill claims.",
   "summary": {
-    "tracked": 314,
+    "tracked": 317,
     "matured_60m": 200,
-    "successes": 54,
+    "successes": 56,
     "failures": 14,
-    "open": 242
+    "open": 243
   },
   "event_dedup": {
     "mode": "same_symbol_direction_within_4h",
     "reentry_gap_minutes": 240,
     "duplicates_collapsed_this_pass": 0,
-    "samples_after_dedup": 314
+    "samples_after_dedup": 317
   }
 }
