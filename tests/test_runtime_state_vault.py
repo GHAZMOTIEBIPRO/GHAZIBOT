@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -81,6 +82,14 @@ def test_runtime_state_still_rejects_secret_string_in_status_named_field(tmp_pat
 
     with pytest.raises(ValueError, match=r"secret-like value.*credential_status"):
         publish_runtime_state(repo_root=repo, vault_root=vault)
+
+
+def test_checked_in_runtime_snapshot_passes_vault_guard(tmp_path) -> None:
+    repo = Path(__file__).resolve().parents[1]
+    result = publish_runtime_state(repo_root=repo, vault_root=tmp_path / "vault")
+    assert result["published"] >= 3
+    assert (tmp_path / "vault/public/data/latest.json").exists()
+    assert (tmp_path / "vault/manifest.json").exists()
 
 
 def test_runtime_state_does_not_copy_non_allowlisted_files(tmp_path) -> None:
