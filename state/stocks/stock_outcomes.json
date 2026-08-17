@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-17T18:52:09.495192+00:00",
+  "updated_at": "2026-08-17T19:18:43.327642+00:00",
   "signals": {
     "f19745c89262b8663b00": {
       "signal_id": "f19745c89262b8663b00",
@@ -3657,13 +3657,29 @@
       "official_cause": false,
       "follow_through_target_pct": 6.0,
       "failure_threshold_pct": 6.0,
-      "observations": 1,
-      "last_observed_at": "2026-08-13T15:31:32.454950+00:00",
-      "last_price": 1.3601,
-      "last_directional_return_pct": 0.0,
+      "observations": 2,
+      "last_observed_at": "2026-08-17T19:18:43.327642+00:00",
+      "last_price": 1.355,
+      "last_directional_return_pct": -0.375,
       "mfe_pct": 0.0,
-      "mae_pct": 0.0,
-      "checkpoints": {},
+      "mae_pct": -0.375,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-17T19:18:43.327642+00:00",
+          "price": 1.355,
+          "directional_return_pct": -0.375
+        },
+        "60m": {
+          "observed_at": "2026-08-17T19:18:43.327642+00:00",
+          "price": 1.355,
+          "directional_return_pct": -0.375
+        },
+        "1d": {
+          "observed_at": "2026-08-17T19:18:43.327642+00:00",
+          "price": 1.355,
+          "directional_return_pct": -0.375
+        }
+      },
       "terminal_outcome": "open",
       "measurement_basis": "repeated_radar_snapshots",
       "entry_stage": "EXPLOSION",
@@ -15585,10 +15601,10 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 6,
-      "last_observed_at": "2026-08-17T18:52:09.495192+00:00",
-      "last_price": 4.2501,
-      "last_directional_return_pct": -2.5206,
+      "observations": 7,
+      "last_observed_at": "2026-08-17T19:18:43.327642+00:00",
+      "last_price": 4.26,
+      "last_directional_return_pct": -2.2936,
       "mfe_pct": 0.0,
       "mae_pct": -3.211,
       "checkpoints": {
@@ -15715,10 +15731,10 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 3,
-      "last_observed_at": "2026-08-17T18:52:09.495192+00:00",
-      "last_price": 2.115,
-      "last_directional_return_pct": -2.0833,
+      "observations": 4,
+      "last_observed_at": "2026-08-17T19:18:43.327642+00:00",
+      "last_price": 2.16,
+      "last_directional_return_pct": 0.0,
       "mfe_pct": 0.0,
       "mae_pct": -2.0833,
       "checkpoints": {
@@ -15818,20 +15834,56 @@
           "score_band": "below-72"
         }
       ]
+    },
+    "cbc6e8eff2ec6656bf23": {
+      "signal_id": "cbc6e8eff2ec6656bf23",
+      "signal_time": "2026-08-17T19:18:43.327642+00:00",
+      "symbol": "BFRI",
+      "direction": "up",
+      "entry_price": 1.355,
+      "score": 63.66,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-08-17T19:18:43.327642+00:00",
+      "last_price": 1.355,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.66,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-08-17T19:18:43.327642+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 63.66,
+          "score_band": "below-72"
+        }
+      ]
     }
   },
   "measurement_note": "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; therefore it is used for calibration, not executable-fill claims.",
   "summary": {
-    "tracked": 332,
-    "matured_60m": 206,
+    "tracked": 333,
+    "matured_60m": 207,
     "successes": 57,
     "failures": 15,
-    "open": 256
+    "open": 257
   },
   "event_dedup": {
     "mode": "same_symbol_direction_within_4h",
     "reentry_gap_minutes": 240,
     "duplicates_collapsed_this_pass": 0,
-    "samples_after_dedup": 332
+    "samples_after_dedup": 333
   }
 }
