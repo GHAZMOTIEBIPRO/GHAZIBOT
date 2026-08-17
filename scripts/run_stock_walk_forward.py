@@ -1,11 +1,25 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from options_radar.stock_walk_forward import run_stock_walk_forward
+
+def _load_walk_forward() -> Callable[[dict[str, Any]], dict[str, Any]]:
+    module_path = Path(__file__).resolve().parents[1] / "options_radar" / "stock_walk_forward.py"
+    spec = importlib.util.spec_from_file_location("_ghazi_stock_walk_forward", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"unable to load walk-forward module: {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module.run_stock_walk_forward
+
+
+run_stock_walk_forward = _load_walk_forward()
 
 
 def _read(path: str | Path) -> dict[str, Any]:
