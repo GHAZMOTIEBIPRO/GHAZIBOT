@@ -1,0 +1,167 @@
+name: BLACK BOX Omega Stock Walk Forward
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stock-walk-forward.yml"
+      - "options_radar/stock_walk_forward.py"
+      - "scripts/run_stock_walk_forward.py"
+  workflow_run:
+    workflows:
+      - "BLACK BOX Omega Stock Outcome Auditor"
+    types: [completed]
+
+concurrency:
+  group: black-box-omega-stock-walk-forward
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  walk-forward:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAID_MARKET_DATA_ALLOWED: "false"
+      FREE_AUTONOMY_MODE: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore latest audited stock outcomes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          mkdir -p data/live .incoming
+          restored=false
+
+          if [[ "$EVENT_NAME" == "workflow_run" && -n "${SOURCE_RUN_ID:-}" ]]; then
+            if gh run download "$SOURCE_RUN_ID" -n stock-outcome-audit-state -D .incoming >/dev/null 2>&1 \
+              && [[ -s .incoming/stock_outcome_audit.json ]]; then
+              cp -f .incoming/stock_outcome_audit.json data/live/stock_outcome_audit.json
+              restored=true
+            fi
+          fi
+
+          if [[ "$restored" != true ]]; then
+            git fetch origin bot-state >/dev/null 2>&1 || true
+            if git show origin/bot-state:state/stocks/stock_outcome_audit.json > data/live/stock_outcome_audit.json 2>/dev/null \
+              && [[ -s data/live/stock_outcome_audit.json ]]; then
+              restored=true
+            fi
+          fi
+
+          if [[ "$restored" != true ]]; then
+            echo "No audited stock outcome state is available."
+            exit 1
+          fi
+
+      - name: Run expanding-session walk-forward research
+        run: >-
+          python -m scripts.run_stock_walk_forward
+          --audit data/live/stock_outcome_audit.json
+          --output data/live/stock_walk_forward.json
+
+      - name: Validate fail-closed walk-forward contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('data/live/stock_walk_forward.json').read_text(encoding='utf-8'))
+          assert report['mode'] == 'EXPANDING_SESSION_WALK_FORWARD'
+          assert report['decision_authority'] is False
+          assert report['live_alert_weights_changed'] is False
+          assert report['live_promotion_allowed'] is False
+          assert report['data_policy']['random_split_allowed'] is False
+          assert report['data_policy']['future_session_training_allowed'] is False
+          gate = report['gate']
+          if gate['ready'] is not True:
+              assert report['status'] == 'NOT_READY'
+              assert report['research_passed'] is False
+          for fold in report.get('folds', []):
+              assert fold['test_session'] not in fold['train_sessions']
+              assert all(session < fold['test_session'] for session in fold['train_sessions'])
+          print(
+              'Walk-forward contract passed:',
+              report['status'],
+              'coverage=', gate['coverage_60m_pct'],
+              'sessions=', gate['independent_60m_sessions'],
+          )
+          PY
+
+      - name: Upload walk-forward research state
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-walk-forward-state
+          path: data/live/stock_walk_forward.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Persist walk-forward report to durable bot-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin bot-state:refs/heads/bot-state-walk-forward
+          git worktree add .bot-state bot-state-walk-forward
+          mkdir -p .bot-state/state/stocks
+          cp -f data/live/stock_walk_forward.json .bot-state/state/stocks/stock_walk_forward.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('.bot-state/state/stocks/stock_walk_forward.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          forbidden = ('token', 'secret', 'api_key', 'authorization', 'password', 'credential')
+          def reject(value, at='root'):
+              if isinstance(value, dict):
+                  for key, child in value.items():
+                      lowered = str(key).lower()
+                      assert not any(part in lowered for part in forbidden), f'secret-like key at {at}.{key}'
+                      reject(child, f'{at}.{key}')
+              elif isinstance(value, list):
+                  for index, child in enumerate(value):
+                      reject(child, f'{at}[{index}]')
+          reject(payload)
+          assert payload['decision_authority'] is False
+          assert payload['live_promotion_allowed'] is False
+          PY
+
+          git -C .bot-state config user.name "BLACK BOX Omega State Vault"
+          git -C .bot-state config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git -C .bot-state add state/stocks/stock_walk_forward.json
+          if git -C .bot-state diff --cached --quiet; then
+            echo "Walk-forward durable state unchanged."
+            exit 0
+          fi
+          git -C .bot-state commit -m "state: persist stock walk-forward research [skip ci]"
+
+          for attempt in 1 2 3; do
+            if git -C .bot-state pull --rebase origin bot-state \
+              && git -C .bot-state push origin HEAD:bot-state; then
+              echo "Walk-forward state persisted on attempt $attempt."
+              exit 0
+            fi
+            git -C .bot-state rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Failed to persist walk-forward state after retries."
+          exit 1
