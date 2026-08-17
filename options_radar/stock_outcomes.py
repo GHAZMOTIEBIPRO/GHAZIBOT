@@ -117,13 +117,34 @@ class StockOutcomeTracker:
         return "down" if (_number(row.get("move_pct"), 0.0) or 0.0) < 0 else "up"
 
     @staticmethod
-    def _cause_fields(row: dict[str, Any]) -> tuple[str, str, bool]:
+    def _cause_fields(row: dict[str, Any]) -> tuple[str, str, bool, str, str]:
+        """Freeze the entry-time catalyst evidence state without inventing proof.
+
+        `cause_tier` remains the actual source tier (or unknown). The additional
+        evidence state distinguishes a genuinely unproven cause from missing
+        metadata, which is useful for research cohorts but has no live authority.
+        """
+
         cause = row.get("cause") if isinstance(row.get("cause"), dict) else {}
-        return (
-            str(cause.get("category") or "unknown")[:80],
-            str(cause.get("source_tier") or "unknown")[:40],
-            bool(cause.get("official_confirmed")),
-        )
+        category = str(cause.get("category") or "unknown")[:80]
+        tier = str(cause.get("source_tier") or "unknown")[:40]
+        official = bool(cause.get("official_confirmed"))
+        raw_status = str(cause.get("status") or "").upper().strip()
+
+        if official:
+            evidence_state = "OFFICIAL_CONFIRMED"
+        elif raw_status == "NO_PRIMARY_CAUSE_PROVEN":
+            evidence_state = "NO_PRIMARY_CAUSE_PROVEN"
+        elif any(
+            str(cause.get(key) or "").strip()
+            for key in ("category", "headline", "source", "source_tier", "url")
+        ):
+            evidence_state = "PRIMARY_UNCONFIRMED"
+        else:
+            evidence_state = "UNKNOWN"
+
+        cause_status = raw_status or evidence_state
+        return category, tier, official, evidence_state, cause_status[:80]
 
     @staticmethod
     def _observe(state: dict[str, Any], price: float, now: datetime) -> None:
@@ -205,7 +226,7 @@ class StockOutcomeTracker:
             if signal_id in signals:
                 continue
             target, stop = STAGE_THRESHOLDS[stage]
-            cause_category, cause_tier, official = self._cause_fields(row)
+            cause_category, cause_tier, official, evidence_state, cause_status = self._cause_fields(row)
             score = _number(row.get("score"), 0.0) or 0.0
             state = {
                 "signal_id": signal_id,
@@ -220,6 +241,8 @@ class StockOutcomeTracker:
                 "cause_category": cause_category,
                 "cause_tier": cause_tier,
                 "official_cause": official,
+                "entry_evidence_state": evidence_state,
+                "entry_cause_status": cause_status,
                 "follow_through_target_pct": target,
                 "failure_threshold_pct": stop,
                 "observations": 1,
