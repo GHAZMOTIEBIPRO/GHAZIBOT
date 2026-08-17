@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-17T15:44:27.798348+00:00",
+  "updated_at": "2026-08-17T16:00:16.785275+00:00",
   "signals": {
     "f19745c89262b8663b00": {
       "signal_id": "f19745c89262b8663b00",
@@ -12502,11 +12502,11 @@
       "official_cause": false,
       "follow_through_target_pct": 6.0,
       "failure_threshold_pct": 6.0,
-      "observations": 5,
-      "last_observed_at": "2026-08-17T13:35:09.155542+00:00",
-      "last_price": 1.92,
-      "last_directional_return_pct": -2.2901,
-      "mfe_pct": 0.0,
+      "observations": 6,
+      "last_observed_at": "2026-08-17T16:00:16.785275+00:00",
+      "last_price": 2.02,
+      "last_directional_return_pct": 2.799,
+      "mfe_pct": 2.799,
       "mae_pct": -2.2901,
       "checkpoints": {
         "15m": {
@@ -15013,11 +15013,11 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 4,
-      "last_observed_at": "2026-08-17T13:35:09.155542+00:00",
-      "last_price": 1.92,
-      "last_directional_return_pct": 0.0,
-      "mfe_pct": 0.0,
+      "observations": 5,
+      "last_observed_at": "2026-08-17T16:00:16.785275+00:00",
+      "last_price": 2.02,
+      "last_directional_return_pct": 5.2083,
+      "mfe_pct": 5.2083,
       "mae_pct": 0.0,
       "checkpoints": {
         "15m": {
@@ -15563,13 +15563,19 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 1,
-      "last_observed_at": "2026-08-17T15:44:27.798348+00:00",
-      "last_price": 4.36,
-      "last_directional_return_pct": 0.0,
+      "observations": 2,
+      "last_observed_at": "2026-08-17T16:00:16.785275+00:00",
+      "last_price": 4.22,
+      "last_directional_return_pct": -3.211,
       "mfe_pct": 0.0,
-      "mae_pct": 0.0,
-      "checkpoints": {},
+      "mae_pct": -3.211,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-17T16:00:16.785275+00:00",
+          "price": 4.22,
+          "directional_return_pct": -3.211
+        }
+      },
       "terminal_outcome": "open",
       "measurement_basis": "repeated_radar_snapshots",
       "entry_stage": "PRESSURE_BUILDING",
@@ -15583,20 +15589,56 @@
           "score_band": "below-72"
         }
       ]
+    },
+    "2238d037a96d2790ce0c": {
+      "signal_id": "2238d037a96d2790ce0c",
+      "signal_time": "2026-08-17T16:00:16.785275+00:00",
+      "symbol": "PPSI",
+      "direction": "up",
+      "entry_price": 3.155,
+      "score": 62.11,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-08-17T16:00:16.785275+00:00",
+      "last_price": 3.155,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.11,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-08-17T16:00:16.785275+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 62.11,
+          "score_band": "below-72"
+        }
+      ]
     }
   },
   "measurement_note": "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; therefore it is used for calibration, not executable-fill claims.",
   "summary": {
-    "tracked": 327,
+    "tracked": 328,
     "matured_60m": 201,
     "successes": 57,
     "failures": 15,
-    "open": 251
+    "open": 252
   },
   "event_dedup": {
     "mode": "same_symbol_direction_within_4h",
     "reentry_gap_minutes": 240,
     "duplicates_collapsed_this_pass": 0,
-    "samples_after_dedup": 327
+    "samples_after_dedup": 328
   }
 }
