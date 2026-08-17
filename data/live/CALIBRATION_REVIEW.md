@@ -17,14 +17,14 @@
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 1 | 1 | 1 | 0.0% | 0.0% | 100.0% | 2.12 | -73.15 |
 | 70-79 | 72 | 72 | 69 | 24.6% | 10.1% | 73.9% | 22.16 | -85.20 |
-| 60-69 | 119 | 119 | 114 | 7.0% | 5.3% | 86.0% | 47.61 | -75.83 |
+| 60-69 | 119 | 119 | 114 | 7.0% | 5.3% | 86.0% | 47.69 | -75.83 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
 
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 73 | 11.0% | 84.9% | 56.03 |
+| bullish EMA stack; MACD/RSI bullish momentum | 73 | 11.0% | 84.9% | 56.16 |
 | bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 51 | 21.6% | 78.4% | 18.65 |
 | bearish EMA stack; MACD/RSI bearish momentum | 36 | 0.0% | 97.2% | 23.97 |
 | bullish EMA stack | 12 | 0.0% | 75.0% | 55.68 |
