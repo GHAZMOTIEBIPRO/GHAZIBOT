@@ -36,25 +36,68 @@ SECRET_KEY_TOKENS = (
     "credential",
 )
 
+SAFE_SECRET_METADATA_VALUES = frozenset(
+    {
+        "",
+        "configured",
+        "disabled",
+        "enabled",
+        "false",
+        "masked",
+        "missing",
+        "needs_credentials",
+        "needs_key",
+        "needs_token",
+        "none",
+        "not configured",
+        "not_configured",
+        "not_set",
+        "present",
+        "redacted",
+        "true",
+        "unavailable",
+        "unconfigured",
+        "unset",
+    }
+)
 
-def _has_secret_key(value: Any) -> bool:
+
+def _is_secret_like_key(key: Any) -> bool:
+    normalized = str(key).lower().replace("-", "_")
+    return any(token in normalized for token in SECRET_KEY_TOKENS)
+
+
+def _is_safe_secret_metadata_value(value: Any) -> bool:
+    if value is None or isinstance(value, bool):
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() in SAFE_SECRET_METADATA_VALUES
+    return False
+
+
+def _find_secret_value(value: Any, *, path: str = "$") -> str | None:
     if isinstance(value, dict):
         for key, child in value.items():
-            normalized = str(key).lower().replace("-", "_")
-            if any(token in normalized for token in SECRET_KEY_TOKENS):
-                return True
-            if _has_secret_key(child):
-                return True
-        return False
+            child_path = f"{path}.{key}"
+            if _is_secret_like_key(key) and not _is_safe_secret_metadata_value(child):
+                return child_path
+            nested = _find_secret_value(child, path=child_path)
+            if nested is not None:
+                return nested
+        return None
     if isinstance(value, list):
-        return any(_has_secret_key(item) for item in value)
-    return False
+        for index, child in enumerate(value):
+            nested = _find_secret_value(child, path=f"{path}[{index}]")
+            if nested is not None:
+                return nested
+    return None
 
 
 def _validate_json(path: Path) -> None:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if _has_secret_key(payload):
-        raise ValueError(f"secret-like key rejected from runtime vault: {path}")
+    rejected_path = _find_secret_value(payload)
+    if rejected_path is not None:
+        raise ValueError(f"secret-like value rejected from runtime vault: {path} at {rejected_path}")
 
 
 def _validate_jsonl(path: Path) -> None:
@@ -62,8 +105,11 @@ def _validate_jsonl(path: Path) -> None:
         if not line.strip():
             continue
         payload = json.loads(line)
-        if _has_secret_key(payload):
-            raise ValueError(f"secret-like key rejected from runtime vault: {path}:{index}")
+        rejected_path = _find_secret_value(payload)
+        if rejected_path is not None:
+            raise ValueError(
+                f"secret-like value rejected from runtime vault: {path}:{index} at {rejected_path}"
+            )
 
 
 def validate_runtime_file(path: Path) -> None:
