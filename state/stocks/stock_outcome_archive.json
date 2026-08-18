@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-17T22:42:20.468982+00:00",
+  "updated_at": "2026-08-18T14:53:56.705229+00:00",
   "mode": "EVENT_LEVEL_DECISIVE_ARCHIVE",
   "decision_authority": false,
   "maximum_records": 10000,
@@ -240,7 +240,7 @@
       "terminal_reason": "failure_threshold_observed",
       "terminal_at": "2026-08-13T17:36:57.549972+00:00",
       "mfe_pct": 4.3084,
-      "mae_pct": -7.6218,
+      "mae_pct": -22.5356,
       "checkpoints": {
         "15m": {
           "observed_at": "2026-08-13T14:21:37.540438+00:00",
@@ -251,6 +251,11 @@
           "observed_at": "2026-08-13T15:31:32.454950+00:00",
           "price": 1.6791,
           "directional_return_pct": 3.6418
+        },
+        "1d": {
+          "observed_at": "2026-08-18T14:50:21.405043+00:00",
+          "price": 1.255,
+          "directional_return_pct": -22.5356
         }
       },
       "measurement_basis": "repeated_radar_snapshots",
@@ -1971,6 +1976,11 @@
           "observed_at": "2026-08-14T19:10:34.289122+00:00",
           "price": 3.24,
           "directional_return_pct": -17.1355
+        },
+        "1d": {
+          "observed_at": "2026-08-18T14:50:21.405043+00:00",
+          "price": 3.47,
+          "directional_return_pct": -11.2532
         }
       },
       "measurement_basis": "repeated_radar_snapshots",
@@ -3010,13 +3020,103 @@
       },
       "measurement_basis": "repeated_radar_snapshots",
       "event_level_deduped": true
+    },
+    "ea57c2de06914113300c": {
+      "signal_id": "ea57c2de06914113300c",
+      "signal_time": "2026-08-14T00:11:50.027113+00:00",
+      "symbol": "OFAL",
+      "direction": "up",
+      "entry_price": 1.63,
+      "entry_stage": "EXPLOSION",
+      "entry_score": 82.32,
+      "entry_score_band": "80-89",
+      "stage": "EXPLOSION",
+      "score": 82.32,
+      "score_band": "80-89",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "LEGACY_UNKNOWN",
+      "entry_cause_status": "LEGACY_UNKNOWN",
+      "follow_through_target_pct": 6.0,
+      "failure_threshold_pct": 6.0,
+      "terminal_outcome": "failed",
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-08-18T14:50:21.405043+00:00",
+      "mfe_pct": 0.0,
+      "mae_pct": -23.0061,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-14T09:03:38.298470+00:00",
+          "price": 1.63,
+          "directional_return_pct": 0.0
+        },
+        "60m": {
+          "observed_at": "2026-08-14T09:03:38.298470+00:00",
+          "price": 1.63,
+          "directional_return_pct": 0.0
+        },
+        "1d": {
+          "observed_at": "2026-08-18T14:50:21.405043+00:00",
+          "price": 1.255,
+          "directional_return_pct": -23.0061
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
+    },
+    "4221dc07a3165f4ba390": {
+      "signal_id": "4221dc07a3165f4ba390",
+      "signal_time": "2026-08-14T20:27:29.999856+00:00",
+      "symbol": "LBGJ",
+      "direction": "up",
+      "entry_price": 3.2,
+      "entry_stage": "EXPLOSION",
+      "entry_score": 88.26,
+      "entry_score_band": "80-89",
+      "stage": "EXPLOSION",
+      "score": 88.26,
+      "score_band": "80-89",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "LEGACY_UNKNOWN",
+      "entry_cause_status": "LEGACY_UNKNOWN",
+      "follow_through_target_pct": 6.0,
+      "failure_threshold_pct": 6.0,
+      "terminal_outcome": "success",
+      "terminal_reason": "follow_through_target_observed",
+      "terminal_at": "2026-08-18T14:50:21.405043+00:00",
+      "mfe_pct": 8.4375,
+      "mae_pct": 0.0,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-18T14:50:21.405043+00:00",
+          "price": 3.47,
+          "directional_return_pct": 8.4375
+        },
+        "60m": {
+          "observed_at": "2026-08-18T14:50:21.405043+00:00",
+          "price": 3.47,
+          "directional_return_pct": 8.4375
+        },
+        "1d": {
+          "observed_at": "2026-08-18T14:50:21.405043+00:00",
+          "price": 3.47,
+          "directional_return_pct": 8.4375
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
     }
   },
   "summary": {
-    "records": 72,
-    "successes": 57,
-    "failures": 15,
-    "added_this_pass": 0,
-    "updated_this_pass": 0
+    "records": 74,
+    "successes": 58,
+    "failures": 16,
+    "added_this_pass": 2,
+    "updated_this_pass": 2
   }
 }
