@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-18T16:49:54.556292+00:00",
+  "updated_at": "2026-08-18T17:44:12.769284+00:00",
   "mode": "EVENT_LEVEL_DECISIVE_ARCHIVE",
   "decision_authority": false,
   "maximum_records": 10000,
@@ -3205,13 +3205,98 @@
       },
       "measurement_basis": "repeated_radar_snapshots",
       "event_level_deduped": true
+    },
+    "a80a157504a2353d5019": {
+      "signal_id": "a80a157504a2353d5019",
+      "signal_time": "2026-08-13T14:05:45.367917+00:00",
+      "symbol": "CMND",
+      "direction": "up",
+      "entry_price": 1.72,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 66.0,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 66.0,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "LEGACY_UNKNOWN",
+      "entry_cause_status": "LEGACY_UNKNOWN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "success",
+      "terminal_reason": "follow_through_target_observed",
+      "terminal_at": "2026-08-18T17:35:49.129533+00:00",
+      "mfe_pct": 15.6977,
+      "mae_pct": 0.0,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-13T14:21:37.540438+00:00",
+          "price": 1.8,
+          "directional_return_pct": 4.6512
+        },
+        "60m": {
+          "observed_at": "2026-08-18T17:35:49.129533+00:00",
+          "price": 1.99,
+          "directional_return_pct": 15.6977
+        },
+        "1d": {
+          "observed_at": "2026-08-18T17:35:49.129533+00:00",
+          "price": 1.99,
+          "directional_return_pct": 15.6977
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
+    },
+    "e388195589e4eb84b788": {
+      "signal_id": "e388195589e4eb84b788",
+      "signal_time": "2026-08-18T15:47:40.450679+00:00",
+      "symbol": "INHD",
+      "direction": "up",
+      "entry_price": 8.82,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 69.03,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 69.03,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "failed",
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-08-18T17:35:49.129533+00:00",
+      "mfe_pct": 0.1134,
+      "mae_pct": -5.3288,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-18T16:05:16.603009+00:00",
+          "price": 8.83,
+          "directional_return_pct": 0.1134
+        },
+        "60m": {
+          "observed_at": "2026-08-18T17:03:33.957337+00:00",
+          "price": 8.41,
+          "directional_return_pct": -4.6485
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
     }
   },
   "summary": {
-    "records": 76,
-    "successes": 60,
-    "failures": 16,
-    "added_this_pass": 1,
-    "updated_this_pass": 3
+    "records": 78,
+    "successes": 61,
+    "failures": 17,
+    "added_this_pass": 2,
+    "updated_this_pass": 0
   }
 }
