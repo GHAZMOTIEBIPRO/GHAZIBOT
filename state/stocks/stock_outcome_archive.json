@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-20T19:00:12.779584+00:00",
+  "updated_at": "2026-08-20T19:46:50.900049+00:00",
   "mode": "EVENT_LEVEL_DECISIVE_ARCHIVE",
   "decision_authority": false,
   "maximum_records": 10000,
@@ -4081,6 +4081,11 @@
           "observed_at": "2026-08-19T20:47:25.120647+00:00",
           "price": 1.21,
           "directional_return_pct": -0.779
+        },
+        "1d": {
+          "observed_at": "2026-08-20T19:13:34.178198+00:00",
+          "price": 1.3901,
+          "directional_return_pct": 13.9893
         }
       },
       "measurement_basis": "repeated_radar_snapshots",
@@ -4149,7 +4154,7 @@
       "terminal_outcome": "success",
       "terminal_reason": "follow_through_target_observed",
       "terminal_at": "2026-08-20T14:59:20.063486+00:00",
-      "mfe_pct": 67.4299,
+      "mfe_pct": 71.0407,
       "mae_pct": 0.0,
       "checkpoints": {
         "15m": {
@@ -4330,7 +4335,7 @@
       "terminal_reason": "failure_threshold_observed",
       "terminal_at": "2026-08-20T17:34:04.429255+00:00",
       "mfe_pct": 0.0,
-      "mae_pct": -8.66,
+      "mae_pct": -8.6667,
       "checkpoints": {
         "15m": {
           "observed_at": "2026-08-20T17:02:11.690852+00:00",
@@ -4369,7 +4374,7 @@
       "terminal_outcome": "success",
       "terminal_reason": "follow_through_target_observed",
       "terminal_at": "2026-08-20T17:59:43.452346+00:00",
-      "mfe_pct": 169.6104,
+      "mfe_pct": 182.0831,
       "mae_pct": -0.2597,
       "checkpoints": {
         "15m": {
@@ -4435,13 +4440,98 @@
       },
       "measurement_basis": "repeated_radar_snapshots",
       "event_level_deduped": true
+    },
+    "5d90975e0099a0cd8b05": {
+      "signal_id": "5d90975e0099a0cd8b05",
+      "signal_time": "2026-08-19T16:46:05.836002+00:00",
+      "symbol": "BRNX",
+      "direction": "up",
+      "entry_price": 2.83,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.64,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 62.64,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "success",
+      "terminal_reason": "follow_through_target_observed",
+      "terminal_at": "2026-08-20T19:13:34.178198+00:00",
+      "mfe_pct": 12.1908,
+      "mae_pct": 0.0,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-20T19:13:34.178198+00:00",
+          "price": 3.175,
+          "directional_return_pct": 12.1908
+        },
+        "60m": {
+          "observed_at": "2026-08-20T19:13:34.178198+00:00",
+          "price": 3.175,
+          "directional_return_pct": 12.1908
+        },
+        "1d": {
+          "observed_at": "2026-08-20T19:13:34.178198+00:00",
+          "price": 3.175,
+          "directional_return_pct": 12.1908
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
+    },
+    "ebceac371de288fb17b5": {
+      "signal_id": "ebceac371de288fb17b5",
+      "signal_time": "2026-08-20T14:59:20.063486+00:00",
+      "symbol": "CYPH",
+      "direction": "up",
+      "entry_price": 1.175,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.7,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 63.7,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "failed",
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-08-20T19:13:34.178198+00:00",
+      "mfe_pct": 2.1277,
+      "mae_pct": -5.1064,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-20T16:30:31.431762+00:00",
+          "price": 1.2,
+          "directional_return_pct": 2.1277
+        },
+        "60m": {
+          "observed_at": "2026-08-20T16:30:31.431762+00:00",
+          "price": 1.2,
+          "directional_return_pct": 2.1277
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
     }
   },
   "summary": {
-    "records": 104,
-    "successes": 80,
-    "failures": 24,
+    "records": 106,
+    "successes": 81,
+    "failures": 25,
     "added_this_pass": 2,
-    "updated_this_pass": 0
+    "updated_this_pass": 4
   }
 }
