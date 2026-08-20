@@ -24,7 +24,7 @@
 
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 73 | 11.0% | 84.9% | 58.08 |
+| bullish EMA stack; MACD/RSI bullish momentum | 73 | 11.0% | 84.9% | 58.09 |
 | bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 51 | 21.6% | 78.4% | 18.65 |
 | bearish EMA stack; MACD/RSI bearish momentum | 36 | 0.0% | 97.2% | 23.97 |
 | bullish EMA stack | 12 | 0.0% | 75.0% | 55.68 |
