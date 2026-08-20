@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-20T17:47:02.815735+00:00",
+  "generated_at": "2026-08-20T19:00:29.093030+00:00",
   "mode": "SHADOW_LEARNING",
   "live_alert_weights_changed": false,
   "free_autonomy": {
@@ -22,11 +22,11 @@
     "error": ""
   },
   "stock_archive_summary": {
-    "records": 102,
-    "successes": 78,
+    "records": 104,
+    "successes": 80,
     "failures": 24,
     "added_this_pass": 2,
-    "updated_this_pass": 3
+    "updated_this_pass": 0
   },
   "stock_outcome_audit": {
     "available": true,
@@ -38,22 +38,22 @@
     "coverage_ready": false
   },
   "option_outcome_summary": {
-    "tracked_signals": 37,
-    "priced_signals": 37,
-    "path_evaluated": 36,
+    "tracked_signals": 41,
+    "priced_signals": 41,
+    "path_evaluated": 40,
     "successful": 0,
     "stopped_out": 0,
     "ambiguous": 0,
-    "open": 37,
+    "open": 41,
     "option_contract_basis": 0,
-    "underlying_proxy_basis": 36,
-    "average_mfe_pct": 0.9112,
-    "average_mae_pct": -2.9318,
+    "underlying_proxy_basis": 40,
+    "average_mfe_pct": -0.7218,
+    "average_mae_pct": -4.6105,
     "measurement_note": "Path-dependent paper tracking. Contract OHLC is preferred; underlying OHLC is a documented fallback. Stop-first is terminal. Same-bar stop/target is ambiguous and never counted as a win."
   },
   "calibration": {
-    "sample_size": 3,
-    "raw_priced_sample": 3,
+    "sample_size": 8,
+    "raw_priced_sample": 8,
     "priced_sample": 0,
     "matured_sample": 0,
     "five_day_sample": 0,
@@ -90,8 +90,8 @@
       },
       {
         "band": "70-79",
-        "signals": 0,
-        "observed": 0,
+        "signals": 4,
+        "observed": 4,
         "priced": 0,
         "matured": 0,
         "target_1_rate": null,
@@ -103,8 +103,8 @@
       },
       {
         "band": "60-69",
-        "signals": 1,
-        "observed": 1,
+        "signals": 2,
+        "observed": 2,
         "priced": 0,
         "matured": 0,
         "target_1_rate": null,
@@ -133,7 +133,7 @@
   },
   "model": {
     "schema_version": 1,
-    "generated_at": "2026-08-20T17:47:02.813435+00:00",
+    "generated_at": "2026-08-20T19:00:29.090395+00:00",
     "policy": {
       "no_live_weight_change_before_minimum_sample": true,
       "stock_min_matured": 60,
@@ -149,9 +149,9 @@
     },
     "stock": {
       "ready": true,
-      "matured_decisive": 102,
+      "matured_decisive": 104,
       "minimum_required": 60,
-      "baseline_success_rate": 0.7647,
+      "baseline_success_rate": 0.7692,
       "score_bands": {
         "80-89": {
           "sample": 29,
@@ -170,10 +170,10 @@
           "score_adjustment": 0.0
         },
         "below-72": {
-          "sample": 34,
-          "successes": 26,
+          "sample": 36,
+          "successes": 28,
           "failures": 8,
-          "success_rate": 0.7647,
+          "success_rate": 0.7778,
           "eligible": true,
           "score_adjustment": 0.0
         },
@@ -204,20 +204,20 @@
           "score_adjustment": 0.0
         },
         "PRESSURE_BUILDING": {
-          "sample": 27,
-          "successes": 21,
+          "sample": 29,
+          "successes": 23,
           "failures": 6,
-          "success_rate": 0.7778,
+          "success_rate": 0.7931,
           "eligible": true,
           "score_adjustment": 0.0
         }
       },
       "regimes": {
         "risk_on": {
-          "sample": 101,
-          "successes": 78,
+          "sample": 103,
+          "successes": 80,
           "failures": 23,
-          "success_rate": 0.7723,
+          "success_rate": 0.7767,
           "eligible": true,
           "score_adjustment": 0.0
         },
@@ -232,10 +232,10 @@
       },
       "cause_tiers": {
         "unknown": {
-          "sample": 102,
-          "successes": 78,
+          "sample": 104,
+          "successes": 80,
           "failures": 24,
-          "success_rate": 0.7647,
+          "success_rate": 0.7692,
           "eligible": true,
           "score_adjustment": 0.0
         }
@@ -250,11 +250,11 @@
           "score_adjustment": 0.0
         },
         "NO_PRIMARY_CAUSE_PROVEN": {
-          "sample": 14,
-          "successes": 10,
+          "sample": 16,
+          "successes": 12,
           "failures": 4,
-          "success_rate": 0.7143,
-          "eligible": false,
+          "success_rate": 0.75,
+          "eligible": true,
           "score_adjustment": 0.0
         }
       }
