@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T19:35:15.158984+00:00",
+  "generated_at": "2026-08-21T19:53:57.670970+00:00",
   "policy": {
     "social_is_supporting_only": true,
     "social_cannot_promote_recommendation_alone": true,
@@ -22,7 +22,7 @@
       "success": true,
       "records": 15,
       "error": null,
-      "checked_at": "2026-08-21T19:35:09.556487+00:00",
+      "checked_at": "2026-08-21T19:53:51.787423+00:00",
       "date_window_start": "2026-07-31",
       "date_window_end": "2026-08-21"
     },
@@ -32,7 +32,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-08-21T19:35:15.158822+00:00"
+      "checked_at": "2026-08-21T19:53:57.670862+00:00"
     },
     {
       "provider": "x_recent_search",
@@ -40,7 +40,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-08-21T19:35:15.158841+00:00"
+      "checked_at": "2026-08-21T19:53:57.670880+00:00"
     },
     {
       "provider": "reddit_oauth_search",
@@ -48,7 +48,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-08-21T19:35:15.158849+00:00"
+      "checked_at": "2026-08-21T19:53:57.670886+00:00"
     },
     {
       "provider": "benzinga_option_activity",
@@ -56,7 +56,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-08-21T19:35:15.158854+00:00"
+      "checked_at": "2026-08-21T19:53:57.670890+00:00"
     },
     {
       "provider": "alpaca_stock_snapshots",
@@ -64,7 +64,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-08-21T19:35:15.158859+00:00"
+      "checked_at": "2026-08-21T19:53:57.670894+00:00"
     },
     {
       "provider": "alpaca_option_snapshots",
@@ -72,7 +72,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-08-21T19:35:15.158863+00:00"
+      "checked_at": "2026-08-21T19:53:57.670896+00:00"
     }
   ],
   "stocks": {
@@ -196,6 +196,41 @@
         "short_exempt_volume": 62529.0,
         "total_volume": 11414282.95,
         "short_volume_ratio": 0.3044,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF",
+          "NYTRF"
+        ],
+        "market_codes": [
+          "B",
+          "N",
+          "Q"
+        ],
+        "rows_aggregated": 3,
+        "context_only": true,
+        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
+      },
+      "news": null,
+      "x": null,
+      "reddit": null,
+      "alpaca": null,
+      "social_score": 0.0
+    },
+    "IOVA": {
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
+      "market_sources": [],
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-08-20",
+        "short_volume": 9272514.69,
+        "short_exempt_volume": 43379.0,
+        "total_volume": 19816458.79,
+        "short_volume_ratio": 0.4679,
         "reporting_facilities": [
           "NCTRF",
           "NQTRF",
@@ -354,41 +389,6 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "CRM": {
-      "sources": [
-        "FINRA Reg SHO"
-      ],
-      "official_sources": [
-        "FINRA Reg SHO"
-      ],
-      "market_sources": [],
-      "finra": {
-        "source": "FINRA Reg SHO Daily Short Sale Volume",
-        "trade_date": "2026-08-20",
-        "short_volume": 2132389.9,
-        "short_exempt_volume": 7655.0,
-        "total_volume": 3227358.52,
-        "short_volume_ratio": 0.6607,
-        "reporting_facilities": [
-          "NCTRF",
-          "NQTRF",
-          "NYTRF"
-        ],
-        "market_codes": [
-          "B",
-          "N",
-          "Q"
-        ],
-        "rows_aggregated": 3,
-        "context_only": true,
-        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
-      },
-      "news": null,
-      "x": null,
-      "reddit": null,
-      "alpaca": null,
-      "social_score": 0.0
-    },
     "CRSP": {
       "sources": [
         "FINRA Reg SHO"
@@ -424,7 +424,7 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "IOVA": {
+    "CRM": {
       "sources": [
         "FINRA Reg SHO"
       ],
@@ -435,10 +435,10 @@
       "finra": {
         "source": "FINRA Reg SHO Daily Short Sale Volume",
         "trade_date": "2026-08-20",
-        "short_volume": 9272514.69,
-        "short_exempt_volume": 43379.0,
-        "total_volume": 19816458.79,
-        "short_volume_ratio": 0.4679,
+        "short_volume": 2132389.9,
+        "short_exempt_volume": 7655.0,
+        "total_volume": 3227358.52,
+        "short_volume_ratio": 0.6607,
         "reporting_facilities": [
           "NCTRF",
           "NQTRF",
@@ -494,7 +494,7 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "GILD": {
+    "AMGN": {
       "sources": [
         "FINRA Reg SHO"
       ],
@@ -505,10 +505,10 @@
       "finra": {
         "source": "FINRA Reg SHO Daily Short Sale Volume",
         "trade_date": "2026-08-20",
-        "short_volume": 610518.3,
-        "short_exempt_volume": 413.0,
-        "total_volume": 1971533.74,
-        "short_volume_ratio": 0.3097,
+        "short_volume": 505799.7,
+        "short_exempt_volume": 0.0,
+        "total_volume": 814335.38,
+        "short_volume_ratio": 0.6211,
         "reporting_facilities": [
           "NCTRF",
           "NQTRF",
@@ -529,7 +529,7 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "AMGN": {
+    "GILD": {
       "sources": [
         "FINRA Reg SHO"
       ],
@@ -540,10 +540,10 @@
       "finra": {
         "source": "FINRA Reg SHO Daily Short Sale Volume",
         "trade_date": "2026-08-20",
-        "short_volume": 505799.7,
-        "short_exempt_volume": 0.0,
-        "total_volume": 814335.38,
-        "short_volume_ratio": 0.6211,
+        "short_volume": 610518.3,
+        "short_exempt_volume": 413.0,
+        "total_volume": 1971533.74,
+        "short_volume_ratio": 0.3097,
         "reporting_facilities": [
           "NCTRF",
           "NQTRF",
