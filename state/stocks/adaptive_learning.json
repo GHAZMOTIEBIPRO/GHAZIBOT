@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-20T22:46:27.053405+00:00",
+  "generated_at": "2026-08-21T14:54:29.582316+00:00",
   "policy": {
     "no_live_weight_change_before_minimum_sample": true,
     "stock_min_matured": 60,
@@ -16,17 +16,17 @@
   },
   "stock": {
     "ready": true,
-    "matured_decisive": 108,
+    "matured_decisive": 111,
     "minimum_required": 60,
-    "baseline_success_rate": 0.7593,
+    "baseline_success_rate": 0.7477,
     "score_bands": {
       "80-89": {
-        "sample": 30,
+        "sample": 32,
         "successes": 21,
-        "failures": 9,
-        "success_rate": 0.7,
+        "failures": 11,
+        "success_rate": 0.6562,
         "eligible": true,
-        "score_adjustment": 0.0
+        "score_adjustment": -1.65
       },
       "72-79": {
         "sample": 21,
@@ -37,10 +37,10 @@
         "score_adjustment": 0.0
       },
       "below-72": {
-        "sample": 39,
-        "successes": 30,
+        "sample": 40,
+        "successes": 31,
         "failures": 9,
-        "success_rate": 0.7692,
+        "success_rate": 0.775,
         "eligible": true,
         "score_adjustment": 0.0
       },
@@ -55,36 +55,36 @@
     },
     "stages": {
       "EXPLOSION": {
-        "sample": 68,
+        "sample": 69,
         "successes": 51,
-        "failures": 17,
-        "success_rate": 0.75,
+        "failures": 18,
+        "success_rate": 0.7391,
         "eligible": true,
         "score_adjustment": 0.0
       },
       "IGNITION": {
-        "sample": 8,
+        "sample": 9,
         "successes": 6,
-        "failures": 2,
-        "success_rate": 0.75,
+        "failures": 3,
+        "success_rate": 0.6667,
         "eligible": false,
         "score_adjustment": 0.0
       },
       "PRESSURE_BUILDING": {
-        "sample": 32,
-        "successes": 25,
+        "sample": 33,
+        "successes": 26,
         "failures": 7,
-        "success_rate": 0.7812,
+        "success_rate": 0.7879,
         "eligible": true,
         "score_adjustment": 0.0
       }
     },
     "regimes": {
       "risk_on": {
-        "sample": 107,
-        "successes": 82,
-        "failures": 25,
-        "success_rate": 0.7664,
+        "sample": 110,
+        "successes": 83,
+        "failures": 27,
+        "success_rate": 0.7545,
         "eligible": true,
         "score_adjustment": 0.0
       },
@@ -99,28 +99,28 @@
     },
     "cause_tiers": {
       "unknown": {
-        "sample": 108,
-        "successes": 82,
-        "failures": 26,
-        "success_rate": 0.7593,
+        "sample": 111,
+        "successes": 83,
+        "failures": 28,
+        "success_rate": 0.7477,
         "eligible": true,
         "score_adjustment": 0.0
       }
     },
     "evidence_states": {
       "LEGACY_UNKNOWN": {
-        "sample": 90,
+        "sample": 92,
         "successes": 69,
-        "failures": 21,
-        "success_rate": 0.7667,
+        "failures": 23,
+        "success_rate": 0.75,
         "eligible": true,
         "score_adjustment": 0.0
       },
       "NO_PRIMARY_CAUSE_PROVEN": {
-        "sample": 18,
-        "successes": 13,
+        "sample": 19,
+        "successes": 14,
         "failures": 5,
-        "success_rate": 0.7222,
+        "success_rate": 0.7368,
         "eligible": true,
         "score_adjustment": 0.0
       }
