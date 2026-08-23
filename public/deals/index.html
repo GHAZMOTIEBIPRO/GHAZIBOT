@@ -1,1 +1,34 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="رادار الخصومات — عروض السعودية والعروض العالمية والمنوعة، موثقة وروابط مباشرة"><title>رادار الخصومات</title><link rel="stylesheet" href="./styles.css"></head><body><div class="watermark" aria-hidden="true" data-signature="رأس الزعراء"></div><header><div><h1>رادار الخصومات</h1><p>خصومات موثقة • روابط مباشرة • تحقق من السعر والمخزون والشحن</p></div><div class="stats"><span id="dealCount">— عرض</span><span id="updatedAt">آخر تحديث: —</span></div></header><main><nav class="mode-tabs" aria-label="نوع العروض"><button class="mode active" data-mode="saudi"><strong>🇸🇦 عروض السعودية</strong><small id="saudiCount">الشركات والمحلات والمتاجر والخدمات</small></button><button class="mode" data-mode="global"><strong>🌍 عروض عالمية</strong><small id="globalCount">متاجر عالمية تشحن للسعودية</small></button><button class="mode" data-mode="mixed"><strong>✨ منوع</strong><small>أقوى الصفقات والمواسم والخدمات الرقمية</small></button></nav><section id="nationalDay" class="season-banner" hidden><div><b>🇸🇦 عروض اليوم الوطني 96</b><span>رصد موسمي للعروض الموثقة من المتاجر نفسها</span></div><button id="showNationalDay">عرض عروض اليوم الوطني</button></section><section class="controls"><input id="search" type="search" placeholder="ابحث عن منتج أو متجر…"><select id="minDiscount"><option value="0">كل الخصومات</option><option value="30">30%+</option><option value="50">50%+</option><option value="70">70%+</option><option value="80">80%+</option><option value="90">90%+</option></select><select id="sort"><option value="score">الأقوى</option><option value="discount">الأعلى خصمًا</option><option value="priceAsc">الأقل سعرًا</option><option value="fresh">الأحدث تحققًا</option></select></section><section id="categoryChips" class="chips"></section><section id="storeChips" class="chips store-chips"></section><section id="empty" class="empty" hidden>لا توجد عروض موثقة تطابق الفلاتر الآن.</section><section id="grid" class="grid"></section></main><footer>الأسعار والمخزون والشحن قد تتغير لدى المتجر. الرادار يعرض آخر تحقق مسجل.</footer><script type="module" src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="رادار الخصومات — عروض السعودية والعروض العالمية والمنوعة، موثقة وروابط مباشرة" />
+  <title>رادار الخصومات</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="watermark" aria-hidden="true"><span>غازي بن متعب</span></div>
+  <header>
+    <div><h1>رادار الخصومات</h1><p>خصومات موثقة • روابط مباشرة • تحقق من السعر والمخزون والشحن</p></div>
+    <div class="stats"><span id="dealCount">— عرض</span><span id="updatedAt">آخر تحديث: —</span></div>
+  </header>
+  <main>
+    <nav class="mode-tabs" aria-label="نوع العروض">
+      <button class="mode active" data-mode="saudi"><strong>🇸🇦 عروض السعودية</strong><small id="saudiCount">الشركات والمحلات والمتاجر والخدمات</small></button>
+      <button class="mode" data-mode="global"><strong>🌍 عروض عالمية</strong><small id="globalCount">متاجر عالمية تشحن للسعودية</small></button>
+      <button class="mode" data-mode="mixed"><strong>✨ منوع</strong><small>أقوى الصفقات والمواسم والخدمات الرقمية</small></button>
+    </nav>
+    <section id="nationalDay" class="season-banner" hidden><div><b>🇸🇦 عروض اليوم الوطني 96</b><span>رصد موسمي للعروض الموثقة من المتاجر نفسها</span></div><button id="showNationalDay">عرض عروض اليوم الوطني</button></section>
+    <section class="controls">
+      <input id="search" type="search" placeholder="ابحث عن منتج أو متجر…" />
+      <select id="minDiscount"><option value="0">كل الخصومات</option><option value="30">30%+</option><option value="50">50%+</option><option value="70">70%+</option><option value="80">80%+</option><option value="90">90%+</option></select>
+      <select id="sort"><option value="score">الأقوى</option><option value="discount">الأعلى خصمًا</option><option value="priceAsc">الأقل سعرًا</option><option value="fresh">الأحدث تحققًا</option></select>
+    </section>
+    <section id="categoryChips" class="chips"></section><section id="storeChips" class="chips store-chips"></section>
+    <section id="empty" class="empty" hidden>لا توجد عروض موثقة تطابق الفلاتر الآن.</section><section id="grid" class="grid"></section>
+  </main>
+  <footer>الأسعار والمخزون والشحن قد تتغير لدى المتجر. الرادار يعرض آخر تحقق مسجل.</footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
