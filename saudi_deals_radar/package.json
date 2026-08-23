@@ -1,10 +1,10 @@
 {
   "name": "saudi-deals-radar-standalone",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
-    "test": "node scripts/self-test.mjs && node scripts/generic-self-test.mjs",
+    "test": "node --check scripts/radar.mjs && node scripts/self-test.mjs && node scripts/generic-self-test.mjs",
     "scan": "node scripts/radar.mjs",
     "serve": "node scripts/serve.mjs"
   },
