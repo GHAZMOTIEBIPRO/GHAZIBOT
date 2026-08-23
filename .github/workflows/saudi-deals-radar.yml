@@ -12,7 +12,8 @@ on:
       - "saudi_deals_radar/package.json"
       - ".github/workflows/saudi-deals-radar.yml"
   schedule:
-    - cron: "10 21,3,9,15 * * *"
+    # كل 3 ساعات: تغطية واسعة بمجموعات أصغر وأكثر ثباتًا
+    - cron: "10 */3 * * *"
 permissions:
   contents: write
   pages: write
@@ -23,7 +24,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,11 +36,11 @@ jobs:
       - name: Scan rotating merchant universe
         working-directory: saudi_deals_radar
         env:
-          RADAR_MAX_SOURCES: "48"
-          RADAR_MAX_PRODUCTS_PER_SOURCE: "10"
+          RADAR_MAX_SOURCES: "28"
+          RADAR_MAX_PRODUCTS_PER_SOURCE: "7"
           RADAR_EXTRA_DEAL_PAGES: "3"
-          RADAR_PAGE_DELAY_MS: "350"
-          RADAR_PRODUCT_DELAY_MS: "180"
+          RADAR_PAGE_DELAY_MS: "300"
+          RADAR_PRODUCT_DELAY_MS: "150"
         run: npm run scan
       - name: Sync Vercel public data
         working-directory: saudi_deals_radar
