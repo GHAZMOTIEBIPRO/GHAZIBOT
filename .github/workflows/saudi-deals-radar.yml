@@ -1,0 +1,77 @@
+name: Radar Deals Saudi V4.2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "saudi_deals_radar/scripts/**"
+      - "saudi_deals_radar/data/sources/**"
+      - "saudi_deals_radar/public/index.html"
+      - "saudi_deals_radar/public/app.js"
+      - "saudi_deals_radar/public/styles.css"
+      - "saudi_deals_radar/package.json"
+      - ".github/workflows/saudi-deals-radar.yml"
+  schedule:
+    - cron: "10 21,3,9,15 * * *"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: saudi-deals-radar-v42
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Self test
+        working-directory: saudi_deals_radar
+        run: npm test
+      - name: Scan rotating merchant universe
+        working-directory: saudi_deals_radar
+        env:
+          RADAR_MAX_SOURCES: "48"
+          RADAR_MAX_PRODUCTS_PER_SOURCE: "10"
+          RADAR_EXTRA_DEAL_PAGES: "3"
+          RADAR_PAGE_DELAY_MS: "350"
+          RADAR_PRODUCT_DELAY_MS: "180"
+        run: npm run scan
+      - name: Upload page artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./saudi_deals_radar/public"
+      - name: Commit refreshed radar state
+        run: |
+          if git diff --quiet -- saudi_deals_radar/public/data saudi_deals_radar/data/history.json saudi_deals_radar/data/scan-state.json; then
+            echo "No radar data changes"
+            exit 0
+          fi
+          git config user.name "Radar Deals Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add saudi_deals_radar/public/data saudi_deals_radar/data/history.json saudi_deals_radar/data/scan-state.json
+          git commit -m "data: refresh Saudi deals radar V4.2"
+          git push
+
+  deploy:
+    needs: scan
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Deploy Radar
+        id: deployment
+        uses: actions/deploy-pages@v4
