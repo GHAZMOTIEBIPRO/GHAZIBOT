@@ -1,5 +1,4 @@
 name: Radar Deals Saudi V4.2
-
 on:
   workflow_dispatch:
   push:
@@ -14,16 +13,13 @@ on:
       - ".github/workflows/saudi-deals-radar.yml"
   schedule:
     - cron: "10 21,3,9,15 * * *"
-
 permissions:
   contents: write
   pages: write
   id-token: write
-
 concurrency:
   group: saudi-deals-radar-v42
   cancel-in-progress: false
-
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -45,22 +41,21 @@ jobs:
           RADAR_PAGE_DELAY_MS: "350"
           RADAR_PRODUCT_DELAY_MS: "180"
         run: npm run scan
+      - name: Sync Vercel public data
+        working-directory: saudi_deals_radar
+        run: node scripts/sync-vercel.mjs
       - name: Upload page artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./saudi_deals_radar/public"
       - name: Commit refreshed radar state
         run: |
-          if git diff --quiet -- saudi_deals_radar/public/data saudi_deals_radar/data/history.json saudi_deals_radar/data/scan-state.json; then
-            echo "No radar data changes"
-            exit 0
-          fi
+          if git diff --quiet -- saudi_deals_radar/public/data saudi_deals_radar/data/history.json saudi_deals_radar/data/scan-state.json public/deals/data; then echo "No radar data changes"; exit 0; fi
           git config user.name "Radar Deals Bot"
           git config user.email "actions@users.noreply.github.com"
-          git add saudi_deals_radar/public/data saudi_deals_radar/data/history.json saudi_deals_radar/data/scan-state.json
+          git add saudi_deals_radar/public/data saudi_deals_radar/data/history.json saudi_deals_radar/data/scan-state.json public/deals/data
           git commit -m "data: refresh Saudi deals radar V4.2"
           git push
-
   deploy:
     needs: scan
     environment:

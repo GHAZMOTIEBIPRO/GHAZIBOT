@@ -1,0 +1,1 @@
+import fs from 'node:fs/promises';await fs.mkdir('../public/deals/data',{recursive:true});await Promise.all([fs.copyFile('public/data/deals.json','../public/deals/data/deals.json'),fs.copyFile('public/data/source-health.json','../public/deals/data/source-health.json')]);console.log('VERCEL_DEALS_SYNC_OK');
