@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-24T19:46:06.718175+00:00",
+  "updated_at": "2026-08-24T20:49:29.222900+00:00",
   "mode": "EVENT_LEVEL_DECISIVE_ARCHIVE",
   "decision_authority": false,
   "maximum_records": 10000,
@@ -5919,7 +5919,7 @@
       "terminal_outcome": "success",
       "terminal_reason": "follow_through_target_observed",
       "terminal_at": "2026-08-24T19:37:48.707222+00:00",
-      "mfe_pct": 25.974,
+      "mfe_pct": 27.9221,
       "mae_pct": 0.0,
       "checkpoints": {
         "15m": {
@@ -6050,7 +6050,7 @@
       "terminal_reason": "follow_through_target_observed",
       "terminal_at": "2026-08-24T19:37:48.707222+00:00",
       "mfe_pct": 8.0616,
-      "mae_pct": 0.0,
+      "mae_pct": -0.0362,
       "checkpoints": {
         "15m": {
           "observed_at": "2026-08-24T17:55:36.637971+00:00",
@@ -6065,13 +6065,58 @@
       },
       "measurement_basis": "repeated_radar_snapshots",
       "event_level_deduped": true
+    },
+    "edf939496d6af33ed44f": {
+      "signal_id": "edf939496d6af33ed44f",
+      "signal_time": "2026-08-17T18:04:07.920477+00:00",
+      "symbol": "RETO",
+      "direction": "up",
+      "entry_price": 1.349,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 64.94,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 64.94,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "LEGACY_UNKNOWN",
+      "entry_cause_status": "LEGACY_UNKNOWN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "success",
+      "terminal_reason": "follow_through_target_observed",
+      "terminal_at": "2026-08-24T19:59:51.393138+00:00",
+      "mfe_pct": 21.9422,
+      "mae_pct": 0.0,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-24T19:59:51.393138+00:00",
+          "price": 1.645,
+          "directional_return_pct": 21.9422
+        },
+        "60m": {
+          "observed_at": "2026-08-24T19:59:51.393138+00:00",
+          "price": 1.645,
+          "directional_return_pct": 21.9422
+        },
+        "1d": {
+          "observed_at": "2026-08-24T19:59:51.393138+00:00",
+          "price": 1.645,
+          "directional_return_pct": 21.9422
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
     }
   },
   "summary": {
-    "records": 140,
-    "successes": 107,
+    "records": 141,
+    "successes": 108,
     "failures": 33,
-    "added_this_pass": 4,
-    "updated_this_pass": 5
+    "added_this_pass": 1,
+    "updated_this_pass": 2
   }
 }
