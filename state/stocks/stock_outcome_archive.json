@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-21T22:42:39.120050+00:00",
+  "updated_at": "2026-08-24T15:01:42.572691+00:00",
   "mode": "EVENT_LEVEL_DECISIVE_ARCHIVE",
   "decision_authority": false,
   "maximum_records": 10000,
@@ -4771,6 +4771,11 @@
           "observed_at": "2026-08-21T10:40:05.088896+00:00",
           "price": 1.36,
           "directional_return_pct": 0.0
+        },
+        "1d": {
+          "observed_at": "2026-08-24T08:59:41.965511+00:00",
+          "price": 1.57,
+          "directional_return_pct": 15.4412
         }
       },
       "measurement_basis": "repeated_radar_snapshots",
@@ -5191,6 +5196,11 @@
           "observed_at": "2026-08-21T19:16:38.429511+00:00",
           "price": 0.974,
           "directional_return_pct": 8.4029
+        },
+        "1d": {
+          "observed_at": "2026-08-24T08:59:41.965511+00:00",
+          "price": 1.0,
+          "directional_return_pct": 11.2966
         }
       },
       "measurement_basis": "repeated_radar_snapshots",
@@ -5285,13 +5295,103 @@
       },
       "measurement_basis": "repeated_radar_snapshots",
       "event_level_deduped": true
+    },
+    "7f93ee1b5ceac9463ba3": {
+      "signal_id": "7f93ee1b5ceac9463ba3",
+      "signal_time": "2026-08-17T14:57:46.390997+00:00",
+      "symbol": "CAPR",
+      "direction": "up",
+      "entry_price": 7.1001,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.02,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 63.02,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "LEGACY_UNKNOWN",
+      "entry_cause_status": "LEGACY_UNKNOWN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "failed",
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-08-24T14:27:07.299348+00:00",
+      "mfe_pct": 7.745,
+      "mae_pct": -5.5647,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-17T16:25:12.500389+00:00",
+          "price": 7.15,
+          "directional_return_pct": 0.7028
+        },
+        "60m": {
+          "observed_at": "2026-08-17T16:25:12.500389+00:00",
+          "price": 7.15,
+          "directional_return_pct": 0.7028
+        },
+        "1d": {
+          "observed_at": "2026-08-19T18:53:51.251252+00:00",
+          "price": 7.51,
+          "directional_return_pct": 5.7732
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
+    },
+    "2f5face06c0e917c28a3": {
+      "signal_id": "2f5face06c0e917c28a3",
+      "signal_time": "2026-08-19T18:53:51.251252+00:00",
+      "symbol": "CAPR",
+      "direction": "up",
+      "entry_price": 7.51,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.26,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 62.26,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "failed",
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-08-24T14:27:07.299348+00:00",
+      "mfe_pct": 1.8642,
+      "mae_pct": -10.719,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-19T19:40:27.231652+00:00",
+          "price": 7.65,
+          "directional_return_pct": 1.8642
+        },
+        "60m": {
+          "observed_at": "2026-08-24T14:27:07.299348+00:00",
+          "price": 6.705,
+          "directional_return_pct": -10.719
+        },
+        "1d": {
+          "observed_at": "2026-08-24T14:27:07.299348+00:00",
+          "price": 6.705,
+          "directional_return_pct": -10.719
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
     }
   },
   "summary": {
-    "records": 123,
+    "records": 125,
     "successes": 94,
-    "failures": 29,
-    "added_this_pass": 0,
-    "updated_this_pass": 0
+    "failures": 31,
+    "added_this_pass": 2,
+    "updated_this_pass": 2
   }
 }
