@@ -13,6 +13,7 @@ from typing import Any
 import pandas as pd
 
 from options_radar.catalysts import CatalystScanner
+from options_radar.optionable_universe import IndependentOptionableUniverse
 from options_radar.providers import load_universe
 from options_radar.settings import Settings
 from scripts.telegram_transport import send_html_message
@@ -116,6 +117,7 @@ def send_news(frame: pd.DataFrame, state: dict[str, Any]) -> int:
         }
         sent += 1
 
+    # Bound the persisted dedupe registry.
     if len(sent_map) > 1200:
         ordered = sorted(
             sent_map.items(),
@@ -145,9 +147,47 @@ def main() -> None:
 
     settings = Settings()
     settings.validate()
-    symbols = load_universe(args.universe)[: max(1, min(args.max_symbols, settings.max_universe_size))]
-    if not symbols:
+    configured = load_universe(args.universe)
+    limit = max(20, min(args.max_symbols, settings.max_universe_size))
+
+    # Rotate across OCC's official optionable-underlying directory so the news
+    # watcher is not permanently limited to a hand-maintained watchlist. A small
+    # liquid/configured core is repeated every run; the remainder is a deterministic
+    # 15-minute shard that advances through the official universe.
+    universe_builder = IndependentOptionableUniverse(user_agent=settings.sec_user_agent)
+    official, _, _, occ_errors, cache_used = universe_builder.fetch_official()
+    non_company_roots = {"SPX", "VIX", "NDX", "RUT"}
+    official = [symbol for symbol in official if symbol not in non_company_roots]
+
+    priority = []
+    seen = set()
+    for symbol in configured:
+        symbol = str(symbol).strip().upper()
+        if symbol and symbol not in seen and symbol not in non_company_roots:
+            priority.append(symbol)
+            seen.add(symbol)
+
+    pool = official or priority
+    if not pool:
         raise RuntimeError("News watch universe is empty")
+
+    core_count = min(24, max(8, limit // 4), len(priority))
+    core = priority[:core_count]
+    shard_size = max(1, limit - len(core))
+    # One shard per 15-minute slot. With ~100 symbols/run the watcher can cycle
+    # through several thousand OCC-optionable underlyings during an extended day.
+    slot = int(datetime.now(timezone.utc).timestamp() // (15 * 60))
+    start = (slot * shard_size) % len(pool)
+    rotated = pool[start:] + pool[:start]
+    symbols = []
+    selected = set()
+    for symbol in [*core, *rotated]:
+        if symbol in selected:
+            continue
+        selected.add(symbol)
+        symbols.append(symbol)
+        if len(symbols) >= limit:
+            break
 
     frame = CatalystScanner(settings).scan(symbols, lookback_days=max(1, args.lookback_days))
     state_path = Path(args.state)
@@ -156,7 +196,10 @@ def main() -> None:
         sent = send_news(frame, state)
     finally:
         _save(state_path, state)
-    print(f"Material news sender: symbols={len(symbols)} events={len(frame)} sent={sent}")
+    print(
+        f"Material news sender: symbols={len(symbols)} events={len(frame)} sent={sent} "
+        f"official_occ={bool(official)} cache={cache_used} occ_errors={len(occ_errors)}"
+    )
 
 
 if __name__ == "__main__":
