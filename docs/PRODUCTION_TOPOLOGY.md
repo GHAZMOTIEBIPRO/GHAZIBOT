@@ -95,7 +95,8 @@ Security/fail-closed behavior:
 Companion scheduled workflow: `.github/workflows/sniper-news-watch.yml`
 
 Purpose:
-- independent material-company-news watch for the configured market universe;
+- independent material-company-news watch across a rotating OCC optionable-underlying universe rather than a fixed watchlist only;
+- keep a configured/liquid core in every run and rotate the remaining coverage in deterministic 15-minute shards;
 - SEC/openFDA/Yahoo-news evidence through the existing catalyst scanner;
 - Telegram deduplication across scheduled runs;
 - informational only; news cannot promote a stock/options/Sniper candidate by itself.
