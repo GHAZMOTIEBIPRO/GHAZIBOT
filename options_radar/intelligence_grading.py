@@ -44,6 +44,7 @@ def register_alert(
     direction: str,
     baseline_underlying: float,
     baseline_instrument: float = 0.0,
+    instrument_key: str = "",
     score: float = 0.0,
     evidence_signature: str = "",
     sent_at: datetime | None = None,
@@ -59,6 +60,7 @@ def register_alert(
         "sent_at": sent_at.isoformat(),
         "baseline_underlying": round(max(0.0, baseline_underlying), 8),
         "baseline_instrument": round(max(0.0, baseline_instrument), 8),
+        "instrument_key": instrument_key,
         "score": round(score, 4),
         "evidence_signature": evidence_signature[:180],
         "checkpoints": {},
@@ -86,7 +88,8 @@ def grade_alerts(
         symbol = str(record.get("symbol") or "").upper()
         current_underlying = _num(underlying_prices.get(symbol))
         baseline_underlying = _num(record.get("baseline_underlying"))
-        current_instrument = _num(instrument_prices.get(alert_id))
+        instrument_key = str(record.get("instrument_key") or alert_id)
+        current_instrument = _num(instrument_prices.get(instrument_key))
         baseline_instrument = _num(record.get("baseline_instrument"))
         checkpoints = record.setdefault("checkpoints", {})
         direction = str(record.get("direction") or "UP").upper()
@@ -112,7 +115,6 @@ def grade_alerts(
                 "direction_correct": directional > 0,
             }
 
-    # Bound old completed records, preserving the most recent evidence for calibration.
     if len(outcomes) > 1200:
         ordered = sorted(
             outcomes.items(),
