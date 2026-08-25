@@ -5,8 +5,7 @@ import json
 import logging
 import os
 import threading
-import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -113,6 +112,12 @@ class BlackBoxBot:
     the server enriches those signals with the radar's stock/options/catalyst context.
     """
 
+    OPTION_HORIZONS = (
+        ("يومي", 0, 2),
+        ("أسبوعي", 3, 10),
+        ("شهري", 11, 45),
+    )
+
     def __init__(self, settings: Settings | None = None, config: BotConfig | None = None):
         self.settings = settings or Settings()
         self.config = config or BotConfig()
@@ -144,7 +149,7 @@ class BlackBoxBot:
         sent = 0
         if catalysts.empty:
             return sent
-        rows = catalysts.sort_values("score", ascending=False).head(30)
+        rows = catalysts.reindex(catalysts["score"].abs().sort_values(ascending=False).index).head(30)
         for _, row in rows.iterrows():
             score = float(row.get("score", 0) or 0)
             if abs(score) < 30:
@@ -178,13 +183,14 @@ class BlackBoxBot:
         candidates = frame.copy()
         if "new_setup_candidate" in candidates:
             candidates = candidates[candidates["new_setup_candidate"] == True]  # noqa: E712
-        candidates = candidates.sort_values("score", ascending=False).head(self.config.top_options * 2)
+        candidates = candidates.sort_values("score", ascending=False).head(self.config.top_options * 3)
         for _, row in candidates.iterrows():
             identity = {
                 "contract": self._safe(row.get("contract_symbol")),
                 "score": round(float(row.get("score", 0) or 0), 1),
                 "volume": int(float(row.get("volume", 0) or 0)),
                 "oi": int(float(row.get("open_interest", 0) or 0)),
+                "horizon": self._safe(row.get("horizon")),
             }
             if not identity["contract"] or identity["contract"] == "-":
                 continue
@@ -195,6 +201,7 @@ class BlackBoxBot:
             message = (
                 "🎯 بلاك بوكس | رصد عقد\n"
                 f"السهم: {self._safe(row.get('symbol'))}\n"
+                f"المدة: {identity['horizon']}\n"
                 f"العقد: {side_ar} | تنفيذ {self._safe(row.get('strike'))} | انتهاء {self._safe(row.get('expiration'))[:10]}\n"
                 f"الجودة: {identity['score']}/100 | {self._safe(row.get('rating'))}\n"
                 f"الحجم/OI: {self._safe(row.get('vol_oi'))}\n"
@@ -210,6 +217,40 @@ class BlackBoxBot:
             self.notifier.send(message)
             sent += 1
         return sent
+
+    def _scan_option_horizons(
+        self,
+        option_symbols: list[str],
+        catalysts: pd.DataFrame,
+    ) -> tuple[pd.DataFrame, dict[str, str], dict[str, int]]:
+        frames: list[pd.DataFrame] = []
+        providers: dict[str, str] = {}
+        counts: dict[str, int] = {}
+        for label, min_dte, max_dte in self.OPTION_HORIZONS:
+            horizon_settings = replace(
+                self.settings,
+                free_swing_mode=False,
+                min_dte=min_dte,
+                max_dte=max_dte,
+            )
+            result = OptionsRadar(horizon_settings).scan(
+                option_symbols,
+                top=self.config.top_options,
+                output_csv=f"results/options_{label}_latest.csv",
+                catalysts=catalysts,
+            )
+            frame = result.opportunities.copy()
+            if not frame.empty:
+                frame["horizon"] = label
+                frames.append(frame)
+            providers[label] = result.provider
+            counts[label] = int(len(frame))
+        combined = pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
+        if not combined.empty:
+            combined = combined.sort_values("score", ascending=False)
+            Path("results").mkdir(parents=True, exist_ok=True)
+            combined.to_csv("results/options_all_horizons_latest.csv", index=False)
+        return combined, providers, counts
 
     def scan_once(self) -> dict[str, Any]:
         if not self._scan_lock.acquire(blocking=False):
@@ -229,24 +270,23 @@ class BlackBoxBot:
                 if not stock_result.opportunities.empty
                 else symbols[: max(20, self.config.top_stocks)]
             )
-            option_result = OptionsRadar(self.settings).scan(
+            option_frame, option_providers, option_counts = self._scan_option_horizons(
                 option_symbols,
-                top=self.config.top_options,
-                output_csv="results/options_latest.csv",
-                catalysts=catalysts,
+                catalysts,
             )
             news_sent = self._notify_news(catalysts)
-            option_sent = self._notify_options(option_result.opportunities)
+            option_sent = self._notify_options(option_frame)
             self._last_snapshot = {
                 "status": "ok",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "symbols": len(symbols),
                 "market_regime": stock_result.regime,
                 "stock_candidates": int(len(stock_result.opportunities)),
-                "option_candidates": int(len(option_result.opportunities)),
+                "option_candidates": int(len(option_frame)),
+                "option_candidates_by_horizon": option_counts,
                 "news_notifications": news_sent,
                 "option_notifications": option_sent,
-                "options_provider": option_result.provider,
+                "options_providers": option_providers,
                 "elapsed_seconds": round((datetime.now(timezone.utc) - started).total_seconds(), 2),
             }
             return self._last_snapshot
