@@ -118,6 +118,14 @@ def _deliver(payload: dict[str, Any], fingerprint: str) -> None:
 class SniperHandler(SimpleHTTPRequestHandler):
     server_version = "BLACKBOX-Sniper/1.0"
 
+    def end_headers(self) -> None:
+        path = urlparse(self.path).path
+        if path.startswith("/data/") or path.endswith("latest.json"):
+            self.send_header("Cache-Control", "no-store, max-age=0")
+        else:
+            self.send_header("Cache-Control", "public, max-age=300")
+        super().end_headers()
+
     def _json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         self.send_response(status)
