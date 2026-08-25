@@ -1,6 +1,6 @@
 # BLACK BOX Ω — Production Topology
 
-_Last reviewed: 2026-08-18_
+_Last reviewed: 2026-08-25_
 
 This file is the canonical map of the repository. If README wording or a historical workflow name conflicts with this document, verify the current workflow triggers and update this document before changing production behavior.
 
@@ -12,6 +12,7 @@ This file is the canonical map of the repository. If README wording or a histori
 4. **Indicative/delayed/unofficial options data is research-grade only.** It cannot masquerade as production OPRA/execution-quality evidence.
 5. **Learning is fail-closed.** Research models have no live authority until explicit out-of-sample gates are satisfied and separately promoted.
 6. **`main` is the code branch.** Machine-managed durable research/runtime state belongs in `bot-state`.
+7. **Sniper is an independent underlying-price alert source.** A Sniper webhook may trigger a Telegram signal and request same-side contract/news enrichment, but option-chain data may not retroactively create a Sniper signal.
 
 ## Canonical live paths
 
@@ -71,6 +72,34 @@ Purpose:
 - observe independently-produced stock/options evidence;
 - enrich an existing opportunity message when both paths agree;
 - never block, suppress, or originate a stock/options decision.
+
+### 6) Sniper TradingView webhook bridge
+
+Production entrypoint remains `web: python main.py`. The dashboard handler inherits the Sniper webhook handler, so the same HTTP service serves static dashboard content and `/webhooks/sniper`.
+
+Purpose:
+- accept validated JSON alerts emitted by the TradingView indicator **سنايبر**;
+- acknowledge the TradingView webhook immediately and perform delivery/enrichment in a bounded background worker;
+- send one Arabic Telegram message for the Sniper signal;
+- inspect the existing options engine for a same-direction contract using the signal horizon;
+- inspect the existing catalyst engine for material company news/official events;
+- edit the original Telegram message when enrichment is available instead of generating confirmation spam.
+
+Security/fail-closed behavior:
+- prefer a secret-bearing webhook path via `SNIPER_WEBHOOK_SECRET`;
+- without that secret, accept only TradingView's documented webhook source IPs;
+- reject stale or malformed Sniper payloads;
+- never place Telegram/provider credentials in the TradingView payload;
+- Sniper does not execute broker orders.
+
+Companion scheduled workflow: `.github/workflows/sniper-news-watch.yml`
+
+Purpose:
+- independent material-company-news watch across a rotating OCC optionable-underlying universe rather than a fixed watchlist only;
+- keep a configured/liquid core in every run and rotate the remaining coverage in deterministic 15-minute shards;
+- SEC/openFDA/Yahoo-news evidence through the existing catalyst scanner;
+- Telegram deduplication across scheduled runs;
+- informational only; news cannot promote a stock/options/Sniper candidate by itself.
 
 ## Telegram transport
 
@@ -183,3 +212,4 @@ Before merging any change that touches a live path, verify:
 6. Runtime state cannot introduce secrets into the public repository or `bot-state`.
 7. CI covers the real CLI entrypoint, not compile-only behavior.
 8. Production verification is performed after merge for runtime-boundary/workflow changes.
+9. Sniper webhook changes preserve fast acknowledgement, source authentication, stale-event rejection, and non-execution semantics.
