@@ -21,13 +21,6 @@ from scripts.sniper_webhook_server import SniperHandler
 class DashboardRequestHandler(SniperHandler):
     """Serve the dashboard plus Sniper webhook with fresh market JSON responses."""
 
-    def end_headers(self) -> None:
-        if self.path.startswith("/data/") or self.path.endswith("latest.json"):
-            self.send_header("Cache-Control", "no-store, max-age=0")
-        else:
-            self.send_header("Cache-Control", "public, max-age=300")
-        super().end_headers()
-
 
 def serve_dashboard() -> int:
     """Serve public/ and the Sniper webhook on the Render web process."""
