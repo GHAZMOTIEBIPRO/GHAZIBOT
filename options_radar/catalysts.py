@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import json
 import logging
 import re
 import time
@@ -129,30 +130,50 @@ class CatalystScanner:
         })
         self.cache_dir = Path("data/cache")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self._ticker_maps: tuple[dict[str, tuple[str, str]], dict[str, str]] | None = None
 
     def _ticker_map(self) -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
+        if self._ticker_maps is not None:
+            return self._ticker_maps
+
         cache = self.cache_dir / "sec_company_tickers.json"
-        payload: dict
+        payload: dict = {}
         try:
             response = self.session.get(SEC_TICKERS, timeout=20)
             response.raise_for_status()
-            payload = response.json()
-            cache.write_text(response.text, encoding="utf-8")
-        except Exception:
-            if not cache.exists():
-                raise
-            import json
-            payload = json.loads(cache.read_text(encoding="utf-8"))
+            candidate = response.json()
+            if not isinstance(candidate, dict):
+                raise ValueError("SEC company_tickers.json did not return an object")
+            payload = candidate
+            try:
+                cache.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            except OSError as exc:
+                LOGGER.warning("Could not persist SEC ticker-map cache: %s", exc)
+        except Exception as exc:
+            LOGGER.warning("SEC ticker map unavailable; degrading SEC catalyst mapping instead of aborting: %s", exc)
+            if cache.exists():
+                try:
+                    candidate = json.loads(cache.read_text(encoding="utf-8"))
+                    if isinstance(candidate, dict):
+                        payload = candidate
+                    else:
+                        LOGGER.warning("SEC ticker-map cache has invalid shape; SEC mapping disabled for this run")
+                except (OSError, json.JSONDecodeError) as cache_exc:
+                    LOGGER.warning("SEC ticker-map cache could not be read; SEC mapping disabled: %s", cache_exc)
+
         by_cik: dict[str, tuple[str, str]] = {}
         by_ticker: dict[str, str] = {}
         for item in payload.values():
+            if not isinstance(item, dict):
+                continue
             cik = str(item.get("cik_str", "")).zfill(10)
             ticker = str(item.get("ticker", "")).upper()
             title = str(item.get("title", ""))
             if cik and ticker:
                 by_cik[cik] = (ticker, title)
                 by_ticker[ticker] = title
-        return by_cik, by_ticker
+        self._ticker_maps = (by_cik, by_ticker)
+        return self._ticker_maps
 
     def _fetch_filing_text(self, filing_url: str) -> str:
         response = self.session.get(filing_url, timeout=20)
