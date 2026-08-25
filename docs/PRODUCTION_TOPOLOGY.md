@@ -75,7 +75,7 @@ Purpose:
 
 ### 6) Sniper TradingView webhook bridge
 
-Runtime entrypoint: `python -m scripts.sniper_webhook_server`
+Production entrypoint remains `web: python main.py`. The dashboard handler inherits the Sniper webhook handler, so the same HTTP service serves static dashboard content and `/webhooks/sniper`.
 
 Purpose:
 - accept validated JSON alerts emitted by the TradingView indicator **سنايبر**;
