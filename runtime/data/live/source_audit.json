@@ -1,10 +1,120 @@
 {
   "stocks": {},
   "options": {
-    "BNTX": {
+    "HOOD": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:43.093813+03:00",
+      "fetched_at": "2026-08-25T16:38:37.804691+03:00",
+      "attempts": [
+        {
+          "provider": "tradier",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: TRADIER_TOKEN is not configured"
+        },
+        {
+          "provider": "marketdata",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "ValueError: MARKETDATA_TOKEN is required"
+        },
+        {
+          "provider": "finnhub",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 1,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
+        },
+        {
+          "provider": "yahoo",
+          "operation": "option_chain",
+          "success": true,
+          "elapsed_ms": 2098,
+          "rows": 919,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "HOOD",
+        "min_dte": 0,
+        "max_dte": 120,
+        "successful_sources": [
+          "yahoo"
+        ],
+        "source_count": 1,
+        "cross_source_confirmed": false,
+        "contracts_after_merge": 919,
+        "opra_source_active": false
+      }
+    },
+    "MRVL": {
+      "source": "yahoo",
+      "freshness": "unofficial / may be delayed",
+      "fetched_at": "2026-08-25T16:38:39.639376+03:00",
+      "attempts": [
+        {
+          "provider": "tradier",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 1,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: TRADIER_TOKEN is not configured"
+        },
+        {
+          "provider": "marketdata",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 1,
+          "rows": 0,
+          "status_code": null,
+          "error": "ValueError: MARKETDATA_TOKEN is required"
+        },
+        {
+          "provider": "finnhub",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 1,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
+        },
+        {
+          "provider": "yahoo",
+          "operation": "option_chain",
+          "success": true,
+          "elapsed_ms": 2396,
+          "rows": 1110,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "MRVL",
+        "min_dte": 0,
+        "max_dte": 120,
+        "successful_sources": [
+          "yahoo"
+        ],
+        "source_count": 1,
+        "cross_source_confirmed": false,
+        "contracts_after_merge": 1110,
+        "opra_source_active": false
+      }
+    },
+    "MRNA": {
+      "source": "yahoo",
+      "freshness": "unofficial / may be delayed",
+      "fetched_at": "2026-08-25T16:38:40.341532+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -37,172 +147,7 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 623,
-          "rows": 113,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "BNTX",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 113,
-        "opra_source_active": false
-      }
-    },
-    "REGN": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:46.984067+03:00",
-      "attempts": [
-        {
-          "provider": "tradier",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: TRADIER_TOKEN is not configured"
-        },
-        {
-          "provider": "marketdata",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "ValueError: MARKETDATA_TOKEN is required"
-        },
-        {
-          "provider": "finnhub",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
-        },
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 1782,
-          "rows": 834,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "REGN",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 834,
-        "opra_source_active": false
-      }
-    },
-    "VRTX": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:48.216069+03:00",
-      "attempts": [
-        {
-          "provider": "tradier",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 6,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: TRADIER_TOKEN is not configured"
-        },
-        {
-          "provider": "marketdata",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "ValueError: MARKETDATA_TOKEN is required"
-        },
-        {
-          "provider": "finnhub",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 5,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
-        },
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 1962,
-          "rows": 565,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "VRTX",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 565,
-        "opra_source_active": false
-      }
-    },
-    "MRNA": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:50.649385+03:00",
-      "attempts": [
-        {
-          "provider": "tradier",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: TRADIER_TOKEN is not configured"
-        },
-        {
-          "provider": "marketdata",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "ValueError: MARKETDATA_TOKEN is required"
-        },
-        {
-          "provider": "finnhub",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
-        },
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 3421,
+          "elapsed_ms": 2478,
           "rows": 1343,
           "status_code": null,
           "error": null
@@ -221,126 +166,16 @@
         "opra_source_active": false
       }
     },
-    "MRVL": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:54.969153+03:00",
-      "attempts": [
-        {
-          "provider": "tradier",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 5,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: TRADIER_TOKEN is not configured"
-        },
-        {
-          "provider": "marketdata",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "ValueError: MARKETDATA_TOKEN is required"
-        },
-        {
-          "provider": "finnhub",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
-        },
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 3725,
-          "rows": 1110,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "MRVL",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 1110,
-        "opra_source_active": false
-      }
-    },
-    "AMGN": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:54.668876+03:00",
-      "attempts": [
-        {
-          "provider": "tradier",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 5,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: TRADIER_TOKEN is not configured"
-        },
-        {
-          "provider": "marketdata",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "ValueError: MARKETDATA_TOKEN is required"
-        },
-        {
-          "provider": "finnhub",
-          "operation": "option_chain",
-          "success": false,
-          "elapsed_ms": 0,
-          "rows": 0,
-          "status_code": null,
-          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
-        },
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 3005,
-          "rows": 764,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "AMGN",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 764,
-        "opra_source_active": false
-      }
-    },
     "IOVA": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:55.529560+03:00",
+      "fetched_at": "2026-08-25T16:38:42.754798+03:00",
       "attempts": [
         {
           "provider": "tradier",
           "operation": "option_chain",
           "success": false,
-          "elapsed_ms": 2,
+          "elapsed_ms": 5,
           "rows": 0,
           "status_code": null,
           "error": "RuntimeError: TRADIER_TOKEN is not configured"
@@ -367,7 +202,7 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 4052,
+          "elapsed_ms": 1413,
           "rows": 239,
           "status_code": null,
           "error": null
@@ -389,7 +224,7 @@
     "CRM": {
       "source": "yahoo",
       "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-08-25T16:15:58.009019+03:00",
+      "fetched_at": "2026-08-25T16:38:45.290015+03:00",
       "attempts": [
         {
           "provider": "tradier",
@@ -422,7 +257,7 @@
           "provider": "yahoo",
           "operation": "option_chain",
           "success": true,
-          "elapsed_ms": 1769,
+          "elapsed_ms": 2873,
           "rows": 731,
           "status_code": null,
           "error": null
@@ -438,6 +273,116 @@
         "source_count": 1,
         "cross_source_confirmed": false,
         "contracts_after_merge": 731,
+        "opra_source_active": false
+      }
+    },
+    "CRSP": {
+      "source": "yahoo",
+      "freshness": "unofficial / may be delayed",
+      "fetched_at": "2026-08-25T16:38:44.647933+03:00",
+      "attempts": [
+        {
+          "provider": "tradier",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: TRADIER_TOKEN is not configured"
+        },
+        {
+          "provider": "marketdata",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "ValueError: MARKETDATA_TOKEN is required"
+        },
+        {
+          "provider": "finnhub",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
+        },
+        {
+          "provider": "yahoo",
+          "operation": "option_chain",
+          "success": true,
+          "elapsed_ms": 2276,
+          "rows": 336,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "CRSP",
+        "min_dte": 0,
+        "max_dte": 120,
+        "successful_sources": [
+          "yahoo"
+        ],
+        "source_count": 1,
+        "cross_source_confirmed": false,
+        "contracts_after_merge": 336,
+        "opra_source_active": false
+      }
+    },
+    "MU": {
+      "source": "yahoo",
+      "freshness": "unofficial / may be delayed",
+      "fetched_at": "2026-08-25T16:38:57.803136+03:00",
+      "attempts": [
+        {
+          "provider": "tradier",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: TRADIER_TOKEN is not configured"
+        },
+        {
+          "provider": "marketdata",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "ValueError: MARKETDATA_TOKEN is required"
+        },
+        {
+          "provider": "finnhub",
+          "operation": "option_chain",
+          "success": false,
+          "elapsed_ms": 0,
+          "rows": 0,
+          "status_code": null,
+          "error": "RuntimeError: FINNHUB_API_KEY is not configured"
+        },
+        {
+          "provider": "yahoo",
+          "operation": "option_chain",
+          "success": true,
+          "elapsed_ms": 4853,
+          "rows": 3727,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "MU",
+        "min_dte": 0,
+        "max_dte": 120,
+        "successful_sources": [
+          "yahoo"
+        ],
+        "source_count": 1,
+        "cross_source_confirmed": false,
+        "contracts_after_merge": 3727,
         "opra_source_active": false
       }
     }
