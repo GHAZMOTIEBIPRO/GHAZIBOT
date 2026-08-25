@@ -40,7 +40,11 @@ class DedupeRegistry:
         if not isinstance(raw, dict):
             return {}
         now = time.time()
-        return {str(key): float(value) for key, value in raw.items() if isinstance(value, (int, float)) and now - float(value) <= self.ttl_seconds}
+        return {
+            str(key): float(value)
+            for key, value in raw.items()
+            if isinstance(value, (int, float)) and now - float(value) <= self.ttl_seconds
+        }
 
     def _save(self, data: dict[str, float]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -69,7 +73,16 @@ class DedupeRegistry:
 
 
 def _event_fingerprint(payload: dict[str, Any]) -> str:
-    fields = [payload.get("schema"), payload.get("symbol"), payload.get("ticker_id"), payload.get("direction"), payload.get("timeframe"), payload.get("event_time_ms") or payload.get("time_close_ms"), payload.get("entry"), payload.get("score")]
+    fields = [
+        payload.get("schema"),
+        payload.get("symbol"),
+        payload.get("ticker_id"),
+        payload.get("direction"),
+        payload.get("timeframe"),
+        payload.get("event_time_ms") or payload.get("time_close_ms"),
+        payload.get("entry"),
+        payload.get("score"),
+    ]
     raw = "|".join(str(value or "") for value in fields)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -85,7 +98,10 @@ def _configured_secret() -> str:
 
 
 def _telegram_ready() -> bool:
-    return bool(str(os.getenv("TELEGRAM_BOT_TOKEN") or "").strip() and str(os.getenv("TELEGRAM_CHAT_ID") or "").strip())
+    return bool(
+        str(os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+        and str(os.getenv("TELEGRAM_CHAT_ID") or "").strip()
+    )
 
 
 def _client_ip(handler: SimpleHTTPRequestHandler) -> str:
@@ -102,7 +118,12 @@ def _deliver(payload: dict[str, Any], fingerprint: str) -> None:
         message_id = getattr(result, "message_id", None)
         if message_id is None:
             return
-        if str(os.getenv("SNIPER_ENRICH_ENABLED", "true")).strip().lower() in {"0", "false", "no", "off"}:
+        if str(os.getenv("SNIPER_ENRICH_ENABLED", "true")).strip().lower() in {
+            "0",
+            "false",
+            "no",
+            "off",
+        }:
             return
         try:
             enriched = enrich_sniper_message(event, base_text)
@@ -119,11 +140,25 @@ class SniperHandler(SimpleHTTPRequestHandler):
     server_version = "BLACKBOX-Sniper/1.0"
 
     def end_headers(self) -> None:
-        path = urlparse(self.path).path
-        if path.startswith("/data/") or path.endswith("latest.json") or path.startswith("/webhooks/") or path == "/health":
-            self.send_header("Cache-Control", "no-store, max-age=0")
-        else:
-            self.send_header("Cache-Control", "public, max-age=300")
+        # A subclass (main.py) may already have selected the dashboard cache policy.
+        # Do not emit a second contradictory Cache-Control header.
+        buffered = getattr(self, "_headers_buffer", [])
+        has_cache_control = any(
+            isinstance(header, (bytes, bytearray))
+            and header.lower().startswith(b"cache-control:")
+            for header in buffered
+        )
+        if not has_cache_control:
+            path = urlparse(self.path).path
+            if (
+                path.startswith("/data/")
+                or path.endswith("latest.json")
+                or path.startswith("/webhooks/")
+                or path == "/health"
+            ):
+                self.send_header("Cache-Control", "no-store, max-age=0")
+            else:
+                self.send_header("Cache-Control", "public, max-age=300")
         super().end_headers()
 
     def _json(self, status: int, payload: dict[str, Any]) -> None:
@@ -136,7 +171,19 @@ class SniperHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if urlparse(self.path).path == "/health":
-            self._json(HTTPStatus.OK, {"ok": True, "service": "black-box-sniper-webhook", "secret_configured": bool(_configured_secret()), "telegram_configured": _telegram_ready(), "enrichment_enabled": str(os.getenv("SNIPER_ENRICH_ENABLED", "true")).strip().lower() not in {"0", "false", "no", "off"}})
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "ok": True,
+                    "service": "black-box-sniper-webhook",
+                    "secret_configured": bool(_configured_secret()),
+                    "telegram_configured": _telegram_ready(),
+                    "enrichment_enabled": str(
+                        os.getenv("SNIPER_ENRICH_ENABLED", "true")
+                    ).strip().lower()
+                    not in {"0", "false", "no", "off"},
+                },
+            )
             return
         super().do_GET()
 
@@ -154,10 +201,16 @@ class SniperHandler(SimpleHTTPRequestHandler):
                 return
         else:
             if len(parts) != 2 or _client_ip(self) not in TRADINGVIEW_WEBHOOK_IPS:
-                self._json(HTTPStatus.FORBIDDEN, {"ok": False, "error": "tradingview_source_required"})
+                self._json(
+                    HTTPStatus.FORBIDDEN,
+                    {"ok": False, "error": "tradingview_source_required"},
+                )
                 return
         if not _telegram_ready():
-            self._json(HTTPStatus.SERVICE_UNAVAILABLE, {"ok": False, "error": "telegram_not_configured"})
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"ok": False, "error": "telegram_not_configured"},
+            )
             return
 
         try:
@@ -165,25 +218,52 @@ class SniperHandler(SimpleHTTPRequestHandler):
         except ValueError:
             length = 0
         if length <= 0 or length > MAX_BODY_BYTES:
-            self._json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE if length > MAX_BODY_BYTES else HTTPStatus.BAD_REQUEST, {"ok": False, "error": "invalid_body_size"})
+            status = (
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+                if length > MAX_BODY_BYTES
+                else HTTPStatus.BAD_REQUEST
+            )
+            self._json(status, {"ok": False, "error": "invalid_body_size"})
             return
         if "application/json" not in str(self.headers.get("Content-Type") or "").lower():
-            self._json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"ok": False, "error": "json_required"})
+            self._json(
+                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+                {"ok": False, "error": "json_required"},
+            )
             return
 
         try:
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
             event = parse_sniper_event(payload)
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-            self._json(HTTPStatus.BAD_REQUEST, {"ok": False, "error": str(exc)[:160]})
+            self._json(
+                HTTPStatus.BAD_REQUEST,
+                {"ok": False, "error": str(exc)[:160]},
+            )
             return
 
         fingerprint = _event_fingerprint(payload)
         if not _REGISTRY.reserve(fingerprint):
-            self._json(HTTPStatus.ACCEPTED, {"ok": True, "duplicate": True, "symbol": event.symbol, "direction": event.direction})
+            self._json(
+                HTTPStatus.ACCEPTED,
+                {
+                    "ok": True,
+                    "duplicate": True,
+                    "symbol": event.symbol,
+                    "direction": event.direction,
+                },
+            )
             return
         _EXECUTOR.submit(_deliver, payload, fingerprint)
-        self._json(HTTPStatus.ACCEPTED, {"ok": True, "queued": True, "symbol": event.symbol, "direction": event.direction})
+        self._json(
+            HTTPStatus.ACCEPTED,
+            {
+                "ok": True,
+                "queued": True,
+                "symbol": event.symbol,
+                "direction": event.direction,
+            },
+        )
 
     def log_message(self, format: str, *args: Any) -> None:
         message = format % args
@@ -200,7 +280,10 @@ def main() -> int:
     port = int(os.getenv("PORT", "10000"))
     handler = partial(SniperHandler, directory=str(public_dir))
     server = ThreadingHTTPServer(("0.0.0.0", port), handler)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    )
     LOGGER.info("Serving dashboard + Sniper webhook on 0.0.0.0:%s", port)
     try:
         server.serve_forever()
