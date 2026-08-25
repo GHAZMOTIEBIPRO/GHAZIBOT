@@ -5,8 +5,10 @@ import json
 import logging
 import os
 import threading
+from functools import partial
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -21,7 +23,7 @@ def _json_bytes(payload: dict[str, Any]) -> bytes:
     return json.dumps(payload, ensure_ascii=False, default=str).encode("utf-8")
 
 
-class Handler(BaseHTTPRequestHandler):
+class Handler(SimpleHTTPRequestHandler):
     server_version = "GHAZI-BlackBox/1.0"
 
     def _reply(self, status: int, payload: dict[str, Any]) -> None:
@@ -42,6 +44,11 @@ class Handler(BaseHTTPRequestHandler):
         supplied = self.headers.get("X-Sniper-Secret") or (query.get("secret") or [""])[0]
         return hmac.compare_digest(str(configured), str(supplied))
 
+    def end_headers(self) -> None:
+        if self.path.startswith("/data/") or self.path.endswith("latest.json"):
+            self.send_header("Cache-Control", "no-store, max-age=0")
+        super().end_headers()
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         if parsed.path == "/health":
@@ -59,7 +66,7 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/scan/latest":
             self._reply(HTTPStatus.OK, BOT.last_snapshot or {"status": "not_run"})
             return
-        self._reply(HTTPStatus.NOT_FOUND, {"status": "not_found"})
+        super().do_GET()
 
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
@@ -94,8 +101,10 @@ def main() -> int:
         worker = threading.Thread(target=BOT.run_forever, name="black-box-scanner", daemon=True)
         worker.start()
     port = int(os.getenv("PORT", "10000"))
-    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
-    LOGGER.info("Black Box bot listening on 0.0.0.0:%s", port)
+    public_dir = Path(__file__).resolve().parent / "public"
+    handler = partial(Handler, directory=str(public_dir))
+    server = ThreadingHTTPServer(("0.0.0.0", port), handler)
+    LOGGER.info("Black Box bot + dashboard listening on 0.0.0.0:%s", port)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
