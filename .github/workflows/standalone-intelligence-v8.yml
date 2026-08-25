@@ -1,13 +1,13 @@
-name: BLACK BOX Standalone Intelligence V7
+name: BLACK BOX Standalone Intelligence V8
 
 on:
   workflow_dispatch:
   schedule:
-    # Broad U.S. stock activity window. Each sender rejects stale payloads itself.
+    # Ten-minute intelligence loop. Source payloads keep their own market-session gates.
     - cron: "4,14,24,34,44,54 8-23 * * 1-5"
 
 concurrency:
-  group: black-box-standalone-intelligence-v7
+  group: black-box-standalone-intelligence-v8
   cancel-in-progress: true
 
 permissions:
@@ -58,42 +58,44 @@ jobs:
               fi
             fi
           done
-          if [[ "$found" != "1" ]]; then
-            echo "No fast-market evidence artifact available; stock intelligence will skip."
-          fi
+          [[ "$found" == "1" ]] || echo "No fast-market evidence artifact available; stock intelligence will skip."
 
-      - name: Restore stock alert state
+      - name: Restore stock intelligence memory
         shell: bash
         run: |
-          printf '{"sent":{}}\n' > data/live/stock_intelligence_v7_state.json
-          for run_id in $(gh run list --workflow standalone-intelligence-v7.yml --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+          printf '{"sent":{},"outcomes":{}}\n' > data/live/stock_intelligence_v8_state.json
+          for run_id in $(gh run list --branch main --limit 40 --json databaseId,name --jq '.[] | select(.name=="BLACK BOX Standalone Intelligence V8" or .name=="BLACK BOX Standalone Intelligence V7") | .databaseId' 2>/dev/null || true); do
             rm -rf .stock-state-restore && mkdir -p .stock-state-restore
+            if gh run download "$run_id" -n stock-intelligence-v8-state -D .stock-state-restore >/dev/null 2>&1; then
+              source="$(find .stock-state-restore -type f -name stock_intelligence_v8_state.json | head -1)"
+              if [[ -n "$source" ]]; then cp "$source" data/live/stock_intelligence_v8_state.json; break; fi
+            fi
             if gh run download "$run_id" -n stock-intelligence-v7-state -D .stock-state-restore >/dev/null 2>&1; then
               source="$(find .stock-state-restore -type f -name stock_intelligence_v7_state.json | head -1)"
-              if [[ -n "$source" ]]; then cp "$source" data/live/stock_intelligence_v7_state.json; break; fi
+              if [[ -n "$source" ]]; then cp "$source" data/live/stock_intelligence_v8_state.json; break; fi
             fi
           done
 
-      - name: Send verified stock catalyst alerts
+      - name: Run stock catalyst intelligence + self grading
         if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
         shell: bash
         run: |
           if [[ -s data/live/fast_explosion_scan.json ]]; then
-            python -m scripts.send_stock_intelligence_v7 \
+            python -m scripts.send_stock_intelligence_v8 \
               --payload data/live/fast_explosion_scan.json \
-              --state data/live/stock_intelligence_v7_state.json
+              --state data/live/stock_intelligence_v8_state.json
           else
             echo "Stock intelligence skipped: no payload."
           fi
 
-      - name: Upload stock intelligence state
+      - name: Upload stock intelligence memory
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stock-intelligence-v7-state
-          path: data/live/stock_intelligence_v7_state.json
+          name: stock-intelligence-v8-state
+          path: data/live/stock_intelligence_v8_state.json
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 45
 
   options-flow-intelligence:
     runs-on: ubuntu-latest
@@ -143,39 +145,41 @@ jobs:
               fi
             fi
           done
-          if [[ "$found" != "1" ]]; then
-            echo "No independent options payload artifact available; options intelligence will skip."
-          fi
+          [[ "$found" == "1" ]] || echo "No independent options payload artifact available; options intelligence will skip."
 
-      - name: Restore options intelligence state
+      - name: Restore repeat-flow and outcome memory
         shell: bash
         run: |
-          printf '{"sent":{},"contracts":{}}\n' > data/live/options_intelligence_v7_state.json
-          for run_id in $(gh run list --workflow standalone-intelligence-v7.yml --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-            rm -rf .options-state-restore-v7 && mkdir -p .options-state-restore-v7
-            if gh run download "$run_id" -n options-intelligence-v7-state -D .options-state-restore-v7 >/dev/null 2>&1; then
-              source="$(find .options-state-restore-v7 -type f -name options_intelligence_v7_state.json | head -1)"
-              if [[ -n "$source" ]]; then cp "$source" data/live/options_intelligence_v7_state.json; break; fi
+          printf '{"sent":{},"contracts":{},"flow_memory":{},"outcomes":{}}\n' > data/live/options_intelligence_v8_state.json
+          for run_id in $(gh run list --branch main --limit 40 --json databaseId,name --jq '.[] | select(.name=="BLACK BOX Standalone Intelligence V8" or .name=="BLACK BOX Standalone Intelligence V7") | .databaseId' 2>/dev/null || true); do
+            rm -rf .options-state-restore-v8 && mkdir -p .options-state-restore-v8
+            if gh run download "$run_id" -n options-intelligence-v8-state -D .options-state-restore-v8 >/dev/null 2>&1; then
+              source="$(find .options-state-restore-v8 -type f -name options_intelligence_v8_state.json | head -1)"
+              if [[ -n "$source" ]]; then cp "$source" data/live/options_intelligence_v8_state.json; break; fi
+            fi
+            if gh run download "$run_id" -n options-intelligence-v7-state -D .options-state-restore-v8 >/dev/null 2>&1; then
+              source="$(find .options-state-restore-v8 -type f -name options_intelligence_v7_state.json | head -1)"
+              if [[ -n "$source" ]]; then cp "$source" data/live/options_intelligence_v8_state.json; break; fi
             fi
           done
 
-      - name: Send options flow + catalyst intelligence
+      - name: Run repeat-flow + premium acceleration + catalyst intelligence
         if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
         shell: bash
         run: |
           if [[ -s public/data/options_latest.json ]]; then
-            python -m scripts.send_options_intelligence_v7 \
+            python -m scripts.send_options_intelligence_v8 \
               --payload public/data/options_latest.json \
-              --state data/live/options_intelligence_v7_state.json
+              --state data/live/options_intelligence_v8_state.json
           else
             echo "Options intelligence skipped: no payload."
           fi
 
-      - name: Upload options intelligence state
+      - name: Upload options flow/outcome memory
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: options-intelligence-v7-state
-          path: data/live/options_intelligence_v7_state.json
+          name: options-intelligence-v8-state
+          path: data/live/options_intelligence_v8_state.json
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 45
