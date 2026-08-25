@@ -1,0 +1,185 @@
+name: BLACK BOX Standalone Intelligence V8
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Ten-minute intelligence loop. Source payloads keep their own market-session gates.
+    - cron: "4,14,24,34,44,54 8-23 * * 1-5"
+
+concurrency:
+  group: black-box-standalone-intelligence-v8
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  stock-news-intelligence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Market Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      STOCK_INTEL_MAX_PAYLOAD_AGE_MINUTES: ${{ secrets.STOCK_INTEL_MAX_PAYLOAD_AGE_MINUTES || '35' }}
+      STOCK_INTEL_MAX_ALERTS: ${{ secrets.STOCK_INTEL_MAX_ALERTS || '3' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore latest fast-market evidence
+        shell: bash
+        run: |
+          mkdir -p data/live .fast-restore
+          found=0
+          for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .fast-restore && mkdir -p .fast-restore
+            if gh run download "$run_id" -n fast-market-state -D .fast-restore >/dev/null 2>&1; then
+              source="$(find .fast-restore -type f -name fast_explosion_scan.json | head -1)"
+              if [[ -n "$source" ]]; then
+                cp "$source" data/live/fast_explosion_scan.json
+                echo "Restored fast evidence from run $run_id"
+                found=1
+                break
+              fi
+            fi
+          done
+          [[ "$found" == "1" ]] || echo "No fast-market evidence artifact available; stock intelligence will skip."
+
+      - name: Restore stock intelligence memory
+        shell: bash
+        run: |
+          printf '{"sent":{},"outcomes":{}}\n' > data/live/stock_intelligence_v8_state.json
+          for run_id in $(gh run list --branch main --limit 40 --json databaseId,name --jq '.[] | select(.name=="BLACK BOX Standalone Intelligence V8" or .name=="BLACK BOX Standalone Intelligence V7") | .databaseId' 2>/dev/null || true); do
+            rm -rf .stock-state-restore && mkdir -p .stock-state-restore
+            if gh run download "$run_id" -n stock-intelligence-v8-state -D .stock-state-restore >/dev/null 2>&1; then
+              source="$(find .stock-state-restore -type f -name stock_intelligence_v8_state.json | head -1)"
+              if [[ -n "$source" ]]; then cp "$source" data/live/stock_intelligence_v8_state.json; break; fi
+            fi
+            if gh run download "$run_id" -n stock-intelligence-v7-state -D .stock-state-restore >/dev/null 2>&1; then
+              source="$(find .stock-state-restore -type f -name stock_intelligence_v7_state.json | head -1)"
+              if [[ -n "$source" ]]; then cp "$source" data/live/stock_intelligence_v8_state.json; break; fi
+            fi
+          done
+
+      - name: Run stock catalyst intelligence + self grading
+        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        shell: bash
+        run: |
+          if [[ -s data/live/fast_explosion_scan.json ]]; then
+            python -m scripts.send_stock_intelligence_v8 \
+              --payload data/live/fast_explosion_scan.json \
+              --state data/live/stock_intelligence_v8_state.json
+          else
+            echo "Stock intelligence skipped: no payload."
+          fi
+
+      - name: Upload stock intelligence memory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-intelligence-v8-state
+          path: data/live/stock_intelligence_v8_state.json
+          if-no-files-found: warn
+          retention-days: 45
+
+  options-flow-intelligence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Options Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      INTRINIO_API_KEY: ${{ secrets.INTRINIO_API_KEY }}
+      INTRINIO_OPTIONS_SOURCE: ${{ secrets.INTRINIO_OPTIONS_SOURCE || 'delayed' }}
+      INTRINIO_FLOW_MAX_AGE_MINUTES: ${{ secrets.INTRINIO_FLOW_MAX_AGE_MINUTES || '90' }}
+      INTRINIO_FLOW_MAX_SYMBOLS: ${{ secrets.INTRINIO_FLOW_MAX_SYMBOLS || '12' }}
+      OPTIONS_INTEL_MIN_SCORE: ${{ secrets.OPTIONS_INTEL_MIN_SCORE || '85' }}
+      OPTIONS_INTEL_MAX_ALERTS: ${{ secrets.OPTIONS_INTEL_MAX_ALERTS || '3' }}
+      OPTIONS_INTEL_MAX_PAYLOAD_AGE_MINUTES: ${{ secrets.OPTIONS_INTEL_MAX_PAYLOAD_AGE_MINUTES || '45' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore latest independent options payload
+        shell: bash
+        run: |
+          mkdir -p data/live public/data .options-payload-restore
+          found=0
+          for run_id in $(gh run list --workflow options-contract-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .options-payload-restore && mkdir -p .options-payload-restore
+            if gh run download "$run_id" -n independent-options-radar -D .options-payload-restore >/dev/null 2>&1; then
+              source="$(find .options-payload-restore -type f -name options_latest.json | head -1)"
+              if [[ -n "$source" ]]; then
+                cp "$source" public/data/options_latest.json
+                echo "Restored options payload from run $run_id"
+                found=1
+                break
+              fi
+            fi
+          done
+          [[ "$found" == "1" ]] || echo "No independent options payload artifact available; options intelligence will skip."
+
+      - name: Restore repeat-flow and outcome memory
+        shell: bash
+        run: |
+          printf '{"sent":{},"contracts":{},"flow_memory":{},"outcomes":{}}\n' > data/live/options_intelligence_v8_state.json
+          for run_id in $(gh run list --branch main --limit 40 --json databaseId,name --jq '.[] | select(.name=="BLACK BOX Standalone Intelligence V8" or .name=="BLACK BOX Standalone Intelligence V7") | .databaseId' 2>/dev/null || true); do
+            rm -rf .options-state-restore-v8 && mkdir -p .options-state-restore-v8
+            if gh run download "$run_id" -n options-intelligence-v8-state -D .options-state-restore-v8 >/dev/null 2>&1; then
+              source="$(find .options-state-restore-v8 -type f -name options_intelligence_v8_state.json | head -1)"
+              if [[ -n "$source" ]]; then cp "$source" data/live/options_intelligence_v8_state.json; break; fi
+            fi
+            if gh run download "$run_id" -n options-intelligence-v7-state -D .options-state-restore-v8 >/dev/null 2>&1; then
+              source="$(find .options-state-restore-v8 -type f -name options_intelligence_v7_state.json | head -1)"
+              if [[ -n "$source" ]]; then cp "$source" data/live/options_intelligence_v8_state.json; break; fi
+            fi
+          done
+
+      - name: Run repeat-flow + premium acceleration + catalyst intelligence
+        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        shell: bash
+        run: |
+          if [[ -s public/data/options_latest.json ]]; then
+            python -m scripts.send_options_intelligence_v8 \
+              --payload public/data/options_latest.json \
+              --state data/live/options_intelligence_v8_state.json
+          else
+            echo "Options intelligence skipped: no payload."
+          fi
+
+      - name: Upload options flow/outcome memory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: options-intelligence-v8-state
+          path: data/live/options_intelligence_v8_state.json
+          if-no-files-found: warn
+          retention-days: 45
