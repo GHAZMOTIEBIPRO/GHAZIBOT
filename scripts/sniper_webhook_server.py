@@ -120,7 +120,7 @@ class SniperHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self) -> None:
         path = urlparse(self.path).path
-        if path.startswith("/data/") or path.endswith("latest.json"):
+        if path.startswith("/data/") or path.endswith("latest.json") or path.startswith("/webhooks/") or path == "/health":
             self.send_header("Cache-Control", "no-store, max-age=0")
         else:
             self.send_header("Cache-Control", "public, max-age=300")
@@ -131,7 +131,6 @@ class SniperHandler(SimpleHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
 
@@ -187,7 +186,11 @@ class SniperHandler(SimpleHTTPRequestHandler):
         self._json(HTTPStatus.ACCEPTED, {"ok": True, "queued": True, "symbol": event.symbol, "direction": event.direction})
 
     def log_message(self, format: str, *args: Any) -> None:
-        LOGGER.info("%s - %s", self.address_string(), format % args)
+        message = format % args
+        secret = _configured_secret()
+        if secret:
+            message = message.replace(secret, "<redacted>")
+        LOGGER.info("%s - %s", self.address_string(), message)
 
 
 def main() -> int:
