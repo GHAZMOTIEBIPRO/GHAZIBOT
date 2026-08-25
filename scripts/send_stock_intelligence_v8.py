@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 from datetime import datetime, timezone
 from typing import Any
 
@@ -34,7 +35,7 @@ def _alert_id(symbol: str, fingerprint: str, sent_at: datetime) -> str:
 
 
 def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
-    max_age = v7._number(__import__("os").getenv("STOCK_INTEL_MAX_PAYLOAD_AGE_MINUTES", "35"), 35.0)
+    max_age = v7._number(os.getenv("STOCK_INTEL_MAX_PAYLOAD_AGE_MINUTES", "35"), 35.0)
     age = v7._payload_age_minutes(payload)
     if age is None or age > max_age:
         state.update(
@@ -65,8 +66,6 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
     catalysts = CatalystScanner(settings).scan(symbols, lookback_days=3)
     catalyst_map = best_catalyst_map(catalysts)
     sent_state = state.setdefault("sent", {})
-    import os
-
     maximum = max(1, min(5, int(v7._number(os.getenv("STOCK_INTEL_MAX_ALERTS", "3"), 3))))
     sent = 0
 
