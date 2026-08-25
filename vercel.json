@@ -12,11 +12,6 @@
   "github": {
     "silent": true
   },
-  "functions": {
-    "api/sniper.py": {
-      "maxDuration": 3
-    }
-  },
   "rewrites": [
     {
       "source": "/health",
@@ -25,14 +20,6 @@
     {
       "source": "/data-status",
       "destination": "/data/data-status.json"
-    },
-    {
-      "source": "/webhook/sniper",
-      "destination": "/api/sniper"
-    },
-    {
-      "source": "/webhook/tradingview",
-      "destination": "/api/sniper"
     }
   ],
   "headers": [
@@ -53,7 +40,7 @@
         },
         {
           "key": "X-GHAZI-UI-BUILD",
-          "value": "2026-08-25.sniper-webhook"
+          "value": "2026-08-25.standalone-intelligence-v7"
         },
         {
           "key": "X-Content-Type-Options",
