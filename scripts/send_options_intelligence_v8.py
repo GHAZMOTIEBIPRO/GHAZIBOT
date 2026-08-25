@@ -6,12 +6,10 @@ import html
 import math
 import os
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from options_radar.catalyst_selection import best_catalyst_map
 from options_radar.catalysts import CatalystScanner
-from options_radar.event_source_policy import event_source_evidence
 from options_radar.flow_memory import (
     attach_strike_clusters,
     contract_key,
@@ -77,7 +75,6 @@ def _enhanced_strength(row: dict[str, Any], flow: dict[str, Any]) -> float:
     acceleration = 7.0 if row.get("flow_acceleration_strong") is True else 0.0
     cluster = min(8.0, _num(row.get("strike_cluster_score")) * 0.08)
     verified = 5.0 if flow.get("tier") == "VERIFIED" else 0.0
-    # This is a ranking score, not a probability. The original strict gate remains authoritative.
     return min(100.0, strict * 0.78 + _num(flow.get("score")) * 0.12 + repeat + acceleration + cluster + verified)
 
 
@@ -95,8 +92,6 @@ def _eligible_v8(row: dict[str, Any], catalyst: dict[str, Any] | None, flow: dic
     min_score = _num(os.getenv("OPTIONS_INTEL_MIN_SCORE", "85"), 85.0)
     if strict < min_score or (grade and grade not in {"A", "A+"}) or not aligned or catalyst_score < 8:
         return False
-    # Snapshot evidence may graduate only when activity repeats/accelerates or appears
-    # across a strike ladder. Activity-only data never becomes "verified flow".
     if flow.get("tier") in {"VERIFIED", "SNAPSHOT_PROXY"}:
         return (repeat and accel) or (cluster and (repeat or accel))
     if flow.get("tier") == "ACTIVITY_ONLY":
@@ -148,7 +143,6 @@ def _flow_memory_lines(row: dict[str, Any]) -> list[str]:
 
 def _message_v8(row: dict[str, Any], catalyst: dict[str, Any] | None, flow: dict[str, Any]) -> str:
     base = v7._message(row, catalyst, flow).splitlines()
-    # Replace the heading and quality line while preserving the carefully worded v7 evidence policy.
     direction = v7._direction(row)
     side_ar = "كول" if direction == "CALL" else "بوت"
     emoji = "🟢" if direction == "CALL" else "🔴"
