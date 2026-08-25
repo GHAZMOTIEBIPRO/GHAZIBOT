@@ -1,1 +1,1 @@
-web: python main.py
+web: python -m scripts.sniper_webhook_server
