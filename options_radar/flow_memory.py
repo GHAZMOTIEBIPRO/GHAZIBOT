@@ -69,12 +69,13 @@ def update_flow_memory(
     """Attach repeat-flow and premium-acceleration evidence to option rows.
 
     Option volume is cumulative during a session, so acceleration is calculated from
-    *incremental* contract volume between observations. The notional field is therefore
+    incremental contract volume between observations. The notional field is therefore
     explicitly a proxy (delta volume × current mid × 100) unless trade-level UOA premium
     is available. No output claims buy-to-open.
     """
 
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    session_date = now.date().isoformat()
     memory = state.setdefault("flow_memory", {})
     output: list[dict[str, Any]] = []
 
@@ -91,6 +92,7 @@ def update_flow_memory(
         record = memory.get(key) if isinstance(memory.get(key), dict) else {}
         history = record.get("history") if isinstance(record.get("history"), list) else []
         previous = history[-1] if history else None
+        same_session = isinstance(previous, dict) and previous.get("session_date") == session_date
         volume_delta = 0.0
         notional_delta = 0.0
         verified_premium_delta = 0.0
@@ -103,28 +105,28 @@ def update_flow_memory(
             if previous_at is not None:
                 minutes = max((now - previous_at).total_seconds() / 60.0, 0.0)
             previous_volume = max(0.0, _num(previous.get("volume")))
-            # Volume resets between sessions; never turn the reset into negative flow.
-            if previous.get("session_date") == now.date().isoformat() and volume >= previous_volume:
+            if same_session and volume >= previous_volume:
                 volume_delta = volume - previous_volume
             previous_verified = max(0.0, _num(previous.get("verified_value")))
-            if verified_value >= previous_verified:
+            if same_session and verified_value >= previous_verified:
                 verified_premium_delta = verified_value - previous_verified
             notional_delta = volume_delta * mid * 100.0
             previous_underlying = max(0.0, _num(previous.get("underlying")))
-            if previous_underlying > 0 and underlying > 0:
+            if same_session and previous_underlying > 0 and underlying > 0:
                 underlying_move_pct = (underlying / previous_underlying - 1.0) * 100.0
 
             min_contracts = max(20.0, previous_volume * 0.03)
-            meaningful_repeat = (
+            meaningful_repeat = same_session and (
                 volume_delta >= min_contracts
                 or verified_premium_delta >= 50_000
                 or verified_prints > max(0.0, _num(previous.get("verified_prints")))
             )
 
-        repeat_hits = int(_num(record.get("repeat_hits"))) + (1 if meaningful_repeat else 0)
+        prior_repeat_hits = int(_num(record.get("repeat_hits"))) if same_session else 0
+        repeat_hits = prior_repeat_hits + (1 if meaningful_repeat else 0)
         observation_count = int(_num(record.get("observation_count"))) + 1
-        velocity = notional_delta / minutes if minutes > 0 else 0.0
-        verified_velocity = verified_premium_delta / minutes if minutes > 0 else 0.0
+        velocity = notional_delta / minutes if same_session and minutes > 0 else 0.0
+        verified_velocity = verified_premium_delta / minutes if same_session and minutes > 0 else 0.0
 
         row.update(
             {
@@ -148,7 +150,7 @@ def update_flow_memory(
 
         observation = {
             "at": now.isoformat(),
-            "session_date": now.date().isoformat(),
+            "session_date": session_date,
             "volume": volume,
             "oi": oi,
             "mid": mid,
@@ -162,10 +164,10 @@ def update_flow_memory(
             "repeat_hits": repeat_hits,
             "observation_count": observation_count,
             "last_seen_at": now.isoformat(),
+            "last_session_date": session_date,
         }
         output.append(row)
 
-    # Bound persistent state so repeated scheduled runs do not grow forever.
     if len(memory) > 750:
         ordered = sorted(
             memory.items(),
@@ -226,7 +228,10 @@ def attach_strike_clusters(
         distinct = sorted({round(_num(peer.get("strike")), 6) for peer in nearby if _num(peer.get("strike")) > 0})
         total_volume = int(sum(max(0.0, _num(peer.get("volume"))) for peer in nearby))
         total_notional = sum(estimated_notional(peer) for peer in nearby)
-        cluster_score = min(100.0, max(0.0, (len(distinct) - 1) * 22.0 + math.log10(max(total_volume, 1.0)) * 12.0))
+        cluster_score = min(
+            100.0,
+            max(0.0, (len(distinct) - 1) * 22.0 + math.log10(max(total_volume, 1.0)) * 12.0),
+        )
         row.update(
             {
                 "strike_cluster_count": len(distinct),
