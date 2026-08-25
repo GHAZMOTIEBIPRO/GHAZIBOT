@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 import pandas as pd
@@ -15,10 +15,11 @@ from options_radar.providers import load_universe
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
 from options_radar.stocks import StockRadar
+from scripts.sniper_webhook_server import SniperHandler
 
 
-class DashboardRequestHandler(SimpleHTTPRequestHandler):
-    """Serve the generated public dashboard with fresh JSON responses."""
+class DashboardRequestHandler(SniperHandler):
+    """Serve the dashboard plus Sniper webhook with fresh market JSON responses."""
 
     def end_headers(self) -> None:
         if self.path.startswith("/data/") or self.path.endswith("latest.json"):
@@ -29,7 +30,7 @@ class DashboardRequestHandler(SimpleHTTPRequestHandler):
 
 
 def serve_dashboard() -> int:
-    """Serve public/ on the host and port required by Render web services."""
+    """Serve public/ and the Sniper webhook on the Render web process."""
 
     public_dir = Path(__file__).resolve().parent / "public"
     index_file = public_dir / "index.html"
@@ -49,7 +50,7 @@ def serve_dashboard() -> int:
         format="%(asctime)s %(levelname)s %(name)s — %(message)s",
     )
     logging.getLogger(__name__).info(
-        "Serving GHAZI Market Radar from %s on 0.0.0.0:%s",
+        "Serving GHAZI Market Radar + Sniper webhook from %s on 0.0.0.0:%s",
         public_dir,
         port,
     )
