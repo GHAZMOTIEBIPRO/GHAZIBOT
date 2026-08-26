@@ -24,16 +24,14 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class BotConfig:
-    enabled: bool = (os.getenv("BLACK_BOX_BOT_ENABLED", "true").lower() in {"1", "true", "yes", "on"})
+    enabled: bool = os.getenv("BLACK_BOX_BOT_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
     scan_minutes: int = int(os.getenv("BLACK_BOX_SCAN_MINUTES", "15"))
     top_stocks: int = int(os.getenv("BLACK_BOX_TOP_STOCKS", "20"))
     top_options: int = int(os.getenv("BLACK_BOX_TOP_OPTIONS", "15"))
     universe_path: str = os.getenv("BLACK_BOX_UNIVERSE", "data/universe.txt")
     telegram_token: str | None = os.getenv("TELEGRAM_BOT_TOKEN") or None
     telegram_chat_id: str | None = os.getenv("TELEGRAM_CHAT_ID") or None
-    webhook_secret: str | None = os.getenv("SNIPER_WEBHOOK_SECRET") or None
     state_path: Path = Path(os.getenv("BLACK_BOX_BOT_STATE", "data/live/black_box_bot_state.json"))
-    notify_sniper_score: int = int(os.getenv("SNIPER_NOTIFY_SCORE", "80"))
 
 
 class TelegramNotifier:
@@ -50,9 +48,8 @@ class TelegramNotifier:
         if not self.configured:
             LOGGER.info("Telegram is not configured; notification retained in server logs")
             return False
-        url = f"https://api.telegram.org/bot{self.token}/sendMessage"
         response = self.session.post(
-            url,
+            f"https://api.telegram.org/bot{self.token}/sendMessage",
             json={
                 "chat_id": self.chat_id,
                 "text": text[:4096],
@@ -65,7 +62,7 @@ class TelegramNotifier:
 
 
 class EventLedger:
-    """Small durable dedupe ledger for scanner/news/webhook notifications."""
+    """Durable de-duplication ledger for BLACK BOX scanner notifications."""
 
     def __init__(self, path: Path):
         self.path = path
@@ -78,16 +75,13 @@ class EventLedger:
             if self.path.exists():
                 payload = json.loads(self.path.read_text(encoding="utf-8"))
                 self._seen = dict(payload.get("seen", {}))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - state corruption must fail soft
             LOGGER.warning("Could not load bot ledger %s: %s", self.path, exc)
 
     def _save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-        tmp.write_text(
-            json.dumps({"seen": self._seen}, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        tmp.write_text(json.dumps({"seen": self._seen}, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(self.path)
 
     def first_time(self, namespace: str, payload: Any) -> bool:
@@ -105,11 +99,10 @@ class EventLedger:
 
 
 class BlackBoxBot:
-    """Bridge SNIPER TradingView alerts with options flow and company catalysts.
+    """Standalone market/catalyst/options monitor.
 
-    It never submits broker orders. Its purpose is monitoring, evidence aggregation,
-    ranking and notification. TradingView remains the source of SNIPER chart signals;
-    the server enriches those signals with the radar's stock/options/catalyst context.
+    BLACK BOX does not consume TradingView or indicator signals and never submits
+    broker orders. Its job is evidence aggregation, ranking and notification.
     """
 
     OPTION_HORIZONS = (
@@ -132,7 +125,7 @@ class BlackBoxBot:
 
     def _symbols(self) -> list[str]:
         symbols = load_universe(self.config.universe_path)
-        return list(dict.fromkeys(str(s).upper().strip() for s in symbols if str(s).strip()))
+        return list(dict.fromkeys(str(symbol).upper().strip() for symbol in symbols if str(symbol).strip()))
 
     @staticmethod
     def _safe(value: Any, default: str = "-") -> str:
@@ -141,14 +134,14 @@ class BlackBoxBot:
         try:
             if pd.isna(value):
                 return default
-        except Exception:
+        except Exception:  # noqa: BLE001 - arbitrary display value
             pass
         return str(value)
 
     def _notify_news(self, catalysts: pd.DataFrame) -> int:
-        sent = 0
         if catalysts.empty:
-            return sent
+            return 0
+        sent = 0
         rows = catalysts.reindex(catalysts["score"].abs().sort_values(ascending=False).index).head(30)
         for _, row in rows.iterrows():
             score = float(row.get("score", 0) or 0)
@@ -163,31 +156,33 @@ class BlackBoxBot:
             if not self.ledger.first_time("news", identity):
                 continue
             direction = "إيجابي" if score > 0 else "سلبي"
-            message = (
-                "📰 بلاك بوكس | خبر جوهري\n"
-                f"السهم: {identity['symbol']}\n"
-                f"التقييم: {direction} ({score:.0f})\n"
-                f"الخبر: {identity['headline']}\n"
-                f"الفئة: {self._safe(row.get('category'))}\n"
-                f"المصدر: {identity['source']}\n"
-                f"الدليل: {self._safe(row.get('evidence'))}"
+            self.notifier.send(
+                "\n".join(
+                    [
+                        "📰 بلاك بوكس | خبر جوهري",
+                        f"السهم: {identity['symbol']}",
+                        f"التقييم: {direction}",
+                        f"الخبر: {identity['headline']}",
+                        f"الفئة: {self._safe(row.get('category'))}",
+                        f"المصدر: {identity['source']}",
+                        f"الدليل: {self._safe(row.get('evidence'))}",
+                    ]
+                )
             )
-            self.notifier.send(message)
             sent += 1
         return sent
 
     def _notify_options(self, frame: pd.DataFrame) -> int:
-        sent = 0
         if frame.empty:
-            return sent
+            return 0
         candidates = frame.copy()
         if "new_setup_candidate" in candidates:
             candidates = candidates[candidates["new_setup_candidate"] == True]  # noqa: E712
         candidates = candidates.sort_values("score", ascending=False).head(self.config.top_options * 3)
+        sent = 0
         for _, row in candidates.iterrows():
             identity = {
                 "contract": self._safe(row.get("contract_symbol")),
-                "score": round(float(row.get("score", 0) or 0), 1),
                 "volume": int(float(row.get("volume", 0) or 0)),
                 "oi": int(float(row.get("open_interest", 0) or 0)),
                 "horizon": self._safe(row.get("horizon")),
@@ -198,23 +193,21 @@ class BlackBoxBot:
                 continue
             option_type = self._safe(row.get("option_type")).upper()
             side_ar = "كول" if option_type == "CALL" else "بوت" if option_type == "PUT" else option_type
-            message = (
-                "🎯 بلاك بوكس | رصد عقد\n"
-                f"السهم: {self._safe(row.get('symbol'))}\n"
-                f"المدة: {identity['horizon']}\n"
-                f"العقد: {side_ar} | تنفيذ {self._safe(row.get('strike'))} | انتهاء {self._safe(row.get('expiration'))[:10]}\n"
-                f"الجودة: {identity['score']}/100 | {self._safe(row.get('rating'))}\n"
-                f"الحجم/OI: {self._safe(row.get('vol_oi'))}\n"
-                f"الحجم: {identity['volume']:,} | OI: {identity['oi']:,}\n"
-                f"دلتا: {self._safe(row.get('delta'))} | IV: {self._safe(row.get('iv'))}\n"
-                f"دخول تقريبي: {self._safe(row.get('entry_price'))}\n"
-                f"هدف 1: {self._safe(row.get('target_1'))} | هدف 2: {self._safe(row.get('target_2'))}\n"
-                f"إلغاء: {self._safe(row.get('stop_price'))}\n"
-                f"المحفز: {self._safe(row.get('catalyst'))}\n"
-                f"البيانات: {self._safe(row.get('source'))} — {self._safe(row.get('freshness_label'))}\n"
-                "تنبيه رصد وليس أمر تنفيذ."
+            self.notifier.send(
+                "\n".join(
+                    [
+                        "🎯 بلاك بوكس | رصد عقد",
+                        f"السهم: {self._safe(row.get('symbol'))}",
+                        f"المدة: {identity['horizon']}",
+                        f"العقد: {side_ar} | {self._safe(row.get('strike'))} | {self._safe(row.get('expiration'))[:10]}",
+                        f"الحجم: {identity['volume']:,} | OI: {identity['oi']:,}",
+                        f"دلتا: {self._safe(row.get('delta'))} | IV: {self._safe(row.get('iv'))}",
+                        f"المحفز: {self._safe(row.get('catalyst'))}",
+                        f"البيانات: {self._safe(row.get('source'))} — {self._safe(row.get('freshness_label'))}",
+                        "تنبيه رصد وليس أمر تنفيذ.",
+                    ]
+                )
             )
-            self.notifier.send(message)
             sent += 1
         return sent
 
@@ -227,12 +220,7 @@ class BlackBoxBot:
         providers: dict[str, str] = {}
         counts: dict[str, int] = {}
         for label, min_dte, max_dte in self.OPTION_HORIZONS:
-            horizon_settings = replace(
-                self.settings,
-                free_swing_mode=False,
-                min_dte=min_dte,
-                max_dte=max_dte,
-            )
+            horizon_settings = replace(self.settings, free_swing_mode=False, min_dte=min_dte, max_dte=max_dte)
             result = OptionsRadar(horizon_settings).scan(
                 option_symbols,
                 top=self.config.top_options,
@@ -270,12 +258,7 @@ class BlackBoxBot:
                 if not stock_result.opportunities.empty
                 else symbols[: max(20, self.config.top_stocks)]
             )
-            option_frame, option_providers, option_counts = self._scan_option_horizons(
-                option_symbols,
-                catalysts,
-            )
-            news_sent = self._notify_news(catalysts)
-            option_sent = self._notify_options(option_frame)
+            option_frame, option_providers, option_counts = self._scan_option_horizons(option_symbols, catalysts)
             self._last_snapshot = {
                 "status": "ok",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -284,13 +267,14 @@ class BlackBoxBot:
                 "stock_candidates": int(len(stock_result.opportunities)),
                 "option_candidates": int(len(option_frame)),
                 "option_candidates_by_horizon": option_counts,
-                "news_notifications": news_sent,
-                "option_notifications": option_sent,
+                "news_notifications": self._notify_news(catalysts),
+                "option_notifications": self._notify_options(option_frame),
                 "options_providers": option_providers,
                 "elapsed_seconds": round((datetime.now(timezone.utc) - started).total_seconds(), 2),
+                "architecture": "standalone_black_box_no_indicator_bridge",
             }
             return self._last_snapshot
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - one scan failure is reported, not fatal to service
             LOGGER.exception("Black Box scan failed")
             self._last_snapshot = {
                 "status": "error",
@@ -300,53 +284,6 @@ class BlackBoxBot:
             return self._last_snapshot
         finally:
             self._scan_lock.release()
-
-    def handle_sniper(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Validate and relay one SNIPER webhook event from TradingView."""
-        event = str(payload.get("event", "")).strip().lower()
-        direction = str(payload.get("direction", "")).strip().lower()
-        symbol = str(payload.get("symbol", "")).strip().upper()
-        score = int(float(payload.get("score", 0) or 0))
-        allowed_events = {"signal", "call", "put", "setup", "invalidation", "target"}
-        if event not in allowed_events:
-            raise ValueError(f"unsupported event: {event!r}")
-        if not symbol:
-            raise ValueError("symbol is required")
-        if direction not in {"call", "put", "bull", "bear", "none", ""}:
-            raise ValueError(f"unsupported direction: {direction!r}")
-
-        fingerprint = {
-            "event": event,
-            "direction": direction,
-            "symbol": symbol,
-            "time": payload.get("time"),
-            "entry": payload.get("entry"),
-            "score": score,
-        }
-        fresh = self.ledger.first_time("sniper", fingerprint)
-        if not fresh:
-            return {"status": "duplicate", "accepted": True}
-
-        side = "كول" if direction in {"call", "bull"} else "بوت" if direction in {"put", "bear"} else "-"
-        should_notify = event in {"invalidation", "target"} or score >= self.config.notify_sniper_score
-        if should_notify:
-            message = (
-                "🎯 سنايبر × بلاك بوكس\n"
-                f"السهم/المؤشر: {symbol}\n"
-                f"الحدث: {event}\n"
-                f"الاتجاه: {side}\n"
-                f"الجودة: {score}/100\n"
-                f"الفريم: {self._safe(payload.get('timeframe'))}\n"
-                f"الدخول: {self._safe(payload.get('entry'))}\n"
-                f"الإلغاء: {self._safe(payload.get('stop'))}\n"
-                f"الهدف 1: {self._safe(payload.get('target1'))}\n"
-                f"الهدف 2: {self._safe(payload.get('target2'))}\n"
-                f"الهدف 3: {self._safe(payload.get('target3'))}\n"
-                f"المحرك: {self._safe(payload.get('engine'))}\n"
-                f"السبب: {self._safe(payload.get('reason'))}"
-            )
-            self.notifier.send(message)
-        return {"status": "ok", "accepted": True, "notified": should_notify}
 
     def run_forever(self, stop_event: threading.Event | None = None) -> None:
         stop_event = stop_event or threading.Event()

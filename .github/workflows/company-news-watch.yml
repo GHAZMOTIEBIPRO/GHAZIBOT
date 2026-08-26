@@ -1,14 +1,12 @@
-name: BLACK BOX Omega Sniper Company News Watch
+name: BLACK BOX Company News Watch
 
 on:
   workflow_dispatch:
   schedule:
-    # 12:06-23:51 UTC, weekdays. Covers U.S. pre-market through after-hours
-    # across most DST states without relying on runner local time.
     - cron: "6,21,36,51 12-23 * * 1-5"
 
 concurrency:
-  group: black-box-omega-sniper-news-watch
+  group: black-box-company-news-watch
   cancel-in-progress: true
 
 permissions:
@@ -73,20 +71,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p data/live data/cache .news-state-restore
-          printf '{"sent":{}}\n' > data/live/sniper_news_alert_state.json
-          for run_id in $(gh run list --workflow sniper-news-watch.yml --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-            rm -rf .news-state-restore && mkdir -p .news-state-restore
-            if gh run download "$run_id" -n sniper-news-state -D .news-state-restore >/dev/null 2>&1; then
-              if [[ -s .news-state-restore/sniper_news_alert_state.json ]]; then
-                cp -f .news-state-restore/sniper_news_alert_state.json data/live/sniper_news_alert_state.json
-              fi
-              if [[ -s .news-state-restore/sec_company_tickers.json ]]; then
-                cp -f .news-state-restore/sec_company_tickers.json data/cache/sec_company_tickers.json
-              fi
-              if [[ -s data/live/sniper_news_alert_state.json || -s data/cache/sec_company_tickers.json ]]; then
-                break
-              fi
-            fi
+          printf '{"sent":{}}\n' > data/live/company_news_alert_state.json
+          for workflow in company-news-watch.yml sniper-news-watch.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .news-state-restore && mkdir -p .news-state-restore
+              for artifact in company-news-state sniper-news-state; do
+                if gh run download "$run_id" -n "$artifact" -D .news-state-restore >/dev/null 2>&1; then
+                  source="$(find .news-state-restore -type f \( -name company_news_alert_state.json -o -name sniper_news_alert_state.json \) | head -1)"
+                  if [[ -n "$source" ]]; then cp -f "$source" data/live/company_news_alert_state.json; fi
+                  cache="$(find .news-state-restore -type f -name sec_company_tickers.json | head -1)"
+                  if [[ -n "$cache" ]]; then cp -f "$cache" data/cache/sec_company_tickers.json; fi
+                  if [[ -n "$source" || -n "$cache" ]]; then break 3; fi
+                fi
+              done
+            done
           done
 
       - name: Scan material company news and official catalysts
@@ -94,7 +92,7 @@ jobs:
         run: >-
           python -m scripts.send_material_news_alerts
           --universe data/universe.txt
-          --state data/live/sniper_news_alert_state.json
+          --state data/live/company_news_alert_state.json
           --lookback-days 3
           --max-symbols 120
 
@@ -103,19 +101,15 @@ jobs:
         shell: bash
         run: |
           mkdir -p .news-state-upload
-          if [[ -s data/live/sniper_news_alert_state.json ]]; then
-            cp data/live/sniper_news_alert_state.json .news-state-upload/sniper_news_alert_state.json
-          fi
-          if [[ -s data/cache/sec_company_tickers.json ]]; then
-            cp data/cache/sec_company_tickers.json .news-state-upload/sec_company_tickers.json
-          fi
+          [[ -s data/live/company_news_alert_state.json ]] && cp data/live/company_news_alert_state.json .news-state-upload/company_news_alert_state.json || true
+          [[ -s data/cache/sec_company_tickers.json ]] && cp data/cache/sec_company_tickers.json .news-state-upload/sec_company_tickers.json || true
           exit 0
 
       - name: Upload news state
         if: always() && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: sniper-news-state
+          name: company-news-state
           path: .news-state-upload/
           if-no-files-found: warn
           include-hidden-files: true
