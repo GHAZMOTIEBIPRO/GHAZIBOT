@@ -103,8 +103,13 @@ jobs:
         shell: bash
         run: |
           mkdir -p .news-state-upload
-          [[ -s data/live/sniper_news_alert_state.json ]] && cp data/live/sniper_news_alert_state.json .news-state-upload/sniper_news_alert_state.json
-          [[ -s data/cache/sec_company_tickers.json ]] && cp data/cache/sec_company_tickers.json .news-state-upload/sec_company_tickers.json
+          if [[ -s data/live/sniper_news_alert_state.json ]]; then
+            cp data/live/sniper_news_alert_state.json .news-state-upload/sniper_news_alert_state.json
+          fi
+          if [[ -s data/cache/sec_company_tickers.json ]]; then
+            cp data/cache/sec_company_tickers.json .news-state-upload/sec_company_tickers.json
+          fi
+          exit 0
 
       - name: Upload news state
         if: always() && env.TELEGRAM_READY == 'true'
