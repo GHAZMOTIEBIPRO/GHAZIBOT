@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-26T16:21:45.531342+00:00",
+  "updated_at": "2026-08-26T16:58:17.566741+00:00",
   "signals": {
     "4c541e9583c6779c1dea": {
       "signal_id": "4c541e9583c6779c1dea",
@@ -895,10 +895,10 @@
       "official_cause": false,
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 27,
-      "last_observed_at": "2026-08-26T14:30:23.989143+00:00",
-      "last_price": 4.75,
-      "last_directional_return_pct": 8.945,
+      "observations": 28,
+      "last_observed_at": "2026-08-26T16:58:17.566741+00:00",
+      "last_price": 4.4802,
+      "last_directional_return_pct": 2.7569,
       "mfe_pct": 8.945,
       "mae_pct": -3.4404,
       "checkpoints": {
@@ -1459,10 +1459,10 @@
       "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 7,
-      "last_observed_at": "2026-08-26T14:30:23.989143+00:00",
-      "last_price": 4.75,
-      "last_directional_return_pct": 12.8266,
+      "observations": 8,
+      "last_observed_at": "2026-08-26T16:58:17.566741+00:00",
+      "last_price": 4.4802,
+      "last_directional_return_pct": 6.4181,
       "mfe_pct": 12.8266,
       "mae_pct": 0.0,
       "checkpoints": {
@@ -12220,14 +12220,25 @@
       "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 1,
-      "last_observed_at": "2026-08-26T14:30:23.989143+00:00",
-      "last_price": 4.75,
-      "last_directional_return_pct": 0.0,
+      "observations": 2,
+      "last_observed_at": "2026-08-26T16:58:17.566741+00:00",
+      "last_price": 4.4802,
+      "last_directional_return_pct": -5.68,
       "mfe_pct": 0.0,
-      "mae_pct": 0.0,
-      "checkpoints": {},
-      "terminal_outcome": "open",
+      "mae_pct": -5.68,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-26T16:58:17.566741+00:00",
+          "price": 4.4802,
+          "directional_return_pct": -5.68
+        },
+        "60m": {
+          "observed_at": "2026-08-26T16:58:17.566741+00:00",
+          "price": 4.4802,
+          "directional_return_pct": -5.68
+        }
+      },
+      "terminal_outcome": "failed",
       "measurement_basis": "repeated_radar_snapshots",
       "entry_stage": "PRESSURE_BUILDING",
       "entry_score": 66.46,
@@ -12239,7 +12250,9 @@
           "score": 66.46,
           "score_band": "below-72"
         }
-      ]
+      ],
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-08-26T16:58:17.566741+00:00"
     },
     "8f747638bf2966c6d930": {
       "signal_id": "8f747638bf2966c6d930",
@@ -12517,20 +12530,58 @@
           "score_band": "below-72"
         }
       ]
+    },
+    "4bc390a4a7123e44c441": {
+      "signal_id": "4bc390a4a7123e44c441",
+      "signal_time": "2026-08-26T16:58:17.566741+00:00",
+      "symbol": "AIHS",
+      "direction": "up",
+      "entry_price": 1.765,
+      "score": 63.52,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-08-26T16:58:17.566741+00:00",
+      "last_price": 1.765,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.52,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-08-26T16:58:17.566741+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 63.52,
+          "score_band": "below-72"
+        }
+      ]
     }
   },
   "measurement_note": "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; therefore it is used for calibration, not executable-fill claims.",
   "summary": {
-    "tracked": 264,
-    "matured_60m": 173,
+    "tracked": 265,
+    "matured_60m": 174,
     "successes": 52,
-    "failures": 22,
+    "failures": 23,
     "open": 189
   },
   "event_dedup": {
     "mode": "same_symbol_direction_within_4h",
     "reentry_gap_minutes": 240,
     "duplicates_collapsed_this_pass": 0,
-    "samples_after_dedup": 264
+    "samples_after_dedup": 265
   }
 }
