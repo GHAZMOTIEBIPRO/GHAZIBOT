@@ -79,7 +79,7 @@ def _source_line(thesis: UnifiedThesis) -> str:
     source = _esc(thesis.catalyst_source or "مصدر غير مسمى", 100)
     url = str(thesis.catalyst_url or "").strip()
     if url.startswith(("https://", "http://")):
-        return f'📰 <a href="{html.escape(url, quote=True)}">{source}</a> | محفز <b>{thesis.catalyst_grade}</b>'
+        return f'<a href="{html.escape(url, quote=True)}">📰 {source}</a> | محفز <b>{thesis.catalyst_grade}</b>'
     return f"📰 {source} | محفز <b>{thesis.catalyst_grade}</b>"
 
 
@@ -114,17 +114,21 @@ def _message(thesis: UnifiedThesis) -> str:
                 f"Strike <b>{contract.strike:g}</b> | Exp <b>{_esc(contract.expiration)}</b> | Bid/Ask <b>{contract.bid:.2f}/{contract.ask:.2f}</b>",
                 f"Spread <b>{contract.spread_pct:.1%}</b> | Vol <b>{contract.volume:,}</b> | OI <b>{contract.open_interest:,}</b>",
                 f"Δ <b>{contract.delta:.2f}</b> | IV <b>{contract.iv:.1%}</b> | Contract <b>{contract.contract_grade}</b> | Flow <b>{contract.flow_grade}</b>",
-                f"📡 البيانات <b>{contract.data_confidence}</b> — {_esc(contract.reason, 220)}",
+                f"📡 البيانات <b>{contract.data_confidence}</b> — {_esc(contract.reason, 360)}",
             ]
         )
+        if contract.quote_age_seconds is not None:
+            lines.append(f"⏱ Quote age <b>{contract.quote_age_seconds:.0f}ث</b>")
+        if contract.execution_blockers:
+            lines.append(f"🚫 <b>بوابة التنفيذ:</b> {_esc('؛ '.join(contract.execution_blockers[:3]), 420)}")
     else:
         lines.extend(["", "🎯 العقد: <b>غير متاح حاليًا</b> — الفكرة تبقى على السهم ولا تتحول لسعر تنفيذ."])
 
     lines.append("")
     if thesis.manual_execution_ready:
-        lines.append("✅ <b>جاهز للمراجعة اليدوية:</b> طابق السعر الحي في منصة الوسيط قبل التنفيذ.")
+        lines.append("✅ <b>جاهز للمراجعة اليدوية:</b> Quote حي وحديث؛ طابق السعر في منصة الوسيط قبل التنفيذ.")
     elif thesis.stage == "CONFIRMED":
-        lines.append("🟡 <b>الفكرة مؤكدة على السهم، لكن بيانات العقد ليست Execution-grade.</b>")
+        lines.append("🟡 <b>الفكرة مؤكدة على السهم، لكن بيانات العقد لا تمر بوابة Execution-grade.</b>")
     elif thesis.stage == "EXTENDED":
         lines.append("🟠 <b>لا تطارد الحركة؛ انتظر إعادة تموضع جديدة.</b>")
     elif thesis.stage == "FAILED":
@@ -146,6 +150,7 @@ def _fingerprint(thesis: UnifiedThesis) -> str:
             thesis.catalyst_headline[:160],
             contract.contract_symbol,
             contract.data_confidence,
+            str(round(contract.quote_age_seconds or -1.0, -1)),
             str(round(thesis.price, 2)),
         ]
     )
@@ -157,7 +162,6 @@ def _should_send(thesis: UnifiedThesis, previous: dict[str, Any]) -> bool:
     old_grade = str(previous.get("overall_grade") or "")
     if thesis.stage in {"CONFIRMED", "EXTENDED", "FAILED"}:
         return thesis.stage != old_stage or thesis.overall_grade != old_grade
-    # BUILDING is useful once; WATCH is retained in state without Telegram noise.
     return thesis.stage == "BUILDING" and old_stage not in {"BUILDING", "CONFIRMED", "EXTENDED"}
 
 
@@ -166,6 +170,8 @@ def send(
     classical_payload: dict[str, Any],
     options_payload: dict[str, Any],
     state: dict[str, Any],
+    *,
+    dry_run: bool = False,
 ) -> int:
     max_age = v7._number(os.getenv("STOCK_INTEL_MAX_PAYLOAD_AGE_MINUTES", "35"), 35.0)
     age = v7._payload_age_minutes(fast_payload)
@@ -174,17 +180,27 @@ def send(
             {
                 "last_run_at": datetime.now(timezone.utc).isoformat(),
                 "last_sent_count": 0,
+                "last_preview_count": 0,
                 "blocked_reason": "STALE_FAST_PAYLOAD",
                 "payload_age_minutes": age,
+                "transport_mode": "DRY_RUN" if dry_run else "TELEGRAM",
             }
         )
         return 0
 
-    scorecard = grade_alerts(state, underlying_prices=_current_prices(fast_payload))
+    scorecard = {} if dry_run else grade_alerts(state, underlying_prices=_current_prices(fast_payload))
     rows = v7._candidate_rows(fast_payload)
     symbols = [str(row.get("symbol") or "").upper() for row in rows[:30]]
     if not symbols:
-        state.update({"last_run_at": datetime.now(timezone.utc).isoformat(), "last_sent_count": 0, "candidate_count": 0})
+        state.update(
+            {
+                "last_run_at": datetime.now(timezone.utc).isoformat(),
+                "last_sent_count": 0,
+                "last_preview_count": 0,
+                "candidate_count": 0,
+                "transport_mode": "DRY_RUN" if dry_run else "TELEGRAM",
+            }
+        )
         return 0
 
     catalysts = CatalystScanner(Settings()).scan(symbols, lookback_days=3)
@@ -194,7 +210,9 @@ def send(
     thesis_state = state.setdefault("theses", {})
     maximum = max(1, min(5, int(v7._number(os.getenv("STOCK_INTEL_MAX_ALERTS", "3"), 3))))
     sent = 0
+    previewed = 0
     built = 0
+    preview_messages: list[str] = []
 
     for row in rows:
         symbol = str(row.get("symbol") or "").upper()
@@ -214,8 +232,13 @@ def send(
         built += 1
         previous = thesis_state.get(symbol) if isinstance(thesis_state.get(symbol), dict) else {}
         fingerprint = _fingerprint(thesis)
-        should_send = sent < maximum and _should_send(thesis, previous) and str(previous.get("fingerprint") or "") != fingerprint
-        if should_send:
+        should_emit = (sent + previewed) < maximum and _should_send(thesis, previous) and str(previous.get("fingerprint") or "") != fingerprint
+
+        if should_emit and dry_run:
+            previewed += 1
+            if len(preview_messages) < 3:
+                preview_messages.append(_message(thesis))
+        elif should_emit:
             send_html_message(_message(thesis))
             sent_at = datetime.now(timezone.utc)
             alert_id = hashlib.sha256(f"{symbol}|{fingerprint}|{sent_at.timestamp()}".encode()).hexdigest()[:24]
@@ -228,11 +251,18 @@ def send(
                 baseline_underlying=thesis.price,
                 score=v7._number(row.get("score")),
                 evidence_signature="|".join(
-                    [thesis.chart_grade, thesis.catalyst_grade, thesis.timing_grade, thesis.contract_grade, thesis.data_confidence]
+                    [
+                        thesis.chart_grade,
+                        thesis.catalyst_grade,
+                        thesis.timing_grade,
+                        thesis.contract_grade,
+                        thesis.data_confidence,
+                    ]
                 ),
                 sent_at=sent_at,
             )
             sent += 1
+
         thesis_state[symbol] = {
             "fingerprint": fingerprint,
             "stage": thesis.stage,
@@ -242,29 +272,38 @@ def send(
             "manual_execution_ready": thesis.manual_execution_ready,
             "data_confidence": thesis.data_confidence,
             "contract": thesis.contract.contract_symbol,
+            "quote_age_seconds": thesis.contract.quote_age_seconds,
+            "execution_blockers": list(thesis.contract.execution_blockers),
         }
 
     state.update(
         {
             "last_run_at": datetime.now(timezone.utc).isoformat(),
             "last_sent_count": sent,
+            "last_preview_count": previewed,
             "candidate_count": len(rows),
             "theses_built": built,
             "payload_age_minutes": round(age, 2),
             "self_grading_scorecard": scorecard,
-            "architecture": "black_box_v10_unified_mobile_thesis",
+            "architecture": "black_box_v10_1_fail_closed_execution",
+            "transport_mode": "DRY_RUN" if dry_run else "TELEGRAM",
         }
     )
+    if dry_run:
+        state["preview_messages"] = preview_messages
+    else:
+        state.pop("preview_messages", None)
     state.pop("blocked_reason", None)
-    return sent
+    return previewed if dry_run else sent
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Send BLACK BOX V10 unified chart+catalyst+contract thesis cards")
+    parser = argparse.ArgumentParser(description="Send BLACK BOX V10.1 unified chart+catalyst+contract thesis cards")
     parser.add_argument("--fast-payload", default="data/live/fast_explosion_scan.json")
     parser.add_argument("--classical-payload", default="public/data/classical_direction_latest.json")
     parser.add_argument("--options-payload", default="public/data/options_latest.json")
     parser.add_argument("--state", default="data/live/stock_intelligence_v10_state.json")
+    parser.add_argument("--dry-run", action="store_true", help="Build/render thesis cards without Telegram or outcome registration")
     args = parser.parse_args()
 
     fast = v7._load(args.fast_payload, {})
@@ -280,13 +319,14 @@ def main() -> None:
     if not isinstance(state, dict):
         state = {"theses": {}, "outcomes": {}}
     try:
-        sent = send(fast, classical, options, state)
+        count = send(fast, classical, options, state, dry_run=args.dry_run)
     finally:
         v7._save(args.state, state)
+    label = "previewed" if args.dry_run else "sent"
     print(
-        "Stock intelligence v10: "
-        f"sent={sent} theses={state.get('theses_built', 0)} "
-        f"candidates={state.get('candidate_count', 0)}"
+        "Stock intelligence v10.1: "
+        f"{label}={count} theses={state.get('theses_built', 0)} "
+        f"candidates={state.get('candidate_count', 0)} mode={state.get('transport_mode')}"
     )
 
 

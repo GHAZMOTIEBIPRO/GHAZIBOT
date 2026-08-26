@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import asdict, dataclass
 from typing import Any, Iterable
+
+from options_radar.execution_confidence import ExecutionGate, assess_execution_quote
 
 
 BULLISH = "BULLISH"
 BEARISH = "BEARISH"
 NEUTRAL = "NEUTRAL"
-
 
 STAGE_ORDER = {
     "WATCH": 0,
@@ -101,13 +103,7 @@ def classify_catalyst_reaction(
     market_row: dict[str, Any],
     bias: str,
 ) -> CatalystReaction:
-    """Classify price response without pretending we have a tick at the news timestamp.
-
-    The fast scanner may only provide current move/stage/volume context. When an
-    explicit event-price response is present we use it; otherwise the result is a
-    conservative reaction proxy and is labelled by its reason.
-    """
-
+    """Conservatively classify the market response to a catalyst."""
     stage = _text(market_row.get("stage") or market_row.get("setup_status") or "WATCH").upper()
     move = _number(
         market_row.get("move_since_catalyst_pct"),
@@ -128,10 +124,31 @@ def classify_catalyst_reaction(
         return CatalystReaction("DIVERGING", "F", move, rel_volume, stage, f"{prefix}: السعر يتحرك عكس المحفز")
     if stage in {"IGNITION", "PRE_EXPLOSION", "EXPLOSION"} and aligned_move >= 1.0:
         grade = "A" if rel_volume >= 1.5 else "B+"
-        return CatalystReaction("CONFIRMING", grade, move, rel_volume, stage, f"{prefix}: السعر والحالة يؤكدان إعادة التسعير")
+        return CatalystReaction(
+            "CONFIRMING",
+            grade,
+            move,
+            rel_volume,
+            stage,
+            f"{prefix}: السعر والحالة يؤكدان إعادة التسعير",
+        )
     if aligned_move >= 0.25 or stage in {"PRESSURE_BUILDING", "PRE_EXPLOSION"}:
-        return CatalystReaction("BUILDING", "B", move, rel_volume, stage, f"{prefix}: الاستجابة تتكوّن ولم تكتمل")
-    return CatalystReaction("LAGGING", "C", move, rel_volume, stage, f"{prefix}: المحفز لم يظهر استجابة سعرية كافية بعد")
+        return CatalystReaction(
+            "BUILDING",
+            "B",
+            move,
+            rel_volume,
+            stage,
+            f"{prefix}: الاستجابة تتكوّن ولم تكتمل",
+        )
+    return CatalystReaction(
+        "LAGGING",
+        "C",
+        move,
+        rel_volume,
+        stage,
+        f"{prefix}: المحفز لم يظهر استجابة سعرية كافية بعد",
+    )
 
 
 @dataclass(frozen=True)
@@ -155,32 +172,31 @@ class ContractEvidence:
     source: str
     freshness: str
     reason: str
+    quote_timestamp: str = ""
+    quote_age_seconds: float | None = None
+    execution_blockers: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["execution_blockers"] = list(self.execution_blockers)
+        return payload
+
+
+def _max_execution_quote_age_seconds() -> float:
+    value = _number(os.getenv("BLACK_BOX_MAX_EXECUTION_QUOTE_AGE_SECONDS", "120"), 120.0)
+    return max(5.0, min(900.0, value))
+
+
+def execution_gate(row: dict[str, Any]) -> ExecutionGate:
+    return assess_execution_quote(
+        row,
+        max_quote_age_seconds=_max_execution_quote_age_seconds(),
+    )
 
 
 def data_confidence(row: dict[str, Any]) -> str:
-    text = " ".join(
-        _text(row.get(key)).lower()
-        for key in (
-            "source",
-            "freshness_label",
-            "fabric_source_tier",
-            "provider",
-            "data_mode",
-        )
-    )
-    delayed = any(token in text for token in ("delayed", "indicative", "sandbox", "unofficial", "yahoo", "24h"))
-    live = any(token in text for token in ("opra", "realtime", "real-time", "licensed", "brokerage feed"))
-    account = any(token in text for token in ("account entitlement", "account feed"))
-    if live and not delayed:
-        return "LIVE"
-    if account and not delayed:
-        return "ACCOUNT"
-    if delayed or text.strip():
-        return "RESEARCH"
-    return "UNAVAILABLE"
+    """Public compatibility helper; confidence is fail-closed on quote freshness."""
+    return execution_gate(row).confidence
 
 
 def _contract_grade(row: dict[str, Any]) -> str:
@@ -199,6 +215,12 @@ def _contract_grade(row: dict[str, Any]) -> str:
     return "C"
 
 
+def _candidate_gate_rank(row: dict[str, Any]) -> tuple[int, int]:
+    gate = execution_gate(row)
+    confidence_rank = {"LIVE": 3, "ACCOUNT": 2, "RESEARCH": 1, "UNAVAILABLE": 0}.get(gate.confidence, 0)
+    return (1 if gate.execution_ready else 0, confidence_rank)
+
+
 def select_contract_evidence(
     rows: Iterable[dict[str, Any]],
     *,
@@ -213,43 +235,66 @@ def select_contract_evidence(
         if _text(row.get("symbol")).upper() != symbol.upper():
             continue
         side = _text(row.get("option_type") or row.get("direction")).lower()
-        if wanted and side not in {wanted, wanted.upper().lower()}:
+        if wanted and side != wanted:
             continue
         candidates.append(row)
 
     if not candidates:
         return ContractEvidence(
-            False, "", wanted, 0.0, "", 0.0, 0.0, 0.0, 0, 0, 0.0, 0.0,
-            "UNAVAILABLE", "N/A", "N/A", False, "", "", "لا توجد بيانات عقد متوافقة مع اتجاه الفكرة",
+            False,
+            "",
+            wanted,
+            0.0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            0,
+            0,
+            0.0,
+            0.0,
+            "UNAVAILABLE",
+            "N/A",
+            "N/A",
+            False,
+            "",
+            "",
+            "لا توجد بيانات عقد متوافقة مع اتجاه الفكرة",
         )
 
-    def rank(row: dict[str, Any]) -> tuple[int, float, float, float]:
+    def rank(row: dict[str, Any]) -> tuple[int, int, int, float, float, float]:
+        gate_ready, confidence_rank = _candidate_gate_rank(row)
         grade = _contract_grade(row)
         grade_rank = {"A": 4, "B": 3, "C": 2, "F": 0}.get(grade, 1)
         score = _number(row.get("score"))
         volume = _number(row.get("volume"))
         spread = _number(row.get("spread_pct"), 1.0)
-        return grade_rank, score, volume, -spread
+        return gate_ready, confidence_rank, grade_rank, score, volume, -spread
 
     row = max(candidates, key=rank)
     bid = _number(row.get("bid"))
     ask = _number(row.get("ask"))
     spread = _number(row.get("spread_pct"), (ask - bid) / ask if ask > 0 and bid > 0 else 0.0)
-    confidence = data_confidence(row)
+    gate = execution_gate(row)
     grade = _contract_grade(row)
     flow_grade = _text(row.get("evidence_grade") or row.get("flow_evidence_grade") or "N/A").upper()
-    execution_ready = confidence in {"LIVE", "ACCOUNT"} and grade in {"A", "B"}
-    reason = (
-        "سعر عقد صالح للتنفيذ اليدوي بعد التحقق من منصة الوسيط"
-        if execution_ready
-        else "العقد بحثي/متأخر أو جودته غير كافية؛ لا يستخدم كسعر تنفيذ"
-    )
+
+    blockers = list(gate.blockers)
+    if grade not in {"A", "B"}:
+        blockers.append(f"جودة العقد {grade} لا تمر بوابة التنفيذ")
+    execution_ready = gate.execution_ready and grade in {"A", "B"}
+
+    if execution_ready:
+        reason = "Quote حي وحديث وعقد بجودة مناسبة؛ تحقق من منصة الوسيط قبل أي تنفيذ يدوي"
+    else:
+        reason = "؛ ".join(dict.fromkeys(blockers)) or "العقد لا يمر بوابة التنفيذ"
+
     return ContractEvidence(
         True,
         _text(row.get("contract_symbol")),
         wanted,
         _number(row.get("strike")),
-        _text(row.get("expiration"))[:10],
+        _text(row.get("expiration") or row.get("expiration_date"))[:10],
         bid,
         ask,
         spread,
@@ -257,13 +302,16 @@ def select_contract_evidence(
         int(_number(row.get("open_interest"))),
         _number(row.get("delta")),
         _number(row.get("iv")),
-        confidence,
+        gate.confidence,
         grade,
         flow_grade,
         execution_ready,
         _text(row.get("source") or row.get("provider")),
         _text(row.get("freshness_label")),
         reason,
+        gate.quote_timestamp,
+        gate.quote_age_seconds,
+        tuple(dict.fromkeys(blockers)),
     )
 
 
@@ -343,16 +391,31 @@ def build_thesis(
         stage = "FAILED"
     elif reaction.state == "EXTENDED":
         stage = "EXTENDED"
-    elif chart_direction == bias and chart_grade in {"A+", "A", "B"} and catalyst_grade in {"A+", "A", "B+", "B"} and reaction.state == "CONFIRMING":
+    elif (
+        chart_direction == bias
+        and chart_grade in {"A+", "A", "B"}
+        and catalyst_grade in {"A+", "A", "B+", "B"}
+        and reaction.state == "CONFIRMING"
+    ):
         stage = "CONFIRMED"
     elif chart_direction == bias or reaction.state in {"BUILDING", "CONFIRMING"}:
         stage = "BUILDING"
     else:
         stage = "WATCH"
 
-    # Evidence grade is categorical, not a probability. Execution readiness is separate.
-    if stage == "CONFIRMED" and chart_grade in {"A+", "A"} and catalyst_grade in {"A+", "A"} and reaction.grade in {"A", "B+"}:
-        overall = "A+" if contract.contract_grade == "A" and contract.data_confidence in {"LIVE", "ACCOUNT"} else "A"
+    if (
+        stage == "CONFIRMED"
+        and chart_grade in {"A+", "A"}
+        and catalyst_grade in {"A+", "A"}
+        and reaction.grade in {"A", "B+"}
+    ):
+        overall = (
+            "A+"
+            if contract.contract_grade == "A"
+            and contract.execution_ready
+            and contract.data_confidence in {"LIVE", "ACCOUNT"}
+            else "A"
+        )
     elif stage == "CONFIRMED":
         overall = "B+"
     elif stage == "BUILDING":
@@ -362,9 +425,18 @@ def build_thesis(
     else:
         overall = "C"
 
-    manual_ready = stage == "CONFIRMED" and contract.execution_ready and overall in {"A+", "A", "B+"}
+    manual_ready = (
+        stage == "CONFIRMED"
+        and contract.execution_ready
+        and contract.data_confidence in {"LIVE", "ACCOUNT"}
+        and overall in {"A+", "A", "B+"}
+    )
     trigger = _number((classical or {}).get("confirmation_level")) or None
-    invalidation = _number((classical or {}).get("invalidation_level")) or _number(market_row.get("invalidation")) or None
+    invalidation = (
+        _number((classical or {}).get("invalidation_level"))
+        or _number(market_row.get("invalidation"))
+        or None
+    )
     daily = _text(((classical or {}).get("daily") or {}).get("direction") or "N/A")
     hourly = _text(((classical or {}).get("hourly") or {}).get("direction") or "N/A")
     intraday = _text(((classical or {}).get("intraday") or {}).get("direction") or "N/A")
