@@ -1,0 +1,116 @@
+name: BLACK BOX Company News Watch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "6,21,36,51 12-23 * * 1-5"
+
+concurrency:
+  group: black-box-company-news-watch
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  news-watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Market Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      NEWS_ALERT_MIN_ABS_SCORE: ${{ secrets.NEWS_ALERT_MIN_ABS_SCORE || '15' }}
+      NEWS_ALERT_MAX_PER_RUN: ${{ secrets.NEWS_ALERT_MAX_PER_RUN || '5' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore Telegram destination when chat secret is absent
+        if: env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Restore news state and SEC ticker cache
+        if: env.TELEGRAM_READY == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live data/cache .news-state-restore
+          printf '{"sent":{}}\n' > data/live/company_news_alert_state.json
+          for workflow in company-news-watch.yml sniper-news-watch.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .news-state-restore && mkdir -p .news-state-restore
+              for artifact in company-news-state sniper-news-state; do
+                if gh run download "$run_id" -n "$artifact" -D .news-state-restore >/dev/null 2>&1; then
+                  source="$(find .news-state-restore -type f \( -name company_news_alert_state.json -o -name sniper_news_alert_state.json \) | head -1)"
+                  if [[ -n "$source" ]]; then cp -f "$source" data/live/company_news_alert_state.json; fi
+                  cache="$(find .news-state-restore -type f -name sec_company_tickers.json | head -1)"
+                  if [[ -n "$cache" ]]; then cp -f "$cache" data/cache/sec_company_tickers.json; fi
+                  if [[ -n "$source" || -n "$cache" ]]; then break 3; fi
+                fi
+              done
+            done
+          done
+
+      - name: Scan material company news and official catalysts
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_material_news_alerts
+          --universe data/universe.txt
+          --state data/live/company_news_alert_state.json
+          --lookback-days 3
+          --max-symbols 120
+
+      - name: Stage news state and SEC ticker cache
+        if: always() && env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          mkdir -p .news-state-upload
+          [[ -s data/live/company_news_alert_state.json ]] && cp data/live/company_news_alert_state.json .news-state-upload/company_news_alert_state.json || true
+          [[ -s data/cache/sec_company_tickers.json ]] && cp data/cache/sec_company_tickers.json .news-state-upload/sec_company_tickers.json || true
+          exit 0
+
+      - name: Upload news state
+        if: always() && env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: company-news-state
+          path: .news-state-upload/
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 30
