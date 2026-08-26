@@ -25,6 +25,7 @@ jobs:
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       STOCK_INTEL_MAX_PAYLOAD_AGE_MINUTES: ${{ secrets.STOCK_INTEL_MAX_PAYLOAD_AGE_MINUTES || '35' }}
       STOCK_INTEL_MAX_ALERTS: ${{ secrets.STOCK_INTEL_MAX_ALERTS || '3' }}
+      BLACK_BOX_MAX_EXECUTION_QUOTE_AGE_SECONDS: ${{ secrets.BLACK_BOX_MAX_EXECUTION_QUOTE_AGE_SECONDS || '120' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +70,7 @@ jobs:
             fi
           done
 
-          [[ -s data/live/fast_explosion_scan.json ]] || echo "No fast-market evidence: V10 will skip."
+          [[ -s data/live/fast_explosion_scan.json ]] || echo "No fast-market evidence: V10 will fail closed."
           [[ -s public/data/classical_direction_latest.json ]] || echo '{"signals":[],"waits":[]}' > public/data/classical_direction_latest.json
           [[ -s public/data/options_latest.json ]] || echo '{"contracts":[]}' > public/data/options_latest.json
 
@@ -88,6 +89,37 @@ jobs:
               if [[ -n "$source" ]]; then cp "$source" data/live/stock_intelligence_v10_state.json; break; fi
             fi
           done
+
+      - name: Dry-run unified thesis engine without Telegram
+        shell: bash
+        run: |
+          printf '{"theses":{},"outcomes":{}}\n' > /tmp/stock_intelligence_v10_smoke_state.json
+          python -m scripts.send_stock_intelligence_v10 \
+            --fast-payload data/live/fast_explosion_scan.json \
+            --classical-payload public/data/classical_direction_latest.json \
+            --options-payload public/data/options_latest.json \
+            --state /tmp/stock_intelligence_v10_smoke_state.json \
+            --dry-run
+
+      - name: Validate dry-run execution gates
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path('/tmp/stock_intelligence_v10_smoke_state.json').read_text(encoding='utf-8'))
+          assert state.get('transport_mode') == 'DRY_RUN'
+          for thesis in state.get('theses', {}).values():
+              assert thesis.get('stage') in {'WATCH','BUILDING','CONFIRMED','EXTENDED','FAILED'}
+              assert thesis.get('data_confidence') in {'LIVE','ACCOUNT','RESEARCH','UNAVAILABLE'}
+              if thesis.get('manual_execution_ready'):
+                  assert thesis.get('stage') == 'CONFIRMED'
+                  assert thesis.get('data_confidence') in {'LIVE','ACCOUNT'}
+                  age = thesis.get('quote_age_seconds')
+                  assert age is not None and age <= 120
+                  assert not thesis.get('execution_blockers')
+          print('V10.1 dry-run execution gates passed.')
+          PY
 
       - name: Run unified chart + catalyst + contract thesis
         if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
@@ -121,7 +153,10 @@ jobs:
               if thesis.get('manual_execution_ready'):
                   assert thesis.get('stage') == 'CONFIRMED'
                   assert thesis.get('data_confidence') in {'LIVE','ACCOUNT'}
-          print('V10 thesis state semantics passed.')
+                  age = thesis.get('quote_age_seconds')
+                  assert age is not None and age <= 120
+                  assert not thesis.get('execution_blockers')
+          print('V10.1 thesis state semantics passed.')
           PY
 
       - name: Upload V10 thesis memory
