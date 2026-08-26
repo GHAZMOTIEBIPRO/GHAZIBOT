@@ -152,9 +152,9 @@ def assess_execution_quote(
 ) -> ExecutionGate:
     """Fail-closed per-contract execution gate.
 
-    A source label alone never creates execution readiness. A contract must have
-    an explicitly trusted live/account source, a valid two-sided quote, and
-    quote-time evidence fresh enough for the configured threshold.
+    Source labels and precomputed relative ages are insufficient. A contract must
+    carry an absolute quote timestamp, a trusted live/account source and a valid
+    two-sided quote before it may be execution-ready.
     """
     record = row if isinstance(row, dict) else {}
     source_text = _source_text(record)
@@ -195,16 +195,9 @@ def assess_execution_quote(
     if stamp is not None:
         quote_timestamp = stamp.isoformat()
         quote_age = (current - stamp).total_seconds()
-    else:
-        direct_age = _number(record.get("stream_quote_age_seconds"))
-        if direct_age is None:
-            direct_age = _number(record.get("quote_age_seconds"))
-        if direct_age is not None:
-            quote_age = direct_age
-            stamp_key = "quote_age_seconds"
 
     if quote_age is None:
-        blockers.append("لا يوجد توقيت Quote يمكن التحقق من حداثته")
+        blockers.append("لا يوجد توقيت Quote مطلق يمكن التحقق من حداثته")
     elif quote_age < -abs(max_clock_skew_seconds):
         blockers.append("توقيت Quote يقع في المستقبل خارج سماحية الساعة")
     elif quote_age > max(1.0, float(max_quote_age_seconds)):
