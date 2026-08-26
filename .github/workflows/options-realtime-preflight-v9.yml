@@ -1,0 +1,80 @@
+name: BLACK BOX Realtime OPRA Preflight V9
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/options-realtime-preflight-v9.yml"
+      - "scripts/preflight_intrinio_realtime.py"
+      - "requirements-realtime.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      INTRINIO_API_KEY: ${{ secrets.INTRINIO_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-realtime.txt
+
+      - name: Install realtime runtime
+        run: pip install -r requirements-realtime.txt
+
+      - name: Verify realtime OPRA auth and websocket
+        shell: bash
+        run: |
+          python -m scripts.preflight_intrinio_realtime \
+            --soft-fail \
+            --websocket-timeout 12 \
+            --output data/live/realtime_opra_preflight.json
+
+      - name: Publish safe preflight summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -s data/live/realtime_opra_preflight.json ]]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('data/live/realtime_opra_preflight.json').read_text(encoding='utf-8'))
+          print('### BLACK BOX V9 — Realtime OPRA preflight')
+          print(f"- Status: **{p.get('status')}**")
+          print(f"- Auth HTTP: `{p.get('auth_http_status')}`")
+          print(f"- WebSocket opened: `{p.get('websocket_open')}`")
+          print(f"- Reason: `{p.get('reason')}`")
+          with open(Path.home() / 'summary.md', 'w', encoding='utf-8') as f:
+              f.write('### BLACK BOX V9 — Realtime OPRA preflight\n')
+              f.write(f"- Status: **{p.get('status')}**\n")
+              f.write(f"- Auth HTTP: `{p.get('auth_http_status')}`\n")
+              f.write(f"- WebSocket opened: `{p.get('websocket_open')}`\n")
+              f.write(f"- Reason: `{p.get('reason')}`\n")
+          PY
+            cat "$HOME/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Preflight report was not created."
+          fi
+
+      - name: Upload realtime entitlement report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: realtime-opra-preflight-v9
+          path: data/live/realtime_opra_preflight.json
+          if-no-files-found: warn
+          retention-days: 7
