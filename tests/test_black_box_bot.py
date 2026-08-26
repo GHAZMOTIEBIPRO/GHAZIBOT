@@ -35,5 +35,6 @@ def test_event_ledger_deduplicates_scanner_events(tmp_path: Path) -> None:
 
 def test_black_box_runtime_identity_is_standalone(tmp_path: Path) -> None:
     bot = _bot(tmp_path)
-    assert "TradingView" not in (BlackBoxBot.__doc__ or "")
-    assert "indicator signals" in (BlackBoxBot.__doc__ or "")
+    assert bot.config.enabled is False
+    assert "Standalone" in (BlackBoxBot.__doc__ or "")
+    assert callable(bot.scan_once)
