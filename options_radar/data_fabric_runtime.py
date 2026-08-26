@@ -35,6 +35,18 @@ def _provider_list(raw: str) -> list[str]:
     return output
 
 
+def _option_health_operation(symbol: str) -> str:
+    """Scope option-chain circuit health to one underlying.
+
+    An unsupported index symbol returning an empty chain is not evidence that the
+    provider is globally down for SPY/AAPL/NVDA. Keeping the circuit key per symbol
+    prevents a few semantic empty responses from poisoning the whole provider for
+    the rest of the scan while still suppressing repeated failures for that symbol.
+    """
+    clean = str(symbol or "").strip().upper() or "UNKNOWN"
+    return f"option_chain:{clean}"
+
+
 def _ensure_dte(frame: pd.DataFrame) -> pd.DataFrame:
     if frame is None or frame.empty or "expiration" not in frame:
         return frame
@@ -256,9 +268,10 @@ def install_data_fabric() -> None:
         if not loaders:
             raise hybrid.DataUnavailableError(f"option_chain:{symbol}", [])
         health = health_from_env()
+        health_operation = _option_health_operation(symbol)
         fetched = parallel_fetch(
             loaders,
-            operation="option_chain",
+            operation=health_operation,
             row_counter=len,
             health=health,
             max_workers=int(os.getenv("DATA_FABRIC_MAX_WORKERS", "5")),
