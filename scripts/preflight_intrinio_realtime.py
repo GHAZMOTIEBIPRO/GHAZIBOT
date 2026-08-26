@@ -11,7 +11,6 @@ from typing import Any
 from urllib.parse import quote
 
 import requests
-import websocket
 
 AUTH_URL = "https://realtime-options.intrinio.com/auth"
 WS_BASE = "wss://realtime-options.intrinio.com/socket/websocket"
@@ -46,21 +45,27 @@ def probe_websocket(token: str, timeout: float = 12.0) -> dict[str, Any]:
         result["error"] = "missing_auth_token"
         return result
 
+    try:
+        import websocket
+    except ImportError:
+        result["error"] = "websocket_client_not_installed"
+        return result
+
     finished = threading.Event()
     started = time.monotonic()
     url = f"{WS_BASE}?vsn=1.0.0&token={quote(token, safe='')}"
 
-    def on_open(ws: websocket.WebSocketApp) -> None:
+    def on_open(ws: Any) -> None:
         result["opened"] = True
         finished.set()
         ws.close()
 
-    def on_error(_ws: websocket.WebSocketApp, error: Any) -> None:
+    def on_error(_ws: Any, error: Any) -> None:
         # Never persist the websocket URL/token. Error type is enough for the audit.
         result["error"] = type(error).__name__ if error is not None else "websocket_error"
         finished.set()
 
-    def on_close(_ws: websocket.WebSocketApp, status_code: Any, _message: Any) -> None:
+    def on_close(_ws: Any, status_code: Any, _message: Any) -> None:
         try:
             result["close_code"] = int(status_code) if status_code is not None else None
         except (TypeError, ValueError):
