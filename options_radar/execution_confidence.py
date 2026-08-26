@@ -24,7 +24,6 @@ _TRUSTED_LIVE_TOKENS = (
     "massive",
     "polygon_options",
     "polygon options",
-    "tradier",
     "brokerage feed",
 )
 _ACCOUNT_TOKENS = (
@@ -68,6 +67,20 @@ def _source_text(row: dict[str, Any]) -> str:
             "provider",
             "freshness_label",
             "fabric_source_tier",
+            "fabric_quote_provider",
+            "stream_feed",
+            "data_mode",
+            "data_quality_label",
+        )
+        if row.get(key) is not None
+    )
+
+
+def _current_quote_text(row: dict[str, Any]) -> str:
+    return " ".join(
+        _text(row.get(key)).lower()
+        for key in (
+            "freshness_label",
             "fabric_quote_provider",
             "stream_feed",
             "data_mode",
@@ -154,15 +167,22 @@ def assess_execution_quote(
 
     Source labels and precomputed relative ages are insufficient. A contract must
     carry an absolute quote timestamp, a trusted live/account source and a valid
-    two-sided quote before it may be execution-ready.
+    two-sided quote before it may be execution-ready. A verified OPRA stream
+    overlay may supersede a fallback base-chain label only when the overlay
+    explicitly replaced the execution quote.
     """
     record = row if isinstance(row, dict) else {}
     source_text = _source_text(record)
+    current_quote_text = _current_quote_text(record)
     blockers: list[str] = []
 
-    delayed = any(token in source_text for token in _DELAYED_TOKENS)
-    trusted_live = any(token in source_text for token in _TRUSTED_LIVE_TOKENS)
-    account = any(token in source_text for token in _ACCOUNT_TOKENS)
+    overlay_execution = bool(record.get("stream_execution_grade")) and (
+        "opra" in current_quote_text or "alpaca_opra_stream" in current_quote_text
+    )
+    classification_text = current_quote_text if overlay_execution else source_text
+    delayed = any(token in classification_text for token in _DELAYED_TOKENS)
+    trusted_live = any(token in classification_text for token in _TRUSTED_LIVE_TOKENS)
+    account = any(token in classification_text for token in _ACCOUNT_TOKENS)
 
     if delayed:
         source_mode = "DELAYED_OR_RESEARCH"
@@ -172,7 +192,7 @@ def assess_execution_quote(
         source_mode = "ACCOUNT"
         base_confidence = "ACCOUNT"
     elif trusted_live:
-        source_mode = "LIVE"
+        source_mode = "LIVE_OVERLAY" if overlay_execution else "LIVE"
         base_confidence = "LIVE"
     elif source_text:
         source_mode = "UNVERIFIED"
