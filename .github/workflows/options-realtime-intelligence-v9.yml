@@ -1,0 +1,101 @@
+name: BLACK BOX Realtime Options Intelligence V9
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Two hand-off windows cover both U.S. DST regimes. The second run replaces
+    # the first cleanly and carries the realtime stream through the close.
+    - cron: "20 13,18 * * 1-5"
+
+concurrency:
+  group: black-box-realtime-options-v9
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  realtime-options:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      GH_TOKEN: ${{ github.token }}
+      INTRINIO_API_KEY: ${{ secrets.INTRINIO_API_KEY }}
+      INTRINIO_OPTIONS_SOURCE: realtime
+      INTRINIO_REALTIME_PROVIDER: OPRA
+      INTRINIO_REALTIME_THREADS: ${{ secrets.INTRINIO_REALTIME_THREADS || '8' }}
+      OPTIONS_REALTIME_SYMBOLS: ${{ secrets.OPTIONS_REALTIME_SYMBOLS || 'SPY,QQQ,IWM,AAPL,MSFT,NVDA,AMD,TSLA,META,AMZN,GOOGL,AVGO' }}
+      OPTIONS_REALTIME_MAX_EVENT_AGE_SECONDS: ${{ secrets.OPTIONS_REALTIME_MAX_EVENT_AGE_SECONDS || '90' }}
+      OPTIONS_REALTIME_THESIS_WINDOW_SECONDS: ${{ secrets.OPTIONS_REALTIME_THESIS_WINDOW_SECONDS || '600' }}
+      OPTIONS_REALTIME_MIN_CONFIRMED_PREMIUM: ${{ secrets.OPTIONS_REALTIME_MIN_CONFIRMED_PREMIUM || '250000' }}
+      OPTIONS_REALTIME_EXTENDED_MOVE_PCT: ${{ secrets.OPTIONS_REALTIME_EXTENDED_MOVE_PCT || '0.80' }}
+      OPTIONS_REALTIME_SEND_BUILDING: ${{ secrets.OPTIONS_REALTIME_SEND_BUILDING || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-realtime.txt
+
+      - name: Install realtime runtime
+        run: pip install -r requirements-realtime.txt
+
+      - name: Restore V9 thesis/delivery memory
+        shell: bash
+        run: |
+          mkdir -p data/live .realtime-v9-restore
+          printf '{"theses":{},"latest":[]}\n' > data/live/realtime_options_v9_state.json
+          for run_id in $(gh run list --workflow options-realtime-intelligence-v9.yml --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .realtime-v9-restore && mkdir -p .realtime-v9-restore
+            if gh run download "$run_id" -n realtime-options-v9-state -D .realtime-v9-restore >/dev/null 2>&1; then
+              state="$(find .realtime-v9-restore -type f -name realtime_options_v9_state.json | head -1)"
+              log="$(find .realtime-v9-restore -type f -name realtime_options_v9_transitions.jsonl | head -1)"
+              [[ -n "$state" ]] && cp "$state" data/live/realtime_options_v9_state.json
+              [[ -n "$log" ]] && cp "$log" data/live/realtime_options_v9_transitions.jsonl
+              echo "Restored V9 state from run $run_id"
+              break
+            fi
+          done
+
+      - name: Realtime entitlement preflight
+        shell: bash
+        run: |
+          if [[ -z "$INTRINIO_API_KEY" ]]; then
+            echo "::warning::INTRINIO_API_KEY is missing; realtime worker will not start."
+          else
+            echo "Intrinio key present. V9 will request realtime OPRA and fail closed if entitlement is unavailable."
+          fi
+
+      - name: Run realtime parent-order + thesis engine
+        if: env.INTRINIO_API_KEY != ''
+        shell: bash
+        run: |
+          python -m scripts.run_realtime_options_intelligence \
+            --wait-for-market \
+            --until-market-close \
+            --max-wait-seconds 5400 \
+            --max-runtime-seconds 17700 \
+            --state data/live/realtime_options_v9_state.json \
+            --log data/live/realtime_options_v9_transitions.jsonl
+
+      - name: Upload realtime V9 state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: realtime-options-v9-state
+          path: |
+            data/live/realtime_options_v9_state.json
+            data/live/realtime_options_v9_transitions.jsonl
+          if-no-files-found: warn
+          retention-days: 30
