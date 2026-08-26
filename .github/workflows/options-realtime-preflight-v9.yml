@@ -18,6 +18,14 @@ jobs:
     timeout-minutes: 5
     env:
       INTRINIO_API_KEY: ${{ secrets.INTRINIO_API_KEY }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +44,46 @@ jobs:
       - name: Install realtime runtime
         run: pip install -r requirements-realtime.txt
 
+      - name: Build safe provider readiness matrix
+        shell: bash
+        run: |
+          mkdir -p data/live
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def present(name):
+              return bool(os.getenv(name, '').strip())
+
+          tradier_base = os.getenv('TRADIER_BASE_URL', '').lower()
+          tradier_mode = 'production' if 'api.tradier.com' in tradier_base and 'sandbox' not in tradier_base else 'sandbox' if 'sandbox' in tradier_base else 'custom_or_unknown'
+          alpaca_feed = os.getenv('ALPACA_OPTIONS_FEED', '').strip().lower() or 'indicative'
+          matrix = {
+              'intrinio': {
+                  'credential_present': present('INTRINIO_API_KEY'),
+                  'requested_options_mode': 'realtime',
+              },
+              'tradier': {
+                  'credential_present': present('TRADIER_TOKEN'),
+                  'configured_mode': tradier_mode,
+              },
+              'alpaca': {
+                  'credentials_present': present('ALPACA_API_KEY') and present('ALPACA_SECRET_KEY'),
+                  'configured_options_feed': alpaca_feed,
+                  'opra_requested': alpaca_feed == 'opra',
+              },
+              'polygon': {'credential_present': present('POLYGON_API_KEY')},
+              'marketdata': {'credential_present': present('MARKETDATA_TOKEN')},
+              'finnhub': {'credential_present': present('FINNHUB_API_KEY')},
+          }
+          Path('data/live/options_provider_readiness.json').write_text(
+              json.dumps(matrix, indent=2), encoding='utf-8'
+          )
+          print('Options provider readiness (credentials only; no secret values):')
+          print(json.dumps(matrix, indent=2))
+          PY
+
       - name: Verify realtime OPRA auth and websocket
         shell: bash
         run: |
@@ -53,28 +101,28 @@ jobs:
           import json
           from pathlib import Path
           p = json.loads(Path('data/live/realtime_opra_preflight.json').read_text(encoding='utf-8'))
-          print('### BLACK BOX V9 — Realtime OPRA preflight')
-          print(f"- Status: **{p.get('status')}**")
-          print(f"- Auth HTTP: `{p.get('auth_http_status')}`")
-          print(f"- WebSocket opened: `{p.get('websocket_open')}`")
-          print(f"- Reason: `{p.get('reason')}`")
+          matrix = json.loads(Path('data/live/options_provider_readiness.json').read_text(encoding='utf-8')) if Path('data/live/options_provider_readiness.json').exists() else {}
           with open(Path.home() / 'summary.md', 'w', encoding='utf-8') as f:
-              f.write('### BLACK BOX V9 — Realtime OPRA preflight\n')
-              f.write(f"- Status: **{p.get('status')}**\n")
-              f.write(f"- Auth HTTP: `{p.get('auth_http_status')}`\n")
-              f.write(f"- WebSocket opened: `{p.get('websocket_open')}`\n")
-              f.write(f"- Reason: `{p.get('reason')}`\n")
+              f.write('### BLACK BOX V9 — Realtime/provider preflight\n')
+              f.write(f"- Intrinio realtime: **{p.get('status')}** — `{p.get('reason')}`\n")
+              f.write(f"- Tradier credential: `{matrix.get('tradier', {}).get('credential_present')}` | mode: `{matrix.get('tradier', {}).get('configured_mode')}`\n")
+              f.write(f"- Alpaca credentials: `{matrix.get('alpaca', {}).get('credentials_present')}` | options feed: `{matrix.get('alpaca', {}).get('configured_options_feed')}`\n")
+              f.write(f"- Polygon credential: `{matrix.get('polygon', {}).get('credential_present')}`\n")
+              f.write(f"- MarketData credential: `{matrix.get('marketdata', {}).get('credential_present')}`\n")
+              f.write(f"- Finnhub credential: `{matrix.get('finnhub', {}).get('credential_present')}`\n")
           PY
             cat "$HOME/summary.md" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "::warning::Preflight report was not created."
           fi
 
-      - name: Upload realtime entitlement report
+      - name: Upload realtime/provider reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: realtime-opra-preflight-v9
-          path: data/live/realtime_opra_preflight.json
+          path: |
+            data/live/realtime_opra_preflight.json
+            data/live/options_provider_readiness.json
           if-no-files-found: warn
           retention-days: 7
