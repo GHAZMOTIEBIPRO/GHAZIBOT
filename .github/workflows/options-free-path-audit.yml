@@ -1,0 +1,149 @@
+name: BLACK BOX Free Options Path Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/options-free-path-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit-free-options:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+      TRADIER_TOKEN: ""
+      MARKETDATA_TOKEN: ""
+      FINNHUB_API_KEY: ""
+      TIINGO_API_KEY: ""
+      TWELVE_DATA_API_KEY: ""
+      POLYGON_API_KEY: ""
+      ALPHA_VANTAGE_API_KEY: ""
+      ALPACA_API_KEY: ""
+      ALPACA_SECRET_KEY: ""
+      ALPACA_OPTIONS_FEED: "indicative"
+      ALPACA_STOCK_FEED: "iex"
+      OPTIONS_INDEPENDENT_MAX_SYMBOLS: "8"
+      OPTIONS_INDEPENDENT_TOP_PER_SIDE: "5"
+      OPTIONS_FREE_ALERTS_ENABLED: "false"
+      DATABASE_PATH: data/live/audit_options_alert_state.json
+      SIGNAL_JOURNAL_PATH: data/live/audit_options_signals.jsonl
+      OUTCOME_PATH: data/live/audit_options_outcomes.json
+      CALIBRATION_PATH: data/live/audit_options_calibration.json
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run zero-cost options radar sample
+        id: radar
+        shell: bash
+        run: |
+          mkdir -p public/data data/live
+          set +e
+          python -m scripts.run_options_radar_fabric \
+            --output public/data/options_free_audit.json \
+            --max-symbols 8 \
+            --top-per-side 5 \
+            2>&1 | tee data/live/options_free_audit.log
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "Radar diagnostic exit code: $code"
+
+      - name: Summarize data quality and usefulness
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          src = Path('public/data/options_free_audit.json')
+          report = {
+              'payload_created': src.exists() and src.stat().st_size > 0,
+              'radar_exit_code': int('${{ steps.radar.outputs.exit_code }}' or -1),
+          }
+          if report['payload_created']:
+              try:
+                  payload = json.loads(src.read_text(encoding='utf-8'))
+              except Exception as exc:
+                  report['parse_error'] = f'{type(exc).__name__}: {exc}'
+                  payload = {}
+              summary = payload.get('summary') if isinstance(payload.get('summary'), dict) else {}
+              readiness = payload.get('provider_readiness') if isinstance(payload.get('provider_readiness'), dict) else {}
+              rows = payload.get('research_contracts') or payload.get('contracts') or []
+              rows = [r for r in rows if isinstance(r, dict)]
+              free = payload.get('free_directional_signals') or []
+              free = [r for r in free if isinstance(r, dict)]
+              def coverage(name):
+                  if not rows:
+                      return 0.0
+                  n = sum(1 for r in rows if r.get(name) not in (None, '', 0, 0.0))
+                  return round(n / len(rows), 3)
+              provider_counts = {}
+              for row in rows:
+                  provider = str(row.get('provider') or row.get('quote_source') or row.get('source') or 'unknown')
+                  provider_counts[provider] = provider_counts.get(provider, 0) + 1
+              report.update({
+                  'architecture': payload.get('architecture'),
+                  'symbols_scanned': summary.get('symbols_scanned', 0),
+                  'provider_readiness': readiness.get('status') or summary.get('provider_readiness'),
+                  'production_quote_ready': bool(readiness.get('production_quote_ready')),
+                  'production_flow_ready': bool(readiness.get('production_flow_ready')),
+                  'production_alerts_blocked': bool(summary.get('production_alerts_blocked')),
+                  'research_contracts': len(rows),
+                  'free_directional_signals': len(free),
+                  'provider_counts': provider_counts,
+                  'coverage': {
+                      'bid': coverage('bid'),
+                      'ask': coverage('ask'),
+                      'volume': coverage('volume'),
+                      'open_interest': coverage('open_interest'),
+                      'iv': coverage('iv'),
+                      'delta': coverage('delta'),
+                      'underlying_price': coverage('underlying_price'),
+                  },
+                  'errors': payload.get('errors') if isinstance(payload.get('errors'), dict) else {},
+                  'limitations': (payload.get('limitations') or [])[:8],
+              })
+          Path('data/live/options_free_path_audit.json').write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8'
+          )
+          print('=== SAFE FREE OPTIONS PATH AUDIT ===')
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          with open(Path.home() / 'free-options-summary.md', 'w', encoding='utf-8') as f:
+              f.write('### BLACK BOX — Free options path audit\n')
+              for key in ('payload_created','radar_exit_code','symbols_scanned','provider_readiness','production_quote_ready','production_flow_ready','production_alerts_blocked','research_contracts','free_directional_signals'):
+                  f.write(f'- {key}: `{report.get(key)}`\n')
+              f.write(f"- coverage: `{json.dumps(report.get('coverage', {}), ensure_ascii=False)}`\n")
+              f.write(f"- providers: `{json.dumps(report.get('provider_counts', {}), ensure_ascii=False)}`\n")
+          PY
+          cat "$HOME/free-options-summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: free-options-path-audit
+          path: |
+            data/live/options_free_path_audit.json
+            data/live/options_free_audit.log
+            public/data/options_free_audit.json
+          if-no-files-found: warn
+          retention-days: 7
