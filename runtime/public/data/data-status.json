@@ -1,16 +1,16 @@
 {
-  "status": "stale",
-  "generated_at": "2026-08-26T18:22:16.516185+00:00",
-  "dataset_age_minutes": 384.9,
-  "last_successful_refresh": "2026-08-26T18:22:16.516185+00:00",
+  "status": "degraded",
+  "generated_at": "2026-08-27T22:18:14.134343+00:00",
+  "dataset_age_minutes": 2.4,
+  "last_successful_refresh": "2026-08-27T22:18:14.134343+00:00",
   "option_provider": "phase5_hybrid",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
     "production_quote_ready": false,
     "production_flow_ready": false,
-    "usable_chains": 11,
-    "fallback_only_chains": 11,
-    "delayed_or_indicative_chains": 11,
+    "usable_chains": 9,
+    "fallback_only_chains": 9,
+    "delayed_or_indicative_chains": 9,
     "live_primary_chains": 0,
     "cross_source_chains": 0,
     "opra_chains": 0,
@@ -19,8 +19,8 @@
     ],
     "reasons": [
       "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-      "11 chain(s) are Yahoo/YFinance-only fallback",
-      "11 chain(s) contain delayed, indicative, or unofficial sources"
+      "9 chain(s) are Yahoo/YFinance-only fallback",
+      "9 chain(s) contain delayed, indicative, or unofficial sources"
     ]
   },
   "source_status": {
@@ -30,7 +30,7 @@
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-08-27T00:45:56.058807+00:00",
+      "checked_at": "2026-08-27T22:17:28.487794+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
@@ -53,16 +53,16 @@
   "row_counts": {
     "stocks": 15,
     "options": 0,
-    "catalysts": 8,
+    "catalysts": 13,
     "expiry_contracts": 0
   },
   "quality_counts": {
     "stale_options": 0,
     "missing_expiry_family": 0,
-    "duplicate_events_collapsed": 0,
-    "errors": 5,
+    "duplicate_events_collapsed": 2,
+    "errors": 6,
     "critical_errors": 0,
-    "fallback_only_option_chains": 11,
+    "fallback_only_option_chains": 9,
     "live_primary_option_chains": 0
   },
   "sec_incremental": {
@@ -75,13 +75,12 @@
     "prefilter_skips": 0,
     "events_emitted": 0,
     "processed_accessions": 0,
-    "updated_at": "2026-08-26T18:21:22.622436+00:00"
+    "updated_at": "2026-08-27T22:17:38.278977+00:00"
   },
   "run_duration_seconds": null,
   "reasons": [
-    "published dataset age 385 minutes",
     "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-    "11 chain(s) are Yahoo/YFinance-only fallback",
-    "11 chain(s) contain delayed, indicative, or unofficial sources"
+    "9 chain(s) are Yahoo/YFinance-only fallback",
+    "9 chain(s) contain delayed, indicative, or unofficial sources"
   ]
 }
