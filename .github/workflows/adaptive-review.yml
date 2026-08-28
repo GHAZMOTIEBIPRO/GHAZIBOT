@@ -165,8 +165,11 @@ jobs:
             "data/live/options_outcomes.json:options_outcomes.json"; do
             source="${pair%%:*}"
             target="${pair##*:}"
-            [[ -f "$source" ]] && cp -f "$source" ".adaptive-upload/$target"
+            if [[ -f "$source" ]]; then
+              cp -f "$source" ".adaptive-upload/$target"
+            fi
           done
+          exit 0
 
       - name: Upload adaptive evidence state
         uses: actions/upload-artifact@v4
