@@ -50,7 +50,9 @@ jobs:
             for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
               if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
-                [[ -s telegram_runtime/connection.enc ]] && break 2
+                if [[ -s telegram_runtime/connection.enc ]]; then
+                  break 2
+                fi
               fi
             done
           done
@@ -60,11 +62,12 @@ jobs:
               -out telegram_runtime/connection.json \
               -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
           fi
+          exit 0
 
       - name: Resolve Telegram destination
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
-      - name: Restore news state and SEC ticker cache
+      - name: Restore company news state and SEC ticker cache
         if: env.TELEGRAM_READY == 'true'
         shell: bash
         env:
@@ -72,20 +75,23 @@ jobs:
         run: |
           mkdir -p data/live data/cache .news-state-restore
           printf '{"sent":{}}\n' > data/live/company_news_alert_state.json
-          for workflow in company-news-watch.yml sniper-news-watch.yml; do
-            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-              rm -rf .news-state-restore && mkdir -p .news-state-restore
-              for artifact in company-news-state sniper-news-state; do
-                if gh run download "$run_id" -n "$artifact" -D .news-state-restore >/dev/null 2>&1; then
-                  source="$(find .news-state-restore -type f \( -name company_news_alert_state.json -o -name sniper_news_alert_state.json \) | head -1)"
-                  if [[ -n "$source" ]]; then cp -f "$source" data/live/company_news_alert_state.json; fi
-                  cache="$(find .news-state-restore -type f -name sec_company_tickers.json | head -1)"
-                  if [[ -n "$cache" ]]; then cp -f "$cache" data/cache/sec_company_tickers.json; fi
-                  if [[ -n "$source" || -n "$cache" ]]; then break 3; fi
-                fi
-              done
-            done
+          for run_id in $(gh run list --workflow company-news-watch.yml --status completed --branch main --limit 12 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .news-state-restore && mkdir -p .news-state-restore
+            if gh run download "$run_id" -n company-news-state -D .news-state-restore >/dev/null 2>&1; then
+              source="$(find .news-state-restore -type f -name company_news_alert_state.json | head -1)"
+              if [[ -n "$source" ]]; then
+                cp -f "$source" data/live/company_news_alert_state.json
+              fi
+              cache="$(find .news-state-restore -type f -name sec_company_tickers.json | head -1)"
+              if [[ -n "$cache" ]]; then
+                cp -f "$cache" data/cache/sec_company_tickers.json
+              fi
+              if [[ -n "$source" || -n "$cache" ]]; then
+                break
+              fi
+            fi
           done
+          exit 0
 
       - name: Scan material company news and official catalysts
         if: env.TELEGRAM_READY == 'true'
@@ -101,8 +107,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p .news-state-upload
-          [[ -s data/live/company_news_alert_state.json ]] && cp data/live/company_news_alert_state.json .news-state-upload/company_news_alert_state.json || true
-          [[ -s data/cache/sec_company_tickers.json ]] && cp data/cache/sec_company_tickers.json .news-state-upload/sec_company_tickers.json || true
+          if [[ -s data/live/company_news_alert_state.json ]]; then
+            cp data/live/company_news_alert_state.json .news-state-upload/company_news_alert_state.json
+          fi
+          if [[ -s data/cache/sec_company_tickers.json ]]; then
+            cp data/cache/sec_company_tickers.json .news-state-upload/sec_company_tickers.json
+          fi
           exit 0
 
       - name: Upload news state
