@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-31T20:07:03.235762+00:00",
+  "updated_at": "2026-08-31T23:52:03.592598+00:00",
   "mode": "EVENT_LEVEL_DECISIVE_ARCHIVE",
   "decision_authority": false,
   "maximum_records": 10000,
@@ -7220,13 +7220,53 @@
       },
       "measurement_basis": "repeated_radar_snapshots",
       "event_level_deduped": true
+    },
+    "0e44583e8cca9bb7abb0": {
+      "signal_id": "0e44583e8cca9bb7abb0",
+      "signal_time": "2026-08-31T19:21:29.311268+00:00",
+      "symbol": "LGPS",
+      "direction": "up",
+      "entry_price": 1.225,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.83,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 62.83,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "failed",
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-08-31T23:15:30.758034+00:00",
+      "mfe_pct": 0.0,
+      "mae_pct": -6.9388,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-08-31T23:15:30.758034+00:00",
+          "price": 1.14,
+          "directional_return_pct": -6.9388
+        },
+        "60m": {
+          "observed_at": "2026-08-31T23:15:30.758034+00:00",
+          "price": 1.14,
+          "directional_return_pct": -6.9388
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
     }
   },
   "summary": {
-    "records": 166,
+    "records": 167,
     "successes": 121,
-    "failures": 45,
-    "added_this_pass": 0,
+    "failures": 46,
+    "added_this_pass": 1,
     "updated_this_pass": 0
   }
 }
