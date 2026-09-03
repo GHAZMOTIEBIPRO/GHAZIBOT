@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-03T21:03:42.336113+00:00",
+  "updated_at": "2026-09-03T23:18:01.143703+00:00",
   "mode": "EVENT_LEVEL_DECISIVE_ARCHIVE",
   "decision_authority": false,
   "maximum_records": 10000,
@@ -7575,12 +7575,57 @@
       },
       "measurement_basis": "repeated_radar_snapshots",
       "event_level_deduped": true
+    },
+    "8743e81c03c5517b1e8c": {
+      "signal_id": "8743e81c03c5517b1e8c",
+      "signal_time": "2026-08-27T22:44:06.588755+00:00",
+      "symbol": "DFNS",
+      "direction": "up",
+      "entry_price": 12.71,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 64.14,
+      "entry_score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "score": 64.14,
+      "score_band": "below-72",
+      "market_regime": "risk_on",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "terminal_outcome": "failed",
+      "terminal_reason": "failure_threshold_observed",
+      "terminal_at": "2026-09-03T21:49:09.687916+00:00",
+      "mfe_pct": 0.0,
+      "mae_pct": -19.9056,
+      "checkpoints": {
+        "15m": {
+          "observed_at": "2026-09-03T21:49:09.687916+00:00",
+          "price": 10.18,
+          "directional_return_pct": -19.9056
+        },
+        "60m": {
+          "observed_at": "2026-09-03T21:49:09.687916+00:00",
+          "price": 10.18,
+          "directional_return_pct": -19.9056
+        },
+        "1d": {
+          "observed_at": "2026-09-03T21:49:09.687916+00:00",
+          "price": 10.18,
+          "directional_return_pct": -19.9056
+        }
+      },
+      "measurement_basis": "repeated_radar_snapshots",
+      "event_level_deduped": true
     }
   },
   "summary": {
-    "records": 174,
+    "records": 175,
     "successes": 121,
-    "failures": 53,
+    "failures": 54,
     "added_this_pass": 1,
     "updated_this_pass": 0
   }
