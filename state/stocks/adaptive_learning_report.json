@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-04T20:47:19.494546+00:00",
+  "generated_at": "2026-09-04T23:03:46.390720+00:00",
   "mode": "SHADOW_LEARNING",
   "live_alert_weights_changed": false,
   "free_autonomy": {
@@ -22,11 +22,11 @@
     "error": ""
   },
   "stock_archive_summary": {
-    "records": 177,
+    "records": 178,
     "successes": 123,
-    "failures": 54,
-    "added_this_pass": 0,
-    "updated_this_pass": 0
+    "failures": 55,
+    "added_this_pass": 1,
+    "updated_this_pass": 1
   },
   "stock_outcome_audit": {
     "available": true,
@@ -52,8 +52,8 @@
     "measurement_note": "Path-dependent paper tracking. Contract OHLC is preferred; underlying OHLC is a documented fallback. Stop-first is terminal. Same-bar stop/target is ambiguous and never counted as a win."
   },
   "calibration": {
-    "sample_size": 9,
-    "raw_priced_sample": 9,
+    "sample_size": 0,
+    "raw_priced_sample": 0,
     "priced_sample": 0,
     "matured_sample": 0,
     "five_day_sample": 0,
@@ -77,8 +77,8 @@
       },
       {
         "band": "80-89",
-        "signals": 2,
-        "observed": 2,
+        "signals": 0,
+        "observed": 0,
         "priced": 0,
         "matured": 0,
         "target_1_rate": null,
@@ -90,8 +90,8 @@
       },
       {
         "band": "70-79",
-        "signals": 7,
-        "observed": 7,
+        "signals": 0,
+        "observed": 0,
         "priced": 0,
         "matured": 0,
         "target_1_rate": null,
@@ -133,7 +133,7 @@
   },
   "model": {
     "schema_version": 1,
-    "generated_at": "2026-09-04T20:47:19.490667+00:00",
+    "generated_at": "2026-09-04T23:03:46.388241+00:00",
     "policy": {
       "no_live_weight_change_before_minimum_sample": true,
       "stock_min_matured": 60,
@@ -149,9 +149,9 @@
     },
     "stock": {
       "ready": true,
-      "matured_decisive": 177,
+      "matured_decisive": 178,
       "minimum_required": 60,
-      "baseline_success_rate": 0.6949,
+      "baseline_success_rate": 0.691,
       "score_bands": {
         "80-89": {
           "sample": 32,
@@ -167,13 +167,13 @@
           "failures": 5,
           "success_rate": 0.7727,
           "eligible": true,
-          "score_adjustment": 0.0
+          "score_adjustment": 1.47
         },
         "below-72": {
-          "sample": 104,
+          "sample": 105,
           "successes": 69,
-          "failures": 35,
-          "success_rate": 0.6635,
+          "failures": 36,
+          "success_rate": 0.6571,
           "eligible": true,
           "score_adjustment": 0.0
         },
@@ -204,20 +204,20 @@
           "score_adjustment": 0.0
         },
         "PRESSURE_BUILDING": {
-          "sample": 97,
+          "sample": 98,
           "successes": 64,
-          "failures": 33,
-          "success_rate": 0.6598,
+          "failures": 34,
+          "success_rate": 0.6531,
           "eligible": true,
           "score_adjustment": 0.0
         }
       },
       "regimes": {
         "risk_on": {
-          "sample": 176,
+          "sample": 177,
           "successes": 123,
-          "failures": 53,
-          "success_rate": 0.6989,
+          "failures": 54,
+          "success_rate": 0.6949,
           "eligible": true,
           "score_adjustment": 0.0
         },
@@ -232,10 +232,10 @@
       },
       "cause_tiers": {
         "unknown": {
-          "sample": 177,
+          "sample": 178,
           "successes": 123,
-          "failures": 54,
-          "success_rate": 0.6949,
+          "failures": 55,
+          "success_rate": 0.691,
           "eligible": true,
           "score_adjustment": 0.0
         }
@@ -250,12 +250,12 @@
           "score_adjustment": 0.0
         },
         "NO_PRIMARY_CAUSE_PROVEN": {
-          "sample": 76,
+          "sample": 77,
           "successes": 47,
-          "failures": 29,
-          "success_rate": 0.6184,
+          "failures": 30,
+          "success_rate": 0.6104,
           "eligible": true,
-          "score_adjustment": 0.0
+          "score_adjustment": -0.81
         }
       }
     },
