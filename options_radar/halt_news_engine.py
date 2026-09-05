@@ -14,9 +14,32 @@ import requests
 NASDAQ_HALT_RSS = os.getenv("NASDAQ_HALT_RSS_URL", "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts")
 ALPHA_VANTAGE_NEWS = "https://www.alphavantage.co/query"
 FINNHUB_NEWS = "https://finnhub.io/api/v1/news"
+GLOBENEWSWIRE_PUBLIC_RSS = os.getenv(
+    "GLOBENEWSWIRE_PUBLIC_RSS_URL",
+    "https://www.globenewswire.com/RssFeed/orgclass/1/feedTitle/GlobeNewswire%20-%20News%20about%20Public%20Companies",
+)
+BUSINESS_WIRE_RSS = os.getenv(
+    "BUSINESS_WIRE_RSS_URL",
+    "https://feed.businesswire.com/rss/home/?rss=G1QFDERJXkJeGVtRWA==",
+)
+GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
 TIMEOUT = 18
 SYMBOL_RE = re.compile(r"\b[A-Z][A-Z0-9.-]{0,6}\b")
 HALT_REASON_RE = re.compile(r"\b(T1|T2|T5|T6|T8|T12|LUDP|H10|H11|M1|M2|MWC1|MWC2|MWC3)\b", re.I)
+EXCHANGE_TICKER_RE = re.compile(
+    r"\b(?:NASDAQ|NYSE|NYSE\s+AMERICAN|NYSEAMERICAN|AMEX|CBOE|OTCQX|OTCQB)\s*[:\-]\s*([A-Z][A-Z0-9.\-]{0,6})\b",
+    re.I,
+)
+_BULLISH_NEWS = (
+    "approval", "approved", "positive results", "record revenue", "raises guidance",
+    "wins contract", "awarded contract", "strategic partnership", "acquisition", "buyback",
+    "share repurchase", "dividend increase", "patent granted", "breakthrough",
+)
+_BEARISH_NEWS = (
+    "public offering", "registered direct", "atm offering", "bankruptcy", "delisting",
+    "lowers guidance", "cuts guidance", "investigation", "going concern", "reverse split",
+    "misses estimates", "trial failed", "clinical hold",
+)
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -70,6 +93,35 @@ def _symbol_from_text(text: str, known_symbols: set[str] | None = None) -> str:
     return ""
 
 
+def _symbols_from_release_text(text: str, known_symbols: set[str] | None = None) -> list[str]:
+    known = {str(symbol).upper().strip() for symbol in (known_symbols or set()) if str(symbol).strip()}
+    upper = str(text or "").upper()
+    output: list[str] = []
+    for match in EXCHANGE_TICKER_RE.finditer(upper):
+        symbol = match.group(1).upper().strip()
+        if symbol and (not known or symbol in known) and symbol not in output:
+            output.append(symbol)
+    if known:
+        # Avoid very short English-word tickers unless the release explicitly
+        # labels them with an exchange. This materially reduces false matches.
+        for symbol in sorted(known, key=len, reverse=True):
+            if len(symbol) < 3 or symbol in output:
+                continue
+            pattern = rf"(?<![A-Z0-9]){re.escape(symbol)}(?![A-Z0-9])"
+            if re.search(pattern, upper):
+                output.append(symbol)
+    return output
+
+
+def _headline_sentiment(headline: str) -> float:
+    text = str(headline or "").lower()
+    bullish = sum(token in text for token in _BULLISH_NEWS)
+    bearish = sum(token in text for token in _BEARISH_NEWS)
+    if bullish == bearish:
+        return 0.0
+    return max(-0.6, min(0.6, (bullish - bearish) * 0.22))
+
+
 def fetch_nasdaq_halts(known_symbols: set[str] | None = None) -> list[HaltEvent]:
     headers = {"User-Agent": "Mozilla/5.0 (compatible; BLACK-BOX-Omega/1.0)"}
     response = requests.get(NASDAQ_HALT_RSS, headers=headers, timeout=TIMEOUT)
@@ -87,6 +139,146 @@ def fetch_nasdaq_halts(known_symbols: set[str] | None = None) -> list[HaltEvent]
         if symbol:
             events.append(HaltEvent(symbol=symbol, reason=reason, title=title, description=description, published=published))
     return events
+
+
+def _feed_items(root: ET.Element) -> list[ET.Element]:
+    items = list(root.findall(".//item"))
+    if items:
+        return items
+    return list(root.findall(".//{*}entry"))
+
+
+def _feed_text(item: ET.Element, *names: str) -> str:
+    for name in names:
+        value = item.findtext(name)
+        if value:
+            return _strip_html(value)
+        value = item.findtext(f"{{*}}{name}")
+        if value:
+            return _strip_html(value)
+    return ""
+
+
+def _feed_link(item: ET.Element) -> str:
+    direct = _feed_text(item, "link")
+    if direct.startswith("http"):
+        return direct
+    for node in list(item.findall("link")) + list(item.findall("{*}link")):
+        href = str(node.attrib.get("href") or "").strip()
+        if href.startswith("http"):
+            return href
+    return ""
+
+
+def _feed_categories(item: ET.Element) -> list[str]:
+    output: list[str] = []
+    for node in list(item.findall("category")) + list(item.findall("{*}category")):
+        text = _strip_html(node.text)
+        term = _strip_html(node.attrib.get("term"))
+        if text:
+            output.append(text)
+        if term and term not in output:
+            output.append(term)
+    return output
+
+
+def _parse_release_feed(
+    content: bytes,
+    *,
+    known_symbols: set[str] | None,
+    source: str,
+    provider: str,
+    maximum: int = 140,
+) -> list[NewsEvent]:
+    root = ET.fromstring(content)
+    events: list[NewsEvent] = []
+    for item in _feed_items(root)[:maximum]:
+        headline = _feed_text(item, "title")
+        if not headline:
+            continue
+        description = _feed_text(item, "description", "summary", "content")
+        published = _feed_text(item, "pubDate", "published", "updated")
+        url = _feed_link(item)
+        categories = _feed_categories(item)
+        category_text = " ".join(categories)
+        explicit = _symbols_from_release_text(category_text, known_symbols=known_symbols)
+        symbols = explicit or _symbols_from_release_text(
+            f"{headline} {description}", known_symbols=known_symbols
+        )
+        if not symbols:
+            continue
+        relevance = 0.90 if explicit else 0.72
+        sentiment = _headline_sentiment(headline)
+        for symbol in symbols:
+            events.append(
+                NewsEvent(
+                    symbol=symbol,
+                    headline=headline,
+                    source=source,
+                    url=url,
+                    published=published,
+                    relevance=relevance,
+                    sentiment=sentiment,
+                    provider=provider,
+                )
+            )
+    return events
+
+
+def _get_rss(url: str, *, params: dict[str, str] | None = None) -> bytes:
+    response = requests.get(
+        url,
+        params=params,
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; BLACK-BOX-Omega/NewsMesh; +https://github.com/GHAZMOTIEBIPRO/GHAZIBOT)",
+            "Accept": "application/rss+xml,application/atom+xml,application/xml,text/xml,*/*",
+        },
+        timeout=TIMEOUT,
+    )
+    response.raise_for_status()
+    return response.content
+
+
+def fetch_globenewswire_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
+    content = _get_rss(GLOBENEWSWIRE_PUBLIC_RSS)
+    return _parse_release_feed(
+        content,
+        known_symbols=known_symbols,
+        source="GlobeNewswire company release",
+        provider="globenewswire_rss",
+    )
+
+
+def fetch_businesswire_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
+    content = _get_rss(BUSINESS_WIRE_RSS)
+    return _parse_release_feed(
+        content,
+        known_symbols=known_symbols,
+        source="Business Wire company release",
+        provider="businesswire_rss",
+    )
+
+
+def fetch_prnewswire_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
+    # PR Newswire publishes RSS feeds. Google News RSS is used only as a
+    # keyless discovery transport here; headlines/links remain attributed to
+    # PR Newswire and never become official proof inside the stock path.
+    content = _get_rss(
+        GOOGLE_NEWS_RSS,
+        params={
+            "q": "site:prnewswire.com when:1d",
+            "hl": "en-US",
+            "gl": "US",
+            "ceid": "US:en",
+        },
+    )
+    return _parse_release_feed(
+        content,
+        known_symbols=known_symbols,
+        source="PR Newswire via Google News RSS",
+        provider="prnewswire_google_rss",
+        maximum=100,
+    )
 
 
 def fetch_alpha_vantage_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
@@ -173,13 +365,26 @@ def fetch_finnhub_news(known_symbols: set[str] | None = None) -> list[NewsEvent]
 
 def collect_fast_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
     events: list[NewsEvent] = []
-    for fetcher in (fetch_alpha_vantage_news, fetch_finnhub_news):
+    # Keyless feeds come first so the bot remains multi-source even when no API
+    # secrets are configured. Press-release wires are direct-company evidence,
+    # not independent confirmation; the deep stock path still requires official
+    # SEC/FDA/primary-source evidence before proving a catalyst.
+    fetchers = (
+        fetch_globenewswire_news,
+        fetch_businesswire_news,
+        fetch_prnewswire_news,
+        fetch_alpha_vantage_news,
+        fetch_finnhub_news,
+    )
+    for fetcher in fetchers:
         try:
             events.extend(fetcher(known_symbols=known_symbols))
         except requests.RequestException as exc:
-            print(f"Fast news provider skipped: {type(exc).__name__}: {exc}")
+            print(f"Fast news provider skipped: {fetcher.__name__}: {type(exc).__name__}: {exc}")
+        except (ET.ParseError, ValueError) as exc:
+            print(f"Fast news parse skipped: {fetcher.__name__}: {type(exc).__name__}: {exc}")
         except Exception as exc:
-            print(f"Fast news parse skipped: {type(exc).__name__}: {exc}")
+            print(f"Fast news provider degraded: {fetcher.__name__}: {type(exc).__name__}: {exc}")
     deduped: dict[tuple[str, str], NewsEvent] = {}
     for event in events:
         key = (event.symbol, event.headline.lower()[:180])
