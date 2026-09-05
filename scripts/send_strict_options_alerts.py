@@ -32,7 +32,9 @@ def _save(path: str | Path, payload: Any) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     temporary.replace(destination)
 
 
@@ -58,7 +60,9 @@ def _payload_age_minutes(payload: dict[str, Any]) -> float | None:
         return None
     if timestamp.tzinfo is None:
         timestamp = timestamp.replace(tzinfo=timezone.utc)
-    age = (datetime.now(timezone.utc) - timestamp.astimezone(timezone.utc)).total_seconds() / 60.0
+    age = (
+        datetime.now(timezone.utc) - timestamp.astimezone(timezone.utc)
+    ).total_seconds() / 60.0
     return max(0.0, age)
 
 
@@ -72,9 +76,63 @@ def _stored_fingerprint(value: Any) -> str:
     return str(value or "")
 
 
+def _level(value: Any) -> str:
+    number = _number(value, float("nan"))
+    return f"{number:g}" if math.isfinite(number) else "—"
+
+
+def _pattern(value: Any) -> str:
+    labels = {
+        "bullish_engulfing": "Bull Engulf",
+        "bearish_engulfing": "Bear Engulf",
+        "hammer": "Hammer",
+        "shooting_star": "Shooting Star",
+        "doji": "Doji",
+        "bullish_marubozu": "Bull Marubozu",
+        "bearish_marubozu": "Bear Marubozu",
+        "bullish_body": "Bull Candle",
+        "bearish_body": "Bear Candle",
+        "none": "—",
+    }
+    raw = str(value or "none").strip().lower()
+    return labels.get(raw, raw.replace("_", " ") or "—")
+
+
+def _chart_patterns(row: dict[str, Any]) -> str:
+    chart = row.get("chart_context")
+    if not isinstance(chart, dict):
+        return ""
+    frames = chart.get("timeframes")
+    if not isinstance(frames, dict):
+        return ""
+    parts: list[str] = []
+    for key, label in (("1d", "1D"), ("15m", "15m"), ("5m", "5m")):
+        frame = frames.get(key)
+        if not isinstance(frame, dict) or frame.get("available") is not True:
+            continue
+        pattern = _pattern(frame.get("pattern"))
+        rvol = _number(frame.get("relative_volume"))
+        vwap = frame.get("vwap")
+        suffix = f" {pattern}"
+        if rvol > 0:
+            suffix += f" RVOL {rvol:.2f}×"
+        if vwap is not None:
+            close = _number(frame.get("close"))
+            vwap_number = _number(vwap)
+            if close > 0 and vwap_number > 0:
+                suffix += " >VWAP" if close > vwap_number else " <VWAP"
+        parts.append(f"{label}:{suffix.strip()}")
+    return " | ".join(parts)
+
+
 def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> str:
     symbol = str(row.get("symbol") or "").upper()
-    direction = str(row.get("direction_label") or row.get("direction") or row.get("option_type") or "").upper()
+    direction = str(
+        row.get("direction_label")
+        or row.get("direction")
+        or row.get("option_type")
+        or ""
+    ).upper()
     expiration = str(row.get("expiration") or "")[:10]
     strike = _number(row.get("strike"))
     dte = int(_number(row.get("dte")))
@@ -90,42 +148,108 @@ def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> st
     rr = _number(row.get("reward_risk_1"))
     call_wall = row.get("call_wall")
     put_wall = row.get("put_wall")
+    gamma_flip = row.get("gamma_flip")
+    liquidity_strike = row.get("liquidity_strike")
     gamma_context = str(row.get("gamma_context") or "غير متاح")
     gamma_coverage = _number(row.get("gamma_coverage_pct"))
     oi_coverage = _number(row.get("oi_coverage_pct"))
-    occ = row.get("occ_side_context") if isinstance(row.get("occ_side_context"), dict) else {}
-    reasons = [str(value) for value in row.get("strict_reasons", []) if str(value).strip()]
+    chart_direction = str(row.get("chart_direction") or "غير متاح")
+    chart_score = _number(row.get("chart_score"))
+    chart_timeframes = int(_number(row.get("chart_available_timeframes")))
+    expected_move = _number(row.get("expected_move_1sigma"), float("nan"))
+    strike_intel = _number(row.get("strike_intelligence_score"))
+    inst_proxy = _number(row.get("institutional_activity_proxy_score"))
+    strike_reasons = [
+        str(value)
+        for value in row.get("strike_reasons_ar", [])
+        if str(value).strip()
+    ]
+    strict_reasons = [
+        str(value)
+        for value in row.get("strict_reasons", [])
+        if str(value).strip()
+    ]
+    patterns = _chart_patterns(row)
+    occ = (
+        row.get("occ_side_context")
+        if isinstance(row.get("occ_side_context"), dict)
+        else {}
+    )
     emoji = "🟢" if direction == "CALL" else "🔴"
     side_letter = "C" if direction == "CALL" else "P"
     mode_text = "إنتاجي" if mode == "production" else "مجاني/صارم"
 
     lines = [
         f"{emoji} <b>Ω | {symbol} {direction} {grade} | {strict:.0f}/100</b>",
-        f"🎯 <b>{strike:g}{side_letter} • {expiration} • {dte}D</b> | B/A <b>${bid:.2f}/${ask:.2f}</b> | Spr <b>{spread * 100:.1f}%</b>",
-        f"⚡ Flow <b>{flow:.0f}</b> | R/R <b>{rr:.2f}</b> | Δ <b>{delta:+.2f}</b> | IV <b>{iv:.0%}</b> | V/OI <b>{vol_oi:.2f}×</b>",
-        f"🧲 GEX <b>{_safe(gamma_context, 80)}</b> | CW <b>{_safe(call_wall, 40)}</b> | PW <b>{_safe(put_wall, 40)}</b> | Γ/OI <b>{gamma_coverage:.0f}/{oi_coverage:.0f}%</b>",
+        (
+            f"🎯 <b>{strike:g}{side_letter} • {expiration} • {dte}D</b> | "
+            f"B/A <b>${bid:.2f}/${ask:.2f}</b> | Spr <b>{spread * 100:.1f}%</b>"
+        ),
+        (
+            f"📊 Chart <b>{_safe(chart_direction, 30)}</b> "
+            f"<b>{chart_score:+.0f}</b> | TF <b>{chart_timeframes}/3</b> | "
+            f"Inst Proxy <b>{inst_proxy:.0f}/100</b>"
+        ),
     ]
+    if patterns:
+        lines.append(f"🕯 {_safe(patterns, 520)}")
+    lines.append(
+        f"⚡ Flow <b>{flow:.0f}</b> | R/R <b>{rr:.2f}</b> | "
+        f"Δ <b>{delta:+.2f}</b> | IV <b>{iv:.0%}</b> | V/OI <b>{vol_oi:.2f}×</b>"
+    )
+    lines.append(
+        f"🧲 GEX <b>{_safe(gamma_context, 70)}</b> | Flip <b>{_level(gamma_flip)}</b> | "
+        f"CW <b>{_level(call_wall)}</b> | PW <b>{_level(put_wall)}</b> | "
+        f"Liq <b>{_level(liquidity_strike)}</b> | Γ/OI <b>{gamma_coverage:.0f}/{oi_coverage:.0f}%</b>"
+    )
+    expected_text = f"${expected_move:.2f}" if math.isfinite(expected_move) else "—"
+    lines.append(
+        f"🎯 Strike Intel <b>{strike_intel:.0f}/100</b> | Expected Move 1σ <b>{expected_text}</b>"
+    )
+    if strike_reasons:
+        lines.append(
+            f"💡 <b>ليش هذا السترايك؟</b> {_safe(' | '.join(strike_reasons[:3]), 700)}"
+        )
     if occ.get("available") is True:
         lines.append(
-            f"🏛 OCC C/P <b>{int(_number(occ.get('call_volume'))):,}/{int(_number(occ.get('put_volume'))):,}</b> | {_safe(occ.get('dominance_ratio'), 30)}×"
+            f"🏛 OCC C/P <b>{int(_number(occ.get('call_volume'))):,}/"
+            f"{int(_number(occ.get('put_volume'))):,}</b> | "
+            f"{_safe(occ.get('dominance_ratio'), 30)}×"
         )
-    if reasons:
-        lines.append(f"✅ {_safe(' | '.join(reasons[:2]), 520)}")
+    if strict_reasons:
+        lines.append(f"✅ {_safe(' | '.join(strict_reasons[:2]), 520)}")
     lines.extend(
         [
             f"🛰 <b>{mode_text}</b> • {_safe(readiness.get('status') or 'UNKNOWN', 80)}",
-            "⚠️ <i>GEX Proxy والترشيح احتمالي؛ مسار الأوبشن مستقل عن الأسهم.</i>",
+            (
+                "⚠️ <i>GEX وInst Proxy استدلالات بحثية وليست مراكز ديلر/مؤسسات مؤكدة؛ "
+                "البيانات المجانية تبقى Research-grade.</i>"
+            ),
         ]
     )
     return "\n".join(lines)
 
 
-def select_rows(payload: dict[str, Any]) -> tuple[str, list[dict[str, Any]], dict[str, Any]]:
-    readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
+def select_rows(
+    payload: dict[str, Any],
+) -> tuple[str, list[dict[str, Any]], dict[str, Any]]:
+    readiness = (
+        payload.get("provider_readiness")
+        if isinstance(payload.get("provider_readiness"), dict)
+        else {}
+    )
     if readiness.get("production_quote_ready") is True:
-        rows = payload.get("production_directional_signals") or payload.get("directional_signals") or []
+        rows = (
+            payload.get("production_directional_signals")
+            or payload.get("directional_signals")
+            or []
+        )
         return "production", [row for row in rows if isinstance(row, dict)], readiness
-    free_enabled = os.getenv("OPTIONS_FREE_ALERTS_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
+    free_enabled = os.getenv("OPTIONS_FREE_ALERTS_ENABLED", "true").strip().lower() not in {
+        "0",
+        "false",
+        "no",
+    }
     if not free_enabled:
         return "blocked", [], readiness
     rows = payload.get("free_directional_signals") or []
@@ -157,16 +281,26 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
                 "path": "options",
                 "mode": mode,
                 "payload_age_minutes": round(age_minutes, 2),
-                "blocked_reason": str(readiness.get("status") or "PROVIDER_NOT_READY"),
+                "blocked_reason": str(
+                    readiness.get("status") or "PROVIDER_NOT_READY"
+                ),
             }
         )
         return 0
 
     minimum = _number(
-        os.getenv("OPTIONS_FREE_ALERT_MIN_SCORE" if mode == "free" else "OPTIONS_ALERT_MIN_SCORE", "87" if mode == "free" else "85"),
+        os.getenv(
+            "OPTIONS_FREE_ALERT_MIN_SCORE"
+            if mode == "free"
+            else "OPTIONS_ALERT_MIN_SCORE",
+            "87" if mode == "free" else "85",
+        ),
         87.0 if mode == "free" else 85.0,
     )
-    maximum = max(1, min(5, int(_number(os.getenv("OPTIONS_ALERT_MAX", "3"), 3))))
+    maximum = max(
+        1,
+        min(5, int(_number(os.getenv("OPTIONS_ALERT_MAX", "3"), 3))),
+    )
     rows.sort(
         key=lambda row: (
             _number(row.get("strict_score")),
@@ -182,7 +316,9 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
         if sent >= maximum:
             break
         symbol = str(row.get("symbol") or "").upper().strip()
-        direction = str(row.get("direction_label") or row.get("direction") or "").upper()
+        direction = str(
+            row.get("direction_label") or row.get("direction") or ""
+        ).upper()
         strict = _number(row.get("strict_score"))
         grade = str(row.get("signal_grade") or row.get("strict_grade") or "")
         if not symbol or direction not in {"CALL", "PUT"} or symbol in sent_symbols:
@@ -191,9 +327,18 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
             continue
         if mode == "free" and row.get("free_alert_eligible") is not True:
             continue
-        contract = str(row.get("contract_symbol") or f"{symbol}:{direction}:{row.get('expiration')}:{row.get('strike')}")
+        contract = str(
+            row.get("contract_symbol")
+            or f"{symbol}:{direction}:{row.get('expiration')}:{row.get('strike')}"
+        )
         fp = _fingerprint(
-            [symbol, direction, contract, round(strict / 3) * 3, round(_number(row.get("ask")), 2)]
+            [
+                symbol,
+                direction,
+                contract,
+                round(strict / 3) * 3,
+                round(_number(row.get("ask")), 2),
+            ]
         )
         key = f"{symbol}:{direction}"
         if _stored_fingerprint(sent_map.get(key)) == fp:
@@ -230,7 +375,9 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Send strict BLACK BOX CALL/PUT option alerts")
+    parser = argparse.ArgumentParser(
+        description="Send strict BLACK BOX CALL/PUT option alerts"
+    )
     parser.add_argument("--payload", required=True)
     parser.add_argument("--state", required=True)
     args = parser.parse_args()
@@ -247,7 +394,10 @@ def main() -> None:
         # Persist successful sends even if a later message fails, so the next
         # run cannot duplicate already-delivered alerts.
         _save(args.state, state)
-    print(f"Strict options Telegram sender: sent={sent} mode={state.get('mode')} min={state.get('minimum_score')}")
+    print(
+        f"Strict options Telegram sender: sent={sent} "
+        f"mode={state.get('mode')} min={state.get('minimum_score')}"
+    )
 
 
 if __name__ == "__main__":
