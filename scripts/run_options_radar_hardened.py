@@ -17,21 +17,35 @@ from options_radar.provider_readiness import assess_provider_readiness
 from options_radar.runtime_hardening import install_options_radar_hardening
 from options_radar.settings import Settings
 
-from scripts import run_options_radar_independent as base
+from scripts import run_options_radar_chart_first as base
 
 
 def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
     if readiness.get("production_quote_ready") is True:
         payload.setdefault("summary", {})["production_alerts_blocked"] = False
-        payload["production_directional_signals"] = list(payload.get("directional_signals") or [])
+        payload["production_directional_signals"] = list(
+            payload.get("directional_signals") or []
+        )
         payload["free_directional_signals"] = []
         return
 
-    contracts = [row for row in payload.get("contracts", []) if isinstance(row, dict)]
-    top_calls = [row for row in payload.get("top_calls", []) if isinstance(row, dict)]
-    top_puts = [row for row in payload.get("top_puts", []) if isinstance(row, dict)]
-    directional = [row for row in payload.get("directional_signals", []) if isinstance(row, dict)]
-    free_directional = [row for row in directional if row.get("free_alert_eligible") is True]
+    contracts = [
+        row for row in payload.get("contracts", []) if isinstance(row, dict)
+    ]
+    top_calls = [
+        row for row in payload.get("top_calls", []) if isinstance(row, dict)
+    ]
+    top_puts = [
+        row for row in payload.get("top_puts", []) if isinstance(row, dict)
+    ]
+    directional = [
+        row
+        for row in payload.get("directional_signals", [])
+        if isinstance(row, dict)
+    ]
+    free_directional = [
+        row for row in directional if row.get("free_alert_eligible") is True
+    ]
     summary = payload.setdefault("summary", {})
 
     payload["research_contracts"] = contracts
@@ -55,7 +69,9 @@ def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
     summary["puts_selected"] = 0
     summary["directional_signals"] = 0
     summary["production_alerts_blocked"] = True
-    summary["production_block_reason"] = str(readiness.get("status") or "PROVIDER_NOT_READY")
+    summary["production_block_reason"] = str(
+        readiness.get("status") or "PROVIDER_NOT_READY"
+    )
 
     payload.setdefault("flow_policy", {}).update(
         {
@@ -82,11 +98,19 @@ def _run_learning(payload: dict, settings: Settings) -> None:
         summary = payload.setdefault("summary", {})
         summary["learning_tracked_new"] = int(learning.get("tracked_new", 0))
         summary["learning_open_signals"] = int(learning.get("open_signals", 0))
-        summary["learning_observations_updated"] = int(learning.get("observations_updated", 0))
-        summary["learning_calibration_active"] = bool(learning.get("calibration_active"))
-        summary["learning_calibration_sample_size"] = int(learning.get("calibration_sample_size", 0))
+        summary["learning_observations_updated"] = int(
+            learning.get("observations_updated", 0)
+        )
+        summary["learning_calibration_active"] = bool(
+            learning.get("calibration_active")
+        )
+        summary["learning_calibration_sample_size"] = int(
+            learning.get("calibration_sample_size", 0)
+        )
     except Exception as exc:
-        payload.setdefault("errors", {})["outcome_learning"] = f"{type(exc).__name__}: {exc}"
+        payload.setdefault("errors", {})["outcome_learning"] = (
+            f"{type(exc).__name__}: {exc}"
+        )
         payload["outcome_learning"] = {
             "status": "degraded",
             "calibration_active": False,
@@ -116,21 +140,29 @@ def run(
     ).as_dict()
     payload["provider_readiness"] = readiness
     payload.setdefault("summary", {})["provider_readiness"] = readiness["status"]
-    payload["summary"]["production_quote_ready"] = readiness["production_quote_ready"]
-    payload["summary"]["production_flow_ready"] = readiness["production_flow_ready"]
+    payload["summary"]["production_quote_ready"] = readiness[
+        "production_quote_ready"
+    ]
+    payload["summary"]["production_flow_ready"] = readiness[
+        "production_flow_ready"
+    ]
     _quarantine_research_contracts(payload, readiness)
     _run_learning(payload, settings)
 
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     temporary.replace(destination)
     return payload
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run hardened independent BLACK BOX options radar")
+    parser = argparse.ArgumentParser(
+        description="Run hardened independent BLACK BOX options radar"
+    )
     parser.add_argument("--universe", default=str(base.DEFAULT_INPUT))
     parser.add_argument("--output", default=str(base.DEFAULT_OUTPUT))
     parser.add_argument(
