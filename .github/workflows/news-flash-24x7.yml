@@ -1,0 +1,133 @@
+name: BLACK BOX News Flash 24x7
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Fastest schedule GitHub Actions supports. Offset from :00 to reduce top-of-hour queue pressure.
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+
+concurrency:
+  group: black-box-news-flash-24x7
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  news-flash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      NEWS_FLASH_MAX_AGE_MINUTES: "60"
+      NEWS_FLASH_UPDATE_WINDOW_MINUTES: "240"
+      NEWS_FLASH_MAX_NEW_ALERTS: "5"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install lightweight flash dependencies
+        run: pip install "requests>=2.32,<3.0" "yfinance>=0.2.65"
+
+      - name: Restore Telegram destination when chat secret is absent
+        if: env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                if [[ -s telegram_runtime/connection.enc ]]; then
+                  break 2
+                fi
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+          exit 0
+
+      - name: Resolve Telegram destination
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Restore durable news-flash state
+        if: env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          mkdir -p data/live .news-flash-before
+          printf '{"schema":"news_flash_24x7_v1","events":{}}\n' > data/live/news_flash_24x7.json
+          if git fetch origin bot-state:refs/remotes/origin/bot-state --depth=1 >/dev/null 2>&1; then
+            if git show origin/bot-state:state/news/news_flash_24x7.json > .news-flash-state.tmp 2>/dev/null; then
+              if [[ -s .news-flash-state.tmp ]]; then
+                mv .news-flash-state.tmp data/live/news_flash_24x7.json
+              fi
+            fi
+          fi
+          cp data/live/news_flash_24x7.json .news-flash-before/news_flash_24x7.json
+
+      - name: Scan keyless news mesh and track reaction
+        if: env.TELEGRAM_READY == 'true'
+        run: python -m scripts.send_news_flash_24x7 --state data/live/news_flash_24x7.json
+
+      - name: Persist changed flash state to bot-state
+        if: always() && env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="data/live/news_flash_24x7.json"
+          previous=".news-flash-before/news_flash_24x7.json"
+          if [[ ! -s "$current" ]]; then
+            echo "No flash state to persist"
+            exit 0
+          fi
+          if [[ -s "$previous" ]] && cmp -s "$previous" "$current"; then
+            echo "News flash state unchanged; no bot-state commit"
+            exit 0
+          fi
+
+          git fetch origin bot-state:refs/remotes/origin/bot-state --depth=20
+          rm -rf /tmp/ghazi-news-bot-state
+          git worktree add --detach /tmp/ghazi-news-bot-state origin/bot-state
+          mkdir -p /tmp/ghazi-news-bot-state/state/news
+          cp "$current" /tmp/ghazi-news-bot-state/state/news/news_flash_24x7.json
+          cd /tmp/ghazi-news-bot-state
+          git config user.name "BLACK BOX Omega State Vault"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/news/news_flash_24x7.json
+          if git diff --cached --quiet; then
+            echo "News flash state already current"
+            exit 0
+          fi
+          git commit -m "state: update 24x7 news flash [skip ci]"
+
+          for attempt in 1 2 3; do
+            git fetch origin bot-state:refs/remotes/origin/bot-state --depth=20
+            if git rebase origin/bot-state; then
+              if git push origin HEAD:bot-state; then
+                echo "News flash state persisted"
+                exit 0
+              fi
+            else
+              git rebase --abort || true
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "Could not persist news flash state after retries" >&2
+          exit 1
