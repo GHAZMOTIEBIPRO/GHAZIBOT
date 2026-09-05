@@ -5,6 +5,9 @@ from dataclasses import asdict, dataclass
 from typing import MutableMapping
 
 
+TRADIER_LIVE_BASE_URL = "https://api.tradier.com"
+
+
 @dataclass(frozen=True)
 class FreeAutonomyStatus:
     enabled: bool
@@ -33,15 +36,16 @@ def _truthy(value: object, default: bool = True) -> bool:
 def enforce_free_autonomy_environment(
     env: MutableMapping[str, str] | None = None,
 ) -> FreeAutonomyStatus:
-    """Force the bot's autonomous runtime onto zero-cost data feeds.
+    """Force the autonomous runtime onto zero-cost market-data paths.
 
-    This guard intentionally does not pretend that free indicative option data is
-    OPRA or execution-grade.  Existing provider-readiness gates remain responsible
-    for deciding whether a contract may be promoted to a production alert.
+    Alpaca Basic remains the no-account fallback (IEX equities + indicative
+    options). When a Tradier Brokerage production token is available, zero-cost
+    mode prefers Tradier's production endpoint instead of the delayed sandbox.
+    This never enables paid SIP/OPRA entitlements and existing provider-readiness
+    gates still decide whether any quote is suitable for a production alert.
 
-    The guard is deliberately environment-level so it runs *before* Settings and
-    data clients are created.  A stale repository secret that says SIP/OPRA cannot
-    silently turn the autonomous path into a paid dependency.
+    Set ``TRADIER_LIVE_FREE_ENABLED=false`` to keep an explicitly configured
+    Tradier sandbox endpoint for testing.
     """
 
     target = env if env is not None else os.environ
@@ -54,8 +58,8 @@ def enforce_free_autonomy_environment(
             "PAID_MARKET_DATA_ALLOWED": "false",
             # Alpaca Basic: free equity stream is IEX; do not silently select SIP.
             "ALPACA_STOCK_FEED": "iex",
-            # Alpaca Basic options are indicative.  OPRA remains a paid upgrade
-            # and must never be required by the autonomous free path.
+            # Alpaca Basic options are indicative. OPRA remains entitlement
+            # dependent and must never be required by the autonomous free path.
             "ALPACA_OPTIONS_FEED": "indicative",
         }
         for key, value in forced.items():
@@ -64,8 +68,34 @@ def enforce_free_autonomy_environment(
                 overrides.append(f"{key}:{previous or '<unset>'}->{value}")
             target[key] = value
 
+        # Tradier's sandbox is delayed. A Brokerage production token can use the
+        # real-time production endpoint without turning on a paid market-data
+        # entitlement. The token itself is never inspected or logged.
+        tradier_token = str(target.get("TRADIER_TOKEN") or "").strip()
+        tradier_live_enabled = _truthy(
+            target.get("TRADIER_LIVE_FREE_ENABLED"),
+            default=True,
+        )
+        if tradier_token and tradier_live_enabled:
+            previous_url = str(target.get("TRADIER_BASE_URL") or "").strip()
+            if not previous_url or "sandbox.tradier.com" in previous_url.lower():
+                if previous_url != TRADIER_LIVE_BASE_URL:
+                    overrides.append(
+                        "TRADIER_BASE_URL:"
+                        f"{previous_url or '<unset>'}->{TRADIER_LIVE_BASE_URL}"
+                    )
+                target["TRADIER_BASE_URL"] = TRADIER_LIVE_BASE_URL
+
     stock_feed = str(target.get("ALPACA_STOCK_FEED") or "iex").strip().lower()
     option_feed = str(target.get("ALPACA_OPTIONS_FEED") or "indicative").strip().lower()
+    tradier_token = str(target.get("TRADIER_TOKEN") or "").strip()
+    tradier_base_url = str(target.get("TRADIER_BASE_URL") or "").strip().lower()
+    tradier_live = bool(
+        enabled
+        and tradier_token
+        and "api.tradier.com" in tradier_base_url
+        and "sandbox" not in tradier_base_url
+    )
 
     return FreeAutonomyStatus(
         enabled=enabled,
@@ -77,9 +107,17 @@ def enforce_free_autonomy_environment(
         user_intervention_required=False,
         stock_stream_feed=stock_feed,
         option_stream_feed=option_feed,
-        option_stream_grade=("context_only" if option_feed == "indicative" else "entitlement_dependent"),
+        option_stream_grade=(
+            "tradier_realtime_available"
+            if tradier_live
+            else ("context_only" if option_feed == "indicative" else "entitlement_dependent")
+        ),
         persistent_host_required=False,
-        execution_model="scheduled_repository_automation_with_automatic_fallbacks",
+        execution_model=(
+            "tradier_realtime_first_with_free_fallbacks"
+            if tradier_live
+            else "scheduled_repository_automation_with_automatic_fallbacks"
+        ),
         overrides=tuple(overrides),
     )
 
