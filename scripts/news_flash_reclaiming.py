@@ -44,10 +44,10 @@ def reclaim_metrics(
     """Measure a post-news reclaim without pretending it is a trade signal.
 
     The reclaim is anchored to the event timestamp. For positive news, price must
-    regain the event-anchored VWAP and close a 5-minute bar above the prior
-    completed 5-minute high with supportive volume. Negative-news logic is the
-    directional mirror. The newest incomplete 5-minute bucket is ignored when
-    fewer than two complete buckets are available.
+    regain the event-anchored VWAP and close a completed 5-minute bar above the
+    prior completed 5-minute high with supportive volume. Negative-news logic is
+    the directional mirror. An in-progress five-minute bucket is never allowed
+    to promote a reclaim state.
     """
 
     data = _normalise(frame)
@@ -71,6 +71,8 @@ def reclaim_metrics(
         .agg({"Close": "last", "High": "max", "Low": "min", "Volume": "sum"})
         .dropna(subset=["Close", "High", "Low"])
     )
+    if not bars.empty and bars.index[-1] > after.index[-1]:
+        bars = bars.iloc[:-1]
     if len(bars) < 3:
         return None
 
