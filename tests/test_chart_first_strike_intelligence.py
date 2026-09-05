@@ -111,7 +111,8 @@ def test_gamma_map_adds_flip_oi_volume_and_liquidity_levels() -> None:
     assert gamma_map.top_oi_strikes[0] == 105
     assert gamma_map.top_volume_strikes[0] == 105
     assert gamma_map.liquidity_strike == 105
-    assert "not verified dealer or institutional inventory" in gamma_map.source_note
+    assert "not verified dealer inventory" in gamma_map.source_note
+    assert "not verified institutional inventory" in gamma_map.source_note
 
 
 def test_chart_aligned_contract_can_pass_strict_consensus() -> None:
@@ -179,8 +180,14 @@ def test_contract_enrichment_explains_strike_choice() -> None:
         "top_oi_strikes": [105.0, 100.0],
         "top_volume_strikes": [105.0, 110.0],
     }
-    row = _valid_contract(strike=105.0, underlying_price=100.0, strike_liquidity_score=90)
-    enriched = enrich_contract_with_chart_and_strike(row, chart=chart, gamma_map=gamma_map)
+    row = _valid_contract(
+        strike=105.0,
+        underlying_price=100.0,
+        strike_liquidity_score=90,
+    )
+    enriched = enrich_contract_with_chart_and_strike(
+        row, chart=chart, gamma_map=gamma_map
+    )
     assert enriched["chart_first"] is True
     assert enriched["strike_intelligence_score"] > 60
     assert enriched["expected_move_1sigma"] is not None
