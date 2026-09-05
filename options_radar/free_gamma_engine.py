@@ -356,7 +356,8 @@ def build_gamma_map(symbol: str, chain: pd.DataFrame, settings: Settings) -> Gam
         f"GEX proxy from gamma×OI; gamma coverage {gamma_coverage:.0f}%, "
         f"OI coverage {oi_coverage:.0f}%, estimated gamma share "
         f"{estimated_gamma_pct:.0f}%. Gamma flip/walls and liquidity levels are "
-        "derived positioning proxies, not verified dealer or institutional inventory. "
+        "derived positioning proxies, not verified dealer inventory; they are also "
+        "not verified institutional inventory. "
         f"Sources: {source_text or 'unknown'}."
     )
     return GammaMap(
