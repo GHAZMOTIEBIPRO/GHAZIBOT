@@ -69,6 +69,15 @@ from .phase62_contract_separation import install_contract_separation_policy
 
 install_contract_separation_policy()
 
+# Credential-aware provider pruning must protect every package consumer, not
+# only the newest runner entrypoints. Install it after the Phase 6/6.1 fetcher
+# wrappers so legacy workflows also skip deterministically unconfigured
+# providers before adapter/network fan-out. The installer is idempotent, so
+# modern runners may still call it explicitly before single-flight wrapping.
+from .provider_preflight import install_provider_preflight
+
+install_provider_preflight()
+
 # Modules importing best_catalyst_map after package initialization receive the
 # confidence-aware selector without duplicating selection logic.
 _catalysts.best_catalyst_map = _confidence_best_catalyst_map
@@ -86,4 +95,4 @@ def _combined_sec_symbols(settings, *, lookback_days: int = 14):
 # event discoveries are placed ahead of general market movers.
 _sec_efts.sec_fulltext_symbols = _combined_sec_symbols
 
-__version__ = "6.4.0"
+__version__ = "6.4.1"
