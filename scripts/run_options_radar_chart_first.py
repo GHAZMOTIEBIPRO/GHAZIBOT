@@ -162,21 +162,30 @@ def run(
             min(12, int(os.getenv("OPTIONS_STRICT_MAX_SIGNALS", "8"))),
         ),
     )
+    # Keep the stable schema contract consumed by existing validation/UI while
+    # exposing the stricter chart-first policy separately.
+    for signal in directional:
+        signal["chart_selection_policy"] = signal.get("selection_policy")
+        signal["selection_policy"] = "one_side_one_contract_per_symbol_strict_consensus"
+
     calls = [
         row for row in contracts if str(row.get("option_type") or "").lower() == "call"
     ]
     puts = [
         row for row in contracts if str(row.get("option_type") or "").lower() == "put"
     ]
-    order_key = lambda row: (
-        _number(row.get("strike_intelligence_score")),
-        _number(row.get("flow_rank_score")),
-        _number(row.get("score")),
-    )
+
+    def order_key(row: dict[str, Any]) -> tuple[float, float, float]:
+        return (
+            _number(row.get("strike_intelligence_score")),
+            _number(row.get("flow_rank_score")),
+            _number(row.get("score")),
+        )
+
     calls.sort(key=order_key, reverse=True)
     puts.sort(key=order_key, reverse=True)
 
-    payload["architecture"] = "independent_options_chart_first_v4"
+    payload["chart_architecture"] = "independent_options_chart_first_v4"
     payload["contracts"] = contracts
     payload["top_calls"] = calls
     payload["top_puts"] = puts
@@ -191,7 +200,9 @@ def run(
         1 for row in directional if row.get("free_alert_eligible") is True
     )
     summary["gamma_flip_symbols"] = sum(
-        1 for row in gamma_maps.values() if isinstance(row, dict) and row.get("gamma_flip") is not None
+        1
+        for row in gamma_maps.values()
+        if isinstance(row, dict) and row.get("gamma_flip") is not None
     )
 
     policy = payload.setdefault("flow_policy", {})
