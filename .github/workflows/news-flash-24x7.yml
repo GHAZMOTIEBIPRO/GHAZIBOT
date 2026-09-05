@@ -82,9 +82,9 @@ jobs:
           fi
           cp data/live/news_flash_24x7.json .news-flash-before/news_flash_24x7.json
 
-      - name: Scan keyless news mesh and track reaction
+      - name: Scan keyless news mesh and track reaction/reclaim
         if: env.TELEGRAM_READY == 'true'
-        run: python -m scripts.send_news_flash_24x7 --state data/live/news_flash_24x7.json
+        run: python -m scripts.send_news_flash_reclaiming --state data/live/news_flash_24x7.json
 
       - name: Persist changed flash state to bot-state
         if: always() && env.TELEGRAM_READY == 'true'
