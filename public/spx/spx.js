@@ -2,6 +2,7 @@ const $=id=>document.getElementById(id);
 const num=(x)=>Number.isFinite(Number(x))?Number(x):null;
 const fmt=(x,d=2)=>num(x)!=null?num(x).toLocaleString('en-US',{maximumFractionDigits:d}):'—';
 async function getJSON(p){const r=await fetch(p,{cache:'no-store'});if(!r.ok)throw Error(r.status);return r.json()}
+function renderFreeHealth(h){const ok=h?.overall==='healthy';$('freeHealth').textContent=(ok?'HEALTHY':'DEGRADED')+' • '+(h?.generated_at||'—');$('freeHealth').className='status '+(ok?'ok':'warn');const rows=(h?.sources||[]).map(x=>x.name+': '+(x.ok?'OK':'DOWN'));$('freeSources').textContent=rows.length?rows.join(' • '):'لا توجد نتائج فحص.';}
 
 function optionSignal(o){
   const sigs=o?.research_directional_signals||o?.directional_signals||[];
@@ -70,8 +71,8 @@ function render(d,o){
 }
 async function boot(){
   try{
-    const [d,s,o]=await Promise.all([getJSON('../data/spx_dashboard.json'),getJSON('../data/data-status.json'),getJSON('../data/options_latest.json').catch(()=>({}))]);
-    render(d,o);
+    const [d,s,o,h]=await Promise.all([getJSON('../data/spx_dashboard.json'),getJSON('../data/data-status.json'),getJSON('../data/options_latest.json').catch(()=>({})),getJSON('../data/free_data_health.json').catch(()=>({overall:'degraded',sources:[]}))]);
+    render(d,o);renderFreeHealth(h);
     const age=num(d.age_minutes), optionTime=o?.generated_at||o?.updated_at||'';
     $('status').textContent=age!=null&&age<=10?'LIVE/RECENT • '+fmt(age,1)+' min old':'STALE • '+fmt(age,1)+' min old';
     $('status').className='status '+(age!=null&&age<=10?'ok':'warn');
