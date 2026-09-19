@@ -1,0 +1,51 @@
+name: GHAZI SPX Dashboard
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 13-20 * * 1-5"
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 1}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements.txt
+      - name: Build SPX snapshot
+        run: |
+          python - <<'PY'
+          import json, math, yfinance as yf
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from options_radar.spx_external_gamma import build_spx_external_context
+          import pandas as pd
+          out=Path("public/data/spx_dashboard.json")
+          idx=yf.download("^GSPC",period="1d",interval="5m",progress=False,auto_adjust=False,prepost=False)
+          if idx.empty: raise SystemExit("SPX price unavailable")
+          if isinstance(idx.columns,pd.MultiIndex): idx.columns=idx.columns.get_level_values(0)
+          idx=idx.dropna(subset=["Close"])
+          close=idx["Close"].astype(float); vol=idx.get("Volume",pd.Series(index=idx.index,dtype=float)).fillna(0).astype(float)
+          typical=close
+          vwap=float((typical*vol).sum()/vol.sum()) if vol.sum()>0 else float(close.iloc[-1])
+          delta=close.diff(); gain=delta.clip(lower=0).rolling(14).mean(); loss=(-delta.clip(upper=0)).rolling(14).mean()
+          rs=gain/loss.replace(0,float("nan")); rsi=float((100-(100/(1+rs))).iloc[-1]) if math.isfinite(float((100-(100/(1+rs))).iloc[-1])) else 50.0
+          spot=float(close.iloc[-1]); prev=float(close.iloc[0]); ctx=build_spx_external_context()
+          g=ctx.get("daily_gamma",{}) or {}
+          payload={"generated_at":datetime.now(timezone.utc).isoformat(),"spot":spot,"change_pct":(spot/prev-1)*100 if prev else None,"vwap":vwap,"rsi":rsi,"vix":None,"price_source":"yahoo/yfinance ^GSPC","gamma_source":g.get("source"),"zero_gamma_flip":g.get("zero_gamma_flip"),"call_wall":g.get("call_wall"),"put_wall":g.get("put_wall"),"net_gex_dollars":g.get("net_gex_dollars"),"gamma_regime":g.get("gamma_regime"),"age_minutes":0}
+          v=yf.download("^VIX",period="1d",interval="5m",progress=False,auto_adjust=False,prepost=False)
+          if not v.empty:
+            if isinstance(v.columns,pd.MultiIndex): v.columns=v.columns.get_level_values(0)
+            payload["vix"]=float(v["Close"].dropna().iloc[-1])
+          out.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding="utf-8")
+          PY
+      - name: Commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/spx_dashboard.json
+          git diff --cached --quiet || git commit -m "chore: refresh SPX dashboard data"
+          git push
