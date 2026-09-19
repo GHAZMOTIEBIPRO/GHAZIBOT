@@ -1,0 +1,106 @@
+name: BLACK BOX Omega Telegram Failure Watchdog
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - BLACK BOX Omega Options Contract Radar
+      - BLACK BOX Omega Radar Health
+      - BLACK BOX Omega Telegram Connection Keeper
+    types: [completed]
+
+concurrency:
+  group: black-box-omega-telegram-failure-watchdog
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  notify-failure:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'failure' ||
+      github.event.workflow_run.conclusion == 'cancelled' ||
+      github.event.workflow_run.conclusion == 'timed_out'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      RUN_NAME: ${{ github.event.workflow_run.name || 'Manual watchdog check' }}
+      RUN_ID: ${{ github.event.workflow_run.id || 'manual' }}
+      RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion || 'manual' }}
+      RUN_URL: ${{ github.event.workflow_run.html_url || format('https://github.com/{0}/actions', github.repository) }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Telegram dependency
+        run: pip install 'requests>=2.32,<3.0'
+
+      - name: Restore centralized Telegram destination
+        if: env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml radar-health.yml options-telegram-alerts.yml stock-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2               -in telegram_runtime/connection.enc               -out telegram_runtime/connection.json               -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Send failure alert
+        if: env.TELEGRAM_READY == 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import html
+          import os
+          from scripts.telegram_transport import send_html_message
+
+          conclusion = os.getenv("RUN_CONCLUSION", "unknown")
+          if conclusion == "manual":
+              title = "اختبار مراقب فشل التشغيل"
+              detail = "تم تشغيل مراقب Telegram يدويًا للتأكد من جاهزية مسار التنبيه."
+          else:
+              title = "فشل تشغيل Omega"
+              detail = (
+                  f"المسار: {os.getenv('RUN_NAME', 'unknown')}\n"
+                  f"الحالة: {conclusion}\n"
+                  f"Run ID: {os.getenv('RUN_ID', 'unknown')}"
+              )
+
+          url = os.getenv("RUN_URL", "")
+          message = (
+              f"<b>🚨 {html.escape(title)}</b>\n\n"
+              f"{html.escape(detail)}\n\n"
+              f"<a href=\"{html.escape(url, quote=True)}\">فتح تفاصيل التشغيل</a>"
+          )
+          result = send_html_message(message, max_attempts=3)
+          print(f"Telegram failure notification sent; message_id={result.message_id}; attempts={result.attempts}")
+          PY
+
+      - name: Telegram not ready
+        if: env.TELEGRAM_READY != 'true'
+        run: |
+          echo "Telegram failure watchdog could not notify because the Telegram destination is not ready."
+          echo "Send /start or any message to the bot once so the keeper can discover the destination."
