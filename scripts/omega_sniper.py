@@ -4,11 +4,11 @@ import html
 import json
 import math
 import os
-from datetime import datetime, timezone
+from pathlib import Path
 from urllib.request import Request, urlopen
 from typing import Any
 
-from scripts.sniper_signal import SniperEvent, format_sniper_message
+from scripts.sniper_signal import SniperEvent
 
 GEX_URL = os.getenv("GHAZI_GEX_JSON_URL", "").strip()
 TIMEOUT_SECONDS = 8
@@ -29,7 +29,26 @@ def _safe(value: Any, limit: int = 320) -> str:
     return html.escape(text)
 
 
-def _fetch_gex() -> dict[str, Any] | None:
+def _load_local_gex(symbol: str) -> dict[str, Any] | None:
+    """Prefer the repository's validated gamma map over an arbitrary remote feed."""
+    path = Path(os.getenv("GHAZI_GEX_STATE_PATH", "public/data/options_latest.json"))
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        payload = None
+    if not isinstance(payload, dict):
+        return None
+    maps = payload.get("gamma_maps")
+    if not isinstance(maps, dict):
+        return None
+    item = maps.get(symbol) or maps.get(symbol.upper()) or maps.get(symbol.lower())
+    return item if isinstance(item, dict) else None
+
+
+def _fetch_gex(symbol: str) -> dict[str, Any] | None:
+    local = _load_local_gex(symbol)
+    if local:
+        return local
     if not GEX_URL:
         return None
     try:
@@ -125,7 +144,6 @@ def _fmt(value: float | None) -> str:
 
 
 def format_omega_sniper_message(event: SniperEvent) -> str:
-    base = format_sniper_message(event)
     spot = event.entry
     target1_pct = (
         abs(event.target_1 - spot) / spot
@@ -138,10 +156,16 @@ def format_omega_sniper_message(event: SniperEvent) -> str:
         else None
     )
 
-    t1_window = _sessions_for_target(target1_pct or 0, event.horizon, 1)
-    t2_window = _sessions_for_target(target2_pct or 0, event.horizon, 2)
+    t1_window = (
+        _sessions_for_target(target1_pct, event.horizon, 1)
+        if target1_pct is not None else "لا يمكن تقديره قبل تحديد الدخول والهدف"
+    )
+    t2_window = (
+        _sessions_for_target(target2_pct, event.horizon, 2)
+        if target2_pct is not None else "لا يمكن تقديره قبل تحديد الدخول والهدف"
+    )
 
-    gex = _gex_assessment(event, _fetch_gex())
+    gex = _gex_assessment(event, _fetch_gex(event.symbol))
     lines = [
         f"{event.side_emoji} <b>أوميغا | {_safe(event.symbol)} | {event.side_ar}</b>",
         f"⭐ <b>درجة الإشارة: {event.score:.0f}/100</b> | الأفق: <b>{_safe(event.horizon)}</b> | الفريم: <b>{_safe(event.timeframe)}</b>",
@@ -186,4 +210,5 @@ def format_omega_sniper_message(event: SniperEvent) -> str:
         "📊 <b>الزمن تقديري وليس وعدًا:</b> النافذة مبنية على بُعد الهدف والفريم والأفق، وتُعاد معايرتها من النتائج الفعلية.",
         "🔎 <i>الغرض من طبقة غاما هو زيادة جودة السياق، لا الادعاء بمعرفة دفتر صانع السوق الحقيقي.</i>",
     ]
-    return "\n".join(lines)
+    message = "\n".join(lines)
+    return message if len(message) <= 4096 else message[:4080].rstrip() + "\n…"
