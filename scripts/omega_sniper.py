@@ -5,6 +5,7 @@ import json
 import math
 import os
 from pathlib import Path
+from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 from typing import Any
 
@@ -37,6 +38,20 @@ def _load_local_gex(symbol: str) -> dict[str, Any] | None:
     except (OSError, json.JSONDecodeError):
         payload = None
     if not isinstance(payload, dict):
+        return None
+    generated = str(payload.get("generated_at") or payload.get("timestamp") or "").strip()
+    if generated:
+        try:
+            stamp = datetime.fromisoformat(generated.replace("Z", "+00:00"))
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=timezone.utc)
+            age_minutes = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+            max_age = float(os.getenv("GHAZI_GEX_MAX_AGE_MINUTES", "45"))
+            if age_minutes > max_age or age_minutes < -5:
+                return None
+        except (TypeError, ValueError, OverflowError):
+            return None
+    else:
         return None
     maps = payload.get("gamma_maps")
     if not isinstance(maps, dict):
