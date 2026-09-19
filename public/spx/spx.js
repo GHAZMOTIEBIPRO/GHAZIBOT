@@ -12,31 +12,56 @@ function optionSignal(o){
   return sigs.find(x=>String(x.symbol||'').toUpperCase()==='SPX')||null;
 }
 function decide(d,o){
-  const p=num(d.spot), v=num(d.vwap), r=num(d.rsi), age=num(d.age_minutes);
+  const p=num(d.spot), v=num(d.vwap), r=num(d.rsi), age=num(d.age_minutes), flip=num(d.zero_gamma_flip);
+  const cw=num(d.call_wall), pw=num(d.put_wall), vix=num(d.vix);
   if(p==null||v==null||r==null)return{s:'WAIT',confidence:0,reason:'بيانات السعر/VWAP/RSI غير مكتملة.',gate:'DATA'};
   if(age!=null&&age>15)return{s:'WAIT',confidence:0,reason:'بيانات SPX أصبحت قديمة؛ المحرك مغلق لحماية الإشارة.',gate:'STALE_DATA'};
+
   let bull=0,bear=0,parts=[];
-  if(p>v){bull++;parts.push('السعر فوق VWAP')}else{bear++;parts.push('السعر تحت VWAP')}
-  if(r>=55){bull++;parts.push('RSI داعم للصعود')}else if(r<=45){bear++;parts.push('RSI داعم للهبوط')}else parts.push('RSI محايد');
+  const add=(side,label)=>{if(side==='bull'){bull++;parts.push(label)}else if(side==='bear'){bear++;parts.push(label)}};
+  add(p>v?'bull':'bear',p>v?'السعر فوق VWAP':'السعر تحت VWAP');
+
+  if(r>=55)add('bull','RSI فوق 55');
+  else if(r<=45)add('bear','RSI تحت 45');
+  else parts.push('RSI في المنطقة المحايدة');
+
+  if(flip!=null){
+    if(p>flip)add('bull','فوق Gamma Flip');
+    else if(p<flip)add('bear','تحت Gamma Flip');
+  }
+
   const regime=String(d.gamma_regime||'').toLowerCase();
-  if(regime.includes('positive')){p>v?bull++:bear++;parts.push('Gamma موجب')}
-  else if(regime.includes('negative')){p<v?bear++:bull++;parts.push('Gamma سالب')}
-  const flip=num(d.zero_gamma_flip);
-  if(flip!=null){if(p>flip){bull++;parts.push('فوق Gamma Flip')}else if(p<flip){bear++;parts.push('تحت Gamma Flip')}}
+  if(regime.includes('positive'))parts.push('بيئة Gamma موجبة');
+  else if(regime.includes('negative'))parts.push('بيئة Gamma سالبة');
+  else parts.push('Gamma محايدة/غير حاسمة');
+
+  const dailyMove=p&&vix?p*(vix/100)/Math.sqrt(252):null;
+  const upperExpected=dailyMove?p+dailyMove:null;
+  const lowerExpected=dailyMove?p-dailyMove:null;
+  const wallUp=cw&&cw>p?cw:null;
+  const wallDown=pw&&pw<p?pw:null;
+
+  if(wallUp&&dailyMove&&wallUp<=upperExpected)add('bull','Call Wall داخل النطاق اليومي');
+  if(wallDown&&dailyMove&&wallDown>=lowerExpected)add('bear','Put Wall داخل النطاق اليومي');
+
   const os=optionSignal(o);
   let optionDir='';
+  const approved=os?.omega_decision?.approved===true || os?.free_alert_eligible===true;
   if(os&&['CALL','PUT'].includes(os.direction)){
     optionDir=os.direction;
-    const approved=os.omega_decision?.approved===true || os.free_alert_eligible===true;
-    if(approved){os.direction==='CALL'?bull++:bear++;parts.push('رادار الخيارات مؤكد')}
-    else parts.push('رادار الخيارات غير مجاز للتنبيه');
+    if(approved)add(os.direction==='CALL'?'bull':'bear','رادار الخيارات اجتاز بوابة Omega');
+    else parts.push('رادار الخيارات بحثي وغير مجاز');
   }
-  const net=bull-bear;
-  const strongest=Math.max(bull,bear), total=bull+bear;
-  const conflict=(bull>0&&bear>0&&Math.abs(net)<2);
-  if(conflict||strongest<3||Math.abs(net)<2)return{s:'WAIT',confidence:Math.round(Math.max(0,Math.min(100,50+Math.abs(net)*10))),reason:parts.join(' • '),gate:'CONFLUENCE'};
+
+  const net=bull-bear, strongest=Math.max(bull,bear), total=bull+bear;
+  const conflict=optionDir && ((net>0&&optionDir==='PUT')||(net<0&&optionDir==='CALL'));
+  if(conflict)return{s:'WAIT',confidence:Math.min(60,50+Math.abs(net)*3),reason:parts.join(' • ')+' • تعارض اتجاهي مع الخيارات.',gate:'CONFLICT'};
+
+  if(strongest<3||Math.abs(net)<2){
+    return{s:'WAIT',confidence:Math.round(Math.min(72,50+(Math.abs(net)*8))),reason:parts.join(' • '),gate:'CONFLUENCE'};
+  }
+
   const s=net>0?'CALL':'PUT';
-  if(optionDir&&optionDir!==s)return{s:'WAIT',confidence:45,reason:parts.join(' • ')+' • تعارض مع اتجاه رادار الخيارات.',gate:'CONFLICT'};
   const confidence=Math.round(Math.min(95,55+(Math.abs(net)/Math.max(total,1))*40));
   return{s,confidence,reason:parts.join(' • '),gate:'PASS'};
 }
@@ -64,11 +89,15 @@ function render(d,o){
   $('entry').textContent='—';$('tp1').textContent='—';$('tp2').textContent='—';$('sl').textContent='—';
   if(q.s==='CALL'||q.s==='PUT'){
     const spot=num(d.spot),callWall=num(d.call_wall),putWall=num(d.put_wall);
-    const tp1=q.s==='CALL'?(callWall&&callWall>spot?callWall:null):(putWall&&putWall<spot?putWall:null);
+    const vix=num(d.vix), dailyMove=spot&&vix?spot*(vix/100)/Math.sqrt(252):null;
+    const wall=q.s==='CALL'?(callWall&&callWall>spot?callWall:null):(putWall&&putWall<spot?putWall:null);
+    const expected=q.s==='CALL'?(dailyMove?spot+dailyMove:null):(dailyMove?spot-dailyMove:null);
+    const tp1=wall||expected;
+    const tp2=tp1?(q.s==='CALL'?Math.max(tp1,expected||tp1)+(dailyMove||0)*0.5:Math.min(tp1,expected||tp1)-(dailyMove||0)*0.5):null;
     const risk=Math.max(spot*0.0015,Math.abs(spot-num(d.vwap))*0.35);
     $('entry').textContent=fmt(spot);
     $('tp1').textContent=fmt(tp1);
-    $('tp2').textContent=fmt(q.s==='CALL'?(tp1?tp1+(tp1-spot)*0.5:null):(tp1?tp1-(spot-tp1)*0.5:null));
+    $('tp2').textContent=fmt(tp2);
     $('sl').textContent=fmt(q.s==='CALL'?spot-risk:spot+risk);
   }
 }
