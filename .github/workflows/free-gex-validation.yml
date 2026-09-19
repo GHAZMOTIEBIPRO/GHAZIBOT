@@ -1,0 +1,82 @@
+name: BLACK BOX Free GEX Validation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 13-21 * * 1-5"
+  push:
+    branches: [main]
+    paths:
+      - "options_radar/free_gex_validation.py"
+      - "research/spx_intelligence_catalog_ar.json"
+      - ".github/workflows/free-gex-validation.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: free-gex-validation
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run free GEX validation
+        run: python -m options_radar.free_gex_validation
+
+      - name: Validate payload and Arabic catalog
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("public/data/free_gex_validation.json").read_text(encoding="utf-8"))
+          catalog = json.loads(Path("research/spx_intelligence_catalog_ar.json").read_text(encoding="utf-8"))
+
+          assert payload["policy"] == "shadow_validation_never_signal_authority"
+          assert payload["decision"] == "SHADOW_ONLY"
+          assert int(payload["reliability_policy_ar"]["minimum_samples"]) >= 100
+          assert payload["reliability_policy_ar"]["walk_forward_required"] is True
+          assert float(payload["reliability_policy_ar"]["max_source_weight_before_validation"]) == 0.0
+          assert len(catalog["indicators"]) >= 25
+          assert any(x["id"] == "vanna" for x in catalog["indicators"])
+          assert any(x["id"] == "charm" for x in catalog["indicators"])
+          assert any(x["id"] == "iv_rank" for x in catalog["indicators"])
+          assert any(x["id"] == "expected_move" for x in catalog["indicators"])
+          print("Arabic catalog + conservative GEX validation gate passed.")
+          PY
+
+      - name: Publish validation data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/free_gex_validation.json public/data/free_gex_validation_history.json
+          git diff --cached --quiet || git commit -m "chore: publish free GEX validation snapshot"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo "Validation publish failed after 3 synchronized push attempts."
+          exit 1
+
+      - name: Upload validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: free-gex-validation
+          path: |
+            public/data/free_gex_validation.json
+            public/data/free_gex_validation_history.json
+          retention-days: 14
