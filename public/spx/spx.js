@@ -3,6 +3,9 @@ const num=(x)=>Number.isFinite(Number(x))?Number(x):null;
 const fmt=(x,d=2)=>num(x)!=null?num(x).toLocaleString('en-US',{maximumFractionDigits:d}):'—';
 async function getJSON(p){const r=await fetch(p,{cache:'no-store'});if(!r.ok)throw Error(r.status);return r.json()}
 function renderFreeHealth(h){const ok=h?.overall==='healthy';$('freeHealth').textContent=(ok?'HEALTHY':'DEGRADED')+' • '+(h?.generated_at||'—');$('freeHealth').className='status '+(ok?'ok':'warn');const rows=(h?.sources||[]).map(x=>x.name+': '+(x.ok?'OK':'DOWN'));$('freeSources').textContent=rows.length?rows.join(' • '):'لا توجد نتائج فحص.';}
+function renderValidation(v){const score=num(v?.agreement_score);$('gexValidation').textContent=(v?.decision||'SHADOW_ONLY')+' • توافق '+(score!=null?fmt(score*100,0)+'%':'—');$('gexValidation').className='status '+(score!=null&&score>=.6?'ok':'warn');$('gexValidationReason').textContent=(v?.reasons_ar||[]).join(' • ')||'طبقة تحقق بحثية فقط؛ لا تمنح أي مصدر سلطة منفردة.';
+const m=v?.metrics||{};$('gexDisagreement').textContent=['gex','flip','call_wall','put_wall'].map(k=>k+': '+(m[k]?.relative_disagreement!=null?fmt(m[k].relative_disagreement*100,1)+'%':'—')).join(' • ');}
+function renderTargets(d){const spot=num(d.spot),flip=num(d.zero_gamma_flip),cw=num(d.call_wall),pw=num(d.put_wall),vix=num(d.vix);$('targetUp').textContent=cw&&spot&&cw>spot?fmt(cw):'—';$('targetDown').textContent=pw&&spot&&pw<spot?fmt(pw):'—';$('targetFlip').textContent=fmt(flip);const em=spot&&vix?spot*(vix/100)/Math.sqrt(252):null;$('expectedUp').textContent=em?fmt(spot+em):'—';$('expectedDown').textContent=em?fmt(spot-em):'—';$('reading').textContent=(d.gamma_regime||'محايد')+' • '+(spot&&flip?(spot>flip?'فوق Gamma Flip':'تحت Gamma Flip'):'قراءة غير مكتملة');}
 
 function optionSignal(o){
   const sigs=o?.research_directional_signals||o?.directional_signals||[];
@@ -71,8 +74,8 @@ function render(d,o){
 }
 async function boot(){
   try{
-    const [d,s,o,h]=await Promise.all([getJSON('../data/spx_dashboard.json'),getJSON('../data/data-status.json'),getJSON('../data/options_latest.json').catch(()=>({})),getJSON('../data/free_data_health.json').catch(()=>({overall:'degraded',sources:[]}))]);
-    render(d,o);renderFreeHealth(h);
+    const [d,s,o,h,v]=await Promise.all([getJSON('../data/spx_dashboard.json'),getJSON('../data/data-status.json'),getJSON('../data/options_latest.json').catch(()=>({})),getJSON('../data/free_data_health.json').catch(()=>({overall:'degraded',sources:[]})),getJSON('../data/free_gex_validation.json').catch(()=>({decision:'SHADOW_ONLY',agreement_score:0,reasons_ar:['لا توجد نتيجة تحقق منشورة حالياً.']}))]);
+    render(d,o);renderFreeHealth(h);renderValidation(v);renderTargets(d);
     const age=num(d.age_minutes), optionTime=o?.generated_at||o?.updated_at||'';
     $('status').textContent=age!=null&&age<=10?'LIVE/RECENT • '+fmt(age,1)+' min old':'STALE • '+fmt(age,1)+' min old';
     $('status').className='status '+(age!=null&&age<=10?'ok':'warn');
