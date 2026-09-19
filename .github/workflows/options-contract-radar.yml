@@ -34,7 +34,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -205,6 +205,18 @@ jobs:
           assert float(calibration.get('max_total_adjustment', 4.0)) <= 4.0
           print('Independent options + data fabric + gamma + guarded learning passed.')
           PY
+
+      - name: Publish dashboard options payload
+        if: steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p public/data
+          cp -f public/data/options_latest.json public/data/options_latest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/options_latest.json
+          git diff --cached --quiet || git commit -m "chore: publish SPX options intelligence payload"
+          git push
 
       - name: Upload options radar payload
         if: steps.market.outputs.open == 'true'
