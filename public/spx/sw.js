@@ -1,0 +1,1 @@
+self.addEventListener('install',e=>e.waitUntil(caches.open('ghazi-spx-v1').then(c=>c.addAll(['./','./index.html','./spx.css','./spx.js','./manifest.json']))));self.addEventListener('fetch',e=>{if(e.request.url.includes('/data/'))return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})
