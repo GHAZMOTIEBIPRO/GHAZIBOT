@@ -37,7 +37,11 @@ jobs:
           vwap=float((close*vol).sum()/vol.sum()) if vol.sum()>0 else float(close.iloc[-1])
           delta=close.diff(); gain=delta.clip(lower=0).rolling(14).mean(); loss=(-delta.clip(upper=0)).rolling(14).mean()
           rs=gain/loss.replace(0,float("nan")); raw_rsi=100-(100/(1+rs)); rsi=float(raw_rsi.iloc[-1]) if math.isfinite(float(raw_rsi.iloc[-1])) else 50.0
-          spot=float(close.iloc[-1]); prev=float(close.iloc[0]); ctx=build_spx_external_context(); g=ctx.get("daily_gamma",{}) or {}\n          bar_time=close.index[-1]\n          if getattr(bar_time, "tzinfo", None) is None: bar_time=bar_time.tz_localize("UTC")\n          generated=datetime.now(timezone.utc)\n          age_minutes=max(0,(generated-bar_time.to_pydatetime()).total_seconds()/60)
+          spot=float(close.iloc[-1]); prev=float(close.iloc[0]); ctx=build_spx_external_context(); g=ctx.get("daily_gamma",{}) or {}
+          bar_time=close.index[-1]
+          if getattr(bar_time, "tzinfo", None) is None: bar_time=bar_time.tz_localize("UTC")
+          generated=datetime.now(timezone.utc)
+          age_minutes=max(0,(generated-bar_time.to_pydatetime()).total_seconds()/60)
           payload={"generated_at":generated.isoformat(),"spot":spot,"change_pct":(spot/prev-1)*100 if prev else None,"vwap":vwap,"rsi":rsi,"vix":None,"price_source":"yahoo/yfinance ^GSPC","gamma_source":g.get("source"),"zero_gamma_flip":g.get("zero_gamma_flip"),"call_wall":g.get("call_wall"),"put_wall":g.get("put_wall"),"net_gex_dollars":g.get("net_gex_dollars"),"gamma_regime":g.get("gamma_regime"),"age_minutes":age_minutes,"market_bar_time":bar_time.isoformat()}
           v=yf.download("^VIX",period="1d",interval="5m",progress=False,auto_adjust=False,prepost=False)
           if not v.empty:
