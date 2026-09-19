@@ -21,4 +21,10 @@ def test_omega_message_contains_arabic_execution_fields():
         },
         now=None,
     )
+    message = format_omega_sniper_message(event)
     assert event.symbol == "SPX"
+    assert "منطقة الدخول" in message
+    assert "الهدف الأول" in message
+    assert "الهدف الثاني" in message
+    assert "نافذة الهدف الأول" in message
+    assert len(message) <= 4096
