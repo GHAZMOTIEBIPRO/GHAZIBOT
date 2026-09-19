@@ -10,7 +10,7 @@ from typing import Any
 
 from scripts.sniper_signal import SniperEvent, format_sniper_message
 
-GEX_URL = "https://raw.githubusercontent.com/dhawalc/spx-gamma-levels/main/data/latest.json"
+GEX_URL = os.getenv("GHAZI_GEX_JSON_URL", "").strip()
 TIMEOUT_SECONDS = 8
 
 
@@ -30,6 +30,8 @@ def _safe(value: Any, limit: int = 320) -> str:
 
 
 def _fetch_gex() -> dict[str, Any] | None:
+    if not GEX_URL:
+        return None
     try:
         req = Request(GEX_URL, headers={"User-Agent": "GHAZIBOT-Omega/1.0"})
         with urlopen(req, timeout=TIMEOUT_SECONDS) as response:
