@@ -2,6 +2,14 @@ name: BLACK BOX News Flash 24x7
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/news-flash-24x7.yml"
+      - "scripts/send_news_flash_24x7.py"
+      - "scripts/send_news_flash_reclaiming.py"
+      - "scripts/news_flash_reclaiming.py"
+      - "options_radar/halt_news_engine.py"
   schedule:
     # Fastest schedule GitHub Actions supports. Offset from :00 to reduce top-of-hour queue pressure.
     - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
@@ -82,9 +90,9 @@ jobs:
           fi
           cp data/live/news_flash_24x7.json .news-flash-before/news_flash_24x7.json
 
-      - name: Scan keyless news mesh and track reaction
+      - name: Scan keyless news mesh and track reaction/reclaim
         if: env.TELEGRAM_READY == 'true'
-        run: python -m scripts.send_news_flash_24x7 --state data/live/news_flash_24x7.json
+        run: python -m scripts.send_news_flash_reclaiming --state data/live/news_flash_24x7.json
 
       - name: Persist changed flash state to bot-state
         if: always() && env.TELEGRAM_READY == 'true'
