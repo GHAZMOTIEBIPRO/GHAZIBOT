@@ -10,6 +10,8 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+from .ghazi_gex_multi import build as build_ghazi_gex
+
 CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json"
 SOURCES = {
     "dhawalc/spx-gamma-levels": "https://raw.githubusercontent.com/dhawalc/spx-gamma-levels/main/data/latest.json",
@@ -114,8 +116,22 @@ def build() -> dict[str, Any]:
         safe_fetch("Alexduanran/spx-0dte-archive", lambda: fetch_archive(SOURCES["Alexduanran/spx-0dte-archive"])),
         safe_fetch("CBOE delayed public", lambda: fetch_cboe(CBOE_URL)),
     ]
+    ghazi_engine = safe_fetch("ghazi_gex_multi_reimplementation", lambda: build_ghazi_gex())
     metrics = {k: compare_metric(rows, k) for k in ("spot", "gex", "flip", "call_wall", "put_wall")}
     usable = sum(bool(r.get("available")) for r in rows)
+    engine_available = bool(ghazi_engine.get("available"))
+    if engine_available:
+        rows.append({
+            "available": True,
+            "source": "ghazi_gex_multi_reimplementation",
+            "spot": num(ghazi_engine.get("spot")),
+            "gex": num(ghazi_engine.get("net_gex")),
+            "flip": num(ghazi_engine.get("gamma_flip")),
+            "call_wall": num(ghazi_engine.get("call_wall")),
+            "put_wall": num(ghazi_engine.get("put_wall")),
+            "regime": ghazi_engine.get("gamma_regime"),
+        })
+        usable += 1
     agreement_votes = []
     for key, m in metrics.items():
         d = m["relative_disagreement"]
@@ -142,6 +158,11 @@ def build() -> dict[str, Any]:
         "agreement_score": round(agreement, 3),
         "metrics": metrics,
         "sources": rows,
+        "integrated_engines": {
+            "ghazi_gex_multi": ghazi_engine,
+            "upstream_methodology": ["itsfabtrading/Gex-Multi", "MitchelTurner/GEX"],
+            "integration_mode": "original_reimplementation_shadow_only"
+        },
         "research_indicators_ar": [
             "GEX", "Gamma Flip", "Call Wall", "Put Wall", "0DTE GEX",
             "GCI", "PGR", "GDW", "CAR", "DEX", "Vanna", "Charm",
@@ -156,7 +177,7 @@ def build() -> dict[str, Any]:
             "max_source_weight_before_validation": 0.0,
             "promotion_requires": "agreement + freshness + outcome stability",
         },
-        "reasons_ar": reasons,
+        "reasons_ar": reasons,\n        "promotion_status_ar": "محرك GEX الجديد مدمج فعلياً ويحسب المستويات، لكنه لا يملك سلطة على CALL/PUT قبل اكتمال الاختبار التاريخي.",
     }
 
     history = []
