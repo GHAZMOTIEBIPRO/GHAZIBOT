@@ -42,6 +42,30 @@ def norm_cdf(x):
     return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
 
 
+def norm_pdf(x):
+    return math.exp(-0.5*x*x) / math.sqrt(2.0*math.pi)
+
+
+def greeks_bs(spot, strike, iv, years, rate=0.0):
+    if spot <= 0 or strike <= 0 or iv <= 0 or years <= 0:
+        return {"delta": 0.0, "vega": 0.0, "gamma": 0.0, "vanna": 0.0, "charm": 0.0,
+                "vomma": 0.0, "zomma": 0.0}
+    srt = math.sqrt(years)
+    d1 = (math.log(spot/strike) + (rate + 0.5*iv*iv)*years) / (iv*srt)
+    d2 = d1 - iv*srt
+    pdf = norm_pdf(d1)
+    cdf1, cdf2 = norm_cdf(d1), norm_cdf(d2)
+    gamma = pdf/(spot*iv*srt)
+    vega = spot*pdf*srt
+    delta = cdf1
+    vanna = vega/spot * (1.0 - d1/(iv*srt))
+    charm = -pdf*(2*rate*years-d2*iv*srt)/(2*years*iv*srt)
+    vomma = vega*d1*d2/iv
+    zomma = gamma*((d1*d2-1)/(iv*iv*years))
+    return {"delta": delta, "vega": vega, "gamma": gamma, "vanna": vanna,
+            "charm": charm, "vomma": vomma, "zomma": zomma}
+
+
 def gamma_bs(spot, strike, iv, years):
     if spot <= 0 or strike <= 0 or iv <= 0 or years <= 0:
         return 0.0
@@ -169,6 +193,27 @@ def build(payload=None, session_date=None):
     zdte_share = zdte_abs / total_abs if total_abs else None
 
     regime = "positive" if flip is not None and spot > flip else ("negative" if flip is not None else "unknown")
+
+    # Greek exposure profile: OI-weighted signed dealer-style exposure.
+    greek_totals = {k: 0.0 for k in ("dex","vanna","charm","vomma","zomma")}
+    near_rows = [r for r in rows if abs(r["strike"]-spot)/spot <= 0.03]
+    for r in near_rows:
+        t = years_to_expiry(r["expiry"], session_date)
+        gk = greeks_bs(spot, r["strike"], r["iv"], t)
+        sign = 1.0 if r["type"] == "call" else -1.0
+        scale = r["oi"] * 100
+        greek_totals["dex"] += sign * gk["delta"] * scale
+        greek_totals["vanna"] += sign * gk["vanna"] * scale
+        greek_totals["charm"] += sign * gk["charm"] * scale
+        greek_totals["vomma"] += sign * gk["vomma"] * scale
+        greek_totals["zomma"] += sign * gk["zomma"] * scale
+
+    abs_gamma = sum(abs(v) for v in [by_strike[k]["net"] for k in eligible])
+    concentration = max((abs(by_strike[k]["net"]) for k in eligible), default=0.0) / abs_gamma if abs_gamma else None
+    total_oi_call = sum(v["oi_call"] for v in by_strike.values())
+    total_oi_put = sum(v["oi_put"] for v in by_strike.values())
+    pc_oi = total_oi_put / total_oi_call if total_oi_call else None
+
     return {
         "available": True, "engine": "ghazi_gex_multi_reimplementation",
         "methodology_sources": ["itsfabtrading/Gex-Multi", "MitchelTurner/GEX"],
