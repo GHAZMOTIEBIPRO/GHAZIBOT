@@ -27,6 +27,7 @@ from options_radar.omega_decision import apply_omega_gate
 from options_radar.outcome_learning import apply_learning_adjustments, load_calibration
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
+from options_radar.spx_external_gamma import build_spx_external_context
 
 DEFAULT_INPUT = Path("data/universe.txt")
 DEFAULT_OUTPUT = Path("public/data/options_latest.json")
@@ -308,8 +309,13 @@ def run(
     top_calls = [row for row in contracts if str(row.get("option_type") or "").lower() == "call"]
     top_puts = [row for row in contracts if str(row.get("option_type") or "").lower() == "put"]
 
+    spx_external_gamma = build_spx_external_context(
+        timeout=min(15, settings.request_timeout_seconds)
+    )
+
     payload: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "spx_external_gamma": spx_external_gamma,
         "path": "options",
         "architecture": "independent_options_contract_radar_v3_outcome_learning",
         "independent_from_stock_radar": True,
