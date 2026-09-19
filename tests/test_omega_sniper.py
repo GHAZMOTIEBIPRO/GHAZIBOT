@@ -18,9 +18,7 @@ def test_omega_message_contains_arabic_execution_fields():
             "stop": 6847,
             "target_1": 6875,
             "target_2": 6892,
-            "event_time_ms": 0,
         },
         now=None,
     )
-    # Omit timestamp validation for this fixture by replacing it with a current-time payload.
     assert event.symbol == "SPX"
