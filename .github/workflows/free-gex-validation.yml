@@ -32,10 +32,35 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run free GEX validation
+      - name: Compile integrated GEX modules
+        run: python -m py_compile options_radar/ghazi_gex_multi.py options_radar/free_gex_validation.py
+
+      - name: Run integrated GEX validation
         run: python -m options_radar.free_gex_validation
 
-      - name: Validate payload and Arabic catalog
+      - name: Unit-check SPXW 0DTE engine
+        run: |
+          python - <<'PY'
+          from options_radar.ghazi_gex_multi import build
+          payload = {"data": {"current_price": 7600, "options": []}}
+          for strike in range(7000, 8201, 50):
+              for typ, suffix, oi in [("C","C",1000),("P","P",900)]:
+                  payload["data"]["options"].append({
+                      "option": f"SPXW260920{strike:05d}{suffix}",
+                      "strike": strike,
+                      "iv": 20,
+                      "open_interest": oi,
+                      "expiration_date": "2026-09-20",
+                      "option_type": "call" if typ == "C" else "put"
+                  })
+          out = build(payload=payload, session_date=__import__("datetime").date(2026,9,20))
+          assert out["available"] is True
+          assert out["data_quality"]["has_spxw"] is True
+          assert out["policy"] == "shadow_validation_never_signal_authority"
+          print("Integrated GEX engine SPXW/0DTE unit check passed.")
+          PY
+
+      - name: Validate integrated payload and Arabic catalog
         run: |
           python - <<'PY'
           import json
@@ -46,6 +71,9 @@ jobs:
 
           assert payload["policy"] == "shadow_validation_never_signal_authority"
           assert payload["decision"] == "SHADOW_ONLY"
+          assert "integrated_engines" in payload
+          assert payload["integrated_engines"]["ghazi_gex_multi"]["available"] is True
+          assert payload["integrated_engines"]["integration_mode"] == "original_reimplementation_shadow_only"
           assert int(payload["reliability_policy_ar"]["minimum_samples"]) >= 100
           assert payload["reliability_policy_ar"]["walk_forward_required"] is True
           assert float(payload["reliability_policy_ar"]["max_source_weight_before_validation"]) == 0.0
