@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from scripts.sniper_signal import enrich_sniper_message, format_sniper_message, parse_sniper_event
+from scripts.omega_sniper import format_omega_sniper_message
+from scripts.sniper_signal import enrich_sniper_message, parse_sniper_event
 from scripts.telegram_transport import edit_html_message, send_html_message
 
 LOGGER = logging.getLogger(__name__)
@@ -112,7 +113,7 @@ def _client_ip(handler: SimpleHTTPRequestHandler) -> str:
 def _deliver(payload: dict[str, Any], fingerprint: str) -> None:
     try:
         event = parse_sniper_event(payload)
-        base_text = format_sniper_message(event)
+        base_text = format_omega_sniper_message(event)
         result = send_html_message(base_text)
         _REGISTRY.complete(fingerprint)
         message_id = getattr(result, "message_id", None)
