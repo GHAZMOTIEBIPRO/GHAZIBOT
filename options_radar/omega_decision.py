@@ -64,8 +64,8 @@ def evaluate_contract(row: dict[str, Any], *, free_threshold: float = 87.0) -> d
         quorum += 1
     if occ_aligned:
         quorum += 1
-    if data_quality >= 0.80:
-        quorum += 1
+    # Data quality is a prerequisite, not directional evidence. It must never
+    # manufacture a second vote when flow/gamma/OCC are neutral.
 
     conflict = (
         (gamma_alignment <= -0.15 and occ_aligned)
