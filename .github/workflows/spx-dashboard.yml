@@ -1,6 +1,11 @@
 name: GHAZI SPX Dashboard
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/spx-dashboard.yml"
+      - "options_radar/spx_external_gamma.py"
   schedule:
     - cron: "*/5 13-20 * * 1-5"
 permissions:
@@ -29,12 +34,10 @@ jobs:
           if isinstance(idx.columns,pd.MultiIndex): idx.columns=idx.columns.get_level_values(0)
           idx=idx.dropna(subset=["Close"])
           close=idx["Close"].astype(float); vol=idx.get("Volume",pd.Series(index=idx.index,dtype=float)).fillna(0).astype(float)
-          typical=close
-          vwap=float((typical*vol).sum()/vol.sum()) if vol.sum()>0 else float(close.iloc[-1])
+          vwap=float((close*vol).sum()/vol.sum()) if vol.sum()>0 else float(close.iloc[-1])
           delta=close.diff(); gain=delta.clip(lower=0).rolling(14).mean(); loss=(-delta.clip(upper=0)).rolling(14).mean()
-          rs=gain/loss.replace(0,float("nan")); rsi=float((100-(100/(1+rs))).iloc[-1]) if math.isfinite(float((100-(100/(1+rs))).iloc[-1])) else 50.0
-          spot=float(close.iloc[-1]); prev=float(close.iloc[0]); ctx=build_spx_external_context()
-          g=ctx.get("daily_gamma",{}) or {}
+          rs=gain/loss.replace(0,float("nan")); raw_rsi=100-(100/(1+rs)); rsi=float(raw_rsi.iloc[-1]) if math.isfinite(float(raw_rsi.iloc[-1])) else 50.0
+          spot=float(close.iloc[-1]); prev=float(close.iloc[0]); ctx=build_spx_external_context(); g=ctx.get("daily_gamma",{}) or {}
           payload={"generated_at":datetime.now(timezone.utc).isoformat(),"spot":spot,"change_pct":(spot/prev-1)*100 if prev else None,"vwap":vwap,"rsi":rsi,"vix":None,"price_source":"yahoo/yfinance ^GSPC","gamma_source":g.get("source"),"zero_gamma_flip":g.get("zero_gamma_flip"),"call_wall":g.get("call_wall"),"put_wall":g.get("put_wall"),"net_gex_dollars":g.get("net_gex_dollars"),"gamma_regime":g.get("gamma_regime"),"age_minutes":0}
           v=yf.download("^VIX",period="1d",interval="5m",progress=False,auto_adjust=False,prepost=False)
           if not v.empty:
