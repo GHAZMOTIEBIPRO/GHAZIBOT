@@ -27,6 +27,8 @@ from options_radar.omega_decision import apply_omega_gate
 from options_radar.outcome_learning import apply_learning_adjustments, load_calibration
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
+from options_radar.spx_gamma_consensus import build_spx_gamma_consensus
+from options_radar.spx_external_gamma import build_spx_external_context
 from options_radar.spx_external_gamma import build_spx_external_context
 
 DEFAULT_INPUT = Path("data/universe.txt")
@@ -313,9 +315,12 @@ def run(
         timeout=min(15, settings.request_timeout_seconds)
     )
 
+    spx_gamma_consensus = build_spx_gamma_consensus(spx_external_gamma)
+
     payload: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "spx_external_gamma": spx_external_gamma,
+        "spx_gamma_consensus": spx_gamma_consensus,
         "path": "options",
         "architecture": "independent_options_contract_radar_v3_outcome_learning",
         "independent_from_stock_radar": True,
