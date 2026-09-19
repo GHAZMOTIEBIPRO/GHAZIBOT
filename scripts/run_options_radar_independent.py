@@ -23,6 +23,7 @@ from options_radar.occ_free_context import OccDailyVolumeClient, side_alignment
 from options_radar.official_event_scan import scan_official_events
 from options_radar.optionable_universe import IndependentOptionableUniverse
 from options_radar.options_consensus import build_directional_signals
+from options_radar.omega_decision import apply_omega_gate
 from options_radar.outcome_learning import apply_learning_adjustments, load_calibration
 from options_radar.scanner import OptionsRadar
 from options_radar.settings import Settings
@@ -297,6 +298,13 @@ def run(
         minimum_side_edge=side_edge,
         max_signals=max(1, min(12, int(os.getenv("OPTIONS_STRICT_MAX_SIGNALS", "8")))),
     )
+    # Omega is a conservative post-consensus gate: it may veto an autonomous
+    # free alert, but it never fabricates a signal and research rows remain
+    # available for outcome learning.
+    directional_signals = apply_omega_gate(
+        directional_signals,
+        free_threshold=float(os.getenv("OPTIONS_FREE_ALERT_MIN_SCORE", "87")),
+    )
     top_calls = [row for row in contracts if str(row.get("option_type") or "").lower() == "call"]
     top_puts = [row for row in contracts if str(row.get("option_type") or "").lower() == "put"]
 
@@ -331,6 +339,7 @@ def run(
             "gamma_policy": "GEX is a gamma-times-OI positioning proxy. Put sign is a modeling convention, not verified dealer inventory.",
             "one_side_policy": "A symbol can emit at most one strict CALL or PUT signal and one best contract per run.",
             "learning_policy": "Only prior 60-minute ask-to-bid outcomes can create bounded score adjustments after the minimum sample. Hard blockers always remain authoritative.",
+            "omega_policy": "Autonomous free alerts require an evidence quorum across score/flow/context/data quality; conflicts produce NO_TRADE while research rows are retained.",
             "note_ar": "الفلو والقاما أدلة سياقية وليسا ضمانًا: لا نثبت Sweep أو Dealer positioning من البيانات المجانية.",
         },
         "contracts": contracts,
