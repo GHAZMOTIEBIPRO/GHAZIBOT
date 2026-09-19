@@ -1,0 +1,45 @@
+name: BLACK BOX Free Data Health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 13-21 * * 1-5"
+  push:
+    branches: [main]
+    paths:
+      - "research/free_data_sources.json"
+      - "options_radar/free_data_health.py"
+      - ".github/workflows/free-data-health.yml"
+
+concurrency:
+  group: black-box-free-data-health
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Check public sources without failing the pipeline
+        run: python options_radar/free_data_health.py
+      - name: Publish health snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/free_data_health.json
+          git diff --cached --quiet || git commit -m "chore: refresh free data health"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo "Health snapshot publish failed after synchronized retries."
+          exit 1
