@@ -177,7 +177,8 @@ def build() -> dict[str, Any]:
             "max_source_weight_before_validation": 0.0,
             "promotion_requires": "agreement + freshness + outcome stability",
         },
-        "reasons_ar": reasons,\n        "promotion_status_ar": "محرك GEX الجديد مدمج فعلياً ويحسب المستويات وGreeks المتقدمة، لكنه لا يملك سلطة على CALL/PUT قبل اكتمال الاختبار التاريخي.",
+        "reasons_ar": reasons,
+        "promotion_status_ar": "محرك GEX الجديد مدمج فعلياً ويحسب المستويات وGreeks المتقدمة، لكنه لا يملك سلطة على CALL/PUT قبل اكتمال الاختبار التاريخي.",
     }
 
     history = []
