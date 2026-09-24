@@ -1,16 +1,16 @@
 {
-  "status": "stale",
-  "generated_at": "2026-09-23T17:49:56.175443+00:00",
-  "dataset_age_minutes": 366.9,
-  "last_successful_refresh": "2026-09-23T17:49:56.175443+00:00",
+  "status": "degraded",
+  "generated_at": "2026-09-24T17:20:30.098638+00:00",
+  "dataset_age_minutes": 1.7,
+  "last_successful_refresh": "2026-09-24T17:20:30.098638+00:00",
   "option_provider": "phase5_hybrid",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
     "production_quote_ready": false,
     "production_flow_ready": false,
-    "usable_chains": 13,
-    "fallback_only_chains": 13,
-    "delayed_or_indicative_chains": 13,
+    "usable_chains": 12,
+    "fallback_only_chains": 12,
+    "delayed_or_indicative_chains": 12,
     "live_primary_chains": 0,
     "cross_source_chains": 0,
     "opra_chains": 0,
@@ -19,8 +19,8 @@
     ],
     "reasons": [
       "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-      "13 chain(s) are Yahoo/YFinance-only fallback",
-      "13 chain(s) contain delayed, indicative, or unofficial sources"
+      "12 chain(s) are Yahoo/YFinance-only fallback",
+      "12 chain(s) contain delayed, indicative, or unofficial sources"
     ]
   },
   "source_status": {
@@ -30,12 +30,12 @@
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-09-23T23:55:16.377526+00:00",
+      "checked_at": "2026-09-24T17:19:30.437285+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
-      "start_date": "2026-09-09",
-      "end_date": "2026-09-23",
+      "start_date": "2026-09-10",
+      "end_date": "2026-09-24",
       "event_count": 0,
       "message": "SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
       "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
@@ -53,16 +53,16 @@
   "row_counts": {
     "stocks": 15,
     "options": 0,
-    "catalysts": 13,
+    "catalysts": 12,
     "expiry_contracts": 0
   },
   "quality_counts": {
     "stale_options": 0,
     "missing_expiry_family": 0,
     "duplicate_events_collapsed": 0,
-    "errors": 2,
+    "errors": 3,
     "critical_errors": 0,
-    "fallback_only_option_chains": 13,
+    "fallback_only_option_chains": 12,
     "live_primary_option_chains": 0
   },
   "sec_incremental": {
@@ -75,13 +75,12 @@
     "prefilter_skips": 0,
     "events_emitted": 0,
     "processed_accessions": 0,
-    "updated_at": "2026-09-23T17:49:00.264790+00:00"
+    "updated_at": "2026-09-24T17:19:40.403314+00:00"
   },
   "run_duration_seconds": null,
   "reasons": [
-    "published dataset age 367 minutes",
     "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-    "13 chain(s) are Yahoo/YFinance-only fallback",
-    "13 chain(s) contain delayed, indicative, or unofficial sources"
+    "12 chain(s) are Yahoo/YFinance-only fallback",
+    "12 chain(s) contain delayed, indicative, or unofficial sources"
   ]
 }
