@@ -2,16 +2,18 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-09-29T18:42:05.649373+00:00",
+  "generated_at": "2026-09-29T18:50:14.418969+00:00",
   "overall_status": "CRITICAL",
   "paths": {
     "fast_discovery": {
-      "status": "UNAVAILABLE",
+      "status": "HEALTHY",
       "file": "data/live/fast_explosion_scan.json",
+      "generated_at": "2026-09-29T18:36:06.102307+00:00",
+      "age_minutes": 14.14,
       "maximum_age_minutes": 45.0,
-      "reasons": [
-        "No validated payload has been published for this path."
-      ]
+      "candidate_count": 0,
+      "provider_readiness": null,
+      "reasons": []
     },
     "stocks": {
       "status": "UNAVAILABLE",
@@ -37,13 +39,12 @@
     }
   },
   "reasons": [
-    "fast_discovery: No validated payload has been published for this path.",
     "stocks: No validated payload has been published for this path.",
     "options: Only delayed, indicative, unofficial, or unverified-entitlement option data is active; 52 chain(s) are Yahoo/YFinance-only fallback; 52 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "publisher": {
-    "source_workflow": "BLACK BOX Omega Options Contract Radar",
-    "source_run_id": "36612962100",
+    "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
+    "source_run_id": "36612940420",
     "mode": "artifact_to_bot_state_status_only"
   }
 }
