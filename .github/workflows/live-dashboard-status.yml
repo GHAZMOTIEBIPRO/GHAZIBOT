@@ -75,7 +75,7 @@ jobs:
               options-contract-radar.yml) workflow_name="BLACK BOX Omega Options Contract Radar" ;;
               *) echo "Unsupported recovery workflow: $workflow_file" >&2; exit 2 ;;
             esac
-            run_id="$(gh run list --workflow "$workflow_file" --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow_file" --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
           fi
 
           case "$workflow_name" in
@@ -114,7 +114,7 @@ jobs:
           set -euo pipefail
           rm -rf incoming
           mkdir -p incoming
-          gh run download "$SOURCE_RUN_ID" -n "$ARTIFACT_NAME" -D incoming
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" -n "$ARTIFACT_NAME" -D incoming
           test -s "incoming/$REQUIRED_FILE"
           PYTHONPATH=publisher python - "incoming/$REQUIRED_FILE" <<'PY'
           import json
