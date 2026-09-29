@@ -2,18 +2,20 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-09-29T22:38:59.766371+00:00",
-  "overall_status": "DEGRADED",
+  "generated_at": "2026-09-29T23:57:09.456337+00:00",
+  "overall_status": "CRITICAL",
   "paths": {
     "fast_discovery": {
-      "status": "HEALTHY",
+      "status": "STALE",
       "file": "data/live/fast_explosion_scan.json",
       "generated_at": "2026-09-29T22:38:05.903480+00:00",
-      "age_minutes": 0.28,
+      "age_minutes": 79.06,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": null,
-      "reasons": []
+      "reasons": [
+        "Payload age 79.1m exceeds the 45m safety limit."
+      ]
     },
     "stocks": {
       "status": "HEALTHY",
@@ -43,11 +45,12 @@
     }
   },
   "reasons": [
+    "fast_discovery: Payload age 79.1m exceeds the 45m safety limit.",
     "options: Only delayed, indicative, unofficial, or unverified-entitlement option data is active; 52 chain(s) are Yahoo/YFinance-only fallback; 52 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "publisher": {
-    "source_workflow": "BLACK BOX Omega Stock Radar",
-    "source_run_id": "36640734812",
+    "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
+    "source_run_id": "36640400265",
     "mode": "artifact_to_bot_state_status_only"
   }
 }
