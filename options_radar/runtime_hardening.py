@@ -68,7 +68,7 @@ def install_options_radar_hardening() -> None:
                 "dte" not in out
                 or pd.to_numeric(out["dte"], errors="coerce").isna().all()
             ):
-                today = pd.Timestamp.now().normalize()
+                today = pd.Timestamp.now(tz="UTC").normalize().tz_localize(None)
                 out["dte"] = (expiration.dt.normalize() - today).dt.days
         return out
 

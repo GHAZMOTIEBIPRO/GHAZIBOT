@@ -143,13 +143,20 @@ class OptionsRadar:
     def _prepare_chain_dates(chain: pd.DataFrame) -> pd.DataFrame:
         out = chain.copy()
         if "expiration" in out:
-            expiration = pd.to_datetime(out["expiration"], errors="coerce")
+            # Expiration is a trading date. Providers can return either a
+            # date-only value or a timezone-aware timestamp, so normalize all
+            # inputs to a timezone-naive UTC calendar date before calculating
+            # DTE. Mixing aware expiration values with a naive `today` raises
+            # at runtime and must never become an unclassified scan error.
+            expiration = pd.to_datetime(
+                out["expiration"], errors="coerce", utc=True
+            ).dt.tz_localize(None)
             out["expiration"] = expiration
             if (
                 "dte" not in out
                 or pd.to_numeric(out["dte"], errors="coerce").isna().all()
             ):
-                today = pd.Timestamp.now().normalize()
+                today = pd.Timestamp.now(tz="UTC").normalize().tz_localize(None)
                 out["dte"] = (expiration.dt.normalize() - today).dt.days
         return out
 

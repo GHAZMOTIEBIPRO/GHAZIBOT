@@ -156,6 +156,13 @@ Current role:
 
 Runtime state is restored/persisted under `bot-state/runtime/`. The dashboard loads the durable runtime dataset first and retains legacy/static fallbacks. Routine market-data refreshes must not push data commits to `main`.
 
+`.github/workflows/live-dashboard-status.yml` validates canonical-radar artifacts only in
+the ephemeral workflow workspace and publishes a **metadata-only**
+`live_dashboard_status.json` to `bot-state/runtime/`. It never copies raw chain, quote,
+or signal rows to the public state branch. The web UI renders that status separately from
+the legacy research dataset, so a stale research snapshot cannot masquerade as current
+path health.
+
 ## State ownership
 
 ### `main`
