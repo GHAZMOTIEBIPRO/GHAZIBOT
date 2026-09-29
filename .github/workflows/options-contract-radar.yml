@@ -327,7 +327,11 @@ jobs:
           done
 
       - name: Send strict option alert directly after persisted validation
-        if: steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        # A source-code push can intentionally re-run the scanner. Preserve the
+        # result and its health metadata, but avoid an unreviewed notification
+        # burst caused solely by deployment; scheduled/manual radar runs retain
+        # the normal direct-delivery path.
+        if: github.event_name != 'push' && steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
         run: >-
           python -m scripts.send_strict_options_alerts
           --payload public/data/options_latest.json

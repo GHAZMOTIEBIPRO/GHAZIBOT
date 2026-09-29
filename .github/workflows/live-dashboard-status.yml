@@ -1,0 +1,164 @@
+name: BLACK BOX Omega Live Dashboard Status
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_workflow:
+        description: Source workflow file to recover when manually dispatched
+        required: true
+        default: stock-radar.yml
+        type: choice
+        options:
+          - fast-explosion-radar.yml
+          - stock-radar.yml
+          - options-contract-radar.yml
+  workflow_run:
+    workflows:
+      - BLACK BOX Omega Fast Explosion Radar
+      - BLACK BOX Omega Stock Radar
+      - BLACK BOX Omega Options Contract Radar
+    types: [completed]
+
+concurrency:
+  group: black-box-omega-live-dashboard-status
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-status:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EVENT_NAME: ${{ github.event_name }}
+      EVENT_WORKFLOW: ${{ github.event.workflow_run.name }}
+      EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+      INPUT_WORKFLOW: ${{ inputs.source_workflow }}
+
+    steps:
+      - name: Check out publisher from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: publisher
+
+      - name: Check out public runtime state
+        uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+
+      - name: Resolve source run and validated artifact
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow_name="$EVENT_WORKFLOW"
+          run_id="$EVENT_RUN_ID"
+          workflow_file=""
+          artifact_name=""
+          required_file=""
+          source_path=""
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            workflow_file="$INPUT_WORKFLOW"
+            case "$workflow_file" in
+              fast-explosion-radar.yml) workflow_name="BLACK BOX Omega Fast Explosion Radar" ;;
+              stock-radar.yml) workflow_name="BLACK BOX Omega Stock Radar" ;;
+              options-contract-radar.yml) workflow_name="BLACK BOX Omega Options Contract Radar" ;;
+              *) echo "Unsupported recovery workflow: $workflow_file" >&2; exit 2 ;;
+            esac
+            run_id="$(gh run list --workflow "$workflow_file" --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          fi
+
+          case "$workflow_name" in
+            "BLACK BOX Omega Fast Explosion Radar")
+              artifact_name="fast-market-state"
+              required_file="fast_explosion_scan.json"
+              source_path="fast_discovery"
+              ;;
+            "BLACK BOX Omega Stock Radar")
+              artifact_name="independent-stock-radar"
+              required_file="stocks_latest.json"
+              source_path="stocks"
+              ;;
+            "BLACK BOX Omega Options Contract Radar")
+              artifact_name="independent-options-radar"
+              required_file="options_latest.json"
+              source_path="options"
+              ;;
+            *) echo "Unsupported workflow event: $workflow_name" >&2; exit 2 ;;
+          esac
+
+          [[ "$run_id" != "0" && -n "$run_id" ]]
+          echo "workflow_name=$workflow_name" >> "$GITHUB_OUTPUT"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          echo "required_file=$required_file" >> "$GITHUB_OUTPUT"
+          echo "source_path=$source_path" >> "$GITHUB_OUTPUT"
+
+      - name: Download and validate fresh source payload
+        shell: bash
+        env:
+          SOURCE_RUN_ID: ${{ steps.source.outputs.run_id }}
+          ARTIFACT_NAME: ${{ steps.source.outputs.artifact_name }}
+          REQUIRED_FILE: ${{ steps.source.outputs.required_file }}
+        run: |
+          set -euo pipefail
+          rm -rf incoming
+          mkdir -p incoming
+          gh run download "$SOURCE_RUN_ID" -n "$ARTIFACT_NAME" -D incoming
+          test -s "incoming/$REQUIRED_FILE"
+          PYTHONPATH=publisher python - "incoming/$REQUIRED_FILE" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          from scripts.runtime_state_vault import validate_runtime_file
+
+          path = Path(sys.argv[1])
+          validate_runtime_file(path)
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          assert isinstance(payload, dict)
+          assert payload.get('generated_at'), 'source payload has no generated_at'
+          print(f'Validated {path}')
+          PY
+
+      - name: Build non-decision live dashboard status
+        shell: bash
+        run: >-
+          python publisher/scripts/publish_live_dashboard_status.py
+          --state-root state/runtime
+          --source-workflow "${{ steps.source.outputs.workflow_name }}"
+          --source-run-id "${{ steps.source.outputs.run_id }}"
+          --source-path "${{ steps.source.outputs.source_path }}"
+          --source-payload "incoming/${{ steps.source.outputs.required_file }}"
+
+      - name: Commit public runtime status to bot-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "BLACK BOX Omega Dashboard State"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/
+          if git diff --cached --quiet; then
+            echo "Live dashboard runtime state is unchanged."
+            exit 0
+          fi
+          git commit -m "state: refresh live dashboard status [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Could not persist live dashboard runtime state." >&2
+          exit 1

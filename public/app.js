@@ -3,6 +3,7 @@ const DATA_URLS = [
   "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/main/public/data/latest.json",
   "./data/latest.json",
 ];
+const LIVE_STATUS_URL = "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/live_dashboard_status.json";
 const RIYADH_TIME_ZONE = "Asia/Riyadh";
 let radarData = null;
 
@@ -172,12 +173,32 @@ function renderCalibration() {
 }
 
 function renderAlerts() { const alerts = radarData?.alerts || []; byId("alerts-section").classList.toggle("hidden", !alerts.length); byId("alerts-list").innerHTML = alerts.map((x) => `<div class="alert-item">${escapeHtml(x)}</div>`).join(""); }
+function livePathStatus(path) {
+  const generated = new Date(path?.generated_at || "");
+  const maximumAge = Number(path?.maximum_age_minutes);
+  const ageMinutes = (Date.now() - generated.getTime()) / 60000;
+  if (Number.isFinite(maximumAge) && !Number.isNaN(generated.getTime()) && ageMinutes > maximumAge) return "STALE";
+  return path?.status || "UNKNOWN";
+}
+function liveOverallStatus(paths, fallback) {
+  const states = paths.map(([name, path]) => [name, livePathStatus(path)]);
+  if (states.some(([name, status]) => (name === "fast_discovery" || name === "stocks") && ["CRITICAL", "STALE", "UNAVAILABLE"].includes(status))) return "CRITICAL";
+  if (states.some(([, status]) => ["DEGRADED", "RESEARCH_ONLY", "UNAVAILABLE", "STALE"].includes(status))) return "DEGRADED";
+  return fallback || "HEALTHY";
+}
 function renderStatus() {
   byId("provider-name").textContent = radarData?.options_provider || "—"; byId("delivery-mode").textContent = "صفحة الويب فقط"; byId("universe-size").textContent = number(radarData?.universe_size, 0); byId("model-version").textContent = radarData?.model_version || "—";
   const sources = radarData?.universe_sources || {}; byId("universe-sources").textContent = Object.entries(sources).map(([k, v]) => `${k}: ${number(v, 0)}`).join(" · ") || "—";
   const clock = radarData?.market_clock || {}; byId("session-status").textContent = clock.is_regular_open ? "مفتوحة" : clock.is_session ? "جلسة مغلقة الآن" : "عطلة سوق";
-  const services = radarData?.operational_status?.services || []; byId("services-status").innerHTML = services.length ? services.map((s) => `<div class="error-line"><strong>${escapeHtml(s.name)}</strong>: ${s.configured ? "جاهز" : "يحتاج إعداد"} — ${escapeHtml(s.note || "")}</div>`).join("") : "—";
-  const errors = Object.entries(radarData?.errors || {}); byId("errors-list").innerHTML = errors.length ? errors.map(([k, v]) => `<div class="error-line"><strong>${escapeHtml(k)}</strong>: ${escapeHtml(v)}</div>`).join("") : '<p>جميع المصادر المطلوبة أكملت الفحص دون أخطاء مسجلة.</p>';
+  const live = radarData?.live_status;
+  const livePaths = live?.paths && typeof live.paths === "object" ? Object.entries(live.paths) : [];
+  const liveOverall = liveOverallStatus(livePaths, live?.overall_status);
+  const services = radarData?.operational_status?.services || [];
+  byId("services-status").innerHTML = livePaths.length
+    ? [`<div class="error-line"><strong>حالة المسارات الحية: ${escapeHtml(liveOverall)}</strong> — ${escapeHtml(formatRiyadhTime(live.generated_at))} الرياض</div>`, ...livePaths.map(([name, path]) => `<div class="error-line"><strong>${escapeHtml(name)}</strong>: ${escapeHtml(livePathStatus(path))} — ${escapeHtml(path?.generated_at ? formatRiyadhTime(path.generated_at) : "لا توجد حمولة موثقة")}</div>`)].join("")
+    : (services.length ? services.map((s) => `<div class="error-line"><strong>${escapeHtml(s.name)}</strong>: ${s.configured ? "جاهز" : "يحتاج إعداد"} — ${escapeHtml(s.note || "")}</div>`).join("") : "—");
+  const liveReasons = Array.isArray(live?.reasons) ? live.reasons.map((reason) => ["live_status", reason]) : [];
+  const errors = [...liveReasons, ...Object.entries(radarData?.errors || {})]; byId("errors-list").innerHTML = errors.length ? errors.map(([key, value]) => `<div class="error-line"><strong>${escapeHtml(key)}</strong>: ${escapeHtml(value)}</div>`).join("") : '<p>جميع المصادر المطلوبة أكملت الفحص دون أخطاء مسجلة.</p>';
 }
 function renderAll(data) {
   radarData = data;
@@ -203,13 +224,22 @@ async function fetchRadarData() {
   }
   throw new Error(failures.join(" | "));
 }
+async function fetchLiveStatus() {
+  try {
+    const response = await fetch(`${LIVE_STATUS_URL}?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return null;
+    const value = await response.json();
+    return value && typeof value === "object" ? value : null;
+  } catch (_) { return null; }
+}
 async function loadData(manual = false) {
   const button = byId("refresh-button");
   const previousGeneratedAt = radarData?.generated_at || null;
   button.disabled = true;
   button.textContent = "جاري التحقق…";
   try {
-    const data = await fetchRadarData();
+    const [data, liveStatus] = await Promise.all([fetchRadarData(), fetchLiveStatus()]);
+    if (liveStatus) data.live_status = liveStatus;
     renderAll(data);
     if (manual) {
       const hasNewerData = previousGeneratedAt && new Date(data.generated_at) > new Date(previousGeneratedAt);
