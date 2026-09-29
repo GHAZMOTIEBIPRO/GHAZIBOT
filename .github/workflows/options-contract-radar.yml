@@ -206,26 +206,19 @@ jobs:
           print('Independent options + data fabric + gamma + guarded learning passed.')
           PY
 
-      - name: Publish dashboard options payload
+      - name: Validate dashboard options payload
         if: steps.market.outputs.open == 'true'
         shell: bash
         run: |
-          mkdir -p public/data
-          cp -f public/data/options_latest.json public/data/options_latest.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/options_latest.json
-          git diff --cached --quiet || git commit -m "chore: publish SPX options intelligence payload"
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Options payload publish failed after 3 synchronized push attempts."
-          exit 1
+          test -s public/data/options_latest.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path("public/data/options_latest.json").read_text(encoding="utf-8"))
+          assert isinstance(payload, dict)
+          assert payload.get("generated_at"), "options payload has no generated_at"
+          print("Options dashboard payload validated; publication is artifact-only.")
+          PY
 
       - name: Upload options radar payload
         if: steps.market.outputs.open == 'true'
