@@ -75,7 +75,6 @@ jobs:
               options-contract-radar.yml) workflow_name="BLACK BOX Omega Options Contract Radar" ;;
               *) echo "Unsupported recovery workflow: $workflow_file" >&2; exit 2 ;;
             esac
-            run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow_file" --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
           fi
 
           case "$workflow_name" in
@@ -97,7 +96,30 @@ jobs:
             *) echo "Unsupported workflow event: $workflow_name" >&2; exit 2 ;;
           esac
 
-          [[ "$run_id" != "0" && -n "$run_id" ]]
+          # A successful workflow can legitimately have no artifact when the market is closed.
+          # Resolve only a run that actually contains the required validated artifact.
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            run_id="0"
+            while read -r candidate; do
+              [[ -n "$candidate" ]] || continue
+              if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$candidate/artifacts" --jq '[.artifacts[] | select(.name == "'"$artifact_name"'" and .expired == false)] | length' | grep -q '^[1-9]'; then
+                run_id="$candidate"
+                break
+              fi
+            done < <(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow_file" --status success --branch main --limit 20 --json databaseId --jq '.[].databaseId')
+          else
+            if ! gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" --jq '[.artifacts[] | select(.name == "'"$artifact_name"'" and .expired == false)] | length' | grep -q '^[1-9]'; then
+              echo "No $artifact_name artifact for source run $run_id; leaving prior live status unchanged."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          if [[ "$run_id" == "0" || -z "$run_id" ]]; then
+            echo "No successful source run contains a non-expired $artifact_name artifact; leaving prior live status unchanged."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "workflow_name=$workflow_name" >> "$GITHUB_OUTPUT"
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
           echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
@@ -105,6 +127,7 @@ jobs:
           echo "source_path=$source_path" >> "$GITHUB_OUTPUT"
 
       - name: Download and validate fresh source payload
+        if: steps.source.outputs.skip != 'true'
         shell: bash
         env:
           SOURCE_RUN_ID: ${{ steps.source.outputs.run_id }}
@@ -131,6 +154,7 @@ jobs:
           PY
 
       - name: Build non-decision live dashboard status
+        if: steps.source.outputs.skip != 'true'
         shell: bash
         run: >-
           python publisher/scripts/publish_live_dashboard_status.py
@@ -141,6 +165,7 @@ jobs:
           --source-payload "incoming/${{ steps.source.outputs.required_file }}"
 
       - name: Commit public runtime status to bot-state
+        if: steps.source.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
