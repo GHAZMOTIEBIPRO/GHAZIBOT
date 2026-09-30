@@ -17,6 +17,9 @@ on:
       - "options_radar/stream_overlay.py"
       - "options_radar/black_box_fusion.py"
       - "scripts/run_black_box_omega.py"
+      - "scripts/run_three_path_intelligence.py"
+      - "options_radar/three_path_intelligence.py"
+      - "scripts/send_three_path_alerts.py"
   schedule:
     - cron: "2,22,42 8-12 * * 1-5"
     - cron: "2-57/5 13-21 * * 1-5"
@@ -135,13 +138,17 @@ jobs:
           --output public/data/options_latest.json
           --max-symbols 40
           --top-per-side 12
-      - name: Send independent three-path research alerts
-        if: steps.market_day.outputs.open == 'true' && github.event_name != 'push'
-        run: python scripts/send_three_path_alerts.py
+      - name: Build three independent intelligence paths
+        if: steps.market_day.outputs.open == 'true'
+        run: python scripts/run_three_path_intelligence.py
 
       - name: Fuse Black Box Omega evidence across chart, catalyst, explosion, options and flow payloads
         if: steps.market_day.outputs.open == 'true'
         run: python scripts/run_black_box_omega.py
+
+      - name: Send guarded three-path research alerts
+        if: steps.market_day.outputs.open == 'true' && github.event_name != 'push'
+        run: python scripts/send_three_path_alerts.py
 
       - name: Upload fast-radar evidence for unified Arabic notifier
         if: steps.market_day.outputs.open == 'true'
