@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from options_radar.black_box_fusion import FusionPolicy, fuse_paths
+from options_radar.black_box_fusion import FusionPolicy, fuse_paths, investigate_candidate, infer_market_regime
 
 
 def main() -> int:
@@ -23,6 +23,24 @@ def main() -> int:
         output_path=args.output,
         policy=FusionPolicy(max_candidates=max(1, args.max_candidates)),
     )
+    investigations = [investigate_candidate(item) for item in result.get("candidates", [])]
+    result["investigations"] = investigations
+    result["investigation_summary"] = {
+        "conflict_count": sum(item.get("conflict_state") == "CONFLICT" for item in investigations),
+        "research_candidate_count": sum(item.get("research_state") == "RESEARCH_CANDIDATE" for item in investigations),
+    }
+    # Regime is optional: only explicitly supplied observations are used.
+    latest_payload = json.loads(Path(args.latest).read_text(encoding="utf-8")) if Path(args.latest).exists() else {}
+    regime_payload = latest_payload.get("market_regime") if isinstance(latest_payload, dict) else {}
+    if isinstance(regime_payload, dict):
+        result["market_regime"] = infer_market_regime(regime_payload)
+    else:
+        result["market_regime"] = infer_market_regime({})
+    Path(args.output).write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, default=str),
+        encoding="utf-8",
+    )
+
     summary = {
         "candidate_count": result["candidate_count"],
         "research_candidates": sum(
