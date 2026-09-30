@@ -102,13 +102,14 @@ def _evidence(rows: list[dict[str, Any]], kind: str) -> dict[str, list[dict[str,
 def fuse_evidence(*, latest: dict[str, Any] | None = None,
                   explosion: dict[str, Any] | None = None,
                   flow: dict[str, Any] | None = None,
+                  options_payload: dict[str, Any] | None = None,
                   policy: FusionPolicy | None = None) -> dict[str, Any]:
     """Fuse independent evidence; scores are not win probabilities."""
     policy = policy or FusionPolicy()
-    latest, explosion, flow = latest or {}, explosion or {}, flow or {}
+    latest, explosion, flow, options_payload = latest or {}, explosion or {}, flow or {}, options_payload or {}
     classes = {
         "chart": _rows(latest, ("stock_recommendations", "stocks", "chart_signals")),
-        "options": _rows(latest, ("contract_recommendations", "option_recommendations", "options")),
+        "options": _rows(options_payload, ("contract_recommendations", "contracts", "top_calls", "top_puts", "directional_signals")) or _rows(latest, ("contract_recommendations", "option_recommendations", "options")),
         "news": _rows(latest, ("news", "catalysts", "news_recommendations")),
         "fundamental": _rows(latest, ("fundamentals", "fundamental_recommendations")),
         "explosion": _rows(explosion, ("candidates", "signals", "opportunities", "rows")),
@@ -297,10 +298,11 @@ def load_json(path: str | Path) -> dict[str, Any]:
 def fuse_paths(*, latest_path: str | Path = "public/data/latest.json",
                explosion_path: str | Path = "data/live/fast_explosion_scan.json",
                flow_path: str | Path = "data/live/delta_signals.json",
+               options_path: str | Path = "public/data/options_latest.json",
                output_path: str | Path = "data/live/black_box_omega.json",
                policy: FusionPolicy | None = None) -> dict[str, Any]:
     result = fuse_evidence(latest=load_json(latest_path), explosion=load_json(explosion_path),
-                           flow=load_json(flow_path), policy=policy)
+                           flow=load_json(flow_path), options_payload=load_json(options_path), policy=policy)
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     tmp = destination.with_suffix(destination.suffix + ".tmp")
