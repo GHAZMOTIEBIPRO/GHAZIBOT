@@ -135,6 +135,10 @@ jobs:
           --output public/data/options_latest.json
           --max-symbols 40
           --top-per-side 12
+      - name: Send independent three-path research alerts
+        if: steps.market_day.outputs.open == 'true' && github.event_name != 'push'
+        run: python scripts/send_three_path_alerts.py
+
       - name: Fuse Black Box Omega evidence across chart, catalyst, explosion, options and flow payloads
         if: steps.market_day.outputs.open == 'true'
         run: python scripts/run_black_box_omega.py
