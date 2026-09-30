@@ -12,6 +12,7 @@ from .settings import Settings
 LOGGER = logging.getLogger(__name__)
 TREASURY_XML = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
 FRED_OBSERVATIONS = "https://api.stlouisfed.org/fred/series/observations"
+CFTC_COT = "https://publicreporting.cftc.gov/resource/6dca-aqww.json"
 
 TREASURY_FIELDS = {
     "BC_3MONTH": "treasury_3m",
@@ -96,6 +97,34 @@ def fetch_fred_latest(settings: Settings, series_id: str) -> dict[str, Any]:
     return {}
 
 
+
+def fetch_cftc_cot(limit: int = 20, market_contains: str | None = None) -> dict[str, Any]:
+    """Fetch latest CFTC COT rows for macro positioning context.
+
+    Context only: never promoted directly to a stock/option direction.
+    """
+    params: dict[str, Any] = {
+        "$limit": max(1, min(int(limit), 100)),
+        "$order": "report_date_as_yyyy_mm_dd DESC",
+    }
+    if market_contains:
+        escaped = market_contains.replace("'", "''")
+        params["$where"] = (
+            "upper(contract_market_name) like "
+            f"upper('%{escaped}%')"
+        )
+    response = requests.get(CFTC_COT, params=params, timeout=30)
+    response.raise_for_status()
+    rows = response.json()
+    if not isinstance(rows, list):
+        raise RuntimeError("CFTC COT endpoint returned an unexpected payload")
+    return {
+        "source": "CFTC Commitments of Traders public reporting API",
+        "count": len(rows),
+        "rows": rows,
+    }
+
+
 def build_macro_context(settings: Settings) -> tuple[dict[str, Any], dict[str, str]]:
     context: dict[str, Any] = {}
     errors: dict[str, str] = {}
@@ -104,6 +133,11 @@ def build_macro_context(settings: Settings) -> tuple[dict[str, Any], dict[str, s
     except Exception as exc:
         errors["treasury"] = str(exc)
         LOGGER.debug("Treasury macro feed failed: %s", exc)
+    try:
+        context["cftc_cot"] = fetch_cftc_cot(limit=20)
+    except Exception as exc:
+        errors["cftc_cot"] = str(exc)
+        LOGGER.debug("CFTC COT macro feed failed: %s", exc)
     if settings.fred_api_key:
         for series in ("VIXCLS", "DFF"):
             try:
