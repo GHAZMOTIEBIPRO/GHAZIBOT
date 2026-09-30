@@ -1,7 +1,7 @@
 {
-  "status": "degraded",
+  "status": "stale",
   "generated_at": "2026-09-30T18:24:00.675954+00:00",
-  "dataset_age_minutes": 1.5,
+  "dataset_age_minutes": 249.2,
   "last_successful_refresh": "2026-09-30T18:24:00.675954+00:00",
   "option_provider": "yahoo/yfinance",
   "option_provider_readiness": {
@@ -24,13 +24,13 @@
     ]
   },
   "source_status": {
-    "active_stock_sources": 2,
+    "active_stock_sources": 1,
     "active_option_sources": 1,
     "option_provider_readiness": "FALLBACK_ONLY",
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-09-30T18:22:44.593024+00:00",
+      "checked_at": "2026-09-30T22:31:57.893573+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
@@ -81,6 +81,7 @@
   "run_duration_seconds": null,
   "reasons": [
     "1 stale option row(s)",
+    "published dataset age 249 minutes",
     "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
     "14 chain(s) are Yahoo/YFinance-only fallback",
     "14 chain(s) contain delayed, indicative, or unofficial sources"
