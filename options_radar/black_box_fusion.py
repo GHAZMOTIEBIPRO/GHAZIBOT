@@ -39,6 +39,28 @@ def _direction(row: dict[str, Any]) -> str:
         return "BEARISH"
     return "NEUTRAL"
 
+def _quality_rejection_reason(row: dict[str, Any]) -> str | None:
+    """Reject only explicit bad-quality evidence; never invent validity."""
+    if row.get("valid") is False or row.get("is_valid") is False:
+        return "explicit_invalid"
+    if row.get("stale") is True or row.get("is_stale") is True:
+        return "explicit_stale"
+    status = str(row.get("freshness_status") or row.get("data_status") or "").strip().lower()
+    if status in {"stale", "expired", "invalid", "rejected", "failed", "error"}:
+        return status
+    quality = row.get("data_quality")
+    if isinstance(quality, dict):
+        qstatus = str(quality.get("status") or quality.get("state") or "").strip().lower()
+        if qstatus in {"stale", "expired", "invalid", "rejected", "failed", "error"}:
+            return f"data_quality:{qstatus}"
+        if quality.get("valid") is False:
+            return "data_quality:invalid"
+    age = _num(row.get("age_seconds"), -1.0)
+    max_age = _num(row.get("max_age_seconds"), -1.0)
+    if age >= 0 and max_age >= 0 and age > max_age:
+        return "age_exceeds_max"
+    return None
+
 def _bounded_score(row: dict[str, Any]) -> float:
     for key in ("score", "strict_score", "signal_score", "explosion_score", "confidence"):
         if row.get(key) is not None:
@@ -64,7 +86,13 @@ def _evidence(rows: list[dict[str, Any]], kind: str) -> dict[str, list[dict[str,
         if not symbol:
             continue
         item = dict(row)
+        rejection = _quality_rejection_reason(item)
+        if rejection:
+            continue
         item["evidence_class"] = kind
+        item["provenance_present"] = bool(
+            item.get("provenance") or item.get("source") or item.get("provider")
+        )
         item["direction"] = _direction(item)
         item["evidence_score"] = _bounded_score(item)
         out.setdefault(symbol, []).append(item)
@@ -108,7 +136,8 @@ def fuse_evidence(*, latest: dict[str, Any] | None = None,
             if direction != "NEUTRAL":
                 directions[direction] += contribution
             if score > 0:
-                reasons.append(f"{kind}:{score:.0f}")
+                provenance_note = "" if best.get("provenance_present") else ":no-provenance"
+                reasons.append(f"{kind}:{score:.0f}{provenance_note}")
         bullish, bearish = directions["BULLISH"], directions["BEARISH"]
         direction = "BULLISH" if bullish > bearish else "BEARISH" if bearish > bullish else "NEUTRAL"
         edge = abs(bullish - bearish)
@@ -126,6 +155,11 @@ def fuse_evidence(*, latest: dict[str, Any] | None = None,
             "research_state": state,
             "reasons": reasons,
             "evidence": raw,
+            "quality_gate": {
+                "explicit_bad_quality_rows_excluded": True,
+                "freshness_checked_when_declared": True,
+                "provenance_presence_recorded": True,
+            },
             "automatic_execution": False,
             "score_is_probability": False,
             "research_only": True,
