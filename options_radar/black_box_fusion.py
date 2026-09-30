@@ -176,6 +176,75 @@ def fuse_evidence(*, latest: dict[str, Any] | None = None,
         "candidates": candidates[:policy.max_candidates],
     }
 
+
+def investigate_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Produce an auditable thesis summary without inventing missing evidence."""
+    evidence = candidate.get("evidence") or {}
+    confirmations = []
+    directions = set()
+    for kind, row in evidence.items():
+        if not isinstance(row, dict):
+            continue
+        direction = _direction(row)
+        if direction != "NEUTRAL":
+            directions.add(direction)
+            confirmations.append({
+                "class": kind,
+                "direction": direction,
+                "score": row.get("evidence_score", _bounded_score(row)),
+                "provenance_present": bool(
+                    row.get("provenance") or row.get("source") or row.get("provider")
+                ),
+            })
+    conflicts = sorted(directions) if len(directions) > 1 else []
+    return {
+        "symbol": candidate.get("symbol"),
+        "research_state": candidate.get("research_state", "WATCH"),
+        "direction": candidate.get("direction", "NEUTRAL"),
+        "fusion_score": candidate.get("fusion_score", 0),
+        "confirmations": confirmations,
+        "conflict_state": "CONFLICT" if conflicts else "NO_EXPLICIT_CONFLICT",
+        "conflicting_directions": conflicts,
+        "invalidation_required": True,
+        "automatic_execution": False,
+        "score_is_probability": False,
+        "research_only": True,
+    }
+
+
+def infer_market_regime(payload: dict[str, Any]) -> dict[str, Any]:
+    """Coarse regime from explicitly supplied SPX/NDX/VIX observations only."""
+    def val(key: str) -> float | None:
+        raw = payload.get(key)
+        try:
+            number = float(raw)
+        except (TypeError, ValueError):
+            return None
+        return number if math.isfinite(number) else None
+
+    risk_on = risk_off = 0.0
+    observations = []
+    for key in ("spx_change_pct", "ndx_change_pct"):
+        number = val(key)
+        if number is None:
+            continue
+        observations.append(f"{key}={number:g}")
+        risk_on += 1.0 if number > 0 else 0.0
+        risk_off += 1.0 if number < 0 else 0.0
+    vix = val("vix_change_pct")
+    if vix is not None:
+        observations.append(f"vix_change_pct={vix:g}")
+        risk_on += 1.0 if vix < 0 else 0.0
+        risk_off += 1.0 if vix > 0 else 0.0
+    if not observations:
+        return {"regime": "UNKNOWN", "confidence": 0.0,
+                "observations": [], "research_only": True}
+    total = risk_on + risk_off
+    edge = abs(risk_on - risk_off)
+    regime = "RISK_ON" if risk_on > risk_off else "RISK_OFF" if risk_off > risk_on else "MIXED"
+    return {"regime": regime, "confidence": round(edge / max(1.0, total), 3),
+            "observations": observations, "research_only": True}
+
 def load_json(path: str | Path) -> dict[str, Any]:
     try:
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
