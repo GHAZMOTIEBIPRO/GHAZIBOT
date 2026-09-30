@@ -3,7 +3,7 @@
 - **Model version:** `2026.08-omega-reengineering`
 - **Status:** **READY FOR INDEPENDENT REVIEW**
 - **Mature signals (1d checkpoint):** **184/100**
-- **Raw priced signals:** **192**
+- **Raw priced signals:** **194**
 - **Five-day mature signals:** **173**
 - **Decision:** Eligible for independent score recalibration review
 
@@ -16,7 +16,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 1 | 1 | 1 | 0.0% | 0.0% | 100.0% | 2.12 | -73.15 |
-| 70-79 | 72 | 72 | 69 | 24.6% | 10.1% | 75.4% | 22.16 | -86.12 |
+| 70-79 | 74 | 74 | 69 | 24.6% | 10.1% | 75.4% | 22.16 | -86.12 |
 | 60-69 | 119 | 119 | 114 | 7.0% | 5.3% | 88.6% | 50.19 | -76.65 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 

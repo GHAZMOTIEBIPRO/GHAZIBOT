@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "updated_at": "2026-09-29T18:35:26.307412+00:00",
+  "updated_at": "2026-09-30T18:03:29.947435+00:00",
   "signals": {
     "33b97ddd23bfcdd2edf2": {
       "contract_symbol": "BAC260918C00062500",
@@ -32706,6 +32706,156 @@
       "terminal_at": "2026-07-30T14:35:00+00:00",
       "bars_evaluated": 18,
       "outcome_basis": "underlying_proxy"
+    },
+    "9613154825d562c2ad60": {
+      "contract_symbol": "SMMT261120C00020000",
+      "symbol": "SMMT",
+      "signal_time": "2026-09-30T18:03:29.947435+00:00",
+      "entry_price": 2.2049999999999996,
+      "target_1": 3.099,
+      "target_2": 3.8005,
+      "stop_price": 1.4643,
+      "underlying_target_1": 19.3238,
+      "underlying_target_2": 20.493,
+      "underlying_invalidation": 15.5462,
+      "observations": 1,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "path_audit": {
+        "option_contract": null,
+        "underlying_proxy": null
+      },
+      "quote_audit": {
+        "source": "yahoo",
+        "freshness": "unofficial / may be delayed",
+        "fetched_at": "2026-09-30T21:03:31.002752+03:00",
+        "attempts": [
+          {
+            "provider": "yahoo",
+            "operation": "option_chain",
+            "success": true,
+            "elapsed_ms": 468,
+            "rows": 151,
+            "status_code": null,
+            "error": null
+          }
+        ],
+        "metadata": {
+          "symbol": "SMMT",
+          "min_dte": 14,
+          "max_dte": 60,
+          "successful_sources": [
+            "yahoo"
+          ],
+          "source_count": 1,
+          "cross_source_confirmed": false,
+          "contracts_after_merge": 151,
+          "opra_source_active": false,
+          "expiry_fields_normalized": true,
+          "expiry_identity_engine": "v1",
+          "provider_classified_expiries": 0,
+          "calendar_fallback_expiries": 151,
+          "unknown_expiry_family_count": 0,
+          "modeled_greeks_count": 0,
+          "provider_preflight": {
+            "configured_providers": [
+              "yahoo"
+            ],
+            "skipped_unconfigured": [
+              "tradier",
+              "marketdata",
+              "finnhub"
+            ],
+            "adapter_attempts_avoided": 3,
+            "credentials_exposed": false,
+            "decision_authority": false
+          }
+        }
+      },
+      "last_updated": "2026-09-30T18:03:29.947435+00:00",
+      "last_observed": 2.175,
+      "max_observed": 2.175,
+      "min_observed": 2.175,
+      "mfe_pct": -1.3605,
+      "mae_pct": -1.3605,
+      "target_1_observed_snapshot": false,
+      "target_2_observed_snapshot": false,
+      "stop_observed_snapshot": false
+    },
+    "fd3ca134ed103c763e00": {
+      "contract_symbol": "META261106C00800000",
+      "symbol": "META",
+      "signal_time": "2026-09-30T18:03:29.947435+00:00",
+      "entry_price": 20.291,
+      "target_1": 38.669,
+      "target_2": 52.9886,
+      "stop_price": 10.091,
+      "underlying_target_1": 785.2346,
+      "underlying_target_2": 812.3078,
+      "underlying_invalidation": 692.6553,
+      "observations": 1,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "path_audit": {
+        "option_contract": null,
+        "underlying_proxy": null
+      },
+      "quote_audit": {
+        "source": "yahoo",
+        "freshness": "unofficial / may be delayed",
+        "fetched_at": "2026-09-30T21:03:35.516028+03:00",
+        "attempts": [
+          {
+            "provider": "yahoo",
+            "operation": "option_chain",
+            "success": true,
+            "elapsed_ms": 1266,
+            "rows": 1176,
+            "status_code": null,
+            "error": null
+          }
+        ],
+        "metadata": {
+          "symbol": "META",
+          "min_dte": 14,
+          "max_dte": 60,
+          "successful_sources": [
+            "yahoo"
+          ],
+          "source_count": 1,
+          "cross_source_confirmed": false,
+          "contracts_after_merge": 1176,
+          "opra_source_active": false,
+          "expiry_fields_normalized": true,
+          "expiry_identity_engine": "v1",
+          "provider_classified_expiries": 0,
+          "calendar_fallback_expiries": 1176,
+          "unknown_expiry_family_count": 0,
+          "modeled_greeks_count": 0,
+          "provider_preflight": {
+            "configured_providers": [
+              "yahoo"
+            ],
+            "skipped_unconfigured": [
+              "tradier",
+              "marketdata",
+              "finnhub"
+            ],
+            "adapter_attempts_avoided": 3,
+            "credentials_exposed": false,
+            "decision_authority": false
+          }
+        }
+      },
+      "last_updated": "2026-09-30T18:03:29.947435+00:00",
+      "last_observed": 20.225,
+      "max_observed": 20.225,
+      "min_observed": 20.225,
+      "mfe_pct": -0.3253,
+      "mae_pct": -0.3253,
+      "target_1_observed_snapshot": false,
+      "target_2_observed_snapshot": false,
+      "stop_observed_snapshot": false
     }
   }
 }
