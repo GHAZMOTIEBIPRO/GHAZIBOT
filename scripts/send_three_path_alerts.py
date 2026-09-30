@@ -18,6 +18,28 @@ def load_state():
         x=json.loads(STATE.read_text(encoding="utf-8")); return x if isinstance(x,dict) else {"sent":{}}
     except (OSError,ValueError): return {"sent":{}}
 def key(path,row): return "|".join(str(row.get(k) or "") for k in ("symbol","contract","expiration","direction"))+"|"+path
+def _omega_guard(path, row, omega):
+    """Require a same-symbol Omega research case with no active conflict before alerting."""
+    symbol = str(row.get("symbol") or "").upper().strip()
+    direction = str(row.get("direction") or "NEUTRAL").upper().strip()
+    if not symbol or not isinstance(omega, dict):
+        return False, "omega_missing"
+    candidates = omega.get("candidates") if isinstance(omega.get("candidates"), list) else []
+    from options_radar.black_box_fusion import investigate_candidate
+    for candidate in candidates:
+        if str(candidate.get("symbol") or "").upper().strip() != symbol:
+            continue
+        if candidate.get("research_state") != "RESEARCH_CANDIDATE":
+            continue
+        omega_direction = str(candidate.get("direction") or "NEUTRAL").upper().strip()
+        if direction != "NEUTRAL" and omega_direction != "NEUTRAL" and direction != omega_direction:
+            continue
+        case = investigate_candidate(candidate)
+        if case.get("thesis_status") != "ACTIVE_RESEARCH":
+            return False, case.get("conflict_state") or "omega_invalidation"
+        return True, case.get("case_id")
+    return False, "no_matching_omega_case"
+
 def message(path,row):
     if path=="SMALL_CAP_PRE_EXPLOSION":
         bridge=row.get("option_bridge") if isinstance(row.get("option_bridge"),dict) else {}
@@ -31,6 +53,11 @@ def message(path,row):
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--payload",default="data/live/three_path_intelligence.json"); ap.add_argument("--no-telegram",action="store_true"); a=ap.parse_args()
     payload=json.loads(Path(a.payload).read_text(encoding="utf-8"))
+    omega_path=Path("data/live/black_box_omega.json")
+    try:
+        omega=json.loads(omega_path.read_text(encoding="utf-8")) if omega_path.exists() else {}
+    except (OSError, ValueError):
+        omega={}
     thresholds={"SMALL_CAP_PRE_EXPLOSION":float(os.getenv("THREE_PATH_SMALL_MIN","70")),"LARGE_CAP_CONTRACT_SELECTION":float(os.getenv("THREE_PATH_LARGE_MIN","78")),"CONTRACT_FIRST_RADAR":float(os.getenv("THREE_PATH_CONTRACT_MIN","75"))}
     state=load_state(); sent=state.setdefault("sent",{}); selected=[]
     for path,rows in payload.items():
@@ -39,6 +66,8 @@ def main():
             metric=n(row.get("readiness",row.get("score",row.get("anomaly_score"))))
             if metric < thresholds[path] or not row.get("symbol"): continue
             if path=="SMALL_CAP_PRE_EXPLOSION" and str(row.get("stage")) in {"EXPLOSION","EXTENDED"}: continue
+            guarded, _ = _omega_guard(path, row, omega)
+            if not guarded: continue
             selected.append((path,row))
     token=os.getenv("TELEGRAM_BOT_TOKEN","").strip(); chat=os.getenv("TELEGRAM_CHAT_ID","").strip(); sent_count=0
     if not a.no_telegram and token and chat:
