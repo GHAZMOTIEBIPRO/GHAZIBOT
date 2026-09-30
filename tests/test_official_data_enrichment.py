@@ -149,3 +149,34 @@ def test_legacy_path_records_without_underlying_levels_are_excluded(tmp_path):
     assert payload["performance"]["legacy_paths_excluded"] == 1
     persisted = json.loads(outcomes.read_text(encoding="utf-8"))
     assert persisted["signals"]["legacy"]["path_status"] == "missing_levels"
+
+
+def test_cftc_cot_parses_public_rows(monkeypatch):
+    from options_radar.macro import fetch_cftc_cot
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return [{"contract_market_name": "E-MINI S&P 500",
+                     "report_date_as_yyyy_mm_dd": "2026-09-29"}]
+
+    monkeypatch.setattr("options_radar.macro.requests.get", lambda *args, **kwargs: Response())
+    payload = fetch_cftc_cot(limit=20)
+    assert payload["source"].startswith("CFTC")
+    assert payload["count"] == 1
+    assert payload["rows"][0]["contract_market_name"] == "E-MINI S&P 500"
+
+
+def test_cftc_cot_failure_is_propagated(monkeypatch):
+    from options_radar.macro import fetch_cftc_cot
+
+    class Response:
+        def raise_for_status(self):
+            raise RuntimeError("rate limited")
+
+    monkeypatch.setattr("options_radar.macro.requests.get", lambda *args, **kwargs: Response())
+    import pytest
+    with pytest.raises(RuntimeError, match="rate limited"):
+        fetch_cftc_cot()
