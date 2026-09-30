@@ -110,6 +110,31 @@ jobs:
         if: steps.market_day.outputs.open == 'true'
         run: python scripts/fast_explosion_scan_fabric.py --no-telegram
 
+      - name: Build dynamic options universe from early explosion candidates
+        if: steps.market_day.outputs.open == 'true'
+        run: python scripts/build_dynamic_options_universe.py --fast data/live/fast_explosion_scan.json --output data/live/dynamic_options_universe.json --max-symbols 40 --min-score 52
+
+      - name: Cross-check early candidates with same-cycle options
+        if: steps.market_day.outputs.open == 'true'
+        env:
+          FREE_AUTONOMY_MODE: "true"
+          PAID_MARKET_DATA_ALLOWED: "false"
+          TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+          TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_STOCK_FEED: iex
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+          TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+        run: >-
+          python scripts/run_options_radar_fabric.py
+          --universe data/live/dynamic_options_universe.txt
+          --output public/data/options_latest.json
+          --max-symbols 40
+          --top-per-side 12
       - name: Fuse Black Box Omega evidence across chart, catalyst, explosion, options and flow payloads
         if: steps.market_day.outputs.open == 'true'
         run: python scripts/run_black_box_omega.py
@@ -124,6 +149,9 @@ jobs:
             data/live/fast_explosion_scan.json
             data/live/provider_health.json
             data/live/black_box_omega.json
+            data/live/dynamic_options_universe.json
+            data/live/dynamic_options_universe.txt
+            public/data/options_latest.json
           if-no-files-found: warn
           retention-days: 2
 
