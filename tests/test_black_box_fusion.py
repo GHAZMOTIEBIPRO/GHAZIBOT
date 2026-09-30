@@ -56,3 +56,34 @@ def test_fusion_respects_declared_age_limit():
         }
     )
     assert payload["candidate_count"] == 0
+
+
+def test_investigator_surfaces_directional_conflict():
+    from options_radar.black_box_fusion import investigate_candidate
+    result = investigate_candidate({
+        "symbol": "XYZ", "direction": "BULLISH", "fusion_score": 70,
+        "research_state": "RESEARCH_CANDIDATE",
+        "evidence": {
+            "chart": {"direction": "BULLISH", "evidence_score": 80},
+            "options": {"direction": "BEARISH", "evidence_score": 70},
+        },
+    })
+    assert result["conflict_state"] == "CONFLICT"
+    assert result["automatic_execution"] is False
+
+
+def test_market_regime_does_not_invent_missing_inputs():
+    from options_radar.black_box_fusion import infer_market_regime
+    result = infer_market_regime({})
+    assert result["regime"] == "UNKNOWN"
+    assert result["confidence"] == 0.0
+
+
+def test_market_regime_uses_explicit_observations():
+    from options_radar.black_box_fusion import infer_market_regime
+    result = infer_market_regime({
+        "spx_change_pct": 1.0,
+        "ndx_change_pct": 0.5,
+        "vix_change_pct": -2.0,
+    })
+    assert result["regime"] == "RISK_ON"
