@@ -87,3 +87,38 @@ def test_market_regime_uses_explicit_observations():
         "vix_change_pct": -2.0,
     })
     assert result["regime"] == "RISK_ON"
+
+
+def test_investigator_creates_auditable_case_and_invalidation_rules():
+    from options_radar.black_box_fusion import investigate_candidate
+    result = investigate_candidate({
+        "symbol": "ABC",
+        "direction": "BULLISH",
+        "fusion_score": 72,
+        "research_state": "RESEARCH_CANDIDATE",
+        "evidence": {
+            "chart": {"direction": "BULLISH", "evidence_score": 80, "source": "chart-provider"},
+            "options": {"direction": "BULLISH", "evidence_score": 75, "provider": "options-provider"},
+        },
+    })
+    assert result["case_id"].startswith("omega-")
+    assert result["thesis_status"] == "ACTIVE_RESEARCH"
+    assert result["invalidation_rules"] == []
+    assert result["audit"]["source_provenance_preserved"] is True
+
+
+def test_investigator_pauses_on_missing_provenance():
+    from options_radar.black_box_fusion import investigate_candidate
+    result = investigate_candidate({
+        "symbol": "ABC",
+        "direction": "BULLISH",
+        "fusion_score": 72,
+        "research_state": "RESEARCH_CANDIDATE",
+        "evidence": {
+            "chart": {"direction": "BULLISH", "evidence_score": 80},
+            "options": {"direction": "BULLISH", "evidence_score": 75, "provider": "options-provider"},
+        },
+    })
+    codes = {item["code"] for item in result["invalidation_rules"]}
+    assert "MISSING_PROVENANCE" in codes
+    assert result["thesis_status"] == "PAUSE"
