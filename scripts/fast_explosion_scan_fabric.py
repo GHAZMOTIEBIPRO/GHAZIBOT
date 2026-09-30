@@ -60,7 +60,25 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
         frame = result.data
         if frame is None or frame.empty:
             raise RuntimeError("empty reconciled stock bars")
-        latest = float(pd.to_numeric(frame["Close"], errors="coerce").dropna().iloc[-1])
+        close = pd.to_numeric(frame["Close"], errors="coerce")
+        high = pd.to_numeric(frame.get("High", frame["Close"]), errors="coerce")
+        low = pd.to_numeric(frame.get("Low", frame["Close"]), errors="coerce")
+        volume = pd.to_numeric(frame.get("Volume", pd.Series(index=frame.index, dtype=float)), errors="coerce")
+        clean = pd.DataFrame({"close": close, "high": high, "low": low, "volume": volume}).dropna(subset=["close"])
+        latest = float(clean["close"].iloc[-1])
+        chart_quality = {}
+        if len(clean) >= 12:
+            recent = clean.tail(6)
+            prior = clean.iloc[-12:-6]
+            prior_high = float(prior["high"].max()) if not prior.empty else latest
+            recent_range = float((recent["high"] - recent["low"]).mean())
+            prior_range = float((prior["high"] - prior["low"]).mean())
+            compression_ratio = recent_range / prior_range if prior_range > 0 else 1.0
+            resistance_distance_pct = max(0.0, (prior_high - latest) / latest * 100.0) if latest > 0 else 0.0
+            prior_volume = float(prior["volume"].median()) if prior["volume"].notna().any() else 0.0
+            last_volume = float(recent["volume"].iloc[-1]) if recent["volume"].notna().any() else 0.0
+            volume_acceleration = last_volume / prior_volume if prior_volume > 0 else 1.0
+            chart_quality = {"bars_used": len(clean), "compression_ratio": round(compression_ratio, 4), "resistance_distance_pct": round(resistance_distance_pct, 4), "volume_acceleration_ratio": round(volume_acceleration, 4), "compression_detected": compression_ratio <= 0.72, "near_breakout": 0 <= resistance_distance_pct <= 3.0, "volume_acceleration_detected": volume_acceleration >= 1.8}
         metadata = result.metadata or {} if hasattr(result, "metadata") else {}
         audit = metadata.get("data_fabric", {}) if isinstance(metadata, dict) else {}
         stream = metadata.get("stream_reference") if isinstance(metadata, dict) else None
@@ -80,6 +98,7 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
             "nasdaq_vs_fabric_divergence_pct": round(divergence, 6),
             "selected_close_divergence_pct": audit.get("selected_close_divergence_pct"),
             "stream_reference": stream if isinstance(stream, dict) else None,
+            "chart_quality": chart_quality,
             "health_checked": True,
         }
     except Exception as exc:
@@ -164,6 +183,25 @@ def _rank_market_with_fabric(rows, news_events, structural):
         if not validation.get("available"):
             candidate.reasons.append("بيانات التحقق المتعدد غير متاحة؛ لا ترقية للثقة")
             continue
+        chart = validation.get("chart_quality") if isinstance(validation.get("chart_quality"), dict) else {}
+        compression = _number(chart.get("compression_ratio"), 1.0)
+        resistance = _number(chart.get("resistance_distance_pct"), 99.0)
+        volume_accel = _number(chart.get("volume_acceleration_ratio"), 1.0)
+        pre_score = 0.0
+        if compression <= 0.72:
+            candidate.reasons.append(f"انضغاط شموع 5m: {compression:.2f} من النطاق السابق")
+            pre_score += 5.0
+        if 0 <= resistance <= 3.0:
+            candidate.reasons.append(f"قريب من مقاومة سابقة: {resistance:.2f}%")
+            pre_score += 5.0
+        if volume_accel >= 1.8:
+            candidate.reasons.append(f"تسارع حجم آخر شمعة: ×{volume_accel:.2f}")
+            pre_score += 5.0
+        if pre_score:
+            candidate.score = min(100.0, float(candidate.score) + pre_score)
+            candidate.institutional_priority = min(100.0, float(getattr(candidate, "institutional_priority", candidate.score)) + pre_score * 0.8)
+        candidate.pre_explosion_score = round(min(100.0, pre_score * 6.67 + float(getattr(candidate, "institutional_earlyness", 0.0)) * 0.55), 2)
+
         sources = int(validation.get("fabric_source_count") or 0)
         divergence = _number(validation.get("nasdaq_vs_fabric_divergence_pct"))
         consensus = bool(validation.get("fabric_consensus_pass", True))
