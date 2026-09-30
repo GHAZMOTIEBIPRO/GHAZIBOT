@@ -24,3 +24,35 @@ def test_fusion_combines_independent_evidence_without_probability_claim():
 def test_fusion_does_not_invent_missing_symbols():
     payload = fuse_evidence(latest={}, explosion={}, flow={})
     assert payload["candidate_count"] == 0
+
+def test_fusion_excludes_explicitly_invalid_or_stale_evidence():
+    payload = fuse_evidence(
+        latest={
+            "stock_recommendations": [
+                {"symbol": "BAD", "score": 99, "direction": "BULLISH", "valid": False},
+                {"symbol": "STALE", "score": 99, "direction": "BULLISH", "freshness_status": "stale"},
+                {"symbol": "GOOD", "score": 90, "direction": "BULLISH", "provider": "test"},
+            ]
+        }
+    )
+    symbols = {item["symbol"] for item in payload["candidates"]}
+    assert "BAD" not in symbols
+    assert "STALE" not in symbols
+    assert "GOOD" in symbols
+
+
+def test_fusion_respects_declared_age_limit():
+    payload = fuse_evidence(
+        latest={
+            "stock_recommendations": [
+                {
+                    "symbol": "OLD",
+                    "score": 99,
+                    "direction": "BULLISH",
+                    "age_seconds": 120,
+                    "max_age_seconds": 60,
+                }
+            ]
+        }
+    )
+    assert payload["candidate_count"] == 0
