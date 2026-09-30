@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from .indicators import TechnicalSnapshot
+from .opensource_pricing import vollib_black_scholes_delta_gamma
 from .settings import Settings
 
 
@@ -26,9 +27,24 @@ def approximate_greeks(
     risk_free_rate: float,
     option_type: str,
 ) -> tuple[float, float]:
-    """Return Black-Scholes delta and gamma as a screening approximation."""
+    """Return Black-Scholes delta and gamma with an optional vollib cross-check.
+
+    The open-source implementation is used when installed; the original local
+    formula remains the deterministic fallback so data scans never depend on a
+    third-party package being importable.
+    """
     if min(spot, strike, t_years, iv) <= 0:
         return np.nan, np.nan
+    external = vollib_black_scholes_delta_gamma(
+        spot=spot,
+        strike=strike,
+        t_years=t_years,
+        volatility=iv,
+        risk_free_rate=risk_free_rate,
+        option_type=option_type,
+    )
+    if external is not None:
+        return external[0], external[1]
     sqrt_t = math.sqrt(t_years)
     d1 = (
         math.log(spot / strike)
