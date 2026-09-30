@@ -12,6 +12,7 @@ def main() -> int:
     parser.add_argument("--latest", default="public/data/latest.json")
     parser.add_argument("--explosion", default="data/live/fast_explosion_scan.json")
     parser.add_argument("--flow", default="data/live/delta_signals.json")
+    parser.add_argument("--options", default="public/data/options_latest.json")
     parser.add_argument("--output", default="data/live/black_box_omega.json")
     parser.add_argument("--max-candidates", type=int, default=25)
     args = parser.parse_args()
@@ -20,6 +21,7 @@ def main() -> int:
         latest_path=args.latest,
         explosion_path=args.explosion,
         flow_path=args.flow,
+        options_path=args.options,
         output_path=args.output,
         policy=FusionPolicy(max_candidates=max(1, args.max_candidates)),
     )
