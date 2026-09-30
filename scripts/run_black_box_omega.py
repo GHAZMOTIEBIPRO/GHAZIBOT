@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from options_radar.black_box_fusion import FusionPolicy, fuse_paths, investigate_candidate, infer_market_regime
+from options_radar.black_box_fusion import FusionPolicy, fuse_paths, investigate_candidate, infer_market_regime, load_json
 
 
 def main() -> int:
@@ -30,7 +30,7 @@ def main() -> int:
         "research_candidate_count": sum(item.get("research_state") == "RESEARCH_CANDIDATE" for item in investigations),
     }
     # Regime is optional: only explicitly supplied observations are used.
-    latest_payload = json.loads(Path(args.latest).read_text(encoding="utf-8")) if Path(args.latest).exists() else {}
+    latest_payload = load_json(args.latest)
     regime_payload = latest_payload.get("market_regime") if isinstance(latest_payload, dict) else {}
     if isinstance(regime_payload, dict):
         result["market_regime"] = infer_market_regime(regime_payload)
