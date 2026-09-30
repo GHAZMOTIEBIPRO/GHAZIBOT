@@ -219,6 +219,7 @@ class FastCandidate:
     news_headline: str
     news_source: str
     reasons: list[str]
+    pre_explosion_score: float = 0.0
 
 
 def _stage(score: float, move: float, turnover: float) -> str:

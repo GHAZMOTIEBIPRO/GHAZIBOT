@@ -53,6 +53,58 @@ def small_cap_path(explosion):
                     "direction":_dir(r),"reasons":r.get("reasons",[])[:6],"research_only":True})
     return sorted(out,key=lambda x:(x["readiness"],x["earlyness"]),reverse=True)[:25]
 
+def _small_cap_option_bridge(small_rows, options):
+    """Attach same-cycle option evidence to small-cap pre-explosion candidates."""
+    contracts=_rows(options,("contract_recommendations","contracts","top_calls","top_puts","directional_signals","research_contracts"))
+    by_symbol={}
+    for row in contracts:
+        if not _quality(row):
+            continue
+        s=_sym(row)
+        if not s:
+            continue
+        by_symbol.setdefault(s,[]).append(row)
+    out=[]
+    for item in small_rows:
+        matches=by_symbol.get(item["symbol"],[])
+        scored=[]
+        for c in matches:
+            direction=_dir(c)
+            if direction != "NEUTRAL" and item.get("direction") != "NEUTRAL" and direction != item.get("direction"):
+                continue
+            vol=_n(c.get("volume")); oi=_n(c.get("open_interest",c.get("oi")))
+            voi=vol/oi if oi>0 else _n(c.get("volume_oi",c.get("vol_oi")))
+            spread=_n(c.get("spread_pct",c.get("bid_ask_spread_pct")),99)
+            quality_score=_score(c)
+            liquidity=min(100, min(100,voi*20)*0.45 + min(100,vol/1000)*0.25 + quality_score*0.20 + max(0,100-spread)*0.10)
+            scored.append((liquidity,c,voi))
+        if scored:
+            _, best, voi=max(scored,key=lambda x:x[0])
+            item=dict(item)
+            item["option_bridge"]={
+                "available":True,
+                "contract":best.get("contract") or best.get("occ_symbol") or best.get("symbol"),
+                "direction":_dir(best),
+                "expiration":best.get("expiration") or best.get("expiry"),
+                "dte":best.get("dte",best.get("days_to_expiration")),
+                "strike":best.get("strike"),
+                "delta":best.get("delta"),
+                "gamma":best.get("gamma"),
+                "volume":best.get("volume"),
+                "open_interest":best.get("open_interest",best.get("oi")),
+                "volume_oi":round(voi,3),
+                "iv":best.get("iv",best.get("implied_volatility")),
+                "spread_pct":best.get("spread_pct",best.get("bid_ask_spread_pct")),
+                "contract_score":quality_score,
+                "source":best.get("source") or best.get("provider"),
+                "provenance_present":bool(best.get("provenance") or best.get("source") or best.get("provider")),
+            }
+        else:
+            item=dict(item)
+            item["option_bridge"]={"available":False,"reason":"no_same_cycle_quality_checked_contract"}
+        out.append(item)
+    return out
+
 def _horizon(dte):
     if dte<=2: return "DAILY"
     if dte<=14: return "WEEKLY"
@@ -105,8 +157,9 @@ def contract_first_path(options):
     return sorted(out,key=lambda x:x["anomaly_score"],reverse=True)[:30]
 
 def build_three_paths(*, explosion, latest, options):
-    return {"schema":"three-path-intelligence-v1",
-            "small_cap_pre_explosion":small_cap_path(explosion),
+    small_caps=_small_cap_option_bridge(small_cap_path(explosion), options)
+    return {"schema":"three-path-intelligence-v2",
+            "small_cap_pre_explosion":small_caps,
             "large_cap_contract_selection":large_cap_path(latest,options),
             "contract_first_radar":contract_first_path(options),
             "policy":{"independent_paths":True,"automatic_execution":False,"score_is_probability":False,

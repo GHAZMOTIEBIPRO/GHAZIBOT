@@ -15,3 +15,14 @@ def test_three_paths_are_independent():
 def test_small_cap_excludes_over_ten():
     result=build_three_paths(explosion={"candidates":[{"symbol":"ABCD","price":10.01,"earlyness":100,"anomaly":100,"acceleration":100,"catalyst_score":100,"score":100}]},latest={},options={})
     assert result["small_cap_pre_explosion"]==[]
+
+def test_small_cap_gets_same_cycle_option_bridge():
+    result=build_three_paths(
+        explosion={"candidates":[{"symbol":"ABCD","price":4.2,"stage":"PRESSURE_BUILDING","earlyness":90,"anomaly":80,"acceleration":75,"catalyst_score":90,"score":80}]},
+        latest={},
+        options={"contracts":[{"symbol":"ABCD","contract":"ABCD261016C00005000","dte":16,"volume":4000,"open_interest":1000,"score":88,"direction":"CALL","delta":0.55,"gamma":0.08,"source":"test"}]},
+    )
+    bridge=result["small_cap_pre_explosion"][0]["option_bridge"]
+    assert bridge["available"] is True
+    assert bridge["contract"]=="ABCD261016C00005000"
+    assert bridge["volume_oi"]==4.0

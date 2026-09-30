@@ -141,3 +141,18 @@ def test_options_payload_is_used_when_latest_has_no_option_rows():
     candidate = next(row for row in result["candidates"] if row["symbol"] == "ABCD")
     assert "options" in candidate["independent_evidence_classes"]
     assert candidate["research_state"] == "RESEARCH_CANDIDATE"
+
+
+def test_investigator_pauses_on_direction_conflict():
+    from options_radar.black_box_fusion import investigate_candidate
+    result = investigate_candidate({
+        "symbol": "CONFLICT",
+        "direction": "BULLISH",
+        "research_state": "RESEARCH_CANDIDATE",
+        "evidence": {
+            "chart": {"direction": "BULLISH", "evidence_score": 90, "source": "chart"},
+            "options": {"direction": "BEARISH", "evidence_score": 90, "source": "options"},
+        },
+    })
+    assert result["thesis_status"] == "PAUSE"
+    assert any(x["code"] == "DIRECTION_CONFLICT" for x in result["invalidation_rules"])
