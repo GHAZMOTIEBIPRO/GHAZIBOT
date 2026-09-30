@@ -59,15 +59,17 @@ def main():
     except (OSError, ValueError):
         omega={}
     thresholds={"SMALL_CAP_PRE_EXPLOSION":float(os.getenv("THREE_PATH_SMALL_MIN","70")),"LARGE_CAP_CONTRACT_SELECTION":float(os.getenv("THREE_PATH_LARGE_MIN","78")),"CONTRACT_FIRST_RADAR":float(os.getenv("THREE_PATH_CONTRACT_MIN","75"))}
-    state=load_state(); sent=state.setdefault("sent",{}); selected=[]
+    state=load_state(); sent=state.setdefault("sent",{}); selected=[]; blocked=[]
     for path,rows in payload.items():
         if path not in thresholds or not isinstance(rows,list): continue
         for row in rows:
             metric=n(row.get("readiness",row.get("score",row.get("anomaly_score"))))
             if metric < thresholds[path] or not row.get("symbol"): continue
             if path=="SMALL_CAP_PRE_EXPLOSION" and str(row.get("stage")) in {"EXPLOSION","EXTENDED"}: continue
-            guarded, _ = _omega_guard(path, row, omega)
-            if not guarded: continue
+            guarded, reason = _omega_guard(path, row, omega)
+            if not guarded:
+                blocked.append({"path":path,"symbol":row.get("symbol"),"reason":reason})
+                continue
             selected.append((path,row))
     token=os.getenv("TELEGRAM_BOT_TOKEN","").strip(); chat=os.getenv("TELEGRAM_CHAT_ID","").strip(); sent_count=0
     if not a.no_telegram and token and chat:
@@ -75,7 +77,7 @@ def main():
             k=key(path,row)
             if k in sent: continue
             send(token,chat,message(path,row)); sent[k]={"sent_at":now(),"metric":n(row.get("readiness",row.get("score",row.get("anomaly_score"))))}; sent_count+=1
-    state["last_run_at"]=now(); state["last_selected"]=len(selected); state["last_sent"]=sent_count
+    state["last_run_at"]=now(); state["last_selected"]=len(selected); state["last_blocked"]=blocked; state["last_sent"]=sent_count
     STATE.parent.mkdir(parents=True,exist_ok=True); STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding="utf-8")
     print(f"Three-path alerts: selected={len(selected)} sent={sent_count}")
 if __name__=="__main__": main()
