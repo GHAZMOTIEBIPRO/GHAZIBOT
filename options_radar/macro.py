@@ -118,10 +118,20 @@ def fetch_cftc_cot(limit: int = 20, market_contains: str | None = None) -> dict[
     rows = response.json()
     if not isinstance(rows, list):
         raise RuntimeError("CFTC COT endpoint returned an unexpected payload")
+    latest_report_date = None
+    for row in rows:
+        if isinstance(row, dict) and row.get("report_date_as_yyyy_mm_dd"):
+            latest_report_date = row["report_date_as_yyyy_mm_dd"]
+            break
     return {
         "source": "CFTC Commitments of Traders public reporting API",
+        "source_tier": "S",
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "latest_report_date": latest_report_date,
         "count": len(rows),
         "rows": rows,
+        "context_only": True,
+        "directional_signal": False,
     }
 
 
