@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import argparse
+
 from options_radar.data_fabric_runtime import install_data_fabric
 from options_radar.data_fabric_singleflight import install_data_fabric_singleflight
 from options_radar.durable_state import restore_missing_durable_options_state
@@ -40,9 +42,27 @@ def main() -> None:
     install_data_fabric()
     install_provider_preflight()
     install_data_fabric_singleflight()
-    from scripts.run_options_radar_hardened import main as hardened_main
+    from scripts.run_options_radar_hardened import run as hardened_run
 
-    hardened_main()
+    parser = argparse.ArgumentParser(description="Run hardened options radar through the data fabric.")
+    parser.add_argument("--universe", default="data/universe.txt")
+    parser.add_argument("--output", default="public/data/options_latest.json")
+    parser.add_argument("--max-symbols", type=int, default=40)
+    parser.add_argument("--top-per-side", type=int, default=12)
+    args = parser.parse_args()
+    payload = hardened_run(
+        universe_path=args.universe,
+        output_path=args.output,
+        max_symbols=args.max_symbols,
+        top_per_side=args.top_per_side,
+    )
+    summary = payload.get("summary") or {}
+    print(
+        "Fabric options radar: "
+        f"symbols={summary.get('symbols_scanned', 0)} "
+        f"research={summary.get('research_contracts_selected', 0)} "
+        f"production={summary.get('contracts_selected', 0)}"
+    )
 
 
 if __name__ == "__main__":
