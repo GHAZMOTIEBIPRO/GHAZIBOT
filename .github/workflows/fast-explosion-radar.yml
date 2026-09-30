@@ -15,6 +15,8 @@ on:
       - "options_radar/data_fabric_runtime.py"
       - "options_radar/market_clock.py"
       - "options_radar/stream_overlay.py"
+      - "options_radar/black_box_fusion.py"
+      - "scripts/run_black_box_omega.py"
   schedule:
     - cron: "2,22,42 8-12 * * 1-5"
     - cron: "2-57/5 13-21 * * 1-5"
@@ -108,6 +110,10 @@ jobs:
         if: steps.market_day.outputs.open == 'true'
         run: python scripts/fast_explosion_scan_fabric.py --no-telegram
 
+      - name: Fuse Black Box Omega evidence across chart, catalyst, explosion, options and flow payloads
+        if: steps.market_day.outputs.open == 'true'
+        run: python scripts/run_black_box_omega.py
+
       - name: Upload fast-radar evidence for unified Arabic notifier
         if: steps.market_day.outputs.open == 'true'
         uses: actions/upload-artifact@v4
@@ -117,6 +123,7 @@ jobs:
             data/live/fast_market_state.json
             data/live/fast_explosion_scan.json
             data/live/provider_health.json
+            data/live/black_box_omega.json
           if-no-files-found: warn
           retention-days: 2
 
