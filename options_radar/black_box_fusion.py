@@ -1,5 +1,6 @@
 """Black Box Omega evidence fusion layer."""
 from __future__ import annotations
+import hashlib
 import json
 import math
 from dataclasses import dataclass
@@ -177,40 +178,81 @@ def fuse_evidence(*, latest: dict[str, Any] | None = None,
     }
 
 
+def _case_id(candidate: dict[str, Any]) -> str:
+    """Stable case identifier for audit/replay; no timestamp or random state."""
+    material = {
+        "symbol": candidate.get("symbol"),
+        "direction": candidate.get("direction"),
+        "fusion_score": candidate.get("fusion_score"),
+        "evidence": candidate.get("evidence") or {},
+    }
+    encoded = json.dumps(material, sort_keys=True, default=str, separators=(",", ":"))
+    return "omega-" + hashlib.sha256(encoded.encode("utf-8")).hexdigest()[:16]
+
+
+def _invalidation_rules(candidate: dict[str, Any], confirmations: list[dict[str, Any]],
+                        conflicts: list[str]) -> list[dict[str, str]]:
+    """Return explicit conditions that invalidate or pause the research thesis."""
+    rules: list[dict[str, str]] = []
+    if candidate.get("research_state") != "RESEARCH_CANDIDATE":
+        rules.append({"code": "NOT_PROMOTED", "when": "independent evidence/side edge threshold is not met"})
+    if candidate.get("direction") == "NEUTRAL":
+        rules.append({"code": "NO_DIRECTION", "when": "evidence does not establish a directional edge"})
+    if conflicts:
+        rules.append({"code": "DIRECTION_CONFLICT", "when": "independent evidence contains opposing directions"})
+    if any(not item["provenance_present"] for item in confirmations):
+        rules.append({"code": "MISSING_PROVENANCE", "when": "a directional evidence row lacks source/provider provenance"})
+    if not confirmations:
+        rules.append({"code": "NO_DIRECTIONAL_EVIDENCE", "when": "no directional evidence survived quality gates"})
+    return rules
+
+
 def investigate_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
-    """Produce an auditable thesis summary without inventing missing evidence."""
+    """Produce an auditable thesis case without inventing missing evidence."""
     evidence = candidate.get("evidence") or {}
     confirmations = []
     directions = set()
+    evidence_trace = []
     for kind, row in evidence.items():
         if not isinstance(row, dict):
             continue
         direction = _direction(row)
+        provenance = row.get("provenance") or row.get("source") or row.get("provider")
+        trace = {
+            "class": kind,
+            "direction": direction,
+            "score": row.get("evidence_score", _bounded_score(row)),
+            "source": row.get("source") or row.get("provider"),
+            "provenance_present": bool(provenance),
+        }
+        evidence_trace.append(trace)
         if direction != "NEUTRAL":
             directions.add(direction)
-            confirmations.append({
-                "class": kind,
-                "direction": direction,
-                "score": row.get("evidence_score", _bounded_score(row)),
-                "provenance_present": bool(
-                    row.get("provenance") or row.get("source") or row.get("provider")
-                ),
-            })
+            confirmations.append(trace)
     conflicts = sorted(directions) if len(directions) > 1 else []
+    invalidation = _invalidation_rules(candidate, confirmations, conflicts)
     return {
+        "case_id": _case_id(candidate),
         "symbol": candidate.get("symbol"),
         "research_state": candidate.get("research_state", "WATCH"),
         "direction": candidate.get("direction", "NEUTRAL"),
         "fusion_score": candidate.get("fusion_score", 0),
         "confirmations": confirmations,
+        "evidence_trace": evidence_trace,
         "conflict_state": "CONFLICT" if conflicts else "NO_EXPLICIT_CONFLICT",
         "conflicting_directions": conflicts,
-        "invalidation_required": True,
+        "invalidation_rules": invalidation,
+        "thesis_status": "PAUSE" if invalidation else "ACTIVE_RESEARCH",
+        "audit": {
+            "schema": "omega-case-v1",
+            "inputs_are_snapshotted": True,
+            "missing_data_is_not_invented": True,
+            "source_provenance_preserved": True,
+        },
         "automatic_execution": False,
         "score_is_probability": False,
         "research_only": True,
     }
-
 
 def infer_market_regime(payload: dict[str, Any]) -> dict[str, Any]:
     """Coarse regime from explicitly supplied SPX/NDX/VIX observations only."""
