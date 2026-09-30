@@ -2,8 +2,8 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-09-30T14:49:16.891580+00:00",
-  "overall_status": "HEALTHY",
+  "generated_at": "2026-09-30T18:25:56.026745+00:00",
+  "overall_status": "DEGRADED",
   "paths": {
     "fast_discovery": {
       "status": "HEALTHY",
@@ -28,27 +28,26 @@
       ]
     },
     "options": {
-      "status": "STALE",
+      "status": "RESEARCH_ONLY",
       "file": "public/data/options_latest.json",
-      "generated_at": "2026-09-29T18:39:02.849372+00:00",
-      "age_minutes": 318.41,
+      "generated_at": "2026-09-30T18:25:26.521961+00:00",
+      "age_minutes": 0.49,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": "FALLBACK_ONLY",
       "reasons": [
-        "Payload age 318.4m exceeds the 45m safety limit.",
         "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-        "52 chain(s) are Yahoo/YFinance-only fallback",
-        "52 chain(s) contain delayed, indicative, or unofficial sources"
+        "48 chain(s) are Yahoo/YFinance-only fallback",
+        "48 chain(s) contain delayed, indicative, or unofficial sources"
       ]
     }
   },
   "reasons": [
-    "options: Payload age 318.4m exceeds the 45m safety limit.; Only delayed, indicative, unofficial, or unverified-entitlement option data is active; 52 chain(s) are Yahoo/YFinance-only fallback; 52 chain(s) contain delayed, indicative, or unofficial sources"
+    "options: Only delayed, indicative, unofficial, or unverified-entitlement option data is active; 48 chain(s) are Yahoo/YFinance-only fallback; 48 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "publisher": {
-    "source_workflow": "BLACK BOX Omega Stock Radar",
-    "source_run_id": "36731854230",
+    "source_workflow": "BLACK BOX Omega Options Contract Radar",
+    "source_run_id": "36758116427",
     "mode": "artifact_to_bot_state_status_only"
   }
 }
