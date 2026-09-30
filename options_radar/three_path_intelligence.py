@@ -45,11 +45,18 @@ def small_cap_path(explosion):
         catalyst=_n(r.get("catalyst_score",r.get("news_score",r.get("catalyst_quality"))))
         stage=str(r.get("stage") or "WATCH")
         s=_score(r)
-        readiness=min(100,0.30*early+0.25*anomaly+0.20*accel+0.15*catalyst+0.10*s)
+        cq=r.get("chart_quality") or r.get("data_fabric_validation",{}).get("chart_quality") or {}
+        compression=_n(cq.get("compression_ratio"),1.0)
+        resistance=_n(cq.get("resistance_distance_pct"),99.0)
+        volume_accel=_n(cq.get("volume_acceleration_ratio"),1.0)
+        chart_early=(25 if compression <= 0.72 else 0)+(25 if resistance <= 3.0 else 0)+(25 if volume_accel >= 1.8 else 0)
+        pre_score=_n(r.get("pre_explosion_score"))
+        readiness=min(100,0.25*early+0.20*anomaly+0.15*accel+0.10*catalyst+0.10*s+0.10*chart_early+0.10*pre_score)
         if readiness < 45: continue
         out.append({"path":"SMALL_CAP_PRE_EXPLOSION","symbol":_sym(r),"price":_n(r.get("price")),
                     "stage":stage,"readiness":round(readiness,2),"earlyness":early,"anomaly":anomaly,
-                    "acceleration":accel,"catalyst_score":catalyst,"score":s,
+                    "acceleration":accel,"catalyst_score":catalyst,"score":s,"pre_explosion_score":pre_score,
+                    "chart_quality":{"compression_ratio":compression,"resistance_distance_pct":resistance,"volume_acceleration_ratio":volume_accel,"early_breakout_flags":chart_early},
                     "direction":_dir(r),"reasons":r.get("reasons",[])[:6],"research_only":True})
     return sorted(out,key=lambda x:(x["readiness"],x["earlyness"]),reverse=True)[:25]
 
@@ -146,19 +153,27 @@ def contract_first_path(options):
         iv=_n(r.get("iv",r.get("implied_volatility")))
         spread=_n(r.get("spread_pct",r.get("bid_ask_spread_pct")))
         score=_score(r)
-        anomaly=min(100,0.45*min(100,voi*20)+0.25*min(100,vol/1000)+0.20*score+0.10*max(0,100-spread))
+        baseline_vol=_n(r.get("baseline_volume"))
+        baseline_oi=_n(r.get("baseline_open_interest",r.get("baseline_oi")))
+        volume_multiple=(vol/baseline_vol) if baseline_vol>0 else None
+        oi_multiple=(oi/baseline_oi) if baseline_oi>0 else None
+        historical_support=0
+        if volume_multiple is not None: historical_support += 15 if volume_multiple>=1.5 else 0
+        if oi_multiple is not None: historical_support += 10 if oi_multiple>=1.2 else 0
+        anomaly=min(100,0.40*min(100,voi*20)+0.20*min(100,vol/1000)+0.20*score+0.10*max(0,100-spread)+0.10*historical_support)
         if anomaly<50: continue
         out.append({"path":"CONTRACT_FIRST_RADAR","symbol":_sym(r),
                     "direction":_dir(r),"contract":r.get("contract") or r.get("occ_symbol") or r.get("symbol"),
                     "expiration":r.get("expiration") or r.get("expiry"),"dte":r.get("dte"),
                     "volume":vol,"open_interest":oi,"volume_oi":round(voi,3),"iv":iv,
                     "spread_pct":spread,"anomaly_score":round(anomaly,2),
+                    "historical_comparison":{"available":volume_multiple is not None or oi_multiple is not None,"volume_multiple":volume_multiple,"oi_multiple":oi_multiple},
                     "underlying_evidence_required":True,"research_only":True})
     return sorted(out,key=lambda x:x["anomaly_score"],reverse=True)[:30]
 
 def build_three_paths(*, explosion, latest, options):
     small_caps=_small_cap_option_bridge(small_cap_path(explosion), options)
-    return {"schema":"three-path-intelligence-v2",
+    return {"schema":"three-path-intelligence-v3",
             "small_cap_pre_explosion":small_caps,
             "large_cap_contract_selection":large_cap_path(latest,options),
             "contract_first_radar":contract_first_path(options),
