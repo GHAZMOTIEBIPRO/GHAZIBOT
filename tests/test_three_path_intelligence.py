@@ -26,3 +26,34 @@ def test_small_cap_gets_same_cycle_option_bridge():
     assert bridge["available"] is True
     assert bridge["contract"]=="ABCD261016C00005000"
     assert bridge["volume_oi"]==4.0
+
+
+def test_small_cap_uses_direct_chart_quality_and_pre_explosion_score():
+    from options_radar.three_path_intelligence import build_three_paths
+    result = build_three_paths(
+        explosion={"candidates":[{
+            "symbol":"EARLY","price":4.0,"earlyness":60,"anomaly":60,"acceleration":60,
+            "catalyst_score":50,"score":50,"pre_explosion_score":90,
+            "chart_quality":{"compression_ratio":0.65,"resistance_distance_pct":2.0,"volume_acceleration_ratio":2.2}
+        }]},
+        latest={}, options={}
+    )
+    row=result["small_cap_pre_explosion"][0]
+    assert row["chart_quality"]["early_breakout_flags"] == 75
+    assert row["pre_explosion_score"] == 90
+
+
+def test_contract_first_reports_historical_baseline_only_when_supplied():
+    from options_radar.three_path_intelligence import build_three_paths
+    result = build_three_paths(
+        explosion={}, latest={},
+        options={"contracts":[{
+            "symbol":"ABC","contract":"ABC261016C00010000","volume":5000,
+            "open_interest":1000,"score":90,"spread_pct":2,
+            "baseline_volume":2000,"baseline_open_interest":800
+        }]}
+    )
+    row=result["contract_first_radar"][0]
+    assert row["historical_comparison"]["available"] is True
+    assert row["historical_comparison"]["volume_multiple"] == 2.5
+    assert row["historical_comparison"]["oi_multiple"] == 1.25
