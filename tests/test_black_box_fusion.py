@@ -122,3 +122,22 @@ def test_investigator_pauses_on_missing_provenance():
     codes = {item["code"] for item in result["invalidation_rules"]}
     assert "MISSING_PROVENANCE" in codes
     assert result["thesis_status"] == "PAUSE"
+
+def test_options_payload_is_used_when_latest_has_no_option_rows():
+    result = fuse_evidence(
+        latest={
+            "stock_recommendations": [
+                {"symbol": "ABCD", "direction": "BULLISH", "score": 80, "source": "chart"}
+            ]
+        },
+        explosion={},
+        flow={},
+        options_payload={
+            "contracts": [
+                {"symbol": "ABCD", "option_type": "call", "direction": "BULLISH", "score": 85, "source": "options"}
+            ]
+        },
+    )
+    candidate = next(row for row in result["candidates"] if row["symbol"] == "ABCD")
+    assert "options" in candidate["independent_evidence_classes"]
+    assert candidate["research_state"] == "RESEARCH_CANDIDATE"
