@@ -1,0 +1,75 @@
+name: BLACK BOX Omega Outcome Calibration
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 23 * * 1-5"
+
+concurrency:
+  group: black-box-omega-outcome-calibration
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  outcome-calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project dependencies
+        run: pip install -r requirements.txt
+      - name: Restore previous Omega outcome state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p data/live .omega-restore
+          for run_id in $(gh run list --workflow omega-outcome-calibration.yml --status completed --branch main --limit 10 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .omega-restore && mkdir -p .omega-restore
+            if gh run download "$run_id" -n omega-outcome-state -D .omega-restore >/dev/null 2>&1; then
+              cp -f .omega-restore/signals.jsonl data/live/signals.jsonl 2>/dev/null || true
+              cp -f .omega-restore/outcomes.json data/live/outcomes.json 2>/dev/null || true
+              break
+            fi
+          done
+      - name: Run path-aware outcomes and calibration
+        run: |
+          python scripts/run_omega_outcome_calibration.py \
+            --signals data/live/signals.jsonl \
+            --outcomes data/live/outcomes.json \
+            --calibration data/live/calibration.json \
+            --minimum-sample 100
+      - name: Validate research-only calibration gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("data/live/calibration.json").read_text(encoding="utf-8"))
+          assert p["policy"]["automatic_execution"] is False
+          assert p["policy"]["automatic_weight_changes"] is False
+          assert p["policy"]["score_is_probability"] is False
+          assert p["calibration"]["minimum_sample"] == 100
+          print("Omega outcome/calibration safety gate passed.")
+          PY
+      - name: Upload Omega outcome state
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-outcome-state
+          path: |
+            data/live/signals.jsonl
+            data/live/outcomes.json
+            data/live/calibration.json
+          if-no-files-found: warn
+          retention-days: 30
