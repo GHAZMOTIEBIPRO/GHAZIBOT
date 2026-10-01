@@ -4,6 +4,7 @@ import math
 from typing import Any
 
 from .v11_gate import evaluate_v11_signal
+from .option_explosion import score_option_explosion
 
 _INDEX_ROOTS = {"SPX", "SPXW", "NDX", "XND", "SPY", "QQQ"}
 
@@ -318,6 +319,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             )
 
         primary = choices[0]
+        primary["option_explosion"] = score_option_explosion(primary)
         primary["v11_decision"] = evaluate_v11_signal(primary)
         primary["production_alert_eligible"] = bool(primary["v11_decision"]["approved"])
 

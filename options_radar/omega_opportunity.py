@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import Any, Iterable
 
 from .omega_target_map import build_target_maps
+from .target_horizon import estimate_target_horizon
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -330,6 +331,7 @@ def build_omega_opportunities(
             "swing_decision": swing_decision,
             "catalyst": cluster,
             "target_map": target_maps.get(symbol),
+            "target_horizon": estimate_target_horizon(stock, target_maps.get(symbol)),
             "best_expiry_family": option.get("expiry_family") if option else None,
             "best_contract": option,
             "contract_score": (
