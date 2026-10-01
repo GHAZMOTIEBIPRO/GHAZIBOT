@@ -87,8 +87,21 @@ def _target_dte(catalyst: dict[str, Any], opportunity: dict[str, Any]) -> tuple[
     official = bool(catalyst.get("official_confirmed"))
     materiality = _number(catalyst.get("materiality"))
     reaction = str(catalyst.get("reaction_state") or "").upper()
+    target_horizon = opportunity.get("target_horizon") if isinstance(opportunity.get("target_horizon"), dict) else {}
+    primary_horizon = str(target_horizon.get("primary_horizon") or "").upper()
     horizon = str(opportunity.get("horizon") or opportunity.get("timeframe") or "").upper()
 
+    # Prefer the explainable underlying time-to-target bucket when available.
+    # Keep extra calendar time for equities so a fast thesis does not force
+    # unnecessary 0DTE/1DTE theta exposure.
+    horizon_dte = {
+        "INTRADAY_1D": (7.0, "أفق الهدف نفس الجلسة إلى جلسة؛ نستخدم نحو أسبوع لحماية السهم من Theta المفرط"),
+        "SHORT_1_3D": (10.0, "أفق الهدف 1–3 جلسات؛ نستخدم نحو 10 أيام لإعطاء الفكرة وقتًا كافيًا"),
+        "SWING_3_7D": (21.0, "أفق الهدف 3–7 جلسات؛ نستخدم نحو 3 أسابيع لموازنة الوقت والحساسية"),
+        "POSITION_1_4W": (45.0, "أفق الهدف 1–4 أسابيع؛ نستخدم نحو 45 يومًا لتقليل ضغط Theta"),
+    }
+    if primary_horizon in horizon_dte:
+        return horizon_dte[primary_horizon]
     if "SWING" in horizon:
         return 30.0, "مدة أقرب إلى شهر لأن السيناريو Swing"
     if official and materiality >= 75 and reaction in {"NOT_YET_REPRICED", "REPRICING", "UNKNOWN"}:
