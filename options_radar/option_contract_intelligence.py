@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from .v11_gate import evaluate_v11_signal
+
 _INDEX_ROOTS = {"SPX", "SPXW", "NDX", "XND", "SPY", "QQQ"}
 
 
@@ -296,8 +298,28 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                     "occ_is_context_only": True,
                     "automatic_execution": False,
                     "research_only": True,
+                    "fabric_independent_source_count": row.get("fabric_independent_source_count"),
+                    "fabric_source_count": row.get("fabric_source_count"),
+                    "fabric_consensus_pass": row.get("fabric_consensus_pass"),
+                    "fabric_quote_divergence_pct": row.get("fabric_quote_divergence_pct"),
+                    "fabric_source_tier": row.get("fabric_source_tier"),
+                    "freshness_label": row.get("freshness_label"),
+                    "quote_timestamp": row.get("quote_timestamp") or row.get("updated_at"),
+                    "updated_at": row.get("updated_at"),
+                    "strict_score": row.get("strict_score", row.get("score")),
+                    "strict_blockers": row.get("strict_blockers") or [],
+                    "flow_momentum_score": row.get("flow_momentum_score"),
+                    "data_quality": row.get("data_quality"),
+                    "gamma_context_alignment": row.get("gamma_context_alignment"),
+                    "gamma_coverage_pct": row.get("gamma_coverage_pct"),
+                    "oi_coverage_pct": row.get("oi_coverage_pct"),
+                    "occ_side_context": row.get("occ_side_context") or {},
                 }
             )
+
+        primary = choices[0]
+        primary["v11_decision"] = evaluate_v11_signal(primary)
+        primary["production_alert_eligible"] = bool(primary["v11_decision"]["approved"])
 
         by_symbol[symbol] = {
             "symbol": symbol,
