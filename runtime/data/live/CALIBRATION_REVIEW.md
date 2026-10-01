@@ -2,7 +2,7 @@
 
 - **Model version:** `2026.08-omega-reengineering`
 - **Status:** **READY FOR INDEPENDENT REVIEW**
-- **Mature signals (1d checkpoint):** **184/100**
+- **Mature signals (1d checkpoint):** **186/100**
 - **Raw priced signals:** **195**
 - **Five-day mature signals:** **173**
 - **Decision:** Eligible for independent score recalibration review
@@ -16,7 +16,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 1 | 1 | 1 | 0.0% | 0.0% | 100.0% | 2.12 | -73.15 |
-| 70-79 | 74 | 74 | 69 | 24.6% | 10.1% | 75.4% | 22.16 | -86.12 |
+| 70-79 | 74 | 74 | 71 | 23.9% | 9.9% | 73.2% | 21.53 | -83.99 |
 | 60-69 | 120 | 120 | 114 | 7.0% | 5.3% | 88.6% | 50.19 | -76.65 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
@@ -24,10 +24,10 @@
 
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
-| bullish EMA stack; MACD/RSI bullish momentum | 73 | 11.0% | 86.3% | 58.69 |
+| bullish EMA stack; MACD/RSI bullish momentum | 74 | 10.8% | 85.1% | 57.90 |
 | bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 51 | 21.6% | 78.4% | 18.65 |
 | bearish EMA stack; MACD/RSI bearish momentum | 36 | 0.0% | 100.0% | 23.97 |
-| bullish EMA stack | 12 | 0.0% | 91.7% | 55.68 |
+| bullish EMA stack | 13 | 0.0% | 84.6% | 51.29 |
 | Secondary mention — Acquisition | 6 | 100.0% | 0.0% | -0.84 |
 | FDA approval record — verify materiality | 2 | 0.0% | 0.0% | 185.53 |
 | FDA approval | 2 | 0.0% | 100.0% | 57.30 |
