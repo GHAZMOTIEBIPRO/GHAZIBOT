@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from options_radar.option_contract_intelligence import build_option_contract_intelligence
 
 
@@ -26,10 +28,25 @@ def _contract(side: str, dte: int, strike: float, rank: float, *, delta: float, 
         "open_interest": 400,
         "vol_to_oi_ratio": vol_oi,
         "spread_pct": spread,
-        "source": "tradier",
+        "source": "polygon_options brokerage feed",
         "primary_or_licensed_quote": True,
         "flow_sources": ["tradier"],
         "liquidity_grade": "PASS",
+        "freshness_label": "real-time",
+        "quote_timestamp": datetime.now(timezone.utc).isoformat(),
+        "fabric_independent_source_count": 2,
+        "fabric_source_count": 2,
+        "fabric_consensus_pass": True,
+        "fabric_quote_divergence_pct": 0.01,
+        "strict_score": 94,
+        "strict_blockers": [],
+        "flow_momentum_score": 82,
+        "data_quality": 0.96,
+        "gamma_context_alignment": 0.30,
+        "occ_side_context": {"aligned": True, "opposed": False},
+        "gamma_coverage_pct": 90,
+        "oi_coverage_pct": 90,
+        "occ_side_context": {"aligned": True, "opposed": False},
     }
 
 
@@ -118,3 +135,20 @@ def test_only_far_expiries_means_no_contract_choice():
     intel = build_option_contract_intelligence(payload)
     assert "TEST" not in intel["by_symbol"]
     assert intel["rejected_for_horizon"]["TEST"] == 1
+
+
+def test_primary_contract_exposes_v11_production_readiness():
+    intel = build_option_contract_intelligence(_payload("bullish"))
+    primary = intel["by_symbol"]["TEST"]["primary"]
+    assert primary["v11_decision"]["version"] == "OMEGA_V11"
+    assert primary["production_alert_eligible"] is True
+
+
+def test_primary_contract_fails_closed_when_source_quorum_is_missing():
+    payload = _payload("bullish")
+    for row in payload["expiry_radar"]["tabs"]["all_expirations"]["calls"]:
+        row["fabric_independent_source_count"] = 1
+    intel = build_option_contract_intelligence(payload)
+    primary = intel["by_symbol"]["TEST"]["primary"]
+    assert primary["production_alert_eligible"] is False
+    assert "v11_independent_source_quorum_not_met" in primary["v11_decision"]["blockers"]
