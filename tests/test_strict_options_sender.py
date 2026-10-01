@@ -35,7 +35,14 @@ def _signal():
         "call_wall": 105,
         "put_wall": 95,
         "strict_reasons": ["contract score 94/100", "flow momentum 88/100"],
-        "occ_side_context": {"available": True, "call_volume": 15000, "put_volume": 10000, "dominance_ratio": 1.5},
+        "occ_side_context": {"available": True, "aligned": True, "opposed": False, "call_volume": 15000, "put_volume": 10000, "dominance_ratio": 1.5},
+        "data_quality": 0.96,
+        "fabric_independent_source_count": 2,
+        "fabric_consensus_pass": True,
+        "fabric_quote_divergence_pct": 0.01,
+        "source": "polygon_options brokerage feed",
+        "freshness_label": "real-time",
+        "quote_timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -43,7 +50,7 @@ def _payload(row=None):
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "path": "options",
-        "provider_readiness": {"production_quote_ready": False, "status": "RESEARCH_ONLY"},
+        "provider_readiness": {"production_quote_ready": False, "status": "FREE_CONFIRMED"},
         "free_directional_signals": [row or _signal()],
     }
 
@@ -133,4 +140,14 @@ def test_missing_payload_timestamp_is_blocked(monkeypatch):
     state = {"sent": {}}
     assert sender.send(payload, state) == 0
     assert state["mode"] == "stale_blocked"
+    assert sent == []
+
+
+def test_v11_blocks_research_only_quote_even_when_free_signal_is_high_score(monkeypatch):
+    sent = []
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
+    row = _signal()
+    row["source"] = "yahoo research"
+    row["freshness_label"] = "delayed"
+    assert sender.send(_payload(row), {"sent": {}}) == 0
     assert sent == []
