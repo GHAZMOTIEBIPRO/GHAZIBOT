@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from options_radar.telegram_transport import send_html_message
+from options_radar.v11_gate import evaluate_v11_signal
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -218,8 +219,10 @@ def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> st
         )
     if strict_reasons:
         lines.append(f"✅ {_safe(' | '.join(strict_reasons[:2]), 520)}")
+    v11 = row.get("v11_decision") if isinstance(row.get("v11_decision"), dict) else {}
     lines.extend(
         [
+            f"🛡 <b>Omega V11 CONFIRMED</b> • Sources <b>{int(_number(v11.get('independent_sources')))}</b>",
             f"🛰 <b>{mode_text}</b> • {_safe(readiness.get('status') or 'UNKNOWN', 80)}",
             (
                 "⚠️ <i>GEX وInst Proxy استدلالات بحثية وليست مراكز ديلر/مؤسسات مؤكدة؛ "
@@ -326,6 +329,11 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
         if strict < minimum or grade not in {"A", "A+"}:
             continue
         if mode == "free" and row.get("free_alert_eligible") is not True:
+            continue
+        v11 = evaluate_v11_signal(row)
+        row["v11_decision"] = v11
+        row["telegram_eligible"] = bool(v11["approved"])
+        if row["telegram_eligible"] is not True:
             continue
         contract = str(
             row.get("contract_symbol")
