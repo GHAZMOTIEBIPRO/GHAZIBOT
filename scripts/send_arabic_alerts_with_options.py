@@ -136,7 +136,7 @@ def _option_block(candidate: notifier.UnifiedCandidate) -> str:
     vol_oi = _num(primary.get("vol_to_oi_ratio"))
     spread = _num(primary.get("spread_pct"), -1.0)
     rank = _num(primary.get("contract_rank"))
-    v11 = primary.get("v11_decision") if isinstance(primary.get("v11_decision"), dict) else {}
+    explosion = primary.get("option_explosion") if isinstance(primary.get("option_explosion"), dict) else {}
     production_ready = bool(primary.get("production_alert_eligible"))
 
     price_line = ""
@@ -154,6 +154,10 @@ def _option_block(candidate: notifier.UnifiedCandidate) -> str:
         risk_line = "\n⚠️ " + _safe("؛ ".join(str(x) for x in risks[:3]), 600)
 
     v11_line = ("جاهز إنتاجيًا وفق V11" if production_ready else "بحثي/مراقبة فقط — لم يجتز بوابة V11")
+    explosion_line = ""
+    if explosion:
+        explosion_line = (f"\n💥 قابلية تمدد البريميوم: <b>{_safe(explosion.get('label'))}</b> "
+                          f"({_num(explosion.get('score')):.0f}/100) — {_safe(explosion.get('estimated_window_ar'))}")
     return (
         "\n\n🎛 <b>عقد الخيار المرصود</b>\n"
         f"النوع: <b>{_safe(side)}</b> — {_safe(primary.get('side_reason_ar'), 450)}\n"
@@ -164,6 +168,7 @@ def _option_block(candidate: notifier.UnifiedCandidate) -> str:
         f"Delta: <b>{_safe(delta)}</b> | Volume: <b>{_safe(volume)}</b> | OI: <b>{_safe(oi)}</b> | Vol/OI: <b>{vol_oi:.2f}×</b>{spread_text}\n"
         f"ترتيب العقد: <b>{rank:.0f}/100</b> <i>(ترتيب جودة وليس احتمال ربح)</i>\n"
         f"🛡 V11: <b>{_safe(v11_line)}</b>"
+        f"{explosion_line}"
         f"{price_line}\n"
         f"🧾 القراءة: {_safe(flow_claim)}"
         f"{risk_line}"
