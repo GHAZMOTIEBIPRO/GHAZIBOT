@@ -48,3 +48,18 @@ def test_spx_ui_prefers_durable_runtime_state() -> None:
     assert durable in source
     assert "spx_dashboard.json" in source
     assert "free_data_health.json" in source
+
+
+def test_free_gex_validation_is_shadow_tolerant_and_publishes_to_bot_state() -> None:
+    workflow = Path(".github/workflows/free-gex-validation.yml").read_text(encoding="utf-8")
+    assert 'engine["available"] is True' not in workflow
+    assert "staying SHADOW_ONLY without failing the workflow" in workflow
+    assert "HEAD:main" not in workflow
+    assert "origin main" not in workflow
+    assert "origin bot-state" in workflow
+    assert "runtime/public/data/free_gex_validation.json" in workflow
+
+
+def test_spx_ui_prefers_durable_free_gex_validation() -> None:
+    source = Path("public/spx/spx.js").read_text(encoding="utf-8")
+    assert "DURABLE+'free_gex_validation.json'" in source
