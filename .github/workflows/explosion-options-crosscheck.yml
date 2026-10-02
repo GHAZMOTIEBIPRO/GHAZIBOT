@@ -1,0 +1,276 @@
+name: BLACK BOX Explosion Options Cross-Check
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "BLACK BOX Omega Fast Explosion Radar"
+    types: [completed]
+
+concurrency:
+  group: black-box-explosion-options-crosscheck
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  crosscheck:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_OPTIONS_FEED: "indicative"
+      ALPACA_STOCK_FEED: "iex"
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+      OPTIONS_INDEPENDENT_MAX_SYMBOLS: "30"
+      OPTIONS_INDEPENDENT_TOP_PER_SIDE: "10"
+      OPTIONS_STRICT_MIN_SCORE: ${{ secrets.OPTIONS_STRICT_MIN_SCORE || '85' }}
+      OPTIONS_STRICT_SIDE_EDGE: ${{ secrets.OPTIONS_STRICT_SIDE_EDGE || '6' }}
+      OPTIONS_FREE_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_FREE_ALERT_MIN_SCORE || '87' }}
+      OPTIONS_FREE_ALERTS_ENABLED: "true"
+      OPTIONS_ALERT_MAX: "0"
+      OPTIONS_PAYLOAD_MAX_AGE_MINUTES: "30"
+      OCC_FREE_ENABLED: "true"
+      DATABASE_PATH: data/live/explosion_options_alert_state.json
+      SIGNAL_JOURNAL_PATH: data/live/explosion_options_signals.jsonl
+      OUTCOME_PATH: data/live/explosion_options_outcomes.json
+      CALIBRATION_PATH: data/live/explosion_options_calibration.json
+      DATA_FABRIC_HEALTH_PATH: data/live/explosion_options_provider_health.json
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Require U.S. regular session
+        id: market
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime, timezone
+          import exchange_calendars as xcals
+          import pandas as pd
+          cal = xcals.get_calendar("XNYS")
+          minute = pd.Timestamp(datetime.now(timezone.utc)).floor("min")
+          try:
+              opened = bool(cal.is_open_on_minute(minute))
+          except Exception:
+              opened = False
+          print(f"open={'true' if opened else 'false'}")
+          PY
+
+      - name: Restore Fast Explosion evidence
+        if: steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/live
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            gh run download "${{ github.event.workflow_run.id }}" -n fast-market-state -D .fast-source
+          else
+            source_run="$(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+            [[ -n "$source_run" ]] && gh run download "$source_run" -n fast-market-state -D .fast-source
+          fi
+          test -s .fast-source/fast_explosion_scan.json
+          cp .fast-source/fast_explosion_scan.json data/live/fast_explosion_scan.json
+
+      - name: Restore isolated cross-check state
+        if: steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p data/live .crosscheck-restore
+          previous="$(gh run list --workflow explosion-options-crosscheck.yml --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)"
+          if [[ -n "$previous" ]]; then
+            gh run download "$previous" -n explosion-options-crosscheck-state -D .crosscheck-restore >/dev/null 2>&1 || true
+            cp -f .crosscheck-restore/* data/live/ 2>/dev/null || true
+          fi
+
+      - name: Build dynamic explosion options universe
+        if: steps.market.outputs.open == 'true'
+        run: >-
+          python -m scripts.build_explosion_options_universe
+          --fast data/live/fast_explosion_scan.json
+          --json data/live/explosion_options_universe.json
+          --text data/live/explosion_options_universe.txt
+          --max-symbols 30
+
+      - name: Decide whether a new scan is due
+        if: steps.market.outputs.open == 'true'
+        id: due
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          universe = json.loads(Path("data/live/explosion_options_universe.json").read_text())
+          symbols = universe.get("symbols") or []
+          fingerprint = str(universe.get("fingerprint") or "")
+          state_path = Path("data/live/explosion_options_crosscheck_state.json")
+          try:
+              state = json.loads(state_path.read_text())
+          except Exception:
+              state = {}
+          previous = str(state.get("fingerprint") or "")
+          raw_time = str(state.get("last_scan_at") or "")
+          age = 9999.0
+          if raw_time:
+              try:
+                  stamp = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+                  age = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60
+              except Exception:
+                  pass
+          due = bool(symbols) and (fingerprint != previous or age >= 12.0)
+          print(f"scan={'true' if due else 'false'}")
+          print(f"symbols={len(symbols)}")
+          print(f"fingerprint={fingerprint}")
+          PY
+
+      - name: Run same-cycle hardened options cross-check
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true'
+        run: >-
+          python -m scripts.run_options_radar_fabric
+          --universe data/live/explosion_options_universe.txt
+          --output public/data/explosion_options_crosscheck.json
+          --max-symbols 30
+          --top-per-side 10
+          --configured-priority
+
+      - name: Validate discovery-only separation
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path("public/data/explosion_options_crosscheck.json").read_text())
+          assert payload["universe_discovery_mode"] == "fast_explosion_seed_priority"
+          assert payload["configured_discovery_seeds_do_not_change_contract_scoring"] is True
+          assert payload["independent_from_stock_radar"] is False
+          assert payload["contract_scoring_independent_from_stock_signal"] is True
+          universe = json.loads(Path("data/live/explosion_options_universe.json").read_text())
+          assert universe["discovery_seed_only"] is True
+          assert universe["stock_signal_independent_from_options_result"] is True
+          assert universe["options_result_cannot_promote_stock_signal"] is True
+          PY
+
+      - name: Restore centralized Telegram destination
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true' && env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true'
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Send only strict V11-approved cross-check alerts
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true' && env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_strict_options_alerts
+          --payload public/data/explosion_options_crosscheck.json
+          --state data/live/explosion_options_telegram_state.json
+
+      - name: Update cross-check cadence state
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          universe = json.loads(Path("data/live/explosion_options_universe.json").read_text())
+          Path("data/live/explosion_options_crosscheck_state.json").write_text(
+              json.dumps({
+                  "fingerprint": universe.get("fingerprint"),
+                  "last_scan_at": datetime.now(timezone.utc).isoformat(),
+                  "symbols": universe.get("symbols") or [],
+              }, indent=2),
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Stage isolated cross-check state
+        if: always() && steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p .crosscheck-state
+          for file in \
+            explosion_options_crosscheck_state.json \
+            explosion_options_telegram_state.json \
+            explosion_options_alert_state.json \
+            explosion_options_signals.jsonl \
+            explosion_options_outcomes.json \
+            explosion_options_calibration.json \
+            explosion_options_provider_health.json; do
+            if [[ -f "data/live/$file" ]]; then
+              cp "data/live/$file" ".crosscheck-state/$file"
+            fi
+          done
+
+      - name: Upload isolated cross-check state
+        if: always() && steps.market.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: explosion-options-crosscheck-state
+          path: .crosscheck-state/
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 30
+
+      - name: Upload cross-check research payload
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: explosion-options-crosscheck
+          path: |
+            public/data/explosion_options_crosscheck.json
+            data/live/explosion_options_universe.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: No-scan status
+        if: steps.market.outputs.open != 'true' || steps.due.outputs.scan != 'true'
+        run: echo "Explosion options cross-check skipped: outside RTH, no candidates, or unchanged universe inside 12-minute rescan window."

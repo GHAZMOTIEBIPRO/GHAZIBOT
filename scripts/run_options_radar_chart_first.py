@@ -126,12 +126,14 @@ def run(
     output_path: str | Path = DEFAULT_OUTPUT,
     max_symbols: int = 80,
     top_per_side: int = 15,
+    configured_priority: bool = False,
 ) -> dict[str, Any]:
     payload = legacy.run(
         universe_path=universe_path,
         output_path=output_path,
         max_symbols=max_symbols,
         top_per_side=top_per_side,
+        configured_priority=configured_priority,
     )
     settings = Settings()
     gamma_maps = (
