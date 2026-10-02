@@ -41,6 +41,7 @@ jobs:
           python -m scripts.send_independent_path_alerts --help >/dev/null
           python -m scripts.send_strict_options_alerts --help >/dev/null
           python -m scripts.send_omega_watch_alerts --help >/dev/null
+          python -m scripts.run_omega_target_learning --help >/dev/null
           python -m scripts.send_cross_confirmation --help >/dev/null
           python -m scripts.send_radar_health --help >/dev/null
           python -m py_compile scripts/omega_sniper.py tests/test_omega_sniper.py
@@ -69,6 +70,8 @@ jobs:
             options_radar/omega_catalyst_intelligence.py \
             options_radar/omega_target_map.py \
             options_radar/omega_opportunity.py \
+            options_radar/omega_target_learning.py \
+            options_radar/target_horizon.py \
             options_radar/explosion_cause.py \
             options_radar/option_explosion.py \
             options_radar/option_contract_intelligence.py \
@@ -115,6 +118,7 @@ jobs:
             scripts/send_independent_path_alerts.py \
             scripts/send_strict_options_alerts.py \
             scripts/send_omega_watch_alerts.py \
+            scripts/run_omega_target_learning.py \
             scripts/send_cross_confirmation.py \
             scripts/send_radar_health.py \
             scripts/omega_sniper.py \
@@ -126,6 +130,8 @@ jobs:
             tests/test_omega_catalyst_intelligence.py \
             tests/test_omega_target_map.py \
             tests/test_omega_opportunity.py \
+            tests/test_omega_target_learning.py \
+            tests/test_target_horizon.py \
             tests/test_explosion_cause.py \
             tests/test_option_explosion.py \
             tests/test_option_contract_intelligence.py \
