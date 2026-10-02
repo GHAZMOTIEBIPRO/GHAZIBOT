@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 1}
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
       - uses: actions/setup-python@v5
         with: {python-version: "3.12", cache: pip}
       - run: pip install -r requirements.txt
@@ -54,19 +59,26 @@ jobs:
           payload["trade_map"]=build_spx_trade_map(payload)
           out.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
-      - name: Commit snapshot
+      - name: Publish snapshot to durable bot-state
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/spx_dashboard.json
-          git diff --cached --quiet || git commit -m "chore: refresh SPX dashboard data"
+          set -euo pipefail
+          mkdir -p state/runtime/public/data
+          cp public/data/spx_dashboard.json state/runtime/public/data/spx_dashboard.json
+          cd state
+          git config user.name "BLACK BOX Omega SPX State"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/spx_dashboard.json
+          if git diff --cached --quiet; then
+            echo "SPX runtime snapshot unchanged."
+            exit 0
+          fi
+          git commit -m "state: refresh SPX dashboard [skip ci]"
           for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
               exit 0
             fi
-            sleep 2
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
           done
-          echo "SPX dashboard publish failed after 3 synchronized push attempts."
+          echo "SPX bot-state publish failed after 3 retries."
           exit 1
