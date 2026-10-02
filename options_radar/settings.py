@@ -74,7 +74,7 @@ class Settings:
     fred_api_key: str | None = os.getenv("FRED_API_KEY") or None
     daily_provider_order: str = (
         os.getenv("DAILY_PRICE_PROVIDER_ORDER")
-        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
+        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo"
     )
     intraday_provider_order: str = (
         os.getenv("INTRADAY_PRICE_PROVIDER_ORDER")
@@ -250,6 +250,7 @@ class Settings:
         allowed_bar_sources = {
             "yahoo",
             "yfinance",
+            "yahooquery",
             "tiingo",
             "finnhub",
             "tradier",
