@@ -245,7 +245,9 @@ jobs:
             explosion_options_outcomes.json \
             explosion_options_calibration.json \
             explosion_options_provider_health.json; do
-            [[ -f "data/live/$file" ]] && cp "data/live/$file" ".crosscheck-state/$file"
+            if [[ -f "data/live/$file" ]]; then
+              cp "data/live/$file" ".crosscheck-state/$file"
+            fi
           done
 
       - name: Upload isolated cross-check state
