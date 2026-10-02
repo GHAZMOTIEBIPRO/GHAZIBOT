@@ -124,6 +124,10 @@ def _supply_proxy(market_cap: float, structural: dict[str, Any]) -> float:
             return 80.0
     if structural_score > 0:
         return max(55.0, structural_score)
+    if market_cap <= 0:
+        # Missing market-cap data must not masquerade as a microcap/supply
+        # vacuum. Keep the stock in the universe with neutral supply evidence.
+        return 45.0
     if 0 < market_cap <= 50_000_000:
         return 94.0
     if market_cap <= 150_000_000:
@@ -247,7 +251,7 @@ def rank_market(rows: list[dict[str, Any]], news_events: list[NewsEvent], struct
         market_cap = _number(row.get("marketCap"))
         volume = _number(row.get("volume"))
         move = _number(row.get("pctchange"))
-        if price <= 0.25 or price > 500 or market_cap <= 0:
+        if price <= 0:
             continue
         dollar_volume = price * volume
         turnover = (dollar_volume / market_cap * 100.0) if market_cap > 0 else 0.0
@@ -268,11 +272,15 @@ def rank_market(rows: list[dict[str, Any]], news_events: list[NewsEvent], struct
         )
         if market_cap > 2_000_000_000 and news_component < 70 and move < 8:
             score -= 10
+        if market_cap <= 0:
+            score -= 3
         if move > 38:
             score -= 22
         score = _clamp(score)
         stage = _stage(score, move, turnover)
         reasons: list[str] = []
+        if market_cap <= 0:
+            reasons.append("القيمة السوقية غير متاحة؛ لم يتم استبعاد السهم ولم يُفترض أنه Microcap")
         if supply >= 75:
             reasons.append(f"عرض مقيد {supply:.0f}/100")
         if turnover_component >= 70:
@@ -402,7 +410,7 @@ def run(send_telegram: bool = True) -> int:
     }
     news_events = collect_fast_news(known_symbols=known_symbols)
     ranked = rank_market(rows, news_events=news_events, structural=structural)
-    actionable = [item for item in ranked if item.stage in {"PRESSURE_BUILDING", "IGNITION", "EXPLOSION"}][:30]
+    actionable = [item for item in ranked if item.stage in {"PRESSURE_BUILDING", "IGNITION", "EXPLOSION"}]
 
     halts = []
     try:
@@ -434,10 +442,10 @@ def run(send_telegram: bool = True) -> int:
                 state = {"sent": {}, "halts": {}}
             sent_map = state.setdefault("sent", {})
             halt_map = state.setdefault("halts", {})
-            max_alerts = max(1, min(5, int(_number(os.getenv("OMEGA_FAST_MAX_ALERTS", "3"), 3))))
+            max_alerts = int(_number(os.getenv("OMEGA_FAST_MAX_ALERTS", "0"), 0))
             min_score = _number(os.getenv("OMEGA_FAST_MIN_SCORE", "68"), 68.0)
             for candidate in actionable:
-                if sent >= max_alerts:
+                if max_alerts > 0 and sent >= max_alerts:
                     break
                 if candidate.score < min_score or candidate.stage == "PRESSURE_BUILDING" and candidate.score < 72:
                     continue
@@ -460,7 +468,7 @@ def run(send_telegram: bool = True) -> int:
                 _send(token, chat_id, _halt_message(halt.symbol, halt.reason, halt.title, halt.description))
                 halt_map[key] = {"sent_at": _utc_now()}
                 sent += 1
-                if sent >= max_alerts + 2:
+                if max_alerts > 0 and sent >= max_alerts + 2:
                     break
             state["last_run_at"] = _utc_now()
             state["last_sent_count"] = sent
