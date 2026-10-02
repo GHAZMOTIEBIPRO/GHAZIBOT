@@ -249,6 +249,7 @@ def _swing_decision(stock: dict[str, Any], catalyst: float, price_structure: flo
 def build_omega_opportunities(
     payload: dict[str, Any],
     catalyst_intelligence: dict[str, Any],
+    target_calibration: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     stocks = [row for row in payload.get("stocks", []) if isinstance(row, dict)]
     options = [
@@ -345,7 +346,11 @@ def build_omega_opportunities(
             "swing_decision": swing_decision,
             "catalyst": cluster,
             "target_map": target_maps.get(symbol),
-            "target_horizon": estimate_target_horizon(stock, target_maps.get(symbol)),
+            "target_horizon": estimate_target_horizon(
+                stock,
+                target_maps.get(symbol),
+                calibration=target_calibration,
+            ),
             "best_expiry_family": option.get("expiry_family") if option else None,
             "best_contract": option,
             "contract_score": (
@@ -385,7 +390,15 @@ def build_omega_opportunities(
 
     return {
         "research_status": "RANKING_ONLY",
-        "probability_calibrated": False,
+        "probability_calibrated": bool(
+            isinstance(target_calibration, dict)
+            and target_calibration.get("calibration_ready") is True
+        ),
+        "target_calibration_sample": (
+            int(target_calibration.get("global_matured_t1_sample") or 0)
+            if isinstance(target_calibration, dict)
+            else 0
+        ),
         "omega_day": day,
         "omega_swing": swing,
         "explosion_radar": {

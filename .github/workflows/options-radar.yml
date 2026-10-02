@@ -136,6 +136,15 @@ jobs:
       - name: Validate Omega export contract
         run: python scripts/validate_omega_export.py public/data/latest.json
 
+      - name: Update Omega T1 T2 T3 target-learning evidence
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: >-
+          python -m scripts.run_omega_target_learning
+          --payload public/data/latest.json
+          --state data/live/omega_target_state.json
+          --calibration data/live/omega_target_calibration.json
+
       - name: Restore centralized Telegram destination for Omega WATCH
         if: github.event_name != 'push' && env.TELEGRAM_CHAT_ID == ''
         shell: bash
