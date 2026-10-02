@@ -13,6 +13,7 @@ on:
       - "scripts/telegram_transport.py"
       - "options_radar/stock_outcomes.py"
       - "options_radar/stock_decision.py"
+      - "options_radar/explosion_cause.py"
       - "options_radar/radar_health.py"
       - "data/stock_ping.txt"
   workflow_run:
@@ -44,7 +45,9 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       STOCK_ALERT_MIN_SCORE: ${{ secrets.STOCK_ALERT_MIN_SCORE || '72' }}
-      STOCK_ALERT_MAX: ${{ secrets.STOCK_ALERT_MAX || '3' }}
+      STOCK_WATCH_MIN_SCORE: ${{ secrets.STOCK_WATCH_MIN_SCORE || '62' }}
+      STOCK_ALERT_MAX: ${{ secrets.STOCK_ALERT_MAX || '0' }}
+      FAST_MARKET_STATE_PATH: data/live/fast_market_state.json
 
     steps:
       - uses: actions/checkout@v4
@@ -170,6 +173,11 @@ jobs:
               assert row.get('options_required_for_stock_signal') is False
               shadow = row.get('shadow_analysis') or {}
               assert shadow.get('live_alert_eligibility_changed') is False
+              explosion = row.get('explosion_cause') or {}
+              manipulation = row.get('manipulation_risk') or {}
+              assert explosion.get('causation_proven') is False
+              assert manipulation.get('is_accusation') is False
+              assert row.get('alert_stage') in {'WATCH','CONFIRMED','NO_CHASE','NONE'}
           print('Independent stock path + shadow-learning guard passed.')
           PY
 
