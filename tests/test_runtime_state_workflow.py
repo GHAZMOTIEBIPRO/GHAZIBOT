@@ -78,3 +78,14 @@ def test_omega_runtime_publish_rebuilds_from_latest_bot_state_on_contention() ->
     assert "git -C .bot-state reset --hard origin/bot-state" in workflow
     assert "for attempt in 1 2 3 4" in workflow
     assert "pull --rebase origin bot-state" not in workflow
+
+
+def test_omega_target_learning_is_durable_and_non_blocking() -> None:
+    vault = Path("scripts/runtime_state_vault.py").read_text(encoding="utf-8")
+    workflow = Path(".github/workflows/options-radar.yml").read_text(encoding="utf-8")
+    assert '"data/live/omega_target_state.json"' in vault
+    assert '"data/live/omega_target_calibration.json"' in vault
+    assert "Update Omega T1 T2 T3 target-learning evidence" in workflow
+    assert "python -m scripts.run_omega_target_learning" in workflow
+    assert "continue-on-error: true" in workflow
+    assert "if: github.event_name != 'push'" in workflow
