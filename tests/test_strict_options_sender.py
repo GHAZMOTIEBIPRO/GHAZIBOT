@@ -151,3 +151,27 @@ def test_v11_blocks_research_only_quote_even_when_free_signal_is_high_score(monk
     row["freshness_label"] = "delayed"
     assert sender.send(_payload(row), {"sent": {}}) == 0
     assert sent == []
+
+
+def test_zero_alert_max_sends_all_qualified_unique_symbols(monkeypatch):
+    sent = []
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
+    monkeypatch.setenv("OPTIONS_ALERT_MAX", "0")
+    monkeypatch.setenv("OPTIONS_FREE_ALERTS_ENABLED", "true")
+
+    first = _signal()
+    second = dict(_signal())
+    second.update(
+        {
+            "symbol": "ABC",
+            "contract_symbol": "ABC260918C00100000",
+            "strike": 100,
+        }
+    )
+    payload = _payload()
+    payload["free_directional_signals"] = [first, second]
+    state = {"sent": {}}
+
+    assert sender.send(payload, state) == 2
+    assert len(sent) == 2
+    assert {"XYZ:CALL", "ABC:CALL"}.issubset(state["sent"])
