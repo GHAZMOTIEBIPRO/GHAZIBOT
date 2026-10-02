@@ -2,20 +2,6 @@ name: BLACK BOX Omega Stock Radar
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/stock-radar.yml"
-      - "scripts/run_stock_radar_independent.py"
-      - "scripts/enrich_stock_radar_research.py"
-      - "scripts/send_independent_path_alerts.py"
-      - "scripts/telegram_connection_bootstrap.py"
-      - "scripts/telegram_transport.py"
-      - "options_radar/stock_outcomes.py"
-      - "options_radar/stock_decision.py"
-      - "options_radar/explosion_cause.py"
-      - "options_radar/radar_health.py"
-      - "data/stock_ping.txt"
   workflow_run:
     workflows:
       - "BLACK BOX Omega Fast Explosion Radar"
