@@ -125,6 +125,7 @@ def run(
     output_path: str | Path = base.DEFAULT_OUTPUT,
     max_symbols: int = 80,
     top_per_side: int = 15,
+    configured_priority: bool = False,
 ) -> dict:
     install_options_radar_hardening()
     payload = base.run(
@@ -132,6 +133,7 @@ def run(
         output_path=output_path,
         max_symbols=max_symbols,
         top_per_side=top_per_side,
+        configured_priority=configured_priority,
     )
     settings = Settings()
     readiness = assess_provider_readiness(
@@ -175,12 +177,14 @@ def main() -> None:
         type=int,
         default=int(os.getenv("OPTIONS_INDEPENDENT_TOP_PER_SIDE", "15")),
     )
+    parser.add_argument("--configured-priority", action="store_true")
     args = parser.parse_args()
     payload = run(
         universe_path=args.universe,
         output_path=args.output,
         max_symbols=args.max_symbols,
         top_per_side=args.top_per_side,
+        configured_priority=args.configured_priority,
     )
     summary = payload.get("summary") or {}
     print(
