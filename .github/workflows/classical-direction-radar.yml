@@ -18,8 +18,6 @@ on:
       - "scripts/run_classical_direction_radar.py"
       - "scripts/send_classical_direction_alerts.py"
       - "tests/test_classical_stock_direction.py"
-  schedule:
-    - cron: "*/15 13-21 * * 1-5"
 
 concurrency:
   group: black-box-omega-classical-direction
@@ -47,8 +45,8 @@ jobs:
       TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
       POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
-      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
-      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
+      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahooquery,yahoo' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahooquery,yahoo' }}
       CLASSICAL_DIRECTION_MAX_SYMBOLS: ${{ secrets.CLASSICAL_DIRECTION_MAX_SYMBOLS || '48' }}
       CLASSICAL_MIN_DOLLAR_VOLUME: ${{ secrets.CLASSICAL_MIN_DOLLAR_VOLUME || '100000000' }}
       CLASSICAL_MIN_DATA_COVERAGE: ${{ secrets.CLASSICAL_MIN_DATA_COVERAGE || '0.60' }}

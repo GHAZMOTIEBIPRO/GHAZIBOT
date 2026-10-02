@@ -1,0 +1,89 @@
+name: BLACK BOX Omega Market Orchestrator
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "2-57/5 8-23 * * 1-5"
+
+concurrency:
+  group: black-box-omega-market-orchestrator
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Dispatch stale market engines
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          now_epoch="$(date -u +%s)"
+          utc_hour="$(date -u +%H)"
+          utc_hour=$((10#$utc_hour))
+
+          age_minutes() {
+            workflow="$1"
+            created_at="$(gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow "$workflow" \
+              --branch main \
+              --limit 1 \
+              --json createdAt \
+              --jq '.[0].createdAt // empty' 2>/dev/null || true)"
+            if [[ -z "$created_at" ]]; then
+              echo 99999
+              return
+            fi
+            last_epoch="$(date -u -d "$created_at" +%s)"
+            echo $(( (now_epoch - last_epoch) / 60 ))
+          }
+
+          dispatch_if_stale() {
+            workflow="$1"
+            max_age="$2"
+            label="$3"
+            age="$(age_minutes "$workflow")"
+            echo "$label: workflow=$workflow age=\${age}m max=\${max_age}m"
+            if (( age > max_age )); then
+              echo "Dispatching $label"
+              gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref main
+            else
+              echo "Fresh enough; skip $label"
+            fi
+          }
+
+          if (( utc_hour >= 8 && utc_hour <= 23 )); then
+            dispatch_if_stale fast-explosion-radar.yml 8 "Fast Explosion"
+          fi
+
+          if (( utc_hour >= 12 && utc_hour <= 22 )); then
+            dispatch_if_stale spx-dashboard.yml 8 "SPX"
+            dispatch_if_stale classical-direction-radar.yml 18 "Classical Direction"
+            dispatch_if_stale options-contract-radar.yml 18 "Options Contract"
+            dispatch_if_stale company-news-watch.yml 18 "Company News"
+            dispatch_if_stale free-data-health.yml 18 "Free Data Health"
+            dispatch_if_stale free-gex-validation.yml 18 "Free GEX Validation"
+            dispatch_if_stale options-radar.yml 38 "Full Omega Radar"
+            dispatch_if_stale adaptive-review.yml 70 "Adaptive Evidence Review"
+          fi
+
+      - name: Scheduling policy
+        run: |
+          cat <<'EOF'
+          Core market cadence is owned here.
+          workflow_run chains still own dependent stages:
+          Fast Explosion -> Stock Radar
+          Options Contract -> Options Research Enrichment
+          Stock/Options -> Cross Confirmation / state / dashboard
+          News Flash remains independent 24x7.
+          End-of-day auditors and weekly research labs remain independent.
+          EOF

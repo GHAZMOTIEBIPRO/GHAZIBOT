@@ -34,6 +34,21 @@ def _normalise_name(value: str) -> str:
     return aliases.get(name, name)
 
 
+def _source_family(value: str) -> str:
+    name = str(value or "").strip().lower()
+    if "yahoo" in name or "yfinance" in name:
+        return "yahoo"
+    if "polygon" in name or "massive" in name:
+        return "polygon_massive"
+    aliases = {
+        "twelve": "twelve_data",
+        "twelvedata": "twelve_data",
+        "alpha": "alpha_vantage",
+        "alphavantage": "alpha_vantage",
+    }
+    return aliases.get(name, name)
+
+
 def _unique_names(*raw_values: str) -> list[str]:
     result: list[str] = []
     for raw in raw_values:
@@ -91,15 +106,20 @@ def _consensus_metadata(successes: list[tuple[str, pd.DataFrame, str]]) -> dict[
         median = float(np.median(values))
         if median:
             dispersion = max(abs(value - median) for value in values) / abs(median)
+    source_names = [name for name, _, _ in successes]
+    families = list(dict.fromkeys(_source_family(name) for name in source_names))
     return {
-        "successful_sources": [name for name, _, _ in successes],
+        "successful_sources": source_names,
         "source_count": len(successes),
+        "transport_source_count": len(successes),
+        "independent_source_count": len(families),
+        "source_families": families,
         "latest_close_by_source": closes,
         "latest_close_dispersion_pct": (
             round(float(dispersion) * 100.0, 4) if dispersion is not None else None
         ),
         "cross_source_confirmed": bool(
-            len(successes) >= 2 and dispersion is not None and dispersion <= 0.015
+            len(families) >= 2 and dispersion is not None and dispersion <= 0.015
         ),
     }
 

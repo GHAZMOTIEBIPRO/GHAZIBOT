@@ -14,9 +14,6 @@ on:
       - "data/manual_refresh.txt"
       - "requirements.txt"
       - ".github/workflows/options-radar.yml"
-  schedule:
-    - cron: "7,37 13-21 * * 1-5"
-    - cron: "45 12 * * 1-5"
 
 concurrency:
   group: ghazi-market-radar
@@ -59,9 +56,9 @@ jobs:
       EXPIRY_RADAR_TOP_PER_SIDE: ${{ secrets.EXPIRY_RADAR_TOP_PER_SIDE || '8' }}
       OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
       OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
-      STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
-      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
-      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo' }}
+      STOCK_PROVIDER_ORDER: ${{ secrets.STOCK_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahooquery,yahoo' }}
+      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com' }}
       OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
       FREE_SWING_MODE: "true"

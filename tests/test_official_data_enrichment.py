@@ -149,3 +149,55 @@ def test_legacy_path_records_without_underlying_levels_are_excluded(tmp_path):
     assert payload["performance"]["legacy_paths_excluded"] == 1
     persisted = json.loads(outcomes.read_text(encoding="utf-8"))
     assert persisted["signals"]["legacy"]["path_status"] == "missing_levels"
+
+
+def test_cftc_tff_is_official_context_only(monkeypatch):
+    from options_radar.macro import fetch_cftc_tff
+
+    captured = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return [
+                {
+                    "contract_market_name": "E-MINI S&P 500 STOCK INDEX",
+                    "report_date_as_yyyy_mm_dd": "2026-09-29",
+                }
+            ]
+
+    def fake_get(url, params=None, timeout=None):
+        captured["url"] = url
+        captured["params"] = params
+        return Response()
+
+    monkeypatch.setattr("options_radar.macro.requests.get", fake_get)
+    payload = fetch_cftc_tff(limit=20, market_contains="S&P")
+    assert payload["dataset"] == "gpe5-46if"
+    assert payload["source_tier"] == "S_OFFICIAL_CONTEXT"
+    assert payload["context_only"] is True
+    assert payload["directional_signal"] is False
+    assert payload["frequency"] == "weekly"
+    assert payload["latest_report_date"] == "2026-09-29"
+    assert captured["params"]["$limit"] == 20
+    assert "contract_market_name" in captured["params"]["$where"]
+
+
+def test_cftc_tff_failure_is_nonfatal_in_macro_context(monkeypatch):
+    from options_radar.macro import build_macro_context
+    from options_radar.settings import Settings
+
+    monkeypatch.setattr(
+        "options_radar.macro.fetch_treasury_curve",
+        lambda: {"source": "test"},
+    )
+    monkeypatch.setattr(
+        "options_radar.macro.fetch_cftc_tff",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("rate limited")),
+    )
+    context, errors = build_macro_context(Settings(fred_api_key=None))
+    assert context["treasury"]["source"] == "test"
+    assert "cftc_tff" not in context
+    assert "rate limited" in errors["cftc_tff"]

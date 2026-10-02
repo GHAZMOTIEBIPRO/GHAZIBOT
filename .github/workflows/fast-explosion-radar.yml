@@ -15,10 +15,6 @@ on:
       - "options_radar/data_fabric_runtime.py"
       - "options_radar/market_clock.py"
       - "options_radar/stream_overlay.py"
-  schedule:
-    - cron: "2,22,42 8-12 * * 1-5"
-    - cron: "2-57/5 13-21 * * 1-5"
-    - cron: "2,22,42 22-23 * * 1-5"
 
 concurrency:
   group: black-box-omega-fast-radar
@@ -46,7 +42,7 @@ jobs:
       TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
       POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
-      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,tiingo,finnhub,twelve_data,polygon,alpha_vantage,yahoo' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,tiingo,finnhub,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
       DATA_FABRIC_HEALTH_PATH: data/live/provider_health.json
       DATA_FABRIC_MAX_WORKERS: ${{ secrets.DATA_FABRIC_MAX_WORKERS || '5' }}
       DATA_FABRIC_CIRCUIT_FAILURES: ${{ secrets.DATA_FABRIC_CIRCUIT_FAILURES || '3' }}

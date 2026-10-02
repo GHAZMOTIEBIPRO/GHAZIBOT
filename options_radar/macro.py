@@ -12,6 +12,7 @@ from .settings import Settings
 LOGGER = logging.getLogger(__name__)
 TREASURY_XML = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
 FRED_OBSERVATIONS = "https://api.stlouisfed.org/fred/series/observations"
+CFTC_TFF = "https://publicreporting.cftc.gov/resource/gpe5-46if.json"
 
 TREASURY_FIELDS = {
     "BC_3MONTH": "treasury_3m",
@@ -96,6 +97,50 @@ def fetch_fred_latest(settings: Settings, series_id: str) -> dict[str, Any]:
     return {}
 
 
+def fetch_cftc_tff(limit: int = 200, market_contains: str | None = None) -> dict[str, Any]:
+    """Fetch CFTC Traders in Financial Futures positioning as context only.
+
+    The CFTC Public Reporting Environment currently allows API access without a
+    token for reasonable usage. This feed is weekly positioning context and is
+    never allowed to create CALL/PUT direction by itself.
+    """
+    params: dict[str, Any] = {
+        "$limit": max(1, min(int(limit), 1000)),
+        "$order": "report_date_as_yyyy_mm_dd DESC",
+    }
+    if market_contains:
+        escaped = market_contains.replace("'", "''")
+        params["$where"] = (
+            "upper(contract_market_name) like "
+            f"upper('%{escaped}%')"
+        )
+    response = requests.get(CFTC_TFF, params=params, timeout=30)
+    response.raise_for_status()
+    rows = response.json()
+    if not isinstance(rows, list):
+        raise RuntimeError("CFTC TFF endpoint returned an unexpected payload")
+    latest_report_date = next(
+        (
+            row.get("report_date_as_yyyy_mm_dd")
+            for row in rows
+            if isinstance(row, dict) and row.get("report_date_as_yyyy_mm_dd")
+        ),
+        None,
+    )
+    return {
+        "source": "CFTC Traders in Financial Futures public reporting API",
+        "dataset": "gpe5-46if",
+        "source_tier": "S_OFFICIAL_CONTEXT",
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "latest_report_date": latest_report_date,
+        "count": len(rows),
+        "rows": rows,
+        "context_only": True,
+        "directional_signal": False,
+        "frequency": "weekly",
+    }
+
+
 def build_macro_context(settings: Settings) -> tuple[dict[str, Any], dict[str, str]]:
     context: dict[str, Any] = {}
     errors: dict[str, str] = {}
@@ -104,6 +149,11 @@ def build_macro_context(settings: Settings) -> tuple[dict[str, Any], dict[str, s
     except Exception as exc:
         errors["treasury"] = str(exc)
         LOGGER.debug("Treasury macro feed failed: %s", exc)
+    try:
+        context["cftc_tff"] = fetch_cftc_tff(limit=200)
+    except Exception as exc:
+        errors["cftc_tff"] = str(exc)
+        LOGGER.debug("CFTC TFF macro feed failed: %s", exc)
     if settings.fred_api_key:
         for series in ("VIXCLS", "DFF"):
             try:

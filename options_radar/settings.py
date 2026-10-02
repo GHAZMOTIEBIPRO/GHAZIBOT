@@ -60,7 +60,7 @@ class Settings:
     # Phase 6 deterministic fallback orders. Yahoo/YFinance belongs last.
     stock_provider_order: str = (
         os.getenv("STOCK_PROVIDER_ORDER")
-        or "tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
+        or "tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo"
     )
     options_provider_order: str = (
         os.getenv("OPTIONS_PROVIDER_ORDER")
@@ -74,11 +74,11 @@ class Settings:
     fred_api_key: str | None = os.getenv("FRED_API_KEY") or None
     daily_provider_order: str = (
         os.getenv("DAILY_PRICE_PROVIDER_ORDER")
-        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
+        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo"
     )
     intraday_provider_order: str = (
         os.getenv("INTRADAY_PRICE_PROVIDER_ORDER")
-        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
+        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo"
     )
 
     sec_user_agent: str = (
@@ -224,6 +224,7 @@ class Settings:
             "alpha_vantage",
             "yahoo",
             "yfinance",
+            "yahooquery",
         }
         phase6_options = {
             "tradier",
@@ -249,6 +250,7 @@ class Settings:
         allowed_bar_sources = {
             "yahoo",
             "yfinance",
+            "yahooquery",
             "tiingo",
             "finnhub",
             "tradier",

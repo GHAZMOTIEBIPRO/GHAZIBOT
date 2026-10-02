@@ -121,3 +121,16 @@ def test_stock_consensus_detects_matching_and_divergent_prices():
         [("tiingo", close_a, "fresh"), ("yahoo", close_c, "delayed")]
     )
     assert divergent["cross_source_confirmed"] is False
+
+
+def test_same_family_yahoo_transports_do_not_create_cross_source_confirmation():
+    index = pd.date_range("2026-07-20", periods=2, tz="UTC")
+    a = pd.DataFrame({"Close": [100, 101]}, index=index)
+    b = pd.DataFrame({"Close": [100, 101.1]}, index=index)
+    result = _consensus_metadata(
+        [("yahooquery", a, "unofficial"), ("yahoo", b, "unofficial")]
+    )
+    assert result["transport_source_count"] == 2
+    assert result["independent_source_count"] == 1
+    assert result["source_families"] == ["yahoo"]
+    assert result["cross_source_confirmed"] is False
