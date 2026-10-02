@@ -27,6 +27,7 @@ RUNTIME_PATHS = (
     "data/live/calibration.json",
     "data/live/CALIBRATION_REVIEW.md",
     "data/live/calibration_issue.json",
+    "data/live/omega_watch_alert_state.json",
 )
 
 SECRET_KEY_TOKENS = (
