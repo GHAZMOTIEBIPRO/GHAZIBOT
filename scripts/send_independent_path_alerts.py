@@ -61,7 +61,8 @@ def _stored_fingerprint(value: Any) -> str:
 def _stage_ar(stage: str) -> str:
     return {
         "WATCH": "مراقبة",
-        "PRESSURE_BUILDING": "بناء ضغط",
+        "PRESSURE_BUILDING": "مراقبة مبكرة / بناء ضغط",
+        "PRE_EXPLOSION": "قبل الانفجار",
         "IGNITION": "بداية انطلاقة",
         "EXPLOSION": "حركة قوية",
         "EXTENDED": "ممتدة/متأخرة",
@@ -88,35 +89,68 @@ def _stock_message(row: dict[str, Any]) -> str:
     price = _number(row.get("price"))
     move = _number(row.get("move_pct"))
     stage = str(row.get("stage") or "WATCH").upper()
+    alert_stage = str(row.get("alert_stage") or ("WATCH" if stage == "PRESSURE_BUILDING" else "CONFIRMED")).upper()
     cause = row.get("cause") if isinstance(row.get("cause"), dict) else {}
+    explosion = row.get("explosion_cause") if isinstance(row.get("explosion_cause"), dict) else {}
+    manipulation = row.get("manipulation_risk") if isinstance(row.get("manipulation_risk"), dict) else {}
+    memory = row.get("institutional_memory") if isinstance(row.get("institutional_memory"), dict) else {}
     cause_status = str(cause.get("status_ar") or "السبب الأساسي غير مثبت")
     cause_headline = str(cause.get("headline") or "").strip()
+    explosion_label = str(explosion.get("primary_label_ar") or "نمط الانفجار قيد التصنيف")
+    explosion_score = _number(explosion.get("primary_score"))
+    drivers = [
+        str(value.get("label_ar") or "")
+        for value in explosion.get("drivers", [])
+        if isinstance(value, dict) and str(value.get("label_ar") or "").strip()
+    ]
     amplifiers = [str(value) for value in row.get("amplifiers", []) if str(value).strip()]
     halts = [value for value in row.get("market_status_evidence", []) if isinstance(value, dict)]
     arrow = "↑" if move > 0 else ("↓" if move < 0 else "↔")
+    stage_icon = "🟡" if alert_stage == "WATCH" else "🔴" if alert_stage == "CONFIRMED" else "⚪️"
 
     lines = [
-        f"🚀 <b>Ω | {symbol} | {_safe(_stage_ar(stage), 60)} | {score:.0f}/100</b>",
+        f"{stage_icon} <b>Ω | {symbol} | {_safe(_stage_ar(stage), 80)} | {score:.0f}/100</b>",
         f"💵 <b>${price:,.2f}</b> | {arrow} <b>{move:+.1f}%</b> | أولوية <b>{_safe(_priority_ar(score), 40)}</b>",
-        f"🧨 <b>السبب:</b> {_safe(cause_status, 220)}",
+        f"🧬 <b>نمط الانفجار:</b> {_safe(explosion_label, 180)}"
+        + (f" • <b>{explosion_score:.0f}/100</b>" if explosion_score > 0 else ""),
+        f"🧨 <b>المحفز الرسمي:</b> {_safe(cause_status, 220)}",
     ]
     if cause_headline:
         lines.append(f"📰 {_safe(cause_headline, 320)}")
+    if drivers:
+        lines.append(f"🧩 <b>العوامل:</b> {_safe(' | '.join(drivers[:3]), 320)}")
     if amplifiers:
-        lines.append(f"⚡ <b>دعم:</b> {_safe(' | '.join(amplifiers[:2]), 240)}")
+        lines.append(f"⚡ <b>دعم السوق:</b> {_safe(' | '.join(amplifiers[:3]), 300)}")
+    if memory:
+        lines.append(
+            "📡 <b>التسارع:</b> "
+            f"{_number(memory.get('acceleration')):.0f}/100"
+            f" | مبكر {_number(memory.get('earlyness')):.0f}/100"
+            f" | شذوذ {_number(memory.get('anomaly')):.0f}/100"
+        )
+    if _number(manipulation.get("score")) >= 25:
+        lines.append(
+            f"🛡 <b>مخاطر Microcap/ضخ بحثية:</b> "
+            f"{_safe(manipulation.get('label_ar') or 'متوسط', 40)} "
+            f"{_number(manipulation.get('score')):.0f}/100"
+            " — علم خطر فقط، وليس اتهامًا بوجود تلاعب."
+        )
     if halts:
         event = halts[0]
         lines.append(f"⏸ {_safe(event.get('reason'), 80)} | {_safe(event.get('note_ar'), 180)}")
 
     if "غير مثبت" in cause_status or "NO_PRIMARY" in str(cause.get("status") or ""):
-        risk = "السبب الرسمي غير مثبت؛ راقب استمرار السعر والحجم."
+        risk = "السبب الرسمي غير مثبت؛ استمرار السعر والحجم مطلوب قبل ترقية الثقة."
     elif stage == "EXTENDED":
         risk = "الحركة ممتدة؛ المطاردة أعلى مخاطرة."
+    elif alert_stage == "WATCH":
+        risk = "مراقبة مبكرة فقط؛ تنتقل إلى CONFIRMED إذا ظهر اشتعال/تأكيد أقوى."
     else:
-        risk = "تضعف الفكرة إذا اختفى الحجم أو انعكس السعر."
+        risk = "تضعف الفكرة إذا اختفى الحجم أو انكسرت بنية الحركة."
     lines.extend(
         [
-            f"⚠️ {_safe(risk, 220)}",
+            f"⚠️ {_safe(risk, 260)}",
+            f"<b>الحالة: {alert_stage}</b>",
             "<i>درجة الرادار ترتيب وليست نسبة نجاح؛ مسار الأسهم مستقل عن الأوبشن.</i>",
         ]
     )
@@ -172,27 +206,66 @@ def _record(fp: str, text: str, result: Any, **extra: Any) -> dict[str, Any]:
 
 
 def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
-    minimum = _number(os.getenv("STOCK_ALERT_MIN_SCORE", "72"), 72.0)
-    maximum = max(1, min(5, int(_number(os.getenv("STOCK_ALERT_MAX", "3"), 3))))
+    confirmed_minimum = _number(os.getenv("STOCK_ALERT_MIN_SCORE", "72"), 72.0)
+    watch_minimum = _number(os.getenv("STOCK_WATCH_MIN_SCORE", "62"), 62.0)
+    configured_maximum = int(_number(os.getenv("STOCK_ALERT_MAX", "0"), 0))
     rows = [row for row in payload.get("stocks", []) if isinstance(row, dict)]
-    rows.sort(key=lambda row: _number(row.get("score")), reverse=True)
+    rows.sort(
+        key=lambda row: (
+            1 if str(row.get("alert_stage") or "").upper() == "CONFIRMED" else 0,
+            _number(row.get("score")),
+            _number((row.get("explosion_cause") or {}).get("primary_score")),
+        ),
+        reverse=True,
+    )
     sent_map = state.setdefault("sent", {})
     sent = 0
     for row in rows:
-        if sent >= maximum:
+        if configured_maximum > 0 and sent >= configured_maximum:
             break
         score = _number(row.get("score"))
         stage = str(row.get("stage") or "WATCH").upper()
-        if score < minimum or stage == "WATCH":
+        alert_stage = str(
+            row.get("alert_stage")
+            or ("WATCH" if stage == "PRESSURE_BUILDING" else "CONFIRMED" if stage in {"IGNITION", "EXPLOSION"} else "NONE")
+        ).upper()
+        if alert_stage == "WATCH":
+            if score < watch_minimum:
+                continue
+        elif alert_stage == "CONFIRMED":
+            if score < confirmed_minimum:
+                continue
+        else:
             continue
         symbol = str(row.get("symbol") or "").upper()
         cause = row.get("cause") if isinstance(row.get("cause"), dict) else {}
-        fp = _fingerprint([symbol, stage, round(score / 4) * 4, cause.get("status"), cause.get("headline")])
+        explosion = row.get("explosion_cause") if isinstance(row.get("explosion_cause"), dict) else {}
+        manipulation = row.get("manipulation_risk") if isinstance(row.get("manipulation_risk"), dict) else {}
+        fp = _fingerprint(
+            [
+                symbol,
+                stage,
+                alert_stage,
+                round(score / 4) * 4,
+                cause.get("status"),
+                cause.get("headline"),
+                explosion.get("primary"),
+                manipulation.get("label"),
+            ]
+        )
         if _stored_fingerprint(sent_map.get(symbol)) == fp:
             continue
         text = _stock_message(row)
         result = _send(text)
-        sent_map[symbol] = _record(fp, text, result, symbol=symbol, kind="stocks", stage=stage)
+        sent_map[symbol] = _record(
+            fp,
+            text,
+            result,
+            symbol=symbol,
+            kind="stocks",
+            stage=stage,
+            alert_stage=alert_stage,
+        )
         sent += 1
     state["last_run_at"] = datetime.now(timezone.utc).isoformat()
     state["last_sent_count"] = sent
