@@ -445,8 +445,12 @@ def reconcile_stock_bars(
             item["score"] -= 0.05
     candidates.sort(key=lambda item: (item["score"], item["rows"]), reverse=True)
     chosen = candidates[0]
+    families = list(dict.fromkeys(_provider_family(item["provider"]) for item in candidates))
     audit = {
         "source_count": len(candidates),
+        "transport_source_count": len(candidates),
+        "independent_source_count": len(families),
+        "source_families": families,
         "sources": [item["provider"] for item in candidates],
         "selected_source": chosen["provider"],
         "latest_close": chosen["close"],
