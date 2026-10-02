@@ -63,3 +63,18 @@ def test_free_gex_validation_is_shadow_tolerant_and_publishes_to_bot_state() -> 
 def test_spx_ui_prefers_durable_free_gex_validation() -> None:
     source = Path("public/spx/spx.js").read_text(encoding="utf-8")
     assert "DURABLE+'free_gex_validation.json'" in source
+
+
+def test_general_runtime_vault_does_not_own_dedicated_runtime_feeds() -> None:
+    source = Path("scripts/runtime_state_vault.py").read_text(encoding="utf-8")
+    assert '"public/data/spx_dashboard.json"' not in source
+    assert '"public/data/free_data_health.json"' not in source
+    assert '"public/data/free_gex_validation.json"' not in source
+    assert '"public/data/free_gex_validation_history.json"' not in source
+
+
+def test_omega_runtime_publish_rebuilds_from_latest_bot_state_on_contention() -> None:
+    workflow = Path(".github/workflows/options-radar.yml").read_text(encoding="utf-8")
+    assert "git -C .bot-state reset --hard origin/bot-state" in workflow
+    assert "for attempt in 1 2 3 4" in workflow
+    assert "pull --rebase origin bot-state" not in workflow
