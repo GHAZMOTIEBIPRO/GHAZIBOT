@@ -30,6 +30,11 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
 
       - uses: actions/setup-python@v5
         with:
@@ -78,8 +83,11 @@ jobs:
           assert payload["policy"] == "shadow_validation_never_signal_authority"
           assert payload["decision"] == "SHADOW_ONLY"
           assert "integrated_engines" in payload
-          assert payload["integrated_engines"]["ghazi_gex_multi"]["available"] is True
+          engine = payload["integrated_engines"]["ghazi_gex_multi"]
+          assert isinstance(engine.get("available"), bool)
           assert payload["integrated_engines"]["integration_mode"] == "original_reimplementation_shadow_only"
+          if engine["available"] is not True:
+              print("GEX external/free input unavailable; staying SHADOW_ONLY without failing the workflow.")
           assert int(payload["reliability_policy_ar"]["minimum_samples"]) >= 100
           assert payload["reliability_policy_ar"]["walk_forward_required"] is True
           assert float(payload["reliability_policy_ar"]["max_source_weight_before_validation"]) == 0.0
@@ -91,19 +99,29 @@ jobs:
           print("Arabic catalog + conservative GEX validation gate passed.")
           PY
 
-      - name: Publish validation data
+      - name: Publish validation data to durable bot-state
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/free_gex_validation.json public/data/free_gex_validation_history.json
-          git diff --cached --quiet || git commit -m "chore: publish free GEX validation snapshot"
+          set -euo pipefail
+          mkdir -p state/runtime/public/data
+          cp public/data/free_gex_validation.json state/runtime/public/data/free_gex_validation.json
+          cp public/data/free_gex_validation_history.json state/runtime/public/data/free_gex_validation_history.json
+          cd state
+          git config user.name "BLACK BOX Omega GEX State"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/free_gex_validation.json runtime/public/data/free_gex_validation_history.json
+          if git diff --cached --quiet; then
+            echo "Free GEX runtime state unchanged."
+            exit 0
+          fi
+          git commit -m "state: refresh free GEX validation [skip ci]"
           for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 2
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
           done
-          echo "Validation publish failed after 3 synchronized push attempts."
+          echo "Free GEX bot-state publish failed after retries."
           exit 1
 
       - name: Upload validation artifact
