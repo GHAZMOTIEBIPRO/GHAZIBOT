@@ -46,3 +46,10 @@ Barchart, Market Chameleon, Unusual Whales, Cboe, and social-network pages may b
 - OCC aggregate volume is `market_context`, not `options_quote` or `options_flow`.
 - Yahoo/YFinance remains fallback-only and cannot create Tier A.
 - Tier A options require a licensed/primary quote and independent flow evidence.
+
+
+## Open-source fallback and validation additions
+
+- **Yahooquery (MIT):** alternate transport to Yahoo's unofficial data family. It may improve resilience when yfinance transport fails, but it is explicitly the same `yahoo` evidence family and never increases independent-source quorum.
+- **py_vollib / py_vollib_vectorized (MIT):** weekly/manual shadow validation of modeled Black-Scholes Greeks. Validation evidence has no live decision authority.
+- **CFTC Traders in Financial Futures:** official weekly macro-positioning context from the CFTC Public Reporting Environment. It is `context_only` and cannot create CALL/PUT direction by itself.
