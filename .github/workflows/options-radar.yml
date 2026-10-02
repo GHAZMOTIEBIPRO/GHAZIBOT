@@ -240,27 +240,31 @@ jobs:
             git worktree add .bot-state bot-state-runtime
           fi
 
-          python -m scripts.runtime_state_vault publish --repo-root . --vault-root .bot-state/runtime
           git -C .bot-state config user.name "BLACK BOX Omega Runtime Vault"
           git -C .bot-state config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git -C .bot-state add runtime
 
-          if git -C .bot-state diff --cached --quiet; then
-            echo "Runtime state unchanged."
-            exit 0
-          fi
+          for attempt in 1 2 3 4; do
+            # Always rebuild the runtime commit from the newest remote bot-state.
+            # This avoids replaying a stale commit when another runtime workflow
+            # publishes between our scan and our push.
+            git -C .bot-state fetch origin bot-state
+            git -C .bot-state reset --hard origin/bot-state
+            python -m scripts.runtime_state_vault publish --repo-root . --vault-root .bot-state/runtime
+            git -C .bot-state add runtime
 
-          git -C .bot-state commit -m "state: refresh GHAZIBOT runtime research [skip ci]"
-          for attempt in 1 2 3; do
-            if git -C .bot-state pull --rebase origin bot-state \
-              && git -C .bot-state push origin HEAD:bot-state; then
+            if git -C .bot-state diff --cached --quiet; then
+              echo "Runtime state unchanged after refresh."
+              exit 0
+            fi
+
+            git -C .bot-state commit -m "state: refresh GHAZIBOT runtime research [skip ci]"
+            if git -C .bot-state push origin HEAD:bot-state; then
               echo "Runtime state persisted on attempt $attempt."
               exit 0
             fi
-            git -C .bot-state rebase --abort >/dev/null 2>&1 || true
             sleep "$attempt"
           done
-          echo "Failed to persist runtime state after retries."
+          echo "Failed to persist runtime state after fresh-state retries."
           exit 1
 
       - name: Upload result files
