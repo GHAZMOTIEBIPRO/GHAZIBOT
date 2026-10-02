@@ -56,8 +56,15 @@ def stock_failure_flags(row: dict[str, Any]) -> list[str]:
     stage = str(row.get("entry_stage") or row.get("stage") or "").upper()
     score = _number(row.get("entry_score", row.get("score")))
     regime = str(row.get("market_regime") or "").lower()
-    evidence = str(row.get("entry_evidence_state") or "").upper()
-    cause_tier = str(row.get("cause_tier") or "").upper()
+    cause = row.get("cause") if isinstance(row.get("cause"), dict) else {}
+    evidence = str(
+        row.get("entry_evidence_state")
+        or row.get("entry_cause_status")
+        or cause.get("status")
+        or ""
+    ).upper()
+    cause_tier = str(row.get("cause_tier") or cause.get("source_tier") or "").upper()
+    official_cause = bool(row.get("official_cause") or cause.get("official_confirmed"))
 
     if stage in {"WATCH", "PRESSURE_BUILDING"}:
         flags.append("EARLY_UNCONFIRMED_STAGE")
@@ -67,7 +74,7 @@ def stock_failure_flags(row: dict[str, Any]) -> list[str]:
         flags.append("LOW_ENTRY_SCORE")
     if not regime or regime == "unknown":
         flags.append("UNKNOWN_REGIME")
-    if (
+    if not official_cause and (
         "NO_PRIMARY" in evidence
         or evidence in {"LEGACY_UNKNOWN", "UNKNOWN", ""}
         or cause_tier in {"", "UNKNOWN", "NONE"}
