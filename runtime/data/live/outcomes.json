@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "updated_at": "2026-10-02T22:49:18.410723+00:00",
+  "updated_at": "2026-10-02T23:28:01.032545+00:00",
   "signals": {
     "33b97ddd23bfcdd2edf2": {
       "contract_symbol": "BAC260918C00062500",
@@ -32718,7 +32718,7 @@
       "underlying_target_1": 19.3238,
       "underlying_target_2": 20.493,
       "underlying_invalidation": 15.5462,
-      "observations": 16,
+      "observations": 17,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-01T01:30:37.315187+00:00",
@@ -32740,15 +32740,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.928257+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:23.828835+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 181,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 84,
+              "elapsed_ms": 112,
               "rows": 180,
               "status_code": null,
               "error": null
@@ -32758,16 +32767,24 @@
             "symbol": "SMMT",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 16.7549991607666,
               "yahoo": 16.760000228881836
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0149,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -32787,13 +32804,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:32.017814+03:00",
+        "fetched_at": "2026-10-03T02:28:17.819280+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 487,
+            "elapsed_ms": 499,
             "rows": 151,
             "status_code": null,
             "error": null
@@ -32831,7 +32848,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 1.725,
       "max_observed": 2.175,
       "min_observed": 1.65,
@@ -32850,7 +32867,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 179,
+      "bars_evaluated": 180,
       "outcome_basis": "underlying_proxy"
     },
     "fd3ca134ed103c763e00": {
@@ -32864,7 +32881,7 @@
       "underlying_target_1": 785.2346,
       "underlying_target_2": 812.3078,
       "underlying_invalidation": 692.6553,
-      "observations": 16,
+      "observations": 17,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-01T01:30:37.315187+00:00",
@@ -32886,15 +32903,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:33.017893+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:24.447850+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 181,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 81,
+              "elapsed_ms": 115,
               "rows": 180,
               "status_code": null,
               "error": null
@@ -32904,16 +32930,24 @@
             "symbol": "META",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 728.0800170898438,
               "yahoo": 728.0700073242188
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0007,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -32933,13 +32967,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:31.164238+03:00",
+        "fetched_at": "2026-10-03T02:28:16.827864+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 960,
+            "elapsed_ms": 1044,
             "rows": 1176,
             "status_code": null,
             "error": null
@@ -32977,7 +33011,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 14.65,
       "max_observed": 20.425,
       "min_observed": 14.45,
@@ -32996,7 +33030,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 179,
+      "bars_evaluated": 180,
       "outcome_basis": "underlying_proxy"
     },
     "0d845fd35067d59d22cb": {
@@ -33010,7 +33044,7 @@
       "underlying_target_1": 785.3821,
       "underlying_target_2": 813.1924,
       "underlying_invalidation": 697.0745,
-      "observations": 13,
+      "observations": 14,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-01T02:30:27.534113+00:00",
@@ -33032,15 +33066,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.836410+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:23.199579+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 157,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 86,
+              "elapsed_ms": 114,
               "rows": 156,
               "status_code": null,
               "error": null
@@ -33050,16 +33093,24 @@
             "symbol": "META",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 728.0800170898438,
               "yahoo": 728.0700073242188
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0007,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -33079,13 +33130,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:31.164238+03:00",
+        "fetched_at": "2026-10-03T02:28:16.827864+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 960,
+            "elapsed_ms": 1044,
             "rows": 1176,
             "status_code": null,
             "error": null
@@ -33123,7 +33174,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 14.65,
       "max_observed": 17.45,
       "min_observed": 14.45,
@@ -33142,7 +33193,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 156,
+      "bars_evaluated": 157,
       "outcome_basis": "underlying_proxy"
     },
     "fc7c64dd9666645362fe": {
@@ -33156,7 +33207,7 @@
       "underlying_target_1": 32.1525,
       "underlying_target_2": 30.72,
       "underlying_invalidation": 35.304,
-      "observations": 8,
+      "observations": 9,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-02T19:30:30.509041+00:00",
@@ -33173,15 +33224,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.487503+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:20.804742+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 26,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 72,
+              "elapsed_ms": 114,
               "rows": 25,
               "status_code": null,
               "error": null
@@ -33191,16 +33251,24 @@
             "symbol": "NKE",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 33.869998931884766,
               "yahoo": 33.8849983215332
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0221,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -33220,13 +33288,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:24.614031+03:00",
+        "fetched_at": "2026-10-03T02:28:08.607353+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 550,
+            "elapsed_ms": 601,
             "rows": 265,
             "status_code": null,
             "error": null
@@ -33264,7 +33332,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 0.825,
       "max_observed": 0.995,
       "min_observed": 0.825,
@@ -33283,7 +33351,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 24,
+      "bars_evaluated": 25,
       "outcome_basis": "underlying_proxy"
     },
     "14131fcaf7995c3f75a6": {
@@ -33297,7 +33365,7 @@
       "underlying_target_1": 32.1525,
       "underlying_target_2": 30.72,
       "underlying_invalidation": 35.304,
-      "observations": 8,
+      "observations": 9,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-02T19:30:30.509041+00:00",
@@ -33314,15 +33382,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.579676+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:21.399864+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 26,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 87,
+              "elapsed_ms": 111,
               "rows": 25,
               "status_code": null,
               "error": null
@@ -33332,16 +33409,24 @@
             "symbol": "NKE",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 33.869998931884766,
               "yahoo": 33.8849983215332
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0221,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -33361,13 +33446,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:24.614031+03:00",
+        "fetched_at": "2026-10-03T02:28:08.607353+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 550,
+            "elapsed_ms": 601,
             "rows": 265,
             "status_code": null,
             "error": null
@@ -33405,7 +33490,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 0.65,
       "max_observed": 0.9,
       "min_observed": 0.65,
@@ -33424,7 +33509,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 24,
+      "bars_evaluated": 25,
       "outcome_basis": "underlying_proxy"
     },
     "cd667184d35b6fbdc440": {
@@ -33438,7 +33523,7 @@
       "underlying_target_1": 662.15,
       "underlying_target_2": 692.4099,
       "underlying_invalidation": 595.5781,
-      "observations": 8,
+      "observations": 9,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-02T19:30:30.509041+00:00",
@@ -33455,15 +33540,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.665993+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:21.974581+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 26,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 81,
+              "elapsed_ms": 110,
               "rows": 25,
               "status_code": null,
               "error": null
@@ -33473,16 +33567,24 @@
             "symbol": "AMD",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 633.9099731445312,
               "yahoo": 633.75
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0126,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -33502,13 +33604,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:27.775837+03:00",
+        "fetched_at": "2026-10-03T02:28:12.495499+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 967,
+            "elapsed_ms": 979,
             "rows": 1071,
             "status_code": null,
             "error": null
@@ -33546,7 +33648,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 20.35,
       "max_observed": 20.35,
       "min_observed": 18.65,
@@ -33565,7 +33667,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 24,
+      "bars_evaluated": 25,
       "outcome_basis": "underlying_proxy"
     },
     "09dca87ffe0fb5d96866": {
@@ -33579,7 +33681,7 @@
       "underlying_target_1": 662.15,
       "underlying_target_2": 692.4099,
       "underlying_invalidation": 595.5781,
-      "observations": 8,
+      "observations": 9,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-02T19:30:30.509041+00:00",
@@ -33596,15 +33698,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.745923+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:22.586882+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 26,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 75,
+              "elapsed_ms": 122,
               "rows": 25,
               "status_code": null,
               "error": null
@@ -33614,16 +33725,24 @@
             "symbol": "AMD",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 633.9099731445312,
               "yahoo": 633.75
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0126,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -33643,13 +33762,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:27.775837+03:00",
+        "fetched_at": "2026-10-03T02:28:12.495499+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 967,
+            "elapsed_ms": 979,
             "rows": 1071,
             "status_code": null,
             "error": null
@@ -33687,7 +33806,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 23.575,
       "max_observed": 23.575,
       "min_observed": 21.5,
@@ -33706,7 +33825,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 24,
+      "bars_evaluated": 25,
       "outcome_basis": "underlying_proxy"
     },
     "dd2d33514b03a2bc73bc": {
@@ -33720,7 +33839,7 @@
       "underlying_target_1": 64.6122,
       "underlying_target_2": 62.1393,
       "underlying_invalidation": 70.0524,
-      "observations": 7,
+      "observations": 8,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-02T19:30:30.509041+00:00",
@@ -33737,15 +33856,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.411006+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:20.143991+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 24,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 84,
+              "elapsed_ms": 111,
               "rows": 23,
               "status_code": null,
               "error": null
@@ -33755,16 +33883,24 @@
             "symbol": "NFLX",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 67.05999755859375,
               "yahoo": 67.07499694824219
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0112,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -33784,13 +33920,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:23.506146+03:00",
+        "fetched_at": "2026-10-03T02:28:07.256483+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 610,
+            "elapsed_ms": 622,
             "rows": 379,
             "status_code": null,
             "error": null
@@ -33828,7 +33964,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 2.72,
       "max_observed": 2.825,
       "min_observed": 2.685,
@@ -33847,7 +33983,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 22,
+      "bars_evaluated": 23,
       "outcome_basis": "underlying_proxy"
     },
     "7f1d7d6b05607ef36bc8": {
@@ -33861,7 +33997,7 @@
       "underlying_target_1": 251.885,
       "underlying_target_2": 232.32,
       "underlying_invalidation": 294.928,
-      "observations": 5,
+      "observations": 6,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-02T21:58:32.118764+00:00",
@@ -33878,15 +34014,24 @@
       "path_audit": {
         "option_contract": null,
         "underlying_proxy": {
-          "source": "yahoo",
-          "freshness": "multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
-          "fetched_at": "2026-10-03T01:49:32.322361+03:00",
+          "source": "yahooquery",
+          "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+          "fetched_at": "2026-10-03T02:28:19.545267+03:00",
           "attempts": [
+            {
+              "provider": "yahooquery",
+              "operation": "stock_bars",
+              "success": true,
+              "elapsed_ms": 0,
+              "rows": 7,
+              "status_code": null,
+              "error": null
+            },
             {
               "provider": "yahoo",
               "operation": "stock_bars",
               "success": true,
-              "elapsed_ms": 96,
+              "elapsed_ms": 113,
               "rows": 6,
               "status_code": null,
               "error": null
@@ -33896,16 +34041,24 @@
             "symbol": "APP",
             "interval": "5m",
             "successful_sources": [
+              "yahooquery",
               "yahoo"
             ],
-            "source_count": 1,
+            "source_count": 2,
+            "transport_source_count": 2,
+            "independent_source_count": 1,
+            "source_families": [
+              "yahoo"
+            ],
             "latest_close_by_source": {
+              "yahooquery": 268.2200012207031,
               "yahoo": 267.989990234375
             },
-            "latest_close_dispersion_pct": null,
+            "latest_close_dispersion_pct": 0.0429,
             "cross_source_confirmed": false,
             "provider_preflight": {
               "configured_providers": [
+                "yahooquery",
                 "yahoo"
               ],
               "skipped_unconfigured": [
@@ -33925,13 +34078,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:22.112977+03:00",
+        "fetched_at": "2026-10-03T02:28:05.571228+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 645,
+            "elapsed_ms": 687,
             "rows": 469,
             "status_code": null,
             "error": null
@@ -33969,7 +34122,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 8.8,
       "max_observed": 8.8,
       "min_observed": 7.7,
@@ -33988,7 +34141,7 @@
       "outcome_order": "open",
       "terminal_reason": "no_decisive_level_reached",
       "terminal_at": null,
-      "bars_evaluated": 5,
+      "bars_evaluated": 6,
       "outcome_basis": "underlying_proxy"
     },
     "738572003cc3c3953929": {
@@ -34002,10 +34155,15 @@
       "underlying_target_1": 167.5001,
       "underlying_target_2": 176.0401,
       "underlying_invalidation": 148.7119,
-      "observations": 3,
+      "observations": 4,
       "checkpoints": {
         "30m": {
           "observed_at": "2026-10-02T22:49:18.410723+00:00",
+          "price": 5.975,
+          "return_pct": -0.1003
+        },
+        "60m": {
+          "observed_at": "2026-10-02T23:28:01.032545+00:00",
           "price": 5.975,
           "return_pct": -0.1003
         }
@@ -34018,13 +34176,13 @@
       "quote_audit": {
         "source": "yahoo",
         "freshness": "unofficial / may be delayed",
-        "fetched_at": "2026-10-03T01:49:20.458971+03:00",
+        "fetched_at": "2026-10-03T02:28:03.574652+03:00",
         "attempts": [
           {
             "provider": "yahoo",
             "operation": "option_chain",
             "success": true,
-            "elapsed_ms": 753,
+            "elapsed_ms": 802,
             "rows": 596,
             "status_code": null,
             "error": null
@@ -34062,7 +34220,7 @@
           }
         }
       },
-      "last_updated": "2026-10-02T22:49:18.410723+00:00",
+      "last_updated": "2026-10-02T23:28:01.032545+00:00",
       "last_observed": 5.975,
       "max_observed": 5.975,
       "min_observed": 5.975,
