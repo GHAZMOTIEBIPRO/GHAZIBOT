@@ -307,6 +307,7 @@ class IndependentOptionableUniverse:
         *,
         max_symbols: int = 80,
         include_cboe_attention: bool = True,
+        configured_priority: bool = False,
         priority_symbols: Iterable[Any] = (
             "SPX",
             "SPY",
@@ -336,25 +337,45 @@ class IndependentOptionableUniverse:
                 errors["cboe:most_active"] = cboe_error
 
         if official_set:
-            # With OCC verification available, options-native activity gets first
-            # priority, followed by the liquid core and configured research list.
-            ordered = _unique([*attention, *priority, *configured])
+            # Normal radar remains options-native first. A dedicated same-cycle
+            # cross-check may explicitly prioritize configured discovery seeds,
+            # but OCC optionability remains mandatory when available.
+            ordered = (
+                _unique([*configured, *attention, *priority])
+                if configured_priority
+                else _unique([*attention, *priority, *configured])
+            )
             selected = [symbol for symbol in ordered if symbol in official_set]
             official_verified = True
-            source = "OCC DLP + Cboe options attention + configured options universe"
+            source = (
+                "OCC DLP + configured discovery seeds + Cboe options attention"
+                if configured_priority
+                else "OCC DLP + Cboe options attention + configured options universe"
+            )
         else:
-            # Without current/cached OCC proof, do not let a hard-coded priority
-            # list silently displace the configured research universe. Preserve
-            # live options attention first, then configured symbols, then the
-            # liquid core as a continuity fallback — all explicitly unverified.
-            selected = _unique([*attention, *configured, *priority])
+            # Without current/cached OCC proof, dynamic discovery seeds may lead
+            # a research-only cross-check, but every contract still faces normal
+            # quote/liquidity/data-quality gates.
+            selected = (
+                _unique([*configured, *attention, *priority])
+                if configured_priority
+                else _unique([*attention, *configured, *priority])
+            )
             official_verified = False
-            source = "configured/Cboe fallback; OCC verification unavailable"
+            source = (
+                "configured discovery seeds/Cboe fallback; OCC verification unavailable"
+                if configured_priority
+                else "configured/Cboe fallback; OCC verification unavailable"
+            )
 
         limitations = [
             "Cboe Most Active is a partial-exchange attention source, not whole-market OPRA flow.",
             "Optionability does not imply liquidity; contract-level bid/ask, volume, OI and freshness guards still apply.",
-            "The universe is independent from StockRadar and may contain symbols absent from the stock path.",
+            (
+                "Configured symbols are discovery seeds from Fast Explosion only; options results cannot promote or alter the stock signal."
+                if configured_priority
+                else "The universe is independent from StockRadar and may contain symbols absent from the stock path."
+            ),
         ]
         if not official_verified:
             limitations.append(
