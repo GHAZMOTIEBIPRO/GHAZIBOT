@@ -243,11 +243,13 @@ def test_notifier_workflows_do_not_upload_connection_every_run():
     assert "from scripts.telegram_transport import verify_bot" in keeper
 
 
-def test_latency_sensitive_crons_avoid_top_of_hour():
+def test_latency_sensitive_cadence_is_owned_by_offset_orchestrator():
     root = Path(__file__).resolve().parents[1]
+    orchestrator = (root / ".github" / "workflows" / "market-orchestrator.yml").read_text(encoding="utf-8")
     fast = (root / ".github" / "workflows" / "fast-explosion-radar.yml").read_text(encoding="utf-8")
     options = (root / ".github" / "workflows" / "options-contract-radar.yml").read_text(encoding="utf-8")
-    assert 'cron: "*/5 ' not in fast
-    assert 'cron: "*/15 ' not in options
-    assert 'cron: "2-57/5 13-21 * * 1-5"' in fast
-    assert 'cron: "3,18,33,48 13-21 * * 1-5"' in options
+    assert 'cron: "2-57/5 8-23 * * 1-5"' in orchestrator
+    assert "schedule:" not in fast
+    assert "schedule:" not in options
+    assert "dispatch_if_stale fast-explosion-radar.yml 8" in orchestrator
+    assert "dispatch_if_stale options-contract-radar.yml 18" in orchestrator
