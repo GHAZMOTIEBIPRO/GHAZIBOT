@@ -87,8 +87,21 @@ def _target_dte(catalyst: dict[str, Any], opportunity: dict[str, Any]) -> tuple[
     official = bool(catalyst.get("official_confirmed"))
     materiality = _number(catalyst.get("materiality"))
     reaction = str(catalyst.get("reaction_state") or "").upper()
+    target_horizon = opportunity.get("target_horizon") if isinstance(opportunity.get("target_horizon"), dict) else {}
+    primary_horizon = str(target_horizon.get("primary_horizon") or "").upper()
     horizon = str(opportunity.get("horizon") or opportunity.get("timeframe") or "").upper()
 
+    # Time-to-target is the primary expiry driver.  The canonical DTE sits near
+    # the safer edge of each preferred band so the contract has time to survive
+    # normal path noise without silently turning an intraday thesis into 0DTE.
+    horizon_dte = {
+        "INTRADAY_1D": (7.0, "أفق الهدف نفس الجلسة إلى جلسة؛ النطاق المفضل 3–7 أيام"),
+        "SHORT_1_3D": (10.0, "أفق الهدف 1–3 جلسات؛ النطاق المفضل 7–14 يومًا"),
+        "SWING_3_7D": (21.0, "أفق الهدف 3–7 جلسات؛ النطاق المفضل 14–30 يومًا"),
+        "POSITION_1_4W": (45.0, "أفق الهدف 1–4 أسابيع؛ النطاق المفضل 30–60 يومًا"),
+    }
+    if primary_horizon in horizon_dte:
+        return horizon_dte[primary_horizon]
     if "SWING" in horizon:
         return 30.0, "مدة أقرب إلى شهر لأن السيناريو Swing"
     if official and materiality >= 75 and reaction in {"NOT_YET_REPRICED", "REPRICING", "UNKNOWN"}:
@@ -110,6 +123,56 @@ def _dte_window(target: float, symbol: str) -> tuple[float, float]:
     if target <= 21:
         return 7.0, 45.0
     return 10.0, 70.0
+
+
+def _preferred_dte_band(opportunity: dict[str, Any], target: float, symbol: str) -> tuple[float, float]:
+    target_horizon = opportunity.get("target_horizon") if isinstance(opportunity.get("target_horizon"), dict) else {}
+    primary_horizon = str(target_horizon.get("primary_horizon") or "").upper()
+    bands = {
+        "INTRADAY_1D": (3.0, 7.0),
+        "SHORT_1_3D": (7.0, 14.0),
+        "SWING_3_7D": (14.0, 30.0),
+        "POSITION_1_4W": (30.0, 60.0),
+    }
+    if primary_horizon in bands:
+        low, high = bands[primary_horizon]
+        if symbol in _INDEX_ROOTS and primary_horizon == "INTRADAY_1D":
+            # Index products may legitimately use same-day expiries, but 0DTE is
+            # still treated as an exception rather than the default.
+            return 0.0, high
+        return low, high
+    return _dte_window(target, symbol)
+
+
+def _watch_decision(row: dict[str, Any]) -> dict[str, Any]:
+    """Research-stage gate: surface early opportunities without weakening V11."""
+    explosion = row.get("option_explosion") if isinstance(row.get("option_explosion"), dict) else {}
+    explosion_score = _number(explosion.get("score"))
+    strict = _number(row.get("strict_score"))
+    contract_rank = _number(row.get("contract_rank"))
+    spread = _number(row.get("spread_pct"), 1.0)
+    volume = _number(row.get("volume"))
+    oi = _number(row.get("open_interest"))
+    blockers: list[str] = []
+    if spread > 0.30:
+        blockers.append("watch_spread_above_30pct")
+    if volume < 10 and oi < 25:
+        blockers.append("watch_contract_too_thin")
+    if not str(row.get("contract_symbol") or "").strip():
+        blockers.append("watch_missing_contract_identity")
+
+    evidence_score = max(explosion_score, strict, contract_rank)
+    approved = not blockers and evidence_score >= 68.0
+    return {
+        "version": "OMEGA_WATCH_V1",
+        "approved": approved,
+        "stage": "WATCH" if approved else "NONE",
+        "evidence_score": round(evidence_score, 1),
+        "option_explosion_score": round(explosion_score, 1),
+        "blockers": blockers,
+        "production_claim": False,
+        "purpose_ar": "مراقبة مبكرة فقط؛ لا تخفف بوابة V11 ولا تعني دخولًا مؤكدًا",
+    }
 
 
 def _dte_score(dte: float, target: float, symbol: str) -> tuple[float, str, list[str]]:
@@ -257,7 +320,14 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             )
             if score >= 0:
                 ranked.append((score, row, detail))
-        ranked.sort(key=lambda item: item[0], reverse=True)
+        preferred_low, preferred_high = _preferred_dte_band(opportunity, target_dte, symbol)
+        ranked.sort(
+            key=lambda item: (
+                1 if preferred_low <= _number(item[1].get("dte"), -1.0) <= preferred_high else 0,
+                item[0],
+            ),
+            reverse=True,
+        )
         rejected_for_horizon[symbol] = max(0, eligible_side - len(ranked))
         if not ranked:
             continue
@@ -310,6 +380,18 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                     "strict_score": row.get("strict_score", row.get("score")),
                     "strict_blockers": row.get("strict_blockers") or [],
                     "flow_momentum_score": row.get("flow_momentum_score"),
+                    "side_consensus_score": row.get("side_consensus_score"),
+                    "repeat_flow_hits": row.get("repeat_flow_hits"),
+                    "flow_observation_count": row.get("flow_observation_count"),
+                    "flow_notional_velocity_per_min": row.get("flow_notional_velocity_per_min"),
+                    "verified_premium_velocity_per_min": row.get("verified_premium_velocity_per_min"),
+                    "verified_unusual_print_count": row.get("verified_unusual_print_count"),
+                    "strike_cluster_score": row.get("strike_cluster_score"),
+                    "iv_rank": row.get("iv_rank"),
+                    "iv_percentile": row.get("iv_percentile"),
+                    "iv_skew": row.get("iv_skew"),
+                    "term_structure_slope": row.get("term_structure_slope"),
+                    "expected_move_1sigma": row.get("expected_move_1sigma"),
                     "data_quality": row.get("data_quality"),
                     "gamma_context_alignment": row.get("gamma_context_alignment"),
                     "gamma_coverage_pct": row.get("gamma_coverage_pct"),
@@ -322,6 +404,17 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
         primary["option_explosion"] = score_option_explosion(primary)
         primary["v11_decision"] = evaluate_v11_signal(primary)
         primary["production_alert_eligible"] = bool(primary["v11_decision"]["approved"])
+        primary["watch_decision"] = _watch_decision(primary)
+        primary["watch_alert_eligible"] = bool(
+            not primary["production_alert_eligible"] and primary["watch_decision"]["approved"]
+        )
+        primary["alert_stage"] = (
+            "CONFIRMED"
+            if primary["production_alert_eligible"]
+            else "WATCH"
+            if primary["watch_alert_eligible"]
+            else "NONE"
+        )
 
         by_symbol[symbol] = {
             "symbol": symbol,
@@ -329,6 +422,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             "side_reason_ar": side_reason,
             "target_dte": target_dte,
             "allowed_dte_window": list(_dte_window(target_dte, symbol)),
+            "preferred_dte_band": list(_preferred_dte_band(opportunity, target_dte, symbol)),
             "catalyst_verification": catalyst.get("verification_state") or "NO_OFFICIAL_CAUSE",
             "catalyst_cause_status_ar": catalyst.get("cause_status_ar") or "السبب الأساسي غير مثبت رسميًا",
             "primary": choices[0],
@@ -338,7 +432,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
         }
 
     return {
-        "version": "2026.08-option-contract-rationale-v3",
+        "version": "2026.10-omega-v13-adaptive-horizon-watch-v1",
         "policy": {
             "side_requires_direction_alignment": True,
             "strike_not_selected_by_volume_alone": True,

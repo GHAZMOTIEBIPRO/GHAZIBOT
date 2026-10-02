@@ -152,3 +152,56 @@ def test_primary_contract_fails_closed_when_source_quorum_is_missing():
     primary = intel["by_symbol"]["TEST"]["primary"]
     assert primary["production_alert_eligible"] is False
     assert "v11_independent_source_quorum_not_met" in primary["v11_decision"]["blockers"]
+
+
+def test_target_horizon_controls_preferred_expiry_band():
+    payload = _payload("bullish")
+    payload["omega"]["opportunities"][0]["target_horizon"] = {
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "نفس الجلسة إلى جلسة",
+    }
+    payload["expiry_radar"]["tabs"]["all_expirations"]["calls"].append(
+        _contract("call", 7, 10.5, 82, delta=0.46, vol_oi=1.9)
+    )
+    intel = build_option_contract_intelligence(payload)
+    item = intel["by_symbol"]["TEST"]
+    assert item["target_dte"] == 7.0
+    assert item["preferred_dte_band"] == [3.0, 7.0]
+    assert item["primary"]["dte"] == 7
+    assert "3–7" in item["primary"]["expiry_reason_ar"]
+
+
+def test_position_horizon_prefers_30_to_60_dte_contract():
+    payload = _payload("bullish")
+    payload["omega"]["opportunities"][0]["target_horizon"] = {
+        "primary_horizon": "POSITION_1_4W",
+        "primary_time_ar": "1–4 أسابيع",
+    }
+    payload["expiry_radar"]["tabs"]["all_expirations"]["calls"].append(
+        _contract("call", 45, 10.5, 82, delta=0.46, vol_oi=1.9)
+    )
+    intel = build_option_contract_intelligence(payload)
+    item = intel["by_symbol"]["TEST"]
+    assert item["target_dte"] == 45.0
+    assert item["preferred_dte_band"] == [30.0, 60.0]
+    assert item["primary"]["dte"] == 45
+
+
+def test_watch_stage_surfaces_research_candidate_without_weakening_v11():
+    payload = _payload("bullish")
+    for row in payload["expiry_radar"]["tabs"]["all_expirations"]["calls"]:
+        row["fabric_independent_source_count"] = 1
+    intel = build_option_contract_intelligence(payload)
+    primary = intel["by_symbol"]["TEST"]["primary"]
+    assert primary["production_alert_eligible"] is False
+    assert primary["watch_alert_eligible"] is True
+    assert primary["alert_stage"] == "WATCH"
+    assert primary["watch_decision"]["production_claim"] is False
+
+
+def test_confirmed_stage_wins_over_watch_when_v11_approves():
+    intel = build_option_contract_intelligence(_payload("bullish"))
+    primary = intel["by_symbol"]["TEST"]["primary"]
+    assert primary["production_alert_eligible"] is True
+    assert primary["watch_alert_eligible"] is False
+    assert primary["alert_stage"] == "CONFIRMED"

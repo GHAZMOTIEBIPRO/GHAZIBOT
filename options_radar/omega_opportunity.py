@@ -4,6 +4,11 @@ import math
 from collections import defaultdict
 from typing import Any, Iterable
 
+from .explosion_cause import (
+    adaptive_dimension_weights,
+    classify_explosion_cause,
+    manipulation_risk,
+)
 from .omega_target_map import build_target_maps
 from .target_horizon import estimate_target_horizon
 
@@ -289,13 +294,19 @@ def build_omega_opportunities(
                 bool(option),
             ]
         )
+        explosion_cause = classify_explosion_cause(stock, cluster, dimensions)
+        dimension_weights = adaptive_dimension_weights(explosion_cause)
+        manipulation = manipulation_risk(stock, cluster, explosion_cause)
         base_rank = (
-            catalyst_score * 0.24
-            + participation * 0.21
-            + supply * 0.14
-            + price_structure * 0.25
-            + options_score * 0.16
+            catalyst_score * dimension_weights["catalyst"]
+            + participation * dimension_weights["participation"]
+            + supply * dimension_weights["supply_structure"]
+            + price_structure * dimension_weights["price_structure"]
+            + options_score * dimension_weights["options_structure"]
         )
+        # Manipulation risk is surfaced for decision support, not treated as
+        # proof of misconduct and not used as an automatic rejection. Existing
+        # structural/dilution/chasing blockers remain the hard risk controls.
         ranking = _bounded(base_rank - risk_penalty * 0.42)
         fresh = bool(not cluster or _number(cluster.get("age_days"), 0) <= 7)
         valid_setup = str(stock.get("setup_status") or "") not in {"too_late"} and not str(stock.get("rejection_reason") or "")
@@ -327,6 +338,9 @@ def build_omega_opportunities(
             "explosion_rank": round(ranking, 1),
             "ranking_score_label": "RANKING SCORE — NOT PROBABILITY",
             "dimensions": dimensions,
+            "dimension_weights": {key: round(value, 3) for key, value in dimension_weights.items()},
+            "explosion_cause": explosion_cause,
+            "manipulation_risk": manipulation,
             "day_decision": day_decision,
             "swing_decision": swing_decision,
             "catalyst": cluster,
@@ -339,7 +353,17 @@ def build_omega_opportunities(
             ),
             "tradable_contract": tradable,
             "why": list(dict.fromkeys(catalyst_reasons + participation_reasons + price_reasons + options_reasons))[:12],
-            "risks": list(dict.fromkeys(supply_reasons + risk_reasons))[:12],
+            "risks": list(
+                dict.fromkeys(
+                    supply_reasons
+                    + risk_reasons
+                    + (
+                        [f"Manipulation-risk research flag {manipulation['score']:.0f}/100 — {manipulation['label_ar']}"]
+                        if _number(manipulation.get("score")) >= 50
+                        else []
+                    )
+                )
+            )[:12],
             "no_trade_state": no_contract_state,
             "data_fresh": fresh,
             "available_dimensions": available,
@@ -374,6 +398,8 @@ def build_omega_opportunities(
                 "Price Structure",
                 "Options Structure",
                 "Risk Penalty",
+                "Explosion Cause Classification",
+                "Manipulation Risk (research flag, not accusation)",
             ],
         },
         "all_ranked": rows,
@@ -389,5 +415,13 @@ def build_omega_opportunities(
             "tier_b": sum(row["opportunity_tier"] == "B" for row in rows),
             "rejected": sum(row["opportunity_tier"] == "X" for row in rows),
             "no_good_option": sum(bool(row["no_trade_state"]) for row in rows),
+            "multi_factor_explosions": sum(
+                (row.get("explosion_cause") or {}).get("primary") == "MULTI_FACTOR_EXPLOSION"
+                for row in rows
+            ),
+            "high_manipulation_risk_flags": sum(
+                _number((row.get("manipulation_risk") or {}).get("score")) >= 50
+                for row in rows
+            ),
         },
     }

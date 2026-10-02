@@ -27,3 +27,24 @@ def test_runtime_state_migration_keeps_artifact_backup() -> None:
     assert "ghazibot-omega-results" in workflow
     assert "public/data/latest.json" in workflow
     assert "data/live/*.json" in workflow
+
+
+def test_spx_and_free_health_publish_runtime_to_bot_state_not_main() -> None:
+    spx = Path(".github/workflows/spx-dashboard.yml").read_text(encoding="utf-8")
+    health = Path(".github/workflows/free-data-health.yml").read_text(encoding="utf-8")
+    assert "HEAD:main" not in spx
+    assert "origin main" not in spx
+    assert "HEAD:main" not in health
+    assert "origin main" not in health
+    assert "origin bot-state" in spx
+    assert "origin bot-state" in health
+    assert "runtime/public/data/spx_dashboard.json" in spx
+    assert "runtime/public/data/free_data_health.json" in health
+
+
+def test_spx_ui_prefers_durable_runtime_state() -> None:
+    source = Path("public/spx/spx.js").read_text(encoding="utf-8")
+    durable = "GHAZIBOT/bot-state/runtime/public/data/"
+    assert durable in source
+    assert "spx_dashboard.json" in source
+    assert "free_data_health.json" in source

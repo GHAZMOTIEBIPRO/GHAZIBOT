@@ -1,0 +1,81 @@
+name: BLACK BOX Omega Cadence Watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 8-23 * * 1-5"
+
+concurrency:
+  group: black-box-omega-cadence-watchdog
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  recover-stale-radars:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: \${{ github.token }}
+
+    steps:
+      - name: Recover delayed scheduled radars
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          now_epoch="$(date -u +%s)"
+          utc_hour="$(date -u +%H)"
+          utc_hour=$((10#$utc_hour))
+
+          recover_if_stale() {
+            workflow="$1"
+            max_age_minutes="$2"
+
+            created_at="$(gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow "$workflow" \
+              --branch main \
+              --limit 1 \
+              --json createdAt \
+              --jq '.[0].createdAt // empty' 2>/dev/null || true)"
+
+            if [[ -z "$created_at" ]]; then
+              echo "$workflow has no visible run; dispatching recovery."
+              gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref main
+              return
+            fi
+
+            last_epoch="$(date -u -d "$created_at" +%s)"
+            age_minutes=$(( (now_epoch - last_epoch) / 60 ))
+            echo "$workflow age=\${age_minutes}m threshold=\${max_age_minutes}m"
+
+            if (( age_minutes > max_age_minutes )); then
+              echo "Cadence miss detected for $workflow; dispatching recovery."
+              gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref main
+            fi
+          }
+
+          # Extended-hours discovery. The child workflow has its own XNYS
+          # activity-window gate, so a holiday recovery request safely becomes a no-op.
+          if (( utc_hour >= 8 && utc_hour <= 23 )); then
+            recover_if_stale fast-explosion-radar.yml 12
+          fi
+
+          # Regular-session engines. Children retain their own market gates.
+          if (( utc_hour >= 13 && utc_hour <= 21 )); then
+            recover_if_stale classical-direction-radar.yml 22
+            recover_if_stale options-contract-radar.yml 22
+            recover_if_stale options-radar.yml 42
+          fi
+
+          # SPX deserves the tightest cadence during the core U.S. session.
+          if (( utc_hour >= 13 && utc_hour <= 20 )); then
+            recover_if_stale spx-dashboard.yml 12
+          fi
+
+      - name: Explain guarantee boundary
+        run: |
+          echo "The watchdog mitigates missed child cron events but GitHub-hosted scheduling itself is not a hard real-time guarantee."

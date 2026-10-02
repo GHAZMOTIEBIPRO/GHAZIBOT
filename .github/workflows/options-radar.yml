@@ -25,6 +25,7 @@ concurrency:
 permissions:
   contents: write
   issues: write
+  actions: read
 
 jobs:
   scan:
@@ -83,6 +84,10 @@ jobs:
       MAX_UNIVERSE_SIZE: "150"
       CALIBRATION_MINIMUM_SAMPLE: "100"
       OUTCOME_MAX_AGE_DAYS: "60"
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      OMEGA_WATCH_ALERT_MAX: ${{ secrets.OMEGA_WATCH_ALERT_MAX || '20' }}
+      OMEGA_WATCH_PAYLOAD_MAX_AGE_MINUTES: ${{ secrets.OMEGA_WATCH_PAYLOAD_MAX_AGE_MINUTES || '90' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -130,6 +135,39 @@ jobs:
 
       - name: Validate Omega export contract
         run: python scripts/validate_omega_export.py public/data/latest.json
+
+      - name: Restore centralized Telegram destination for Omega WATCH
+        if: github.event_name != 'push' && env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml options-radar.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination for Omega WATCH
+        if: github.event_name != 'push'
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Send Omega early WATCH alerts
+        if: github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_omega_watch_alerts
+          --payload public/data/latest.json
+          --state data/live/omega_watch_alert_state.json
 
       - name: Evaluate calibration review gate
         id: calibration_gate

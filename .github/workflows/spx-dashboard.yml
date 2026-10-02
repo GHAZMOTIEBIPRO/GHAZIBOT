@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 1}
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
       - uses: actions/setup-python@v5
         with: {python-version: "3.12", cache: pip}
       - run: pip install -r requirements.txt
@@ -27,6 +32,7 @@ jobs:
           from datetime import datetime, timezone
           from pathlib import Path
           from options_radar.spx_external_gamma import build_spx_external_context
+          from options_radar.spx_decision import build_spx_trade_map
           import pandas as pd
           out=Path("public/data/spx_dashboard.json")
           idx=yf.download("^GSPC",period="1d",interval="5m",progress=False,auto_adjust=False,prepost=False)
@@ -34,6 +40,9 @@ jobs:
           if isinstance(idx.columns,pd.MultiIndex): idx.columns=idx.columns.get_level_values(0)
           idx=idx.dropna(subset=["Close"])
           close=idx["Close"].astype(float); vol=idx.get("Volume",pd.Series(index=idx.index,dtype=float)).fillna(0).astype(float)
+          opening=idx.head(min(6,len(idx)))
+          opening_range_high=float(opening["High"].astype(float).max()) if "High" in opening and not opening.empty else None
+          opening_range_low=float(opening["Low"].astype(float).min()) if "Low" in opening and not opening.empty else None
           vwap=float((close*vol).sum()/vol.sum()) if vol.sum()>0 else float(close.iloc[-1])
           delta=close.diff(); gain=delta.clip(lower=0).rolling(14).mean(); loss=(-delta.clip(upper=0)).rolling(14).mean()
           rs=gain/loss.replace(0,float("nan")); raw_rsi=100-(100/(1+rs)); rsi=float(raw_rsi.iloc[-1]) if math.isfinite(float(raw_rsi.iloc[-1])) else 50.0
@@ -42,26 +51,34 @@ jobs:
           if getattr(bar_time, "tzinfo", None) is None: bar_time=bar_time.tz_localize("UTC")
           generated=datetime.now(timezone.utc)
           age_minutes=max(0,(generated-bar_time.to_pydatetime()).total_seconds()/60)
-          payload={"generated_at":generated.isoformat(),"spot":spot,"change_pct":(spot/prev-1)*100 if prev else None,"vwap":vwap,"rsi":rsi,"vix":None,"price_source":"yahoo/yfinance ^GSPC","gamma_source":g.get("source"),"zero_gamma_flip":g.get("zero_gamma_flip"),"call_wall":g.get("call_wall"),"put_wall":g.get("put_wall"),"net_gex_dollars":g.get("net_gex_dollars"),"gamma_regime":g.get("gamma_regime"),"age_minutes":age_minutes,"market_bar_time":bar_time.isoformat()}
+          payload={"generated_at":generated.isoformat(),"spot":spot,"change_pct":(spot/prev-1)*100 if prev else None,"vwap":vwap,"rsi":rsi,"vix":None,"price_source":"yahoo/yfinance ^GSPC","gamma_source":g.get("source"),"zero_gamma_flip":g.get("zero_gamma_flip"),"call_wall":g.get("call_wall"),"put_wall":g.get("put_wall"),"net_gex_dollars":g.get("net_gex_dollars"),"gamma_regime":g.get("gamma_regime"),"opening_range_high":opening_range_high,"opening_range_low":opening_range_low,"age_minutes":age_minutes,"market_bar_time":bar_time.isoformat()}
           v=yf.download("^VIX",period="1d",interval="5m",progress=False,auto_adjust=False,prepost=False)
           if not v.empty:
             if isinstance(v.columns,pd.MultiIndex): v.columns=v.columns.get_level_values(0)
             payload["vix"]=float(v["Close"].dropna().iloc[-1])
+          payload["trade_map"]=build_spx_trade_map(payload)
           out.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
-      - name: Commit snapshot
+      - name: Publish snapshot to durable bot-state
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/spx_dashboard.json
-          git diff --cached --quiet || git commit -m "chore: refresh SPX dashboard data"
+          set -euo pipefail
+          mkdir -p state/runtime/public/data
+          cp public/data/spx_dashboard.json state/runtime/public/data/spx_dashboard.json
+          cd state
+          git config user.name "BLACK BOX Omega SPX State"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/spx_dashboard.json
+          if git diff --cached --quiet; then
+            echo "SPX runtime snapshot unchanged."
+            exit 0
+          fi
+          git commit -m "state: refresh SPX dashboard [skip ci]"
           for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
               exit 0
             fi
-            sleep 2
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
           done
-          echo "SPX dashboard publish failed after 3 synchronized push attempts."
+          echo "SPX bot-state publish failed after 3 retries."
           exit 1

@@ -79,6 +79,9 @@ def test_explosion_radar_exposes_dimensions_and_never_probability():
     assert row["probability_of_profit"] is None
     assert "NOT PROBABILITY" in row["ranking_score_label"]
     assert row["best_expiry_family"] == "WEEKLY"
+    assert row["explosion_cause"]["causation_proven"] is False
+    assert abs(sum(row["dimension_weights"].values()) - 1.0) < 0.01
+    assert row["manipulation_risk"]["is_accusation"] is False
 
 
 def test_good_stock_with_bad_option_can_say_no_good_option():

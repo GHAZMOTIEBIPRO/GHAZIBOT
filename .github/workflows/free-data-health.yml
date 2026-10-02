@@ -25,21 +25,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - name: Check public sources without failing the pipeline
         run: python options_radar/free_data_health.py
-      - name: Publish health snapshot
+      - name: Publish health snapshot to durable bot-state
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/free_data_health.json
-          git diff --cached --quiet || git commit -m "chore: refresh free data health"
+          set -euo pipefail
+          mkdir -p state/runtime/public/data
+          cp public/data/free_data_health.json state/runtime/public/data/free_data_health.json
+          cd state
+          git config user.name "BLACK BOX Omega Free Data State"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/free_data_health.json
+          if git diff --cached --quiet; then
+            echo "Free-data health snapshot unchanged."
+            exit 0
+          fi
+          git commit -m "state: refresh free data health [skip ci]"
           for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 2
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
           done
-          echo "Health snapshot publish failed after synchronized retries."
+          echo "Free-data health bot-state publish failed after retries."
           exit 1
