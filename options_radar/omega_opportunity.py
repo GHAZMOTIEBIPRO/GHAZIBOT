@@ -10,6 +10,7 @@ from .explosion_cause import (
     manipulation_risk,
 )
 from .omega_target_map import build_target_maps
+from .similar_cases import find_similar_cases
 from .target_horizon import estimate_target_horizon
 
 
@@ -250,6 +251,7 @@ def build_omega_opportunities(
     payload: dict[str, Any],
     catalyst_intelligence: dict[str, Any],
     target_calibration: dict[str, Any] | None = None,
+    target_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     stocks = [row for row in payload.get("stocks", []) if isinstance(row, dict)]
     options = [
@@ -374,6 +376,7 @@ def build_omega_opportunities(
             "available_dimensions": available,
             "probability_of_profit": None,
         }
+        row["similar_cases"] = find_similar_cases(row, target_state)
         rows.append(row)
         if day_decision != "NO TRADE":
             day.append(row)
@@ -434,6 +437,10 @@ def build_omega_opportunities(
             ),
             "high_manipulation_risk_flags": sum(
                 _number((row.get("manipulation_risk") or {}).get("score")) >= 50
+                for row in rows
+            ),
+            "similar_cases_ready": sum(
+                (row.get("similar_cases") or {}).get("status") == "READY"
                 for row in rows
             ),
         },
