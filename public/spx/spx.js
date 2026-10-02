@@ -137,7 +137,7 @@ async function boot(){
       getJSON('../data/data-status.json'),
       getJSON('../data/options_latest.json').catch(()=>({})),
       getFirstJSON([DURABLE+'free_data_health.json','../data/free_data_health.json']).catch(()=>({overall:'degraded',sources:[]})),
-      getJSON('../data/free_gex_validation.json').catch(()=>({decision:'SHADOW_ONLY',agreement_score:0,reasons_ar:['لا توجد نتيجة تحقق منشورة حالياً.']}))
+      getFirstJSON([DURABLE+'free_gex_validation.json','../data/free_gex_validation.json']).catch(()=>({decision:'SHADOW_ONLY',agreement_score:0,reasons_ar:['لا توجد نتيجة تحقق منشورة حالياً.']}))
     ]);
     render(d,o);renderFreeHealth(h);renderValidation(v);renderAdvanced(v);renderTargets(d);
     const age=num(d.age_minutes), optionTime=o?.generated_at||o?.updated_at||'';
