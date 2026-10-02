@@ -78,7 +78,7 @@ class Settings:
     )
     intraday_provider_order: str = (
         os.getenv("INTRADAY_PRICE_PROVIDER_ORDER")
-        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
+        or "tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo"
     )
 
     sec_user_agent: str = (
