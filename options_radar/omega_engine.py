@@ -7,7 +7,7 @@ from typing import Any
 from .official_catalyst_intelligence import build_catalyst_intelligence
 from .omega_observability import apply_observability
 from .omega_target_learning import load_target_calibration
-from .omega_target_learning import _load as load_target_state
+from .omega_target_learning import load_target_state
 from .omega_opportunity import build_omega_opportunities
 from .omega_validation import build_validation_status
 
