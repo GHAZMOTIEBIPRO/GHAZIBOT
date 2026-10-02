@@ -1,0 +1,44 @@
+name: BLACK BOX Open Source Model Validation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 9 * * 0"
+
+concurrency:
+  group: black-box-open-source-model-validation
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-research.txt
+
+      - name: Install open-source research validators
+        run: pip install -r requirements-research.txt
+
+      - name: Validate modeled Greeks against MIT reference libraries
+        run: python scripts/validate_open_source_greeks.py
+
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-source-model-validation
+          path: public/data/open_source_greeks_validation.json
+          if-no-files-found: error
+          retention-days: 14
