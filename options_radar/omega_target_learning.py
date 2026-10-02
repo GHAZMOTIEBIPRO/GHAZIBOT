@@ -619,3 +619,7 @@ class OmegaTargetLearning:
 
 def load_target_calibration(path: str | Path) -> dict[str, Any]:
     return _load(path, {})
+
+
+def load_target_state(path: str | Path) -> dict[str, Any]:
+    return _load(path, {})
