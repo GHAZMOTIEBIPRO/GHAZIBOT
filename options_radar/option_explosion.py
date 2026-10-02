@@ -181,7 +181,7 @@ def score_option_explosion(row: dict[str, Any]) -> dict[str, Any]:
         time_ar = "أسبوعان إلى 6 أسابيع"
 
     max_spread = {
-        "PREMIUM_EXPLOSION": 0.22,
+        "PREMIUM_EXPLOSION": 0.20,
         "SWING": 0.14,
         "EVENT": 0.18,
     }[profile]
