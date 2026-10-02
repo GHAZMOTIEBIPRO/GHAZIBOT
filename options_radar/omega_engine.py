@@ -6,6 +6,7 @@ from typing import Any
 
 from .official_catalyst_intelligence import build_catalyst_intelligence
 from .omega_observability import apply_observability
+from .omega_target_learning import load_target_calibration
 from .omega_opportunity import build_omega_opportunities
 from .omega_validation import build_validation_status
 
@@ -16,7 +17,12 @@ def apply_omega(payload: dict[str, Any]) -> dict[str, Any]:
     stocks = payload.get("stocks") if isinstance(payload.get("stocks"), list) else []
     catalysts = payload.get("catalysts") if isinstance(payload.get("catalysts"), list) else []
     catalyst_intelligence = build_catalyst_intelligence(catalysts, stocks)
-    opportunities = build_omega_opportunities(payload, catalyst_intelligence)
+    target_calibration = load_target_calibration("data/live/omega_target_calibration.json")
+    opportunities = build_omega_opportunities(
+        payload,
+        catalyst_intelligence,
+        target_calibration=target_calibration,
+    )
     validation = build_validation_status(payload)
 
     status_path = Path("data/cache/sec_incremental_status.json")
@@ -27,9 +33,16 @@ def apply_omega(payload: dict[str, Any]) -> dict[str, Any]:
             payload["sec_incremental_metrics"] = {"status": "unreadable"}
 
     payload["omega"] = {
-        "version": "2026.08-omega-reengineering",
+        "version": "2026.10-omega-v13-target-learning",
         "research_status": "RANKING_ONLY",
-        "probability_calibrated": False,
+        "probability_calibrated": opportunities["probability_calibrated"],
+        "target_calibration": {
+            "ready": opportunities["probability_calibrated"],
+            "matured_t1_sample": opportunities["target_calibration_sample"],
+            "minimum_global_sample": int(target_calibration.get("minimum_global_sample") or 100)
+            if isinstance(target_calibration, dict)
+            else 100,
+        },
         "catalyst_intelligence": catalyst_intelligence,
         "omega_day": opportunities["omega_day"],
         "omega_swing": opportunities["omega_swing"],
