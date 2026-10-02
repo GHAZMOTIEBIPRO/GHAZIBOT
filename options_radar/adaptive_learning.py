@@ -5,6 +5,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from .failure_attribution import (
+    MAX_OPTIONS_FAILURE_PENALTY,
+    MAX_STOCK_FAILURE_PENALTY,
+    build_failure_factor_stats,
+    failure_factor_penalty,
+    option_failure_flags,
+    stock_failure_flags,
+)
+
 STOCK_MIN_MATURED = 60
 STOCK_MIN_COHORT = 20
 OPTIONS_MIN_DECISIVE = 100
@@ -177,6 +186,17 @@ def build_learning_model(
     option_baseline = option_success / len(option_rows) if option_rows else 0.5
     options_ready = len(option_rows) >= OPTIONS_MIN_DECISIVE
 
+    stock_failure_factors = build_failure_factor_stats(
+        stock_rows,
+        stock_failure_flags,
+        max_penalty=MAX_STOCK_FAILURE_PENALTY,
+    )
+    options_failure_factors = build_failure_factor_stats(
+        option_rows,
+        option_failure_flags,
+        max_penalty=MAX_OPTIONS_FAILURE_PENALTY,
+    )
+
     stock = {
         "ready": stock_ready,
         "matured_decisive": len(stock_rows),
@@ -224,6 +244,7 @@ def build_learning_model(
             scale=10.0,
             cap=2.0,
         ),
+        "failure_factors": stock_failure_factors,
     }
 
     options = {
@@ -255,6 +276,7 @@ def build_learning_model(
             scale=8.0,
             cap=1.5,
         ),
+        "failure_factors": options_failure_factors,
     }
 
     return {
@@ -272,6 +294,8 @@ def build_learning_model(
             "entry_evidence_state_frozen": True,
             "entry_evidence_state_is_research_only_until_walk_forward": True,
             "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": True,
+            "failure_factor_learning_is_association_not_causation": True,
+            "failure_factor_penalties_require_minimum_sample_and_excess_failure": True,
         },
         "stock": stock,
         "options": options,
@@ -308,6 +332,12 @@ def stock_score_adjustment(model: dict[str, Any], row: dict[str, Any]) -> float:
         evidence = group.get(key) if isinstance(group.get(key), dict) else {}
         if evidence.get("eligible"):
             adjustment += _number(evidence.get("score_adjustment"))
+    failure_penalty, _ = failure_factor_penalty(
+        stock.get("failure_factors") if isinstance(stock.get("failure_factors"), dict) else {},
+        row,
+        domain="stock",
+    )
+    adjustment -= failure_penalty
     return round(max(-MAX_STOCK_ADJUSTMENT, min(MAX_STOCK_ADJUSTMENT, adjustment)), 2)
 
 
@@ -326,4 +356,10 @@ def options_score_adjustment(model: dict[str, Any], row: dict[str, Any]) -> floa
         evidence = group.get(key) if isinstance(group.get(key), dict) else {}
         if evidence.get("eligible"):
             adjustment += _number(evidence.get("score_adjustment"))
+    failure_penalty, _ = failure_factor_penalty(
+        options.get("failure_factors") if isinstance(options.get("failure_factors"), dict) else {},
+        row,
+        domain="options",
+    )
+    adjustment -= failure_penalty
     return round(max(-MAX_OPTIONS_ADJUSTMENT, min(MAX_OPTIONS_ADJUSTMENT, adjustment)), 2)
