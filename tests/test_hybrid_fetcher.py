@@ -54,3 +54,35 @@ def test_black_scholes_put_delta_is_negative():
     assert -0.60 < greek["delta"] < -0.30
     assert greek["gamma"] > 0
     assert greek["vega"] > 0
+
+
+def test_yahooquery_fallback_can_precede_yfinance_without_breaking(monkeypatch):
+    settings = Settings(stock_provider_order="yahooquery,yahoo")
+    fetcher = DataFetcher(settings)
+    index = pd.to_datetime(["2026-10-01T14:30:00Z"])
+    frame = pd.DataFrame(
+        {"Open": [100.0], "High": [101.0], "Low": [99.0], "Close": [100.5], "Volume": [1000]},
+        index=index,
+    )
+    monkeypatch.setattr(fetcher, "_yahooquery_bars", lambda *args, **kwargs: pd.DataFrame())
+    monkeypatch.setattr(fetcher, "_yahoo_bars", lambda *args, **kwargs: frame)
+    result = fetcher.fetch_stock_bars("TEST", providers=["yahooquery", "yahoo"])
+    assert result.source == "yahoo"
+    assert len(result.attempts) == 2
+    assert result.attempts[0].provider == "yahooquery"
+    assert result.attempts[0].success is False
+    assert result.attempts[1].success is True
+
+
+def test_yahooquery_can_serve_as_free_same_family_transport(monkeypatch):
+    settings = Settings(stock_provider_order="yahooquery,yahoo")
+    fetcher = DataFetcher(settings)
+    index = pd.to_datetime(["2026-10-01T14:30:00Z"])
+    frame = pd.DataFrame(
+        {"Open": [100.0], "High": [101.0], "Low": [99.0], "Close": [100.5], "Volume": [1000]},
+        index=index,
+    )
+    monkeypatch.setattr(fetcher, "_yahooquery_bars", lambda *args, **kwargs: frame)
+    result = fetcher.fetch_stock_bars("TEST", providers=["yahooquery", "yahoo"])
+    assert result.source == "yahooquery"
+    assert "Yahoo fallback" in result.freshness
