@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
+from options_radar import market_bars
 from options_radar.hybrid_fetcher import DataFetcher
 from options_radar.settings import Settings
 
@@ -64,8 +65,13 @@ def test_yahooquery_fallback_can_precede_yfinance_without_breaking(monkeypatch):
         {"Open": [100.0], "High": [101.0], "Low": [99.0], "Close": [100.5], "Volume": [1000]},
         index=index,
     )
-    monkeypatch.setattr(fetcher, "_yahooquery_bars", lambda *args, **kwargs: pd.DataFrame())
-    monkeypatch.setattr(fetcher, "_yahoo_bars", lambda *args, **kwargs: frame)
+
+    def fake_provider(name, *args, **kwargs):
+        if name == "yahooquery":
+            return market_bars.BarResult(pd.DataFrame(), "yahoo/yahooquery", "unofficial")
+        return market_bars.BarResult(frame, "yahoo/yfinance", "unofficial")
+
+    monkeypatch.setattr(market_bars, "_call_provider", fake_provider)
     result = fetcher.fetch_stock_bars("TEST", providers=["yahooquery", "yahoo"])
     assert result.source == "yahoo"
     assert len(result.attempts) == 2
@@ -82,7 +88,17 @@ def test_yahooquery_can_serve_as_free_same_family_transport(monkeypatch):
         {"Open": [100.0], "High": [101.0], "Low": [99.0], "Close": [100.5], "Volume": [1000]},
         index=index,
     )
-    monkeypatch.setattr(fetcher, "_yahooquery_bars", lambda *args, **kwargs: frame)
+
+    def fake_provider(name, *args, **kwargs):
+        if name == "yahooquery":
+            return market_bars.BarResult(
+                frame,
+                "yahoo/yahooquery",
+                "unofficial Yahoo fallback via alternate endpoint; may be delayed",
+            )
+        return market_bars.BarResult(pd.DataFrame(), "yahoo/yfinance", "unofficial")
+
+    monkeypatch.setattr(market_bars, "_call_provider", fake_provider)
     result = fetcher.fetch_stock_bars("TEST", providers=["yahooquery", "yahoo"])
     assert result.source == "yahooquery"
     assert "Yahoo fallback" in result.freshness
