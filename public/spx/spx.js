@@ -2,6 +2,8 @@ const $=id=>document.getElementById(id);
 const num=(x)=>Number.isFinite(Number(x))?Number(x):null;
 const fmt=(x,d=2)=>num(x)!=null?num(x).toLocaleString('en-US',{maximumFractionDigits:d}):'—';
 async function getJSON(p){const r=await fetch(p,{cache:'no-store'});if(!r.ok)throw Error(r.status);return r.json()}
+async function getFirstJSON(paths){let last=null;for(const p of paths){try{return await getJSON(p)}catch(e){last=e}}throw last||Error('DATA_UNAVAILABLE')}
+const DURABLE='https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/';
 function renderFreeHealth(h){const ok=h?.overall==='healthy';$('freeHealth').textContent=(ok?'HEALTHY':'DEGRADED')+' • '+(h?.generated_at||'—');$('freeHealth').className='status '+(ok?'ok':'warn');const rows=(h?.sources||[]).map(x=>x.name+': '+(x.ok?'OK':'DOWN'));$('freeSources').textContent=rows.length?rows.join(' • '):'لا توجد نتائج فحص.';}
 function renderAdvanced(v){
   const e=v?.integrated_engines?.ghazi_gex_multi||{};
@@ -130,7 +132,13 @@ function render(d,o){
 }
 async function boot(){
   try{
-    const [d,s,o,h,v]=await Promise.all([getJSON('../data/spx_dashboard.json'),getJSON('../data/data-status.json'),getJSON('../data/options_latest.json').catch(()=>({})),getJSON('../data/free_data_health.json').catch(()=>({overall:'degraded',sources:[]})),getJSON('../data/free_gex_validation.json').catch(()=>({decision:'SHADOW_ONLY',agreement_score:0,reasons_ar:['لا توجد نتيجة تحقق منشورة حالياً.']}))]);
+    const [d,s,o,h,v]=await Promise.all([
+      getFirstJSON([DURABLE+'spx_dashboard.json','../data/spx_dashboard.json']),
+      getJSON('../data/data-status.json'),
+      getJSON('../data/options_latest.json').catch(()=>({})),
+      getFirstJSON([DURABLE+'free_data_health.json','../data/free_data_health.json']).catch(()=>({overall:'degraded',sources:[]})),
+      getJSON('../data/free_gex_validation.json').catch(()=>({decision:'SHADOW_ONLY',agreement_score:0,reasons_ar:['لا توجد نتيجة تحقق منشورة حالياً.']}))
+    ]);
     render(d,o);renderFreeHealth(h);renderValidation(v);renderAdvanced(v);renderTargets(d);
     const age=num(d.age_minutes), optionTime=o?.generated_at||o?.updated_at||'';
     $('status').textContent=age!=null&&age<=10?'LIVE/RECENT • '+fmt(age,1)+' min old':'STALE • '+fmt(age,1)+' min old';
