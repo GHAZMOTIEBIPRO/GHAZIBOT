@@ -1,0 +1,69 @@
+{
+  "generated_at": "2026-10-03",
+  "policy": {
+    "zero_cost": true,
+    "copy_code_only_with_compatible_license": true,
+    "external_source_does_not_gain_independence_by_brand_name": true,
+    "scraping_not_promoted_when_official_or_permitted_api_is_unclear": true,
+    "research_bridges_do_not_change_live_decisions_until_validated": true
+  },
+  "projects": [
+    {
+      "repo": "marcdemers/py_vollib_vectorized",
+      "license": "MIT",
+      "decision": "INTEGRATED_SHADOW_VALIDATION",
+      "use": "Batch/reference validation of Black-Scholes Delta/Gamma/Theta/Vega.",
+      "live_decision_authority": false
+    },
+    {
+      "repo": "vollib/py_vollib",
+      "license": "MIT",
+      "decision": "INTEGRATED_SHADOW_VALIDATION",
+      "use": "Fallback reference implementation for option Greeks validation.",
+      "live_decision_authority": false
+    },
+    {
+      "repo": "dpguthrie/yahooquery",
+      "license": "MIT",
+      "decision": "INTEGRATED_FREE_FALLBACK",
+      "use": "Alternative Yahoo transport for stock bars when yfinance transport fails.",
+      "source_family": "yahoo",
+      "counts_as_independent_source": false
+    },
+    {
+      "repo": "aaguiar10/gflows",
+      "license": "MIT",
+      "decision": "CONCEPTS_REVIEWED_NO_DIRECT_COPY",
+      "use": "Greek exposure architecture (Delta/Gamma/Vanna/Charm) reviewed; GHAZIBOT already has equivalent advanced Greek calculations and free CBOE research path.",
+      "reason": "Avoid duplicate code and preserve existing source-use restrictions."
+    },
+    {
+      "repo": "jadchaar/sec-edgar-downloader",
+      "license": "MIT",
+      "decision": "NOT_NEEDED_CORE",
+      "use": "SEC filing retrieval patterns reviewed.",
+      "reason": "GHAZIBOT already uses official SEC endpoints directly with User-Agent/rate-limit policy; extra dependency adds little."
+    },
+    {
+      "repo": "lit26/finvizfinance",
+      "license": "MIT",
+      "decision": "NOT_CORE_SOURCE",
+      "use": "Screening/fundamental discovery ideas reviewed.",
+      "reason": "Website extraction is less robust than current official/public API paths; not suitable as production evidence."
+    },
+    {
+      "repo": "polakowo/vectorbt",
+      "license": "NOASSERTION",
+      "decision": "RESEARCH_ONLY_PENDING_LICENSE_REVIEW",
+      "use": "Walk-forward/vectorized research concepts.",
+      "reason": "No code copied until repository licensing is unambiguous for our use."
+    },
+    {
+      "repo": "kernc/backtesting.py",
+      "license": "AGPL-3.0",
+      "decision": "NO_CODE_MERGE",
+      "use": "Backtesting concepts only.",
+      "reason": "AGPL integration is deliberately avoided for the core repository."
+    }
+  ]
+}
