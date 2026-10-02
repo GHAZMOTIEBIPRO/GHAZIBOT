@@ -280,12 +280,14 @@ class DataFetcher:
         loaders: dict[str, Callable[[], pd.DataFrame]] = {
             "tiingo": lambda: self._tiingo_bars(symbol, start_dt, end_dt, interval),
             "finnhub": lambda: self._finnhub_bars(symbol, start_dt, end_dt, interval),
+            "yahooquery": lambda: self._yahooquery_bars(symbol, start_dt, end_dt, interval),
             "yahoo": lambda: self._yahoo_bars(symbol, start_dt, end_dt, interval),
             "yfinance": lambda: self._yahoo_bars(symbol, start_dt, end_dt, interval),
         }
         freshness = {
             "tiingo": "Tiingo account entitlement; timestamped provider data",
             "finnhub": "Finnhub account entitlement; timestamped provider data",
+            "yahooquery": "unofficial Yahoo fallback via alternate endpoint; may be delayed",
             "yahoo": "unofficial fallback; may be delayed",
             "yfinance": "unofficial fallback; may be delayed",
         }
@@ -360,6 +362,43 @@ class DataFetcher:
             "Volume": payload.get("v", []),
         })
         return _normalise_bars(frame, index_column="timestamp")
+
+    @staticmethod
+    def _yahooquery_bars(
+        symbol: str, start: pd.Timestamp, end: pd.Timestamp, interval: str
+    ) -> pd.DataFrame:
+        # yahooquery is an alternate client for the same unofficial Yahoo data
+        # family. It improves transport resilience but never counts as an
+        # independent market source.
+        from yahooquery import Ticker
+
+        normalized_interval = "5m" if interval in {"5m", "5min"} else interval
+        ticker = Ticker(symbol, asynchronous=False)
+        frame = ticker.history(
+            start=start.date().isoformat() if normalized_interval == "1d" else start.to_pydatetime(),
+            end=(end + pd.Timedelta(days=1)).date().isoformat()
+            if normalized_interval == "1d"
+            else end.to_pydatetime(),
+            interval=normalized_interval,
+        )
+        if frame is None or len(frame) == 0:
+            return pd.DataFrame(columns=OHLCV)
+        if isinstance(frame.index, pd.MultiIndex):
+            frame = frame.reset_index()
+            timestamp = "date"
+        else:
+            frame = frame.reset_index()
+            timestamp = "date" if "date" in frame.columns else frame.columns[0]
+        frame = frame.rename(
+            columns={
+                "open": "Open",
+                "high": "High",
+                "low": "Low",
+                "close": "Close",
+                "volume": "Volume",
+            }
+        )
+        return _normalise_bars(frame, index_column=timestamp)
 
     @staticmethod
     def _yahoo_bars(
