@@ -174,7 +174,8 @@ jobs:
           payload = json.loads(Path("public/data/explosion_options_crosscheck.json").read_text())
           assert payload["universe_discovery_mode"] == "fast_explosion_seed_priority"
           assert payload["configured_discovery_seeds_do_not_change_contract_scoring"] is True
-          assert payload["independent_from_stock_radar"] is True
+          assert payload["independent_from_stock_radar"] is False
+          assert payload["contract_scoring_independent_from_stock_signal"] is True
           universe = json.loads(Path("data/live/explosion_options_universe.json").read_text())
           assert universe["discovery_seed_only"] is True
           assert universe["stock_signal_independent_from_options_result"] is True
