@@ -325,7 +325,8 @@ def run(
         "spx_gamma_consensus": spx_gamma_consensus,
         "path": "options",
         "architecture": "independent_options_contract_radar_v3_outcome_learning",
-        "independent_from_stock_radar": True,
+        "independent_from_stock_radar": not configured_priority,
+        "contract_scoring_independent_from_stock_signal": True,
         "universe_discovery_mode": (
             "fast_explosion_seed_priority" if configured_priority else "options_native"
         ),
