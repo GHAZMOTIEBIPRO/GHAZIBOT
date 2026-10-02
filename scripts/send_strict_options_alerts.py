@@ -300,10 +300,10 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
         ),
         87.0 if mode == "free" else 85.0,
     )
-    maximum = max(
-        1,
-        min(5, int(_number(os.getenv("OPTIONS_ALERT_MAX", "3"), 3))),
-    )
+    configured_max = int(_number(os.getenv("OPTIONS_ALERT_MAX", "3"), 3))
+    # 0 means "send every qualified, deduplicated signal in this payload".
+    # Positive values remain bounded to protect Telegram from accidental bursts.
+    maximum = len(rows) if configured_max <= 0 else max(1, min(25, configured_max))
     rows.sort(
         key=lambda row: (
             _number(row.get("strict_score")),
