@@ -245,6 +245,7 @@ def run(
     output_path: str | Path = DEFAULT_OUTPUT,
     max_symbols: int = 80,
     top_per_side: int = 15,
+    configured_priority: bool = False,
 ) -> dict[str, Any]:
     settings = Settings()
     settings.validate()
@@ -256,6 +257,7 @@ def run(
         configured,
         max_symbols=min(max_symbols, settings.max_universe_size),
         include_cboe_attention=True,
+        configured_priority=configured_priority,
     )
     if not universe.symbols:
         raise RuntimeError("Independent options universe is empty")
@@ -324,6 +326,10 @@ def run(
         "path": "options",
         "architecture": "independent_options_contract_radar_v3_outcome_learning",
         "independent_from_stock_radar": True,
+        "universe_discovery_mode": (
+            "fast_explosion_seed_priority" if configured_priority else "options_native"
+        ),
+        "configured_discovery_seeds_do_not_change_contract_scoring": True,
         "universe": universe.as_dict(),
         "summary": {
             "symbols_scanned": len(universe.symbols),
@@ -373,7 +379,11 @@ def run(
         "errors": {**universe.errors, **result.errors, **context_errors},
         "limitations": [
             *universe.limitations,
-            "StockRadar output is never an input to this options universe or contract scoring.",
+            (
+                "Fast Explosion symbols are discovery seeds only; options evidence cannot alter or promote the stock signal."
+                if configured_priority
+                else "StockRadar output is never an input to this options universe or contract scoring."
+            ),
             "Free gamma uses available chain OI and reported or Black-Scholes-estimated gamma; it is not a verified dealer-position dataset.",
             "OCC daily CALL/PUT volume is official aggregate context only, not a quote, sweep feed, or proof of buy-to-open.",
             "Yahoo/Alpaca indicative inputs remain research-grade; strict free alerts are labeled accordingly and use a higher threshold.",
@@ -394,12 +404,14 @@ def main() -> None:
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     parser.add_argument("--max-symbols", type=int, default=int(os.getenv("OPTIONS_INDEPENDENT_MAX_SYMBOLS", "80")))
     parser.add_argument("--top-per-side", type=int, default=int(os.getenv("OPTIONS_INDEPENDENT_TOP_PER_SIDE", "15")))
+    parser.add_argument("--configured-priority", action="store_true")
     args = parser.parse_args()
     payload = run(
         universe_path=args.universe,
         output_path=args.output,
         max_symbols=args.max_symbols,
         top_per_side=args.top_per_side,
+        configured_priority=args.configured_priority,
     )
     print(
         "Independent options radar: "
