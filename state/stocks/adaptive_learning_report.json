@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-02T19:18:11.399681+00:00",
+  "generated_at": "2026-10-02T22:16:24.595645+00:00",
   "mode": "SHADOW_LEARNING",
   "live_alert_weights_changed": false,
   "free_autonomy": {
@@ -47,7 +47,7 @@
     "open": 110,
     "option_contract_basis": 0,
     "underlying_proxy_basis": 99,
-    "average_mfe_pct": 1.2305,
+    "average_mfe_pct": 1.3917,
     "average_mae_pct": -1.848,
     "measurement_note": "Path-dependent paper tracking. Contract OHLC is preferred; underlying OHLC is a documented fallback. Stop-first is terminal. Same-bar stop/target is ambiguous and never counted as a win."
   },
@@ -133,7 +133,7 @@
   },
   "model": {
     "schema_version": 1,
-    "generated_at": "2026-10-02T19:18:11.396379+00:00",
+    "generated_at": "2026-10-02T22:16:24.591444+00:00",
     "policy": {
       "no_live_weight_change_before_minimum_sample": true,
       "stock_min_matured": 60,
@@ -145,7 +145,9 @@
       "stock_learning_uses_durable_event_archive": true,
       "entry_evidence_state_frozen": true,
       "entry_evidence_state_is_research_only_until_walk_forward": true,
-      "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": true
+      "automatic_adjustments_are_cohort_relative_not_absolute_win_probability": true,
+      "failure_factor_learning_is_association_not_causation": true,
+      "failure_factor_penalties_require_minimum_sample_and_excess_failure": true
     },
     "stock": {
       "ready": true,
@@ -257,6 +259,63 @@
           "eligible": true,
           "score_adjustment": -0.81
         }
+      },
+      "failure_factors": {
+        "decisive_sample": 178,
+        "baseline_failure_rate": 0.309,
+        "minimum_factor_sample": 20,
+        "minimum_excess_failure_rate": 0.08,
+        "factors": {
+          "EARLY_UNCONFIRMED_STAGE": {
+            "sample": 98,
+            "failures": 34,
+            "successes": 64,
+            "failure_rate": 0.3469,
+            "baseline_failure_rate": 0.309,
+            "excess_failure_rate": 0.038,
+            "eligible": true,
+            "harmful_association": false,
+            "score_penalty": 0.0
+          },
+          "LOW_ENTRY_SCORE": {
+            "sample": 105,
+            "failures": 36,
+            "successes": 69,
+            "failure_rate": 0.3429,
+            "baseline_failure_rate": 0.309,
+            "excess_failure_rate": 0.0339,
+            "eligible": true,
+            "harmful_association": false,
+            "score_penalty": 0.0
+          },
+          "UNKNOWN_REGIME": {
+            "sample": 1,
+            "failures": 1,
+            "successes": 0,
+            "failure_rate": 1.0,
+            "baseline_failure_rate": 0.309,
+            "excess_failure_rate": 0.691,
+            "eligible": false,
+            "harmful_association": false,
+            "score_penalty": 0.0
+          },
+          "WEAK_CAUSE_EVIDENCE": {
+            "sample": 178,
+            "failures": 55,
+            "successes": 123,
+            "failure_rate": 0.309,
+            "baseline_failure_rate": 0.309,
+            "excess_failure_rate": 0.0,
+            "eligible": true,
+            "harmful_association": false,
+            "score_penalty": 0.0
+          }
+        },
+        "policy": {
+          "association_not_causation": true,
+          "no_penalty_below_minimum_sample": true,
+          "only_excess_failure_generates_penalty": true
+        }
       }
     },
     "options": {
@@ -266,7 +325,19 @@
       "baseline_success_rate": null,
       "score_bands": {},
       "regimes": {},
-      "sides": {}
+      "sides": {},
+      "failure_factors": {
+        "decisive_sample": 0,
+        "baseline_failure_rate": null,
+        "minimum_factor_sample": 20,
+        "minimum_excess_failure_rate": 0.08,
+        "factors": {},
+        "policy": {
+          "association_not_causation": true,
+          "no_penalty_below_minimum_sample": true,
+          "only_excess_failure_generates_penalty": true
+        }
+      }
     }
   },
   "errors": [],
