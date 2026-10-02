@@ -60,7 +60,7 @@ class Settings:
     # Phase 6 deterministic fallback orders. Yahoo/YFinance belongs last.
     stock_provider_order: str = (
         os.getenv("STOCK_PROVIDER_ORDER")
-        or "tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahoo"
+        or "tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo"
     )
     options_provider_order: str = (
         os.getenv("OPTIONS_PROVIDER_ORDER")
@@ -224,6 +224,7 @@ class Settings:
             "alpha_vantage",
             "yahoo",
             "yfinance",
+            "yahooquery",
         }
         phase6_options = {
             "tradier",
