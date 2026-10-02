@@ -113,7 +113,7 @@ def _stock_message(row: dict[str, Any]) -> str:
         f"💵 <b>${price:,.2f}</b> | {arrow} <b>{move:+.1f}%</b> | أولوية <b>{_safe(_priority_ar(score), 40)}</b>",
         f"🧬 <b>نمط الانفجار:</b> {_safe(explosion_label, 180)}"
         + (f" • <b>{explosion_score:.0f}/100</b>" if explosion_score > 0 else ""),
-        f"🧨 <b>المحفز الرسمي:</b> {_safe(cause_status, 220)}",
+        f"🧨 <b>السبب:</b> {_safe(cause_status, 220)}",
     ]
     if cause_headline:
         lines.append(f"📰 {_safe(cause_headline, 320)}")
