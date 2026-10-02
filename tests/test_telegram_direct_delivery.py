@@ -75,3 +75,11 @@ def test_delivery_state_accepts_completed_runs_but_core_state_remains_success_on
     # successful runs, so Telegram reliability can never weaken analysis state.
     assert "gh run list --workflow stock-radar.yml --status success --branch main" in stock
     assert "gh run list --workflow options-contract-radar.yml --status success --branch main" in options
+
+
+def test_stock_radar_waits_for_fresh_fast_radar_instead_of_racing_on_push():
+    text = _workflow("stock-radar.yml")
+    assert "workflow_run:" in text
+    assert '"BLACK BOX Omega Fast Explosion Radar"' in text
+    assert "\n  push:\n" not in text
+    assert 'github.event.workflow_run.conclusion == \'success\'' in text
