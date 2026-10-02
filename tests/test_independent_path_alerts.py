@@ -59,7 +59,7 @@ def test_stock_message_is_compact_actionable_and_options_are_not_required():
     assert "$4.20" in message
     assert "السبب:" in message
     assert "مسار الأسهم مستقل" in message
-    assert len(message) < 900
+    assert len(message) < 1800
 
 
 def test_options_sender_deduplicates_and_records_message_registry(monkeypatch):
@@ -186,3 +186,112 @@ def test_old_string_fingerprint_state_migrates_cleanly(monkeypatch):
     state = {"sent": {"XYZ": "legacy-fingerprint"}}
     assert sender.send_stocks(payload, state) == 1
     assert isinstance(state["sent"]["XYZ"], dict)
+
+
+def test_stock_message_surfaces_explosion_cause_and_research_risk_flag():
+    row = {
+        "symbol": "MICR",
+        "price": 0.18,
+        "move_pct": 6.5,
+        "stage": "PRESSURE_BUILDING",
+        "alert_stage": "WATCH",
+        "score": 68,
+        "cause": {"status_ar": "السبب الأساسي غير مثبت حتى الآن"},
+        "explosion_cause": {
+            "primary": "SUPPLY_VACUUM",
+            "primary_label_ar": "نقص معروض / Supply Vacuum",
+            "primary_score": 84,
+            "drivers": [
+                {"label_ar": "نقص معروض / Supply Vacuum"},
+                {"label_ar": "اشتعال زخم وسيولة"},
+            ],
+        },
+        "manipulation_risk": {
+            "score": 58,
+            "label": "HIGH",
+            "label_ar": "مرتفع",
+            "is_accusation": False,
+        },
+        "institutional_memory": {"acceleration": 71, "earlyness": 88, "anomaly": 69},
+        "amplifiers": ["ضغط/قلة معروض 90/100"],
+    }
+    message = sender._stock_message(row)
+    assert "نمط الانفجار" in message
+    assert "Supply Vacuum" in message
+    assert "WATCH" in message
+    assert "علم خطر فقط" in message
+    assert "ليس اتهامًا" in message
+
+
+def test_stock_sender_sends_watch_then_confirmed_promotion(monkeypatch):
+    sent: list[str] = []
+
+    class Result:
+        message_id = 10
+
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text) or Result())
+    monkeypatch.setenv("STOCK_WATCH_MIN_SCORE", "62")
+    monkeypatch.setenv("STOCK_ALERT_MIN_SCORE", "72")
+    monkeypatch.setenv("STOCK_ALERT_MAX", "0")
+
+    watch = {
+        "path": "stocks",
+        "stocks": [{
+            "symbol": "XYZ",
+            "price": 4.0,
+            "move_pct": 1.4,
+            "stage": "PRESSURE_BUILDING",
+            "alert_stage": "WATCH",
+            "score": 66,
+            "cause": {"status": "NO_PRIMARY_CAUSE_PROVEN", "status_ar": "غير مثبت"},
+            "explosion_cause": {"primary": "SUPPLY_VACUUM", "primary_score": 80},
+            "manipulation_risk": {"label": "LOW", "score": 10},
+        }],
+    }
+    state = {"sent": {}}
+    assert sender.send_stocks(watch, state) == 1
+    assert state["sent"]["XYZ"]["alert_stage"] == "WATCH"
+
+    confirmed = {
+        "path": "stocks",
+        "stocks": [{
+            **watch["stocks"][0],
+            "stage": "IGNITION",
+            "alert_stage": "CONFIRMED",
+            "score": 78,
+        }],
+    }
+    assert sender.send_stocks(confirmed, state) == 1
+    assert state["sent"]["XYZ"]["alert_stage"] == "CONFIRMED"
+    assert len(sent) == 2
+
+
+def test_stock_sender_zero_max_means_no_strategic_alert_cap(monkeypatch):
+    sent: list[str] = []
+
+    class Result:
+        message_id = 1
+
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text) or Result())
+    monkeypatch.setenv("STOCK_ALERT_MIN_SCORE", "72")
+    monkeypatch.setenv("STOCK_ALERT_MAX", "0")
+    payload = {
+        "path": "stocks",
+        "stocks": [
+            {
+                "symbol": f"S{i}",
+                "price": 5,
+                "move_pct": 5,
+                "stage": "IGNITION",
+                "alert_stage": "CONFIRMED",
+                "score": 80 + i,
+                "cause": {"status": "OFFICIAL_CONFIRMED", "status_ar": "سبب رسمي"},
+                "explosion_cause": {"primary": "CATALYST_REPRICING", "primary_score": 82},
+                "manipulation_risk": {"label": "LOW", "score": 5},
+            }
+            for i in range(8)
+        ],
+    }
+    state = {"sent": {}}
+    assert sender.send_stocks(payload, state) == 8
+    assert len(sent) == 8
