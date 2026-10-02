@@ -61,6 +61,39 @@ def _period_start(period: str) -> datetime:
     return now - timedelta(days=mapping.get(period, 380))
 
 
+def _yahooquery(symbol: str, *, period: str, interval: str, start: datetime | None = None,
+                end: datetime | None = None) -> BarResult:
+    from yahooquery import Ticker
+
+    end = end or datetime.now(timezone.utc)
+    start = start or (_period_start(period) if interval == "1d" else end - timedelta(days=14))
+    ticker = Ticker(symbol, asynchronous=False)
+    frame = ticker.history(
+        start=start.date().isoformat() if interval == "1d" else start,
+        end=(end + timedelta(days=1)).date().isoformat() if interval == "1d" else end,
+        interval="5m" if interval in {"5m", "5min"} else interval,
+    )
+    if frame is None or len(frame) == 0:
+        return BarResult(_empty(), "yahoo/yahooquery", "unofficial / may be delayed")
+    if isinstance(frame.index, pd.MultiIndex):
+        frame = frame.reset_index()
+        index = "date"
+    else:
+        frame = frame.reset_index()
+        index = "date" if "date" in frame.columns else frame.columns[0]
+    frame = frame.rename(
+        columns={
+            "open": "Open", "high": "High", "low": "Low",
+            "close": "Close", "volume": "Volume",
+        }
+    )
+    return BarResult(
+        _normalise(frame, index=index),
+        "yahoo/yahooquery",
+        "unofficial Yahoo fallback via alternate endpoint; may be delayed",
+    )
+
+
 def _yahoo(symbol: str, *, period: str, interval: str, start: datetime | None = None,
            end: datetime | None = None) -> BarResult:
     kwargs: dict[str, Any] = {
@@ -344,7 +377,9 @@ def _call_provider(name: str, settings: Settings, symbol: str, *, interval: str,
         return _polygon(settings, symbol, interval=interval, start=start, end=end)
     if name in {"alpha", "alphavantage", "alpha_vantage"}:
         return _alpha_vantage(settings, symbol, interval=interval, start=start, end=end)
-    if name == "yahoo":
+    if name == "yahooquery":
+        return _yahooquery(symbol, period=period, interval=interval, start=start, end=end)
+    if name in {"yahoo", "yfinance"}:
         return _yahoo(symbol, period=period, interval=interval, start=start if interval != "1d" else None, end=end)
     raise RuntimeError(f"Unknown bar provider: {name}")
 
@@ -377,6 +412,7 @@ def get_intraday_history(settings: Settings, symbol: str, start: datetime,
 
 def configured_bar_sources(settings: Settings) -> list[dict[str, Any]]:
     return [
+        {"name": "yahooquery", "configured": True, "role": "unofficial Yahoo alternate transport; same source family"},
         {"name": "yahoo", "configured": True, "role": "unofficial fallback"},
         {"name": "tiingo", "configured": bool(settings.tiingo_api_key), "role": "official account API"},
         {"name": "finnhub", "configured": bool(settings.finnhub_api_key), "role": "official account API"},
