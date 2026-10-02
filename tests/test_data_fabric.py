@@ -10,6 +10,7 @@ from options_radar.data_fabric import (
     health_from_env,
     reconcile_option_chains,
     reconcile_stock_bars,
+    _provider_family,
 )
 from options_radar.options_consensus import build_directional_signals
 
@@ -163,3 +164,9 @@ def test_provider_quote_disagreement_is_hard_options_blocker():
         "fabric_consensus_pass": False,
     }
     assert build_directional_signals([row], minimum_score=70) == []
+
+
+def test_yahooquery_and_yfinance_are_one_source_family():
+    assert _provider_family("yahooquery") == "yahoo"
+    assert _provider_family("yahoo/yahooquery") == "yahoo"
+    assert _provider_family("yahoo/yfinance") == "yahoo"
