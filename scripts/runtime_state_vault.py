@@ -13,6 +13,8 @@ RUNTIME_PATHS = (
     "public/data/live_dashboard_status.json",
     "public/data/spx_dashboard.json",
     "public/data/free_data_health.json",
+    "public/data/free_gex_validation.json",
+    "public/data/free_gex_validation_history.json",
     "data/cache/sec_efts_events.json",
     "data/cache/sec_efts_status.json",
     "data/cache/sec_efts_circuit.json",
