@@ -2,10 +2,6 @@ name: BLACK BOX Realtime Options Intelligence V9
 
 on:
   workflow_dispatch:
-  schedule:
-    # Two hand-off windows cover both U.S. DST regimes. The second run replaces
-    # the first cleanly and carries the realtime stream through the close.
-    - cron: "20 13,18 * * 1-5"
 
 concurrency:
   group: black-box-realtime-options-v9
