@@ -63,7 +63,12 @@ def _fabric_classification(
     stream = metadata.get("stream_overlay") if isinstance(metadata.get("stream_overlay"), dict) else {}
     successes = _successful_providers(raw)
 
-    live_quote = False
+    execution_ready_contracts = int(
+        fabric.get("execution_quote_ready_contracts")
+        or metadata.get("execution_quote_ready_contracts")
+        or 0
+    )
+    live_quote = execution_ready_contracts > 0
     delayed = False
     non_fallback = 0
     for provider in successes:
@@ -75,14 +80,13 @@ def _fabric_classification(
         if name == "tradier":
             if "sandbox" in tradier_base_url.lower():
                 delayed = True
-            else:
-                live_quote = True
         elif name == "marketdata":
             # Current MarketData adapter explicitly labels its free/account path
             # as delayed. A future live adapter must advertise that separately.
             delayed = True
         elif name in {"databento", "massive", "polygon_options"}:
-            live_quote = True
+            # Identity alone is not execution evidence.
+            pass
         else:
             # Finnhub and other account feeds may be live depending on entitlement,
             # but absence of an explicit live marker must not create Production.
@@ -145,13 +149,26 @@ def assess_provider_readiness(
         is_fallback = bool(source) and _contains(source, _FALLBACK_TOKENS) and len(successes) <= 1
         is_delayed = _contains(f"{source} {freshness}", _DELAYED_TOKENS)
         explicit_live = _contains(f"{source} {freshness}", _LIVE_TOKENS)
-        live_tradier_chain = "tradier" in source and "sandbox" not in tradier_base_url.lower()
+        structured_quote_ready = bool(metadata.get("execution_quote_ready")) or int(
+            metadata.get("execution_quote_ready_contracts") or 0
+        ) > 0
+        live_tradier_chain = (
+            structured_quote_ready
+            and "tradier" in source
+            and "sandbox" not in tradier_base_url.lower()
+        )
         is_opra = bool(metadata.get("opra_source_active")) or _contains(source, _OPRA_TOKENS)
         if is_fallback:
             fallback += 1
         if is_delayed:
             delayed += 1
-        if source and not is_fallback and not is_delayed and (explicit_live or live_tradier_chain or is_opra):
+        if (
+            source
+            and structured_quote_ready
+            and not is_fallback
+            and not is_delayed
+            and (explicit_live or live_tradier_chain or is_opra)
+        ):
             live_primary += 1
         if is_opra:
             opra += 1
@@ -168,7 +185,10 @@ def assess_provider_readiness(
         reasons.append("No usable option-chain source is currently producing data")
     elif not production_quote_ready:
         status = "FALLBACK_ONLY"
-        reasons.append("Only delayed, indicative, unofficial, or unverified-entitlement option data is active")
+        reasons.append(
+            "No contract has a verified fresh executable quote; delayed, indicative, "
+            "unofficial, stale, trade-time-only, or label-only sources remain research-grade"
+        )
     elif not production_flow_ready:
         status = "LIVE_QUOTES_NO_TRADE_FLOW"
         reasons.append("Live option quotes are available, but trade+NBBO flow evidence is not active")
