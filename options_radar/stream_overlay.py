@@ -70,8 +70,10 @@ def option_stream_reference(
         return None
     quote = _event(record, "q", "quote")
     trade = _event(record, "t", "trade")
-    quote_time = quote.get("t") or quote.get("timestamp") or record.get("last_event_at")
-    trade_time = trade.get("t") or trade.get("timestamp") or record.get("last_event_at")
+    # A generic last_event_at may belong to the other event type. Do not use it
+    # as a quote/trade timestamp because that manufactures semantic freshness.
+    quote_time = quote.get("t") or quote.get("timestamp")
+    trade_time = trade.get("t") or trade.get("timestamp")
     return {
         "contract_symbol": contract,
         "feed": str(snapshot.get("option_feed") or "indicative").lower(),
@@ -129,7 +131,10 @@ def overlay_option_chain_from_stream(
         out.at[idx, "ask"] = ask
         if last > 0 and trade_age is not None and trade_age <= maximum:
             out.at[idx, "last"] = last
-        out.at[idx, "updated_at"] = reference.get("quote_at") or reference.get("trade_at")
+        out.at[idx, "updated_at"] = reference.get("quote_at")
+        out.at[idx, "quote_timestamp"] = reference.get("quote_at")
+        out.at[idx, "last_trade_timestamp"] = reference.get("trade_at")
+        out.at[idx, "timestamp_kind"] = "quote"
         existing_source = str(row.get("source") or "")
         out.at[idx, "source"] = f"{existing_source} + alpaca_opra_stream".strip(" +")
         out.at[idx, "freshness_label"] = "Alpaca OPRA stream; execution-grade quote overlay"
