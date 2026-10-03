@@ -32,19 +32,25 @@ _ACCOUNT_TOKENS = (
     "broker account",
     "brokerage account",
 )
-_TIMESTAMP_KEYS = (
+_EXPLICIT_QUOTE_TIMESTAMP_KEYS = (
     "quote_timestamp",
     "quote_time",
     "quote_at",
-    "updated_at",
-    "data_timestamp",
-    "snapshot_at",
-    "as_of",
-    "last_updated",
-    "event_at",
-    "timestamp",
-    "generated_at",
 )
+_LEGACY_QUOTE_TIMESTAMP_KEYS = (
+    "updated_at",
+    "last_updated",
+)
+_NON_QUOTE_TIMESTAMP_KINDS = {
+    "last_trade",
+    "trade",
+    "provider_update",
+    "generated",
+    "generated_at",
+    "snapshot",
+    "response",
+}
+_QUOTE_TIMESTAMP_KINDS = {"quote", "provider_quote", "quote_snapshot"}
 
 
 def _number(value: Any, default: float | None = None) -> float | None:
@@ -134,7 +140,20 @@ def _parse_timestamp(value: Any) -> datetime | None:
 
 
 def _quote_timestamp(row: dict[str, Any]) -> tuple[datetime | None, str]:
-    for key in _TIMESTAMP_KEYS:
+    for key in _EXPLICIT_QUOTE_TIMESTAMP_KEYS:
+        stamp = _parse_timestamp(row.get(key))
+        if stamp is not None:
+            return stamp, key
+
+    kind = _text(row.get("timestamp_kind")).lower()
+    if kind in _NON_QUOTE_TIMESTAMP_KINDS:
+        return None, ""
+    if kind and kind not in _QUOTE_TIMESTAMP_KINDS:
+        return None, ""
+
+    # Backward compatibility for legacy rows that predate timestamp_kind.
+    # Once a row declares semantics, only quote-like kinds may use updated_at.
+    for key in _LEGACY_QUOTE_TIMESTAMP_KEYS:
         stamp = _parse_timestamp(row.get(key))
         if stamp is not None:
             return stamp, key
@@ -176,6 +195,7 @@ def assess_execution_quote(
     current_quote_text = _current_quote_text(record)
     blockers: list[str] = []
 
+    overlay_marker = "alpaca_opra_stream" in source_text or "alpaca_opra_stream" in current_quote_text
     overlay_execution = bool(record.get("stream_execution_grade")) and (
         "opra" in current_quote_text or "alpaca_opra_stream" in current_quote_text
     )
@@ -183,6 +203,9 @@ def assess_execution_quote(
     delayed = any(token in classification_text for token in _DELAYED_TOKENS)
     trusted_live = any(token in classification_text for token in _TRUSTED_LIVE_TOKENS)
     account = any(token in classification_text for token in _ACCOUNT_TOKENS)
+    if overlay_marker and not overlay_execution:
+        trusted_live = False
+        blockers.append("تراكب OPRA لا يملك stream_execution_grade صريحًا")
 
     if delayed:
         source_mode = "DELAYED_OR_RESEARCH"
