@@ -1,11 +1,12 @@
 name: BLACK BOX Explosion Options Cross-Check
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
   workflow_run:
     workflows:
       - "BLACK BOX Omega Fast Explosion Radar"
-    types: [completed]
+    types:
+      - completed
 
 concurrency:
   group: black-box-explosion-options-crosscheck
@@ -17,9 +18,7 @@ permissions:
 
 jobs:
   crosscheck:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 22
     env:
