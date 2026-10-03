@@ -61,6 +61,37 @@ def _ensure_dte(frame: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _execution_quote_audit(
+    frame: pd.DataFrame,
+    *,
+    max_quote_age_seconds: float = 120.0,
+) -> dict[str, Any]:
+    if frame is None or frame.empty:
+        return {
+            "execution_quote_checked_contracts": 0,
+            "execution_quote_ready_contracts": 0,
+            "verifiable_quote_timestamp_contracts": 0,
+            "execution_quote_max_age_seconds": float(max_quote_age_seconds),
+        }
+    checks = [
+        assess_execution_quote(
+            row,
+            max_quote_age_seconds=max_quote_age_seconds,
+        ).as_dict()
+        for row in frame.to_dict(orient="records")
+    ]
+    return {
+        "execution_quote_checked_contracts": len(checks),
+        "execution_quote_ready_contracts": sum(
+            1 for item in checks if item.get("execution_ready") is True
+        ),
+        "verifiable_quote_timestamp_contracts": sum(
+            1 for item in checks if item.get("quote_timestamp")
+        ),
+        "execution_quote_max_age_seconds": float(max_quote_age_seconds),
+    }
+
+
 def install_data_fabric() -> None:
     """Replace first-success fetching with resilient multi-provider reconciliation.
 
@@ -333,23 +364,12 @@ def install_data_fabric() -> None:
         maximum_quote_age = float(
             os.getenv("OPTIONS_EXECUTION_MAX_QUOTE_AGE_SECONDS", "120")
         )
-        execution_checks = [
-            assess_execution_quote(
-                row,
+        audit.update(
+            _execution_quote_audit(
+                frame,
                 max_quote_age_seconds=maximum_quote_age,
-            ).as_dict()
-            for row in frame.to_dict(orient="records")
-        ]
-        execution_ready = [
-            item for item in execution_checks if item.get("execution_ready") is True
-        ]
-        verifiable_timestamps = [
-            item for item in execution_checks if item.get("quote_timestamp")
-        ]
-        audit["execution_quote_checked_contracts"] = len(execution_checks)
-        audit["execution_quote_ready_contracts"] = len(execution_ready)
-        audit["verifiable_quote_timestamp_contracts"] = len(verifiable_timestamps)
-        audit["execution_quote_max_age_seconds"] = maximum_quote_age
+            )
+        )
 
         source = "fabric:" + "+".join(audit.get("sources") or list(frames))
         if int(stream_audit.get("execution_quotes_replaced") or 0) > 0:
