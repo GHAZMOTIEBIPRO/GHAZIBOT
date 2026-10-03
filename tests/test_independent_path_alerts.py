@@ -77,7 +77,7 @@ def test_options_sender_deduplicates_and_records_message_registry(monkeypatch):
             "production_quote_ready": True,
             "production_flow_ready": False,
         },
-        "contracts": [
+        "production_directional_signals": [
             {
                 "symbol": "NVDA",
                 "contract_symbol": "NVDA260828C00200000",
@@ -98,6 +98,7 @@ def test_options_sender_deduplicates_and_records_message_registry(monkeypatch):
                 "score": 82,
                 "flow_momentum_score": 88,
                 "flow_rank_score": 86,
+                "v11_decision": {"approved": True, "state": "CONFIRMED"},
             }
         ],
     }
@@ -295,3 +296,29 @@ def test_stock_sender_zero_max_means_no_strategic_alert_cap(monkeypatch):
     state = {"sent": {}}
     assert sender.send_stocks(payload, state) == 8
     assert len(sent) == 8
+
+
+def test_options_sender_never_uses_raw_contracts_when_production_list_is_empty(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(sender, "_send", lambda text: sent.append(text))
+    payload = {
+        "path": "options",
+        "provider_readiness": {
+            "status": "LIVE_QUOTES_NO_TRADE_FLOW",
+            "production_quote_ready": True,
+            "production_flow_ready": False,
+        },
+        "contracts": [
+            {
+                "symbol": "NVDA",
+                "contract_symbol": "NVDA260828C00200000",
+                "option_type": "call",
+                "score": 99,
+                "flow_momentum_score": 99,
+            }
+        ],
+        "production_directional_signals": [],
+    }
+    state = {"sent": {}}
+    assert sender.send_options(payload, state) == 0
+    assert sent == []

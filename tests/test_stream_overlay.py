@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -67,6 +69,12 @@ def test_fresh_opra_stream_replaces_execution_quote():
     assert row["last"] == 1.25
     assert row["fabric_quote_provider"] == "alpaca_opra_stream"
     assert row["fabric_source_tier"] == "LIVE_OR_LICENSED"
+    assert row["fabric_source_count"] == 2
+    assert row["fabric_independent_source_count"] == 2
+    field_sources = json.loads(row["fabric_field_sources"])
+    assert field_sources["bid"] == "alpaca_opra_stream"
+    assert field_sources["ask"] == "alpaca_opra_stream"
+    assert field_sources["quote_timestamp"] == "alpaca_opra_stream"
     assert row["data_quality"] >= 0.96
     assert audit["execution_quotes_replaced"] == 1
 

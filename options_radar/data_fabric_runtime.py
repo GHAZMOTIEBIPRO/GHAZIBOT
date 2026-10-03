@@ -12,6 +12,7 @@ from .data_fabric import (
     reconcile_option_chains,
     reconcile_stock_bars,
 )
+from .execution_confidence import assess_execution_quote
 from .stream_overlay import (
     load_stream_snapshot,
     overlay_option_chain_from_stream,
@@ -58,6 +59,37 @@ def _ensure_dte(frame: pd.DataFrame) -> pd.DataFrame:
     today = pd.Timestamp.now(tz="UTC").normalize()
     out["dte"] = (expiration.dt.normalize() - today).dt.days
     return out
+
+
+def _execution_quote_audit(
+    frame: pd.DataFrame,
+    *,
+    max_quote_age_seconds: float = 120.0,
+) -> dict[str, Any]:
+    if frame is None or frame.empty:
+        return {
+            "execution_quote_checked_contracts": 0,
+            "execution_quote_ready_contracts": 0,
+            "verifiable_quote_timestamp_contracts": 0,
+            "execution_quote_max_age_seconds": float(max_quote_age_seconds),
+        }
+    checks = [
+        assess_execution_quote(
+            row,
+            max_quote_age_seconds=max_quote_age_seconds,
+        ).as_dict()
+        for row in frame.to_dict(orient="records")
+    ]
+    return {
+        "execution_quote_checked_contracts": len(checks),
+        "execution_quote_ready_contracts": sum(
+            1 for item in checks if item.get("execution_ready") is True
+        ),
+        "verifiable_quote_timestamp_contracts": sum(
+            1 for item in checks if item.get("quote_timestamp")
+        ),
+        "execution_quote_max_age_seconds": float(max_quote_age_seconds),
+    }
 
 
 def install_data_fabric() -> None:
@@ -329,6 +361,16 @@ def install_data_fabric() -> None:
                 )
             )
             raise hybrid.DataUnavailableError(f"option_chain:{symbol}", attempts)
+        maximum_quote_age = float(
+            os.getenv("OPTIONS_EXECUTION_MAX_QUOTE_AGE_SECONDS", "120")
+        )
+        audit.update(
+            _execution_quote_audit(
+                frame,
+                max_quote_age_seconds=maximum_quote_age,
+            )
+        )
+
         source = "fabric:" + "+".join(audit.get("sources") or list(frames))
         if int(stream_audit.get("execution_quotes_replaced") or 0) > 0:
             source += "+alpaca_opra_stream"

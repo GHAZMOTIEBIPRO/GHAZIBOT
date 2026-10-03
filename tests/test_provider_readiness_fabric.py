@@ -28,7 +28,7 @@ def test_fabric_with_tradier_sandbox_and_yahoo_is_not_production():
     assert readiness.status == "FALLBACK_ONLY"
 
 
-def test_fabric_with_production_tradier_is_quote_ready_but_not_flow_ready():
+def test_fabric_production_tradier_without_verified_quote_stays_research():
     readiness = assess_provider_readiness(
         _audit(
             "fabric:tradier+yahoo",
@@ -36,6 +36,30 @@ def test_fabric_with_production_tradier_is_quote_ready_but_not_flow_ready():
                 {"provider": "tradier", "success": True},
                 {"provider": "yahoo", "success": True},
             ],
+        ),
+        tradier_base_url="https://api.tradier.com",
+    )
+    assert readiness.production_quote_ready is False
+    assert readiness.production_flow_ready is False
+    assert readiness.status == "FALLBACK_ONLY"
+
+
+def test_fabric_structured_execution_quote_is_ready_but_not_flow_ready():
+    readiness = assess_provider_readiness(
+        _audit(
+            "fabric:tradier+yahoo",
+            [
+                {"provider": "tradier", "success": True},
+                {"provider": "yahoo", "success": True},
+            ],
+            metadata={
+                "data_fabric": {
+                    "source_count": 2,
+                    "execution_quote_checked_contracts": 4,
+                    "execution_quote_ready_contracts": 1,
+                    "verifiable_quote_timestamp_contracts": 1,
+                }
+            },
         ),
         tradier_base_url="https://api.tradier.com",
     )
@@ -62,3 +86,32 @@ def test_fresh_opra_stream_overlay_is_production_flow_ready():
     assert readiness.production_quote_ready is True
     assert readiness.production_flow_ready is True
     assert readiness.status == "LIVE_FLOW_READY"
+
+
+def test_process_level_stream_flag_alone_never_creates_production_readiness():
+    readiness = assess_provider_readiness(
+        {},
+        stream_active=True,
+        stream_source="opra",
+    )
+    assert readiness.production_quote_ready is False
+    assert readiness.production_flow_ready is False
+
+
+def test_fake_execution_grade_non_opra_stream_is_not_live():
+    readiness = assess_provider_readiness(
+        _audit(
+            "fabric:yahoo",
+            [{"provider": "yahoo", "success": True}],
+            metadata={
+                "data_fabric": {"source_count": 1},
+                "stream_overlay": {
+                    "execution_grade": True,
+                    "execution_quotes_replaced": 3,
+                    "feed": "indicative",
+                },
+            },
+        )
+    )
+    assert readiness.production_quote_ready is False
+    assert readiness.production_flow_ready is False

@@ -141,6 +141,51 @@ def overlay_option_chain_from_stream(
         out.at[idx, "data_quality"] = max(0.96, _number(row.get("data_quality")))
         out.at[idx, "fabric_quote_provider"] = "alpaca_opra_stream"
         out.at[idx, "fabric_source_tier"] = "LIVE_OR_LICENSED"
+
+        sources = [
+            value.strip()
+            for value in str(row.get("fabric_sources") or row.get("source") or "").split(",")
+            if value.strip()
+        ]
+        if "alpaca_opra_stream" not in sources:
+            sources.append("alpaca_opra_stream")
+        out.at[idx, "fabric_sources"] = ",".join(sources)
+        out.at[idx, "fabric_source_count"] = len(sources)
+
+        families: list[str] = []
+        for source in sources:
+            lowered = source.lower()
+            family = "alpaca" if "alpaca" in lowered else (
+                "yahoo" if "yahoo" in lowered or "yfinance" in lowered else (
+                    "tradier" if "tradier" in lowered else (
+                        "finnhub" if "finnhub" in lowered else (
+                            "marketdata" if "marketdata" in lowered else lowered
+                        )
+                    )
+                )
+            )
+            if family and family not in families:
+                families.append(family)
+        out.at[idx, "fabric_independent_source_count"] = len(families)
+
+        try:
+            field_sources = json.loads(str(row.get("fabric_field_sources") or "{}"))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            field_sources = {}
+        if not isinstance(field_sources, dict):
+            field_sources = {}
+        for field in (
+            "bid",
+            "ask",
+            "updated_at",
+            "quote_timestamp",
+            "timestamp_kind",
+        ):
+            field_sources[field] = "alpaca_opra_stream"
+        if last > 0 and trade_age is not None and trade_age <= maximum:
+            field_sources["last"] = "alpaca_opra_stream"
+            field_sources["last_trade_timestamp"] = "alpaca_opra_stream"
+        out.at[idx, "fabric_field_sources"] = json.dumps(field_sources, sort_keys=True)
         replaced += 1
 
     return out, {

@@ -91,7 +91,7 @@ def build_matches(stock_payload: dict[str, Any], options_payload: dict[str, Any]
         if isinstance(row, dict) and str(row.get("symbol") or "").strip()
     }
     contracts_by_symbol: dict[str, list[dict[str, Any]]] = {}
-    for row in options_payload.get("contracts", []):
+    for row in options_payload.get("production_directional_signals", []):
         if not isinstance(row, dict):
             continue
         symbol = str(row.get("symbol") or "").upper().strip()

@@ -175,3 +175,19 @@ def test_zero_alert_max_sends_all_qualified_unique_symbols(monkeypatch):
     assert sender.send(payload, state) == 2
     assert len(sent) == 2
     assert {"XYZ:CALL", "ABC:CALL"}.issubset(state["sent"])
+
+
+def test_production_readiness_never_falls_back_to_raw_directional_rows(monkeypatch):
+    monkeypatch.setenv("OPTIONS_FREE_ALERTS_ENABLED", "false")
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "provider_readiness": {
+            "production_quote_ready": True,
+            "status": "LIVE_QUOTES_NO_TRADE_FLOW",
+        },
+        "directional_signals": [_signal()],
+        "production_directional_signals": [],
+    }
+    mode, rows, _ = sender.select_rows(payload)
+    assert mode == "blocked"
+    assert rows == []

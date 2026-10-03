@@ -71,10 +71,11 @@ def _direction(row: dict[str, Any]) -> str:
 
 def _signals(payload: dict[str, Any]) -> list[dict[str, Any]]:
     readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
-    if readiness.get("production_quote_ready") is True:
-        rows = payload.get("production_directional_signals") or payload.get("directional_signals") or []
+    production = payload.get("production_directional_signals") or []
+    if readiness.get("production_quote_ready") is True and production:
+        rows = production
     else:
-        rows = payload.get("free_directional_signals") or payload.get("directional_signals") or []
+        rows = payload.get("free_directional_signals") or []
     output = [dict(row) for row in rows if isinstance(row, dict)]
     output.sort(
         key=lambda row: (

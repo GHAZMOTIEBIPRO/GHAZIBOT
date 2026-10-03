@@ -16,19 +16,12 @@ from options_radar.outcome_learning import update_outcome_learning
 from options_radar.provider_readiness import assess_provider_readiness
 from options_radar.runtime_hardening import install_options_radar_hardening
 from options_radar.settings import Settings
+from options_radar.v11_gate import apply_v11_gate
 
 from scripts import run_options_radar_chart_first as base
 
 
 def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
-    if readiness.get("production_quote_ready") is True:
-        payload.setdefault("summary", {})["production_alerts_blocked"] = False
-        payload["production_directional_signals"] = list(
-            payload.get("directional_signals") or []
-        )
-        payload["free_directional_signals"] = []
-        return
-
     contracts = [
         row for row in payload.get("contracts", []) if isinstance(row, dict)
     ]
@@ -43,17 +36,65 @@ def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
         for row in payload.get("directional_signals", [])
         if isinstance(row, dict)
     ]
-    free_directional = [
-        row for row in directional if row.get("free_alert_eligible") is True
+
+    gated_directional = apply_v11_gate(directional)
+    production_directional = [
+        row
+        for row in gated_directional
+        if isinstance(row.get("v11_decision"), dict)
+        and row["v11_decision"].get("approved") is True
     ]
+    free_directional = [
+        row
+        for row in gated_directional
+        if not (
+            isinstance(row.get("v11_decision"), dict)
+            and row["v11_decision"].get("approved") is True
+        )
+        and row.get("free_alert_eligible") is True
+    ]
+
+    payload["research_directional_signals"] = gated_directional
+    payload["production_directional_signals"] = (
+        production_directional
+        if readiness.get("production_quote_ready") is True
+        else []
+    )
+    payload["free_directional_signals"] = free_directional
+
     summary = payload.setdefault("summary", {})
+    summary["research_directional_signals"] = len(gated_directional)
+    summary["production_directional_signals"] = len(
+        payload["production_directional_signals"]
+    )
+    summary["free_directional_signals"] = len(free_directional)
+    summary["v11_rejected_directional_signals"] = (
+        len(gated_directional) - len(production_directional)
+    )
+
+    if readiness.get("production_quote_ready") is True:
+        payload["directional_signals"] = list(
+            payload["production_directional_signals"]
+        )
+        summary["directional_signals"] = len(payload["directional_signals"])
+        summary["production_alerts_blocked"] = bool(
+            gated_directional and not payload["production_directional_signals"]
+        )
+        if summary["production_alerts_blocked"]:
+            summary["production_block_reason"] = "NO_V11_APPROVED_CONTRACT"
+        else:
+            summary.pop("production_block_reason", None)
+        payload.setdefault("flow_policy", {}).update(
+            {
+                "production_directional_requires_v11": True,
+                "raw_directional_can_enter_production_alerts": False,
+            }
+        )
+        return
 
     payload["research_contracts"] = contracts
     payload["research_top_calls"] = top_calls
     payload["research_top_puts"] = top_puts
-    payload["research_directional_signals"] = directional
-    payload["free_directional_signals"] = free_directional
-    payload["production_directional_signals"] = []
     payload["contracts"] = []
     payload["top_calls"] = []
     payload["top_puts"] = []
@@ -62,8 +103,6 @@ def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
     summary["research_contracts_selected"] = len(contracts)
     summary["research_calls_selected"] = len(top_calls)
     summary["research_puts_selected"] = len(top_puts)
-    summary["research_directional_signals"] = len(directional)
-    summary["free_directional_signals"] = len(free_directional)
     summary["contracts_selected"] = 0
     summary["calls_selected"] = 0
     summary["puts_selected"] = 0
@@ -80,6 +119,8 @@ def _quarantine_research_contracts(payload: dict, readiness: dict) -> None:
             "fallback_contracts_can_enter_strict_free_alerts": True,
             "fallback_contracts_remain_available_for_shadow_research": True,
             "strict_free_alerts_are_production_signals": False,
+            "production_directional_requires_v11": True,
+            "raw_directional_can_enter_production_alerts": False,
         }
     )
     payload.setdefault("limitations", []).append(

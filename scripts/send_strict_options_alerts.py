@@ -242,12 +242,10 @@ def select_rows(
         else {}
     )
     if readiness.get("production_quote_ready") is True:
-        rows = (
-            payload.get("production_directional_signals")
-            or payload.get("directional_signals")
-            or []
-        )
-        return "production", [row for row in rows if isinstance(row, dict)], readiness
+        rows = payload.get("production_directional_signals") or []
+        production = [row for row in rows if isinstance(row, dict)]
+        if production:
+            return "production", production, readiness
     free_enabled = os.getenv("OPTIONS_FREE_ALERTS_ENABLED", "true").strip().lower() not in {
         "0",
         "false",
