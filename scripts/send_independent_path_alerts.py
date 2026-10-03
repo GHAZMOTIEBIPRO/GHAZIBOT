@@ -285,7 +285,13 @@ def send_options(payload: dict[str, Any], state: dict[str, Any]) -> int:
 
     minimum = _number(os.getenv("OPTIONS_ALERT_MIN_SCORE", "65"), 65.0)
     maximum = max(1, min(6, int(_number(os.getenv("OPTIONS_ALERT_MAX", "4"), 4))))
-    rows = [row for row in payload.get("contracts", []) if isinstance(row, dict)]
+    rows = [
+        row
+        for row in payload.get("production_directional_signals", [])
+        if isinstance(row, dict)
+        and isinstance(row.get("v11_decision"), dict)
+        and row["v11_decision"].get("approved") is True
+    ]
     rows.sort(
         key=lambda row: (
             _number(row.get("flow_rank_score")),
