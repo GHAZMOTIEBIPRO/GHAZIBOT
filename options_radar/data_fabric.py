@@ -269,6 +269,18 @@ def _latest_age_seconds(value: Any) -> float | None:
     return max(0.0, (pd.Timestamp.now(tz="UTC") - stamp).total_seconds())
 
 
+def _quote_age_seconds(row: pd.Series | dict[str, Any]) -> float | None:
+    explicit = row.get("quote_timestamp")
+    if explicit is not None and not pd.isna(explicit):
+        return _latest_age_seconds(explicit)
+    kind = str(row.get("timestamp_kind") or "").strip().lower()
+    if kind in {"last_trade", "trade", "provider_update", "generated", "generated_at", "snapshot", "response"}:
+        return None
+    if kind and kind not in {"quote", "provider_quote", "quote_snapshot"}:
+        return None
+    return _latest_age_seconds(row.get("updated_at"))
+
+
 def reconcile_option_chains(
     frames: dict[str, pd.DataFrame],
     *,
@@ -304,7 +316,7 @@ def reconcile_option_chains(
     for _, group in combined.groupby("contract_symbol", sort=False):
         group = group.copy()
         group["_mid"] = group.apply(_quote_mid, axis=1)
-        group["_age"] = group.get("updated_at", pd.Series(index=group.index, dtype=object)).map(_latest_age_seconds)
+        group["_age"] = group.apply(_quote_age_seconds, axis=1)
         group["_recency_bonus"] = group["_age"].map(lambda value: 0.03 if value is not None and value <= 120 else 0.0)
         group["_rank"] = group["data_quality"] + group["_recency_bonus"]
         quote_rows = group[group.apply(_valid_quote, axis=1)].sort_values(["_rank", "data_quality"], ascending=False)
@@ -321,6 +333,10 @@ def reconcile_option_chains(
         families = list(dict.fromkeys(_provider_family(value) for value in provider_names))
         quote_provider = str(base.get("_fabric_provider") or "")
         field_sources: dict[str, str] = {"bid": quote_provider, "ask": quote_provider, "last": quote_provider}
+        for timestamp_column in ("updated_at", "quote_timestamp", "last_trade_timestamp", "timestamp_kind"):
+            value = base.get(timestamp_column)
+            if value is not None and not pd.isna(value) and str(value) != "":
+                field_sources[timestamp_column] = quote_provider
 
         for column in (
             "volume",
@@ -331,7 +347,6 @@ def reconcile_option_chains(
             "theta",
             "vega",
             "underlying_price",
-            "updated_at",
             "expiration",
             "strike",
             "option_type",
@@ -383,8 +398,12 @@ def reconcile_option_chains(
     result = pd.DataFrame(rows)
     drop_columns = [column for column in result.columns if column.startswith("_fabric_") or column in {"_mid", "_age", "_recency_bonus", "_rank", "_present"}]
     result = result.drop(columns=drop_columns, errors="ignore").reset_index(drop=True)
+    audit_families = list(dict.fromkeys(_provider_family(name) for name in frames))
     audit = {
         "source_count": len(frames),
+        "transport_source_count": len(frames),
+        "independent_source_count": len(audit_families),
+        "source_families": audit_families,
         "sources": list(frames),
         "contracts": len(result),
         "consensus_contracts": consensus_contracts,

@@ -375,7 +375,17 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                     "fabric_quote_divergence_pct": row.get("fabric_quote_divergence_pct"),
                     "fabric_source_tier": row.get("fabric_source_tier"),
                     "freshness_label": row.get("freshness_label"),
-                    "quote_timestamp": row.get("quote_timestamp") or row.get("updated_at"),
+                    "quote_timestamp": (
+                        row.get("quote_timestamp")
+                        or (
+                            row.get("updated_at")
+                            if str(row.get("timestamp_kind") or "").lower()
+                            in {"", "quote", "provider_quote", "quote_snapshot"}
+                            else None
+                        )
+                    ),
+                    "last_trade_timestamp": row.get("last_trade_timestamp"),
+                    "timestamp_kind": row.get("timestamp_kind"),
                     "updated_at": row.get("updated_at"),
                     "strict_score": row.get("strict_score", row.get("score")),
                     "strict_blockers": row.get("strict_blockers") or [],

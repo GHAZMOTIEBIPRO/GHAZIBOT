@@ -18,7 +18,8 @@ LOGGER = logging.getLogger(__name__)
 STANDARD_COLUMNS = [
     "contract_symbol", "symbol", "expiration", "strike", "option_type",
     "bid", "ask", "last", "volume", "open_interest", "iv", "delta",
-    "gamma", "theta", "vega", "underlying_price", "updated_at", "source",
+    "gamma", "theta", "vega", "underlying_price", "updated_at",
+    "quote_timestamp", "last_trade_timestamp", "timestamp_kind", "source",
     "data_quality", "freshness_label", "aggressor_proxy",
 ]
 
@@ -42,8 +43,10 @@ def _as_int(value: Any, default: int = 0) -> int:
 
 
 def _to_utc(value: Any) -> pd.Timestamp:
+    # Missing provider time must stay missing. Never manufacture freshness from
+    # the local clock; callers decide whether a timestamp is quote/trade/update.
     if value is None or value == "":
-        return pd.Timestamp.now(tz="UTC")
+        return pd.NaT
     if isinstance(value, (int, float)):
         return pd.to_datetime(value, unit="s", utc=True)
     return pd.to_datetime(value, utc=True, errors="coerce")
@@ -113,6 +116,9 @@ class YahooProvider(OptionsProvider):
                     "vega": np.nan,
                     "underlying_price": underlying,
                     "updated_at": pd.to_datetime(raw["lastTradeDate"], utc=True, errors="coerce"),
+                    "quote_timestamp": pd.NaT,
+                    "last_trade_timestamp": pd.to_datetime(raw["lastTradeDate"], utc=True, errors="coerce"),
+                    "timestamp_kind": "last_trade",
                     "source": "yahoo/yfinance",
                     "data_quality": 0.52,
                     "freshness_label": "unofficial / may be delayed",
@@ -167,6 +173,9 @@ class MarketDataProvider(OptionsProvider):
                 row[target] = values[i] if i < len(values) else None
             row["expiration"] = pd.to_datetime(row["expiration"], errors="coerce")
             row["updated_at"] = _to_utc(row["updated_at"])
+            row["quote_timestamp"] = pd.NaT
+            row["last_trade_timestamp"] = pd.NaT
+            row["timestamp_kind"] = "provider_update"
             row.update(
                 source="marketdata.app",
                 data_quality=0.72,
@@ -244,6 +253,7 @@ class TradierProvider(OptionsProvider):
             for item in options or []:
                 greeks = item.get("greeks") or {}
                 last, bid, ask = (_as_float(item.get(k)) for k in ("last", "bid", "ask"))
+                trade_timestamp = _to_utc(item.get("trade_date"))
                 rows.append({
                     "contract_symbol": item.get("symbol"),
                     "symbol": symbol,
@@ -261,7 +271,10 @@ class TradierProvider(OptionsProvider):
                     "theta": _as_float(greeks.get("theta")),
                     "vega": _as_float(greeks.get("vega")),
                     "underlying_price": underlying,
-                    "updated_at": pd.Timestamp.now(tz="UTC"),
+                    "updated_at": trade_timestamp,
+                    "quote_timestamp": pd.NaT,
+                    "last_trade_timestamp": trade_timestamp,
+                    "timestamp_kind": "last_trade",
                     "source": "tradier",
                     "data_quality": quality,
                     "freshness_label": freshness,
@@ -294,6 +307,8 @@ class CompositeOptionsProvider(OptionsProvider):
         for _, group in combined.sort_values("data_quality", ascending=False).groupby("contract_symbol", sort=False):
             base = group.iloc[0].copy()
             for column in STANDARD_COLUMNS:
+                if column in {"updated_at", "quote_timestamp", "last_trade_timestamp", "timestamp_kind"}:
+                    continue
                 value = base.get(column)
                 if pd.isna(value) or value in (None, ""):
                     candidates = group[column].dropna() if column in group else pd.Series(dtype=object)
@@ -362,7 +377,17 @@ class AlpacaEnricher:
             out.at[idx, "iv"] = _as_float(snap.get("impliedVolatility"), _as_float(row["iv"]))
             for greek in ("delta", "gamma", "theta", "vega"):
                 out.at[idx, greek] = _as_float(greeks.get(greek), _as_float(row[greek]))
-            out.at[idx, "updated_at"] = _to_utc(quote.get("t") or trade.get("t"))
+            quote_timestamp = _to_utc(quote.get("t"))
+            trade_timestamp = _to_utc(trade.get("t"))
+            if not pd.isna(quote_timestamp):
+                out.at[idx, "updated_at"] = quote_timestamp
+                out.at[idx, "quote_timestamp"] = quote_timestamp
+                out.at[idx, "timestamp_kind"] = "quote"
+            elif not pd.isna(trade_timestamp):
+                out.at[idx, "updated_at"] = trade_timestamp
+                out.at[idx, "quote_timestamp"] = pd.NaT
+                out.at[idx, "timestamp_kind"] = "last_trade"
+            out.at[idx, "last_trade_timestamp"] = trade_timestamp
             out.at[idx, "source"] = f"{row['source']} + alpaca"
             out.at[idx, "data_quality"] = min(0.95, max(_as_float(row["data_quality"], 0.0), 0.82))
             out.at[idx, "freshness_label"] = f"{row['freshness_label']} | Alpaca {self.settings.alpaca_options_feed}"

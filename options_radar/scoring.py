@@ -187,9 +187,19 @@ def score_chain(
     frame["vol_oi"] = frame["vol_oi"].replace([np.inf, -np.inf], np.nan)
 
     frame["updated_at"] = pd.to_datetime(frame.get("updated_at"), utc=True, errors="coerce")
+    explicit_last_trade = pd.to_datetime(
+        frame.get("last_trade_timestamp", pd.Series(pd.NaT, index=frame.index)),
+        utc=True,
+        errors="coerce",
+    )
+    timestamp_kind = frame.get(
+        "timestamp_kind", pd.Series("", index=frame.index, dtype=object)
+    ).fillna("").astype(str).str.lower()
+    legacy_last_trade = frame["updated_at"].where(timestamp_kind.eq(""))
+    last_trade_at = explicit_last_trade.fillna(legacy_last_trade)
     now_utc = pd.Timestamp.now(tz="UTC")
     frame["last_trade_age_minutes"] = (
-        (now_utc - frame["updated_at"]).dt.total_seconds() / 60.0
+        (now_utc - last_trade_at).dt.total_seconds() / 60.0
     ).clip(lower=0)
     frame["bid_ask_valid"] = (
         (frame["bid"] > 0)
