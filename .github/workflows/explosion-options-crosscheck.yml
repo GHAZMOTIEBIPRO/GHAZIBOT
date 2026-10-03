@@ -55,5 +55,111 @@ jobs:
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
-      - name: Syntax probe
-        run: echo "crosscheck workflow parsed"
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Require U.S. regular session
+        id: market
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime, timezone
+          import exchange_calendars as xcals
+          import pandas as pd
+          cal = xcals.get_calendar("XNYS")
+          minute = pd.Timestamp(datetime.now(timezone.utc)).floor("min")
+          try:
+              opened = bool(cal.is_open_on_minute(minute))
+          except Exception:
+              opened = False
+          print(f"open={'true' if opened else 'false'}")
+          PY
+
+      - name: Restore Fast Explosion evidence
+        if: steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/live
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            gh run download "${{ github.event.workflow_run.id }}" -n fast-market-state -D .fast-source
+          else
+            source_run="$(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+            [[ -n "$source_run" ]] && gh run download "$source_run" -n fast-market-state -D .fast-source
+          fi
+          test -s .fast-source/fast_explosion_scan.json
+          cp .fast-source/fast_explosion_scan.json data/live/fast_explosion_scan.json
+
+      - name: Restore isolated cross-check state
+        if: steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p data/live .crosscheck-restore
+          previous="$(gh run list --workflow explosion-options-crosscheck.yml --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)"
+          if [[ -n "$previous" ]]; then
+            gh run download "$previous" -n explosion-options-crosscheck-state -D .crosscheck-restore >/dev/null 2>&1 || true
+            cp -f .crosscheck-restore/* data/live/ 2>/dev/null || true
+          fi
+
+      - name: Build dynamic explosion options universe
+        if: steps.market.outputs.open == 'true'
+        run: >-
+          python -m scripts.build_explosion_options_universe
+          --fast data/live/fast_explosion_scan.json
+          --json data/live/explosion_options_universe.json
+          --text data/live/explosion_options_universe.txt
+          --max-symbols 30
+
+      - name: Decide whether a new scan is due
+        if: steps.market.outputs.open == 'true'
+        id: due
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          universe = json.loads(Path("data/live/explosion_options_universe.json").read_text())
+          symbols = universe.get("symbols") or []
+          fingerprint = str(universe.get("fingerprint") or "")
+          state_path = Path("data/live/explosion_options_crosscheck_state.json")
+          try:
+              state = json.loads(state_path.read_text())
+          except Exception:
+              state = {}
+          previous = str(state.get("fingerprint") or "")
+          raw_time = str(state.get("last_scan_at") or "")
+          age = 9999.0
+          if raw_time:
+              try:
+                  stamp = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+                  age = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60
+              except Exception:
+                  pass
+          due = bool(symbols) and (fingerprint != previous or age >= 12.0)
+          print(f"scan={'true' if due else 'false'}")
+          print(f"symbols={len(symbols)}")
+          print(f"fingerprint={fingerprint}")
+          PY
+
+      - name: Run same-cycle hardened options cross-check
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true'
+        run: >-
+          python -m scripts.run_options_radar_fabric
+          --universe data/live/explosion_options_universe.txt
+          --output public/data/explosion_options_crosscheck.json
+          --max-symbols 30
+          --top-per-side 10
+          --configured-priority
+
