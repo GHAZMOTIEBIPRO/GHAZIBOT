@@ -92,7 +92,11 @@ def _fabric_classification(
             # but absence of an explicit live marker must not create Production.
             pass
 
-    stream_execution = bool(stream.get("execution_grade")) and int(stream.get("execution_quotes_replaced") or 0) > 0
+    stream_execution = (
+        bool(stream.get("execution_grade"))
+        and str(stream.get("feed") or "").strip().lower() == "opra"
+        and int(stream.get("execution_quotes_replaced") or 0) > 0
+    )
     if stream_execution:
         live_quote = True
     opra = stream_execution or bool(fabric.get("opra_source_active"))
@@ -174,10 +178,11 @@ def assess_provider_readiness(
             opra += 1
 
     stream_source_text = str(stream_source or "").strip().lower()
-    live_tradier = bool(stream_active and stream_source_text == "tradier" and "sandbox" not in tradier_base_url.lower())
-    live_opra_stream = bool(stream_active and _contains(stream_source_text, _OPRA_TOKENS))
-    production_quote_ready = bool(live_primary > 0 or live_tradier or live_opra_stream)
-    production_flow_ready = bool(opra > 0 or live_tradier or live_opra_stream)
+    # A process-level "stream active" flag is observability context, not
+    # per-contract execution evidence. Production authority comes only from
+    # structured quote checks recorded in provider metadata.
+    production_quote_ready = bool(live_primary > 0)
+    production_flow_ready = bool(production_quote_ready and opra > 0)
 
     reasons: list[str] = []
     if usable == 0 and not stream_active:
