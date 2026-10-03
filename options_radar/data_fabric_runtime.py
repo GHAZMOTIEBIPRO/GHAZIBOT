@@ -12,6 +12,7 @@ from .data_fabric import (
     reconcile_option_chains,
     reconcile_stock_bars,
 )
+from .execution_confidence import assess_execution_quote
 from .stream_overlay import (
     load_stream_snapshot,
     overlay_option_chain_from_stream,
@@ -329,6 +330,27 @@ def install_data_fabric() -> None:
                 )
             )
             raise hybrid.DataUnavailableError(f"option_chain:{symbol}", attempts)
+        maximum_quote_age = float(
+            os.getenv("OPTIONS_EXECUTION_MAX_QUOTE_AGE_SECONDS", "120")
+        )
+        execution_checks = [
+            assess_execution_quote(
+                row,
+                max_quote_age_seconds=maximum_quote_age,
+            ).as_dict()
+            for row in frame.to_dict(orient="records")
+        ]
+        execution_ready = [
+            item for item in execution_checks if item.get("execution_ready") is True
+        ]
+        verifiable_timestamps = [
+            item for item in execution_checks if item.get("quote_timestamp")
+        ]
+        audit["execution_quote_checked_contracts"] = len(execution_checks)
+        audit["execution_quote_ready_contracts"] = len(execution_ready)
+        audit["verifiable_quote_timestamp_contracts"] = len(verifiable_timestamps)
+        audit["execution_quote_max_age_seconds"] = maximum_quote_age
+
         source = "fabric:" + "+".join(audit.get("sources") or list(frames))
         if int(stream_audit.get("execution_quotes_replaced") or 0) > 0:
             source += "+alpaca_opra_stream"
