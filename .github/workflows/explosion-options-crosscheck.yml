@@ -258,3 +258,14 @@ jobs:
           include-hidden-files: true
           retention-days: 30
 
+      - name: Upload cross-check research payload
+        if: steps.market.outputs.open == 'true' && steps.due.outputs.scan == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: explosion-options-crosscheck
+          path: |
+            public/data/explosion_options_crosscheck.json
+            data/live/explosion_options_universe.json
+          if-no-files-found: error
+          retention-days: 7
+
