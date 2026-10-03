@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -46,3 +48,22 @@ def test_yahooquery_is_reported_as_same_family_fallback():
     yahooquery = next(row for row in sources if row["name"] == "yahooquery")
     assert yahooquery["configured"] is True
     assert "same source family" in yahooquery["role"]
+
+
+def test_market_bar_provider_order_is_deduplicated_preserving_order():
+    settings = Settings(
+        daily_provider_order="tradier,yahooquery,yahooquery,yahoo,tradier"
+    )
+    assert bars._provider_names(settings, intraday=False) == [
+        "tradier",
+        "yahooquery",
+        "yahoo",
+    ]
+
+
+def test_workflow_defaults_do_not_repeat_yahooquery_transport():
+    for path in (
+        Path(".github/workflows/options-radar.yml"),
+        Path(".github/workflows/classical-direction-radar.yml"),
+    ):
+        assert "yahooquery,yahooquery" not in path.read_text(encoding="utf-8")
