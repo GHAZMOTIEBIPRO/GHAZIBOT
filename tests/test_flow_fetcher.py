@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 
 from options_radar.flow_fetcher import _normalise_provider_timestamp
-from options_radar.hybrid_fetcher import DataFetcher
+from options_radar.hybrid_fetcher import DataFetcher, _ordered_unique_provider_names
 
 
 def test_tradier_millisecond_epoch_is_not_read_as_1970():
@@ -77,3 +77,12 @@ def test_hybrid_schema_carries_timestamp_provenance_fields():
     assert "quote_timestamp" in OPTION_COLUMNS
     assert "last_trade_timestamp" in OPTION_COLUMNS
     assert "timestamp_kind" in OPTION_COLUMNS
+
+
+def test_hybrid_provider_order_deduplicates_exact_transports():
+    assert _ordered_unique_provider_names(
+        "tradier,yahooquery,yahooquery,yahoo,tradier"
+    ) == ["tradier", "yahooquery", "yahoo"]
+    assert _ordered_unique_provider_names(
+        ["finnhub", "finnhub", "yahoo", "yfinance", "yahoo"]
+    ) == ["finnhub", "yahoo", "yfinance"]
