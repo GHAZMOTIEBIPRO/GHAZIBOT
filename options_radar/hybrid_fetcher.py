@@ -123,6 +123,16 @@ def _safe_int(value: Any, default: int = 0) -> int:
     return default if math.isnan(number) else int(number)
 
 
+def _ordered_unique_provider_names(values: str | list[str] | tuple[str, ...]) -> list[str]:
+    raw_values = values.split(",") if isinstance(values, str) else values
+    output: list[str] = []
+    for item in raw_values:
+        name = str(item or "").strip().lower()
+        if name and name not in output:
+            output.append(name)
+    return output
+
+
 def _normalise_bars(frame: pd.DataFrame, *, index_column: str | None = None) -> pd.DataFrame:
     if frame is None or frame.empty:
         return pd.DataFrame(columns=OHLCV)
@@ -272,11 +282,11 @@ class DataFetcher:
         end_dt = _utc_timestamp(end)
         start_value = start or (end_dt - pd.Timedelta(days=420 if interval == "1d" else 30))
         start_dt = _utc_timestamp(start_value)
-        order = providers or [
-            item.strip().lower()
-            for item in str(getattr(self.settings, "stock_provider_order", "tiingo,finnhub,yahoo")).split(",")
-            if item.strip()
-        ]
+        order = _ordered_unique_provider_names(
+            providers
+            if providers is not None
+            else str(getattr(self.settings, "stock_provider_order", "tiingo,finnhub,yahoo"))
+        )
         attempts: list[FetchAttempt] = []
         loaders: dict[str, Callable[[], pd.DataFrame]] = {
             "tiingo": lambda: self._tiingo_bars(symbol, start_dt, end_dt, interval),
@@ -432,11 +442,11 @@ class DataFetcher:
         symbol = symbol.strip().upper()
         min_days = int(min_dte if min_dte is not None else getattr(self.settings, "min_dte", 14))
         max_days = int(max_dte if max_dte is not None else getattr(self.settings, "max_dte", 60))
-        order = providers or [
-            item.strip().lower()
-            for item in str(getattr(self.settings, "options_provider_order", "tradier,finnhub,yahoo")).split(",")
-            if item.strip()
-        ]
+        order = _ordered_unique_provider_names(
+            providers
+            if providers is not None
+            else str(getattr(self.settings, "options_provider_order", "tradier,finnhub,yahoo"))
+        )
         attempts: list[FetchAttempt] = []
         loaders: dict[str, Callable[[], pd.DataFrame]] = {
             "tradier": lambda: self._tradier_chain(symbol, min_days, max_days),

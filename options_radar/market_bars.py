@@ -358,7 +358,12 @@ Provider = Callable[[Settings, str], BarResult]
 
 def _provider_names(settings: Settings, *, intraday: bool) -> list[str]:
     raw = settings.intraday_provider_order if intraday else settings.daily_provider_order
-    return [item.strip().lower() for item in raw.split(",") if item.strip()]
+    output: list[str] = []
+    for item in raw.split(","):
+        name = item.strip().lower()
+        if name and name not in output:
+            output.append(name)
+    return output
 
 
 def _call_provider(name: str, settings: Settings, symbol: str, *, interval: str,
