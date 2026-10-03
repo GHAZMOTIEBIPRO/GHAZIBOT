@@ -102,6 +102,9 @@ def install_data_fabric() -> None:
                     "ask",
                     "last",
                     "updated_at",
+                    "quote_timestamp",
+                    "last_trade_timestamp",
+                    "timestamp_kind",
                     "source",
                     "freshness_label",
                     "data_quality",
@@ -115,7 +118,15 @@ def install_data_fabric() -> None:
         # Alpaca documents the free option feed as indicative; trades are delayed.
         # Preserve the pre-existing quote pair and timestamp. Alpaca still enriches
         # IV/Greeks, but it cannot silently become the execution quote source.
-        for column in ("bid", "ask", "last", "updated_at"):
+        for column in (
+            "bid",
+            "ask",
+            "last",
+            "updated_at",
+            "quote_timestamp",
+            "last_trade_timestamp",
+            "timestamp_kind",
+        ):
             if column in base and column in out:
                 out[column] = base[column]
         quality_source = base.get("data_quality", pd.Series(0.0, index=base.index))

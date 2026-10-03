@@ -30,9 +30,8 @@ def _normalise_provider_timestamp(value: Any) -> Any:
 
 def _build_option_row_with_normalized_timestamp(**values: Any) -> dict[str, Any]:
     prepared = dict(values)
-    prepared["updated_at"] = _normalise_provider_timestamp(
-        prepared.get("updated_at")
-    )
+    for key in ("updated_at", "quote_timestamp", "last_trade_timestamp"):
+        prepared[key] = _normalise_provider_timestamp(prepared.get(key))
     return _ORIGINAL_BUILD_OPTION_ROW(**prepared)
 
 
