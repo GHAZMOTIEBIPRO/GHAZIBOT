@@ -232,10 +232,11 @@ def _features(row: dict[str, Any]) -> dict[str, Any]:
 
 def _rows_for_tracking(payload: dict[str, Any]) -> tuple[str, list[dict[str, Any]], float]:
     readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
-    if readiness.get("production_quote_ready") is True:
-        rows = payload.get("production_directional_signals") or payload.get("directional_signals") or []
+    production = payload.get("production_directional_signals") or []
+    production_rows = [row for row in production if isinstance(row, dict)]
+    if readiness.get("production_quote_ready") is True and production_rows:
         minimum = _number(os.getenv("OPTIONS_ALERT_MIN_SCORE", "85"), 85.0)
-        return "production", [row for row in rows if isinstance(row, dict)], minimum
+        return "production", production_rows, minimum
     rows = payload.get("free_directional_signals") or []
     minimum = _number(os.getenv("OPTIONS_FREE_ALERT_MIN_SCORE", "87"), 87.0)
     return "free", [row for row in rows if isinstance(row, dict)], minimum
