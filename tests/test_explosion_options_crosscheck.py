@@ -58,3 +58,7 @@ def test_crosscheck_workflow_is_free_only_isolated_and_v11_sender_only():
     assert "send_strict_options_alerts" in text
     assert 'OPTIONS_ALERT_MAX: "0"' in text
     assert "automatic_execution" not in text.lower()
+    # A colon-space inside an unquoted YAML plain scalar made this workflow
+    # invalid from its first release and GitHub failed before creating a job.
+    assert 'run: echo "Explosion options cross-check skipped:' not in text
+    assert 'run: |\n          echo "Explosion options cross-check skipped:' in text
