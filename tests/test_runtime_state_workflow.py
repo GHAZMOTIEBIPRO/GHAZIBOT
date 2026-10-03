@@ -71,6 +71,18 @@ def test_general_runtime_vault_does_not_own_dedicated_runtime_feeds() -> None:
     assert '"public/data/free_data_health.json"' not in source
     assert '"public/data/free_gex_validation.json"' not in source
     assert '"public/data/free_gex_validation_history.json"' not in source
+    assert '"public/data/live_dashboard_status.json"' not in source
+
+
+def test_live_dashboard_status_has_one_bot_state_writer() -> None:
+    general = Path(".github/workflows/options-radar.yml").read_text(encoding="utf-8")
+    dedicated = Path(".github/workflows/live-dashboard-status.yml").read_text(encoding="utf-8")
+    vault = Path("scripts/runtime_state_vault.py").read_text(encoding="utf-8")
+
+    assert "runtime_state_vault publish" in general
+    assert '"public/data/live_dashboard_status.json"' not in vault
+    assert "runtime/public/data/live_dashboard_status.json" in dedicated or "git add runtime/" in dedicated
+    assert "BLACK BOX Omega Dashboard State" in dedicated
 
 
 def test_omega_runtime_publish_rebuilds_from_latest_bot_state_on_contention() -> None:
