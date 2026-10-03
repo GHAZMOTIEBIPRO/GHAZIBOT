@@ -20,6 +20,40 @@ jobs:
   crosscheck:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_OPTIONS_FEED: "indicative"
+      ALPACA_STOCK_FEED: "iex"
+      OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+      OPTIONS_INDEPENDENT_MAX_SYMBOLS: "30"
+      OPTIONS_INDEPENDENT_TOP_PER_SIDE: "10"
+      OPTIONS_STRICT_MIN_SCORE: ${{ secrets.OPTIONS_STRICT_MIN_SCORE || '85' }}
+      OPTIONS_STRICT_SIDE_EDGE: ${{ secrets.OPTIONS_STRICT_SIDE_EDGE || '6' }}
+      OPTIONS_FREE_ALERT_MIN_SCORE: ${{ secrets.OPTIONS_FREE_ALERT_MIN_SCORE || '87' }}
+      OPTIONS_FREE_ALERTS_ENABLED: "true"
+      OPTIONS_ALERT_MAX: "0"
+      OPTIONS_PAYLOAD_MAX_AGE_MINUTES: "30"
+      OCC_FREE_ENABLED: "true"
+      DATABASE_PATH: data/live/explosion_options_alert_state.json
+      SIGNAL_JOURNAL_PATH: data/live/explosion_options_signals.jsonl
+      OUTCOME_PATH: data/live/explosion_options_outcomes.json
+      CALIBRATION_PATH: data/live/explosion_options_calibration.json
+      DATA_FABRIC_HEALTH_PATH: data/live/explosion_options_provider_health.json
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
     steps:
       - name: Syntax probe
         run: echo "crosscheck workflow parsed"
