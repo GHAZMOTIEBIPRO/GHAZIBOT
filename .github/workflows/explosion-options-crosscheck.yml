@@ -20,6 +20,7 @@ jobs:
   crosscheck:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 22
     env:
       GH_TOKEN: ${{ github.token }}
       FREE_AUTONOMY_MODE: "true"
@@ -269,3 +270,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: No-scan status
+        if: steps.market.outputs.open != 'true' || steps.due.outputs.scan != 'true'
+        run: |
+          echo "Explosion options cross-check skipped: outside RTH, no candidates, or unchanged universe inside 12-minute rescan window."
