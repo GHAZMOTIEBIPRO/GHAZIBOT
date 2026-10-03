@@ -230,3 +230,31 @@ jobs:
           )
           PY
 
+      - name: Stage isolated cross-check state
+        if: always() && steps.market.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p .crosscheck-state
+          for file in \
+            explosion_options_crosscheck_state.json \
+            explosion_options_telegram_state.json \
+            explosion_options_alert_state.json \
+            explosion_options_signals.jsonl \
+            explosion_options_outcomes.json \
+            explosion_options_calibration.json \
+            explosion_options_provider_health.json; do
+            if [[ -f "data/live/$file" ]]; then
+              cp "data/live/$file" ".crosscheck-state/$file"
+            fi
+          done
+
+      - name: Upload isolated cross-check state
+        if: always() && steps.market.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: explosion-options-crosscheck-state
+          path: .crosscheck-state/
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 30
+
