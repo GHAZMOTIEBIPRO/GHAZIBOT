@@ -22,6 +22,8 @@ LOGGER = logging.getLogger(__name__)
 SEC_BASE = "https://www.sec.gov"
 SEC_FEED = f"{SEC_BASE}/cgi-bin/browse-edgar"
 SEC_TICKERS = f"{SEC_BASE}/files/company_tickers.json"
+SEC_SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
+LOCAL_CIK_MAP = Path("data/sec_cik_map.json")
 OPENFDA_DRUGSFDA = "https://api.fda.gov/drug/drugsfda.json"
 
 POSITIVE_PATTERNS: dict[str, tuple[int, str]] = {
@@ -125,16 +127,35 @@ class CatalystScanner:
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": settings.sec_user_agent,
+            "Accept": "application/json,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Encoding": "gzip, deflate",
-            "Host": "www.sec.gov",
         })
         self.cache_dir = Path("data/cache")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._ticker_maps: tuple[dict[str, tuple[str, str]], dict[str, str]] | None = None
+        self._sec_submissions_usable = False
 
     def _ticker_map(self) -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
         if self._ticker_maps is not None:
             return self._ticker_maps
+
+        by_cik: dict[str, tuple[str, str]] = {}
+        by_ticker: dict[str, str] = {}
+
+        # Seed from the checked-in official CIK snapshot so ephemeral GitHub
+        # runners remain useful even when sec.gov blocks a shared runner IP.
+        try:
+            if LOCAL_CIK_MAP.exists():
+                local_payload = json.loads(LOCAL_CIK_MAP.read_text(encoding="utf-8"))
+                if isinstance(local_payload, dict):
+                    for raw_ticker, raw_cik in local_payload.items():
+                        ticker = str(raw_ticker or "").strip().upper()
+                        cik = str(raw_cik or "").strip().zfill(10)
+                        if ticker and cik.isdigit():
+                            by_cik[cik] = (ticker, ticker)
+                            by_ticker[ticker] = ticker
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            LOGGER.warning("Local SEC CIK snapshot unavailable: %s", exc)
 
         cache = self.cache_dir / "sec_company_tickers.json"
         payload: dict = {}
@@ -150,28 +171,30 @@ class CatalystScanner:
             except OSError as exc:
                 LOGGER.warning("Could not persist SEC ticker-map cache: %s", exc)
         except Exception as exc:
-            LOGGER.warning("SEC ticker map unavailable; degrading SEC catalyst mapping instead of aborting: %s", exc)
+            LOGGER.warning(
+                "SEC ticker map unavailable; retaining local/persisted mappings instead of aborting: %s",
+                exc,
+            )
             if cache.exists():
                 try:
                     candidate = json.loads(cache.read_text(encoding="utf-8"))
                     if isinstance(candidate, dict):
                         payload = candidate
                     else:
-                        LOGGER.warning("SEC ticker-map cache has invalid shape; SEC mapping disabled for this run")
+                        LOGGER.warning("SEC ticker-map cache has invalid shape; live cache ignored")
                 except (OSError, json.JSONDecodeError) as cache_exc:
-                    LOGGER.warning("SEC ticker-map cache could not be read; SEC mapping disabled: %s", cache_exc)
+                    LOGGER.warning("SEC ticker-map cache could not be read: %s", cache_exc)
 
-        by_cik: dict[str, tuple[str, str]] = {}
-        by_ticker: dict[str, str] = {}
         for item in payload.values():
             if not isinstance(item, dict):
                 continue
             cik = str(item.get("cik_str", "")).zfill(10)
             ticker = str(item.get("ticker", "")).upper()
-            title = str(item.get("title", ""))
+            title = str(item.get("title", "")) or ticker
             if cik and ticker:
                 by_cik[cik] = (ticker, title)
                 by_ticker[ticker] = title
+
         self._ticker_maps = (by_cik, by_ticker)
         return self._ticker_maps
 
@@ -179,6 +202,11 @@ class CatalystScanner:
         response = self.session.get(filing_url, timeout=20)
         response.raise_for_status()
         page = response.text
+        direct_markers: list[str] = []
+        if re.search(r"<transactionCode>\s*P\s*</transactionCode>", page, flags=re.I):
+            direct_markers.append("transactioncode>p<")
+        if re.search(r"<transactionCode>\s*S\s*</transactionCode>", page, flags=re.I):
+            direct_markers.append("transactioncode>s<")
         candidates = re.findall(r'href=["\']([^"\']+)["\']', page, flags=re.I)
         ranked: list[tuple[int, str]] = []
         for href in candidates:
@@ -212,9 +240,105 @@ class CatalystScanner:
                     return text[:150_000]
             except requests.RequestException:
                 continue
-        return _clean_text(page)[:100_000]
+        return ((" ".join(direct_markers) + " " + _clean_text(page)).strip())[:100_000]
+
+    def _sec_submission_events(
+        self,
+        allowed_symbols: set[str],
+        *,
+        lookback_days: int = 10,
+        max_per_symbol: int = 12,
+    ) -> list[CatalystEvent]:
+        by_cik, company_names = self._ticker_map()
+        ticker_to_cik = {ticker: cik for cik, (ticker, _) in by_cik.items()}
+        forms = {"8-K", "6-K", "SC 13D", "SC 13D/A", "4"}
+        cutoff = date.today() - timedelta(days=max(1, lookback_days))
+        events: list[CatalystEvent] = []
+
+        for symbol in sorted(allowed_symbols):
+            cik = ticker_to_cik.get(symbol)
+            if not cik:
+                continue
+            try:
+                response = self.session.get(SEC_SUBMISSIONS.format(cik=cik), timeout=25)
+                response.raise_for_status()
+                payload = response.json()
+                if not isinstance(payload, dict):
+                    raise ValueError("SEC submissions response is not an object")
+                self._sec_submissions_usable = True
+            except Exception as exc:
+                LOGGER.warning("SEC submissions failed for %s/%s: %s", symbol, cik, exc)
+                continue
+
+            recent = ((payload.get("filings") or {}).get("recent") or {})
+            form_rows = recent.get("form") or []
+            filing_dates = recent.get("filingDate") or []
+            accessions = recent.get("accessionNumber") or []
+            documents = recent.get("primaryDocument") or []
+            company = str(payload.get("name") or company_names.get(symbol) or symbol)
+
+            matched = 0
+            for idx, raw_form in enumerate(form_rows):
+                form = str(raw_form or "").upper()
+                if form not in forms:
+                    continue
+                filing_date = str(filing_dates[idx] if idx < len(filing_dates) else "")
+                try:
+                    parsed_date = date.fromisoformat(filing_date)
+                except ValueError:
+                    continue
+                if parsed_date < cutoff:
+                    continue
+
+                accession = str(accessions[idx] if idx < len(accessions) else "")
+                primary = str(documents[idx] if idx < len(documents) else "")
+                folder = accession.replace("-", "")
+                url = (
+                    f"{SEC_BASE}/Archives/edgar/data/{int(cik)}/{folder}/{primary}"
+                    if folder and primary
+                    else ""
+                )
+                headline = f"{form} filing — {company}"
+                base_score, _, _ = _score_text(headline)
+                filing_text = ""
+                if url:
+                    try:
+                        time.sleep(0.11)
+                        filing_text = self._fetch_filing_text(url)
+                    except requests.RequestException as exc:
+                        LOGGER.debug("SEC primary document failed %s: %s", url, exc)
+
+                score, category, evidence = _score_text(f"{headline} {filing_text}")
+                if form.startswith("SC 13D") and score == 0:
+                    score, category, evidence = 14, "Activist/strategic investor filing", "Schedule 13D"
+                if form == "4" and score == 0:
+                    continue
+                if score == 0 and base_score == 0:
+                    continue
+
+                events.append(CatalystEvent(
+                    symbol=symbol,
+                    company=company,
+                    event_date=filing_date,
+                    category=category,
+                    headline=headline,
+                    score=score,
+                    source="SEC EDGAR submissions",
+                    form=form,
+                    url=url,
+                    evidence=evidence,
+                ))
+                matched += 1
+                if matched >= max_per_symbol:
+                    break
+        return events
 
     def _sec_events(self, allowed_symbols: set[str], max_per_form: int = 16) -> list[CatalystEvent]:
+        if allowed_symbols:
+            direct_events = self._sec_submission_events(allowed_symbols)
+            if self._sec_submissions_usable:
+                return direct_events
+
         by_cik, _ = self._ticker_map()
         events: list[CatalystEvent] = []
         namespace = {"atom": "http://www.w3.org/2005/Atom"}
