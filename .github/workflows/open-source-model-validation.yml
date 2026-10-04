@@ -2,6 +2,11 @@ name: BLACK BOX Open Source Model Validation
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/open-source-model-validation.yml"
+      - "scripts/validate_open_source_greeks.py"
+      - "requirements-research.txt"
   schedule:
     - cron: "40 9 * * 0"
 
@@ -18,8 +23,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
 
       - uses: actions/setup-python@v5
         with:
