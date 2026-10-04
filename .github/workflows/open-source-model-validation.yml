@@ -33,7 +33,7 @@ jobs:
         run: pip install -r requirements-research.txt
 
       - name: Validate modeled Greeks against MIT reference libraries
-        run: python scripts/validate_open_source_greeks.py
+        run: python -m scripts.validate_open_source_greeks
 
       - name: Upload validation evidence
         uses: actions/upload-artifact@v4
