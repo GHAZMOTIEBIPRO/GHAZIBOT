@@ -139,7 +139,8 @@ def _resample_regular_session(frame: pd.DataFrame, minutes: int) -> pd.DataFrame
 
     # A signal may only use a closed 15-minute/hourly bar, never the live partial bar.
     now = pd.Timestamp.now(tz="America/New_York")
-    bars = bars[(bars.index + pd.Timedelta(minutes=minutes)) <= now]
+    latest_closed_start = now - pd.Timedelta(int(minutes), unit="min")
+    bars = bars[bars.index <= latest_closed_start]
     return bars.tz_convert("UTC")
 
 

@@ -31,6 +31,8 @@ def test_research_dependencies_are_not_in_realtime_paid_runtime():
 def test_open_source_validation_workflow_is_weekly_or_manual_not_market_critical():
     text = Path(".github/workflows/open-source-model-validation.yml").read_text(encoding="utf-8")
     assert "workflow_dispatch:" in text
+    assert "pull_request:" in text
     assert 'cron: "40 9 * * 0"' in text
-    assert "validate_open_source_greeks.py" in text
+    assert "python -m scripts.validate_open_source_greeks" in text
+    assert "ref: main" not in text
     assert "open-source-model-validation" in text
