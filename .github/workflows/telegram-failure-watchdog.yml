@@ -25,9 +25,15 @@ jobs:
   notify-failure:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'failure' ||
-      github.event.workflow_run.conclusion == 'cancelled' ||
-      github.event.workflow_run.conclusion == 'timed_out'
+      (
+        github.event.workflow_run.head_branch == 'main' &&
+        (
+          github.event.workflow_run.conclusion == 'failure' ||
+          github.event.workflow_run.conclusion == 'timed_out' ||
+          github.event.workflow_run.conclusion == 'action_required' ||
+          github.event.workflow_run.conclusion == 'startup_failure'
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -36,6 +42,8 @@ jobs:
       RUN_NAME: ${{ github.event.workflow_run.name || 'Manual watchdog check' }}
       RUN_ID: ${{ github.event.workflow_run.id || 'manual' }}
       RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion || 'manual' }}
+      RUN_EVENT: ${{ github.event.workflow_run.event || 'manual' }}
+      RUN_BRANCH: ${{ github.event.workflow_run.head_branch || 'manual' }}
       RUN_URL: ${{ github.event.workflow_run.html_url || format('https://github.com/{0}/actions', github.repository) }}
 
     steps:
@@ -90,6 +98,8 @@ jobs:
               detail = (
                   f"المسار: {os.getenv('RUN_NAME', 'unknown')}\n"
                   f"الحالة: {conclusion}\n"
+                  f"الفرع: {os.getenv('RUN_BRANCH', 'unknown')}\n"
+                  f"نوع التشغيل: {os.getenv('RUN_EVENT', 'unknown')}\n"
                   f"Run ID: {os.getenv('RUN_ID', 'unknown')}"
               )
 
