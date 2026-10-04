@@ -1,8 +1,8 @@
 {
   "status": "degraded",
-  "generated_at": "2026-10-03T20:30:26.445153+00:00",
+  "generated_at": "2026-10-04T22:07:03.414687+00:00",
   "dataset_age_minutes": 1.5,
-  "last_successful_refresh": "2026-10-03T20:30:26.445153+00:00",
+  "last_successful_refresh": "2026-10-04T22:07:03.414687+00:00",
   "option_provider": "yahoo/yfinance",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
@@ -30,12 +30,12 @@
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-10-03T20:29:16.968835+00:00",
+      "checked_at": "2026-10-04T22:05:39.502529+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
-      "start_date": "2026-09-19",
-      "end_date": "2026-10-03",
+      "start_date": "2026-09-20",
+      "end_date": "2026-10-04",
       "event_count": 0,
       "message": "SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
       "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
@@ -52,12 +52,12 @@
   },
   "row_counts": {
     "stocks": 15,
-    "options": 2,
-    "catalysts": 2,
+    "options": 1,
+    "catalysts": 0,
     "expiry_contracts": 0
   },
   "quality_counts": {
-    "stale_options": 2,
+    "stale_options": 1,
     "missing_expiry_family": 0,
     "duplicate_events_collapsed": 0,
     "errors": 5,
@@ -75,11 +75,11 @@
     "prefilter_skips": 0,
     "events_emitted": 0,
     "processed_accessions": 0,
-    "updated_at": "2026-10-03T20:29:27.380860+00:00"
+    "updated_at": "2026-10-04T22:05:49.803139+00:00"
   },
   "run_duration_seconds": null,
   "reasons": [
-    "2 stale option row(s)",
+    "1 stale option row(s)",
     "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
     "13 chain(s) are Yahoo/YFinance-only fallback",
     "13 chain(s) contain delayed, indicative, or unofficial sources"
