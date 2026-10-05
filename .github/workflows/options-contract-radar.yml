@@ -337,6 +337,26 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Record non-sensitive options E2E delivery evidence
+        if: always() && steps.market.outputs.open == 'true'
+        env:
+          TELEGRAM_READY: ${{ env.TELEGRAM_READY }}
+        run: >-
+          python scripts/write_e2e_delivery_evidence.py
+          --payload public/data/options_latest.json
+          --state data/live/options_telegram_alert_state.json
+          --output data/live/e2e_delivery_evidence.json
+          --run-id "${{ github.run_id }}"
+
+      - name: Upload options E2E delivery evidence
+        if: always() && steps.market.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: options-e2e-evidence
+          path: data/live/e2e_delivery_evidence.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Closed-market status
         if: steps.market.outputs.open != 'true'
         run: echo "Options radar skipped because the U.S. regular session is closed; manual runs cannot bypass this safety gate."
