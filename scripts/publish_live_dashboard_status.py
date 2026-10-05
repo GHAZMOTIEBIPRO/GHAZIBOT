@@ -152,6 +152,85 @@ def _path_status(name: str, root: Path, current: datetime) -> dict[str, Any]:
     return _path_status_from_payload(name, payload, current)
 
 
+def _write_public_runtime_metadata(state_root: Path, status: dict[str, Any]) -> None:
+    """Write only bounded, non-decision metadata consumed by public endpoints."""
+    paths = status.get("paths") if isinstance(status.get("paths"), dict) else {}
+    options = paths.get("options") if isinstance(paths.get("options"), dict) else {}
+    readiness = str(options.get("provider_readiness") or "UNKNOWN")
+    production_ready = readiness == "PRODUCTION_QUOTE_READY"
+    overall = str(status.get("overall_status") or "CRITICAL")
+    generated_at = str(status.get("generated_at") or "")
+    safe_paths = {
+        name: {
+            key: path.get(key)
+            for key in (
+                "status",
+                "generated_at",
+                "age_minutes",
+                "maximum_age_minutes",
+                "candidate_count",
+                "provider_readiness",
+                "reasons",
+            )
+            if key in path
+        }
+        for name, path in paths.items()
+        if isinstance(path, dict)
+    }
+    health = {
+        "service": "GHAZIBOT",
+        "status": overall.lower(),
+        "generated_at": generated_at,
+        "schema_version": 7,
+        "health_schema_version": 3,
+        "runtime_source": "bot-state/live_dashboard_status",
+        "checks": {
+            "dataset_fresh": all(
+                path.get("status") not in {"STALE", "CRITICAL", "UNAVAILABLE"}
+                for path in paths.values()
+                if isinstance(path, dict)
+            ),
+            "critical_pipeline_ok": overall != "CRITICAL",
+            "critical_pipeline_error_count": 0 if overall != "CRITICAL" else 1,
+            "option_quotes_production_ready": production_ready,
+            "option_flow_production_ready": production_ready,
+        },
+        "workflow_health": {
+            "publisher": status.get("publisher", {}),
+            "paths": safe_paths,
+        },
+    }
+    data_status = {
+        "status": overall.lower(),
+        "generated_at": generated_at,
+        "last_successful_refresh": generated_at,
+        "runtime_source": "bot-state/live_dashboard_status",
+        "dataset_age_minutes": max(
+            (float(path.get("age_minutes", 0)) for path in paths.values() if isinstance(path, dict)),
+            default=0.0,
+        ),
+        "option_provider_readiness": {
+            "status": readiness,
+            "production_quote_ready": production_ready,
+            "production_flow_ready": production_ready,
+            "reasons": options.get("reasons", []),
+        },
+        "workflow_health": {
+            "publisher": status.get("publisher", {}),
+            "paths": safe_paths,
+        },
+        "reasons": status.get("reasons", []),
+    }
+    for relative, payload in (
+        ("public/data/health.json", health),
+        ("public/data/data-status.json", data_status),
+    ):
+        path = state_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        validate_runtime_file(path)
+
+
 def build_live_dashboard_status(
     *,
     state_root: Path,
@@ -237,6 +316,7 @@ def publish_live_dashboard_status(
     )
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     validate_runtime_file(output)
+    _write_public_runtime_metadata(state_root, payload)
     return output
 
 
