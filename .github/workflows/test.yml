@@ -50,6 +50,7 @@ jobs:
           python -m scripts.run_adaptive_learning --help >/dev/null
           python -m scripts.run_stock_outcome_audit --help >/dev/null
           python -m scripts.run_stock_walk_forward --help >/dev/null
+          python -m scripts.run_contract_guardian --help >/dev/null
           python scripts/telegram_connection_bootstrap.py --help >/dev/null
 
       - name: Python syntax and import compilation
@@ -77,8 +78,11 @@ jobs:
             options_radar/target_horizon.py \
             options_radar/explosion_cause.py \
             options_radar/breakout_pressure.py \
+            options_radar/catalyst_impact.py \
+            options_radar/contract_guardian.py \
             options_radar/option_anomaly.py \
             options_radar/option_explosion.py \
+            options_radar/premium_target_engine.py \
             options_radar/option_contract_intelligence.py \
             options_radar/spx_decision.py \
             options_radar/omega_observability.py \
@@ -123,6 +127,7 @@ jobs:
             scripts/run_adaptive_learning.py \
             scripts/run_stock_outcome_audit.py \
             scripts/run_stock_walk_forward.py \
+            scripts/run_contract_guardian.py \
             scripts/telegram_connection_bootstrap.py \
             scripts/telegram_transport.py \
             scripts/send_independent_path_alerts.py \
@@ -146,9 +151,12 @@ jobs:
             tests/test_target_horizon.py \
             tests/test_explosion_cause.py \
             tests/test_breakout_pressure.py \
+            tests/test_catalyst_impact.py \
+            tests/test_contract_guardian.py \
             tests/test_explosion_breakout_pressure.py \
             tests/test_option_anomaly.py \
             tests/test_option_explosion.py \
+            tests/test_premium_target_engine.py \
             tests/test_option_contract_intelligence.py \
             tests/test_omega_watch_alerts.py \
             tests/test_spx_decision.py \

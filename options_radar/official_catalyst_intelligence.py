@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable
 
+from .catalyst_impact import score_catalyst_impact
 from .event_source_policy import cluster_evidence_summary, event_source_evidence
 from .omega_catalyst_intelligence import build_catalyst_intelligence as _legacy_build
 
@@ -88,11 +89,22 @@ def build_catalyst_intelligence(
     """
 
     intelligence = _legacy_build(catalysts, stocks)
+    stock_map = {
+        str(row.get("symbol") or "").upper(): row
+        for row in (stocks or [])
+        if isinstance(row, dict) and str(row.get("symbol") or "").strip()
+    }
     clusters = [
         _apply_cluster_policy(dict(cluster))
         for cluster in intelligence.get("clusters", [])
         if isinstance(cluster, dict)
     ]
+    for cluster in clusters:
+        symbol = str(cluster.get("symbol") or "").upper()
+        cluster["explosion_impact"] = score_catalyst_impact(
+            cluster,
+            stock_map.get(symbol, {}),
+        )
 
     by_symbol: dict[str, dict[str, Any]] = {}
     for cluster in clusters:
@@ -122,4 +134,5 @@ def build_catalyst_intelligence(
     intelligence["attention_only_clusters"] = sum(bool(row.get("attention_only")) for row in clusters)
     intelligence["official_first_policy"] = True
     intelligence["confirmation_unit"] = "independent_source_family"
+    intelligence["catalyst_impact_model"] = "CATALYST_IMPACT_V1"
     return intelligence

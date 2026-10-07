@@ -10,6 +10,7 @@ RUNTIME_PATHS = (
     "public/data/latest.json",
     "public/data/health.json",
     "public/data/data-status.json",
+    "public/data/contract_guardian.json",
     "data/cache/sec_efts_events.json",
     "data/cache/sec_efts_status.json",
     "data/cache/sec_efts_circuit.json",
@@ -29,6 +30,7 @@ RUNTIME_PATHS = (
     "data/live/omega_watch_alert_state.json",
     "data/live/omega_target_state.json",
     "data/live/omega_target_calibration.json",
+    "data/live/contract_guardian_state.json",
 )
 
 SECRET_KEY_TOKENS = (

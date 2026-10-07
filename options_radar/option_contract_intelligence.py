@@ -3,8 +3,9 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from .v11_gate import evaluate_v11_signal
 from .option_explosion import score_option_explosion
+from .premium_target_engine import build_premium_target_scenarios
+from .v11_gate import evaluate_v11_signal
 
 _INDEX_ROOTS = {"SPX", "SPXW", "NDX", "XND", "SPY", "QQQ"}
 
@@ -342,6 +343,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                     "expiration": str(row.get("expiration_date") or row.get("expiration") or "")[:10],
                     "dte": int(_number(row.get("dte"), 0)),
                     "strike": row.get("strike"),
+                    "underlying_price": row.get("underlying_price") or stock.get("price"),
                     "bid": row.get("bid"),
                     "ask": row.get("ask"),
                     "mid": row.get("mid"),
@@ -410,6 +412,13 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                 }
             )
 
+        for choice in choices:
+            choice["premium_targets"] = build_premium_target_scenarios(
+                choice,
+                stock,
+                opportunity,
+            )
+
         primary = choices[0]
         primary["option_explosion"] = score_option_explosion(primary)
         primary["v11_decision"] = evaluate_v11_signal(primary)
@@ -435,6 +444,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             "preferred_dte_band": list(_preferred_dte_band(opportunity, target_dte, symbol)),
             "catalyst_verification": catalyst.get("verification_state") or "NO_OFFICIAL_CAUSE",
             "catalyst_cause_status_ar": catalyst.get("cause_status_ar") or "السبب الأساسي غير مثبت رسميًا",
+            "catalyst_explosion_impact": catalyst.get("explosion_impact") or {},
             "primary": choices[0],
             "alternatives": choices[1:],
             "contract_count_considered": len(ranked),
@@ -442,7 +452,7 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
         }
 
     return {
-        "version": "2026.10-omega-v13-adaptive-horizon-watch-v1",
+        "version": "2026.10-omega-v13-guardian-targets-v1",
         "policy": {
             "side_requires_direction_alignment": True,
             "strike_not_selected_by_volume_alone": True,
