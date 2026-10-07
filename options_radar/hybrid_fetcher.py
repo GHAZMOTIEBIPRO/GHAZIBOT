@@ -786,10 +786,21 @@ class DataFetcher:
         start_dt = _utc_timestamp(start)
         attempts: list[FetchAttempt] = []
 
+        token = getattr(self.settings, "tradier_token", None)
+        if not token:
+            attempts.append(
+                FetchAttempt(
+                    provider="tradier",
+                    operation="option_history",
+                    success=False,
+                    elapsed_ms=0,
+                    rows=0,
+                    error="provider not configured; skipped before adapter call",
+                )
+            )
+            raise DataUnavailableError(f"option_history:{contract}", attempts)
+
         def tradier() -> pd.DataFrame:
-            token = getattr(self.settings, "tradier_token", None)
-            if not token:
-                raise RuntimeError("TRADIER_TOKEN is not configured")
             base = str(getattr(self.settings, "tradier_base_url", "https://sandbox.tradier.com")).rstrip("/")
             headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
             if interval == "1d":
@@ -836,6 +847,208 @@ class DataFetcher:
                 {"contract_symbol": contract, "interval": interval},
             )
         raise DataUnavailableError(f"option_history:{contract}", attempts)
+
+    def fetch_option_volume_history(
+        self,
+        contract_symbol: str,
+        *,
+        start: datetime | date,
+        end: datetime | date | None = None,
+        providers: list[str] | None = None,
+    ) -> FetchResult[pd.DataFrame]:
+        """Fetch daily contract volume history for research/anomaly ranking.
+
+        MarketData.app historical quotes are preferred when configured because
+        they expose contract-level daily volume on free accounts. Tradier daily
+        bars are an optional fallback. This method is NOT an execution-price
+        source and never upgrades delayed/historical data to live evidence.
+        """
+        contract = contract_symbol.upper().replace(" ", "")
+        end_dt = _utc_timestamp(end)
+        start_dt = _utc_timestamp(start)
+        order = _ordered_unique_provider_names(
+            providers
+            if providers is not None
+            else str(
+                getattr(
+                    self.settings,
+                    "option_history_provider_order",
+                    "marketdata,tradier",
+                )
+            )
+        )
+        attempts: list[FetchAttempt] = []
+
+        def marketdata() -> pd.DataFrame:
+            token = getattr(self.settings, "marketdata_token", None)
+            if not token:
+                raise RuntimeError("MARKETDATA_TOKEN is not configured")
+            payload = self._get_json(
+                f"https://api.marketdata.app/v1/options/quotes/{contract}/",
+                params={
+                    "from": start_dt.date().isoformat(),
+                    # MarketData.app documents the upper bound as exclusive.
+                    "to": (end_dt.date() + timedelta(days=1)).isoformat(),
+                    "mode": "historical",
+                },
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            if str(payload.get("s") or "").lower() != "ok":
+                return pd.DataFrame(
+                    columns=[
+                        "Volume", "OpenInterest", "Bid", "Ask", "Last",
+                        "UnderlyingPrice",
+                    ]
+                )
+
+            updated = payload.get("updated", [])
+            if not isinstance(updated, list):
+                updated = [updated]
+            if not updated:
+                return pd.DataFrame()
+
+            def values(name: str) -> list[Any]:
+                raw = payload.get(name, [])
+                if isinstance(raw, list):
+                    return raw
+                return [raw]
+
+            def at(items: list[Any], idx: int) -> Any:
+                return items[idx] if idx < len(items) else None
+
+            volume = values("volume")
+            open_interest = values("openInterest")
+            bid = values("bid")
+            ask = values("ask")
+            last = values("last")
+            underlying = values("underlyingPrice")
+            rows: list[dict[str, Any]] = []
+            index: list[pd.Timestamp] = []
+            for idx, raw_stamp in enumerate(updated):
+                if isinstance(raw_stamp, (int, float)) and not isinstance(raw_stamp, bool):
+                    stamp = pd.to_datetime(
+                        raw_stamp, unit="s", utc=True, errors="coerce"
+                    )
+                else:
+                    stamp = pd.to_datetime(raw_stamp, utc=True, errors="coerce")
+                if pd.isna(stamp):
+                    continue
+                index.append(stamp)
+                rows.append(
+                    {
+                        "Volume": _safe_float(at(volume, idx), 0.0),
+                        "OpenInterest": _safe_float(
+                            at(open_interest, idx), np.nan
+                        ),
+                        "Bid": _safe_float(at(bid, idx), np.nan),
+                        "Ask": _safe_float(at(ask, idx), np.nan),
+                        "Last": _safe_float(at(last, idx), np.nan),
+                        "UnderlyingPrice": _safe_float(
+                            at(underlying, idx), np.nan
+                        ),
+                    }
+                )
+            return pd.DataFrame(
+                rows, index=pd.DatetimeIndex(index)
+            ).sort_index()
+
+        for provider in order:
+            if provider == "marketdata":
+                if not getattr(self.settings, "marketdata_token", None):
+                    attempts.append(
+                        FetchAttempt(
+                            provider="marketdata",
+                            operation="option_volume_history",
+                            success=False,
+                            elapsed_ms=0,
+                            rows=0,
+                            error=(
+                                "provider not configured; "
+                                "skipped before adapter call"
+                            ),
+                        )
+                    )
+                    continue
+                frame, attempt = self._attempt(
+                    "marketdata",
+                    "option_volume_history",
+                    marketdata,
+                    len,
+                )
+                attempts.append(attempt)
+                if attempt.success and isinstance(frame, pd.DataFrame):
+                    return FetchResult(
+                        frame,
+                        "marketdata",
+                        (
+                            "historical closed-session research; "
+                            "free accounts are historical-only"
+                        ),
+                        _now_riyadh(),
+                        attempts,
+                        {
+                            "contract_symbol": contract,
+                            "interval": "1d",
+                            "execution_grade": False,
+                            "historical_greeks_available": False,
+                        },
+                    )
+                continue
+
+            if provider == "tradier":
+                if not getattr(self.settings, "tradier_token", None):
+                    attempts.append(
+                        FetchAttempt(
+                            provider="tradier",
+                            operation="option_volume_history",
+                            success=False,
+                            elapsed_ms=0,
+                            rows=0,
+                            error=(
+                                "provider not configured; "
+                                "skipped before adapter call"
+                            ),
+                        )
+                    )
+                    continue
+                try:
+                    result = self.fetch_option_history(
+                        contract,
+                        start=start_dt,
+                        end=end_dt,
+                        interval="1d",
+                    )
+                except DataUnavailableError as exc:
+                    attempts.extend(exc.attempts)
+                    continue
+                attempts.extend(result.attempts)
+                return FetchResult(
+                    result.data,
+                    result.source,
+                    result.freshness,
+                    result.fetched_at,
+                    attempts,
+                    {
+                        **result.metadata,
+                        "execution_grade": False,
+                        "usage": "contract_volume_anomaly_research",
+                    },
+                )
+
+            attempts.append(
+                FetchAttempt(
+                    provider=provider,
+                    operation="option_volume_history",
+                    success=False,
+                    elapsed_ms=0,
+                    rows=0,
+                    error="unsupported option history provider",
+                )
+            )
+
+        raise DataUnavailableError(
+            f"option_volume_history:{contract}", attempts
+        )
 
     # ------------------------------- SEC EDGAR -------------------------------
 
