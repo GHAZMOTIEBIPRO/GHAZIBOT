@@ -48,7 +48,20 @@ def _similarity(left: str, right: str) -> float:
     union = len(a | b)
     jaccard = overlap / union if union else 0.0
     containment = overlap / min(len(a), len(b))
-    return max(jaccard, containment * 0.90)
+    score = max(jaccard, containment * 0.90)
+
+    # Sponsor legal names often append compact suffixes to the public issuer
+    # brand (for example ModernaTX vs Moderna). Treat a long-token prefix as
+    # a strong alias match without using broad fuzzy edit-distance matching.
+    for left_token in a:
+        for right_token in b:
+            shorter = min(len(left_token), len(right_token))
+            if shorter >= 5 and (
+                left_token.startswith(right_token)
+                or right_token.startswith(left_token)
+            ):
+                score = max(score, 0.90)
+    return score
 
 
 def _date_value(value: Any) -> date | None:
