@@ -10,6 +10,12 @@ def test_open_source_registry_has_explicit_license_and_authority_policy():
     assert projects["dpguthrie/yahooquery"]["counts_as_independent_source"] is False
     assert projects["marcdemers/py_vollib_vectorized"]["live_decision_authority"] is False
     assert projects["kernc/backtesting.py"]["decision"] == "NO_CODE_MERGE"
+    assert (
+        projects["VladPetrariu/Qullamaggie-breakout-scanner"]["decision"]
+        == "CONCEPTS_INTEGRATED_INDEPENDENT_IMPLEMENTATION"
+    )
+    assert projects["gammagrid/gammagrid"]["decision"] == "CONCEPTS_REVIEWED_NO_CODE_MERGE"
+    assert projects["OpenBB-finance/OpenBB"]["decision"] == "NOT_ADDED_AS_INDEPENDENT_SOURCE"
 
 
 def test_open_source_greeks_validator_is_shadow_only():

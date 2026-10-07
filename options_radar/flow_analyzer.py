@@ -9,6 +9,8 @@ from typing import Any, Callable
 import numpy as np
 import pandas as pd
 
+from .option_anomaly import ContractVolumeAnomaly, analyze_contract_volume_anomaly
+
 LOGGER = logging.getLogger(__name__)
 HistoryLoader = Callable[[str], Any]
 
@@ -122,7 +124,7 @@ class FlowAnalyzer:
         self,
         frame: pd.DataFrame,
         history_loader: HistoryLoader | None,
-    ) -> dict[str, tuple[float | None, str | None]]:
+    ) -> dict[str, tuple[ContractVolumeAnomaly | None, str | None]]:
         if history_loader is None or frame.empty:
             return {}
         ranked = frame.sort_values(
@@ -132,7 +134,14 @@ class FlowAnalyzer:
         if not contracts:
             return {}
 
-        results: dict[str, tuple[float | None, str | None]] = {}
+        current_volume = {
+            str(row["contract_symbol"]): float(row["volume"])
+            for _, row in ranked[["contract_symbol", "volume"]].iterrows()
+            if pd.notna(row["volume"])
+        }
+        results: dict[
+            str, tuple[ContractVolumeAnomaly | None, str | None]
+        ] = {}
         workers = max(1, min(self.thresholds.history_workers, len(contracts)))
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {
@@ -143,9 +152,13 @@ class FlowAnalyzer:
                 contract = futures[future]
                 try:
                     raw = future.result()
-                    average = self._prior_five_day_average(self._history_frame(raw))
+                    history = self._history_frame(raw)
+                    profile = analyze_contract_volume_anomaly(
+                        current_volume.get(contract),
+                        history,
+                    )
                     source = str(getattr(raw, "source", "") or "") or None
-                    results[contract] = (average, source)
+                    results[contract] = (profile, source)
                 except Exception as exc:
                     LOGGER.debug(
                         "Option volume history failed for %s: %s", contract, exc
@@ -280,12 +293,49 @@ class FlowAnalyzer:
 
         baselines = self._load_volume_baselines(prehistory, history_loader)
         contracts = frame["contract_symbol"].astype(str)
+
+        def profile_value(contract: str, field: str, default: Any = np.nan) -> Any:
+            profile = baselines.get(contract, (None, None))[0]
+            if profile is None:
+                return default
+            return getattr(profile, field, default)
+
         frame["prior_5d_avg_volume"] = contracts.map(
-            lambda contract: baselines.get(contract, (None, None))[0]
+            lambda contract: profile_value(contract, "prior_five_day_average")
         )
         frame["volume_history_source"] = contracts.map(
             lambda contract: baselines.get(contract, (None, None))[1]
         )
+        frame["historical_volume_median"] = contracts.map(
+            lambda contract: profile_value(contract, "historical_median")
+        )
+        frame["historical_volume_ratio"] = contracts.map(
+            lambda contract: profile_value(contract, "volume_to_median_ratio")
+        )
+        frame["historical_volume_percentile"] = contracts.map(
+            lambda contract: profile_value(contract, "empirical_percentile")
+        )
+        frame["historical_volume_robust_z"] = contracts.map(
+            lambda contract: profile_value(contract, "robust_z")
+        )
+        frame["historical_volume_anomaly_score"] = contracts.map(
+            lambda contract: profile_value(contract, "score", 0.0)
+        )
+        frame["historical_volume_observations"] = contracts.map(
+            lambda contract: profile_value(contract, "observations", 0)
+        )
+        frame["historical_volume_anomaly_flag"] = (
+            pd.to_numeric(
+                frame["historical_volume_anomaly_score"], errors="coerce"
+            ).fillna(0.0)
+            >= 70.0
+        ) & (
+            pd.to_numeric(
+                frame["historical_volume_observations"], errors="coerce"
+            ).fillna(0)
+            >= 5
+        )
+
         prior_average = pd.to_numeric(
             frame["prior_5d_avg_volume"], errors="coerce"
         )
@@ -346,11 +396,18 @@ class FlowAnalyzer:
                 frame["delta"], frame["dte"], strict=False
             )
         ]
+        frame["flow_historical_anomaly_bonus"] = (
+            pd.to_numeric(
+                frame["historical_volume_anomaly_score"], errors="coerce"
+            ).fillna(0.0)
+            * 0.10
+        ).clip(lower=0.0, upper=10.0)
         frame["flow_momentum_score"] = (
             frame["flow_volume_score"]
             + frame["ask_aggression_score"]
             + frame["flow_technical_score"]
             + frame["flow_contract_score"]
+            + frame["flow_historical_anomaly_bonus"]
         ).clip(lower=0.0, upper=100.0).round(4)
 
         def rejection_reason(row: pd.Series) -> str:
@@ -410,11 +467,12 @@ class FlowAnalyzer:
         accepted = frame[frame["flow_gate_pass"]].copy().sort_values(
             [
                 "flow_momentum_score",
+                "historical_volume_anomaly_score",
                 "vol_to_oi_ratio",
                 "volume_spike_ratio",
                 "volume",
             ],
-            ascending=[False, False, False, False],
+            ascending=[False, False, False, False, False],
             na_position="last",
         )
         rejected = frame[~frame["flow_gate_pass"]].copy()
@@ -430,8 +488,11 @@ class FlowAnalyzer:
             ),
             "high_accumulation": int(frame["high_accumulation"].sum()),
             "volume_spikes": int(frame["volume_spike_flag"].sum()),
+            "historical_volume_anomalies": int(
+                frame["historical_volume_anomaly_flag"].sum()
+            ),
             "history_enriched": int(
-                frame["prior_5d_avg_volume"].notna().sum()
+                frame["historical_volume_observations"].fillna(0).gt(0).sum()
             ),
         }
         return FlowAnalysisResult(accepted, rejected, frame, summary)
