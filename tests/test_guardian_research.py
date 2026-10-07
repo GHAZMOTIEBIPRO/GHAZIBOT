@@ -267,4 +267,4 @@ def test_official_news_rating_uses_verified_report_score():
     tracked = next(iter(state["contracts"].values()))
     assert tracked["explosion_thesis"]["impact_score"] == 91
     assert "91/100" in _message(tracked)
-    assert "91.0/100" in render_guardian_ar(report)
+    assert "91/100" in render_guardian_ar(report)
