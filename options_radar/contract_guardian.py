@@ -4,6 +4,12 @@ import math
 from datetime import date, datetime, timezone
 from typing import Any
 
+from .guardian_research import (
+    catalyst_report_ar,
+    chart_risk_context,
+    record_option_quote_snapshot,
+)
+
 
 TERMINAL_STAGES = {"T3_HIT", "INVALIDATED", "EXPIRED"}
 
@@ -309,6 +315,8 @@ def update_contract_guardian(
                     catalyst,
                 ),
                 "observations": [],
+                "quote_snapshots": [],
+                "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
                 "mfe_pct": 0.0,
                 "mae_pct": 0.0,
                 "stage": str(primary.get("alert_stage") or "WATCH").upper(),
@@ -359,6 +367,19 @@ def update_contract_guardian(
             else None
         )
         iv_crush_risk = iv_change_pct is not None and iv_change_pct <= -20.0
+        chart = chart_risk_context(stock, side, target_map)
+        catalyst_report = catalyst_report_ar(symbol, catalyst, stock, chart)
+        quote_snapshots, history_note = record_option_quote_snapshot(
+            tracked.get("quote_snapshots"),
+            current,
+            now=now,
+            max_age_minutes=max_quote_age_minutes,
+        )
+        tracked["quote_snapshots"] = quote_snapshots
+        tracked["quote_history_status"] = history_note
+        tracked["quote_history_count"] = len(quote_snapshots)
+        tracked["chart_health"] = chart
+        tracked["explosion_thesis"] = catalyst_report
 
         proposed_stage = _state_stage(
             side=side,
@@ -390,15 +411,19 @@ def update_contract_guardian(
         observations.append(observation)
         tracked["observations"] = observations[-120:]
 
+        # Performance extremes use only valid, provider-stamped fresh
+        # research snapshots. Repeated/stale snapshots never raise MFE/MAE.
         returns = [
-            _number(item.get("return_pct"), float("nan"))
-            for item in tracked["observations"]
-            if isinstance(item, dict) and item.get("return_pct") is not None
+            (_number(item.get("mark_for_exit")) / entry - 1.0) * 100.0
+            for item in quote_snapshots
+            if entry > 0 and _number(item.get("mark_for_exit")) > 0
         ]
-        returns = [value for value in returns if math.isfinite(value)]
         if returns:
             tracked["mfe_pct"] = round(max(returns), 4)
             tracked["mae_pct"] = round(min(returns), 4)
+        else:
+            tracked["mfe_pct"] = None
+            tracked["mae_pct"] = None
 
         previous = str(tracked.get("stage") or "WATCH")
         if previous in TERMINAL_STAGES:
@@ -449,6 +474,8 @@ def update_contract_guardian(
             "targets": "frozen underlying T1/T2/T3 from original thesis",
             "premium_targets": "Black-Scholes scenario ranges are research estimates only",
             "stale_option_quotes_do_not_validate_premium_outcomes": True,
+            "snapshot_history": "provider-quote-timestamped self-collected research observations; not historical OPRA",
+            "chart_and_catalyst_are_context_only": True,
         },
     }
     state_out = {
