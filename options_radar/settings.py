@@ -66,6 +66,10 @@ class Settings:
         os.getenv("OPTIONS_PROVIDER_ORDER")
         or "tradier,marketdata,finnhub,yahoo"
     )
+    option_history_provider_order: str = (
+        os.getenv("OPTION_HISTORY_PROVIDER_ORDER")
+        or "marketdata,tradier"
+    )
 
     # Existing optional bar providers remain available to market_bars.py.
     twelve_data_api_key: str | None = os.getenv("TWELVE_DATA_API_KEY") or None
