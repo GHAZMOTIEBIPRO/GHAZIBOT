@@ -5,6 +5,7 @@ import hashlib
 import html
 import json
 import math
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -357,6 +358,10 @@ def main() -> int:
         "--state",
         default="data/live/contract_guardian_telegram_state.json",
     )
+    parser.add_argument(
+        "--audit",
+        default="data/live/guardian_delivery_audit.json",
+    )
     args = parser.parse_args()
 
     report = _load(Path(args.report), {})
@@ -367,8 +372,43 @@ def main() -> int:
     if not isinstance(state, dict):
         state = {"contracts": {}}
 
+    from scripts.guardian_delivery_audit import build_delivery_preflight
+
+    audit_path = Path(args.audit)
+    audit = _load(audit_path, {})
+    if not isinstance(audit, dict):
+        audit = {}
+    if not audit:
+        audit = build_delivery_preflight(
+            report,
+            token_configured=bool(os.getenv("TELEGRAM_BOT_TOKEN")),
+            destination_ready=bool(__import__("os").getenv("TELEGRAM_CHAT_ID")),
+        )
+    if audit.get("status") != "READY_TO_DELIVER":
+        _save(audit_path, audit)
+        print(f"Contract Guardian Telegram: no send; {audit.get('status')}")
+        return 0
+
     try:
         result = send_updates(report, state)
+    except Exception as exc:
+        audit.update({
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "status": "SEND_FAILED",
+            "error_class": type(exc).__name__,
+        })
+        _save(audit_path, audit)
+        raise
+    else:
+        audit.update({
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "status": (
+                "ACCEPTED_BY_TELEGRAM" if result["sent"] or result["edited"]
+                else "UNCHANGED_NO_NEW_SEND"
+            ),
+            **result,
+        })
+        _save(audit_path, audit)
     finally:
         _save(state_path, state)
 
