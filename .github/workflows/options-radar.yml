@@ -175,6 +175,13 @@ jobs:
         if: github.event_name != 'push'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
+      - name: Update Contract Guardian Telegram lifecycle cards
+        if: github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_contract_guardian_updates
+          --report public/data/contract_guardian.json
+          --state data/live/contract_guardian_telegram_state.json
+
       - name: Send Omega early WATCH alerts
         if: github.event_name != 'push' && env.TELEGRAM_READY == 'true'
         run: >-
