@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from .breakout_pressure import analyze_breakout_pressure
 from .catalysts import best_catalyst_map
 from .indicators import TechnicalSnapshot, analyze_technical, market_regime
 from .providers import get_price_history
@@ -232,6 +233,11 @@ class StockRadar:
         reasons = bullish_reasons if setup_side == "call" else bearish_reasons
         score = max(0.0, min(100.0, score))
         close_price = technical.close
+        breakout_pressure = analyze_breakout_pressure(
+            history,
+            setup_side,
+            relative_strength_20d=sector["relative_strength_20d"],
+        )
 
         if setup_side == "call":
             entry_low = max(technical.ema9, close_price - 0.30 * atr)
@@ -331,6 +337,13 @@ class StockRadar:
             "sector_score": round(float(sector["sector_score"]), 3),
             "relative_strength_5d": round(float(sector["relative_strength_5d"]), 6),
             "relative_strength_20d": round(float(sector["relative_strength_20d"]), 6),
+            "breakout_pressure_score": breakout_pressure.score,
+            "atr_compression_ratio": breakout_pressure.atr_compression_ratio,
+            "range_tightness_pct": breakout_pressure.range_tightness_pct,
+            "volume_contraction_ratio": breakout_pressure.volume_contraction_ratio,
+            "breakout_proximity_atr": breakout_pressure.breakout_distance_atr,
+            "weekly_breakout_confluence": breakout_pressure.weekly_confluence,
+            "breakout_pressure_reasons": "؛ ".join(breakout_pressure.reasons),
             "sector_vs_market": round(float(sector["sector_vs_market"]), 6),
             "rejection_reason": rejection_reason,
         }
