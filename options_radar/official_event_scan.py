@@ -14,7 +14,7 @@ def scan_official_events(
     *,
     lookback_days: int = 7,
 ) -> pd.DataFrame:
-    """Scan SEC and FDA without making secondary-news latency a dependency.
+    """Scan SEC, FDA and ClinicalTrials.gov without secondary-news dependency.
 
     This is intentionally a thin official-only view over the existing catalyst
     scanner. Secondary/news/social sources can still nominate attention elsewhere,
@@ -39,9 +39,21 @@ def scan_official_events(
         # absence of an official event rather than substituting an aggregator.
         pass
 
+    company_names: dict[str, str] = {}
     try:
         _, company_names = scanner._ticker_map()
         events.extend(scanner._fda_events(allowed, company_names, lookback_days))
+    except Exception:
+        pass
+
+    try:
+        events.extend(
+            scanner._clinicaltrials_events(
+                allowed,
+                company_names,
+                lookback_days,
+            )
+        )
     except Exception:
         pass
 

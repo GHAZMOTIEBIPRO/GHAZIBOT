@@ -16,6 +16,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+from .clinicaltrials_registry import scan_recent_clinicaltrials
 from .settings import Settings
 
 LOGGER = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ SEC_FEED = f"{SEC_BASE}/cgi-bin/browse-edgar"
 SEC_TICKERS = f"{SEC_BASE}/files/company_tickers.json"
 SEC_SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
 LOCAL_CIK_MAP = Path("data/sec_cik_map.json")
+COMPANY_ALIASES = Path("data/company_aliases.json")
 OPENFDA_DRUGSFDA = "https://api.fda.gov/drug/drugsfda.json"
 
 POSITIVE_PATTERNS: dict[str, tuple[int, str]] = {
@@ -444,6 +446,43 @@ class CatalystScanner:
             ))
         return events
 
+    def _clinicaltrials_events(
+        self,
+        allowed_symbols: set[str],
+        company_names: dict[str, str],
+        lookback_days: int,
+    ) -> list[CatalystEvent]:
+        names = dict(company_names)
+        try:
+            aliases = json.loads(COMPANY_ALIASES.read_text(encoding="utf-8"))
+            if isinstance(aliases, dict):
+                for raw_symbol, raw_name in aliases.items():
+                    symbol = str(raw_symbol or "").strip().upper()
+                    name = str(raw_name or "").strip()
+                    if symbol and name:
+                        names[symbol] = name
+        except (OSError, json.JSONDecodeError, TypeError):
+            pass
+
+        try:
+            rows = scan_recent_clinicaltrials(
+                session=self.session,
+                allowed_symbols=allowed_symbols,
+                company_names=names,
+                lookback_days=lookback_days,
+            )
+        except Exception as exc:
+            LOGGER.warning("ClinicalTrials.gov registry scan failed: %s", exc)
+            return []
+
+        events: list[CatalystEvent] = []
+        for row in rows:
+            try:
+                events.append(CatalystEvent(**row))
+            except TypeError:
+                continue
+        return events
+
     def _yahoo_news_events(self, symbols: Iterable[str], max_per_symbol: int = 4) -> list[CatalystEvent]:
         events: list[CatalystEvent] = []
         for symbol in symbols:
@@ -476,6 +515,7 @@ class CatalystScanner:
         events: list[CatalystEvent] = []
         events.extend(self._sec_events(allowed))
         events.extend(self._fda_events(allowed, company_names, lookback_days))
+        events.extend(self._clinicaltrials_events(allowed, company_names, lookback_days))
         events.extend(self._yahoo_news_events(sorted(allowed)))
         if not events:
             return pd.DataFrame(columns=list(CatalystEvent.__dataclass_fields__))
