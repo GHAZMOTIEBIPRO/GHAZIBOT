@@ -17,6 +17,7 @@ RUNTIME_PATHS = (
     "data/cache/sec_processed_accessions.json",
     "data/cache/sec_incremental_status.json",
     "data/live/provider_health.json",
+    "data/live/free_option_volume_history.json",
     "data/live/source_audit.json",
     "data/live/intelligence_audit.json",
     "data/live/occ_audit.json",
