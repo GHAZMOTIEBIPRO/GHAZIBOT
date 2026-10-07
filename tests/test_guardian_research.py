@@ -4,6 +4,7 @@ from options_radar.guardian_research import (
     catalyst_report_ar,
     chart_risk_context,
     record_option_quote_snapshot,
+    record_unstamped_research_observation,
 )
 from options_radar.contract_guardian import update_contract_guardian
 from scripts.send_contract_guardian_updates import _fingerprint, _message
@@ -193,3 +194,47 @@ def test_guardian_stale_quote_does_not_inflate_mfe():
     assert tracked["mfe_pct"] is None
     assert tracked["mae_pct"] is None
     assert report["decision_authority"] is False
+
+
+def test_free_unstamped_price_tape_never_claims_quote_freshness():
+    row = _quote()
+    row.pop("quote_timestamp")
+    first, note = record_unstamped_research_observation([], row, now=NOW)
+    assert note["recorded"] is True
+    assert first[0]["freshness_known"] is False
+    assert first[0]["execution_grade"] is False
+    assert first[0]["provider_quote_timestamp"] is None
+    assert first[0]["collected_at"] == NOW.isoformat()
+
+    repeated, note = record_unstamped_research_observation(
+        first, row, now=NOW + timedelta(minutes=30)
+    )
+    assert note["reason"] == "unchanged_value"
+    assert len(repeated) == 1
+
+    changed = dict(row, bid=2.50, ask=2.60)
+    second, note = record_unstamped_research_observation(
+        first, changed, now=NOW + timedelta(minutes=50)
+    )
+    assert len(second) == 2
+    assert note["recorded"] is True
+    assert second[-1]["status"] == "UNSTAMPED_RESEARCH_OBSERVATION"
+
+
+def test_unstamped_guardian_keeps_zero_valid_quote_history_and_no_mfe():
+    payload = _payload()
+    payload["expiry_radar"]["tabs"]["all_expirations"]["calls"][0].pop(
+        "quote_timestamp"
+    )
+    payload["option_contract_intelligence"]["by_symbol"]["ABC"]["primary"].pop(
+        "quote_timestamp"
+    )
+    report, state = update_contract_guardian(payload, {}, now=NOW)
+    tracked = next(iter(state["contracts"].values()))
+    assert tracked["quote_history_count"] == 0
+    assert tracked["unstamped_research_count"] == 1
+    assert tracked["mfe_pct"] is None
+    assert tracked["mae_pct"] is None
+    assert tracked["data_stale"] is True
+    assert report["can_promote_v11"] is False
+    assert "رصد مجاني غير مؤرّخ" in _message(tracked)
