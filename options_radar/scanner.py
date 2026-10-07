@@ -13,7 +13,8 @@ import pandas as pd
 from .alerts import collect_new_setups
 from .catalysts import best_catalyst_map
 from .flow_analyzer import FlowAnalyzer
-from .hybrid_fetcher import DataFetcher
+from .free_contract_volume_store import FreeContractVolumeStore
+from .hybrid_fetcher import DataFetcher, DataUnavailableError, FetchResult
 from .indicators import TechnicalSnapshot, analyze_technical, market_regime
 from .market_regime import MarketRegimeEngine, MarketRegimeSnapshot
 from .providers import get_price_history, maybe_enrich_with_alpaca
@@ -77,6 +78,9 @@ class OptionsRadar:
         self.settings = settings
         self.fetcher = DataFetcher(settings)
         self.provider = _HybridOptionsProvider(self.fetcher)
+        self.free_volume_store = FreeContractVolumeStore(
+            settings.free_option_volume_store_path
+        )
         # Phase 5.1 operating gates cannot be weakened by a legacy/test fixture.
         # The original Settings object remains intact for backward-compatible tests.
         strict_flow_settings = replace(
@@ -132,17 +136,68 @@ class OptionsRadar:
     def _option_history_loader(self, contract_symbol: str):
         end = datetime.now(timezone.utc)
         start = end - timedelta(days=self.settings.flow_history_lookback_days)
-        return self.fetcher.fetch_option_volume_history(
+        local = self.free_volume_store.history_frame(
             contract_symbol,
-            start=start,
-            end=end,
+            maximum_sessions=max(
+                5, int(self.settings.flow_history_lookback_days) + 5
+            ),
+        )
+        if self.settings.marketdata_token or self.settings.tradier_token:
+            try:
+                remote = self.fetcher.fetch_option_volume_history(
+                    contract_symbol,
+                    start=start,
+                    end=end,
+                )
+            except DataUnavailableError:
+                if local.empty:
+                    raise
+            else:
+                if local.empty:
+                    return remote
+                merged = pd.concat(
+                    [local, remote.data],
+                    axis=0,
+                    sort=False,
+                )
+                merged = merged[
+                    ~merged.index.duplicated(keep="last")
+                ].sort_index()
+                return FetchResult(
+                    data=merged,
+                    source=f"{remote.source}+self_collected_free",
+                    freshness=(
+                        f"{remote.freshness}; local rows are research-only"
+                    ),
+                    fetched_at=remote.fetched_at,
+                    attempts=remote.attempts,
+                    metadata={
+                        **remote.metadata,
+                        "local_self_collected_rows": len(local),
+                        "execution_grade": False,
+                    },
+                )
+        return FetchResult(
+            data=local,
+            source="self_collected_free",
+            freshness=(
+                "provider-reported volume keyed only by explicit "
+                "last-trade timestamp; research-only"
+            ),
+            fetched_at=end.isoformat(),
+            attempts=[],
+            metadata={
+                "contract_symbol": contract_symbol,
+                "execution_grade": False,
+                "zero_key": True,
+            },
         )
 
     def _option_history_available(self) -> bool:
-        return bool(
-            self.settings.marketdata_token
-            or self.settings.tradier_token
-        )
+        # Zero-key self-collected history is always available as a local
+        # research fallback. It only becomes statistically useful after enough
+        # distinct prior sessions have accumulated.
+        return True
 
     @staticmethod
     def _prepare_chain_dates(chain: pd.DataFrame) -> pd.DataFrame:
@@ -356,6 +411,9 @@ class OptionsRadar:
         quality_accepted, quality_rejected = self.fetcher.apply_option_quality_guards(
             chain, symbol
         )
+        free_volume_audit = self.free_volume_store.record_chain(
+            quality_accepted
+        )
         if not quality_rejected.empty:
             quality_rejected = quality_rejected.copy()
             quality_rejected["rejection_stage"] = "quality"
@@ -374,7 +432,10 @@ class OptionsRadar:
         if not flow_rejected.empty:
             flow_rejected["rejection_stage"] = "flow"
 
-        audit = getattr(self.provider, "audit", {}).get(symbol, {})
+        audit = dict(
+            getattr(self.provider, "audit", {}).get(symbol, {}) or {}
+        )
+        audit["free_contract_volume_history"] = free_volume_audit
         if flow_result.accepted.empty:
             rejected = self._rejection_view([quality_rejected, flow_rejected])
             return pd.DataFrame(), rejected, flow_result.summary, audit
