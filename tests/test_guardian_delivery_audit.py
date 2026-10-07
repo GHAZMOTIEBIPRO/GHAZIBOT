@@ -129,3 +129,79 @@ def test_sender_respects_blocked_preflight(monkeypatch, tmp_path):
     )
     assert sender.main() == 0
     assert not state_path.exists()
+
+
+
+def test_probe_verifies_bot_and_chat_without_leaking_destination(monkeypatch):
+    class Accepted:
+        status_code = 200
+
+        def json(self):
+            return {"ok": True, "result": {"id": 1234}}
+
+    calls = []
+    def fake_post(url, data, timeout):
+        calls.append((url, data, timeout))
+        return Accepted()
+
+    monkeypatch.setattr(audit.requests, "post", fake_post)
+    result = audit.probe_telegram_access("mock-token", "mock-chat")
+    assert result["bot_api_responded"] is True
+    assert result["destination_api_verified"] is True
+    assert [url.rsplit("/", 1)[-1] for url, _, _ in calls] == ["getMe", "getChat"]
+    assert "mock-token" not in str(result)
+    assert "mock-chat" not in str(result)
+
+
+def test_probe_failure_fails_closed_and_does_not_expose_token(monkeypatch):
+    class Rejected:
+        status_code = 403
+        def json(self):
+            return {"ok": False, "description": "mock-chat mock-token forbidden"}
+
+    monkeypatch.setattr(audit.requests, "post", lambda *args, **kwargs: Rejected())
+    result = audit.probe_telegram_access("mock-token", "mock-chat")
+    assert result["destination_api_verified"] is False
+    assert result["reason"] == "bot_identity_check_failed"
+    assert "mock-token" not in str(result)
+
+
+def test_telegram_push_probe_never_claims_message_delivery(monkeypatch):
+    monkeypatch.setattr(
+        audit, "probe_telegram_access",
+        lambda token, chat: {
+            "bot_api_responded": True,
+            "destination_api_verified": True,
+            "reason": "api_identity_and_chat_verified",
+        },
+    )
+    preflight = audit.build_delivery_preflight(
+        _report(), token_configured=True, destination_ready=True, now=NOW,
+    )
+    pushed = audit.enhance_with_telegram_probe(
+        preflight, token="fake", chat_id="fake-chat", event_name="push",
+    )
+    assert pushed["status"] == "CONNECTION_VERIFIED_NOT_SENT"
+    assert pushed["sent"] == 0
+    dispatched = audit.enhance_with_telegram_probe(
+        preflight, token="fake", chat_id="fake-chat", event_name="workflow_dispatch",
+    )
+    assert dispatched["status"] == "READY_TO_DELIVER"
+
+
+def test_api_failure_prevents_delivery(monkeypatch):
+    monkeypatch.setattr(
+        audit, "probe_telegram_access",
+        lambda token, chat: {
+            "bot_api_responded": True,
+            "destination_api_verified": False,
+            "reason": "chat_access_check_failed",
+        },
+    )
+    preflight = audit.build_delivery_preflight(
+        _report(), token_configured=True, destination_ready=True, now=NOW,
+    )
+    result = audit.enhance_with_telegram_probe(
+        preflight, token="fake", chat_id="fake-chat", event_name="workflow_dispatch",
+    )
+    assert result["status"] == "BLOCKED_TELEGRAM_ACCESS_CHECK"
