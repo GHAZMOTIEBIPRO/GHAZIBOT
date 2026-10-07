@@ -48,6 +48,14 @@ The radar may use free sources only when their access method is documented and p
 
 Barchart, Market Chameleon, Unusual Whales, Cboe, and social-network pages may be useful for manual discovery, but the radar does not scrape them unless an official API or explicit permitted export is available. Social mentions remain supporting context only.
 
+### Zero-key self-collected contract volume history
+
+- Yahoo/YFinance or another permitted chain can contribute a daily volume observation only when the row carries an explicit last-trade timestamp.
+- The store never substitutes workflow collection time for market time.
+- Repeated observations from the same trading date are deduplicated; only the largest provider-reported cumulative volume is retained for that session.
+- The history is persisted across GitHub Actions runs and becomes useful for anomaly baselines only after enough distinct prior sessions accumulate.
+- This history is research-only and cannot prove a sweep, buy-to-open, dealer positioning, or execution-grade option pricing.
+
 ## Evidence policy
 
 - A different website name does not automatically mean an independent evidence class.
