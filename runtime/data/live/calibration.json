@@ -1,8 +1,8 @@
 {
-  "sample_size": 218,
-  "raw_priced_sample": 218,
-  "priced_sample": 200,
-  "matured_sample": 200,
+  "sample_size": 219,
+  "raw_priced_sample": 219,
+  "priced_sample": 202,
+  "matured_sample": 202,
   "five_day_sample": 180,
   "maturity_checkpoint": "1d",
   "minimum_sample": 100,
@@ -26,27 +26,27 @@
       "band": "80-89",
       "signals": 4,
       "observed": 4,
-      "priced": 2,
-      "matured": 2,
+      "priced": 3,
+      "matured": 3,
       "target_1_rate": 0.0,
       "target_2_rate": 0.0,
-      "stop_rate": 0.5,
+      "stop_rate": 0.3333333333333333,
       "ambiguous_rate": 0.0,
-      "average_mfe_pct": 0.91525,
-      "average_mae_pct": -50.56014999999999
+      "average_mfe_pct": 0.31843333333333335,
+      "average_mae_pct": -39.19233333333333
     },
     {
       "band": "70-79",
-      "signals": 88,
-      "observed": 88,
-      "priced": 78,
-      "matured": 78,
-      "target_1_rate": 0.21794871794871795,
-      "target_2_rate": 0.08974358974358974,
-      "stop_rate": 0.6666666666666666,
+      "signals": 89,
+      "observed": 89,
+      "priced": 79,
+      "matured": 79,
+      "target_1_rate": 0.21518987341772153,
+      "target_2_rate": 0.08860759493670886,
+      "stop_rate": 0.6582278481012658,
       "ambiguous_rate": 0.0,
-      "average_mfe_pct": 21.278241025641027,
-      "average_mae_pct": -79.17197307692307
+      "average_mfe_pct": 21.00212658227848,
+      "average_mae_pct": -78.43187215189873
     },
     {
       "band": "60-69",
@@ -59,7 +59,7 @@
       "stop_rate": 0.8416666666666667,
       "ambiguous_rate": 0.0,
       "average_mfe_pct": 47.81580916666667,
-      "average_mae_pct": -74.5567475
+      "average_mae_pct": -74.69316333333333
     },
     {
       "band": "0-59",
@@ -78,11 +78,11 @@
   "catalysts": [
     {
       "catalyst": "bullish EMA stack; MACD/RSI bullish momentum",
-      "signals": 81,
-      "target_1_rate": 0.09876543209876543,
-      "stop_rate": 0.7777777777777778,
+      "signals": 82,
+      "target_1_rate": 0.0975609756097561,
+      "stop_rate": 0.7682926829268293,
       "ambiguous_rate": 0.0,
-      "average_mfe_pct": 54.6263740740741
+      "average_mfe_pct": 53.95367682926832
     },
     {
       "catalyst": "bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen",
@@ -133,20 +133,20 @@
       "average_mfe_pct": 57.29655
     },
     {
+      "catalyst": "bullish EMA stack; 20-day breakout with relative volume; MACD/RSI bullish moment",
+      "signals": 2,
+      "target_1_rate": 0.0,
+      "stop_rate": 0.5,
+      "ambiguous_rate": 0.0,
+      "average_mfe_pct": -1.0025499999999998
+    },
+    {
       "catalyst": "bearish EMA stack",
       "signals": 1,
       "target_1_rate": 0.0,
       "stop_rate": 1.0,
       "ambiguous_rate": 0.0,
       "average_mfe_pct": 7.6806
-    },
-    {
-      "catalyst": "bullish EMA stack; 20-day breakout with relative volume; MACD/RSI bullish moment",
-      "signals": 1,
-      "target_1_rate": 0.0,
-      "stop_rate": 1.0,
-      "ambiguous_rate": 0.0,
-      "average_mfe_pct": -1.1299
     }
   ],
   "warning": "Same-scan quotes are monitoring observations, not mature evidence. The review gate counts only signals with a 1d checkpoint. New path-aware records keep stop-first terminal and never count same-bar ambiguity as a win. Legacy observed flags are used only when terminal_outcome is absent."
