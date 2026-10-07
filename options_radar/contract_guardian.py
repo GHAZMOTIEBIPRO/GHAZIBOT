@@ -597,13 +597,21 @@ def render_guardian_ar(report: dict[str, Any], *, limit: int = 8) -> str:
         ret_text = f"{_number(ret):+.1f}%" if ret is not None else "—"
         spot = row.get("last_underlying_price")
         premium = row.get("last_mark")
-        health = row.get("catalyst_health") if isinstance(row.get("catalyst_health"), dict) else {}
-        impact = health.get("impact_score")
+        thesis = row.get("explosion_thesis")
+        thesis = thesis if isinstance(thesis, dict) else {}
+        impact = (
+            thesis.get("impact_score")
+            if str(thesis.get("verification") or "").upper() in {"OFFICIAL", "ISSUER"}
+            else None
+        )
+        impact_text = (
+            f"{_number(impact):.0f}/100" if impact is not None else "غير مثبت"
+        )
         stale = " | بيانات قديمة" if row.get("data_stale") else ""
         iv_risk = " | خطر IV Crush" if row.get("iv_crush_risk") else ""
         lines.append(
             f"{symbol} {side} | {stage} | العقد {premium if premium is not None else '—'} "
             f"({ret_text}) | السهم {spot if spot is not None else '—'}"
-            f" | محفز {impact if impact is not None else '—'}/100{stale}{iv_risk}"
+            f" | محفز {impact_text}{stale}{iv_risk}"
         )
     return "\n".join(lines)

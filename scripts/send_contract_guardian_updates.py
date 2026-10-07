@@ -84,13 +84,13 @@ def _premium_target_text(row: dict[str, Any], key: str) -> str:
 
 
 def _fingerprint(row: dict[str, Any]) -> str:
-    impact = (
-        row.get("catalyst_health")
-        if isinstance(row.get("catalyst_health"), dict)
-        else {}
-    )
     chart = row.get("chart_health") if isinstance(row.get("chart_health"), dict) else {}
     thesis = row.get("explosion_thesis") if isinstance(row.get("explosion_thesis"), dict) else {}
+    verified_impact = (
+        thesis.get("impact_score")
+        if str(thesis.get("verification") or "").upper() in {"OFFICIAL", "ISSUER"}
+        else None
+    )
     raw = "|".join(
         [
             str(chart.get("state") or ""),
@@ -108,7 +108,7 @@ def _fingerprint(row: dict[str, Any]) -> str:
             f"{round(_number(row.get('last_return_pct')) / 3.0) * 3:.0f}",
             str(bool(row.get("iv_crush_risk"))),
             str(bool(row.get("data_stale"))),
-            f"{_number(impact.get('impact_score')):.0f}",
+            str(verified_impact) if verified_impact is not None else "UNVERIFIED",
         ]
     )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
@@ -136,16 +136,18 @@ def _message(row: dict[str, Any]) -> str:
         if quote_age is not None
         else "غير معروف"
     )
-    impact = (
-        row.get("catalyst_health")
-        if isinstance(row.get("catalyst_health"), dict)
-        else {}
+    thesis = row.get("explosion_thesis")
+    thesis = thesis if isinstance(thesis, dict) else {}
+    verification = str(thesis.get("verification") or "").upper()
+    impact_score = (
+        thesis.get("impact_score")
+        if verification in {"OFFICIAL", "ISSUER"}
+        else None
     )
-    impact_score = impact.get("impact_score")
     impact_text = (
         f"{_number(impact_score):.0f}/100"
         if impact_score is not None
-        else "—"
+        else "غير مقيم — الخبر غير مثبت"
     )
 
     icon = "🟢" if side == "CALL" else "🔴"
@@ -190,8 +192,8 @@ def _message(row: dict[str, Any]) -> str:
         f"• T3: {_safe(_premium_target_text(row, 't3'), 120)}",
     ]
 
-    headline = str(impact.get("headline") or "").strip()
-    source = str(impact.get("source") or "").strip()
+    headline = str(thesis.get("headline") or "").strip()
+    source = str(thesis.get("primary_source") or "").strip()
     lines.extend(
         [
             "",
@@ -202,7 +204,6 @@ def _message(row: dict[str, Any]) -> str:
     )
 
     chart = row.get("chart_health") if isinstance(row.get("chart_health"), dict) else {}
-    thesis = row.get("explosion_thesis") if isinstance(row.get("explosion_thesis"), dict) else {}
     chart_label = str(chart.get("label_ar") or "مؤشرات الشارت غير متاحة")
     rvol = _number(chart.get("rvol"), float("nan"))
     pressure = _number(chart.get("breakout_pressure_score"), float("nan"))
@@ -234,6 +235,10 @@ def _message(row: dict[str, Any]) -> str:
             "ليس تاريخ تداول أو سعرًا لحظيًا مؤكّدًا."
         )
 
+    if row.get("stage_price_evidence") != "TIMED_UNDERLYING_RESEARCH":
+        lines.append(
+            "⚠️ سعر السهم من قراءة بحثية غير مؤرخة؛ لا تؤكد به تحقق الأهداف."
+        )
     if row.get("stage_provisional"):
         lines.append(
             "⚠️ <b>حالة الهدف أو الإبطال مبدئية: توقيت سعر السهم غير موثّق؛ "

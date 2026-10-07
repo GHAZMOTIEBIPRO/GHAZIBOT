@@ -238,3 +238,33 @@ def test_unstamped_guardian_keeps_zero_valid_quote_history_and_no_mfe():
     assert tracked["data_stale"] is True
     assert report["can_promote_v11"] is False
     assert "رصد مجاني غير مؤرّخ" in _message(tracked)
+
+
+
+def test_unverified_news_never_exposes_fabricated_explosion_score_on_card_or_dashboard():
+    from options_radar.contract_guardian import render_guardian_ar
+
+    report, state = update_contract_guardian(
+        _payload(official=False), {}, now=NOW,
+    )
+    tracked = next(iter(state["contracts"].values()))
+    assert tracked["catalyst_health"]["impact_score"] == 91
+    assert tracked["explosion_thesis"]["impact_score"] is None
+    telegram = _message(tracked)
+    public_summary = render_guardian_ar(report)
+    assert "91/100" not in telegram
+    assert "91/100" not in public_summary
+    assert "غير مقيم" in telegram
+    assert "غير مثبت" in public_summary
+
+
+def test_official_news_rating_uses_verified_report_score():
+    from options_radar.contract_guardian import render_guardian_ar
+
+    report, state = update_contract_guardian(
+        _payload(official=True), {}, now=NOW,
+    )
+    tracked = next(iter(state["contracts"].values()))
+    assert tracked["explosion_thesis"]["impact_score"] == 91
+    assert "91/100" in _message(tracked)
+    assert "91/100" in render_guardian_ar(report)
