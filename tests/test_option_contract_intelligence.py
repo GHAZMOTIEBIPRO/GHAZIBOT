@@ -59,7 +59,18 @@ def _payload(bias: str = "bullish"):
         _contract("put", 14, 9.5, 89, delta=-0.45, vol_oi=2.0),
     ]
     return {
-        "stocks": [{"symbol": "TEST", "setup_side": "call", "technical_direction": "bullish"}],
+        "stocks": [{
+            "symbol": "TEST",
+            "setup_side": "call",
+            "technical_direction": "bullish",
+            "price": 10.0,
+            "entry_low": 9.8,
+            "entry_high": 10.1,
+            "target_1": 10.8,
+            "target_2": 11.6,
+            "target_3": 12.5,
+            "invalidation": 9.3,
+        }],
         "expiry_radar": {"tabs": {"all_expirations": {"calls": calls, "puts": puts}}},
         "omega": {
             "opportunities": [{"symbol": "TEST", "direction": "UPSIDE"}],
@@ -91,6 +102,8 @@ def test_bullish_official_event_selects_call_and_balanced_strike_expiry():
     assert primary["contract_rank"] > 0
     assert "المحفز" in primary["side_reason_ar"]
     assert primary["flow_claim"] == "BUYING_PRESSURE_PROXY_NOT_SWEEP_PROOF"
+    assert primary["premium_targets"]["available"] is True
+    assert primary["premium_targets"]["targets"]["t1"]["premium_base"] > 0
 
 
 def test_bearish_official_event_selects_put():
