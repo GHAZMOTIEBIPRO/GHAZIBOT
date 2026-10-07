@@ -27,6 +27,8 @@ def test_sec_plus_yahoo_is_one_independent_confirmation_family():
     assert cluster["source_family"] == "sec"
     assert cluster["confirmation_count"] == 1
     assert cluster["cause_status_ar"] == "سبب مؤكد رسميًا"
+    assert cluster["explosion_impact"]["score_is_probability"] is False
+    assert cluster["explosion_impact"]["guaranteed_explosion"] is False
 
 
 def test_attention_only_source_cannot_establish_primary_cause():
