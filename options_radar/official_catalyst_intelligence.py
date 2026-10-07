@@ -63,6 +63,10 @@ def _apply_cluster_policy(cluster: dict[str, Any]) -> dict[str, Any]:
 
     if evidence.get("official_confirmed"):
         cluster["cause_status_ar"] = "سبب مؤكد رسميًا"
+    elif evidence.get("official_registry"):
+        cluster["cause_status_ar"] = (
+            "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية"
+        )
     elif evidence.get("issuer_primary"):
         cluster["cause_status_ar"] = "سبب صادر من الشركة وينتظر مطابقة رسمية"
     elif evidence.get("attention_only"):
@@ -72,6 +76,7 @@ def _apply_cluster_policy(cluster: dict[str, Any]) -> dict[str, Any]:
 
     cluster.setdefault("causal_firewall", {})["verification_state"] = state
     cluster["causal_firewall"]["official_confirmed"] = bool(evidence.get("official_confirmed"))
+    cluster["causal_firewall"]["official_registry"] = bool(evidence.get("official_registry"))
     cluster["causal_firewall"]["primary_cause_eligible"] = bool(evidence.get("primary_cause_eligible"))
     return cluster
 
