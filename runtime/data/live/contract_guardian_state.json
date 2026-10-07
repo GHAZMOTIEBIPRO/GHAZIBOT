@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T01:08:33.603896+00:00",
+  "updated_at": "2026-10-07T01:18:57.271449+00:00",
   "contracts": {
     "MRVL261016C00290000": {
       "contract_symbol": "MRVL261016C00290000",
@@ -243,15 +243,30 @@
           "data_stale": true,
           "source": "yahoo/yfinance",
           "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-07T01:18:57.271449+00:00",
+          "stage": "ACTIVE",
+          "mark": 10.55,
+          "mark_method": "bid",
+          "return_pct": -2.3148,
+          "underlying_price": 287.01001,
+          "iv": 0.63599,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
         }
       ],
       "mfe_pct": -2.3148,
       "mae_pct": -2.3148,
       "stage": "ACTIVE",
       "terminal": false,
-      "previous_stage": "WATCH",
-      "stage_changed": true,
-      "last_observed_at": "2026-10-07T01:08:33.603896+00:00",
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
+      "last_observed_at": "2026-10-07T01:18:57.271449+00:00",
       "last_mark": 10.55,
       "last_return_pct": -2.3148,
       "last_underlying_price": 287.01001,
@@ -506,15 +521,30 @@
           "data_stale": true,
           "source": "yahoo/yfinance",
           "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-07T01:18:57.271449+00:00",
+          "stage": "ACTIVE",
+          "mark": 5.05,
+          "mark_method": "bid",
+          "return_pct": -0.9804,
+          "underlying_price": 171.089996,
+          "iv": 0.473638,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
         }
       ],
       "mfe_pct": -0.9804,
       "mae_pct": -0.9804,
       "stage": "ACTIVE",
       "terminal": false,
-      "previous_stage": "WATCH",
-      "stage_changed": true,
-      "last_observed_at": "2026-10-07T01:08:33.603896+00:00",
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
+      "last_observed_at": "2026-10-07T01:18:57.271449+00:00",
       "last_mark": 5.05,
       "last_return_pct": -0.9804,
       "last_underlying_price": 171.089996,
@@ -532,6 +562,275 @@
         "headline": null,
         "source": null,
         "url": null
+      }
+    },
+    "AMD261030C00655000": {
+      "contract_symbol": "AMD261030C00655000",
+      "symbol": "AMD",
+      "side": "CALL",
+      "strike": 655.0,
+      "expiration": "2026-10-30",
+      "created_at": "2026-10-07T01:18:57.271449+00:00",
+      "entry_premium_reference": 30.15,
+      "entry_method": "ask",
+      "entry_iv": 0.49286395812988293,
+      "entry_underlying": 649.4199829101562,
+      "original_alert_stage": "WATCH",
+      "original_contract_rank": 70.3,
+      "original_strict_score": null,
+      "premium_targets": {
+        "available": true,
+        "method": "BLACK_SCHOLES_SCENARIO_V1",
+        "entry_premium_reference": 30.15,
+        "entry_method": "ask",
+        "spot_reference": 649.42,
+        "strike": 655.0,
+        "side": "CALL",
+        "dte": 23.0,
+        "iv_reference": 0.492864,
+        "iv_scenarios": {
+          "iv_down": 0.418934,
+          "base": 0.492864,
+          "iv_up": 0.566794
+        },
+        "targets": {
+          "t1": {
+            "underlying_price": 685.38,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 22.5,
+            "premium_low": 46.7184,
+            "premium_base": 51.1874,
+            "premium_high": 55.7605,
+            "return_low_pct": 54.95,
+            "return_base_pct": 69.78,
+            "return_high_pct": 84.94,
+            "scenario_prices": {
+              "iv_down": 46.7184,
+              "base": 51.1874,
+              "iv_up": 55.7605
+            }
+          },
+          "t2": {
+            "underlying_price": 721.34,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 22.5,
+            "premium_low": 74.5689,
+            "premium_base": 77.9827,
+            "premium_high": 81.7546,
+            "return_low_pct": 147.33,
+            "return_base_pct": 158.65,
+            "return_high_pct": 171.16,
+            "scenario_prices": {
+              "iv_down": 74.5689,
+              "base": 77.9827,
+              "iv_up": 81.7546
+            }
+          },
+          "t3": {
+            "underlying_price": 721.35,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 22.5,
+            "premium_low": 74.5774,
+            "premium_base": 77.9908,
+            "premium_high": 81.7624,
+            "return_low_pct": 147.35,
+            "return_base_pct": 158.68,
+            "return_high_pct": 171.19,
+            "scenario_prices": {
+              "iv_down": 74.5774,
+              "base": 77.9908,
+              "iv_up": 81.7624
+            }
+          }
+        },
+        "invalidation": {
+          "underlying_price": 613.46,
+          "premium_low": 10.7651,
+          "premium_base": 14.6691,
+          "premium_high": 18.7361,
+          "return_base_pct": -51.35
+        },
+        "research_only": true,
+        "is_guarantee": false,
+        "assumptions": [
+          "Black-Scholes scenario estimate, not a live executable quote.",
+          "IV scenarios use -15% / base / +15% relative to current IV.",
+          "Target timing uses the existing underlying horizon buckets.",
+          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
+        ]
+      },
+      "target_map": {
+        "symbol": "AMD",
+        "direction": "CALL",
+        "entry": {
+          "low": 642.23,
+          "high": 652.3,
+          "source": "stock_setup"
+        },
+        "invalidation": {
+          "price": 613.46,
+          "source": "invalidation"
+        },
+        "t1": {
+          "price": 685.38,
+          "label": "Existing T1",
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t2": {
+          "price": 721.34,
+          "label": "ATR 3.0x",
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED"
+        },
+        "t3": {
+          "price": 721.35,
+          "label": "Existing T2",
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "candidate_levels": [
+          {
+            "price": 685.38,
+            "label": "Existing T1",
+            "source": "target_1",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 721.34,
+            "label": "ATR 3.0x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          },
+          {
+            "price": 721.35,
+            "label": "Existing T2",
+            "source": "target_2",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 757.3,
+            "label": "ATR 4.5x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          }
+        ],
+        "target_map_quality": 91,
+        "missing_inputs": [
+          "structural_levels"
+        ],
+        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
+      },
+      "target_horizon": {
+        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
+        "is_probability": false,
+        "is_guarantee": false,
+        "calibrated_target_count": 0,
+        "calibration_status": "INSUFFICIENT_SAMPLE",
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "نفس الجلسة إلى جلسة",
+        "timeframe_alignment": "ALIGNED",
+        "targets": [
+          {
+            "target": "T1",
+            "price": 685.38,
+            "distance_pct": 5.54,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T2",
+            "price": 721.34,
+            "distance_pct": 11.07,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T3",
+            "price": 721.35,
+            "distance_pct": 11.08,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          }
+        ]
+      },
+      "catalyst_at_entry": {
+        "verification_state": "OFFICIAL_REGISTRY_ONLY",
+        "cause_status_ar": "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية",
+        "directional_bias": "mixed",
+        "conflict_with_contract": false,
+        "impact_score": 61.4,
+        "impact_label": "BUILDING",
+        "impact_label_ar": "محفز متوسط/يتطور",
+        "headline": "ClinicalTrials.gov registry update — A Post-Market Assessment of the Safety and Performance of the TriClip™ System",
+        "source": "ClinicalTrials.gov",
+        "url": "https://clinicaltrials.gov/study/NCT07586995"
+      },
+      "observations": [
+        {
+          "at": "2026-10-07T01:18:57.271449+00:00",
+          "stage": "ACTIVE",
+          "mark": 29.0,
+          "mark_method": "bid",
+          "return_pct": -3.8143,
+          "underlying_price": 649.419983,
+          "iv": 0.492864,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        }
+      ],
+      "mfe_pct": -3.8143,
+      "mae_pct": -3.8143,
+      "stage": "ACTIVE",
+      "terminal": false,
+      "previous_stage": "WATCH",
+      "stage_changed": true,
+      "last_observed_at": "2026-10-07T01:18:57.271449+00:00",
+      "last_mark": 29.0,
+      "last_return_pct": -3.8143,
+      "last_underlying_price": 649.419983,
+      "quote_age_minutes": null,
+      "data_stale": true,
+      "iv_crush_risk": false,
+      "catalyst_health": {
+        "verification_state": "OFFICIAL_REGISTRY_ONLY",
+        "cause_status_ar": "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية",
+        "directional_bias": "mixed",
+        "conflict_with_contract": false,
+        "impact_score": 61.4,
+        "impact_label": "BUILDING",
+        "impact_label_ar": "محفز متوسط/يتطور",
+        "headline": "ClinicalTrials.gov registry update — A Post-Market Assessment of the Safety and Performance of the TriClip™ System",
+        "source": "ClinicalTrials.gov",
+        "url": "https://clinicaltrials.gov/study/NCT07586995"
       }
     }
   }
