@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-03",
+  "generated_at": "2026-10-07",
   "policy": {
     "zero_cost": true,
     "copy_code_only_with_compatible_license": true,
@@ -64,6 +64,30 @@
       "decision": "NO_CODE_MERGE",
       "use": "Backtesting concepts only.",
       "reason": "AGPL integration is deliberately avoided for the core repository."
+    },
+    {
+      "repo": "VladPetrariu/Qullamaggie-breakout-scanner",
+      "license": "MIT",
+      "decision": "CONCEPTS_INTEGRATED_INDEPENDENT_IMPLEMENTATION",
+      "use": "ATR compression, consolidation tightness, breakout proximity and multi-timeframe momentum concepts inform the underlying-only breakout-pressure research engine.",
+      "live_decision_authority": false,
+      "reason": "Implemented independently inside GHAZIBOT; no external scanner code or yfinance pipeline copied."
+    },
+    {
+      "repo": "gammagrid/gammagrid",
+      "license": "AGPL-3.0",
+      "decision": "CONCEPTS_REVIEWED_NO_CODE_MERGE",
+      "use": "Contract-specific historical option-volume anomaly concept informs a local robust anomaly rank feature.",
+      "live_decision_authority": false,
+      "reason": "AGPL code is not copied. The local implementation is independent and cannot bypass existing Vol/OI, ask-side, quality, or V11 gates."
+    },
+    {
+      "repo": "OpenBB-finance/OpenBB",
+      "license": "REVIEW_REQUIRED",
+      "decision": "NOT_ADDED_AS_INDEPENDENT_SOURCE",
+      "use": "Provider-abstraction concepts reviewed for future adapters.",
+      "live_decision_authority": false,
+      "reason": "OpenBB is an abstraction layer over upstream providers, not a new independent source family. Current data_fabric already preserves provider provenance; adding a hard dependency now would add weight without new execution-grade evidence."
     }
   ]
 }
