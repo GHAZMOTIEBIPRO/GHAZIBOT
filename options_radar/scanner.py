@@ -132,11 +132,16 @@ class OptionsRadar:
     def _option_history_loader(self, contract_symbol: str):
         end = datetime.now(timezone.utc)
         start = end - timedelta(days=self.settings.flow_history_lookback_days)
-        return self.fetcher.fetch_option_history(
+        return self.fetcher.fetch_option_volume_history(
             contract_symbol,
             start=start,
             end=end,
-            interval="1d",
+        )
+
+    def _option_history_available(self) -> bool:
+        return bool(
+            self.settings.marketdata_token
+            or self.settings.tradier_token
         )
 
     @staticmethod
@@ -355,7 +360,11 @@ class OptionsRadar:
             quality_rejected = quality_rejected.copy()
             quality_rejected["rejection_stage"] = "quality"
 
-        history_loader = self._option_history_loader if self.settings.tradier_token else None
+        history_loader = (
+            self._option_history_loader
+            if self._option_history_available()
+            else None
+        )
         flow_result = self.flow_analyzer.analyze(
             quality_accepted,
             technical_direction=technical.direction,
