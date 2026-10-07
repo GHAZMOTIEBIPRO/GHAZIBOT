@@ -107,6 +107,16 @@ def test_contract_guardian_runtime_state_has_one_omega_writer() -> None:
     vault = Path("scripts/runtime_state_vault.py").read_text(encoding="utf-8")
     workflow = Path(".github/workflows/options-radar.yml").read_text(encoding="utf-8")
     assert '"data/live/contract_guardian_state.json"' in vault
+    assert '"data/live/contract_guardian_telegram_state.json"' in vault
     assert '"public/data/contract_guardian.json"' in vault
     assert "Track selected contracts with Contract Guardian" in workflow
     assert "python -m scripts.run_contract_guardian" in workflow
+
+
+def test_contract_guardian_telegram_updates_share_omega_single_writer() -> None:
+    workflow = Path(".github/workflows/options-radar.yml").read_text(encoding="utf-8")
+    orchestrator = Path(".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
+    assert "Update Contract Guardian Telegram lifecycle cards" in workflow
+    assert "python -m scripts.send_contract_guardian_updates" in workflow
+    assert "contract_guardian_telegram_state.json" in workflow
+    assert 'dispatch_if_stale options-radar.yml 18 "Full Omega Radar + Contract Guardian"' in orchestrator
