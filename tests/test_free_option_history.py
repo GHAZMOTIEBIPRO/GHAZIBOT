@@ -97,7 +97,7 @@ def test_legacy_price_history_missing_tradier_fails_quietly_before_adapter(monke
     assert "skipped" in str(exc.value.attempts[0].error)
 
 
-def test_scanner_enables_anomaly_history_when_marketdata_free_token_exists():
+def test_scanner_history_is_available_with_remote_or_zero_key_local_store():
     radar = OptionsRadar.__new__(OptionsRadar)
     radar.settings = Settings(
         marketdata_token="free-test-token",
@@ -105,8 +105,10 @@ def test_scanner_enables_anomaly_history_when_marketdata_free_token_exists():
     )
     assert radar._option_history_available() is True
 
+    # The durable self-collected research store is a zero-key fallback, so
+    # history loading remains enabled even when no remote provider is configured.
     radar.settings = Settings(
         marketdata_token=None,
         tradier_token=None,
     )
-    assert radar._option_history_available() is False
+    assert radar._option_history_available() is True
