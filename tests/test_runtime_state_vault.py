@@ -110,6 +110,7 @@ def test_runtime_allowlist_contains_dashboard_and_continuity_files() -> None:
     assert "public/data/data-status.json" in RUNTIME_PATHS
     assert "data/cache/sec_efts_circuit.json" in RUNTIME_PATHS
     assert "data/live/provider_health.json" in RUNTIME_PATHS
+    assert "data/live/free_option_volume_history.json" in RUNTIME_PATHS
     assert "data/live/signals.jsonl" in RUNTIME_PATHS
     assert "data/live/outcomes.json" in RUNTIME_PATHS
     assert "data/live/calibration.json" in RUNTIME_PATHS

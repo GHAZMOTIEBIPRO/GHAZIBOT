@@ -157,6 +157,12 @@ class Settings:
     calibration_path: Path = Path(
         os.getenv("CALIBRATION_PATH", "data/live/calibration.json")
     )
+    free_option_volume_store_path: Path = Path(
+        os.getenv(
+            "FREE_OPTION_VOLUME_STORE_PATH",
+            "data/live/free_option_volume_history.json",
+        )
+    )
 
     def validate(self) -> None:
         if self.provider not in {"auto", "yahoo", "marketdata", "tradier"}:

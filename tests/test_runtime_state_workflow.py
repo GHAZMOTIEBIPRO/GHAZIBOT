@@ -106,6 +106,7 @@ def test_omega_target_learning_is_durable_and_non_blocking() -> None:
 def test_contract_guardian_runtime_state_has_one_omega_writer() -> None:
     vault = Path("scripts/runtime_state_vault.py").read_text(encoding="utf-8")
     workflow = Path(".github/workflows/options-radar.yml").read_text(encoding="utf-8")
+    assert '"data/live/free_option_volume_history.json"' in vault
     assert '"data/live/contract_guardian_state.json"' in vault
     assert '"data/live/contract_guardian_telegram_state.json"' in vault
     assert '"public/data/contract_guardian.json"' in vault
