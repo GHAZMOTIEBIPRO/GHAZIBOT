@@ -88,8 +88,15 @@ def _fingerprint(row: dict[str, Any]) -> str:
         if isinstance(row.get("catalyst_health"), dict)
         else {}
     )
+    chart = row.get("chart_health") if isinstance(row.get("chart_health"), dict) else {}
+    thesis = row.get("explosion_thesis") if isinstance(row.get("explosion_thesis"), dict) else {}
     raw = "|".join(
         [
+            str(chart.get("state") or ""),
+            str(thesis.get("verification") or ""),
+            str(thesis.get("headline") or ""),
+            str(thesis.get("event_date") or ""),
+            str(row.get("quote_history_count") or 0),
             str(row.get("contract_symbol") or ""),
             str(row.get("stage") or ""),
             f"{_number(row.get('last_mark')):.2f}",
@@ -112,8 +119,8 @@ def _message(row: dict[str, Any]) -> str:
     entry = _number(row.get("entry_premium_reference"))
     mark = _number(row.get("last_mark"), float("nan"))
     ret = _number(row.get("last_return_pct"), float("nan"))
-    mfe = _number(row.get("mfe_pct"))
-    mae = _number(row.get("mae_pct"))
+    mfe = _number(row.get("mfe_pct"), float("nan"))
+    mae = _number(row.get("mae_pct"), float("nan"))
     spot = _number(row.get("last_underlying_price"), float("nan"))
     strike = _number(row.get("strike"))
     expiration = str(row.get("expiration") or "")[:10]
@@ -149,6 +156,8 @@ def _message(row: dict[str, Any]) -> str:
     t3_text = f"{t3:.2f}$" if t3 > 0 else "—"
     invalidation_text = f"{invalidation:.2f}$" if invalidation > 0 else "—"
 
+    mfe_text = f"{mfe:+.1f}%" if math.isfinite(mfe) else "—"
+    mae_text = f"{mae:+.1f}%" if math.isfinite(mae) else "—"
     lines = [
         "🛡 <b>BLACK BOX Ω — متابعة العقد</b>",
         f"{icon} <b>{_safe(symbol, 20)} {side}</b> | الحالة: <b>{_safe(stage_ar, 80)}</b>",
@@ -160,7 +169,7 @@ def _message(row: dict[str, Any]) -> str:
             f"💵 البداية <b>{entry:.2f}$</b> → الآن <b>{mark_text}</b>"
             f" | الأداء <b>{ret_text}</b>"
         ),
-        f"📈 MFE <b>{mfe:+.1f}%</b> | MAE <b>{mae:+.1f}%</b> | السهم <b>{spot_text}</b>",
+        f"📈 MFE <b>{mfe_text}</b> | MAE <b>{mae_text}</b> | السهم <b>{spot_text}</b>",
         "",
         "<b>أهداف السهم المجمدة من التوصية الأصلية</b>",
         f"• T1 {t1_text} | T2 {t2_text} | T3 {t3_text}",
@@ -182,6 +191,33 @@ def _message(row: dict[str, Any]) -> str:
             f"المصدر: <b>{_safe(source or '—', 120)}</b>",
         ]
     )
+
+    chart = row.get("chart_health") if isinstance(row.get("chart_health"), dict) else {}
+    thesis = row.get("explosion_thesis") if isinstance(row.get("explosion_thesis"), dict) else {}
+    chart_label = str(chart.get("label_ar") or "مؤشرات الشارت غير متاحة")
+    rvol = _number(chart.get("rvol"), float("nan"))
+    pressure = _number(chart.get("breakout_pressure_score"), float("nan"))
+    rvol_text = f"{rvol:.2f}×" if math.isfinite(rvol) else "—"
+    pressure_text = f"{pressure:.0f}/100" if math.isfinite(pressure) else "—"
+    lines.extend([
+        "",
+        "<b>📊 قراءة الشارت — سياق بحثي من آخر فحص</b>",
+        f"{_safe(chart_label, 140)} | RVOL <b>{rvol_text}</b> | ضغط الاختراق <b>{pressure_text}</b>",
+    ])
+    proof = str(thesis.get("proof_ar") or "").strip()
+    if proof:
+        lines.append(f"📋 حالة الخبر: <b>{_safe(proof, 150)}</b>")
+    drivers = thesis.get("drivers_ar") if isinstance(thesis.get("drivers_ar"), list) else []
+    risks = thesis.get("risks_ar") if isinstance(thesis.get("risks_ar"), list) else []
+    if drivers:
+        lines.append("العوامل: " + _safe("؛ ".join(str(x) for x in drivers[:2]), 280))
+    if risks:
+        lines.append("المخاطر: " + _safe("؛ ".join(str(x) for x in risks[:2]), 280))
+    source_url = str(thesis.get("primary_url") or "")
+    if source_url.startswith(("https://", "http://")):
+        lines.append(f'🔗 <a href="{_safe(source_url, 500)}">فتح المصدر الأصلي للخبر</a>')
+    count = int(_number(row.get("quote_history_count")))
+    lines.append(f"📚 سجل أسعار العقد المجاني: <b>{count}</b> لقطة موثّقة التوقيت (بحثي)")
 
     if row.get("iv_crush_risk"):
         lines.append("⚠️ <b>خطر IV Crush ظاهر مقارنةً بوقت التوصية.</b>")
