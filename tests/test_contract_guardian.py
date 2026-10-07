@@ -130,3 +130,30 @@ def test_guardian_invalidates_without_promoting_v11():
     assert tracked["stage"] == "INVALIDATED"
     assert tracked["terminal"] is True
     assert report["can_promote_v11"] is False
+
+
+
+def test_guardian_does_not_transfer_stock_timestamp_to_stale_option_spot():
+    payload = _payload(105)
+    option = payload["expiry_radar"]["tabs"]["all_expirations"]["calls"][0]
+    option["underlying_price"] = 95.0
+    report, state = update_contract_guardian(payload, {}, now=NOW)
+    tracked = next(iter(state["contracts"].values()))
+    assert tracked["stage"] == "T1_HIT"
+    assert tracked["stage_provisional"] is False
+    assert tracked["last_underlying_price"] == 105
+    assert report["can_promote_v11"] is False
+
+
+def test_guardian_arabic_summary_labels_provisional_stops():
+    payload = _payload(95)
+    payload["stocks"][0].pop("quote_timestamp")
+    report, state = update_contract_guardian(payload, {}, now=NOW)
+    tracked = next(iter(state["contracts"].values()))
+    assert tracked["stage"] == "INVALIDATED"
+    assert tracked["stage_provisional"] is True
+    assert tracked["terminal"] is False
+    from options_radar.contract_guardian import render_guardian_ar
+
+    text = render_guardian_ar(report)
+    assert "مبدئي/السعر غير مؤرخ" in text
