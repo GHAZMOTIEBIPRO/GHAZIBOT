@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -49,7 +50,23 @@ def _clamp(value: float) -> float:
     return max(0.0, min(100.0, value))
 
 
-def _freshness(age_days: float) -> float:
+def _event_age_days(cluster: dict[str, Any]) -> float | None:
+    if cluster.get("age_days") is not None:
+        value = _number(cluster.get("age_days"), float("nan"))
+        return max(0.0, value) if math.isfinite(value) else None
+    raw = str(cluster.get("event_date") or "")[:10]
+    if not raw:
+        return None
+    try:
+        event_date = datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    return float(max(0, (datetime.now(timezone.utc).date() - event_date).days))
+
+
+def _freshness(age_days: float | None) -> float:
+    if age_days is None:
+        return 35.0
     if age_days <= 1:
         return 100.0
     if age_days <= 3:
@@ -137,7 +154,7 @@ def score_catalyst_impact(
     quality = _number(cluster.get("catalyst_quality"))
     materiality = _number(cluster.get("materiality"))
     event_potency = _EVENT_POTENCY.get(category, max(35.0, materiality))
-    age_days = _number(cluster.get("age_days"), 99.0)
+    age_days = _event_age_days(cluster)
     freshness = _freshness(age_days)
 
     rvol = max(
