@@ -87,11 +87,16 @@ def install_provider_preflight() -> None:
     from options_radar import hybrid_fetcher as hybrid
 
     DataFetcher = hybrid.DataFetcher
-    if getattr(DataFetcher, "_ghazi_provider_preflight_v1", False):
+    current_stock = DataFetcher.fetch_stock_bars
+    current_options = DataFetcher.fetch_option_chain
+    if (
+        getattr(current_stock, "_ghazi_provider_preflight_wrapper", False)
+        and getattr(current_options, "_ghazi_provider_preflight_wrapper", False)
+    ):
         return
 
-    original_stock = DataFetcher.fetch_stock_bars
-    original_options = DataFetcher.fetch_option_chain
+    original_stock = current_stock
+    original_options = current_options
 
     def stock_bars(
         self: Any,
@@ -173,6 +178,11 @@ def install_provider_preflight() -> None:
         )
         return _annotate(result, configured, skipped)
 
+    stock_bars._ghazi_provider_preflight_wrapper = True
+    option_chain._ghazi_provider_preflight_wrapper = True
     DataFetcher.fetch_stock_bars = stock_bars
     DataFetcher.fetch_option_chain = option_chain
+    # Compatibility flag for diagnostics/tests. Idempotence is intentionally
+    # checked on the currently installed methods because another acquisition
+    # installer can replace them later in the same process.
     DataFetcher._ghazi_provider_preflight_v1 = True
