@@ -260,6 +260,13 @@ def cluster_evidence_summary(members: list[dict[str, Any]]) -> dict[str, Any]:
             if evidence["source_tier"] == "B_ISSUER_PRIMARY"
         )
     )
+    registry_families = list(
+        dict.fromkeys(
+            evidence["source_family"]
+            for _, evidence in enriched
+            if evidence["source_tier"] == "B_OFFICIAL_REGISTRY"
+        )
+    )
     attention_families = list(
         dict.fromkeys(
             evidence["source_family"]
@@ -284,12 +291,15 @@ def cluster_evidence_summary(members: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
     official_confirmed = bool(official_families)
+    official_registry = bool(registry_families)
     issuer_primary = bool(issuer_families)
     primary_cause_eligible = bool(cause_families)
     attention_only = bool(enriched) and all(evidence["attention_only"] for _, evidence in enriched)
 
     if official_confirmed:
         state = "OFFICIAL_CONFIRMED"
+    elif official_registry:
+        state = "OFFICIAL_REGISTRY_ONLY"
     elif issuer_primary:
         state = "ISSUER_PRIMARY_AWAITING_OFFICIAL_CROSSCHECK"
     elif attention_only:
@@ -300,11 +310,13 @@ def cluster_evidence_summary(members: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "verification_state": state,
         "official_confirmed": official_confirmed,
+        "official_registry": official_registry,
         "issuer_primary": issuer_primary,
         "primary_cause_eligible": primary_cause_eligible,
         "attention_only": attention_only,
         "source_families": families,
         "official_source_families": official_families,
+        "official_registry_families": registry_families,
         "issuer_source_families": issuer_families,
         "attention_source_families": attention_families,
         "cause_source_families": cause_families,
