@@ -448,7 +448,7 @@ def update_contract_guardian(
             "observation_reference": "bid when available",
             "targets": "frozen underlying T1/T2/T3 from original thesis",
             "premium_targets": "Black-Scholes scenario ranges are research estimates only",
-            "stale_quotes_do_not_create_target_hits": True,
+            "stale_option_quotes_do_not_validate_premium_outcomes": True,
         },
     }
     state_out = {
