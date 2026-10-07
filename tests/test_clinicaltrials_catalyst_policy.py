@@ -37,7 +37,8 @@ def test_registry_results_are_official_registry_only_and_not_bullish_or_bearish(
     assert cluster["verification_state"] == "OFFICIAL_REGISTRY_ONLY"
     assert cluster["category"] == "TRIAL_RESULTS_POSTED_REGISTRY"
     assert cluster["directional_bias"] == "mixed"
-    assert cluster["official_confirmed"] is True
+    assert cluster["official_confirmed"] is False
+    assert cluster["official_registry"] is True
     assert cluster["explosion_impact"]["score_is_probability"] is False
 
 
