@@ -6,6 +6,7 @@ The radar uses only sources whose public documentation permits programmatic acce
 
 - SEC EDGAR submissions, filing documents and XBRL Company Facts APIs, with a descriptive User-Agent and fair-access throttling.
 - openFDA public API.
+- ClinicalTrials.gov API v2 for recent industry study-registry updates and newly posted registry results. Registry data is sponsor-submitted; it can prove that a registry record changed or results were posted, but it cannot by itself prove a positive/negative clinical outcome.
 - Nasdaq public market-movers response as best-effort universe discovery.
 - Yahoo/yfinance as an unofficial research fallback, explicitly labelled as such.
 - U.S. Treasury public daily yield-curve XML feed for slow-moving macro context.
