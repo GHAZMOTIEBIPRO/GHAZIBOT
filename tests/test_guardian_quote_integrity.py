@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from options_radar.contract_guardian import update_contract_guardian
 from scripts.send_contract_guardian_updates import _message
-from tests.test_guardian_research import NOW, _payload
+from test_guardian_research import NOW, _payload
 
 
 def test_untimed_option_quote_never_claims_current_return():
