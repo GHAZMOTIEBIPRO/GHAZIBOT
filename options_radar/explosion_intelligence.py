@@ -279,6 +279,7 @@ def _feature_row(
         "volume": _volume(stock),
         "avg_dollar_volume": _number(stock.get("avg_dollar_volume")),
         "social_score": _social_score(stock),
+        "breakout_pressure_score": _number(stock.get("breakout_pressure_score")),
         "catalyst_score": catalyst_score,
         "catalyst_key": catalyst_key,
         "catalyst_headline": str(cluster.get("headline") or cluster.get("title") or ""),
@@ -317,6 +318,7 @@ def _delta_score(current: dict[str, Any], prior: list[dict[str, Any]]) -> tuple[
     day_delta = day - previous_day
     social = _number(current.get("social_score"))
     social_delta = social - _number(previous.get("social_score"))
+    breakout_pressure = _number(current.get("breakout_pressure_score"))
     catalyst = _number(current.get("catalyst_score"))
     new_information = bool(current.get("catalyst_key")) and current.get("catalyst_key") != previous.get("catalyst_key")
     supply = _number((current.get("effective_float") or {}).get("supply_vacuum_score"))
@@ -344,6 +346,11 @@ def _delta_score(current: dict[str, Any], prior: list[dict[str, Any]]) -> tuple[
         + price_lag * 0.14
         + social_component * 0.06
     )
+    # Breakout pressure is underlying-only research evidence. Missing values
+    # are neutral, so legacy/fast paths are not penalized when the richer
+    # stock-history features are unavailable.
+    if breakout_pressure >= 55:
+        score += min(10.0, (breakout_pressure - 55.0) * 0.22)
     if day_delta > 4 and rvol_delta > 0:
         score += min(8.0, day_delta * 0.7)
 
@@ -360,6 +367,8 @@ def _delta_score(current: dict[str, Any], prior: list[dict[str, Any]]) -> tuple[
         reasons.append("الحجم سبق السعر — Price Lag")
     if social_delta >= 12:
         reasons.append("Social acceleration")
+    if breakout_pressure >= 70:
+        reasons.append(f"Breakout pressure {breakout_pressure:.0f}/100")
 
     components = {
         "supply": round(supply, 2),
@@ -368,6 +377,7 @@ def _delta_score(current: dict[str, Any], prior: list[dict[str, Any]]) -> tuple[
         "information_change": round(info_component, 2),
         "price_lag": round(price_lag, 2),
         "social_acceleration": round(social_component, 2),
+        "breakout_pressure": round(breakout_pressure, 2),
         "raw_rvol_delta": round(rvol_delta, 4),
         "raw_volume_accel_ratio": round(volume_accel_ratio, 4),
         "raw_day_delta": round(day_delta, 4),
