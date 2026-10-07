@@ -150,7 +150,7 @@ jobs:
           --calibration data/live/omega_target_calibration.json
 
       - name: Restore centralized Telegram destination for Omega WATCH
-        if: github.event_name != 'push' && env.TELEGRAM_CHAT_ID == ''
+        if: env.TELEGRAM_CHAT_ID == ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -172,11 +172,9 @@ jobs:
           fi
 
       - name: Resolve Telegram destination for Omega WATCH
-        if: github.event_name != 'push'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
       - name: Audit Contract Guardian Telegram readiness
-        if: github.event_name != 'push'
         run: >-
           python -m scripts.guardian_delivery_audit
           --report public/data/contract_guardian.json
