@@ -412,7 +412,12 @@ def update_contract_guardian(
             stock_price_age is not None
             and 0 <= stock_price_age <= max_quote_age_minutes
             and str(stock.get("source") or stock.get("price_source") or "").strip()
+            and _number(stock.get("price")) > 0
         )
+        if underlying_price_timed:
+            # The provider timestamp belongs to stock.price, never to the
+            # underlying_price copied into an unrelated option-chain row.
+            spot = _number(stock.get("price"))
         quote_snapshots, history_note = record_option_quote_snapshot(
             tracked.get("quote_snapshots"),
             current,
@@ -586,6 +591,8 @@ def render_guardian_ar(report: dict[str, Any], *, limit: int = 8) -> str:
         side = str(row.get("side") or "")
         symbol = str(row.get("symbol") or "")
         stage = str(row.get("stage") or "")
+        if row.get("stage_provisional"):
+            stage += " (مبدئي/السعر غير مؤرخ)"
         ret = row.get("last_return_pct")
         ret_text = f"{_number(ret):+.1f}%" if ret is not None else "—"
         spot = row.get("last_underlying_price")
