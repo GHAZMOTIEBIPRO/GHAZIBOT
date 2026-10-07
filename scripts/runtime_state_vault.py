@@ -31,6 +31,7 @@ RUNTIME_PATHS = (
     "data/live/omega_target_state.json",
     "data/live/omega_target_calibration.json",
     "data/live/contract_guardian_state.json",
+    "data/live/contract_guardian_telegram_state.json",
 )
 
 SECRET_KEY_TOKENS = (
