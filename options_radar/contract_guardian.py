@@ -405,6 +405,14 @@ def update_contract_guardian(
         )
         chart = chart_risk_context(stock, side, target_map)
         catalyst_report = catalyst_report_ar(symbol, catalyst, stock, chart)
+        stock_price_age = _quote_age_minutes(
+            {"quote_timestamp": stock.get("quote_timestamp")}, now,
+        )
+        underlying_price_timed = bool(
+            stock_price_age is not None
+            and 0 <= stock_price_age <= max_quote_age_minutes
+            and str(stock.get("source") or stock.get("price_source") or "").strip()
+        )
         quote_snapshots, history_note = record_option_quote_snapshot(
             tracked.get("quote_snapshots"),
             current,
@@ -472,12 +480,29 @@ def update_contract_guardian(
             tracked["mae_pct"] = None
 
         previous = str(tracked.get("stage") or "WATCH")
-        if previous in TERMINAL_STAGES:
+        if previous in TERMINAL_STAGES and tracked.get("terminal") is True:
             proposed_stage = previous
         tracked["previous_stage"] = previous
         tracked["stage"] = proposed_stage
         tracked["stage_changed"] = proposed_stage != previous
-        tracked["terminal"] = proposed_stage in TERMINAL_STAGES
+        tracked["stage_price_evidence"] = (
+            "TIMED_UNDERLYING_RESEARCH"
+            if underlying_price_timed else "UNSTAMPED_UNDERLYING_RESEARCH"
+        )
+        tracked["stage_provisional"] = (
+            proposed_stage in {"T1_HIT", "T2_HIT", "T3_HIT", "INVALIDATED"}
+            and not underlying_price_timed
+        )
+        # Expiry is calendar-confirmed. Target/stop terminal states require a
+        # separately timed underlying observation; an unstamped quote cannot
+        # permanently close an active lifecycle.
+        tracked["terminal"] = (
+            proposed_stage == "EXPIRED"
+            or (
+                proposed_stage in {"T3_HIT", "INVALIDATED"}
+                and underlying_price_timed
+            )
+        )
         tracked["last_observed_at"] = now.isoformat()
         tracked["last_mark"] = observation["mark"] if quote_valid else None
         tracked["last_indicative_mark"] = (
@@ -516,6 +541,16 @@ def update_contract_guardian(
         "tracked_total": len(contracts_state),
         "active_count": len(active),
         "terminal_count": len(terminal),
+        "provisional_target_or_stop_count": sum(
+            bool(row.get("stage_provisional"))
+            for row in contracts_state.values()
+            if isinstance(row, dict)
+        ),
+        "unstamped_option_count": sum(
+            row.get("data_stale") is True
+            for row in contracts_state.values()
+            if isinstance(row, dict)
+        ),
         "active": active,
         "terminal_recent": terminal[-25:],
         "policy": {
@@ -529,6 +564,7 @@ def update_contract_guardian(
             "snapshot_history": "provider-quote-timestamped self-collected research observations; not historical OPRA",
             "unstamped_history": "collected-at only when quote timestamp is missing; no freshness, return or execution authority",
             "chart_and_catalyst_are_context_only": True,
+            "unstamped_stock_prices_cannot_confirm_target_or_invalidation": True,
         },
     }
     state_out = {
