@@ -101,3 +101,12 @@ def test_omega_target_learning_is_durable_and_non_blocking() -> None:
     assert "python -m scripts.run_omega_target_learning" in workflow
     assert "continue-on-error: true" in workflow
     assert "if: github.event_name != 'push'" in workflow
+
+
+def test_contract_guardian_runtime_state_has_one_omega_writer() -> None:
+    vault = Path("scripts/runtime_state_vault.py").read_text(encoding="utf-8")
+    workflow = Path(".github/workflows/options-radar.yml").read_text(encoding="utf-8")
+    assert '"data/live/contract_guardian_state.json"' in vault
+    assert '"public/data/contract_guardian.json"' in vault
+    assert "Track selected contracts with Contract Guardian" in workflow
+    assert "python -m scripts.run_contract_guardian" in workflow
