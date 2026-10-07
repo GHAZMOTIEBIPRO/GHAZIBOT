@@ -119,3 +119,55 @@ def test_guardian_message_marks_stale_and_iv_crush_risk():
     assert "IV Crush" in message
     assert "بيانات العقد قديمة" in message
     assert "155د" in message
+
+
+
+def test_guardian_catalyst_uses_verified_impact_not_unverified_raw_health():
+    row = _row()
+    row["catalyst_health"] = {
+        "impact_score": 98,
+        "headline": "Unverified social rumor",
+        "source": "social media",
+    }
+    row["explosion_thesis"] = {
+        "verification": "UNVERIFIED",
+        "headline": "Unverified social rumor",
+        "primary_source": "social media",
+        "impact_score": None,
+        "proof_ar": "الخبر غير مثبت رسميًا",
+    }
+    card = sender._message(row)
+    assert "غير مقيم — الخبر غير مثبت" in card
+    assert "98/100" not in card
+    assert "غير مثبت رسميًا" in card
+    assert "غير مؤرخة" in card
+
+
+def test_guardian_official_impact_displays_original_approved_score_only():
+    row = _row()
+    row["catalyst_health"] = {"impact_score": 99}
+    row["explosion_thesis"] = {
+        "verification": "OFFICIAL",
+        "headline": "Material report filed",
+        "primary_source": "SEC EDGAR",
+        "impact_score": 81,
+        "proof_ar": "خبر مثبت من جهة رسمية",
+    }
+    card = sender._message(row)
+    assert "81/100" in card
+    assert "99/100" not in card
+    assert "SEC EDGAR" in card
+
+
+def test_guardian_card_refreshes_fingerprint_when_verified_impact_changes():
+    row = _row()
+    row["explosion_thesis"] = {
+        "verification": "OFFICIAL",
+        "headline": "Report filed",
+        "impact_score": 42,
+    }
+    first = sender._fingerprint(row)
+    row["explosion_thesis"]["impact_score"] = 87
+    assert sender._fingerprint(row) != first
+    row["explosion_thesis"]["verification"] = "UNVERIFIED"
+    assert sender._fingerprint(row) != first
