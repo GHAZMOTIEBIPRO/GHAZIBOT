@@ -51,6 +51,7 @@ jobs:
           python -m scripts.run_stock_outcome_audit --help >/dev/null
           python -m scripts.run_stock_walk_forward --help >/dev/null
           python -m scripts.run_contract_guardian --help >/dev/null
+          python -m scripts.send_contract_guardian_updates --help >/dev/null
           python scripts/telegram_connection_bootstrap.py --help >/dev/null
 
       - name: Python syntax and import compilation
@@ -129,6 +130,7 @@ jobs:
             scripts/run_stock_outcome_audit.py \
             scripts/run_stock_walk_forward.py \
             scripts/run_contract_guardian.py \
+            scripts/send_contract_guardian_updates.py \
             scripts/telegram_connection_bootstrap.py \
             scripts/telegram_transport.py \
             scripts/send_independent_path_alerts.py \
@@ -156,6 +158,7 @@ jobs:
             tests/test_clinicaltrials_catalyst_policy.py \
             tests/test_clinicaltrials_registry.py \
             tests/test_contract_guardian.py \
+            tests/test_contract_guardian_sender.py \
             tests/test_explosion_breakout_pressure.py \
             tests/test_option_anomaly.py \
             tests/test_option_explosion.py \
