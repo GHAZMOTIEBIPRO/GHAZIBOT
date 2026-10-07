@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import requests
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -81,6 +83,85 @@ def build_delivery_preflight(
     }
 
 
+def probe_telegram_access(
+    token: str, chat_id: str, *, timeout: int = 12,
+) -> dict[str, Any]:
+    """Check Bot API identity and destination without sending a message.
+
+    Never log or persist token, username, chat id, full API response or URLs.
+    Passing this probe proves API connectivity, NOT successful message delivery.
+    """
+    if not token or not chat_id:
+        return {
+            "bot_api_responded": False,
+            "destination_api_verified": False,
+            "reason": "not_configured",
+        }
+    base = f"https://api.telegram.org/bot{token}"
+    for method, params, reason in (
+        ("getMe", {}, "bot_identity_check_failed"),
+        ("getChat", {"chat_id": chat_id}, "chat_access_check_failed"),
+    ):
+        try:
+            response = requests.post(
+                f"{base}/{method}", data=params, timeout=timeout,
+            )
+            if response.status_code != 200:
+                return {
+                    "bot_api_responded": method == "getChat",
+                    "destination_api_verified": False,
+                    "reason": reason,
+                }
+            body = response.json()
+            if not isinstance(body, dict) or body.get("ok") is not True:
+                return {
+                    "bot_api_responded": method == "getChat",
+                    "destination_api_verified": False,
+                    "reason": reason,
+                }
+        except (requests.RequestException, ValueError):
+            return {
+                "bot_api_responded": method == "getChat",
+                "destination_api_verified": False,
+                "reason": reason,
+            }
+    return {
+        "bot_api_responded": True,
+        "destination_api_verified": True,
+        "reason": "api_identity_and_chat_verified",
+    }
+
+
+def enhance_with_telegram_probe(
+    preflight: dict[str, Any],
+    *,
+    token: str,
+    chat_id: str,
+    event_name: str,
+) -> dict[str, Any]:
+    """Attach a safe observable transport check to delivery preflight."""
+    enriched = dict(preflight)
+    if enriched["status"] != "READY_TO_DELIVER":
+        enriched.update({
+            "bot_api_responded": False,
+            "destination_api_verified": False,
+            "probe_reason": "preflight_blocked",
+        })
+        return enriched
+
+    probe = probe_telegram_access(token, chat_id)
+    enriched.update({
+        "bot_api_responded": probe["bot_api_responded"],
+        "destination_api_verified": probe["destination_api_verified"],
+        "probe_reason": probe["reason"],
+    })
+    if not probe["destination_api_verified"]:
+        enriched["status"] = "BLOCKED_TELEGRAM_ACCESS_CHECK"
+    elif event_name == "push":
+        enriched["status"] = "CONNECTION_VERIFIED_NOT_SENT"
+    return enriched
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit Guardian Telegram readiness without leaking secrets")
     parser.add_argument("--report", default="public/data/contract_guardian.json")
@@ -93,6 +174,12 @@ def main() -> int:
             os.getenv("TELEGRAM_READY", "").lower() == "true"
             and bool(os.getenv("TELEGRAM_CHAT_ID"))
         ),
+    )
+    preflight = enhance_with_telegram_probe(
+        preflight,
+        token=str(os.getenv("TELEGRAM_BOT_TOKEN") or "").strip(),
+        chat_id=str(os.getenv("TELEGRAM_CHAT_ID") or "").strip(),
+        event_name=str(os.getenv("GITHUB_EVENT_NAME") or ""),
     )
     _write(Path(args.output), preflight)
     print(
