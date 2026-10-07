@@ -240,3 +240,58 @@ def record_option_quote_snapshot(
     entries.sort(key=lambda x: str(x.get("quote_timestamp") or ""))
     entries = entries[-max_snapshots:]
     return entries, {"recorded": True, "reason": "new_provider_snapshot", "count": len(entries)}
+
+
+def record_unstamped_research_observation(
+    history: Any,
+    row: dict[str, Any],
+    *,
+    now: datetime,
+    max_snapshots: int = 240,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Retain changes seen in an unstamped free chain, never as tradeable quotes.
+
+    Collection time says when our worker saw the value, NOT when the option
+    quote was created. These observations cannot validate freshness, returns,
+    MFE/MAE, target hits, execution pricing or an option flow event.
+    """
+    entries = [dict(item) for item in history if isinstance(item, dict)] if isinstance(history, list) else []
+
+    if row.get("quote_timestamp"):
+        return entries[-max_snapshots:], {"recorded": False, "reason": "has_provider_quote_timestamp"}
+    kind = str(row.get("timestamp_kind") or "").lower()
+    if kind in {"quote", "provider_quote", "quote_snapshot"} and row.get("updated_at"):
+        return entries[-max_snapshots:], {"recorded": False, "reason": "has_provider_quote_timestamp"}
+
+    bid = _value(row.get("bid"))
+    ask = _value(row.get("ask"))
+    source = str(row.get("source") or "").strip()
+    if not source:
+        return entries[-max_snapshots:], {"recorded": False, "reason": "missing_source"}
+    if bid is None or ask is None or bid <= 0 or ask <= bid:
+        return entries[-max_snapshots:], {"recorded": False, "reason": "invalid_bid_ask"}
+
+    # When a free provider serves the same number repeatedly, do not manufacture
+    # a stream of supposedly independent quotes.
+    signature = f"{source.lower()}|{bid:.6f}|{ask:.6f}"
+    last = entries[-1] if entries else {}
+    if signature == last.get("value_fingerprint"):
+        return entries[-max_snapshots:], {"recorded": False, "reason": "unchanged_value"}
+
+    entries.append({
+        "collected_at": now.astimezone(timezone.utc).isoformat(),
+        "provider_quote_timestamp": None,
+        "source": source,
+        "indicative_bid": round(bid, 6),
+        "indicative_ask": round(ask, 6),
+        "value_fingerprint": signature,
+        "freshness_known": False,
+        "execution_grade": False,
+        "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+        "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة.",
+    })
+    return entries[-max_snapshots:], {
+        "recorded": True,
+        "reason": "new_value_seen_without_provider_timestamp",
+        "count": min(len(entries), max_snapshots),
+    }
