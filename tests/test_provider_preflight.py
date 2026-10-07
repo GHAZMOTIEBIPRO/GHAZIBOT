@@ -8,6 +8,7 @@ from options_radar.provider_preflight import (
     configured_providers,
     normalize_provider_list,
     provider_is_configured,
+    install_provider_preflight,
 )
 
 
@@ -113,3 +114,55 @@ def test_fabric_entrypoints_install_preflight_before_singleflight() -> None:
         assert "install_data_fabric_singleflight()" in text
         assert text.index("install_data_fabric()") < text.index("install_provider_preflight()")
         assert text.index("install_provider_preflight()") < text.index("install_data_fabric_singleflight()")
+
+
+
+def test_preflight_reinstalls_when_later_fabric_replaces_wrapped_methods(monkeypatch) -> None:
+    from options_radar.hybrid_fetcher import DataFetcher
+
+    captured = {}
+
+    def fabric_stock(self, symbol, *, start=None, end=None, interval="1d", providers=None):
+        captured["stock"] = list(providers or [])
+        return SimpleNamespace(metadata={})
+
+    def fabric_options(
+        self,
+        symbol,
+        *,
+        min_dte=None,
+        max_dte=None,
+        providers=None,
+        apply_guards=True,
+    ):
+        captured["options"] = list(providers or [])
+        return SimpleNamespace(metadata={})
+
+    # Reproduce the real startup order: package init installed preflight first,
+    # then a later Data Fabric installer replaced both methods while the legacy
+    # class-level flag still remained True.
+    monkeypatch.setattr(DataFetcher, "fetch_stock_bars", fabric_stock)
+    monkeypatch.setattr(DataFetcher, "fetch_option_chain", fabric_options)
+    monkeypatch.setattr(DataFetcher, "_ghazi_provider_preflight_v1", True)
+
+    install_provider_preflight()
+
+    assert getattr(
+        DataFetcher.fetch_stock_bars,
+        "_ghazi_provider_preflight_wrapper",
+        False,
+    ) is True
+    assert getattr(
+        DataFetcher.fetch_option_chain,
+        "_ghazi_provider_preflight_wrapper",
+        False,
+    ) is True
+
+    fetcher = DataFetcher.__new__(DataFetcher)
+    fetcher.settings = _settings()
+    fetcher.fetch_option_chain(
+        "SPY",
+        providers=["tradier", "marketdata", "finnhub", "yahoo"],
+        apply_guards=False,
+    )
+    assert captured["options"] == ["yahoo"]
