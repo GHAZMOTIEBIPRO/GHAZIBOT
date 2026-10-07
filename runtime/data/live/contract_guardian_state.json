@@ -1,0 +1,538 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-07T01:08:33.603896+00:00",
+  "contracts": {
+    "MRVL261016C00290000": {
+      "contract_symbol": "MRVL261016C00290000",
+      "symbol": "MRVL",
+      "side": "CALL",
+      "strike": 290.0,
+      "expiration": "2026-10-16",
+      "created_at": "2026-10-07T01:08:33.603896+00:00",
+      "entry_premium_reference": 10.8,
+      "entry_method": "ask",
+      "entry_iv": 0.6359899682617188,
+      "entry_underlying": 287.010009765625,
+      "original_alert_stage": "WATCH",
+      "original_contract_rank": 83.2,
+      "original_strict_score": null,
+      "premium_targets": {
+        "available": true,
+        "method": "BLACK_SCHOLES_SCENARIO_V1",
+        "entry_premium_reference": 10.8,
+        "entry_method": "ask",
+        "spot_reference": 287.01,
+        "strike": 290.0,
+        "side": "CALL",
+        "dte": 9.0,
+        "iv_reference": 0.63599,
+        "iv_scenarios": {
+          "iv_down": 0.540591,
+          "base": 0.63599,
+          "iv_up": 0.731388
+        },
+        "targets": {
+          "t1": {
+            "underlying_price": 308.64,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 8.5,
+            "premium_low": 22.069,
+            "premium_base": 23.4202,
+            "premium_high": 24.8619,
+            "return_low_pct": 104.34,
+            "return_base_pct": 116.85,
+            "return_high_pct": 130.2,
+            "scenario_prices": {
+              "iv_down": 22.069,
+              "base": 23.4202,
+              "iv_up": 24.8619
+            }
+          },
+          "t2": {
+            "underlying_price": 330.26,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 8.5,
+            "premium_low": 41.16,
+            "premium_base": 41.7776,
+            "premium_high": 42.5918,
+            "return_low_pct": 281.11,
+            "return_base_pct": 286.83,
+            "return_high_pct": 294.37,
+            "scenario_prices": {
+              "iv_down": 41.16,
+              "base": 41.7776,
+              "iv_up": 42.5918
+            }
+          },
+          "t3": {
+            "underlying_price": 330.27,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 8.5,
+            "premium_low": 41.1695,
+            "premium_base": 41.7868,
+            "premium_high": 42.6007,
+            "return_low_pct": 281.2,
+            "return_base_pct": 286.91,
+            "return_high_pct": 294.45,
+            "scenario_prices": {
+              "iv_down": 41.1695,
+              "base": 41.7868,
+              "iv_up": 42.6007
+            }
+          }
+        },
+        "invalidation": {
+          "underlying_price": 265.38,
+          "premium_low": 1.7015,
+          "premium_base": 2.7033,
+          "premium_high": 3.8369,
+          "return_base_pct": -74.97
+        },
+        "research_only": true,
+        "is_guarantee": false,
+        "assumptions": [
+          "Black-Scholes scenario estimate, not a live executable quote.",
+          "IV scenarios use -15% / base / +15% relative to current IV.",
+          "Target timing uses the existing underlying horizon buckets.",
+          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
+        ]
+      },
+      "target_map": {
+        "symbol": "MRVL",
+        "direction": "CALL",
+        "entry": {
+          "low": 282.68,
+          "high": 288.74,
+          "source": "stock_setup"
+        },
+        "invalidation": {
+          "price": 265.38,
+          "source": "invalidation"
+        },
+        "t1": {
+          "price": 308.64,
+          "label": "Existing T1",
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t2": {
+          "price": 330.26,
+          "label": "Existing T2",
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t3": {
+          "price": 330.27,
+          "label": "ATR 3.0x",
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED"
+        },
+        "candidate_levels": [
+          {
+            "price": 308.64,
+            "label": "Existing T1",
+            "source": "target_1",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 330.26,
+            "label": "Existing T2",
+            "source": "target_2",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 330.27,
+            "label": "ATR 3.0x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          },
+          {
+            "price": 351.9,
+            "label": "ATR 4.5x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          }
+        ],
+        "target_map_quality": 91,
+        "missing_inputs": [
+          "structural_levels"
+        ],
+        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
+      },
+      "target_horizon": {
+        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
+        "is_probability": false,
+        "is_guarantee": false,
+        "calibrated_target_count": 0,
+        "calibration_status": "INSUFFICIENT_SAMPLE",
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "نفس الجلسة إلى جلسة",
+        "timeframe_alignment": "ALIGNED",
+        "targets": [
+          {
+            "target": "T1",
+            "price": 308.64,
+            "distance_pct": 7.54,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T2",
+            "price": 330.26,
+            "distance_pct": 15.07,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T3",
+            "price": 330.27,
+            "distance_pct": 15.07,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          }
+        ]
+      },
+      "catalyst_at_entry": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      },
+      "observations": [
+        {
+          "at": "2026-10-07T01:08:33.603896+00:00",
+          "stage": "ACTIVE",
+          "mark": 10.55,
+          "mark_method": "bid",
+          "return_pct": -2.3148,
+          "underlying_price": 287.01001,
+          "iv": 0.63599,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        }
+      ],
+      "mfe_pct": -2.3148,
+      "mae_pct": -2.3148,
+      "stage": "ACTIVE",
+      "terminal": false,
+      "previous_stage": "WATCH",
+      "stage_changed": true,
+      "last_observed_at": "2026-10-07T01:08:33.603896+00:00",
+      "last_mark": 10.55,
+      "last_return_pct": -2.3148,
+      "last_underlying_price": 287.01001,
+      "quote_age_minutes": null,
+      "data_stale": true,
+      "iv_crush_risk": false,
+      "catalyst_health": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      }
+    },
+    "SPCX261016C00172500": {
+      "contract_symbol": "SPCX261016C00172500",
+      "symbol": "SPCX",
+      "side": "CALL",
+      "strike": 172.5,
+      "expiration": "2026-10-16",
+      "created_at": "2026-10-07T01:08:33.603896+00:00",
+      "entry_premium_reference": 5.1,
+      "entry_method": "ask",
+      "entry_iv": 0.47363807617187503,
+      "entry_underlying": 171.08999633789062,
+      "original_alert_stage": "WATCH",
+      "original_contract_rank": 82.0,
+      "original_strict_score": null,
+      "premium_targets": {
+        "available": true,
+        "method": "BLACK_SCHOLES_SCENARIO_V1",
+        "entry_premium_reference": 5.1,
+        "entry_method": "ask",
+        "spot_reference": 171.09,
+        "strike": 172.5,
+        "side": "CALL",
+        "dte": 9.0,
+        "iv_reference": 0.473638,
+        "iv_scenarios": {
+          "iv_down": 0.402592,
+          "base": 0.473638,
+          "iv_up": 0.544684
+        },
+        "targets": {
+          "t1": {
+            "underlying_price": 182.09,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 8.5,
+            "premium_low": 10.8615,
+            "premium_base": 11.4057,
+            "premium_high": 12.0005,
+            "return_low_pct": 112.97,
+            "return_base_pct": 123.64,
+            "return_high_pct": 135.3,
+            "scenario_prices": {
+              "iv_down": 10.8615,
+              "base": 11.4057,
+              "iv_up": 12.0005
+            }
+          },
+          "t2": {
+            "underlying_price": 193.09,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 8.5,
+            "premium_low": 20.9029,
+            "premium_base": 21.0883,
+            "premium_high": 21.3578,
+            "return_low_pct": 309.86,
+            "return_base_pct": 313.5,
+            "return_high_pct": 318.78,
+            "scenario_prices": {
+              "iv_down": 20.9029,
+              "base": 21.0883,
+              "iv_up": 21.3578
+            }
+          },
+          "t3": {
+            "underlying_price": 204.09,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 8.5,
+            "premium_low": 31.7729,
+            "premium_base": 31.8067,
+            "premium_high": 31.883,
+            "return_low_pct": 523.0,
+            "return_base_pct": 523.66,
+            "return_high_pct": 525.16,
+            "scenario_prices": {
+              "iv_down": 31.7729,
+              "base": 31.8067,
+              "iv_up": 31.883
+            }
+          }
+        },
+        "invalidation": {
+          "underlying_price": 160.09,
+          "premium_low": 0.5795,
+          "premium_base": 0.9725,
+          "premium_high": 1.4324,
+          "return_base_pct": -80.93
+        },
+        "research_only": true,
+        "is_guarantee": false,
+        "assumptions": [
+          "Black-Scholes scenario estimate, not a live executable quote.",
+          "IV scenarios use -15% / base / +15% relative to current IV.",
+          "Target timing uses the existing underlying horizon buckets.",
+          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
+        ]
+      },
+      "target_map": {
+        "symbol": "SPCX",
+        "direction": "CALL",
+        "entry": {
+          "low": 168.89,
+          "high": 171.97,
+          "source": "stock_setup"
+        },
+        "invalidation": {
+          "price": 160.09,
+          "source": "invalidation"
+        },
+        "t1": {
+          "price": 182.09,
+          "label": "Existing T1",
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t2": {
+          "price": 193.09,
+          "label": "Existing T2",
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t3": {
+          "price": 204.09,
+          "label": "ATR 4.5x",
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED"
+        },
+        "candidate_levels": [
+          {
+            "price": 182.09,
+            "label": "Existing T1",
+            "source": "target_1",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 193.09,
+            "label": "Existing T2",
+            "source": "target_2",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 204.09,
+            "label": "ATR 4.5x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          }
+        ],
+        "target_map_quality": 91,
+        "missing_inputs": [
+          "structural_levels"
+        ],
+        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
+      },
+      "target_horizon": {
+        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
+        "is_probability": false,
+        "is_guarantee": false,
+        "calibrated_target_count": 0,
+        "calibration_status": "INSUFFICIENT_SAMPLE",
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "نفس الجلسة إلى جلسة",
+        "timeframe_alignment": "ALIGNED",
+        "targets": [
+          {
+            "target": "T1",
+            "price": 182.09,
+            "distance_pct": 6.43,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T2",
+            "price": 193.09,
+            "distance_pct": 12.86,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T3",
+            "price": 204.09,
+            "distance_pct": 19.29,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          }
+        ]
+      },
+      "catalyst_at_entry": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      },
+      "observations": [
+        {
+          "at": "2026-10-07T01:08:33.603896+00:00",
+          "stage": "ACTIVE",
+          "mark": 5.05,
+          "mark_method": "bid",
+          "return_pct": -0.9804,
+          "underlying_price": 171.089996,
+          "iv": 0.473638,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        }
+      ],
+      "mfe_pct": -0.9804,
+      "mae_pct": -0.9804,
+      "stage": "ACTIVE",
+      "terminal": false,
+      "previous_stage": "WATCH",
+      "stage_changed": true,
+      "last_observed_at": "2026-10-07T01:08:33.603896+00:00",
+      "last_mark": 5.05,
+      "last_return_pct": -0.9804,
+      "last_underlying_price": 171.089996,
+      "quote_age_minutes": null,
+      "data_stale": true,
+      "iv_crush_risk": false,
+      "catalyst_health": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      }
+    }
+  }
+}
