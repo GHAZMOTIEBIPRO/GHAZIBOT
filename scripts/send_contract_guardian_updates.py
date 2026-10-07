@@ -97,6 +97,7 @@ def _fingerprint(row: dict[str, Any]) -> str:
             str(thesis.get("headline") or ""),
             str(thesis.get("event_date") or ""),
             str(row.get("quote_history_count") or 0),
+            str(row.get("unstamped_research_count") or 0),
             str(row.get("contract_symbol") or ""),
             str(row.get("stage") or ""),
             f"{_number(row.get('last_mark')):.2f}",
@@ -217,7 +218,13 @@ def _message(row: dict[str, Any]) -> str:
     if source_url.startswith(("https://", "http://")):
         lines.append(f'🔗 <a href="{_safe(source_url, 500)}">فتح المصدر الأصلي للخبر</a>')
     count = int(_number(row.get("quote_history_count")))
-    lines.append(f"📚 سجل أسعار العقد المجاني: <b>{count}</b> لقطة موثّقة التوقيت (بحثي)")
+    lines.append(f"📚 سجل العقد: <b>{count}</b> لقطة بتوقيت تسعير موثّق (بحثي)")
+    unstamped = int(_number(row.get("unstamped_research_count")))
+    if unstamped:
+        lines.append(
+            f"📓 رصد مجاني غير مؤرّخ: <b>{unstamped}</b> تغيّر سعر جُمِع وقت الفحص؛ "
+            "ليس تاريخ تداول أو سعرًا لحظيًا مؤكّدًا."
+        )
 
     if row.get("iv_crush_risk"):
         lines.append("⚠️ <b>خطر IV Crush ظاهر مقارنةً بوقت التوصية.</b>")

@@ -8,6 +8,7 @@ from .guardian_research import (
     catalyst_report_ar,
     chart_risk_context,
     record_option_quote_snapshot,
+    record_unstamped_research_observation,
 )
 
 
@@ -316,6 +317,7 @@ def update_contract_guardian(
                 ),
                 "observations": [],
                 "quote_snapshots": [],
+                "unstamped_research_observations": [],
                 "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
                 "mfe_pct": 0.0,
                 "mae_pct": 0.0,
@@ -378,6 +380,14 @@ def update_contract_guardian(
         tracked["quote_snapshots"] = quote_snapshots
         tracked["quote_history_status"] = history_note
         tracked["quote_history_count"] = len(quote_snapshots)
+        unstamped, unstamped_note = record_unstamped_research_observation(
+            tracked.get("unstamped_research_observations"),
+            current,
+            now=now,
+        )
+        tracked["unstamped_research_observations"] = unstamped
+        tracked["unstamped_history_status"] = unstamped_note
+        tracked["unstamped_research_count"] = len(unstamped)
         tracked["chart_health"] = chart
         tracked["explosion_thesis"] = catalyst_report
 
@@ -475,6 +485,7 @@ def update_contract_guardian(
             "premium_targets": "Black-Scholes scenario ranges are research estimates only",
             "stale_option_quotes_do_not_validate_premium_outcomes": True,
             "snapshot_history": "provider-quote-timestamped self-collected research observations; not historical OPRA",
+            "unstamped_history": "collected-at only when quote timestamp is missing; no freshness, return or execution authority",
             "chart_and_catalyst_are_context_only": True,
         },
     }
