@@ -25,6 +25,14 @@ The radar may use free sources only when their access method is documented and p
 
 ## Free account or credentials required
 
+### MarketData.app historical option quotes
+
+- Requires a free MarketData.app API token.
+- Free accounts can query historical option quotes; the project uses this only for closed-session contract-volume history and anomaly research.
+- Historical rows are not execution-grade and do not upgrade V11 or live quote freshness.
+- The adapter is credit-aware by design because one historical range can return multiple days for one OCC contract.
+- Historical Greeks are not assumed; they remain unavailable on historical requests.
+
 ### Alpaca indicative options feed
 
 - Requires Alpaca API credentials.
