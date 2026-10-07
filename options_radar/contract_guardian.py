@@ -609,6 +609,6 @@ def render_guardian_ar(report: dict[str, Any], *, limit: int = 8) -> str:
         lines.append(
             f"{symbol} {side} | {stage} | العقد {premium if premium is not None else '—'} "
             f"({ret_text}) | السهم {spot if spot is not None else '—'}"
-            f" | محفز {str(impact) + '/100' if impact is not None else 'غير مثبت'}{stale}{iv_risk}"
+            f" | محفز {f'{_number(impact):.0f}/100' if impact is not None else 'غير مثبت'}{stale}{iv_risk}"
         )
     return "\n".join(lines)
