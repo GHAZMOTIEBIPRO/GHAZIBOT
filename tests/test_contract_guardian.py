@@ -44,6 +44,8 @@ def _payload(spot: float, bid: float = 2.2, iv: float = 0.40):
             {
                 "symbol": "XYZ",
                 "price": spot,
+                "quote_timestamp": NOW.isoformat(),
+                "source": "licensed_test",
                 "entry_low": 99,
                 "entry_high": 101,
                 "target_1": 104,

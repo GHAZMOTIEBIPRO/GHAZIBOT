@@ -178,7 +178,7 @@ def _quote_age_minutes(row: dict[str, Any], now: datetime) -> float | None:
     raw = row.get("quote_timestamp")
     if not raw:
         kind = str(row.get("timestamp_kind") or "").lower()
-        if kind in {"", "quote", "provider_quote", "quote_snapshot"}:
+        if kind in {"quote", "provider_quote", "quote_snapshot"}:
             raw = row.get("updated_at")
     if not raw:
         return None
@@ -186,7 +186,24 @@ def _quote_age_minutes(row: dict[str, Any], now: datetime) -> float | None:
         stamp = _utc(raw)
     except (TypeError, ValueError):
         return None
-    return max(0.0, (now - stamp).total_seconds() / 60.0)
+    age = (now - stamp).total_seconds() / 60.0
+    # A future timestamp cannot be turned into an age-zero fresh quote.
+    return age if age >= -2.0 else None
+
+
+def _quote_research_valid(
+    row: dict[str, Any], now: datetime, max_age_minutes: float,
+) -> bool:
+    age = _quote_age_minutes(row, now)
+    bid = _number(row.get("bid"))
+    ask = _number(row.get("ask"))
+    return bool(
+        age is not None
+        and 0 <= age <= max_age_minutes
+        and bid > 0
+        and ask > bid
+        and str(row.get("source") or "").strip()
+    )
 
 
 def _expiration_passed(value: Any, now: datetime) -> bool:
@@ -291,6 +308,9 @@ def update_contract_guardian(
         target_map = _target_map(stock, opportunity)
         if contract not in contracts_state:
             entry_premium, entry_method = _mark(primary, entry=True)
+            entry_reference_verified = _quote_research_valid(
+                primary, now, max_quote_age_minutes,
+            )
             contracts_state[contract] = {
                 "contract_symbol": contract,
                 "symbol": symbol,
@@ -300,6 +320,11 @@ def update_contract_guardian(
                 "created_at": now.isoformat(),
                 "entry_premium_reference": round(entry_premium, 6),
                 "entry_method": entry_method,
+                "entry_reference_verified": entry_reference_verified,
+                "entry_reference_quality": (
+                    "PROVIDER_STAMPED_RESEARCH" if entry_reference_verified
+                    else "UNSTAMPED_OR_STALE_INDICATIVE"
+                ),
                 "entry_iv": _number(primary.get("iv")),
                 "entry_underlying": _number(
                     primary.get("underlying_price"),
@@ -354,13 +379,17 @@ def update_contract_guardian(
             _number(stock.get("price"), _number(tracked.get("entry_underlying"))),
         )
         entry = _number(tracked.get("entry_premium_reference"))
+        quote_age = _quote_age_minutes(current, now)
+        quote_valid = _quote_research_valid(
+            current, now, max_quote_age_minutes,
+        )
+        data_stale = not quote_valid
+        entry_verified = tracked.get("entry_reference_verified") is True
         return_pct = (
             (mark / entry - 1.0) * 100.0
-            if entry > 0 and mark > 0
+            if entry_verified and quote_valid and entry > 0 and mark > 0
             else None
         )
-        quote_age = _quote_age_minutes(current, now)
-        data_stale = quote_age is None or quote_age > max_quote_age_minutes
         current_iv = _number(current.get("iv"))
         entry_iv = _number(tracked.get("entry_iv"))
         iv_change_pct = (
@@ -368,9 +397,22 @@ def update_contract_guardian(
             if current_iv > 0 and entry_iv > 0
             else None
         )
-        iv_crush_risk = iv_change_pct is not None and iv_change_pct <= -20.0
+        iv_crush_risk = (
+            quote_valid
+            and entry_verified
+            and iv_change_pct is not None
+            and iv_change_pct <= -20.0
+        )
         chart = chart_risk_context(stock, side, target_map)
         catalyst_report = catalyst_report_ar(symbol, catalyst, stock, chart)
+        stock_price_age = _quote_age_minutes(
+            {"quote_timestamp": stock.get("quote_timestamp")}, now,
+        )
+        underlying_price_timed = bool(
+            stock_price_age is not None
+            and 0 <= stock_price_age <= max_quote_age_minutes
+            and str(stock.get("source") or stock.get("price_source") or "").strip()
+        )
         quote_snapshots, history_note = record_option_quote_snapshot(
             tracked.get("quote_snapshots"),
             current,
@@ -412,6 +454,8 @@ def update_contract_guardian(
             "iv_crush_risk": iv_crush_risk,
             "quote_age_minutes": round(quote_age, 2) if quote_age is not None else None,
             "data_stale": data_stale,
+            "quote_valid": quote_valid,
+            "entry_reference_verified": entry_verified,
             "source": current.get("source"),
             "freshness_label": current.get("freshness_label"),
         }
@@ -426,7 +470,7 @@ def update_contract_guardian(
         returns = [
             (_number(item.get("mark_for_exit")) / entry - 1.0) * 100.0
             for item in quote_snapshots
-            if entry > 0 and _number(item.get("mark_for_exit")) > 0
+            if entry_verified and entry > 0 and _number(item.get("mark_for_exit")) > 0
         ]
         if returns:
             tracked["mfe_pct"] = round(max(returns), 4)
@@ -436,15 +480,36 @@ def update_contract_guardian(
             tracked["mae_pct"] = None
 
         previous = str(tracked.get("stage") or "WATCH")
-        if previous in TERMINAL_STAGES:
+        if previous in TERMINAL_STAGES and tracked.get("terminal") is True:
             proposed_stage = previous
         tracked["previous_stage"] = previous
         tracked["stage"] = proposed_stage
         tracked["stage_changed"] = proposed_stage != previous
-        tracked["terminal"] = proposed_stage in TERMINAL_STAGES
+        tracked["stage_price_evidence"] = (
+            "TIMED_UNDERLYING_RESEARCH"
+            if underlying_price_timed else "UNSTAMPED_UNDERLYING_RESEARCH"
+        )
+        tracked["stage_provisional"] = (
+            proposed_stage in {"T1_HIT", "T2_HIT", "T3_HIT", "INVALIDATED"}
+            and not underlying_price_timed
+        )
+        # Expiry is calendar-confirmed. Target/stop terminal states require a
+        # separately timed underlying observation; an unstamped quote cannot
+        # permanently close an active lifecycle.
+        tracked["terminal"] = (
+            proposed_stage == "EXPIRED"
+            or (
+                proposed_stage in {"T3_HIT", "INVALIDATED"}
+                and underlying_price_timed
+            )
+        )
         tracked["last_observed_at"] = now.isoformat()
-        tracked["last_mark"] = observation["mark"]
+        tracked["last_mark"] = observation["mark"] if quote_valid else None
+        tracked["last_indicative_mark"] = (
+            observation["mark"] if not quote_valid else None
+        )
         tracked["last_return_pct"] = observation["return_pct"]
+        tracked["current_quote_research_valid"] = quote_valid
         tracked["last_underlying_price"] = observation["underlying_price"]
         tracked["quote_age_minutes"] = observation["quote_age_minutes"]
         tracked["data_stale"] = data_stale
@@ -476,6 +541,16 @@ def update_contract_guardian(
         "tracked_total": len(contracts_state),
         "active_count": len(active),
         "terminal_count": len(terminal),
+        "provisional_target_or_stop_count": sum(
+            bool(row.get("stage_provisional"))
+            for row in contracts_state.values()
+            if isinstance(row, dict)
+        ),
+        "unstamped_option_count": sum(
+            row.get("data_stale") is True
+            for row in contracts_state.values()
+            if isinstance(row, dict)
+        ),
         "active": active,
         "terminal_recent": terminal[-25:],
         "policy": {
@@ -484,9 +559,12 @@ def update_contract_guardian(
             "targets": "frozen underlying T1/T2/T3 from original thesis",
             "premium_targets": "Black-Scholes scenario ranges are research estimates only",
             "stale_option_quotes_do_not_validate_premium_outcomes": True,
+            "percent_return_requires_valid_entry_and_exit_quotes": True,
+            "unstamped_and_stale_marks_never_appear_as_current_live_marks": True,
             "snapshot_history": "provider-quote-timestamped self-collected research observations; not historical OPRA",
             "unstamped_history": "collected-at only when quote timestamp is missing; no freshness, return or execution authority",
             "chart_and_catalyst_are_context_only": True,
+            "unstamped_stock_prices_cannot_confirm_target_or_invalidation": True,
         },
     }
     state_out = {

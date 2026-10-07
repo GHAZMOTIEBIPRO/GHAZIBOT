@@ -5,6 +5,7 @@ import hashlib
 import html
 import json
 import math
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -100,6 +101,8 @@ def _fingerprint(row: dict[str, Any]) -> str:
             str(row.get("unstamped_research_count") or 0),
             str(row.get("contract_symbol") or ""),
             str(row.get("stage") or ""),
+            str(bool(row.get("stage_provisional"))),
+            str(bool(row.get("entry_reference_verified"))),
             f"{_number(row.get('last_mark')):.2f}",
             f"{_number(row.get('last_underlying_price')):.2f}",
             f"{round(_number(row.get('last_return_pct')) / 3.0) * 3:.0f}",
@@ -118,7 +121,9 @@ def _message(row: dict[str, Any]) -> str:
     stage = str(row.get("stage") or "WATCH").upper()
     stage_ar = STAGE_AR.get(stage, stage)
     entry = _number(row.get("entry_premium_reference"))
+    entry_verified = row.get("entry_reference_verified") is True
     mark = _number(row.get("last_mark"), float("nan"))
+    indicative_mark = _number(row.get("last_indicative_mark"), float("nan"))
     ret = _number(row.get("last_return_pct"), float("nan"))
     mfe = _number(row.get("mfe_pct"), float("nan"))
     mae = _number(row.get("mae_pct"), float("nan"))
@@ -145,7 +150,10 @@ def _message(row: dict[str, Any]) -> str:
 
     icon = "🟢" if side == "CALL" else "🔴"
     mark_text = f"{mark:.2f}$" if math.isfinite(mark) and mark > 0 else "—"
-    ret_text = f"{ret:+.1f}%" if math.isfinite(ret) else "—"
+    ret_text = (
+        f"{ret:+.1f}%" if math.isfinite(ret)
+        and not row.get("data_stale") and entry_verified else "—"
+    )
     spot_text = f"{spot:.2f}$" if math.isfinite(spot) and spot > 0 else "—"
 
     t1 = _target_price(row, "t1")
@@ -167,7 +175,7 @@ def _message(row: dict[str, Any]) -> str:
             f" | العقد <b>{_safe(contract, 80)}</b>"
         ),
         (
-            f"💵 البداية <b>{entry:.2f}$</b> → الآن <b>{mark_text}</b>"
+            f"💵 سعر الاختيار المرجعي <b>{entry:.2f}$</b> → سعر العقد الموثق زمنيًا <b>{mark_text}</b>"
             f" | الأداء <b>{ret_text}</b>"
         ),
         f"📈 MFE <b>{mfe_text}</b> | MAE <b>{mae_text}</b> | السهم <b>{spot_text}</b>",
@@ -226,6 +234,21 @@ def _message(row: dict[str, Any]) -> str:
             "ليس تاريخ تداول أو سعرًا لحظيًا مؤكّدًا."
         )
 
+    if row.get("stage_provisional"):
+        lines.append(
+            "⚠️ <b>حالة الهدف أو الإبطال مبدئية: توقيت سعر السهم غير موثّق؛ "
+            "لا تُحسب نتيجة نهائية.</b>"
+        )
+    if not entry_verified:
+        lines.append(
+            "⚠️ <b>سعر بداية العقد مرجعي وغير موثّق؛ "
+            "لا تتوفر نسبة ربح أو خسارة قابلة للتحقق.</b>"
+        )
+    if math.isfinite(indicative_mark) and indicative_mark > 0:
+        lines.append(
+            f"📒 قيمة إرشادية من آخر فحص: <b>{indicative_mark:.2f}$</b>"
+            " — دون إثبات وقت تسعيرها."
+        )
     if row.get("iv_crush_risk"):
         lines.append("⚠️ <b>خطر IV Crush ظاهر مقارنةً بوقت التوصية.</b>")
     if row.get("data_stale"):
@@ -335,6 +358,10 @@ def main() -> int:
         "--state",
         default="data/live/contract_guardian_telegram_state.json",
     )
+    parser.add_argument(
+        "--audit",
+        default="data/live/guardian_delivery_audit.json",
+    )
     args = parser.parse_args()
 
     report = _load(Path(args.report), {})
@@ -345,8 +372,43 @@ def main() -> int:
     if not isinstance(state, dict):
         state = {"contracts": {}}
 
+    from scripts.guardian_delivery_audit import build_delivery_preflight
+
+    audit_path = Path(args.audit)
+    audit = _load(audit_path, {})
+    if not isinstance(audit, dict):
+        audit = {}
+    if not audit:
+        audit = build_delivery_preflight(
+            report,
+            token_configured=bool(os.getenv("TELEGRAM_BOT_TOKEN")),
+            destination_ready=bool(__import__("os").getenv("TELEGRAM_CHAT_ID")),
+        )
+    if audit.get("status") != "READY_TO_DELIVER":
+        _save(audit_path, audit)
+        print(f"Contract Guardian Telegram: no send; {audit.get('status')}")
+        return 0
+
     try:
         result = send_updates(report, state)
+    except Exception as exc:
+        audit.update({
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "status": "SEND_FAILED",
+            "error_class": type(exc).__name__,
+        })
+        _save(audit_path, audit)
+        raise
+    else:
+        audit.update({
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "status": (
+                "ACCEPTED_BY_TELEGRAM" if result["sent"] or result["edited"]
+                else "UNCHANGED_NO_NEW_SEND"
+            ),
+            **result,
+        })
+        _save(audit_path, audit)
     finally:
         _save(state_path, state)
 

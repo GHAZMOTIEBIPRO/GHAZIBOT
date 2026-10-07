@@ -201,7 +201,7 @@ def record_option_quote_snapshot(
     if quote_time is None:
         return entries[-max_snapshots:], {"recorded": False, "reason": "missing_provider_quote_time"}
     age = (now - quote_time).total_seconds() / 60.0
-    if age < -2.0 or age > max_age_minutes:
+    if age < 0.0 or age > max_age_minutes:
         return entries[-max_snapshots:], {"recorded": False, "reason": "stale_or_future_quote"}
 
     bid = _value(row.get("bid"))
