@@ -1,229 +1,981 @@
 {
-  "stocks": {},
-  "options": {
-    "RXRX": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:33.980291+03:00",
+  "stocks": {
+    "WBD": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:15.638631+03:00",
       "attempts": [
         {
-          "provider": "yahoo",
-          "operation": "option_chain",
+          "provider": "yahooquery",
+          "operation": "stock_bars",
           "success": true,
-          "elapsed_ms": 1105,
-          "rows": 187,
+          "elapsed_ms": 0,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 138,
+          "rows": 1,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
-        "symbol": "RXRX",
-        "min_dte": 0,
-        "max_dte": 120,
+        "symbol": "WBD",
+        "interval": "1d",
         "successful_sources": [
+          "yahooquery",
           "yahoo"
         ],
-        "source_count": 1,
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 30.950000762939453,
+          "yahoo": 30.950000762939453
+        },
+        "latest_close_dispersion_pct": 0.0,
         "cross_source_confirmed": false,
-        "contracts_after_merge": 187,
-        "opra_source_active": false
-      }
-    },
-    "ANET": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:38.207193+03:00",
-      "attempts": [
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 1921,
-          "rows": 660,
-          "status_code": null,
-          "error": null
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
         }
-      ],
-      "metadata": {
-        "symbol": "ANET",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 660,
-        "opra_source_active": false
-      }
-    },
-    "MRVL": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:40.413790+03:00",
-      "attempts": [
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 2111,
-          "rows": 1051,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "MRVL",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 1051,
-        "opra_source_active": false
-      }
-    },
-    "XRPN": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:42.143532+03:00",
-      "attempts": [
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 1201,
-          "rows": 49,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "XRPN",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 49,
-        "opra_source_active": false
-      }
-    },
-    "ARM": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:51.017249+03:00",
-      "attempts": [
-        {
-          "provider": "yahoo",
-          "operation": "option_chain",
-          "success": true,
-          "elapsed_ms": 4009,
-          "rows": 1194,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "ARM",
-        "min_dte": 0,
-        "max_dte": 120,
-        "successful_sources": [
-          "yahoo"
-        ],
-        "source_count": 1,
-        "cross_source_confirmed": false,
-        "contracts_after_merge": 1194,
-        "opra_source_active": false
       }
     },
     "AMD": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:53.646896+03:00",
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:16.838101+03:00",
       "attempts": [
         {
-          "provider": "yahoo",
-          "operation": "option_chain",
+          "provider": "yahooquery",
+          "operation": "stock_bars",
           "success": true,
-          "elapsed_ms": 6375,
-          "rows": 2122,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 137,
+          "rows": 1,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
         "symbol": "AMD",
-        "min_dte": 0,
-        "max_dte": 120,
+        "interval": "5m",
         "successful_sources": [
+          "yahooquery",
           "yahoo"
         ],
-        "source_count": 1,
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 642.375,
+          "yahoo": 642.375
+        },
+        "latest_close_dispersion_pct": 0.0,
         "cross_source_confirmed": false,
-        "contracts_after_merge": 2122,
-        "opra_source_active": false
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
       }
     },
-    "NET": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:53.810655+03:00",
+    "LLY": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:17.528546+03:00",
       "attempts": [
         {
-          "provider": "yahoo",
-          "operation": "option_chain",
+          "provider": "yahooquery",
+          "operation": "stock_bars",
           "success": true,
-          "elapsed_ms": 4403,
-          "rows": 863,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 142,
+          "rows": 1,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
-        "symbol": "NET",
-        "min_dte": 0,
-        "max_dte": 120,
+        "symbol": "LLY",
+        "interval": "5m",
         "successful_sources": [
+          "yahooquery",
           "yahoo"
         ],
-        "source_count": 1,
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 1193.0699462890625,
+          "yahoo": 1193.0699462890625
+        },
+        "latest_close_dispersion_pct": 0.0,
         "cross_source_confirmed": false,
-        "contracts_after_merge": 863,
-        "opra_source_active": false
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "MRNA": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:18.289157+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 140,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "MRNA",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 195.6999969482422,
+          "yahoo": 195.6999969482422
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "SMCI": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:19.014345+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 140,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "SMCI",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 45.06990051269531,
+          "yahoo": 45.06990051269531
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "ANET": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:19.799946+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 164,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "ANET",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 215.6199951171875,
+          "yahoo": 215.6199951171875
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "BULL": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:20.719893+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 145,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "BULL",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 5.894999980926514,
+          "yahoo": 5.894999980926514
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "MRVL": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:21.470895+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 143,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "MRVL",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 282.7099914550781,
+          "yahoo": 282.7099914550781
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "RIVN": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:22.314021+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 142,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "RIVN",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 14.265000343322754,
+          "yahoo": 14.265000343322754
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "AMGN": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:23.090502+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 141,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "AMGN",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 412.55499267578125,
+          "yahoo": 412.55499267578125
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
       }
     },
     "MSFT": {
-      "source": "yahoo",
-      "freshness": "unofficial / may be delayed",
-      "fetched_at": "2026-10-07T11:29:58.259242+03:00",
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:24.018424+03:00",
       "attempts": [
         {
-          "provider": "yahoo",
-          "operation": "option_chain",
+          "provider": "yahooquery",
+          "operation": "stock_bars",
           "success": true,
-          "elapsed_ms": 3687,
-          "rows": 1200,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 240,
+          "rows": 1,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
         "symbol": "MSFT",
-        "min_dte": 0,
-        "max_dte": 120,
+        "interval": "5m",
         "successful_sources": [
+          "yahooquery",
           "yahoo"
         ],
-        "source_count": 1,
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 530.9500122070312,
+          "yahoo": 530.9500122070312
+        },
+        "latest_close_dispersion_pct": 0.0,
         "cross_source_confirmed": false,
-        "contracts_after_merge": 1200,
-        "opra_source_active": false
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "NVDA": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:24.913685+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 142,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "NVDA",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 236.52999877929688,
+          "yahoo": 236.52000427246094
+        },
+        "latest_close_dispersion_pct": 0.0021,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "SHOP": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:25.646286+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 160,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "SHOP",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 166.5500030517578,
+          "yahoo": 166.5500030517578
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "TSM": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:26.455786+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 142,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "TSM",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 471.6000061035156,
+          "yahoo": 471.6000061035156
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "XOM": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:27.287709+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 178,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "XOM",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 164.64500427246094,
+          "yahoo": 164.64500427246094
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
+      }
+    },
+    "RXRX": {
+      "source": "yahooquery",
+      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
+      "fetched_at": "2026-10-07T22:04:28.183914+03:00",
+      "attempts": [
+        {
+          "provider": "yahooquery",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 0,
+          "rows": 2,
+          "status_code": null,
+          "error": null
+        },
+        {
+          "provider": "yahoo",
+          "operation": "stock_bars",
+          "success": true,
+          "elapsed_ms": 141,
+          "rows": 1,
+          "status_code": null,
+          "error": null
+        }
+      ],
+      "metadata": {
+        "symbol": "RXRX",
+        "interval": "5m",
+        "successful_sources": [
+          "yahooquery",
+          "yahoo"
+        ],
+        "source_count": 2,
+        "transport_source_count": 2,
+        "independent_source_count": 1,
+        "source_families": [
+          "yahoo"
+        ],
+        "latest_close_by_source": {
+          "yahooquery": 4.394999980926514,
+          "yahoo": 4.394999980926514
+        },
+        "latest_close_dispersion_pct": 0.0,
+        "cross_source_confirmed": false,
+        "provider_preflight": {
+          "configured_providers": [
+            "yahooquery",
+            "yahoo"
+          ],
+          "skipped_unconfigured": [
+            "tradier",
+            "alpaca",
+            "twelve_data",
+            "polygon",
+            "alpha_vantage"
+          ],
+          "adapter_attempts_avoided": 5,
+          "credentials_exposed": false,
+          "decision_authority": false
+        }
       }
     }
-  }
+  },
+  "options": {}
 }
