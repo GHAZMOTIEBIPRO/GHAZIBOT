@@ -158,7 +158,7 @@ def test_guardian_embeds_chart_news_and_free_quote_history_without_v11_promotion
     card = _message(tracked)
     assert "قراءة الشارت" in card
     assert "حالة الخبر" in card
-    assert "سجل أسعار العقد المجاني" in card
+    assert "سجل العقد" in card
     assert "فتح المصدر الأصلي" in card
 
     report_2, state = update_contract_guardian(payload, state, now=NOW + timedelta(minutes=1))
