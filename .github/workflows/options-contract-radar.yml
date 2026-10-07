@@ -54,6 +54,7 @@ jobs:
       ALPACA_OPTIONS_FEED: ${{ secrets.ALPACA_OPTIONS_FEED || 'indicative' }}
       ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
       OPTIONS_PROVIDER_ORDER: ${{ secrets.OPTIONS_PROVIDER_ORDER || 'tradier,marketdata,finnhub,yahoo' }}
+      OPTION_HISTORY_PROVIDER_ORDER: ${{ secrets.OPTION_HISTORY_PROVIDER_ORDER || 'marketdata,tradier' }}
       DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,tiingo,finnhub,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
       INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tradier,alpaca,tiingo,finnhub,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
       OPTIONS_INDEPENDENT_MAX_SYMBOLS: ${{ secrets.OPTIONS_INDEPENDENT_MAX_SYMBOLS || '60' }}
