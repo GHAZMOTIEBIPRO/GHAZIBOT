@@ -26,9 +26,9 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _download_frame(symbol: str, period: str):
+def _download_frame(symbol: str, period: str, target_return_pct: float = 25.0):
     history = yf.download(symbol, period=period, interval="1d", auto_adjust=False, progress=False, threads=False)
-    return build_replay_frame(history)
+    return build_replay_frame(history, target_return_pct=target_return_pct)
 
 
 def _aggregate(frames: dict[str, Any], threshold: float) -> dict[str, Any]:
@@ -72,13 +72,15 @@ def _largest_event(frame, threshold: float) -> dict[str, Any]:
     }
 
 
-def run(archetypes: list[str], controls: list[str], period: str, thresholds: list[float], output: Path) -> int:
+def run(archetypes: list[str], controls: list[str], period: str, thresholds: list[float], output: Path, target_return_pct: float = 25.0) -> int:
+    if target_return_pct <= 0:
+        raise ValueError('target_return_pct must be positive')
     all_symbols = list(dict.fromkeys(archetypes + controls))
     frames: dict[str, Any] = {}
     errors: dict[str, str] = {}
     for symbol in all_symbols:
         try:
-            frame = _download_frame(symbol, period)
+            frame = _download_frame(symbol, period, target_return_pct=target_return_pct)
             if frame.empty:
                 errors[symbol] = "empty history"
             else:
@@ -123,7 +125,7 @@ def run(archetypes: list[str], controls: list[str], period: str, thresholds: lis
         "score_is_probability": False,
         "live_threshold_auto_changed": False,
         "warning": "Price/volume replay cannot reconstruct historical SEC float, catalyst or borrow state; recommendation is research-only.",
-        "forward_label": "max close return over next 5 sessions >= 25%",
+        "forward_label": f"max close return over next 5 sessions >= {target_return_pct:g}%",\n        "target_return_pct": target_return_pct,
         "period": period,
         "archetypes": archetypes,
         "negative_controls": controls,
@@ -167,6 +169,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--controls", default=os.getenv("REPLAY_CONTROL_SYMBOLS", DEFAULT_CONTROLS))
     parser.add_argument("--period", default=os.getenv("REPLAY_PERIOD", "2y"))
     parser.add_argument("--thresholds", default=os.getenv("REPLAY_THRESHOLDS", DEFAULT_THRESHOLDS))
+    parser.add_argument("--target-return-pct", type=float, default=float(os.getenv("REPLAY_TARGET_RETURN_PCT", "100")))
     parser.add_argument("--output", default=str(OUTPUT_PATH))
     return parser
 
@@ -179,6 +182,7 @@ def main(argv: list[str] | None = None) -> int:
         period=args.period,
         thresholds=_thresholds(args.thresholds),
         output=Path(args.output),
+        target_return_pct=args.target_return_pct,
     )
 
 
