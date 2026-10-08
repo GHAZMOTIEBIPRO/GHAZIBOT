@@ -23,7 +23,7 @@ def test_hunter_report_uses_only_provider_timestamp():
         {"generated_at": now.isoformat(), "symbols": {"ABC": {
             "rvol": 5, "float_shares": 1000000,
             "dollar_volume": 1000000, "day_move_pct": 5,
-            "official_catalyst_url": "https://www.sec.gov/example",
+            "official_catalyst_url": "https://www.sec.gov/Archives/edgar/data/123/abc.htm",
         }}},
         now=now,
     )
