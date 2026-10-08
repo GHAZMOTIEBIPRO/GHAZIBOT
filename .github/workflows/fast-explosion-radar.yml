@@ -10,6 +10,8 @@ on:
       - "scripts/fast_explosion_scan.py"
       - "scripts/fast_explosion_scan_runner.py"
       - "scripts/fast_explosion_scan_fabric.py"
+      - "scripts/explosion_hunter_research.py"
+      - "options_radar/explosion_hunter_profile.py"
       - "options_radar/institutional_radar.py"
       - "options_radar/data_fabric.py"
       - "options_radar/data_fabric_runtime.py"
@@ -104,6 +106,10 @@ jobs:
         if: steps.market_day.outputs.open == 'true'
         run: python scripts/fast_explosion_scan_fabric.py --no-telegram
 
+      - name: Classify 100pct Hunter research evidence without Telegram
+        if: steps.market_day.outputs.open == 'true'
+        run: python scripts/explosion_hunter_research.py
+
       - name: Upload fast-radar evidence for unified Arabic notifier
         if: steps.market_day.outputs.open == 'true'
         uses: actions/upload-artifact@v4
@@ -112,6 +118,7 @@ jobs:
           path: |
             data/live/fast_market_state.json
             data/live/fast_explosion_scan.json
+            data/live/explosion_hunter_research.json
             data/live/provider_health.json
           if-no-files-found: warn
           retention-days: 2
