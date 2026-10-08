@@ -9,7 +9,7 @@ import re
 from datetime import date
 from urllib.parse import quote
 
-ACCESSION = re.compile(r"^\\d{10}-\\d{2}-\\d{6}$")
+ACCESSION = re.compile(r"^\d{10}-\d{2}-\d{6}$")
 DOCUMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,200}$")
 
 
