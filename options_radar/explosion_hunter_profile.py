@@ -5,6 +5,7 @@ Do not interpret the target as a probability or a forecast.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 
 @dataclass(frozen=True)
@@ -21,7 +22,7 @@ class HunterProfile:
 PROFILE = HunterProfile()
 
 
-def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE) -> dict:
+def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE, now: datetime | None = None, max_quote_age_minutes: float = 15.0) -> dict:
     """Classify evidence; never manufacture missing float or timestamp."""
     def numeric(key: str) -> float | None:
         try:
@@ -40,6 +41,18 @@ def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE) -> dict:
     move = numeric("day_move_pct")
     quote_time = row.get("provider_quote_timestamp")
     catalyst_url = row.get("official_catalyst_url")
+    reference = now or datetime.now(timezone.utc)
+    if reference.tzinfo is None or max_quote_age_minutes <= 0:
+        raise ValueError("now must be timezone-aware and maximum quote age positive")
+    quote_fresh = False
+    if isinstance(quote_time, str):
+        try:
+            parsed = datetime.fromisoformat(quote_time.replace("Z", "+00:00"))
+            if parsed.tzinfo is not None:
+                age = (reference.astimezone(timezone.utc) - parsed.astimezone(timezone.utc)).total_seconds()
+                quote_fresh = -60 <= age <= max_quote_age_minutes * 60
+        except ValueError:
+            pass
     evidence = bool(quote_time) and bool(catalyst_url)
     flags = []
     if rvol is None or rvol < profile.minimum_rvol:
@@ -52,6 +65,8 @@ def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE) -> dict:
         flags.append("LIQUIDITY_UNVERIFIED")
     if not evidence:
         flags.append("CATALYST_OR_QUOTE_PROVENANCE_MISSING")
+    if not quote_fresh:
+        flags.append("QUOTE_TIMESTAMP_STALE_OR_INVALID")
     if move is not None and move >= 35:
         flags.append("CHASE_RISK")
     stage = "WATCH" if not flags else "RESEARCH_ONLY"
