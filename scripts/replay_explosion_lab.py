@@ -32,7 +32,7 @@ def _clamp_series(series: pd.Series) -> pd.Series:
     return series.clip(lower=0.0, upper=100.0)
 
 
-def build_replay_frame(history: pd.DataFrame) -> pd.DataFrame:
+def build_replay_frame(history: pd.DataFrame, *, target_return_pct: float = 25.0, forward_sessions: int = 5) -> pd.DataFrame:
     """Build hindsight-safe daily features; forward returns are labels only."""
     if history.empty:
         return pd.DataFrame()
@@ -83,10 +83,10 @@ def build_replay_frame(history: pd.DataFrame) -> pd.DataFrame:
     ).clip(0, 100)
 
     # Labels are forward-looking and deliberately computed only after signal features exist.
-    future_closes = pd.concat([frame["Close"].shift(-offset) for offset in range(1, 6)], axis=1)
+    if target_return_pct <= 0 or forward_sessions < 1:\n        raise ValueError("target_return_pct and forward_sessions must be positive")\n    future_closes = pd.concat([frame["Close"].shift(-offset) for offset in range(1, forward_sessions + 1)], axis=1)
     frame["future_5d_max_close"] = future_closes.max(axis=1)
     frame["future_5d_max_return_pct"] = (frame["future_5d_max_close"] / frame["Close"] - 1.0) * 100.0
-    frame["explosion_label"] = frame["future_5d_max_return_pct"] >= 25.0
+    frame.loc[frame.index[-forward_sessions:], "future_5d_max_return_pct"] = np.nan\n    frame["explosion_label"] = frame["future_5d_max_return_pct"] >= target_return_pct
     return frame.replace([np.inf, -np.inf], np.nan)
 
 
@@ -141,12 +141,12 @@ def _largest_event(frame: pd.DataFrame, threshold: float) -> dict[str, Any]:
     }
 
 
-def replay_symbol(symbol: str, period: str, threshold: float) -> dict[str, Any]:
+def replay_symbol(symbol: str, period: str, threshold: float, target_return_pct: float = 25.0) -> dict[str, Any]:
     try:
         history = yf.download(symbol, period=period, interval="1d", auto_adjust=False, progress=False, threads=False)
     except Exception as exc:
         return {"symbol": symbol, "error": f"{type(exc).__name__}: {exc}"}
-    frame = build_replay_frame(history)
+    frame = build_replay_frame(history, target_return_pct=target_return_pct)
     metrics = evaluate_replay(frame, threshold=threshold)
     largest = _largest_event(frame, threshold=threshold)
     recent_signals = []
@@ -166,8 +166,8 @@ def replay_symbol(symbol: str, period: str, threshold: float) -> dict[str, Any]:
     return {"symbol": symbol, "metrics": metrics, "largest_event": largest, "recent_signals": recent_signals}
 
 
-def run(symbols: list[str], period: str, threshold: float, output: Path) -> int:
-    results = [replay_symbol(symbol, period=period, threshold=threshold) for symbol in symbols]
+def run(symbols: list[str], period: str, threshold: float, output: Path, target_return_pct: float = 25.0) -> int:
+    results = [replay_symbol(symbol, period=period, threshold=threshold, target_return_pct=target_return_pct) for symbol in symbols]
     valid_metrics = [row.get("metrics") for row in results if isinstance(row.get("metrics"), dict) and row["metrics"].get("rows")]
     aggregate: dict[str, Any] = {"symbols": len(results), "valid_symbols": len(valid_metrics)}
     if valid_metrics:
@@ -190,7 +190,7 @@ def run(symbols: list[str], period: str, threshold: float, output: Path) -> int:
         "generated_at": _utc_now(),
         "purpose": "hindsight-safe price/volume replay; catalyst/float history is not reconstructed when unavailable",
         "score_is_probability": False,
-        "forward_label": "max close return over next 5 sessions >= 25%",
+        "forward_label": f"max close return over next 5 sessions >= {target_return_pct:g}%",\n        "target_return_pct": target_return_pct,
         "threshold": threshold,
         "period": period,
         "aggregate": aggregate,
@@ -207,14 +207,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--symbols", default=os.getenv("REPLAY_SYMBOLS", DEFAULT_SYMBOLS))
     parser.add_argument("--period", default=os.getenv("REPLAY_PERIOD", "2y"))
     parser.add_argument("--threshold", type=float, default=_number(os.getenv("REPLAY_SIGNAL_THRESHOLD", "60"), 60.0))
-    parser.add_argument("--output", default=str(OUTPUT_PATH))
+    parser.add_argument("--target-return-pct", type=float, default=25.0)\n    parser.add_argument("--output", default=str(OUTPUT_PATH))
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     symbols = [token.strip().upper() for token in str(args.symbols).split(",") if token.strip()]
-    return run(symbols=symbols, period=args.period, threshold=args.threshold, output=Path(args.output))
+    return run(symbols=symbols, period=args.period, threshold=args.threshold, output=Path(args.output), target_return_pct=args.target_return_pct)
 
 
 if __name__ == "__main__":
