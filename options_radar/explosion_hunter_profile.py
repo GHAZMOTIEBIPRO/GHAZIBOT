@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,25 @@ class HunterProfile:
 
 
 PROFILE = HunterProfile()
+
+
+def is_verified_sec_url(value: object) -> bool:
+    """Accept SEC HTTPS filing links only, not lookalike hosts or credentials."""
+    if not isinstance(value, str):
+        return False
+    try:
+        parsed = urlsplit(value.strip())
+        return (
+            parsed.scheme == "https"
+            and parsed.hostname in {"sec.gov", "www.sec.gov"}
+            and parsed.username is None
+            and parsed.password is None
+            and parsed.port in (None, 443)
+            and parsed.path.startswith(("/Archives/", "/ixviewer/"))
+        )
+    except ValueError:
+        return False
+
 
 
 def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE, now: datetime | None = None, max_quote_age_minutes: float = 15.0) -> dict:
@@ -53,7 +73,8 @@ def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE, now: date
                 quote_fresh = -60 <= age <= max_quote_age_minutes * 60
         except ValueError:
             pass
-    evidence = bool(quote_time) and bool(catalyst_url)
+    official_sec_evidence = is_verified_sec_url(catalyst_url)
+    evidence = bool(quote_time) and official_sec_evidence
     flags = []
     if rvol is None or rvol < profile.minimum_rvol:
         flags.append("INSUFFICIENT_RVOL")
@@ -65,6 +86,8 @@ def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE, now: date
         flags.append("LIQUIDITY_UNVERIFIED")
     if not evidence:
         flags.append("CATALYST_OR_QUOTE_PROVENANCE_MISSING")
+    if not official_sec_evidence:
+        flags.append("SEC_CATALYST_PROVENANCE_UNVERIFIED")
     if not quote_fresh:
         flags.append("QUOTE_TIMESTAMP_STALE_OR_INVALID")
     if move is not None and move >= 35:
