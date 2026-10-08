@@ -3,10 +3,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from options_radar.explosion_hunter_profile import classify_candidate
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from options_radar.explosion_hunter_profile import classify_candidate  # noqa: E402
 
 
 def build_report(payload: dict, *, now: datetime | None = None) -> dict:
