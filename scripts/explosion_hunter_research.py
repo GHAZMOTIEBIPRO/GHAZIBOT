@@ -19,11 +19,17 @@ def build_report(payload: dict, *, now: datetime | None = None) -> dict:
     if not isinstance(symbols, dict):
         symbols = {}
     rows = []
+    missing_by_field = {field: 0 for field in (
+        "rvol", "float_shares", "dollar_volume", "provider_quote_timestamp", "official_catalyst_url"
+    )}
     for symbol, source in sorted(symbols.items()):
         if not isinstance(source, dict):
             continue
         row = dict(source)
         row["symbol"] = symbol
+        for field in missing_by_field:
+            if row.get(field) is None or row.get(field) == "":
+                missing_by_field[field] += 1
         # Only explicit provider evidence is permitted. Never infer quote time
         # from generated_at or the scan timestamp.
         rows.append(classify_candidate(row, now=now))
@@ -34,6 +40,11 @@ def build_report(payload: dict, *, now: datetime | None = None) -> dict:
         "target_return_pct": 100,
         "candidate_count": len(rows),
         "watch_count": sum(row["stage"] == "WATCH" for row in rows),
+        "missing_evidence_counts": missing_by_field,
+        "source_schema_compatible": not any(missing_by_field.values()) if rows else False,
+        "input_status": "NO_CANDIDATES" if not rows else (
+            "MISSING_REQUIRED_EVIDENCE" if any(missing_by_field.values()) else "FIELDS_PRESENT_NOT_VERIFIED"
+        ),
         "candidates": rows,
     }
 
