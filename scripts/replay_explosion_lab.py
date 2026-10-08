@@ -83,10 +83,13 @@ def build_replay_frame(history: pd.DataFrame, *, target_return_pct: float = 25.0
     ).clip(0, 100)
 
     # Labels are forward-looking and deliberately computed only after signal features exist.
-    if target_return_pct <= 0 or forward_sessions < 1:\n        raise ValueError("target_return_pct and forward_sessions must be positive")\n    future_closes = pd.concat([frame["Close"].shift(-offset) for offset in range(1, forward_sessions + 1)], axis=1)
+    if target_return_pct <= 0 or forward_sessions < 1:
+        raise ValueError("target_return_pct and forward_sessions must be positive")
+    future_closes = pd.concat([frame["Close"].shift(-offset) for offset in range(1, forward_sessions + 1)], axis=1)
     frame["future_5d_max_close"] = future_closes.max(axis=1)
     frame["future_5d_max_return_pct"] = (frame["future_5d_max_close"] / frame["Close"] - 1.0) * 100.0
-    frame.loc[frame.index[-forward_sessions:], "future_5d_max_return_pct"] = np.nan\n    frame["explosion_label"] = frame["future_5d_max_return_pct"] >= target_return_pct
+    frame.loc[frame.index[-forward_sessions:], "future_5d_max_return_pct"] = np.nan
+    frame["explosion_label"] = frame["future_5d_max_return_pct"] >= target_return_pct
     return frame.replace([np.inf, -np.inf], np.nan)
 
 
@@ -190,7 +193,8 @@ def run(symbols: list[str], period: str, threshold: float, output: Path, target_
         "generated_at": _utc_now(),
         "purpose": "hindsight-safe price/volume replay; catalyst/float history is not reconstructed when unavailable",
         "score_is_probability": False,
-        "forward_label": f"max close return over next 5 sessions >= {target_return_pct:g}%",\n        "target_return_pct": target_return_pct,
+        "forward_label": f"max close return over next 5 sessions >= {target_return_pct:g}%",
+        "target_return_pct": target_return_pct,
         "threshold": threshold,
         "period": period,
         "aggregate": aggregate,
@@ -207,7 +211,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--symbols", default=os.getenv("REPLAY_SYMBOLS", DEFAULT_SYMBOLS))
     parser.add_argument("--period", default=os.getenv("REPLAY_PERIOD", "2y"))
     parser.add_argument("--threshold", type=float, default=_number(os.getenv("REPLAY_SIGNAL_THRESHOLD", "60"), 60.0))
-    parser.add_argument("--target-return-pct", type=float, default=25.0)\n    parser.add_argument("--output", default=str(OUTPUT_PATH))
+    parser.add_argument("--target-return-pct", type=float, default=25.0)
+    parser.add_argument("--output", default=str(OUTPUT_PATH))
     return parser
 
 
