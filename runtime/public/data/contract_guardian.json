@@ -1,14 +1,455 @@
 {
   "version": "CONTRACT_GUARDIAN_V1",
-  "generated_at": "2026-10-09T15:07:01.111729+00:00",
+  "generated_at": "2026-10-09T18:29:39.763371+00:00",
   "decision_authority": false,
   "can_promote_v11": false,
-  "tracked_total": 29,
-  "active_count": 29,
+  "tracked_total": 32,
+  "active_count": 32,
   "terminal_count": 0,
-  "provisional_target_or_stop_count": 0,
-  "unstamped_option_count": 29,
+  "provisional_target_or_stop_count": 1,
+  "unstamped_option_count": 32,
   "active": [
+    {
+      "contract_symbol": "MRNA261016C00197500",
+      "symbol": "MRNA",
+      "side": "CALL",
+      "strike": 197.5,
+      "expiration": "2026-10-16",
+      "created_at": "2026-10-08T15:20:54.388988+00:00",
+      "entry_premium_reference": 9.45,
+      "entry_method": "ask",
+      "entry_reference_verified": false,
+      "entry_reference_quality": "UNSTAMPED_OR_STALE_INDICATIVE",
+      "entry_iv": 0.799806689453125,
+      "entry_underlying": 196.55499267578125,
+      "original_alert_stage": "WATCH",
+      "original_contract_rank": 76.9,
+      "original_strict_score": null,
+      "premium_targets": {
+        "available": true,
+        "method": "BLACK_SCHOLES_SCENARIO_V1",
+        "entry_premium_reference": 9.45,
+        "entry_method": "ask",
+        "spot_reference": 196.555,
+        "strike": 197.5,
+        "side": "CALL",
+        "dte": 8.0,
+        "iv_reference": 0.799807,
+        "iv_scenarios": {
+          "iv_down": 0.679836,
+          "base": 0.799807,
+          "iv_up": 0.919778
+        },
+        "targets": {
+          "t1": {
+            "underlying_price": 218.38,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 7.5,
+            "premium_low": 22.6132,
+            "premium_base": 23.5118,
+            "premium_high": 24.524,
+            "return_low_pct": 139.29,
+            "return_base_pct": 148.8,
+            "return_high_pct": 159.51,
+            "scenario_prices": {
+              "iv_down": 22.6132,
+              "base": 23.5118,
+              "iv_up": 24.524
+            }
+          },
+          "t2": {
+            "underlying_price": 239.69,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 7.5,
+            "premium_low": 42.5463,
+            "premium_base": 42.8238,
+            "premium_high": 43.2522,
+            "return_low_pct": 350.23,
+            "return_base_pct": 353.16,
+            "return_high_pct": 357.7,
+            "scenario_prices": {
+              "iv_down": 42.5463,
+              "base": 42.8238,
+              "iv_up": 43.2522
+            }
+          },
+          "t3": {
+            "underlying_price": 239.7,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 7.5,
+            "premium_low": 42.556,
+            "premium_base": 42.8334,
+            "premium_high": 43.2615,
+            "return_low_pct": 350.33,
+            "return_base_pct": 353.26,
+            "return_high_pct": 357.79,
+            "scenario_prices": {
+              "iv_down": 42.556,
+              "base": 42.8334,
+              "iv_up": 43.2615
+            }
+          }
+        },
+        "invalidation": {
+          "underlying_price": 175.76,
+          "premium_low": 1.0676,
+          "premium_base": 1.7796,
+          "premium_high": 2.6092,
+          "return_base_pct": -81.17
+        },
+        "research_only": true,
+        "is_guarantee": false,
+        "assumptions": [
+          "Black-Scholes scenario estimate, not a live executable quote.",
+          "IV scenarios use -15% / base / +15% relative to current IV.",
+          "Target timing uses the existing underlying horizon buckets.",
+          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
+        ]
+      },
+      "target_map": {
+        "symbol": "MRNA",
+        "direction": "CALL",
+        "entry": {
+          "low": 192.81,
+          "high": 198.78,
+          "source": "stock_setup"
+        },
+        "invalidation": {
+          "price": 175.76,
+          "source": "invalidation"
+        },
+        "t1": {
+          "price": 218.38,
+          "label": "Existing T1",
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t2": {
+          "price": 239.69,
+          "label": "ATR 3.0x",
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED"
+        },
+        "t3": {
+          "price": 239.7,
+          "label": "Existing T2",
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "candidate_levels": [
+          {
+            "price": 218.38,
+            "label": "Existing T1",
+            "source": "target_1",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 239.69,
+            "label": "ATR 3.0x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          },
+          {
+            "price": 239.7,
+            "label": "Existing T2",
+            "source": "target_2",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 261.0,
+            "label": "ATR 4.5x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          }
+        ],
+        "target_map_quality": 91,
+        "missing_inputs": [
+          "structural_levels"
+        ],
+        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
+      },
+      "target_horizon": {
+        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
+        "is_probability": false,
+        "is_guarantee": false,
+        "calibrated_target_count": 0,
+        "calibration_status": "INSUFFICIENT_SAMPLE",
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "نفس الجلسة إلى جلسة",
+        "timeframe_alignment": "ALIGNED",
+        "targets": [
+          {
+            "target": "T1",
+            "price": 218.38,
+            "distance_pct": 10.81,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T2",
+            "price": 239.69,
+            "distance_pct": 21.63,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          },
+          {
+            "target": "T3",
+            "price": 239.7,
+            "distance_pct": 21.63,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "INSUFFICIENT_SAMPLE",
+            "historical_hit_rate": null,
+            "historical_hit_rate_pct": null,
+            "historical_sample": 0,
+            "historical_ci95_pct": null,
+            "historical_median_sessions_to_hit": null
+          }
+        ]
+      },
+      "catalyst_at_entry": {
+        "verification_state": "OFFICIAL_REGISTRY_ONLY",
+        "cause_status_ar": "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية",
+        "directional_bias": "mixed",
+        "conflict_with_contract": false,
+        "impact_score": 68.9,
+        "impact_label": "BUILDING",
+        "impact_label_ar": "محفز متوسط/يتطور",
+        "headline": "ClinicalTrials.gov results posted — A Clinical Study to Investigate the Safety and Immunogenicity in Relation to Product Attributes of mRNA-1083 (Severe Acute Respiratory Syndrome Coronavirus 2 [SARS-CoV-2] and Influenza Vaccine)",
+        "source": "ClinicalTrials.gov",
+        "url": "https://clinicaltrials.gov/study/NCT06508320"
+      },
+      "observations": [
+        {
+          "at": "2026-10-08T15:20:54.388988+00:00",
+          "stage": "ACTIVE",
+          "mark": 9.35,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 196.554993,
+          "iv": 0.799807,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-08T18:59:13.992084+00:00",
+          "stage": "ACTIVE",
+          "mark": 8.5,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 195.199997,
+          "iv": 0.789675,
+          "iv_change_pct": -1.267,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-08T20:47:27.888911+00:00",
+          "stage": "ACTIVE",
+          "mark": 8.9,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 197.0,
+          "iv": 0.78528,
+          "iv_change_pct": -1.816,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-09T15:07:01.111729+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 207.52,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "T1_HIT",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 221.39,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
+        }
+      ],
+      "quote_snapshots": [],
+      "unstamped_research_observations": [
+        {
+          "collected_at": "2026-10-08T15:20:54.388988+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 9.35,
+          "indicative_ask": 9.45,
+          "value_fingerprint": "yahoo/yfinance|9.350000|9.450000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        },
+        {
+          "collected_at": "2026-10-08T18:59:13.992084+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 8.5,
+          "indicative_ask": 8.7,
+          "value_fingerprint": "yahoo/yfinance|8.500000|8.700000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        },
+        {
+          "collected_at": "2026-10-08T20:47:27.888911+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 8.9,
+          "indicative_ask": 10.0,
+          "value_fingerprint": "yahoo/yfinance|8.900000|10.000000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        }
+      ],
+      "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
+      "mfe_pct": null,
+      "mae_pct": null,
+      "stage": "T1_HIT",
+      "terminal": false,
+      "quote_history_status": {
+        "recorded": false,
+        "reason": "missing_provider_quote_time"
+      },
+      "quote_history_count": 0,
+      "unstamped_history_status": {
+        "recorded": false,
+        "reason": "missing_source"
+      },
+      "unstamped_research_count": 3,
+      "chart_health": {
+        "state": "ALIGNED",
+        "label_ar": "الاتجاه الفني متوافق مع العقد",
+        "direction": "bullish",
+        "direction_conflict": false,
+        "spot": 221.39,
+        "target_1": 218.38,
+        "invalidation": 175.76,
+        "rvol": 1.2309,
+        "rsi": 71.2,
+        "breakout_pressure_score": null,
+        "relative_strength_20d": 0.551867,
+        "trigger_type": "breakout",
+        "market_regime": "risk_on",
+        "underlying_price_timestamp": null,
+        "research_only": true,
+        "note_ar": "مؤشرات السهم من آخر دورة فحص؛ لا تُعد إثباتًا لسعر لحظي."
+      },
+      "explosion_thesis": {
+        "verification": "UNVERIFIED",
+        "official_confirmed": false,
+        "headline": "ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014)",
+        "primary_source": "ClinicalTrials.gov",
+        "primary_url": "https://clinicaltrials.gov/study/NCT07513376",
+        "category": "TRIAL_REGISTRY_UPDATE",
+        "event_date": "2026-10-09",
+        "impact_score": null,
+        "impact_is_probability": false,
+        "drivers_ar": [
+          "الخبر حديث جدًا",
+          "السعر لم يُظهر إعادة تسعير كاملة بعد"
+        ],
+        "risks_ar": [
+          "المحفز ليس إفصاحًا رسميًا مؤكدًا"
+        ],
+        "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
+        "finviz_style_context": {
+          "rvol": 1.2309,
+          "breakout_pressure": null,
+          "gap_pct": 0.01065,
+          "distance_52w_high": -0.008752,
+          "short_float_pct": null
+        },
+        "report_ar": "MRNA: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014). المصدر: ClinicalTrials.gov. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. عوامل داعمة: الخبر حديث جدًا؛ السعر لم يُظهر إعادة تسعير كاملة بعد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
+        "research_only": true
+      },
+      "previous_stage": "ACTIVE",
+      "stage_changed": true,
+      "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
+      "stage_provisional": true,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
+      "last_mark": null,
+      "last_indicative_mark": null,
+      "last_return_pct": null,
+      "current_quote_research_valid": false,
+      "last_underlying_price": 221.39,
+      "quote_age_minutes": null,
+      "data_stale": true,
+      "iv_crush_risk": false,
+      "catalyst_health": {
+        "verification_state": "OFFICIAL_REGISTRY_ONLY",
+        "cause_status_ar": "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية",
+        "directional_bias": "mixed",
+        "conflict_with_contract": false,
+        "impact_score": 62.9,
+        "impact_label": "BUILDING",
+        "impact_label_ar": "محفز متوسط/يتطور",
+        "headline": "ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014)",
+        "source": "ClinicalTrials.gov",
+        "url": "https://clinicaltrials.gov/study/NCT07513376"
+      }
+    },
     {
       "contract_symbol": "MRVL261016C00290000",
       "symbol": "MRVL",
@@ -582,6 +1023,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "WATCH",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 274.05,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "mfe_pct": null,
@@ -590,10 +1048,10 @@
       "terminal": false,
       "previous_stage": "WATCH",
       "stage_changed": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_return_pct": null,
-      "last_underlying_price": 270.69,
+      "last_underlying_price": 274.05,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -620,13 +1078,13 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 270.69,
+        "spot": 274.05,
         "target_1": 308.64,
         "invalidation": 265.38,
-        "rvol": 0.3487,
-        "rsi": 58.7,
+        "rvol": 0.5182,
+        "rsi": 60.8,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.081584,
+        "relative_strength_20d": 0.098031,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -649,10 +1107,10 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.3487,
+          "rvol": 0.5182,
           "breakout_pressure": null,
           "gap_pct": 0.016748,
-          "distance_52w_high": -0.179429,
+          "distance_52w_high": -0.169243,
           "short_float_pct": null
         },
         "report_ar": "MRVL: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
@@ -1273,18 +1731,35 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 171.089996,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "mfe_pct": null,
       "mae_pct": null,
-      "stage": "WATCH",
+      "stage": "ACTIVE",
       "terminal": false,
-      "previous_stage": "ACTIVE",
+      "previous_stage": "WATCH",
       "stage_changed": true,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_return_pct": null,
-      "last_underlying_price": 163.4,
+      "last_underlying_price": 171.089996,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -1307,19 +1782,19 @@
       },
       "quote_history_count": 0,
       "chart_health": {
-        "state": "ALIGNED",
-        "label_ar": "الاتجاه الفني متوافق مع العقد",
-        "direction": "bullish",
+        "state": "UNCONFIRMED",
+        "label_ar": "مؤشرات الاتجاه غير مكتملة",
+        "direction": "unknown",
         "direction_conflict": false,
-        "spot": 163.4,
+        "spot": null,
         "target_1": 182.09,
         "invalidation": 160.09,
-        "rvol": 0.5021,
-        "rsi": 59.6,
+        "rvol": null,
+        "rsi": null,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.0,
-        "trigger_type": "bullish_confirmation",
-        "market_regime": "risk_on",
+        "relative_strength_20d": null,
+        "trigger_type": null,
+        "market_regime": null,
         "underlying_price_timestamp": null,
         "research_only": true,
         "note_ar": "مؤشرات السهم من آخر دورة فحص؛ لا تُعد إثباتًا لسعر لحظي."
@@ -1340,13 +1815,13 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.5021,
+          "rvol": null,
           "breakout_pressure": null,
-          "gap_pct": 0.029707,
-          "distance_52w_high": -0.275815,
+          "gap_pct": null,
+          "distance_52w_high": null,
           "short_float_pct": null
         },
-        "report_ar": "SPCX: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
+        "report_ar": "SPCX: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: مؤشرات الاتجاه غير مكتملة. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
       "unstamped_research_observations": [],
@@ -1918,15 +2393,32 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 649.419983,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "mfe_pct": null,
       "mae_pct": null,
       "stage": "ACTIVE",
       "terminal": false,
-      "previous_stage": "WATCH",
-      "stage_changed": true,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_return_pct": null,
       "last_underlying_price": 649.419983,
@@ -2563,18 +3055,35 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 216.81,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "mfe_pct": null,
       "mae_pct": null,
       "stage": "ACTIVE",
       "terminal": false,
-      "previous_stage": "WATCH",
-      "stage_changed": true,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_return_pct": null,
-      "last_underlying_price": 216.57,
+      "last_underlying_price": 216.81,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -2601,11 +3110,11 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 216.57,
+        "spot": 216.81,
         "target_1": 225.65,
         "invalidation": 205.07,
-        "rvol": 0.1743,
-        "rsi": 64.7,
+        "rvol": 0.3777,
+        "rsi": 64.9,
         "breakout_pressure_score": null,
         "relative_strength_20d": 0.0,
         "trigger_type": "bullish_confirmation",
@@ -2630,10 +3139,10 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.1743,
+          "rvol": 0.3777,
           "breakout_pressure": null,
           "gap_pct": 0.020903,
-          "distance_52w_high": -0.003474,
+          "distance_52w_high": -0.002759,
           "short_float_pct": null
         },
         "report_ar": "ANET: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
@@ -3206,15 +3715,32 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 649.419983,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "mfe_pct": null,
       "mae_pct": null,
       "stage": "ACTIVE",
       "terminal": false,
-      "previous_stage": "WATCH",
-      "stage_changed": true,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_return_pct": null,
       "last_underlying_price": 649.419983,
@@ -3875,18 +4401,35 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 534.78,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "mfe_pct": null,
       "mae_pct": null,
       "stage": "ACTIVE",
       "terminal": false,
-      "previous_stage": "WATCH",
-      "stage_changed": true,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_return_pct": null,
-      "last_underlying_price": 533.32,
+      "last_underlying_price": 534.78,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -3913,13 +4456,13 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 533.32,
+        "spot": 534.78,
         "target_1": 546.89,
         "invalidation": 511.71,
-        "rvol": 0.1746,
-        "rsi": 66.8,
+        "rvol": 0.3489,
+        "rsi": 67.4,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.018657,
+        "relative_strength_20d": 0.019178,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -3942,10 +4485,10 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.1746,
+          "rvol": 0.3489,
           "breakout_pressure": null,
           "gap_pct": 0.010763,
-          "distance_52w_high": -0.036842,
+          "distance_52w_high": -0.034205,
           "short_float_pct": null
         },
         "report_ar": "MSFT: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
@@ -4367,6 +4910,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 643.00769,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -4456,11 +5016,11 @@
         "report_ar": "AMD: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: ClinicalTrials.gov status WITHDRAWN — A Global, Prospective, Real-World, Investigation of the Symani® Surgical System for Microsurgical Anastomosis. المصدر: ClinicalTrials.gov. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: مؤشرات الاتجاه غير مكتملة. عوامل داعمة: الخبر حديث جدًا. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "WATCH",
-      "stage_changed": true,
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -4874,6 +5434,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "WATCH",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 274.05,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -4923,13 +5500,13 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 270.69,
+        "spot": 274.05,
         "target_1": 303.81,
         "invalidation": 261.39,
-        "rvol": 0.3487,
-        "rsi": 58.7,
+        "rvol": 0.5182,
+        "rsi": 60.8,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.081584,
+        "relative_strength_20d": 0.098031,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -4952,10 +5529,10 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.3487,
+          "rvol": 0.5182,
           "breakout_pressure": null,
           "gap_pct": 0.016748,
-          "distance_52w_high": -0.179429,
+          "distance_52w_high": -0.169243,
           "short_float_pct": null
         },
         "report_ar": "MRVL: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
@@ -4965,12 +5542,12 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 270.69,
+      "last_underlying_price": 274.05,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -5385,6 +5962,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 45.060001,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -5476,7 +6070,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -5896,6 +6490,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 216.81,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -5933,11 +6544,11 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 216.57,
+        "spot": 216.81,
         "target_1": 226.53,
         "invalidation": 205.65,
-        "rvol": 0.1743,
-        "rsi": 64.7,
+        "rvol": 0.3777,
+        "rsi": 64.9,
         "breakout_pressure_score": null,
         "relative_strength_20d": 0.0,
         "trigger_type": "bullish_confirmation",
@@ -5962,25 +6573,25 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.1743,
+          "rvol": 0.3777,
           "breakout_pressure": null,
           "gap_pct": 0.020903,
-          "distance_52w_high": -0.003474,
+          "distance_52w_high": -0.002759,
           "short_float_pct": null
         },
         "report_ar": "ANET: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "WATCH",
-      "stage_changed": true,
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 216.57,
+      "last_underlying_price": 216.81,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -6395,6 +7006,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 5.9,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -6474,7 +7102,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -6871,6 +7499,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 44.939999,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -6950,7 +7595,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -7353,6 +7998,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 534.78,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -7402,13 +8064,13 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 533.32,
+        "spot": 534.78,
         "target_1": 546.84,
         "invalidation": 512.68,
-        "rvol": 0.1746,
-        "rsi": 66.8,
+        "rvol": 0.3489,
+        "rsi": 67.4,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.018657,
+        "relative_strength_20d": 0.019178,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -7431,25 +8093,25 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.1746,
+          "rvol": 0.3489,
           "breakout_pressure": null,
           "gap_pct": 0.010763,
-          "distance_52w_high": -0.036842,
+          "distance_52w_high": -0.034205,
           "short_float_pct": null
         },
         "report_ar": "MSFT: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "WATCH",
-      "stage_changed": true,
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 533.32,
+      "last_underlying_price": 534.78,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -7830,6 +8492,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 302.559998,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -7909,7 +8588,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -8227,6 +8906,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 636.469971,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -8304,11 +9000,11 @@
         "report_ar": "AMD: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: ClinicalTrials.gov status WITHDRAWN — A Global, Prospective, Real-World, Investigation of the Symani® Surgical System for Microsurgical Anastomosis. المصدر: ClinicalTrials.gov. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: مؤشرات الاتجاه غير مكتملة. عوامل داعمة: الخبر حديث جدًا. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "WATCH",
-      "stage_changed": true,
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -8620,6 +9316,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": 5.1,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 273.845001,
+          "iv": 0.541264,
+          "iv_change_pct": -2.72,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
         }
       ],
       "quote_snapshots": [],
@@ -8659,12 +9372,24 @@
           "execution_grade": false,
           "status": "UNSTAMPED_RESEARCH_OBSERVATION",
           "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        },
+        {
+          "collected_at": "2026-10-09T18:29:39.763371+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 5.1,
+          "indicative_ask": 5.35,
+          "value_fingerprint": "yahoo/yfinance|5.100000|5.350000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
         }
       ],
       "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
       "mfe_pct": null,
       "mae_pct": null,
-      "stage": "WATCH",
+      "stage": "ACTIVE",
       "terminal": false,
       "quote_history_status": {
         "recorded": false,
@@ -8672,22 +9397,23 @@
       },
       "quote_history_count": 0,
       "unstamped_history_status": {
-        "recorded": false,
-        "reason": "missing_source"
+        "recorded": true,
+        "reason": "new_value_seen_without_provider_timestamp",
+        "count": 4
       },
-      "unstamped_research_count": 3,
+      "unstamped_research_count": 4,
       "chart_health": {
         "state": "ALIGNED",
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 270.69,
+        "spot": 274.05,
         "target_1": 296.64,
         "invalidation": 255.0,
-        "rvol": 0.3487,
-        "rsi": 58.7,
+        "rvol": 0.5182,
+        "rsi": 60.8,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.081584,
+        "relative_strength_20d": 0.098031,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -8710,25 +9436,25 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.3487,
+          "rvol": 0.5182,
           "breakout_pressure": null,
           "gap_pct": 0.016748,
-          "distance_52w_high": -0.179429,
+          "distance_52w_high": -0.169243,
           "short_float_pct": null
         },
         "report_ar": "MRVL: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "ACTIVE",
+      "previous_stage": "WATCH",
       "stage_changed": true,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
-      "last_indicative_mark": null,
+      "last_indicative_mark": 5.1,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 270.69,
+      "last_underlying_price": 273.845001,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -9041,6 +9767,23 @@
           "entry_reference_verified": false,
           "source": "yahoo/yfinance",
           "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 534.78,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -9081,9 +9824,8 @@
       },
       "quote_history_count": 0,
       "unstamped_history_status": {
-        "recorded": true,
-        "reason": "new_value_seen_without_provider_timestamp",
-        "count": 2
+        "recorded": false,
+        "reason": "missing_source"
       },
       "unstamped_research_count": 2,
       "chart_health": {
@@ -9091,13 +9833,13 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 533.32,
+        "spot": 534.78,
         "target_1": 546.57,
         "invalidation": 513.77,
-        "rvol": 0.1746,
-        "rsi": 66.8,
+        "rvol": 0.3489,
+        "rsi": 67.4,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.018657,
+        "relative_strength_20d": 0.019178,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -9120,25 +9862,25 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.1746,
+          "rvol": 0.3489,
           "breakout_pressure": null,
           "gap_pct": 0.010763,
-          "distance_52w_high": -0.036842,
+          "distance_52w_high": -0.034205,
           "short_float_pct": null
         },
         "report_ar": "MSFT: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "WATCH",
-      "stage_changed": true,
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
-      "last_indicative_mark": 5.45,
+      "last_indicative_mark": null,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 532.900024,
+      "last_underlying_price": 534.78,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -9451,6 +10193,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 43.25,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -9530,7 +10289,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -9550,431 +10309,6 @@
         "headline": null,
         "source": null,
         "url": null
-      }
-    },
-    {
-      "contract_symbol": "MRNA261016C00197500",
-      "symbol": "MRNA",
-      "side": "CALL",
-      "strike": 197.5,
-      "expiration": "2026-10-16",
-      "created_at": "2026-10-08T15:20:54.388988+00:00",
-      "entry_premium_reference": 9.45,
-      "entry_method": "ask",
-      "entry_reference_verified": false,
-      "entry_reference_quality": "UNSTAMPED_OR_STALE_INDICATIVE",
-      "entry_iv": 0.799806689453125,
-      "entry_underlying": 196.55499267578125,
-      "original_alert_stage": "WATCH",
-      "original_contract_rank": 76.9,
-      "original_strict_score": null,
-      "premium_targets": {
-        "available": true,
-        "method": "BLACK_SCHOLES_SCENARIO_V1",
-        "entry_premium_reference": 9.45,
-        "entry_method": "ask",
-        "spot_reference": 196.555,
-        "strike": 197.5,
-        "side": "CALL",
-        "dte": 8.0,
-        "iv_reference": 0.799807,
-        "iv_scenarios": {
-          "iv_down": 0.679836,
-          "base": 0.799807,
-          "iv_up": 0.919778
-        },
-        "targets": {
-          "t1": {
-            "underlying_price": 218.38,
-            "horizon_bucket": "INTRADAY_1D",
-            "assumed_elapsed_days": 0.5,
-            "remaining_dte": 7.5,
-            "premium_low": 22.6132,
-            "premium_base": 23.5118,
-            "premium_high": 24.524,
-            "return_low_pct": 139.29,
-            "return_base_pct": 148.8,
-            "return_high_pct": 159.51,
-            "scenario_prices": {
-              "iv_down": 22.6132,
-              "base": 23.5118,
-              "iv_up": 24.524
-            }
-          },
-          "t2": {
-            "underlying_price": 239.69,
-            "horizon_bucket": "INTRADAY_1D",
-            "assumed_elapsed_days": 0.5,
-            "remaining_dte": 7.5,
-            "premium_low": 42.5463,
-            "premium_base": 42.8238,
-            "premium_high": 43.2522,
-            "return_low_pct": 350.23,
-            "return_base_pct": 353.16,
-            "return_high_pct": 357.7,
-            "scenario_prices": {
-              "iv_down": 42.5463,
-              "base": 42.8238,
-              "iv_up": 43.2522
-            }
-          },
-          "t3": {
-            "underlying_price": 239.7,
-            "horizon_bucket": "INTRADAY_1D",
-            "assumed_elapsed_days": 0.5,
-            "remaining_dte": 7.5,
-            "premium_low": 42.556,
-            "premium_base": 42.8334,
-            "premium_high": 43.2615,
-            "return_low_pct": 350.33,
-            "return_base_pct": 353.26,
-            "return_high_pct": 357.79,
-            "scenario_prices": {
-              "iv_down": 42.556,
-              "base": 42.8334,
-              "iv_up": 43.2615
-            }
-          }
-        },
-        "invalidation": {
-          "underlying_price": 175.76,
-          "premium_low": 1.0676,
-          "premium_base": 1.7796,
-          "premium_high": 2.6092,
-          "return_base_pct": -81.17
-        },
-        "research_only": true,
-        "is_guarantee": false,
-        "assumptions": [
-          "Black-Scholes scenario estimate, not a live executable quote.",
-          "IV scenarios use -15% / base / +15% relative to current IV.",
-          "Target timing uses the existing underlying horizon buckets.",
-          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
-        ]
-      },
-      "target_map": {
-        "symbol": "MRNA",
-        "direction": "CALL",
-        "entry": {
-          "low": 192.81,
-          "high": 198.78,
-          "source": "stock_setup"
-        },
-        "invalidation": {
-          "price": 175.76,
-          "source": "invalidation"
-        },
-        "t1": {
-          "price": 218.38,
-          "label": "Existing T1",
-          "source": "target_1",
-          "provenance": "SOURCE_DERIVED"
-        },
-        "t2": {
-          "price": 239.69,
-          "label": "ATR 3.0x",
-          "source": "implied_from_existing_target_1",
-          "provenance": "MODELED"
-        },
-        "t3": {
-          "price": 239.7,
-          "label": "Existing T2",
-          "source": "target_2",
-          "provenance": "SOURCE_DERIVED"
-        },
-        "candidate_levels": [
-          {
-            "price": 218.38,
-            "label": "Existing T1",
-            "source": "target_1",
-            "provenance": "SOURCE_DERIVED"
-          },
-          {
-            "price": 239.69,
-            "label": "ATR 3.0x",
-            "source": "implied_from_existing_target_1",
-            "provenance": "MODELED"
-          },
-          {
-            "price": 239.7,
-            "label": "Existing T2",
-            "source": "target_2",
-            "provenance": "SOURCE_DERIVED"
-          },
-          {
-            "price": 261.0,
-            "label": "ATR 4.5x",
-            "source": "implied_from_existing_target_1",
-            "provenance": "MODELED"
-          }
-        ],
-        "target_map_quality": 91,
-        "missing_inputs": [
-          "structural_levels"
-        ],
-        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
-      },
-      "target_horizon": {
-        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
-        "is_probability": false,
-        "is_guarantee": false,
-        "calibrated_target_count": 0,
-        "calibration_status": "INSUFFICIENT_SAMPLE",
-        "primary_horizon": "INTRADAY_1D",
-        "primary_time_ar": "نفس الجلسة إلى جلسة",
-        "timeframe_alignment": "ALIGNED",
-        "targets": [
-          {
-            "target": "T1",
-            "price": 218.38,
-            "distance_pct": 10.81,
-            "atr_distance": null,
-            "horizon_bucket": "INTRADAY_1D",
-            "estimated_time_ar": "نفس الجلسة إلى جلسة",
-            "probability_status": "INSUFFICIENT_SAMPLE",
-            "historical_hit_rate": null,
-            "historical_hit_rate_pct": null,
-            "historical_sample": 0,
-            "historical_ci95_pct": null,
-            "historical_median_sessions_to_hit": null
-          },
-          {
-            "target": "T2",
-            "price": 239.69,
-            "distance_pct": 21.63,
-            "atr_distance": null,
-            "horizon_bucket": "INTRADAY_1D",
-            "estimated_time_ar": "نفس الجلسة إلى جلسة",
-            "probability_status": "INSUFFICIENT_SAMPLE",
-            "historical_hit_rate": null,
-            "historical_hit_rate_pct": null,
-            "historical_sample": 0,
-            "historical_ci95_pct": null,
-            "historical_median_sessions_to_hit": null
-          },
-          {
-            "target": "T3",
-            "price": 239.7,
-            "distance_pct": 21.63,
-            "atr_distance": null,
-            "horizon_bucket": "INTRADAY_1D",
-            "estimated_time_ar": "نفس الجلسة إلى جلسة",
-            "probability_status": "INSUFFICIENT_SAMPLE",
-            "historical_hit_rate": null,
-            "historical_hit_rate_pct": null,
-            "historical_sample": 0,
-            "historical_ci95_pct": null,
-            "historical_median_sessions_to_hit": null
-          }
-        ]
-      },
-      "catalyst_at_entry": {
-        "verification_state": "OFFICIAL_REGISTRY_ONLY",
-        "cause_status_ar": "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية",
-        "directional_bias": "mixed",
-        "conflict_with_contract": false,
-        "impact_score": 68.9,
-        "impact_label": "BUILDING",
-        "impact_label_ar": "محفز متوسط/يتطور",
-        "headline": "ClinicalTrials.gov results posted — A Clinical Study to Investigate the Safety and Immunogenicity in Relation to Product Attributes of mRNA-1083 (Severe Acute Respiratory Syndrome Coronavirus 2 [SARS-CoV-2] and Influenza Vaccine)",
-        "source": "ClinicalTrials.gov",
-        "url": "https://clinicaltrials.gov/study/NCT06508320"
-      },
-      "observations": [
-        {
-          "at": "2026-10-08T15:20:54.388988+00:00",
-          "stage": "ACTIVE",
-          "mark": 9.35,
-          "mark_method": "bid",
-          "return_pct": null,
-          "underlying_price": 196.554993,
-          "iv": 0.799807,
-          "iv_change_pct": 0.0,
-          "iv_crush_risk": false,
-          "quote_age_minutes": null,
-          "data_stale": true,
-          "quote_valid": false,
-          "entry_reference_verified": false,
-          "source": "yahoo/yfinance",
-          "freshness_label": "unofficial / may be delayed"
-        },
-        {
-          "at": "2026-10-08T18:59:13.992084+00:00",
-          "stage": "ACTIVE",
-          "mark": 8.5,
-          "mark_method": "bid",
-          "return_pct": null,
-          "underlying_price": 195.199997,
-          "iv": 0.789675,
-          "iv_change_pct": -1.267,
-          "iv_crush_risk": false,
-          "quote_age_minutes": null,
-          "data_stale": true,
-          "quote_valid": false,
-          "entry_reference_verified": false,
-          "source": "yahoo/yfinance",
-          "freshness_label": "unofficial / may be delayed"
-        },
-        {
-          "at": "2026-10-08T20:47:27.888911+00:00",
-          "stage": "ACTIVE",
-          "mark": 8.9,
-          "mark_method": "bid",
-          "return_pct": null,
-          "underlying_price": 197.0,
-          "iv": 0.78528,
-          "iv_change_pct": -1.816,
-          "iv_crush_risk": false,
-          "quote_age_minutes": null,
-          "data_stale": true,
-          "quote_valid": false,
-          "entry_reference_verified": false,
-          "source": "yahoo/yfinance",
-          "freshness_label": "unofficial / may be delayed"
-        },
-        {
-          "at": "2026-10-09T15:07:01.111729+00:00",
-          "stage": "ACTIVE",
-          "mark": null,
-          "mark_method": "unavailable",
-          "return_pct": null,
-          "underlying_price": 207.52,
-          "iv": null,
-          "iv_change_pct": null,
-          "iv_crush_risk": false,
-          "quote_age_minutes": null,
-          "data_stale": true,
-          "quote_valid": false,
-          "entry_reference_verified": false,
-          "source": null,
-          "freshness_label": null
-        }
-      ],
-      "quote_snapshots": [],
-      "unstamped_research_observations": [
-        {
-          "collected_at": "2026-10-08T15:20:54.388988+00:00",
-          "provider_quote_timestamp": null,
-          "source": "yahoo/yfinance",
-          "indicative_bid": 9.35,
-          "indicative_ask": 9.45,
-          "value_fingerprint": "yahoo/yfinance|9.350000|9.450000",
-          "freshness_known": false,
-          "execution_grade": false,
-          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
-          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
-        },
-        {
-          "collected_at": "2026-10-08T18:59:13.992084+00:00",
-          "provider_quote_timestamp": null,
-          "source": "yahoo/yfinance",
-          "indicative_bid": 8.5,
-          "indicative_ask": 8.7,
-          "value_fingerprint": "yahoo/yfinance|8.500000|8.700000",
-          "freshness_known": false,
-          "execution_grade": false,
-          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
-          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
-        },
-        {
-          "collected_at": "2026-10-08T20:47:27.888911+00:00",
-          "provider_quote_timestamp": null,
-          "source": "yahoo/yfinance",
-          "indicative_bid": 8.9,
-          "indicative_ask": 10.0,
-          "value_fingerprint": "yahoo/yfinance|8.900000|10.000000",
-          "freshness_known": false,
-          "execution_grade": false,
-          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
-          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
-        }
-      ],
-      "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
-      "mfe_pct": null,
-      "mae_pct": null,
-      "stage": "ACTIVE",
-      "terminal": false,
-      "quote_history_status": {
-        "recorded": false,
-        "reason": "missing_provider_quote_time"
-      },
-      "quote_history_count": 0,
-      "unstamped_history_status": {
-        "recorded": false,
-        "reason": "missing_source"
-      },
-      "unstamped_research_count": 3,
-      "chart_health": {
-        "state": "ALIGNED",
-        "label_ar": "الاتجاه الفني متوافق مع العقد",
-        "direction": "bullish",
-        "direction_conflict": false,
-        "spot": 207.52,
-        "target_1": 218.38,
-        "invalidation": 175.76,
-        "rvol": 0.6845,
-        "rsi": 67.5,
-        "breakout_pressure_score": null,
-        "relative_strength_20d": 0.469389,
-        "trigger_type": "bullish_confirmation",
-        "market_regime": "risk_on",
-        "underlying_price_timestamp": null,
-        "research_only": true,
-        "note_ar": "مؤشرات السهم من آخر دورة فحص؛ لا تُعد إثباتًا لسعر لحظي."
-      },
-      "explosion_thesis": {
-        "verification": "UNVERIFIED",
-        "official_confirmed": false,
-        "headline": "ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014)",
-        "primary_source": "ClinicalTrials.gov",
-        "primary_url": "https://clinicaltrials.gov/study/NCT07513376",
-        "category": "TRIAL_REGISTRY_UPDATE",
-        "event_date": "2026-10-09",
-        "impact_score": null,
-        "impact_is_probability": false,
-        "drivers_ar": [
-          "الخبر حديث جدًا",
-          "RVOL مرتفع 3.04×",
-          "السعر لم يُظهر إعادة تسعير كاملة بعد"
-        ],
-        "risks_ar": [
-          "المحفز ليس إفصاحًا رسميًا مؤكدًا"
-        ],
-        "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
-        "finviz_style_context": {
-          "rvol": 0.6845,
-          "breakout_pressure": null,
-          "gap_pct": 0.01065,
-          "distance_52w_high": -0.043466,
-          "short_float_pct": null
-        },
-        "report_ar": "MRNA: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014). المصدر: ClinicalTrials.gov. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. عوامل داعمة: الخبر حديث جدًا؛ RVOL مرتفع 3.04×؛ السعر لم يُظهر إعادة تسعير كاملة بعد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
-        "research_only": true
-      },
-      "previous_stage": "ACTIVE",
-      "stage_changed": false,
-      "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
-      "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
-      "last_mark": null,
-      "last_indicative_mark": null,
-      "last_return_pct": null,
-      "current_quote_research_valid": false,
-      "last_underlying_price": 207.52,
-      "quote_age_minutes": null,
-      "data_stale": true,
-      "iv_crush_risk": false,
-      "catalyst_health": {
-        "verification_state": "OFFICIAL_REGISTRY_ONLY",
-        "cause_status_ar": "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية",
-        "directional_bias": "mixed",
-        "conflict_with_contract": false,
-        "impact_score": 65.7,
-        "impact_label": "BUILDING",
-        "impact_label_ar": "محفز متوسط/يتطور",
-        "headline": "ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014)",
-        "source": "ClinicalTrials.gov",
-        "url": "https://clinicaltrials.gov/study/NCT07513376"
       }
     },
     {
@@ -10273,6 +10607,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 15.35,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -10364,7 +10715,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -10677,6 +11028,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "WATCH",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 617.034973,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -10766,11 +11134,11 @@
         "report_ar": "AMD: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: ClinicalTrials.gov status WITHDRAWN — A Global, Prospective, Real-World, Investigation of the Symani® Surgical System for Microsurgical Anastomosis. المصدر: ClinicalTrials.gov. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: مؤشرات الاتجاه غير مكتملة. عوامل داعمة: الخبر حديث جدًا. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "ACTIVE",
-      "stage_changed": true,
+      "previous_stage": "WATCH",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -11083,6 +11451,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 534.78,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -11120,13 +11505,13 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 533.32,
+        "spot": 534.78,
         "target_1": 539.45,
         "invalidation": 504.57,
-        "rvol": 0.1746,
-        "rsi": 66.8,
+        "rvol": 0.3489,
+        "rsi": 67.4,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.018657,
+        "relative_strength_20d": 0.019178,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -11149,10 +11534,10 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.1746,
+          "rvol": 0.3489,
           "breakout_pressure": null,
           "gap_pct": 0.010763,
-          "distance_52w_high": -0.036842,
+          "distance_52w_high": -0.034205,
           "short_float_pct": null
         },
         "report_ar": "MSFT: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
@@ -11162,12 +11547,12 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 533.32,
+      "last_underlying_price": 534.78,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -11475,6 +11860,23 @@
           "entry_reference_verified": false,
           "source": "yahoo/yfinance",
           "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": 6.85,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 273.845001,
+          "iv": 0.533208,
+          "iv_change_pct": -6.427,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
         }
       ],
       "quote_snapshots": [],
@@ -11514,12 +11916,24 @@
           "execution_grade": false,
           "status": "UNSTAMPED_RESEARCH_OBSERVATION",
           "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        },
+        {
+          "collected_at": "2026-10-09T18:29:39.763371+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 6.85,
+          "indicative_ask": 7.1,
+          "value_fingerprint": "yahoo/yfinance|6.850000|7.100000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
         }
       ],
       "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
       "mfe_pct": null,
       "mae_pct": null,
-      "stage": "WATCH",
+      "stage": "ACTIVE",
       "terminal": false,
       "quote_history_status": {
         "recorded": false,
@@ -11529,21 +11943,21 @@
       "unstamped_history_status": {
         "recorded": true,
         "reason": "new_value_seen_without_provider_timestamp",
-        "count": 3
+        "count": 4
       },
-      "unstamped_research_count": 3,
+      "unstamped_research_count": 4,
       "chart_health": {
         "state": "ALIGNED",
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 270.69,
+        "spot": 274.05,
         "target_1": 295.22,
         "invalidation": 251.78,
-        "rvol": 0.3487,
-        "rsi": 58.7,
+        "rvol": 0.5182,
+        "rsi": 60.8,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.081584,
+        "relative_strength_20d": 0.098031,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -11566,25 +11980,25 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.3487,
+          "rvol": 0.5182,
           "breakout_pressure": null,
           "gap_pct": 0.016748,
-          "distance_52w_high": -0.179429,
+          "distance_52w_high": -0.169243,
           "short_float_pct": null
         },
         "report_ar": "MRVL: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "ACTIVE",
+      "previous_stage": "WATCH",
       "stage_changed": true,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
-      "last_indicative_mark": 5.3,
+      "last_indicative_mark": 6.85,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 270.309998,
+      "last_underlying_price": 273.845001,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -11892,6 +12306,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 16.921,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -11983,7 +12414,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -12273,6 +12704,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "WATCH",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 620.679993,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -12354,7 +12802,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -12650,6 +13098,23 @@
           "entry_reference_verified": false,
           "source": null,
           "freshness_label": null
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 16.84,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -12729,7 +13194,7 @@
       "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
       "last_indicative_mark": null,
       "last_return_pct": null,
@@ -13008,6 +13473,23 @@
           "entry_reference_verified": false,
           "source": "yahoo/yfinance",
           "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 383.77,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -13036,9 +13518,8 @@
       },
       "quote_history_count": 0,
       "unstamped_history_status": {
-        "recorded": true,
-        "reason": "new_value_seen_without_provider_timestamp",
-        "count": 1
+        "recorded": false,
+        "reason": "missing_source"
       },
       "unstamped_research_count": 1,
       "chart_health": {
@@ -13046,13 +13527,13 @@
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 386.82,
+        "spot": 383.77,
         "target_1": 404.6,
         "invalidation": 369.04,
-        "rvol": 0.48,
-        "rsi": 61.6,
+        "rvol": 0.8212,
+        "rsi": 60.2,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.061249,
+        "relative_strength_20d": 0.051763,
         "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
@@ -13075,25 +13556,25 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.48,
+          "rvol": 0.8212,
           "breakout_pressure": null,
           "gap_pct": 0.01968,
-          "distance_52w_high": -0.224545,
+          "distance_52w_high": -0.230652,
           "short_float_pct": null
         },
         "report_ar": "TSLA: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "WATCH",
-      "stage_changed": true,
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
-      "last_indicative_mark": 8.8,
+      "last_indicative_mark": null,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 386.339996,
+      "last_underlying_price": 383.77,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -13367,6 +13848,23 @@
           "entry_reference_verified": false,
           "source": "yahoo/yfinance",
           "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": 10.5,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 221.190002,
+          "iv": 0.79822,
+          "iv_change_pct": -2.852,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
         }
       ],
       "quote_snapshots": [],
@@ -13378,6 +13876,18 @@
           "indicative_bid": 5.2,
           "indicative_ask": 5.45,
           "value_fingerprint": "yahoo/yfinance|5.200000|5.450000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        },
+        {
+          "collected_at": "2026-10-09T18:29:39.763371+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 10.5,
+          "indicative_ask": 11.5,
+          "value_fingerprint": "yahoo/yfinance|10.500000|11.500000",
           "freshness_known": false,
           "execution_grade": false,
           "status": "UNSTAMPED_RESEARCH_OBSERVATION",
@@ -13397,22 +13907,22 @@
       "unstamped_history_status": {
         "recorded": true,
         "reason": "new_value_seen_without_provider_timestamp",
-        "count": 1
+        "count": 2
       },
-      "unstamped_research_count": 1,
+      "unstamped_research_count": 2,
       "chart_health": {
         "state": "ALIGNED",
         "label_ar": "الاتجاه الفني متوافق مع العقد",
         "direction": "bullish",
         "direction_conflict": false,
-        "spot": 207.52,
+        "spot": 221.39,
         "target_1": 229.45,
         "invalidation": 185.59,
-        "rvol": 0.6845,
-        "rsi": 67.5,
+        "rvol": 1.2309,
+        "rsi": 71.2,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.469389,
-        "trigger_type": "bullish_confirmation",
+        "relative_strength_20d": 0.551867,
+        "trigger_type": "breakout",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
         "research_only": true,
@@ -13430,7 +13940,6 @@
         "impact_is_probability": false,
         "drivers_ar": [
           "الخبر حديث جدًا",
-          "RVOL مرتفع 3.04×",
           "السعر لم يُظهر إعادة تسعير كاملة بعد"
         ],
         "risks_ar": [
@@ -13438,25 +13947,25 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 0.6845,
+          "rvol": 1.2309,
           "breakout_pressure": null,
           "gap_pct": 0.01065,
-          "distance_52w_high": -0.043466,
+          "distance_52w_high": -0.008752,
           "short_float_pct": null
         },
-        "report_ar": "MRNA: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014). المصدر: ClinicalTrials.gov. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. عوامل داعمة: الخبر حديث جدًا؛ RVOL مرتفع 3.04×؛ السعر لم يُظهر إعادة تسعير كاملة بعد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
+        "report_ar": "MRNA: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014). المصدر: ClinicalTrials.gov. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. عوامل داعمة: الخبر حديث جدًا؛ السعر لم يُظهر إعادة تسعير كاملة بعد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
-      "previous_stage": "WATCH",
-      "stage_changed": true,
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
-      "last_indicative_mark": 5.2,
+      "last_indicative_mark": 10.5,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 207.600006,
+      "last_underlying_price": 221.190002,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -13465,7 +13974,7 @@
         "cause_status_ar": "تحديث مثبت في سجل حكومي؛ لا يثبت اتجاه النتيجة السريرية",
         "directional_bias": "mixed",
         "conflict_with_contract": false,
-        "impact_score": 65.7,
+        "impact_score": 62.9,
         "impact_label": "BUILDING",
         "impact_label_ar": "محفز متوسط/يتطور",
         "headline": "ClinicalTrials.gov registry update — A Clinical Trial of Adjuvant Intismeran (V940) With or Without Pembrolizumab Coformulated With Berahyaluronidase Alfa (MK-3475A) in High-Risk Stage I Non-Small Cell Lung Cancer (V940-014)",
@@ -13724,6 +14233,23 @@
           "entry_reference_verified": false,
           "source": "yahoo/yfinance",
           "freshness_label": "unofficial / may be delayed"
+        },
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": null,
+          "mark_method": "unavailable",
+          "return_pct": null,
+          "underlying_price": 22.775,
+          "iv": null,
+          "iv_change_pct": null,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": null,
+          "freshness_label": null
         }
       ],
       "quote_snapshots": [],
@@ -13752,6 +14278,364 @@
       },
       "quote_history_count": 0,
       "unstamped_history_status": {
+        "recorded": false,
+        "reason": "missing_source"
+      },
+      "unstamped_research_count": 1,
+      "chart_health": {
+        "state": "UNCONFIRMED",
+        "label_ar": "مؤشرات الاتجاه غير مكتملة",
+        "direction": "unknown",
+        "direction_conflict": false,
+        "spot": null,
+        "target_1": 21.8,
+        "invalidation": 23.77,
+        "rvol": null,
+        "rsi": null,
+        "breakout_pressure_score": null,
+        "relative_strength_20d": null,
+        "trigger_type": null,
+        "market_regime": null,
+        "underlying_price_timestamp": null,
+        "research_only": true,
+        "note_ar": "مؤشرات السهم من آخر دورة فحص؛ لا تُعد إثباتًا لسعر لحظي."
+      },
+      "explosion_thesis": {
+        "verification": "UNVERIFIED",
+        "official_confirmed": false,
+        "headline": "لا يوجد خبر موثّق جديد مرتبط بالعقد",
+        "primary_source": "",
+        "primary_url": "",
+        "category": null,
+        "event_date": null,
+        "impact_score": null,
+        "impact_is_probability": false,
+        "drivers_ar": [],
+        "risks_ar": [
+          "المحفز ليس إفصاحًا رسميًا مؤكدًا"
+        ],
+        "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
+        "finviz_style_context": {
+          "rvol": null,
+          "breakout_pressure": null,
+          "gap_pct": null,
+          "distance_52w_high": null,
+          "short_float_pct": null
+        },
+        "report_ar": "T: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: مؤشرات الاتجاه غير مكتملة. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
+        "research_only": true
+      },
+      "previous_stage": "ACTIVE",
+      "stage_changed": false,
+      "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
+      "stage_provisional": false,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
+      "last_mark": null,
+      "last_indicative_mark": null,
+      "last_return_pct": null,
+      "current_quote_research_valid": false,
+      "last_underlying_price": 22.775,
+      "quote_age_minutes": null,
+      "data_stale": true,
+      "iv_crush_risk": false,
+      "catalyst_health": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      }
+    },
+    {
+      "contract_symbol": "MSFT261016C00540000",
+      "symbol": "MSFT",
+      "side": "CALL",
+      "strike": 540.0,
+      "expiration": "2026-10-16",
+      "created_at": "2026-10-09T18:29:39.763371+00:00",
+      "entry_premium_reference": 4.5,
+      "entry_method": "ask",
+      "entry_reference_verified": false,
+      "entry_reference_quality": "UNSTAMPED_OR_STALE_INDICATIVE",
+      "entry_iv": 0.21448539428710936,
+      "entry_underlying": 534.7100219726562,
+      "original_alert_stage": "WATCH",
+      "original_contract_rank": 80.5,
+      "original_strict_score": null,
+      "premium_targets": {
+        "available": true,
+        "method": "BLACK_SCHOLES_SCENARIO_V1",
+        "entry_premium_reference": 4.5,
+        "entry_method": "ask",
+        "spot_reference": 534.71,
+        "strike": 540.0,
+        "side": "CALL",
+        "dte": 7.0,
+        "iv_reference": 0.214485,
+        "iv_scenarios": {
+          "iv_down": 0.182313,
+          "base": 0.214485,
+          "iv_up": 0.246658
+        },
+        "targets": {
+          "t1": {
+            "underlying_price": 552.35,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 13.9547,
+            "premium_base": 14.5866,
+            "premium_high": 15.2864,
+            "return_low_pct": 210.1,
+            "return_base_pct": 224.15,
+            "return_high_pct": 239.7,
+            "scenario_prices": {
+              "iv_down": 13.9547,
+              "base": 14.5866,
+              "iv_up": 15.2864
+            }
+          },
+          "t2": {
+            "underlying_price": 569.92,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 30.3908,
+            "premium_base": 30.5039,
+            "premium_high": 30.6997,
+            "return_low_pct": 575.35,
+            "return_base_pct": 577.86,
+            "return_high_pct": 582.22,
+            "scenario_prices": {
+              "iv_down": 30.3908,
+              "base": 30.5039,
+              "iv_up": 30.6997
+            }
+          },
+          "t3": {
+            "underlying_price": 569.92,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 30.3908,
+            "premium_base": 30.5039,
+            "premium_high": 30.6997,
+            "return_low_pct": 575.35,
+            "return_base_pct": 577.86,
+            "return_high_pct": 582.22,
+            "scenario_prices": {
+              "iv_down": 30.3908,
+              "base": 30.5039,
+              "iv_up": 30.6997
+            }
+          }
+        },
+        "invalidation": {
+          "underlying_price": 517.21,
+          "premium_low": 0.2261,
+          "premium_base": 0.4881,
+          "premium_high": 0.8502,
+          "return_base_pct": -89.15
+        },
+        "research_only": true,
+        "is_guarantee": false,
+        "assumptions": [
+          "Black-Scholes scenario estimate, not a live executable quote.",
+          "IV scenarios use -15% / base / +15% relative to current IV.",
+          "Target timing uses the existing underlying horizon buckets.",
+          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
+        ]
+      },
+      "target_map": {
+        "symbol": "MSFT",
+        "direction": "CALL",
+        "entry": {
+          "low": 531.27,
+          "high": 536.19,
+          "source": "stock_setup"
+        },
+        "invalidation": {
+          "price": 517.21,
+          "source": "invalidation"
+        },
+        "t1": {
+          "price": 552.35,
+          "label": "Existing T1",
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t2": {
+          "price": 569.92,
+          "label": "Existing T2",
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t3": {
+          "price": 569.92,
+          "label": "ATR 3.0x",
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED"
+        },
+        "candidate_levels": [
+          {
+            "price": 552.35,
+            "label": "Existing T1",
+            "source": "target_1",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 569.92,
+            "label": "Existing T2",
+            "source": "target_2",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 569.92,
+            "label": "ATR 3.0x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          },
+          {
+            "price": 587.49,
+            "label": "ATR 4.5x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          }
+        ],
+        "target_map_quality": 91,
+        "missing_inputs": [
+          "structural_levels"
+        ],
+        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
+      },
+      "target_horizon": {
+        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
+        "is_probability": true,
+        "is_guarantee": false,
+        "calibrated_target_count": 3,
+        "calibration_status": "CALIBRATED",
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+        "timeframe_alignment": "ALIGNED",
+        "targets": [
+          {
+            "target": "T1",
+            "price": 552.35,
+            "distance_pct": 3.29,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0072,
+            "historical_hit_rate_pct": 0.7,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.1,
+              4.0
+            ],
+            "historical_median_sessions_to_hit": 1.0,
+            "historical_median_elapsed_hours_to_hit": 14.58
+          },
+          {
+            "target": "T2",
+            "price": 569.92,
+            "distance_pct": 6.57,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0,
+            "historical_hit_rate_pct": 0.0,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.0,
+              2.7
+            ],
+            "historical_median_sessions_to_hit": null,
+            "historical_median_elapsed_hours_to_hit": null
+          },
+          {
+            "target": "T3",
+            "price": 569.92,
+            "distance_pct": 6.57,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0,
+            "historical_hit_rate_pct": 0.0,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.0,
+              2.7
+            ],
+            "historical_median_sessions_to_hit": null,
+            "historical_median_elapsed_hours_to_hit": null
+          }
+        ]
+      },
+      "catalyst_at_entry": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      },
+      "observations": [
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": 4.4,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 534.710022,
+          "iv": 0.214485,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        }
+      ],
+      "quote_snapshots": [],
+      "unstamped_research_observations": [
+        {
+          "collected_at": "2026-10-09T18:29:39.763371+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 4.4,
+          "indicative_ask": 4.5,
+          "value_fingerprint": "yahoo/yfinance|4.400000|4.500000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        }
+      ],
+      "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
+      "mfe_pct": null,
+      "mae_pct": null,
+      "stage": "ACTIVE",
+      "terminal": false,
+      "quote_history_status": {
+        "recorded": false,
+        "reason": "missing_provider_quote_time"
+      },
+      "quote_history_count": 0,
+      "unstamped_history_status": {
         "recorded": true,
         "reason": "new_value_seen_without_provider_timestamp",
         "count": 1
@@ -13760,16 +14644,16 @@
       "chart_health": {
         "state": "ALIGNED",
         "label_ar": "الاتجاه الفني متوافق مع العقد",
-        "direction": "bearish",
+        "direction": "bullish",
         "direction_conflict": false,
-        "spot": 22.78,
-        "target_1": 21.8,
-        "invalidation": 23.77,
-        "rvol": 1.1168,
-        "rsi": 29.0,
+        "spot": 534.78,
+        "target_1": 552.35,
+        "invalidation": 517.21,
+        "rvol": 0.3489,
+        "rsi": 67.4,
         "breakout_pressure_score": null,
-        "relative_strength_20d": 0.0,
-        "trigger_type": "breakdown",
+        "relative_strength_20d": 0.019178,
+        "trigger_type": "bullish_confirmation",
         "market_regime": "risk_on",
         "underlying_price_timestamp": null,
         "research_only": true,
@@ -13791,25 +14675,737 @@
         ],
         "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
         "finviz_style_context": {
-          "rvol": 1.1168,
+          "rvol": 0.3489,
           "breakout_pressure": null,
-          "gap_pct": -0.100121,
-          "distance_52w_high": -0.226053,
+          "gap_pct": 0.010763,
+          "distance_52w_high": -0.034205,
           "short_float_pct": null
         },
-        "report_ar": "T: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
+        "report_ar": "MSFT: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
         "research_only": true
       },
       "previous_stage": "WATCH",
       "stage_changed": true,
       "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
       "stage_provisional": false,
-      "last_observed_at": "2026-10-09T15:07:01.111729+00:00",
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
       "last_mark": null,
-      "last_indicative_mark": 0.16,
+      "last_indicative_mark": 4.4,
       "last_return_pct": null,
       "current_quote_research_valid": false,
-      "last_underlying_price": 22.775,
+      "last_underlying_price": 534.710022,
+      "quote_age_minutes": null,
+      "data_stale": true,
+      "iv_crush_risk": false,
+      "catalyst_health": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      }
+    },
+    {
+      "contract_symbol": "MRVL261016C00275000",
+      "symbol": "MRVL",
+      "side": "CALL",
+      "strike": 275.0,
+      "expiration": "2026-10-16",
+      "created_at": "2026-10-09T18:29:39.763371+00:00",
+      "entry_premium_reference": 8.3,
+      "entry_method": "ask",
+      "entry_reference_verified": false,
+      "entry_reference_quality": "UNSTAMPED_OR_STALE_INDICATIVE",
+      "entry_iv": 0.536259520263672,
+      "entry_underlying": 273.8450012207031,
+      "original_alert_stage": "WATCH",
+      "original_contract_rank": 87.3,
+      "original_strict_score": null,
+      "premium_targets": {
+        "available": true,
+        "method": "BLACK_SCHOLES_SCENARIO_V1",
+        "entry_premium_reference": 8.3,
+        "entry_method": "ask",
+        "spot_reference": 273.845,
+        "strike": 275.0,
+        "side": "CALL",
+        "dte": 7.0,
+        "iv_reference": 0.53626,
+        "iv_scenarios": {
+          "iv_down": 0.455821,
+          "base": 0.53626,
+          "iv_up": 0.616698
+        },
+        "targets": {
+          "t1": {
+            "underlying_price": 295.94,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 22.086,
+            "premium_base": 22.7362,
+            "premium_high": 23.5018,
+            "return_low_pct": 166.1,
+            "return_base_pct": 173.93,
+            "return_high_pct": 183.15,
+            "scenario_prices": {
+              "iv_down": 22.086,
+              "base": 22.7362,
+              "iv_up": 23.5018
+            }
+          },
+          "t2": {
+            "underlying_price": 317.83,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 43.0906,
+            "premium_base": 43.2046,
+            "premium_high": 43.4163,
+            "return_low_pct": 419.16,
+            "return_base_pct": 420.54,
+            "return_high_pct": 423.09,
+            "scenario_prices": {
+              "iv_down": 43.0906,
+              "base": 43.2046,
+              "iv_up": 43.4163
+            }
+          },
+          "t3": {
+            "underlying_price": 339.72,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 64.9316,
+            "premium_base": 64.94,
+            "premium_high": 64.97,
+            "return_low_pct": 682.31,
+            "return_base_pct": 682.41,
+            "return_high_pct": 682.77,
+            "scenario_prices": {
+              "iv_down": 64.9316,
+              "base": 64.94,
+              "iv_up": 64.97
+            }
+          }
+        },
+        "invalidation": {
+          "underlying_price": 252.16,
+          "premium_low": 0.5982,
+          "premium_base": 1.0971,
+          "premium_high": 1.7153,
+          "return_base_pct": -86.78
+        },
+        "research_only": true,
+        "is_guarantee": false,
+        "assumptions": [
+          "Black-Scholes scenario estimate, not a live executable quote.",
+          "IV scenarios use -15% / base / +15% relative to current IV.",
+          "Target timing uses the existing underlying horizon buckets.",
+          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
+        ]
+      },
+      "target_map": {
+        "symbol": "MRVL",
+        "direction": "CALL",
+        "entry": {
+          "low": 272.34,
+          "high": 275.8,
+          "source": "stock_setup"
+        },
+        "invalidation": {
+          "price": 252.16,
+          "source": "invalidation"
+        },
+        "t1": {
+          "price": 295.94,
+          "label": "Existing T1",
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t2": {
+          "price": 317.83,
+          "label": "Existing T2",
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t3": {
+          "price": 339.72,
+          "label": "ATR 4.5x",
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED"
+        },
+        "candidate_levels": [
+          {
+            "price": 295.94,
+            "label": "Existing T1",
+            "source": "target_1",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 317.83,
+            "label": "Existing T2",
+            "source": "target_2",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 339.72,
+            "label": "ATR 4.5x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          }
+        ],
+        "target_map_quality": 91,
+        "missing_inputs": [
+          "structural_levels"
+        ],
+        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
+      },
+      "target_horizon": {
+        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
+        "is_probability": true,
+        "is_guarantee": false,
+        "calibrated_target_count": 3,
+        "calibration_status": "CALIBRATED",
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+        "timeframe_alignment": "ALIGNED",
+        "targets": [
+          {
+            "target": "T1",
+            "price": 295.94,
+            "distance_pct": 7.99,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0072,
+            "historical_hit_rate_pct": 0.7,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.1,
+              4.0
+            ],
+            "historical_median_sessions_to_hit": 1.0,
+            "historical_median_elapsed_hours_to_hit": 14.58
+          },
+          {
+            "target": "T2",
+            "price": 317.83,
+            "distance_pct": 15.98,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0,
+            "historical_hit_rate_pct": 0.0,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.0,
+              2.7
+            ],
+            "historical_median_sessions_to_hit": null,
+            "historical_median_elapsed_hours_to_hit": null
+          },
+          {
+            "target": "T3",
+            "price": 339.72,
+            "distance_pct": 23.96,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0,
+            "historical_hit_rate_pct": 0.0,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.0,
+              2.7
+            ],
+            "historical_median_sessions_to_hit": null,
+            "historical_median_elapsed_hours_to_hit": null
+          }
+        ]
+      },
+      "catalyst_at_entry": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      },
+      "observations": [
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": 7.95,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 273.845001,
+          "iv": 0.53626,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        }
+      ],
+      "quote_snapshots": [],
+      "unstamped_research_observations": [
+        {
+          "collected_at": "2026-10-09T18:29:39.763371+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 7.95,
+          "indicative_ask": 8.3,
+          "value_fingerprint": "yahoo/yfinance|7.950000|8.300000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        }
+      ],
+      "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
+      "mfe_pct": null,
+      "mae_pct": null,
+      "stage": "ACTIVE",
+      "terminal": false,
+      "quote_history_status": {
+        "recorded": false,
+        "reason": "missing_provider_quote_time"
+      },
+      "quote_history_count": 0,
+      "unstamped_history_status": {
+        "recorded": true,
+        "reason": "new_value_seen_without_provider_timestamp",
+        "count": 1
+      },
+      "unstamped_research_count": 1,
+      "chart_health": {
+        "state": "ALIGNED",
+        "label_ar": "الاتجاه الفني متوافق مع العقد",
+        "direction": "bullish",
+        "direction_conflict": false,
+        "spot": 274.05,
+        "target_1": 295.94,
+        "invalidation": 252.16,
+        "rvol": 0.5182,
+        "rsi": 60.8,
+        "breakout_pressure_score": null,
+        "relative_strength_20d": 0.098031,
+        "trigger_type": "bullish_confirmation",
+        "market_regime": "risk_on",
+        "underlying_price_timestamp": null,
+        "research_only": true,
+        "note_ar": "مؤشرات السهم من آخر دورة فحص؛ لا تُعد إثباتًا لسعر لحظي."
+      },
+      "explosion_thesis": {
+        "verification": "UNVERIFIED",
+        "official_confirmed": false,
+        "headline": "لا يوجد خبر موثّق جديد مرتبط بالعقد",
+        "primary_source": "",
+        "primary_url": "",
+        "category": null,
+        "event_date": null,
+        "impact_score": null,
+        "impact_is_probability": false,
+        "drivers_ar": [],
+        "risks_ar": [
+          "المحفز ليس إفصاحًا رسميًا مؤكدًا"
+        ],
+        "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
+        "finviz_style_context": {
+          "rvol": 0.5182,
+          "breakout_pressure": null,
+          "gap_pct": 0.016748,
+          "distance_52w_high": -0.169243,
+          "short_float_pct": null
+        },
+        "report_ar": "MRVL: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
+        "research_only": true
+      },
+      "previous_stage": "WATCH",
+      "stage_changed": true,
+      "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
+      "stage_provisional": false,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
+      "last_mark": null,
+      "last_indicative_mark": 7.95,
+      "last_return_pct": null,
+      "current_quote_research_valid": false,
+      "last_underlying_price": 273.845001,
+      "quote_age_minutes": null,
+      "data_stale": true,
+      "iv_crush_risk": false,
+      "catalyst_health": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      }
+    },
+    {
+      "contract_symbol": "SHOP261016C00170000",
+      "symbol": "SHOP",
+      "side": "CALL",
+      "strike": 170.0,
+      "expiration": "2026-10-16",
+      "created_at": "2026-10-09T18:29:39.763371+00:00",
+      "entry_premium_reference": 3.6,
+      "entry_method": "ask",
+      "entry_reference_verified": false,
+      "entry_reference_quality": "UNSTAMPED_OR_STALE_INDICATIVE",
+      "entry_iv": 0.41089456298828125,
+      "entry_underlying": 168.89999389648438,
+      "original_alert_stage": "WATCH",
+      "original_contract_rank": 80.9,
+      "original_strict_score": null,
+      "premium_targets": {
+        "available": true,
+        "method": "BLACK_SCHOLES_SCENARIO_V1",
+        "entry_premium_reference": 3.6,
+        "entry_method": "ask",
+        "spot_reference": 168.9,
+        "strike": 170.0,
+        "side": "CALL",
+        "dte": 7.0,
+        "iv_reference": 0.410895,
+        "iv_scenarios": {
+          "iv_down": 0.34926,
+          "base": 0.410895,
+          "iv_up": 0.472529
+        },
+        "targets": {
+          "t1": {
+            "underlying_price": 178.58,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 9.2976,
+            "premium_base": 9.6483,
+            "premium_high": 10.0463,
+            "return_low_pct": 158.27,
+            "return_base_pct": 168.01,
+            "return_high_pct": 179.06,
+            "scenario_prices": {
+              "iv_down": 9.2976,
+              "base": 9.6483,
+              "iv_up": 10.0463
+            }
+          },
+          "t2": {
+            "underlying_price": 188.15,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 18.3217,
+            "premium_base": 18.399,
+            "premium_high": 18.5294,
+            "return_low_pct": 408.94,
+            "return_base_pct": 411.08,
+            "return_high_pct": 414.71,
+            "scenario_prices": {
+              "iv_down": 18.3217,
+              "base": 18.399,
+              "iv_up": 18.5294
+            }
+          },
+          "t3": {
+            "underlying_price": 188.15,
+            "horizon_bucket": "INTRADAY_1D",
+            "assumed_elapsed_days": 0.5,
+            "remaining_dte": 6.5,
+            "premium_low": 18.3217,
+            "premium_base": 18.399,
+            "premium_high": 18.5294,
+            "return_low_pct": 408.94,
+            "return_base_pct": 411.08,
+            "return_high_pct": 414.71,
+            "scenario_prices": {
+              "iv_down": 18.3217,
+              "base": 18.399,
+              "iv_up": 18.5294
+            }
+          }
+        },
+        "invalidation": {
+          "underlying_price": 159.44,
+          "premium_low": 0.3216,
+          "premium_base": 0.5757,
+          "premium_high": 0.8856,
+          "return_base_pct": -84.01
+        },
+        "research_only": true,
+        "is_guarantee": false,
+        "assumptions": [
+          "Black-Scholes scenario estimate, not a live executable quote.",
+          "IV scenarios use -15% / base / +15% relative to current IV.",
+          "Target timing uses the existing underlying horizon buckets.",
+          "Path, dividends, early exercise, skew and liquidity can move realized premium outside this range."
+        ]
+      },
+      "target_map": {
+        "symbol": "SHOP",
+        "direction": "CALL",
+        "entry": {
+          "low": 167.1,
+          "high": 169.78,
+          "source": "stock_setup"
+        },
+        "invalidation": {
+          "price": 159.44,
+          "source": "invalidation"
+        },
+        "t1": {
+          "price": 178.58,
+          "label": "Existing T1",
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t2": {
+          "price": 188.15,
+          "label": "Existing T2",
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED"
+        },
+        "t3": {
+          "price": 188.15,
+          "label": "ATR 3.0x",
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED"
+        },
+        "candidate_levels": [
+          {
+            "price": 178.58,
+            "label": "Existing T1",
+            "source": "target_1",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 188.15,
+            "label": "Existing T2",
+            "source": "target_2",
+            "provenance": "SOURCE_DERIVED"
+          },
+          {
+            "price": 188.15,
+            "label": "ATR 3.0x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          },
+          {
+            "price": 197.72,
+            "label": "ATR 4.5x",
+            "source": "implied_from_existing_target_1",
+            "provenance": "MODELED"
+          }
+        ],
+        "target_map_quality": 91,
+        "missing_inputs": [
+          "structural_levels"
+        ],
+        "statement": "Reference zones if the scenario continues; not a price forecast or guarantee."
+      },
+      "target_horizon": {
+        "method": "ATR_DISTANCE_TIME_BUCKET_V2_WITH_GATED_CALIBRATION",
+        "is_probability": true,
+        "is_guarantee": false,
+        "calibrated_target_count": 3,
+        "calibration_status": "CALIBRATED",
+        "primary_horizon": "INTRADAY_1D",
+        "primary_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+        "timeframe_alignment": "ALIGNED",
+        "targets": [
+          {
+            "target": "T1",
+            "price": 178.58,
+            "distance_pct": 5.66,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0072,
+            "historical_hit_rate_pct": 0.7,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.1,
+              4.0
+            ],
+            "historical_median_sessions_to_hit": 1.0,
+            "historical_median_elapsed_hours_to_hit": 14.58
+          },
+          {
+            "target": "T2",
+            "price": 188.15,
+            "distance_pct": 11.32,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0,
+            "historical_hit_rate_pct": 0.0,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.0,
+              2.7
+            ],
+            "historical_median_sessions_to_hit": null,
+            "historical_median_elapsed_hours_to_hit": null
+          },
+          {
+            "target": "T3",
+            "price": 188.15,
+            "distance_pct": 11.32,
+            "atr_distance": null,
+            "horizon_bucket": "INTRADAY_1D",
+            "estimated_time_ar": "نفس الجلسة إلى جلسة",
+            "probability_status": "CALIBRATED",
+            "historical_hit_rate": 0.0,
+            "historical_hit_rate_pct": 0.0,
+            "historical_sample": 138,
+            "historical_ci95_pct": [
+              0.0,
+              2.7
+            ],
+            "historical_median_sessions_to_hit": null,
+            "historical_median_elapsed_hours_to_hit": null
+          }
+        ]
+      },
+      "catalyst_at_entry": {
+        "verification_state": null,
+        "cause_status_ar": null,
+        "directional_bias": "neutral",
+        "conflict_with_contract": false,
+        "impact_score": null,
+        "impact_label": null,
+        "impact_label_ar": null,
+        "headline": null,
+        "source": null,
+        "url": null
+      },
+      "observations": [
+        {
+          "at": "2026-10-09T18:29:39.763371+00:00",
+          "stage": "ACTIVE",
+          "mark": 3.45,
+          "mark_method": "bid",
+          "return_pct": null,
+          "underlying_price": 168.899994,
+          "iv": 0.410895,
+          "iv_change_pct": 0.0,
+          "iv_crush_risk": false,
+          "quote_age_minutes": null,
+          "data_stale": true,
+          "quote_valid": false,
+          "entry_reference_verified": false,
+          "source": "yahoo/yfinance",
+          "freshness_label": "unofficial / may be delayed"
+        }
+      ],
+      "quote_snapshots": [],
+      "unstamped_research_observations": [
+        {
+          "collected_at": "2026-10-09T18:29:39.763371+00:00",
+          "provider_quote_timestamp": null,
+          "source": "yahoo/yfinance",
+          "indicative_bid": 3.45,
+          "indicative_ask": 3.6,
+          "value_fingerprint": "yahoo/yfinance|3.450000|3.600000",
+          "freshness_known": false,
+          "execution_grade": false,
+          "status": "UNSTAMPED_RESEARCH_OBSERVATION",
+          "disclaimer_ar": "وقت الجمع ليس توقيت تسعير العقد؛ القيمة قد تكون متأخرة."
+        }
+      ],
+      "quote_history_kind": "SELF_COLLECTED_PROVIDER_STAMPED_RESEARCH",
+      "mfe_pct": null,
+      "mae_pct": null,
+      "stage": "ACTIVE",
+      "terminal": false,
+      "quote_history_status": {
+        "recorded": false,
+        "reason": "missing_provider_quote_time"
+      },
+      "quote_history_count": 0,
+      "unstamped_history_status": {
+        "recorded": true,
+        "reason": "new_value_seen_without_provider_timestamp",
+        "count": 1
+      },
+      "unstamped_research_count": 1,
+      "chart_health": {
+        "state": "ALIGNED",
+        "label_ar": "الاتجاه الفني متوافق مع العقد",
+        "direction": "bullish",
+        "direction_conflict": false,
+        "spot": 169.01,
+        "target_1": 178.58,
+        "invalidation": 159.44,
+        "rvol": 0.3671,
+        "rsi": 71.8,
+        "breakout_pressure_score": null,
+        "relative_strength_20d": 0.0,
+        "trigger_type": "bullish_confirmation",
+        "market_regime": "risk_on",
+        "underlying_price_timestamp": null,
+        "research_only": true,
+        "note_ar": "مؤشرات السهم من آخر دورة فحص؛ لا تُعد إثباتًا لسعر لحظي."
+      },
+      "explosion_thesis": {
+        "verification": "UNVERIFIED",
+        "official_confirmed": false,
+        "headline": "لا يوجد خبر موثّق جديد مرتبط بالعقد",
+        "primary_source": "",
+        "primary_url": "",
+        "category": null,
+        "event_date": null,
+        "impact_score": null,
+        "impact_is_probability": false,
+        "drivers_ar": [],
+        "risks_ar": [
+          "المحفز ليس إفصاحًا رسميًا مؤكدًا"
+        ],
+        "proof_ar": "السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط",
+        "finviz_style_context": {
+          "rvol": 0.3671,
+          "breakout_pressure": null,
+          "gap_pct": 0.009601,
+          "distance_52w_high": -0.072342,
+          "short_float_pct": null
+        },
+        "report_ar": "SHOP: السبب غير مثبت رسميًا؛ اهتمام أو خبر ثانوي فقط. الخبر: لا يوجد خبر موثّق جديد مرتبط بالعقد. المصدر: غير معروف. تقييم أثر المحفز: غير مؤهل للتقييم الرسمي (تصنيف بحثي وليس احتمال ربح). شارت السهم: الاتجاه الفني متوافق مع العقد. المخاطر: المحفز ليس إفصاحًا رسميًا مؤكدًا.",
+        "research_only": true
+      },
+      "previous_stage": "WATCH",
+      "stage_changed": true,
+      "stage_price_evidence": "UNSTAMPED_UNDERLYING_RESEARCH",
+      "stage_provisional": false,
+      "last_observed_at": "2026-10-09T18:29:39.763371+00:00",
+      "last_mark": null,
+      "last_indicative_mark": 3.45,
+      "last_return_pct": null,
+      "current_quote_research_valid": false,
+      "last_underlying_price": 168.899994,
       "quote_age_minutes": null,
       "data_stale": true,
       "iv_crush_risk": false,
@@ -13841,5 +15437,5 @@
     "chart_and_catalyst_are_context_only": true,
     "unstamped_stock_prices_cannot_confirm_target_or_invalidation": true
   },
-  "report_ar": "BLACK BOX Ω — متابعة العقود المقترحة\nMRVL CALL | WATCH | العقد — (—) | السهم 270.69 | محفز غير مثبت | بيانات قديمة\nSPCX CALL | WATCH | العقد — (—) | السهم 163.4 | محفز غير مثبت | بيانات قديمة\nAMD CALL | ACTIVE | العقد — (—) | السهم 649.419983 | محفز غير مثبت | بيانات قديمة\nANET CALL | ACTIVE | العقد — (—) | السهم 216.57 | محفز غير مثبت | بيانات قديمة\nAMD CALL | ACTIVE | العقد — (—) | السهم 649.419983 | محفز غير مثبت | بيانات قديمة\nMSFT CALL | ACTIVE | العقد — (—) | السهم 533.32 | محفز غير مثبت | بيانات قديمة\nAMD CALL | ACTIVE | العقد — (—) | السهم 643.00769 | محفز غير مثبت | بيانات قديمة\nMRVL CALL | WATCH | العقد — (—) | السهم 270.69 | محفز غير مثبت | بيانات قديمة"
+  "report_ar": "BLACK BOX Ω — متابعة العقود المقترحة\nMRNA CALL | T1_HIT (مبدئي/السعر غير مؤرخ) | العقد — (—) | السهم 221.39 | محفز غير مثبت | بيانات قديمة\nMRVL CALL | WATCH | العقد — (—) | السهم 274.05 | محفز غير مثبت | بيانات قديمة\nSPCX CALL | ACTIVE | العقد — (—) | السهم 171.089996 | محفز غير مثبت | بيانات قديمة\nAMD CALL | ACTIVE | العقد — (—) | السهم 649.419983 | محفز غير مثبت | بيانات قديمة\nANET CALL | ACTIVE | العقد — (—) | السهم 216.81 | محفز غير مثبت | بيانات قديمة\nAMD CALL | ACTIVE | العقد — (—) | السهم 649.419983 | محفز غير مثبت | بيانات قديمة\nMSFT CALL | ACTIVE | العقد — (—) | السهم 534.78 | محفز غير مثبت | بيانات قديمة\nAMD CALL | ACTIVE | العقد — (—) | السهم 643.00769 | محفز غير مثبت | بيانات قديمة"
 }
