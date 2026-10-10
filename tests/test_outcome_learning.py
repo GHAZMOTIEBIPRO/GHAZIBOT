@@ -225,3 +225,30 @@ def test_learning_never_bypasses_hard_spread_blocker():
         "learning_adjustment": 4.0,
     }
     assert build_directional_signals([row], minimum_score=70) == []
+
+def test_chart_and_sec_research_cohorts_never_create_score_adjustments():
+    state = {"signals": {}}
+    for index in range(40):
+        aligned = index < 20
+        signal = _historical_signal(12 if aligned else -6, eligible=False)
+        signal["features"].update(
+            {
+                "chart_side_alignment": 0.8 if aligned else -0.8,
+                "chart_available_timeframes": 3,
+                "sec_catalyst": aligned,
+                "catalyst_source": "SEC EDGAR" if aligned else "",
+            }
+        )
+        state["signals"][str(index)] = signal
+
+    calibration = build_calibration(state, minimum_sample=100)
+
+    chart = calibration["research_features"]["chart_side_alignment"]
+    sec = calibration["research_features"]["sec_catalyst"]
+    assert chart["aligned"]["mean_return_pct"] == 12
+    assert chart["opposed"]["mean_return_pct"] == -6
+    assert chart["aligned"]["score_adjustment"] == 0.0
+    assert sec["sec_official_context"]["score_adjustment"] == 0.0
+    assert calibration["research_feature_policy"]["live_score_adjustment"] is False
+    assert calibration["active"] is False
+

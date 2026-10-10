@@ -136,6 +136,25 @@ FEATURE_BINS = {
 }
 
 
+def _chart_alignment_bucket(row: dict[str, Any]) -> str:
+    value = _number(row.get("chart_side_alignment"))
+    if value >= 0.40:
+        return "aligned"
+    if value <= -0.40:
+        return "opposed"
+    return "mixed"
+
+
+def _sec_catalyst_bucket(row: dict[str, Any]) -> str:
+    return "sec_official_context" if row.get("sec_catalyst") is True else "other_or_none"
+
+
+RESEARCH_FEATURE_BINS = {
+    "chart_side_alignment": _chart_alignment_bucket,
+    "sec_catalyst": _sec_catalyst_bucket,
+}
+
+
 def apply_learning_adjustments(
     contracts: list[dict[str, Any]], calibration: dict[str, Any]
 ) -> list[dict[str, Any]]:
@@ -212,6 +231,9 @@ def _session_close(created_at: datetime) -> datetime | None:
 
 
 def _features(row: dict[str, Any]) -> dict[str, Any]:
+    catalyst_source = str(row.get("catalyst_source") or "")
+    catalyst_url = str(row.get("catalyst_url") or "")
+    sec_catalyst = "sec" in catalyst_source.lower() or "sec.gov" in catalyst_url.lower()
     return {
         "delta": _number(row.get("delta")),
         "dte": int(_number(row.get("dte"))),
@@ -223,6 +245,10 @@ def _features(row: dict[str, Any]) -> dict[str, Any]:
         "flow_momentum_score": _number(row.get("flow_momentum_score")),
         "strict_score": _number(row.get("strict_score")),
         "side_consensus_score": _number(row.get("side_consensus_score")),
+        "chart_side_alignment": _number(row.get("chart_side_alignment")),
+        "chart_available_timeframes": int(_number(row.get("chart_available_timeframes"))),
+        "catalyst_source": catalyst_source[:160],
+        "sec_catalyst": sec_catalyst,
         "learning_adjustment": _number(row.get("learning_adjustment")),
         "data_quality": _number(row.get("data_quality")),
         "source": str(row.get("source") or ""),
@@ -475,6 +501,21 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
                 "minimum_group_sample": min_group,
             }
 
+    research_feature_output: dict[str, Any] = {}
+    for feature, bin_fn in RESEARCH_FEATURE_BINS.items():
+        buckets: dict[str, list[float]] = {}
+        for features, value in shadow_records:
+            buckets.setdefault(bin_fn(features), []).append(value)
+        research_feature_output[feature] = {
+            label: {
+                **_stats(values),
+                "score_adjustment": 0.0,
+                "decision_authority": False,
+                "shadow_only": True,
+            }
+            for label, values in buckets.items()
+        }
+
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -489,6 +530,12 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
         "global": global_stats,
         "global_shadow": global_shadow_stats,
         "features": feature_output,
+        "research_features": research_feature_output,
+        "research_feature_policy": {
+            "live_score_adjustment": False,
+            "decision_authority": False,
+            "purpose": "Measure CALL/PUT 60m outcome separation from chart alignment and frozen SEC catalyst context.",
+        },
         "policy": "Bayesian-shrunk bounded score adjustment; never bypasses hard execution/risk blockers.",
     }
 

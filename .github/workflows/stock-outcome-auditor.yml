@@ -7,7 +7,11 @@ on:
     paths:
       - ".github/workflows/stock-outcome-auditor.yml"
       - "options_radar/stock_outcome_backfill.py"
+      - "options_radar/research_attribution.py"
+      - "options_radar/open_source_research.py"
       - "options_radar/stock_audit_rotation.py"
+      - "scripts/enrich_stock_research_attribution.py"
+      - "requirements-research.txt"
       - "options_radar/durable_stock_state.py"
       - "scripts/run_stock_outcome_audit.py"
   schedule:
@@ -44,8 +48,8 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install runtime dependencies
-        run: pip install -r requirements.txt
+      - name: Install runtime and research dependencies
+        run: pip install -r requirements-research.txt
 
       - name: Run free historical stock outcome audit
         run: >-
@@ -54,6 +58,13 @@ jobs:
           --audit "$STOCK_OUTCOME_AUDIT_PATH"
           --max-symbols "$STOCK_OUTCOME_AUDIT_MAX_SYMBOLS"
           --retry-cooldown-hours "$STOCK_OUTCOME_AUDIT_RETRY_COOLDOWN_HOURS"
+
+      - name: Attach causal SMC, chart and SEC attribution
+        run: >-
+          python -m scripts.enrich_stock_research_attribution
+          --audit "$STOCK_OUTCOME_AUDIT_PATH"
+          --period 2y
+          --max-workers 6
 
       - name: Validate coverage, rotation, session and no-promotion guards
         run: |
@@ -98,6 +109,15 @@ jobs:
           assert bias['invalid_session_events_tracked_but_excluded_from_performance_denominator'] is True
           assert bias['independent_session_gate_required'] is True
           assert bias['existing_79pct_snapshot_rate_is_not_treated_as_accuracy'] is True
+
+          attribution = audit['open_source_feature_attribution']
+          assert attribution['decision_authority'] is False
+          assert attribution['live_alert_weights_changed'] is False
+          assert attribution['policy']['daily_bars_on_signal_date_excluded'] is True
+          assert attribution['policy']['smc_confirmation_lag_enforced'] is True
+          enrichment = audit['research_feature_enrichment']
+          assert enrichment['decision_authority'] is False
+          assert enrichment['live_alert_weights_changed'] is False
 
           gate = audit['promotion_gate']
           assert float(gate['minimum_60m_coverage_pct']) >= 90

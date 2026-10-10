@@ -117,7 +117,7 @@ class StockOutcomeTracker:
         return "down" if (_number(row.get("move_pct"), 0.0) or 0.0) < 0 else "up"
 
     @staticmethod
-    def _cause_fields(row: dict[str, Any]) -> tuple[str, str, bool, str, str]:
+    def _cause_fields(row: dict[str, Any]) -> tuple[str, str, bool, str, str, str, str]:
         """Freeze the entry-time catalyst evidence state without inventing proof.
 
         `cause_tier` remains the actual source tier (or unknown). The additional
@@ -144,7 +144,9 @@ class StockOutcomeTracker:
             evidence_state = "UNKNOWN"
 
         cause_status = raw_status or evidence_state
-        return category, tier, official, evidence_state, cause_status[:80]
+        source = str(cause.get("source") or "")[:160]
+        url = str(cause.get("url") or "")[:300]
+        return category, tier, official, evidence_state, cause_status[:80], source, url
 
     @staticmethod
     def _observe(state: dict[str, Any], price: float, now: datetime) -> None:
@@ -226,7 +228,15 @@ class StockOutcomeTracker:
             if signal_id in signals:
                 continue
             target, stop = STAGE_THRESHOLDS[stage]
-            cause_category, cause_tier, official, evidence_state, cause_status = self._cause_fields(row)
+            (
+                cause_category,
+                cause_tier,
+                official,
+                evidence_state,
+                cause_status,
+                cause_source,
+                cause_url,
+            ) = self._cause_fields(row)
             score = _number(row.get("score"), 0.0) or 0.0
             state = {
                 "signal_id": signal_id,
@@ -243,6 +253,8 @@ class StockOutcomeTracker:
                 "official_cause": official,
                 "entry_evidence_state": evidence_state,
                 "entry_cause_status": cause_status,
+                "cause_source": cause_source,
+                "cause_url": cause_url,
                 "follow_through_target_pct": target,
                 "failure_threshold_pct": stop,
                 "observations": 1,
