@@ -17,6 +17,27 @@ def _stock(price: float, *, stage: str = "IGNITION", score: float = 82.0):
             "source_tier": "A_OFFICIAL",
             "official_confirmed": True,
         },
+        "microcap_hunter": {
+            "stage": "PRIORITY",
+            "score": 88,
+            "flags": [],
+            "research_only": True,
+        },
+        "sec_dilution_v2": {
+            "available": True,
+            "risk_score": 82,
+            "risk_label": "HIGH",
+            "confidence": 80,
+            "observed_at": "2026-08-13T13:55:00+00:00",
+            "research_only": True,
+            "decision_authority": False,
+            "share_history": {"growth_pct": {"30d": 25.0, "90d": 60.0, "365d": 120.0}},
+            "financing": {
+                "announced_capacity_to_market_cap": 0.6,
+                "explicit_overhang_to_float": 0.8,
+                "remaining_capacity_verified": False,
+            },
+        },
     }
 
 
@@ -38,6 +59,9 @@ def test_stock_outcome_tracks_mature_follow_through(tmp_path):
     assert "60m" in state["checkpoints"]
     assert state["terminal_outcome"] == "success"
     assert state["mfe_pct"] >= 12.0
+    assert state["microcap_hunter_entry"]["stage"] == "PRIORITY"
+    assert state["sec_dilution_v2_entry"]["risk_score"] == 82
+    assert state["sec_dilution_v2_entry"]["remaining_capacity_verified"] is False
 
 
 def test_extended_stage_is_not_started_as_new_learning_signal(tmp_path):
