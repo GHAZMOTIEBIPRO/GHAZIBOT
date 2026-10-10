@@ -4,6 +4,7 @@ import math
 import re
 from dataclasses import asdict, dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 _DILUTION_TERMS = (
     "at-the-market",
@@ -49,6 +50,23 @@ def _number(value: Any, default: float = 0.0) -> float:
 
 def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
     return max(low, min(high, value))
+
+
+def _official_sec_url(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        parsed = urlsplit(value.strip())
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname in {"sec.gov", "www.sec.gov"}
+        and parsed.username is None
+        and parsed.password is None
+        and parsed.port in (None, 443)
+        and parsed.path.startswith(("/Archives/", "/ixviewer/"))
+    )
 
 
 def _text(row: dict[str, Any]) -> str:
@@ -189,9 +207,7 @@ def assess_microcap_candidate(row: dict[str, Any]) -> MicrocapAssessment:
         _number(row.get("catalyst_score"), _number(row.get("news_score"), 0.0))
     )
     dilution_risk = _clamp(_number(row.get("dilution_risk")))
-    official_sec = bool(row.get("official_catalyst_url")) and "sec.gov/" in str(
-        row.get("official_catalyst_url")
-    ).lower()
+    official_sec = _official_sec_url(row.get("official_catalyst_url"))
 
     text = _text(row)
     dilution_context = dilution_risk >= 45 or any(term in text for term in _DILUTION_TERMS)
