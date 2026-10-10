@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-10T16:21:48.164262+00:00",
+  "generated_at": "2026-10-10T16:40:39.435580+00:00",
   "policy": {
     "social_is_supporting_only": true,
     "social_cannot_promote_recommendation_alone": true,
@@ -8,7 +8,7 @@
   },
   "summary": {
     "symbols_checked": 15,
-    "contracts_checked": 0,
+    "contracts_checked": 1,
     "configured_sources": 1,
     "successful_sources": 1,
     "social_mentions": 0,
@@ -22,7 +22,7 @@
       "success": true,
       "records": 15,
       "error": null,
-      "checked_at": "2026-10-10T16:21:42.046353+00:00",
+      "checked_at": "2026-10-10T16:40:34.240763+00:00",
       "date_window_start": "2026-09-19",
       "date_window_end": "2026-10-10"
     },
@@ -32,7 +32,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-10T16:21:48.164140+00:00"
+      "checked_at": "2026-10-10T16:40:39.435448+00:00"
     },
     {
       "provider": "x_recent_search",
@@ -40,7 +40,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-10T16:21:48.164161+00:00"
+      "checked_at": "2026-10-10T16:40:39.435468+00:00"
     },
     {
       "provider": "reddit_oauth_search",
@@ -48,7 +48,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-10T16:21:48.164166+00:00"
+      "checked_at": "2026-10-10T16:40:39.435475+00:00"
     },
     {
       "provider": "benzinga_option_activity",
@@ -56,7 +56,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-10T16:21:48.164171+00:00"
+      "checked_at": "2026-10-10T16:40:39.435479+00:00"
     },
     {
       "provider": "alpaca_stock_snapshots",
@@ -64,7 +64,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-10T16:21:48.164174+00:00"
+      "checked_at": "2026-10-10T16:40:39.435483+00:00"
     },
     {
       "provider": "alpaca_option_snapshots",
@@ -72,7 +72,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-10T16:21:48.164176+00:00"
+      "checked_at": "2026-10-10T16:40:39.435486+00:00"
     }
   ],
   "stocks": {
@@ -531,41 +531,6 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "AMD": {
-      "sources": [
-        "FINRA Reg SHO"
-      ],
-      "official_sources": [
-        "FINRA Reg SHO"
-      ],
-      "market_sources": [],
-      "finra": {
-        "source": "FINRA Reg SHO Daily Short Sale Volume",
-        "trade_date": "2026-10-09",
-        "short_volume": 3911859.27,
-        "short_exempt_volume": 9393.0,
-        "total_volume": 7076190.31,
-        "short_volume_ratio": 0.5528,
-        "reporting_facilities": [
-          "NCTRF",
-          "NQTRF",
-          "NYTRF"
-        ],
-        "market_codes": [
-          "B",
-          "N",
-          "Q"
-        ],
-        "rows_aggregated": 3,
-        "context_only": true,
-        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
-      },
-      "news": null,
-      "x": null,
-      "reddit": null,
-      "alpaca": null,
-      "social_score": 0.0
-    },
     "TSLA": {
       "sources": [
         "FINRA Reg SHO"
@@ -600,7 +565,49 @@
       "reddit": null,
       "alpaca": null,
       "social_score": 0.0
+    },
+    "CVX": {
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
+      "market_sources": [],
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-10-09",
+        "short_volume": 1341107.06,
+        "short_exempt_volume": 8625.0,
+        "total_volume": 2137733.07,
+        "short_volume_ratio": 0.6274,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF",
+          "NYTRF"
+        ],
+        "market_codes": [
+          "B",
+          "N",
+          "Q"
+        ],
+        "rows_aggregated": 3,
+        "context_only": true,
+        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
+      },
+      "news": null,
+      "x": null,
+      "reddit": null,
+      "alpaca": null,
+      "social_score": 0.0
     }
   },
-  "contracts": {}
+  "contracts": {
+    "MRVL261106C00300000": {
+      "sources": [],
+      "market_flow_sources": [],
+      "benzinga": null,
+      "alpaca": null
+    }
+  }
 }
