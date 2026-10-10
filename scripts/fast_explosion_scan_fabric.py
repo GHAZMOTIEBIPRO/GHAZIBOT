@@ -230,6 +230,9 @@ def _rank_market_with_fabric(rows, news_events, structural):
             candidate.data_fabric_validation = {"available": False, "not_checked": True}
             continue
         candidate.data_fabric_validation = validation
+        time_rvol = validation.get("time_normalized_rvol")
+        if isinstance(time_rvol, dict):
+            candidate.time_normalized_rvol = time_rvol
         if not validation.get("available"):
             candidate.reasons.append("بيانات التحقق المتعدد غير متاحة؛ لا ترقية للثقة")
             continue
