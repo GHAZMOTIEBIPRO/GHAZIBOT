@@ -294,6 +294,26 @@ jobs:
           echo "Failed to persist runtime state after fresh-state retries."
           exit 1
 
+      - name: Upload result files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghazibot-omega-results
+          retention-days: 14
+          path: |
+            public/data/latest.json
+            public/data/health.json
+            public/data/data-status.json
+            data/cache/sec_efts_events.json
+            data/cache/sec_efts_status.json
+            data/cache/sec_processed_accessions.json
+            data/cache/sec_incremental_status.json
+            data/live/*.json
+            data/live/*.jsonl
+            data/live/*.md
+            results/*.csv
+          if-no-files-found: ignore
+
       - name: Mirror fresh safe health metadata to main for Vercel
         if: github.ref == 'refs/heads/main'
         shell: bash
@@ -349,23 +369,3 @@ jobs:
           done
           echo "Could not mirror fresh safe Vercel metadata after retries." >&2
           exit 1
-
-      - name: Upload result files
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ghazibot-omega-results
-          retention-days: 14
-          path: |
-            public/data/latest.json
-            public/data/health.json
-            public/data/data-status.json
-            data/cache/sec_efts_events.json
-            data/cache/sec_efts_status.json
-            data/cache/sec_processed_accessions.json
-            data/cache/sec_incremental_status.json
-            data/live/*.json
-            data/live/*.jsonl
-            data/live/*.md
-            results/*.csv
-          if-no-files-found: ignore
