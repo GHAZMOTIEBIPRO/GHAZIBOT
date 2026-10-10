@@ -201,6 +201,7 @@ def build_chart_context(
     """
     end = now or datetime.now(timezone.utc)
     daily = pd.DataFrame()
+    hourly = pd.DataFrame()
     intraday = pd.DataFrame()
     sources: dict[str, str] = {}
     errors: dict[str, str] = {}
@@ -218,6 +219,17 @@ def build_chart_context(
     try:
         result = fetcher.fetch_stock_bars(
             symbol,
+            interval="1h",
+            start=end - timedelta(days=120),
+            end=end,
+        )
+        hourly = result.data
+        sources["1h"] = str(result.source)
+    except Exception as exc:
+        errors["1h"] = f"{type(exc).__name__}: {exc}"
+    try:
+        result = fetcher.fetch_stock_bars(
+            symbol,
             interval="5m",
             start=end - timedelta(days=7),
             end=end,
@@ -230,13 +242,14 @@ def build_chart_context(
 
     contexts = {
         "1d": _timeframe_context(daily, label="1D", use_vwap=False),
+        "1h": _timeframe_context(hourly, label="1H", use_vwap=False),
         "15m": _timeframe_context(
             _resample_15m(intraday), label="15m", use_vwap=True
         ),
         "5m": _timeframe_context(intraday, label="5m", use_vwap=True),
     }
     weights = {"1d": 0.35, "15m": 0.35, "5m": 0.30}
-    available = [key for key, value in contexts.items() if value.get("available")]
+    available = [key for key in weights if contexts[key].get("available")]
     used_weight = sum(weights[key] for key in available)
     aggregate = (
         sum(_number(contexts[key].get("score")) * weights[key] for key in available)
@@ -246,8 +259,32 @@ def build_chart_context(
     )
     aggregate = _clamp(aggregate)
     direction = "bullish" if aggregate >= 18 else "bearish" if aggregate <= -18 else "neutral"
+
+    structure_weights = {"1d": 0.45, "1h": 0.35, "15m": 0.20}
+    structure_available = [
+        key for key in structure_weights if contexts[key].get("available")
+    ]
+    structure_used_weight = sum(structure_weights[key] for key in structure_available)
+    structure_score = (
+        sum(
+            _number(contexts[key].get("score")) * structure_weights[key]
+            for key in structure_available
+        )
+        / structure_used_weight
+        if structure_used_weight > 0
+        else 0.0
+    )
+    structure_score = _clamp(structure_score)
+    structure_direction = (
+        "bullish"
+        if structure_score >= 18
+        else "bearish"
+        if structure_score <= -18
+        else "neutral"
+    )
+
     reasons: list[str] = []
-    for key in ("1d", "15m", "5m"):
+    for key in ("1d", "1h", "15m", "5m"):
         reasons.extend(list(contexts[key].get("reasons_ar") or [])[:3])
 
     aligned_volume = 0.0
@@ -265,6 +302,15 @@ def build_chart_context(
         "available_timeframes": len(available),
         "required_timeframes_for_strict": 2,
         "timeframes": contexts,
+        "research_structure": {
+            "version": "classical_multiframe_shadow_v2",
+            "score": round(structure_score, 2),
+            "direction": structure_direction,
+            "available_timeframes": len(structure_available),
+            "timeframes": list(structure_available),
+            "live_score_adjustment": False,
+            "decision_authority": False,
+        },
         "sources": sources,
         "errors": errors,
         "reasons_ar": reasons[:8],
@@ -297,6 +343,15 @@ def enrich_contract_with_chart_and_strike(
     spot = _number(gamma_map.get("spot") or output.get("underlying_price"))
     chart_score = _number(chart.get("score"))
     side_chart_alignment = chart_score / 100.0 * (1.0 if side == "call" else -1.0)
+    research_structure = (
+        chart.get("research_structure")
+        if isinstance(chart.get("research_structure"), dict)
+        else {}
+    )
+    research_structure_score = _number(research_structure.get("score"))
+    research_structure_alignment = (
+        research_structure_score / 100.0 * (1.0 if side == "call" else -1.0)
+    )
     expected = expected_move_1sigma(output, spot)
     strike_distance = abs(strike - spot)
     expected_ratio = strike_distance / expected if expected > 0 else None
@@ -367,6 +422,12 @@ def enrich_contract_with_chart_and_strike(
             "chart_score": round(chart_score, 2),
             "chart_side_alignment": round(side_chart_alignment, 4),
             "chart_available_timeframes": int(chart.get("available_timeframes") or 0),
+            "research_chart_structure_score": round(research_structure_score, 2),
+            "research_chart_structure_alignment": round(research_structure_alignment, 4),
+            "research_chart_structure_timeframes": int(
+                research_structure.get("available_timeframes") or 0
+            ),
+            "research_chart_structure_decision_authority": False,
             "chart_context": chart,
             "institutional_activity_proxy_score": _number(
                 chart.get("institutional_activity_proxy_score")
