@@ -233,6 +233,7 @@ class OccFreeVolumeClient:
         self.timeout = timeout
         self.min_interval_seconds = max(0.0, min_interval_seconds)
         self._last_request_at = 0.0
+        self._report_circuits: dict[str, str] = {}
 
     def _wait(self) -> None:
         elapsed = time.monotonic() - self._last_request_at
@@ -249,7 +250,25 @@ class OccFreeVolumeClient:
         reference_date: date | None = None,
     ) -> dict[str, Any]:
         report_type = OCC_REPORT_TYPES[report_key]
+        circuit_reason = self._report_circuits.get(report_key)
+        if circuit_reason:
+            return {
+                "success": False,
+                "source": "OCC Volume Query",
+                "official": True,
+                "free_no_key": True,
+                "report_key": report_key,
+                "report_type": report_type,
+                "context_only": True,
+                "not_live_quote": True,
+                "not_options_flow": True,
+                "attempts": [],
+                "circuit_open": True,
+                "error": circuit_reason,
+            }
+
         attempts: list[dict[str, Any]] = []
+        html_failures = 0
         for report_date in _report_dates(report_key, reference_date):
             compact = report_date.strftime("%Y%m%d")
             params = {
@@ -278,8 +297,64 @@ class OccFreeVolumeClient:
                 )
                 if response.status_code in {204, 404}:
                     continue
+                if response.status_code == 403:
+                    reason = (
+                        f"OCC {report_key} access returned HTTP 403 from the current runner; "
+                        "circuit opened for this report family."
+                    )
+                    self._report_circuits[report_key] = reason
+                    attempts[-1]["error"] = reason
+                    return {
+                        "success": False,
+                        "source": "OCC Volume Query",
+                        "official": True,
+                        "free_no_key": True,
+                        "report_key": report_key,
+                        "report_type": report_type,
+                        "context_only": True,
+                        "not_live_quote": True,
+                        "not_options_flow": True,
+                        "attempts": attempts,
+                        "circuit_open": True,
+                        "error": reason,
+                    }
                 response.raise_for_status()
-                parsed = parse_occ_volume_csv(response.text)
+
+                clean_text = str(response.text or "").lstrip("\ufeff").strip()
+                if not clean_text or clean_text.startswith("<"):
+                    html_failures += 1
+                    message = "OCC response is empty or HTML instead of CSV"
+                    attempts[-1]["error"] = message
+                    LOGGER.warning(
+                        "OCC %s report failed for %s on %s: %s",
+                        report_key,
+                        symbol,
+                        compact,
+                        message,
+                    )
+                    if html_failures >= 2:
+                        reason = (
+                            f"OCC {report_key} returned empty/HTML responses on "
+                            "two period-appropriate dates; circuit opened for the run."
+                        )
+                        self._report_circuits[report_key] = reason
+                        return {
+                            "success": False,
+                            "source": "OCC Volume Query",
+                            "official": True,
+                            "free_no_key": True,
+                            "report_key": report_key,
+                            "report_type": report_type,
+                            "context_only": True,
+                            "not_live_quote": True,
+                            "not_options_flow": True,
+                            "attempts": attempts,
+                            "circuit_open": True,
+                            "error": reason,
+                        }
+                    continue
+
+                parsed = parse_occ_volume_csv(clean_text)
                 return {
                     "success": True,
                     "source": "OCC Volume Query",
