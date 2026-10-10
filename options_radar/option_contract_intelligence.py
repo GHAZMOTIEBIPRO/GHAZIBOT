@@ -356,6 +356,16 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                     "theta": row.get("theta"),
                     "vega": row.get("vega"),
                     "iv": row.get("iv"),
+                    "realized_volatility_30d": (
+                        (
+                            stock.get("realized_volatility_30d")
+                            if isinstance(
+                                stock.get("realized_volatility_30d"),
+                                dict,
+                            )
+                            else {}
+                        ).get("annualized_volatility")
+                    ),
                     "volume": row.get("volume"),
                     "open_interest": row.get("open_interest"),
                     "vol_to_oi_ratio": row.get("vol_to_oi_ratio"),
