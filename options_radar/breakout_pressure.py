@@ -17,6 +17,7 @@ class BreakoutPressureSnapshot:
     breakout_distance_atr: float | None
     weekly_confluence: bool
     reasons: tuple[str, ...]
+    research_v3: dict[str, Any] | None = None
 
 
 def _numeric(frame: pd.DataFrame, *names: str) -> pd.Series:
@@ -54,6 +55,169 @@ def _proximity_score(distance_atr: float) -> float:
     if -1.00 <= distance_atr <= 2.50:
         return 5.0
     return 0.0
+
+
+
+
+def _research_setup_v3(
+    frame: pd.DataFrame,
+    *,
+    side: str,
+    latest_close: float,
+    breakout_distance_atr: float,
+    volume_contraction_ratio: float | None,
+) -> dict[str, Any]:
+    """Independent shadow setup inspired by permissively licensed momentum screeners."""
+
+    close = frame["close"]
+    high = frame["high"]
+    low = frame["low"]
+    enough_200 = len(frame) >= 200
+
+    ema20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1])
+    ema50 = float(close.ewm(span=50, adjust=False).mean().iloc[-1])
+    ema200 = (
+        float(close.ewm(span=200, adjust=False).mean().iloc[-1])
+        if enough_200
+        else None
+    )
+    if side == "call":
+        ema_stack = (
+            latest_close > ema20 > ema50 > ema200
+            if ema200 is not None
+            else latest_close > ema20 > ema50
+        )
+    else:
+        ema_stack = (
+            latest_close < ema20 < ema50 < ema200
+            if ema200 is not None
+            else latest_close < ema20 < ema50
+        )
+
+    comparisons = pd.DataFrame(
+        {
+            "higher_high": high > high.shift(1),
+            "higher_low": low > low.shift(1),
+            "lower_high": high < high.shift(1),
+            "lower_low": low < low.shift(1),
+        }
+    ).tail(20)
+    if side == "call":
+        structure_hits = (
+            comparisons["higher_high"].astype(int)
+            + comparisons["higher_low"].astype(int)
+        ) / 2.0
+    else:
+        structure_hits = (
+            comparisons["lower_high"].astype(int)
+            + comparisons["lower_low"].astype(int)
+        ) / 2.0
+    hh_hl_ratio = float(structure_hits.mean()) if len(structure_hits) else 0.0
+
+    def range_pct(window: int) -> float | None:
+        if len(frame) < window:
+            return None
+        segment = frame.tail(window)
+        denominator = float(segment["close"].iloc[-1])
+        if denominator <= 0:
+            return None
+        return float(segment["high"].max() - segment["low"].min()) / denominator
+
+    range5 = range_pct(5)
+    range10 = range_pct(10)
+    range20 = range_pct(20)
+    vcp_like = bool(
+        range5 is not None
+        and range10 is not None
+        and range20 is not None
+        and range5 < range10 < range20
+    )
+
+    rolling_mean = close.rolling(20).mean()
+    rolling_std = close.rolling(20).std(ddof=0)
+    bandwidth = (4.0 * rolling_std / rolling_mean.replace(0, float("nan"))).dropna()
+    current_bandwidth = float(bandwidth.iloc[-1]) if len(bandwidth) else None
+    bandwidth_percentile = None
+    if current_bandwidth is not None and len(bandwidth) >= 20:
+        history = bandwidth.tail(60)
+        bandwidth_percentile = float(
+            (history <= current_bandwidth).sum() / len(history) * 100.0
+        )
+
+    year_window = frame.tail(min(252, len(frame)))
+    high_52w = float(year_window["high"].max()) if len(year_window) else latest_close
+    low_52w = float(year_window["low"].min()) if len(year_window) else latest_close
+    if side == "call":
+        distance_52w_pct = (
+            (high_52w - latest_close) / latest_close * 100.0
+            if latest_close > 0
+            else None
+        )
+    else:
+        distance_52w_pct = (
+            (latest_close - low_52w) / latest_close * 100.0
+            if latest_close > 0
+            else None
+        )
+
+    quality_flags = {
+        "ema_stack": bool(ema_stack),
+        "price_structure": hh_hl_ratio >= 0.55,
+        "vcp_like": vcp_like,
+        "volume_dry_up": (
+            volume_contraction_ratio is not None
+            and volume_contraction_ratio <= 0.80
+        ),
+        "bollinger_squeeze": (
+            bandwidth_percentile is not None
+            and bandwidth_percentile <= 30.0
+        ),
+        "near_breakout": -0.20 <= breakout_distance_atr <= 0.80,
+        "near_52w_extreme": (
+            distance_52w_pct is not None and distance_52w_pct <= 8.0
+        ),
+    }
+    quality_count = sum(1 for value in quality_flags.values() if value)
+
+    if breakout_distance_atr < -0.75:
+        stage = "EXTENDED"
+    elif quality_count >= 5 and quality_flags["near_breakout"]:
+        stage = "ARMED"
+    elif quality_count >= 3:
+        stage = "COILING"
+    else:
+        stage = "RESEARCH"
+
+    return {
+        "version": "EXPLOSION_SETUP_V3_SHADOW",
+        "stage": stage,
+        "quality_count": quality_count,
+        "quality_flags": quality_flags,
+        "hh_hl_structure_ratio": round(hh_hl_ratio, 4),
+        "range_5d_pct": round(range5 * 100.0, 4) if range5 is not None else None,
+        "range_10d_pct": round(range10 * 100.0, 4) if range10 is not None else None,
+        "range_20d_pct": round(range20 * 100.0, 4) if range20 is not None else None,
+        "bollinger_bandwidth_20": (
+            round(current_bandwidth, 6)
+            if current_bandwidth is not None
+            else None
+        ),
+        "bollinger_bandwidth_percentile_60": (
+            round(bandwidth_percentile, 2)
+            if bandwidth_percentile is not None
+            else None
+        ),
+        "distance_to_52w_extreme_pct": (
+            round(distance_52w_pct, 4)
+            if distance_52w_pct is not None
+            else None
+        ),
+        "ema200_available": enough_200,
+        "research_only": True,
+        "live_score_adjustment": False,
+        "decision_authority": False,
+        "score_is_probability": False,
+    }
 
 
 def analyze_breakout_pressure(
@@ -227,6 +391,14 @@ def analyze_breakout_pressure(
     if -0.20 <= breakout_distance_atr <= 0.80:
         reasons.append(f"near trigger {breakout_distance_atr:.2f} ATR")
 
+    research_v3 = _research_setup_v3(
+        frame,
+        side=normalized_side,
+        latest_close=latest_close,
+        breakout_distance_atr=breakout_distance_atr,
+        volume_contraction_ratio=volume_contraction_ratio,
+    )
+
     return BreakoutPressureSnapshot(
         True,
         normalized_side,
@@ -241,4 +413,5 @@ def analyze_breakout_pressure(
         round(breakout_distance_atr, 4),
         weekly_confluence,
         tuple(reasons),
+        research_v3,
     )
