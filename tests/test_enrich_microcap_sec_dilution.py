@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from scripts.enrich_microcap_sec_dilution import enrich
+from scripts.enrich_microcap_sec_dilution import enrich, propagate_to_fast_payload
 
 
 class _Response:
@@ -112,3 +112,27 @@ def test_enrichment_updates_microcap_hunter_with_sec_dilution_risk():
     assert "SEC_DILUTION_V2_HIGH" in row["microcap_hunter"]["flags"]
     assert result["sec_dilution_v2"]["enriched"] == 1
     assert result["sec_dilution_v2"]["decision_authority"] is False
+
+def test_propagation_adds_research_fields_without_changing_fast_score_or_stage():
+    state = {
+        "sec_dilution_v2": {"research_only": True, "selected": 1},
+        "symbols": {
+            "MICR": {
+                "sec_dilution_v2": {"risk_score": 88, "research_only": True},
+                "microcap_hunter": {"score": 40, "stage": "AVOID_RISK"},
+            }
+        },
+    }
+    fast = {
+        "top": [{"symbol": "MICR", "score": 91, "stage": "IGNITION"}],
+        "actionable": [{"symbol": "MICR", "score": 91, "stage": "IGNITION"}],
+    }
+
+    result = propagate_to_fast_payload(state, fast)
+
+    assert result["actionable"][0]["score"] == 91
+    assert result["actionable"][0]["stage"] == "IGNITION"
+    assert result["actionable"][0]["sec_dilution_v2"]["risk_score"] == 88
+    assert result["actionable"][0]["microcap_hunter"]["stage"] == "AVOID_RISK"
+    assert result["sec_dilution_v2_changes_live_score"] is False
+
