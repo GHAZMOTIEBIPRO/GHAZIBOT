@@ -1,16 +1,16 @@
 {
   "status": "degraded",
-  "generated_at": "2026-10-10T23:37:55.378467+00:00",
-  "dataset_age_minutes": 1.5,
-  "last_successful_refresh": "2026-10-10T23:37:55.378467+00:00",
-  "option_provider": "phase5_hybrid",
+  "generated_at": "2026-10-10T23:50:30.288211+00:00",
+  "dataset_age_minutes": 1.6,
+  "last_successful_refresh": "2026-10-10T23:50:30.288211+00:00",
+  "option_provider": "yahoo/yfinance",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
     "production_quote_ready": false,
     "production_flow_ready": false,
-    "usable_chains": 10,
-    "fallback_only_chains": 10,
-    "delayed_or_indicative_chains": 10,
+    "usable_chains": 12,
+    "fallback_only_chains": 12,
+    "delayed_or_indicative_chains": 12,
     "live_primary_chains": 0,
     "cross_source_chains": 0,
     "opra_chains": 0,
@@ -19,8 +19,8 @@
     ],
     "reasons": [
       "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-      "10 chain(s) are Yahoo/YFinance-only fallback",
-      "10 chain(s) contain delayed, indicative, or unofficial sources"
+      "12 chain(s) are Yahoo/YFinance-only fallback",
+      "12 chain(s) contain delayed, indicative, or unofficial sources"
     ]
   },
   "source_status": {
@@ -30,7 +30,7 @@
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-10-10T23:36:25.624385+00:00",
+      "checked_at": "2026-10-10T23:49:24.212348+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
@@ -53,17 +53,17 @@
   },
   "row_counts": {
     "stocks": 15,
-    "options": 0,
+    "options": 1,
     "catalysts": 52,
     "expiry_contracts": 0
   },
   "quality_counts": {
-    "stale_options": 0,
+    "stale_options": 1,
     "missing_expiry_family": 0,
-    "duplicate_events_collapsed": 32,
-    "errors": 6,
+    "duplicate_events_collapsed": 33,
+    "errors": 4,
     "critical_errors": 0,
-    "fallback_only_option_chains": 10,
+    "fallback_only_option_chains": 12,
     "live_primary_option_chains": 0
   },
   "sec_incremental": {
@@ -76,12 +76,13 @@
     "prefilter_skips": 0,
     "events_emitted": 0,
     "processed_accessions": 0,
-    "updated_at": "2026-10-10T23:36:36.226488+00:00"
+    "updated_at": "2026-10-10T23:49:35.739881+00:00"
   },
   "run_duration_seconds": null,
   "reasons": [
+    "1 stale option row(s)",
     "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-    "10 chain(s) are Yahoo/YFinance-only fallback",
-    "10 chain(s) contain delayed, indicative, or unofficial sources"
+    "12 chain(s) are Yahoo/YFinance-only fallback",
+    "12 chain(s) contain delayed, indicative, or unofficial sources"
   ]
 }
