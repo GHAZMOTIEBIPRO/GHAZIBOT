@@ -314,6 +314,7 @@ class StockOutcomeTracker:
                         time_rvol.get("cutoff_clock_et") or ""
                     ),
                     "source_role": str(time_rvol.get("source_role") or ""),
+                    "frozen_at": now.isoformat(),
                     "research_only": time_rvol.get("research_only") is True,
                     "live_score_adjustment": time_rvol.get(
                         "live_score_adjustment"
