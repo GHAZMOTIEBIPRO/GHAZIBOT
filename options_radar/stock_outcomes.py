@@ -292,7 +292,9 @@ class StockOutcomeTracker:
                     or cause_payload.get("accession_number")
                     or ""
                 )[:80],
-                "cause_observed_at": now.isoformat(),
+                "cause_observed_at": (
+                    cause_payload.get("observed_at") or now.isoformat()
+                ),
                 "cause_point_in_time_frozen": True,
                 "microcap_hunter_entry": {
                     "stage": str(microcap.get("stage") or ""),
