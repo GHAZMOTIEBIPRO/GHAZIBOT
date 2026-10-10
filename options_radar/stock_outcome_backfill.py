@@ -171,6 +171,11 @@ def _base_record(state: dict[str, Any]) -> dict[str, Any]:
         "cause_accession": state.get("cause_accession"),
         "cause_observed_at": state.get("cause_observed_at"),
         "cause_point_in_time_frozen": bool(state.get("cause_point_in_time_frozen")),
+        "time_normalized_rvol_entry": (
+            dict(state.get("time_normalized_rvol_entry"))
+            if isinstance(state.get("time_normalized_rvol_entry"), dict)
+            else {}
+        ),
         "microcap_hunter_entry": (
             dict(state.get("microcap_hunter_entry"))
             if isinstance(state.get("microcap_hunter_entry"), dict)
