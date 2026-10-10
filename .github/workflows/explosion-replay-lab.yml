@@ -39,10 +39,24 @@ jobs:
           cache: pip
 
       - name: Install research dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-research.txt
 
       - name: Run hindsight-safe explosion calibration
         run: python scripts/replay_explosion_calibration.py
+
+      - name: Validate open-source attribution remains research-only
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('data/replay/explosion_replay_report.json').read_text(encoding='utf-8'))
+          attribution = report['open_source_feature_ablation']
+          assert attribution['decision_authority'] is False
+          assert attribution['live_threshold_auto_changed'] is False
+          assert attribution['sec_replay_status'] == 'not_reconstructed_historically'
+          assert attribution['causal_guards']['fvg_shift_bars'] == 1
+          assert attribution['causal_guards']['swing_shift_bars'] == 20
+          PY
 
       - name: Persist calibration report
         shell: bash
