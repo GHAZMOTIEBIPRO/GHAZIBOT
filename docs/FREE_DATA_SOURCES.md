@@ -87,3 +87,29 @@ This enables historical contract-volume research only. It does not change the li
 - **Yahooquery (MIT):** alternate transport to Yahoo's unofficial data family. It may improve resilience when yfinance transport fails, but it is explicitly the same `yahoo` evidence family and never increases independent-source quorum.
 - **py_vollib / py_vollib_vectorized (MIT):** weekly/manual shadow validation of modeled Black-Scholes Greeks. Validation evidence has no live decision authority.
 - **CFTC Traders in Financial Futures:** official weekly macro-positioning context from the CFTC Public Reporting Environment. It is `context_only` and cannot create CALL/PUT direction by itself.
+
+## Free Data Fabric V2
+
+### SEC Form 144
+
+- Electronic Form 144 filings are official SEC supply-context evidence.
+- The parser records proposed shares, aggregate market value, reported units outstanding, approximate sale date, seller/issuer relationship, and disclosed sales from the prior three months when present.
+- A Form 144 filing is a **notice of a proposed sale**. It is not treated as proof that the sale executed.
+- In Microcap Hunter it can add a modest research-only supply-risk penalty, but it is not equivalent to an ATM, registered direct, public offering, or other dilution filing.
+
+### OCC period-aware querying
+
+- Daily Volume Query context uses recent business dates.
+- Weekly queries use completed Friday report dates rather than probing every business day.
+- Monthly queries use the last business day of completed calendar months rather than partial current-month dates.
+- OCC remains aggregate context only and cannot establish sweep direction, buy-to-open activity, dealer positioning, or Tier A execution readiness.
+
+### Source-family health
+
+`public/data/free_data_health.json` now distinguishes official source families from open-source shadow validators.
+
+- SEC submissions and Company Facts share the `sec_edgar` family.
+- Two transports from the same evidence family do not increase source quorum.
+- An official-source outage cannot be replaced with a shadow GitHub source for decision authority.
+- Health checks never grant signal authority; they only report availability and provenance.
+
