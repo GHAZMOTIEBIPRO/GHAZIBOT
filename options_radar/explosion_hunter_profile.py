@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
+from .microcap_hunter import assess_microcap_candidate
+
 
 @dataclass(frozen=True)
 class HunterProfile:
@@ -92,6 +94,11 @@ def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE, now: date
         flags.append("QUOTE_TIMESTAMP_STALE_OR_INVALID")
     if move is not None and move >= 35:
         flags.append("CHASE_RISK")
+
+    microcap = assess_microcap_candidate(row)
+    if microcap.stage == "AVOID_RISK":
+        flags.append("MICROCAP_DILUTION_OR_STRUCTURE_RISK")
+
     stage = "WATCH" if not flags else "RESEARCH_ONLY"
     return {
         "symbol": str(row.get("symbol") or "").upper(),
@@ -102,4 +109,5 @@ def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE, now: date
         "target_is_probability": False,
         "sessions": list(profile.sessions),
         "risk": profile.risk,
+        "microcap_hunter": microcap.as_dict(),
     }
