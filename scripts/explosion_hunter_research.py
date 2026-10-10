@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from options_radar.explosion_hunter_profile import classify_candidate  # noqa: E402
+from options_radar.microcap_hunter import assess_microcap_candidate  # noqa: E402
 
 
 def build_report(payload: dict, *, now: datetime | None = None) -> dict:
@@ -28,11 +29,21 @@ def build_report(payload: dict, *, now: datetime | None = None) -> dict:
         row = dict(source)
         row["symbol"] = symbol
         for field in missing_by_field:
-            if row.get(field) is None or row.get(field) == "":
+            value = row.get(field)
+            if field in {"rvol", "float_shares", "dollar_volume"}:
+                try:
+                    missing = value is None or float(value) <= 0
+                except (TypeError, ValueError):
+                    missing = True
+            else:
+                missing = value is None or value == ""
+            if missing:
                 missing_by_field[field] += 1
         # Only explicit provider evidence is permitted. Never infer quote time
         # from generated_at or the scan timestamp.
-        rows.append(classify_candidate(row, now=now))
+        strict = classify_candidate(row, now=now)
+        strict["microcap_hunter"] = assess_microcap_candidate(row).as_dict()
+        rows.append(strict)
     return {
         "generated_at": (now or datetime.now(timezone.utc)).isoformat(),
         "research_only": True,
@@ -40,6 +51,20 @@ def build_report(payload: dict, *, now: datetime | None = None) -> dict:
         "target_return_pct": 100,
         "candidate_count": len(rows),
         "watch_count": sum(row["stage"] == "WATCH" for row in rows),
+        "microcap_priority_count": sum(
+            (row.get("microcap_hunter") or {}).get("stage") == "PRIORITY"
+            for row in rows
+        ),
+        "microcap_avoid_risk_count": sum(
+            (row.get("microcap_hunter") or {}).get("stage") == "AVOID_RISK"
+            for row in rows
+        ),
+        "microcap_policy": {
+            "research_only": True,
+            "live_score_adjustment": False,
+            "third_party_scraping_added": False,
+            "float_rvol_dilution_are_measured_separately": True,
+        },
         "missing_evidence_counts": missing_by_field,
         "source_schema_compatible": not any(missing_by_field.values()) if rows else False,
         "input_status": "NO_CANDIDATES" if not rows else (
@@ -67,7 +92,13 @@ def main() -> int:
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Hunter research: candidates={report['candidate_count']} watch={report['watch_count']}")
+    print(
+        "Hunter research: "
+        f"candidates={report['candidate_count']} "
+        f"watch={report['watch_count']} "
+        f"microcap_priority={report['microcap_priority_count']} "
+        f"avoid_risk={report['microcap_avoid_risk_count']}"
+    )
     return 0
 
 
