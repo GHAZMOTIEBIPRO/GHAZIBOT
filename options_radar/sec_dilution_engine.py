@@ -352,7 +352,11 @@ def financing_overhang(
             or "DILUTION" in category
             or any(token in text for token in _ACTIVE_FINANCING_TOKENS)
         )
-        if not is_financing and not any(token in text for token in _REVERSE_SPLIT_TOKENS):
+        split_context = (
+            any(token in text for token in _REVERSE_SPLIT_TOKENS)
+            or _forward_split_context(text)
+        )
+        if not is_financing and not split_context:
             continue
 
         value = max(0.0, _number(event.get("event_value")))
