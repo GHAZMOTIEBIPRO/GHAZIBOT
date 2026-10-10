@@ -16,15 +16,18 @@ if str(ROOT) not in sys.path:
 
 from options_radar.data_fabric_runtime import install_data_fabric
 from options_radar.data_fabric_singleflight import install_data_fabric_singleflight
+from options_radar.free_autonomy import enforce_free_autonomy_environment
 from options_radar.hybrid_fetcher import DataFetcher
 from options_radar.market_clock import market_clock_state
+from options_radar.microcap_hunter import assess_microcap_candidate
 from options_radar.provider_preflight import install_provider_preflight
 from options_radar.settings import Settings
 
 # Install data acquisition before the institutional runner creates any fetchers.
-# Unconfigured providers are removed before fan-out; single-flight then shares
-# only concurrently overlapping identical fetches and never retains a completed
-# stock response as a cross-request cache.
+# If a Tradier Brokerage token exists, free-autonomy upgrades an inherited
+# sandbox URL to the production endpoint. Provider/readiness gates still decide
+# whether the returned evidence is fresh enough for its role.
+enforce_free_autonomy_environment()
 install_data_fabric()
 install_provider_preflight()
 install_data_fabric_singleflight()
@@ -60,7 +63,41 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
         frame = result.data
         if frame is None or frame.empty:
             raise RuntimeError("empty reconciled stock bars")
-        latest = float(pd.to_numeric(frame["Close"], errors="coerce").dropna().iloc[-1])
+        close_series = pd.to_numeric(frame["Close"], errors="coerce").dropna()
+        latest = float(close_series.iloc[-1])
+        latest_stamp = frame.index[-1] if len(frame.index) else None
+        provider_quote_timestamp = None
+        if isinstance(latest_stamp, pd.Timestamp) and latest_stamp.tzinfo is not None:
+            provider_quote_timestamp = latest_stamp.to_pydatetime().astimezone(
+                timezone.utc
+            ).isoformat()
+
+        average_volume_20d = 0.0
+        daily_source = ""
+        try:
+            daily_result = fetcher.fetch_stock_bars(
+                candidate.symbol,
+                interval="1d",
+                start=now - timedelta(days=60),
+                end=now,
+            )
+            daily = daily_result.data
+            daily_source = str(daily_result.source)
+            if daily is not None and not daily.empty and "Volume" in daily:
+                working = daily
+                if isinstance(daily.index, pd.DatetimeIndex) and len(daily.index):
+                    last_daily = daily.index[-1]
+                    if last_daily.date() == now.date():
+                        working = daily.iloc[:-1]
+                volumes = pd.to_numeric(working["Volume"], errors="coerce").dropna()
+                volumes = volumes[volumes > 0]
+                if len(volumes):
+                    average_volume_20d = float(volumes.tail(20).mean())
+        except Exception:
+            average_volume_20d = 0.0
+
+        current_volume = _number(getattr(candidate, "volume", 0.0))
+        rvol = current_volume / average_volume_20d if average_volume_20d > 0 else 0.0
         metadata = result.metadata or {} if hasattr(result, "metadata") else {}
         audit = metadata.get("data_fabric", {}) if isinstance(metadata, dict) else {}
         stream = metadata.get("stream_reference") if isinstance(metadata, dict) else None
@@ -73,10 +110,21 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
         return candidate.symbol, {
             "available": True,
             "selected_source": result.source,
+            "daily_source": daily_source,
             "fabric_source_count": int(audit.get("source_count") or 0),
             "fabric_sources": list(audit.get("sources") or []),
             "fabric_consensus_pass": bool(audit.get("consensus_pass", True)),
             "fabric_latest_close": round(latest, 6),
+            "provider_quote_timestamp": provider_quote_timestamp,
+            "average_volume_20d": round(average_volume_20d, 2)
+            if average_volume_20d > 0
+            else None,
+            "rvol": round(rvol, 4) if rvol > 0 else None,
+            "rvol_source": (
+                "Nasdaq cumulative session volume / prior 20 completed daily bars"
+                if rvol > 0
+                else ""
+            ),
             "nasdaq_vs_fabric_divergence_pct": round(divergence, 6),
             "selected_close_divergence_pct": audit.get("selected_close_divergence_pct"),
             "stream_reference": stream if isinstance(stream, dict) else None,
@@ -101,6 +149,16 @@ def _persist_validation(ranked: list[Any]) -> None:
         validation = getattr(candidate, "data_fabric_validation", None)
         if isinstance(row, dict) and isinstance(validation, dict):
             row["data_fabric_validation"] = validation
+            if validation.get("provider_quote_timestamp"):
+                row["provider_quote_timestamp"] = validation["provider_quote_timestamp"]
+            if validation.get("average_volume_20d"):
+                row["average_volume_20d"] = validation["average_volume_20d"]
+            if validation.get("rvol"):
+                row["rvol"] = validation["rvol"]
+                row["rvol_source"] = validation.get("rvol_source") or ""
+            row["microcap_hunter"] = assess_microcap_candidate(
+                {"symbol": candidate.symbol, **row}
+            ).as_dict()
             row["send_priority"] = round(
                 float(
                     getattr(

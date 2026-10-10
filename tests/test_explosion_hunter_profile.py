@@ -70,3 +70,27 @@ def test_unverified_catalyst_blocks_watch_even_with_fresh_quote():
     result = classify_candidate(row, now=datetime(2026, 10, 7, 15, 5, tzinfo=timezone.utc))
     assert result["stage"] == "RESEARCH_ONLY"
     assert "SEC_CATALYST_PROVENANCE_UNVERIFIED" in result["flags"]
+
+def test_high_dilution_blocks_strict_watch_even_when_quote_and_sec_are_fresh():
+    row = {
+        "symbol": "ABC",
+        "price": 4.0,
+        "market_cap": 40_000_000,
+        "rvol": 4,
+        "float_shares": 1_500_000,
+        "dollar_volume": 3_000_000,
+        "day_move_pct": 6,
+        "supply_score": 90,
+        "dilution_risk": 90,
+        "catalyst_headline": "Active ATM offering under S-3 and 424B5",
+        "provider_quote_timestamp": "2026-10-07T15:00:00Z",
+        "official_catalyst_url": "https://www.sec.gov/Archives/edgar/data/123/abc.htm",
+    }
+    result = classify_candidate(
+        row,
+        now=datetime(2026, 10, 7, 15, 5, tzinfo=timezone.utc),
+    )
+    assert result["stage"] == "RESEARCH_ONLY"
+    assert "MICROCAP_DILUTION_OR_STRUCTURE_RISK" in result["flags"]
+    assert result["microcap_hunter"]["stage"] == "AVOID_RISK"
+
