@@ -95,7 +95,7 @@ def build_smc_research_features(history: pd.DataFrame, direction: str) -> dict[s
     frame = _normalise_daily(history)
     try:
         snapshot = build_hindsight_safe_smc_snapshot(frame, swing_length=20)
-    except (ImportError, AttributeError, ValueError) as exc:
+    except Exception as exc:
         return {
             "available": False,
             "direction_alignment": None,
@@ -226,8 +226,10 @@ def _factor_report(
     *,
     minimum_sample: int,
 ) -> dict[str, Any]:
-    present = [row for row in rows if predicate(row) is True]
-    absent = [row for row in rows if predicate(row) is False]
+    classified = [(row, predicate(row)) for row in rows]
+    present = [row for row, value in classified if value is True]
+    absent = [row for row, value in classified if value is False]
+    unknown = sum(value is None for _, value in classified)
     present_summary = _summary(present)
     absent_summary = _summary(absent)
     present_rate = present_summary.get("success_rate")
@@ -238,6 +240,7 @@ def _factor_report(
         "present": present_summary,
         "absent": absent_summary,
         "minimum_sample_each_side": minimum_sample,
+        "unknown_or_unavailable": unknown,
         "sample_ready": len(present) >= minimum_sample and len(absent) >= minimum_sample,
         "success_rate_lift_pp": (
             round((present_rate - absent_rate) * 100.0, 2)
@@ -351,7 +354,7 @@ def add_causal_replay_features(
             pd.to_numeric(swings["HighLow"], errors="coerce").shift(swing_length) < 0
         )
         out["research_smc_available"] = True
-    except (ImportError, AttributeError, KeyError, ValueError):
+    except Exception:
         out["research_smc_bullish_fvg"] = False
         out["research_smc_confirmed_swing_low"] = False
         out["research_smc_available"] = False
