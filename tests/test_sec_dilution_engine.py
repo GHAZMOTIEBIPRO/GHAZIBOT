@@ -68,10 +68,8 @@ def test_financing_overhang_separates_announced_capacity_from_remaining_capacity
             "purpose": "dilution",
             "event_date": "2026-10-07",
             "event_value": 20_000_000,
-            "evidence": (
-                "ATM offering; warrants to purchase 3,000,000 shares "
-                "of common stock"
-            ),
+            "share_count": 3_000_000,
+            "evidence": "ATM offering with warrant overhang",
         }
     ]
 
