@@ -270,7 +270,12 @@ class StrictCatalystScanner(ResilientCatalystScanner):
                 self._sec_incremental_metrics["feed_entries_seen"] += 1
                 title = entry.findtext("atom:title", default="", namespaces=namespace)
                 summary = entry.findtext("atom:summary", default="", namespaces=namespace)
-                updated = entry.findtext("atom:updated", default="", namespaces=namespace)[:10]
+                updated_raw = entry.findtext(
+                    "atom:updated",
+                    default="",
+                    namespaces=namespace,
+                )
+                updated = updated_raw[:10]
                 link_element = entry.find("atom:link", namespace)
                 filing_url = "" if link_element is None else str(link_element.attrib.get("href", ""))
                 cik = self._entry_cik(title, summary)
@@ -356,12 +361,15 @@ class StrictCatalystScanner(ResilientCatalystScanner):
                 elif score == 0:
                     continue
 
+                observed_at = datetime.now(timezone.utc).isoformat()
                 meta = {
                     "event_value": event_value,
                     "share_count": share_count,
                     "confidence": confidence,
                     "purpose": purpose,
                     "accession_number": accession,
+                    "published_at": updated_raw or None,
+                    "observed_at": observed_at,
                     "classification_method": "structured_or_prefiltered_document",
                 }
                 self._event_meta[(symbol, final_url, form)] = meta
@@ -415,7 +423,15 @@ class StrictCatalystScanner(ResilientCatalystScanner):
             frame = pd.concat([frame, official_frame], ignore_index=True, sort=False)
 
         if frame.empty:
-            for column in ("event_value", "share_count", "confidence", "purpose", "accession_number"):
+            for column in (
+                "event_value",
+                "share_count",
+                "confidence",
+                "purpose",
+                "accession_number",
+                "published_at",
+                "observed_at",
+            ):
                 frame[column] = pd.Series(dtype="object")
             return frame
 
@@ -433,6 +449,8 @@ class StrictCatalystScanner(ResilientCatalystScanner):
             ("query_family", ""),
             ("items", None),
             ("accession_number", ""),
+            ("published_at", None),
+            ("observed_at", None),
         ):
             if column not in frame.columns:
                 frame[column] = default
