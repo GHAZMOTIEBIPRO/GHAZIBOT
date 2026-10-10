@@ -10,6 +10,7 @@ from .guardian_research import (
     record_option_quote_snapshot,
     record_unstamped_research_observation,
 )
+from .response_shadow_outcomes import update_response_shadow_ab
 
 
 TERMINAL_STAGES = {"T3_HIT", "INVALIDATED", "EXPIRED"}
@@ -538,6 +539,15 @@ def update_contract_guardian(
         reverse=True,
     )
 
+    response_report, response_state = update_response_shadow_ab(
+        payload,
+        state.get("response_shadow_ab")
+        if isinstance(state.get("response_shadow_ab"), dict)
+        else {},
+        now=now,
+        max_quote_age_minutes=max_quote_age_minutes,
+    )
+
     output = {
         "version": "CONTRACT_GUARDIAN_V1",
         "generated_at": now.isoformat(),
@@ -558,6 +568,7 @@ def update_contract_guardian(
         ),
         "active": active,
         "terminal_recent": terminal[-25:],
+        "response_shadow_ab": response_report,
         "policy": {
             "entry_reference": "ask when available",
             "observation_reference": "bid when available",
@@ -576,6 +587,7 @@ def update_contract_guardian(
         "schema_version": 1,
         "updated_at": now.isoformat(),
         "contracts": contracts_state,
+        "response_shadow_ab": response_state,
     }
     return output, state_out
 
