@@ -69,6 +69,7 @@ jobs:
       OPTIONS_ALERT_MAX: ${{ secrets.OPTIONS_ALERT_MAX || '3' }}
       OPTIONS_PAYLOAD_MAX_AGE_MINUTES: ${{ secrets.OPTIONS_PAYLOAD_MAX_AGE_MINUTES || '45' }}
       OPTIONS_LEARNING_MAX_SYMBOLS: ${{ secrets.OPTIONS_LEARNING_MAX_SYMBOLS || '12' }}
+      OPTIONS_RESEARCH_TRACK_MIN_SCORE: ${{ secrets.OPTIONS_RESEARCH_TRACK_MIN_SCORE || '75' }}
       OPTIONS_LEARNING_MIN_DATA_QUALITY: ${{ secrets.OPTIONS_LEARNING_MIN_DATA_QUALITY || '0.80' }}
       CALIBRATION_MINIMUM_SAMPLE: ${{ secrets.CALIBRATION_MINIMUM_SAMPLE || '100' }}
       OCC_FREE_ENABLED: ${{ secrets.OCC_FREE_ENABLED || 'true' }}
@@ -200,8 +201,12 @@ jobs:
           for path in ('data/live/options_outcomes.json', 'data/live/options_calibration.json'):
               assert Path(path).exists(), f'missing learning state: {path}'
           calibration = json.loads(Path('data/live/options_calibration.json').read_text(encoding='utf-8'))
+          assert int(calibration.get('research_sample_size', 0)) >= int(calibration.get('shadow_sample_size', 0))
           assert int(calibration.get('shadow_sample_size', 0)) >= int(calibration.get('sample_size', 0))
           assert float(calibration.get('max_total_adjustment', 4.0)) <= 4.0
+          research_policy = calibration.get('research_feature_policy') or {}
+          assert research_policy.get('live_score_adjustment') is False
+          assert research_policy.get('decision_authority') is False
           print('Independent options + data fabric + gamma + guarded learning passed.')
           PY
 
@@ -254,6 +259,7 @@ jobs:
                   'independent_from_stock_radar': True,
                   'data_fabric': True,
                   'outcome_learning': True,
+                  'research_outcome_tracking': True,
                   'saved_at': datetime.now(timezone.utc).isoformat(),
               }, indent=2),
               encoding='utf-8',
