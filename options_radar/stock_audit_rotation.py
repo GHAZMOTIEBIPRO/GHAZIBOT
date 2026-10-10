@@ -11,7 +11,8 @@ from options_radar.stock_outcome_backfill import evaluate_stock_event_from_bars
 
 FINAL_TERMINAL = frozenset({"success", "failed", "ambiguous", "non_decisive"})
 INVALID_SESSION_CLASSIFICATION = "invalid_session"
-DEFAULT_RETRY_COOLDOWN_HOURS = 18
+DEFAULT_RETRY_COOLDOWN_HOURS = 2
+YAHOO_5M_RECOVERY_DAYS = 58
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -91,7 +92,12 @@ def fair_symbols_needing_backfill(
     maximum_symbols: int,
     retry_cooldown_hours: int = DEFAULT_RETRY_COOLDOWN_HOURS,
 ) -> list[str]:
-    """Prefer never-attempted symbols, then cooled-down retries."""
+    """Prioritize recoverable 5m evidence without deleting old failures.
+
+    Yahoo intraday history is finite. Old records remain in the denominator,
+    but after one honest attempt they are not allowed to monopolize the fetch
+    budget ahead of recent signals that can still reach strict 60m coverage.
+    """
 
     current = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
     cooldown = timedelta(hours=max(1, int(retry_cooldown_hours)))
@@ -109,14 +115,30 @@ def fair_symbols_needing_backfill(
         attempts = max(0, _int(row.get("audit_attempt_count")))
         last_attempt = _parse_time(row.get("audit_last_attempt_at"))
         coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+        age = current - created
+        within_recovery_window = age <= timedelta(days=YAHOO_5M_RECOVERY_DAYS)
+
+        if not within_recovery_window and attempts > 0:
+            row["audit_recovery_state"] = "provider_5m_retention_exceeded"
+            row["audit_recovery_note"] = (
+                "Kept in coverage denominator; repeated Yahoo 5m retries are "
+                "suppressed after one attempt because strict intraday evidence "
+                "is outside the configured recovery window."
+            )
+            continue
+
         if attempts <= 0:
-            tier = 0
+            tier = 0 if within_recovery_window else 3
         else:
             if last_attempt is not None and current - last_attempt < cooldown:
                 continue
-            tier = 1 if coverage.get("60m") is not True else 2
+            if coverage.get("60m") is not True:
+                tier = 0
+            else:
+                tier = 1
 
-        priority = (tier, created, attempts)
+        recency_key = -created.timestamp() if within_recovery_window else created.timestamp()
+        priority = (tier, recency_key, attempts)
         previous = candidates.get(symbol)
         if previous is None or priority < previous:
             candidates[symbol] = priority
