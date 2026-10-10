@@ -124,6 +124,12 @@ def run(
             "coverage_ready": stock_audit_coverage_ready,
         },
         "option_outcome_summary": option_outcome_summary,
+        "open_source_feature_attribution": (
+            stock_audit.get("open_source_feature_attribution")
+            if isinstance(stock_audit.get("open_source_feature_attribution"), dict)
+            else {}
+        ),
+        "open_source_features_change_live_weights": False,
         "calibration": calibration,
         "model": model,
         "errors": errors,
