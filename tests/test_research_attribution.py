@@ -81,6 +81,15 @@ def _record(**overrides):
         "cause_observed_at": "2026-04-11T15:00:00+00:00",
         "cause_accession": "0000000000-26-000001",
         "cause_point_in_time_frozen": True,
+        "time_normalized_rvol_entry": {
+            "available": True,
+            "ratio": 2.5,
+            "pace_percentile": 90,
+            "sample_sessions": 12,
+            "frozen_at": "2026-04-11T15:00:00+00:00",
+            "research_only": True,
+            "live_score_adjustment": False,
+        },
         "sec_dilution_v2_entry": {
             "available": True,
             "risk_score": 20,
@@ -115,6 +124,8 @@ def test_stock_features_join_sec_chart_and_hindsight_safe_smc(monkeypatch):
     assert features["sec"]["chronology_verified"] is True
     assert features["sec_dilution_v2"]["chronology_verified"] is True
     assert features["sec_dilution_v2"]["high_risk"] is False
+    assert features["time_normalized_rvol"]["chronology_verified"] is True
+    assert features["time_normalized_rvol"]["high_2x"] is True
     assert features["chart"]["direction_alignment"] is True
     assert features["smc"]["direction_alignment"] is True
     assert features["aligned_evidence_count"] == 3
@@ -137,6 +148,10 @@ def test_stock_attribution_measures_lift_without_live_authority():
                     "chronology_verified": True,
                     "high_risk": not aligned,
                 },
+                "time_normalized_rvol": {
+                    "chronology_verified": True,
+                    "high_2x": aligned,
+                },
                 "chart": {"direction_alignment": aligned},
                 "smc": {"direction_alignment": aligned},
                 "aligned_evidence_count": 3 if aligned else 0,
@@ -156,6 +171,8 @@ def test_stock_attribution_measures_lift_without_live_authority():
     assert report["factors"]["chart_direction_alignment"]["success_rate_lift_pp"] == 100.0
     assert report["factors"]["high_sec_dilution_v2"]["sample_ready"] is True
     assert report["factors"]["high_sec_dilution_v2"]["success_rate_lift_pp"] == -100.0
+    assert report["factors"]["time_normalized_rvol_ge_2x"]["sample_ready"] is True
+    assert report["factors"]["time_normalized_rvol_ge_2x"]["success_rate_lift_pp"] == 100.0
     assert report["factors"]["two_of_three_alignment"]["mean_60m_return_lift_pct"] == 14.0
 
 
@@ -219,4 +236,25 @@ def test_sec_dilution_observed_after_signal_is_not_point_in_time_research(monkey
     assert features["sec_dilution_v2"]["chronology_verified"] is False
     assert features["sec_dilution_v2"]["risk_score"] is None
     assert features["sec_dilution_v2"]["high_risk"] is None
+
+def test_time_normalized_rvol_frozen_after_signal_is_not_research_eligible(monkeypatch):
+    monkeypatch.setitem(sys.modules, "smartmoneyconcepts", SimpleNamespace(smc=_FakeSmc))
+    features = build_stock_research_features(
+        _record(
+            time_normalized_rvol_entry={
+                "available": True,
+                "ratio": 4.0,
+                "pace_percentile": 99,
+                "sample_sessions": 15,
+                "frozen_at": "2026-04-11T15:05:00+00:00",
+                "research_only": True,
+                "live_score_adjustment": False,
+            }
+        ),
+        _history(),
+    )
+
+    assert features["time_normalized_rvol"]["chronology_verified"] is False
+    assert features["time_normalized_rvol"]["ratio"] is None
+    assert features["time_normalized_rvol"]["high_2x"] is None
 
