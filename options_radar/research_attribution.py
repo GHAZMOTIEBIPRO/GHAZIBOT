@@ -388,11 +388,25 @@ def evaluate_replay_feature_ablation(
     *,
     threshold: float,
 ) -> dict[str, Any]:
+    unavailable = {
+        "available": False,
+        "threshold": threshold,
+        "decision_authority": False,
+        "live_threshold_auto_changed": False,
+        "baseline": {},
+        "variants": {},
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+            "fvg_shift_bars": 1,
+            "swing_shift_bars": 20,
+            "forward_labels_not_used_in_features": True,
+        },
+    }
     if frame is None or frame.empty:
-        return {"available": False, "reason": "empty_frame"}
+        return {**unavailable, "reason": "empty_frame"}
     valid = frame.dropna(subset=["replay_score", "future_5d_max_return_pct"]).copy()
     if valid.empty:
-        return {"available": False, "reason": "no_labeled_rows"}
+        return {**unavailable, "reason": "no_labeled_rows"}
     positive = valid["explosion_label"].astype(bool)
     baseline = valid["replay_score"] >= threshold
     chart = baseline & valid.get("research_chart_bullish", False)
@@ -417,6 +431,12 @@ def evaluate_replay_feature_ablation(
         )
     return {
         "available": True,
+        "smc_available": bool(
+            valid.get("research_smc_available", pd.Series(False, index=valid.index))
+            .fillna(False)
+            .astype(bool)
+            .any()
+        ),
         "threshold": threshold,
         "decision_authority": False,
         "live_threshold_auto_changed": False,
