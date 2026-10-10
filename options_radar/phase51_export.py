@@ -14,6 +14,22 @@ import pandas as pd
 LOGGER = logging.getLogger(__name__)
 
 
+STOCK_RESEARCH_EXPORT_COLUMNS = (
+    "breakout_pressure_score",
+    "atr_compression_ratio",
+    "range_tightness_pct",
+    "volume_contraction_ratio",
+    "breakout_proximity_atr",
+    "weekly_breakout_confluence",
+    "breakout_pressure_reasons",
+    "explosion_setup_v3",
+    "explosion_setup_v3_stage",
+    "explosion_setup_v3_quality_count",
+    "explosion_setup_v3_live_score_adjustment",
+    "realized_volatility_30d",
+)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Generate the Phase 5.1 public JSON feed for GHAZI Market Radar."
@@ -395,6 +411,7 @@ def main(argv: list[str] | None = None) -> int:
         "finviz_relative_volume",
         "rise_factors",
         "fall_factors",
+        *STOCK_RESEARCH_EXPORT_COLUMNS,
     ]
     option_columns = [
         "symbol",
