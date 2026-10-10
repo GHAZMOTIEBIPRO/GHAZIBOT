@@ -78,6 +78,7 @@
     <nav class="tabs" aria-label="أقسام الرادار">
       <button class="tab-button active" data-tab="omega">Ω Command Center</button>
       <button class="tab-button" data-tab="stocks">رادار الأسهم</button>
+      <button class="tab-button" data-tab="chart">الشارت</button>
       <button class="tab-button" data-tab="options">رادار العقود</button>
       <button class="tab-button" data-tab="spx0dte">SPX 0DTE</button>
       <button class="tab-button" data-tab="sources">شبكة المصادر</button>
@@ -131,6 +132,23 @@
           <input id="stock-search" class="search-input" type="search" placeholder="ابحث عن رمز…" aria-label="بحث الأسهم">
         </div>
         <div id="stocks-grid" class="cards-grid"></div>
+      </section>
+
+      <section id="tab-chart" class="tab-panel">
+        <div class="section-heading">
+          <div>
+            <h2>الشارت التفاعلي</h2>
+            <p>شموع OHLC للمرشحين الأعلى مع منطقة الدخول والأهداف والإبطال. الشارت بحثي ولا يمنح العقد صلاحية تنفيذية.</p>
+          </div>
+          <select id="market-chart-symbol" class="search-input" aria-label="اختيار رمز الشارت">
+            <option value="">جاري التحميل…</option>
+          </select>
+        </div>
+        <div class="market-chart-shell">
+          <div id="market-chart" class="market-chart" aria-label="شارت سعري تفاعلي"></div>
+          <p id="market-chart-note" class="reasons">جاري تجهيز الشارت…</p>
+          <p class="chart-attribution">Powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts</a>.</p>
+        </div>
       </section>
 
       <section id="tab-options" class="tab-panel">
@@ -243,11 +261,13 @@
       </div>
     </footer>
   </div>
-  <script src="./app.js?v=20260807-omega" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js" defer></script>
+  <script src="./app.js?v=20261010-open-source" defer></script>
   <script src="./phase51.js?v=20260807-omega" defer></script>
   <script src="./phase60.js?v=20260807-omega" defer></script>
   <script src="./phase62.js?v=20260807-omega" defer></script>
   <script src="./expiry-radar.js?v=20260807-omega" defer></script>
   <script src="./omega.js?v=20260807-omega" defer></script>
+  <script src="./market-chart.js?v=20261010-open-source" defer></script>
 </body>
 </html>
