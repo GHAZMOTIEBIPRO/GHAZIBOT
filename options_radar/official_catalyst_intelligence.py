@@ -44,6 +44,11 @@ def _apply_cluster_policy(cluster: dict[str, Any]) -> dict[str, Any]:
         cluster["source_tier"] = primary.get("source_tier")
         cluster["source_family"] = primary.get("source_family")
         cluster["source_policy_note_ar"] = primary.get("source_policy_note_ar")
+        cluster["published_at"] = primary.get("published_at")
+        cluster["observed_at"] = primary.get("observed_at")
+        cluster["accession_number"] = primary.get("accession_number")
+        cluster["share_count"] = primary.get("share_count")
+        cluster["event_value"] = primary.get("event_value")
 
     independent_count = int(evidence.get("independent_confirmation_count", 0))
     cluster["confirmation_count"] = independent_count

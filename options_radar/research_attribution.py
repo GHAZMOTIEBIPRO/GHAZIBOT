@@ -180,10 +180,21 @@ def _sec_dilution_features(record: dict[str, Any]) -> dict[str, Any]:
         "high_risk": bool(risk >= 70) if valid_risk else None,
         "elevated_or_high": bool(risk >= 45) if valid_risk else None,
         "share_growth_pct": entry.get("share_growth_pct"),
-        "announced_capacity_to_market_cap": entry.get(
-            "announced_capacity_to_market_cap"
+        "largest_announced_financing_to_market_cap": entry.get(
+            "largest_announced_financing_to_market_cap"
         ),
-        "explicit_overhang_to_float": entry.get("explicit_overhang_to_float"),
+        "largest_explicit_issuable_to_float": entry.get(
+            "largest_explicit_issuable_to_float"
+        ),
+        "same_day_date_only_events_excluded": int(
+            _number(entry.get("same_day_date_only_events_excluded"), 0)
+        ),
+        "future_timestamp_events_excluded": int(
+            _number(entry.get("future_timestamp_events_excluded"), 0)
+        ),
+        "share_growth_risk_suppressed_by_split": (
+            entry.get("share_growth_risk_suppressed_by_split") is True
+        ),
         "remaining_capacity_verified": entry.get("remaining_capacity_verified") is True,
         "decision_authority": False,
     }
@@ -218,6 +229,17 @@ def _time_normalized_rvol_features(record: dict[str, Any]) -> dict[str, Any]:
             else None
         ),
         "sample_sessions": int(_number(entry.get("sample_sessions"), 0)),
+        "selected_source": str(entry.get("selected_source") or ""),
+        "fabric_transport_source_count": int(
+            _number(entry.get("fabric_transport_source_count"), 0)
+        ),
+        "fabric_independent_source_count": int(
+            _number(entry.get("fabric_independent_source_count"), 0)
+        ),
+        "fabric_consensus_pass": entry.get("fabric_consensus_pass") is True,
+        "profile_quality": str(entry.get("profile_quality") or "UNKNOWN"),
+        "current_bar_lag_minutes": entry.get("current_bar_lag_minutes"),
+        "current_slot_coverage_pct": entry.get("current_slot_coverage_pct"),
         "high_2x": bool(ratio >= 2.0) if chronology_verified else None,
         "high_3x": bool(ratio >= 3.0) if chronology_verified else None,
         "decision_authority": False,

@@ -107,3 +107,69 @@ def test_insufficient_historical_sessions_is_unavailable():
 
     assert result.available is False
     assert result.reason == "insufficient_comparable_sessions"
+
+def test_duplicate_bar_timestamp_does_not_double_count_volume():
+    now = datetime(2026, 10, 5, 9, 50, tzinfo=NY)
+    frame = _bars(current_multiplier=2.0)
+    duplicate_stamp = datetime(2026, 10, 5, 9, 35, tzinfo=NY).astimezone(timezone.utc)
+    duplicate = frame.loc[[duplicate_stamp]].copy()
+    duplicate["Volume"] = 2_000.0
+    frame = pd.concat([frame, duplicate]).sort_index()
+
+    result = time_normalized_rvol(frame, now=now)
+
+    assert result.available is True
+    assert result.ratio == 2.0
+
+
+def test_stale_current_session_profile_fails_closed():
+    now = datetime(2026, 10, 5, 10, 0, tzinfo=NY)
+    frame = _bars(current_multiplier=2.0)
+    cutoff = datetime(2026, 10, 5, 9, 40, tzinfo=NY).astimezone(timezone.utc)
+    frame = frame[
+        (frame.index.date != now.date())
+        | (frame.index <= cutoff)
+    ]
+
+    result = time_normalized_rvol(frame, now=now, maximum_current_lag_minutes=10)
+
+    assert result.available is False
+    assert result.reason == "current_session_profile_too_stale_or_sparse"
+    assert result.current_bar_lag_minutes > 10
+    assert result.profile_quality == "STALE_OR_SPARSE"
+
+
+def test_1600_extended_bar_is_never_counted_as_regular_session_volume():
+    frame = _bars(current_multiplier=2.0)
+    stamp = datetime(2026, 10, 5, 16, 0, tzinfo=NY).astimezone(timezone.utc)
+    frame.loc[stamp, ["Open", "High", "Low", "Close", "Volume"]] = [
+        10,
+        10.2,
+        9.8,
+        10,
+        99_000_000,
+    ]
+
+    result = time_normalized_rvol(
+        frame,
+        now=datetime(2026, 10, 5, 16, 10, tzinfo=NY),
+        maximum_current_lag_minutes=400,
+    )
+
+    assert result.cutoff_clock_et == "15:55"
+    assert result.current_cumulative_volume < 99_000_000
+
+
+def test_profile_reports_bar_coverage_and_freshness():
+    result = time_normalized_rvol(
+        _bars(current_multiplier=2.0),
+        now=datetime(2026, 10, 5, 9, 50, tzinfo=NY),
+    )
+
+    assert result.latest_current_bar_clock_et == "09:45"
+    assert result.current_bar_lag_minutes == 0
+    assert result.expected_completed_slots == 4
+    assert result.observed_current_slots == 4
+    assert result.current_slot_coverage_pct == 100.0
+    assert result.profile_quality == "GOOD"
+

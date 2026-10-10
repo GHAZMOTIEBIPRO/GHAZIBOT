@@ -4,8 +4,9 @@ from typing import Iterable
 
 import pandas as pd
 
-from .catalysts import CatalystEvent, CatalystScanner
+from .catalysts import CatalystEvent
 from .settings import Settings
+from .strict_catalysts import StrictCatalystScanner
 
 
 def scan_official_events(
@@ -29,7 +30,7 @@ def scan_official_events(
     if not allowed:
         return pd.DataFrame(columns=list(CatalystEvent.__dataclass_fields__))
 
-    scanner = CatalystScanner(settings)
+    scanner = StrictCatalystScanner(settings)
     events: list[CatalystEvent] = []
 
     try:
@@ -61,6 +62,28 @@ def scan_official_events(
         return pd.DataFrame(columns=list(CatalystEvent.__dataclass_fields__))
 
     frame = pd.DataFrame([event.__dict__ for event in events])
+
+    def metadata(row: pd.Series) -> dict:
+        key = (
+            str(row.get("symbol") or ""),
+            str(row.get("url") or ""),
+            str(row.get("form") or ""),
+        )
+        meta = scanner._event_meta.get(key, {})
+        return meta if isinstance(meta, dict) else {}
+
+    meta_rows = frame.apply(metadata, axis=1, result_type="expand")
+    for column in (
+        "event_value",
+        "share_count",
+        "confidence",
+        "purpose",
+        "accession_number",
+        "published_at",
+        "observed_at",
+    ):
+        frame[column] = meta_rows[column] if column in meta_rows else None
+
     frame["event_date"] = pd.to_datetime(
         frame["event_date"], errors="coerce"
     ).dt.date.astype(str)

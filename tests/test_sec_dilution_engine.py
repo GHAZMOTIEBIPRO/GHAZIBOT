@@ -81,9 +81,10 @@ def test_financing_overhang_separates_announced_capacity_from_remaining_capacity
     )
 
     assert result["active_financing_context"] is True
-    assert result["announced_financing_capacity_usd"] == 20_000_000
-    assert result["announced_capacity_to_market_cap"] == 0.5
-    assert result["explicit_overhang_to_float"] == 1.5
+    assert result["largest_announced_financing_usd"] == 20_000_000
+    assert result["largest_announced_financing_to_market_cap"] == 0.5
+    assert result["largest_explicit_issuable_to_float"] == 1.5
+    assert "not summed" in result["aggregation_policy"]
     assert result["remaining_capacity_verified"] is False
 
 
@@ -136,3 +137,106 @@ def test_sec_dilution_v2_combines_share_growth_capacity_and_share_overhang():
     assert result.research_only is True
     assert result.decision_authority is False
     assert result.score_is_probability is False
+
+def test_same_day_company_fact_is_withheld_for_intraday_point_in_time():
+    facts = _facts()
+    facts["facts"]["dei"]["EntityCommonStockSharesOutstanding"]["units"]["shares"].append(
+        {
+            "val": 9_000_000,
+            "end": "2026-10-10",
+            "filed": "2026-10-10",
+            "form": "8-K",
+        }
+    )
+
+    history = share_count_history(
+        facts,
+        as_of=datetime(2026, 10, 10, 14, 0, tzinfo=timezone.utc),
+    )
+
+    assert history["latest_shares"] == 2_000_000
+    assert history["same_day_date_only_facts_excluded"] == 1
+    assert history["intraday_date_precision_guard"] is True
+
+
+def test_same_day_date_only_financing_is_excluded_but_timestamped_prior_event_is_allowed():
+    cutoff = datetime(2026, 10, 10, 15, 0, tzinfo=timezone.utc)
+    date_only = financing_overhang(
+        [
+            {
+                "form": "424B5",
+                "purpose": "dilution",
+                "event_date": "2026-10-10",
+                "event_value": 50_000_000,
+                "evidence": "ATM offering",
+            }
+        ],
+        market_cap=100_000_000,
+        float_shares=10_000_000,
+        as_of=cutoff,
+    )
+    assert date_only["event_count"] == 0
+    assert date_only["same_day_date_only_events_excluded"] == 1
+
+    timestamped = financing_overhang(
+        [
+            {
+                "form": "424B5",
+                "purpose": "dilution",
+                "event_date": "2026-10-10",
+                "event_value": 50_000_000,
+                "published_at": "2026-10-10T14:30:00+00:00",
+                "observed_at": "2026-10-10T14:35:00+00:00",
+                "evidence": "ATM offering",
+            }
+        ],
+        market_cap=100_000_000,
+        float_shares=10_000_000,
+        as_of=cutoff,
+    )
+    assert timestamped["event_count"] == 1
+    assert timestamped["largest_announced_financing_to_market_cap"] == 0.5
+
+
+def test_same_day_financing_published_after_signal_is_excluded():
+    result = financing_overhang(
+        [
+            {
+                "form": "424B5",
+                "purpose": "dilution",
+                "event_date": "2026-10-10",
+                "event_value": 50_000_000,
+                "published_at": "2026-10-10T16:00:00+00:00",
+                "observed_at": "2026-10-10T16:01:00+00:00",
+                "evidence": "ATM offering",
+            }
+        ],
+        market_cap=100_000_000,
+        float_shares=10_000_000,
+        as_of=datetime(2026, 10, 10, 15, 0, tzinfo=timezone.utc),
+    )
+    assert result["event_count"] == 0
+    assert result["future_timestamp_events_excluded"] == 1
+
+
+def test_forward_split_context_suppresses_unadjusted_share_growth_risk():
+    result = assess_sec_dilution(
+        _facts(),
+        [
+            {
+                "form": "8-K",
+                "purpose": "corporate_action",
+                "event_date": "2026-09-01",
+                "headline": "Company completes 2-for-1 forward stock split",
+                "source": "SEC EDGAR",
+            }
+        ],
+        market_cap=100_000_000,
+        float_shares=10_000_000,
+        as_of=datetime(2026, 10, 10, 15, 0, tzinfo=timezone.utc),
+    )
+
+    assert result.share_growth_risk == 0
+    assert result.share_growth_risk_suppressed_by_split is True
+    assert any("stock-split context" in reason for reason in result.reasons)
+

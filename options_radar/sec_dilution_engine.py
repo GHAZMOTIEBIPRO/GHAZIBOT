@@ -5,7 +5,9 @@ import re
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
+SEC_TIMEZONE = ZoneInfo("America/New_York")
 _SHARE_CONCEPT = "EntityCommonStockSharesOutstanding"
 _DILUTION_FORMS = {
     "S-1",
@@ -32,6 +34,7 @@ _ACTIVE_FINANCING_TOKENS = (
     "convertible",
 )
 _REVERSE_SPLIT_TOKENS = ("reverse split", "reverse stock split")
+_FORWARD_SPLIT_TOKENS = ("forward split", "forward stock split", "stock split")
 _SHARE_PATTERNS = (
     re.compile(
         r"(?:warrants?\s+(?:to\s+purchase|exercisable\s+for)|convertible\s+into|"
@@ -67,23 +70,50 @@ def _parse_date(value: Any) -> date | None:
         return None
 
 
-def _as_of_date(value: date | datetime | None) -> date:
+def _parse_datetime(value: Any) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _as_of_context(
+    value: date | datetime | None,
+) -> tuple[date, datetime | None, bool]:
     if value is None:
-        return datetime.now(timezone.utc).date()
+        current = datetime.now(timezone.utc)
+        return current.astimezone(SEC_TIMEZONE).date(), current, True
     if isinstance(value, datetime):
         if value.tzinfo is None:
             raise ValueError("as_of datetime must be timezone-aware")
-        return value.astimezone(timezone.utc).date()
-    return value
+        current = value.astimezone(timezone.utc)
+        return current.astimezone(SEC_TIMEZONE).date(), current, True
+    return value, None, False
 
 
-def _shares_rows(company_facts: dict[str, Any], *, as_of: date) -> list[dict[str, Any]]:
+def _as_of_date(value: date | datetime | None) -> date:
+    return _as_of_context(value)[0]
+
+
+def _shares_rows(
+    company_facts: dict[str, Any],
+    *,
+    as_of: date | datetime | None,
+) -> tuple[list[dict[str, Any]], int]:
+    cutoff, _, intraday = _as_of_context(as_of)
     facts = company_facts.get("facts") if isinstance(company_facts, dict) else {}
     dei = facts.get("dei") if isinstance(facts, dict) else {}
     concept = dei.get(_SHARE_CONCEPT) if isinstance(dei, dict) else {}
     units = concept.get("units") if isinstance(concept, dict) else {}
     rows = units.get("shares") if isinstance(units, dict) else []
     output: list[dict[str, Any]] = []
+    same_day_date_only_excluded = 0
     for raw in rows if isinstance(rows, list) else []:
         if not isinstance(raw, dict):
             continue
@@ -92,8 +122,13 @@ def _shares_rows(company_facts: dict[str, Any], *, as_of: date) -> list[dict[str
         filed = _parse_date(raw.get("filed"))
         if not math.isfinite(value) or value <= 0 or end is None or filed is None:
             continue
-        # Point-in-time guard: a fact can only be used after it was filed.
-        if filed > as_of:
+        # SEC Company Facts exposes only filing dates here, not filing times.
+        # During an intraday replay, same-day rows are therefore unknowable and
+        # must be withheld to prevent using a filing that may have arrived later.
+        if filed > cutoff:
+            continue
+        if intraday and filed == cutoff:
+            same_day_date_only_excluded += 1
             continue
         output.append(
             {
@@ -105,7 +140,7 @@ def _shares_rows(company_facts: dict[str, Any], *, as_of: date) -> list[dict[str
             }
         )
     output.sort(key=lambda row: (row["end"], row["filed"], row["value"]))
-    return output
+    return output, same_day_date_only_excluded
 
 
 def _latest_unique_share_points(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -147,7 +182,8 @@ def share_count_history(
     """
 
     cutoff = _as_of_date(as_of)
-    points = _latest_unique_share_points(_shares_rows(company_facts, as_of=cutoff))
+    rows, same_day_excluded = _shares_rows(company_facts, as_of=as_of)
+    points = _latest_unique_share_points(rows)
     if not points:
         return {
             "available": False,
@@ -155,6 +191,8 @@ def share_count_history(
             "as_of": cutoff.isoformat(),
             "point_count": 0,
             "growth_pct": {"30d": None, "90d": None, "365d": None},
+            "intraday_date_precision_guard": isinstance(as_of, datetime) or as_of is None,
+            "same_day_date_only_facts_excluded": same_day_excluded,
         }
 
     latest = points[-1]
@@ -180,6 +218,8 @@ def share_count_history(
         "latest_form": latest["form"],
         "point_count": len(points),
         "growth_pct": growth,
+        "intraday_date_precision_guard": isinstance(as_of, datetime) or as_of is None,
+        "same_day_date_only_facts_excluded": same_day_excluded,
         "baseline_periods": {
             label: (
                 {
@@ -220,6 +260,12 @@ def _event_text(event: dict[str, Any]) -> str:
     ).strip()
 
 
+def _forward_split_context(text: str) -> bool:
+    if any(token in text for token in _REVERSE_SPLIT_TOKENS):
+        return False
+    return any(token in text for token in _FORWARD_SPLIT_TOKENS)
+
+
 def explicit_share_overhang(events: list[dict[str, Any]]) -> dict[str, Any]:
     counts: list[float] = []
     sources: list[str] = []
@@ -239,6 +285,9 @@ def explicit_share_overhang(events: list[dict[str, Any]]) -> dict[str, Any]:
                     sources.append(str(event.get("form") or event.get("purpose") or "filing"))
     return {
         "available": bool(counts),
+        "largest_explicit_issuable_shares": round(max(counts), 4) if counts else None,
+        # Backward-compatible alias. This is the largest single observed count,
+        # not a sum across programs and not verified remaining capacity.
         "maximum_explicit_shares": round(max(counts), 4) if counts else None,
         "matched_values": [round(value, 4) for value in sorted(set(counts), reverse=True)[:8]],
         "source_labels": list(dict.fromkeys(sources))[:8],
@@ -256,12 +305,15 @@ def financing_overhang(
     float_shares: float,
     as_of: date | datetime | None = None,
 ) -> dict[str, Any]:
-    cutoff = _as_of_date(as_of)
+    cutoff, cutoff_dt, intraday = _as_of_context(as_of)
     relevant: list[dict[str, Any]] = []
     considered: list[dict[str, Any]] = []
     maximum_dollars = 0.0
     active_financing = False
     reverse_split = False
+    forward_split = False
+    future_timestamp_excluded = 0
+    same_day_date_only_excluded = 0
 
     for event in events:
         if not isinstance(event, dict):
@@ -269,6 +321,24 @@ def financing_overhang(
         event_date = _parse_date(event.get("event_date"))
         if event_date is not None and event_date > cutoff:
             continue
+
+        published_at = _parse_datetime(event.get("published_at"))
+        observed_at = _parse_datetime(event.get("observed_at"))
+        if intraday and cutoff_dt is not None:
+            if published_at is not None and published_at > cutoff_dt:
+                future_timestamp_excluded += 1
+                continue
+            if observed_at is not None and observed_at > cutoff_dt:
+                future_timestamp_excluded += 1
+                continue
+            if (
+                event_date == cutoff
+                and published_at is None
+                and observed_at is None
+            ):
+                same_day_date_only_excluded += 1
+                continue
+
         considered.append(event)
         form = str(event.get("form") or "").upper()
         text = _event_text(event)
@@ -282,7 +352,11 @@ def financing_overhang(
             or "DILUTION" in category
             or any(token in text for token in _ACTIVE_FINANCING_TOKENS)
         )
-        if not is_financing and not any(token in text for token in _REVERSE_SPLIT_TOKENS):
+        split_context = (
+            any(token in text for token in _REVERSE_SPLIT_TOKENS)
+            or _forward_split_context(text)
+        )
+        if not is_financing and not split_context:
             continue
 
         value = max(0.0, _number(event.get("event_value")))
@@ -293,6 +367,7 @@ def financing_overhang(
         reverse_split = reverse_split or any(
             token in text for token in _REVERSE_SPLIT_TOKENS
         )
+        forward_split = forward_split or _forward_split_context(text)
         relevant.append(
             {
                 "form": form,
@@ -302,30 +377,55 @@ def financing_overhang(
                 ),
                 "event_date": str(event.get("event_date") or ""),
                 "event_value": value or None,
+                "published_at": event.get("published_at"),
+                "observed_at": event.get("observed_at"),
+                "accession_number": str(event.get("accession_number") or ""),
                 "source": str(event.get("source") or ""),
                 "url": str(event.get("url") or ""),
             }
         )
 
     shares = explicit_share_overhang(considered)
-    overhang_shares = _number(shares.get("maximum_explicit_shares"))
+    overhang_shares = _number(shares.get("largest_explicit_issuable_shares"))
+    largest_financing_ratio = (
+        round(maximum_dollars / market_cap, 4)
+        if maximum_dollars > 0 and market_cap > 0
+        else None
+    )
+    largest_issuable_ratio = (
+        round(overhang_shares / float_shares, 4)
+        if overhang_shares > 0 and float_shares > 0
+        else None
+    )
     return {
         "event_count": len(relevant),
         "active_financing_context": active_financing,
         "reverse_split_context": reverse_split,
+        "forward_split_context": forward_split,
+        "largest_announced_financing_usd": round(maximum_dollars, 2)
+        if maximum_dollars > 0
+        else None,
+        "largest_announced_financing_to_market_cap": largest_financing_ratio,
+        "largest_explicit_issuable_to_float": largest_issuable_ratio,
+        # Legacy aliases retained for existing consumers. Their semantics are
+        # explicitly "largest single observed event", not total/remaining capacity.
         "announced_financing_capacity_usd": round(maximum_dollars, 2)
         if maximum_dollars > 0
         else None,
-        "announced_capacity_to_market_cap": round(maximum_dollars / market_cap, 4)
-        if maximum_dollars > 0 and market_cap > 0
-        else None,
+        "announced_capacity_to_market_cap": largest_financing_ratio,
         "explicit_share_overhang": shares,
-        "explicit_overhang_to_float": round(overhang_shares / float_shares, 4)
-        if overhang_shares > 0 and float_shares > 0
-        else None,
+        "explicit_overhang_to_float": largest_issuable_ratio,
         "events": relevant[:12],
         "as_of": cutoff.isoformat(),
         "future_events_excluded": True,
+        "future_timestamp_events_excluded": future_timestamp_excluded,
+        "same_day_date_only_events_excluded": same_day_date_only_excluded,
+        "intraday_timestamp_guard": intraday,
+        "aggregation_policy": (
+            "largest single filing-derived financing amount/share count is used "
+            "to avoid double-counting amendments; values are not summed and are "
+            "not interpreted as remaining capacity"
+        ),
         "remaining_capacity_verified": False,
         "remaining_capacity_note": (
             "A filing's announced maximum amount is not treated as remaining capacity "
@@ -346,6 +446,7 @@ class SecDilutionAssessment:
     share_history: dict[str, Any]
     financing: dict[str, Any]
     reasons: tuple[str, ...]
+    share_growth_risk_suppressed_by_split: bool = False
     research_only: bool = True
     decision_authority: bool = False
     score_is_probability: bool = False
@@ -393,9 +494,26 @@ def assess_sec_dilution(
         as_of=as_of,
     )
 
-    share_risk, reasons = _growth_risk(history)
+    raw_share_risk, reasons = _growth_risk(history)
+    suppress_share_growth = bool(
+        financing.get("forward_split_context") and raw_share_risk > 0
+    )
+    if suppress_share_growth:
+        share_risk = 0.0
+        reasons = [
+            reason for reason in reasons
+            if not str(reason).startswith("reported shares +")
+        ]
+        reasons.append(
+            "raw share-count growth withheld because forward stock-split context "
+            "makes unadjusted counts non-comparable"
+        )
+    else:
+        share_risk = raw_share_risk
 
-    capacity_ratio = _number(financing.get("announced_capacity_to_market_cap"))
+    capacity_ratio = _number(
+        financing.get("largest_announced_financing_to_market_cap")
+    )
     if capacity_ratio >= 1.0:
         financing_risk = 38.0
     elif capacity_ratio >= 0.50:
@@ -410,11 +528,15 @@ def assess_sec_dilution(
         financing_risk = 0.0
 
     if capacity_ratio > 0:
-        reasons.append(f"announced financing / market cap {capacity_ratio:.0%}")
+        reasons.append(
+            f"largest announced financing / market cap {capacity_ratio:.0%}"
+        )
     elif financing.get("active_financing_context"):
         reasons.append("active financing/dilution filing context")
 
-    overhang_ratio = _number(financing.get("explicit_overhang_to_float"))
+    overhang_ratio = _number(
+        financing.get("largest_explicit_issuable_to_float")
+    )
     if overhang_ratio >= 1.0:
         overhang_risk = 38.0
     elif overhang_ratio >= 0.50:
@@ -426,7 +548,9 @@ def assess_sec_dilution(
     else:
         overhang_risk = 0.0
     if overhang_ratio > 0:
-        reasons.append(f"explicit issuable-share overhang / float {overhang_ratio:.0%}")
+        reasons.append(
+            f"largest explicit issuable-share count / float {overhang_ratio:.0%}"
+        )
 
     reverse_risk = 14.0 if financing.get("reverse_split_context") else 0.0
     if reverse_risk:
@@ -458,4 +582,5 @@ def assess_sec_dilution(
         share_history=history,
         financing=financing,
         reasons=tuple(reasons),
+        share_growth_risk_suppressed_by_split=suppress_share_growth,
     )

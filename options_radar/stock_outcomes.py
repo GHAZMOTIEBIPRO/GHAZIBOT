@@ -292,7 +292,9 @@ class StockOutcomeTracker:
                     or cause_payload.get("accession_number")
                     or ""
                 )[:80],
-                "cause_observed_at": now.isoformat(),
+                "cause_observed_at": (
+                    cause_payload.get("observed_at") or now.isoformat()
+                ),
                 "cause_point_in_time_frozen": True,
                 "microcap_hunter_entry": {
                     "stage": str(microcap.get("stage") or ""),
@@ -314,6 +316,38 @@ class StockOutcomeTracker:
                         time_rvol.get("cutoff_clock_et") or ""
                     ),
                     "source_role": str(time_rvol.get("source_role") or ""),
+                    "selected_source": str(time_rvol.get("selected_source") or ""),
+                    "fabric_transport_source_count": int(
+                        _number(
+                            time_rvol.get("fabric_transport_source_count"),
+                            0,
+                        )
+                        or 0
+                    ),
+                    "fabric_independent_source_count": int(
+                        _number(
+                            time_rvol.get("fabric_independent_source_count"),
+                            0,
+                        )
+                        or 0
+                    ),
+                    "fabric_consensus_pass": (
+                        time_rvol.get("fabric_consensus_pass") is True
+                    ),
+                    "provider_quote_timestamp": time_rvol.get(
+                        "provider_quote_timestamp"
+                    ),
+                    "profile_quality": str(
+                        time_rvol.get("profile_quality") or "UNKNOWN"
+                    ),
+                    "current_bar_lag_minutes": _number(
+                        time_rvol.get("current_bar_lag_minutes"),
+                        None,
+                    ),
+                    "current_slot_coverage_pct": _number(
+                        time_rvol.get("current_slot_coverage_pct"),
+                        None,
+                    ),
                     "frozen_at": now.isoformat(),
                     "research_only": time_rvol.get("research_only") is True,
                     "live_score_adjustment": time_rvol.get(
@@ -327,11 +361,53 @@ class StockOutcomeTracker:
                     "confidence": _number(dilution.get("confidence"), None),
                     "observed_at": dilution.get("observed_at"),
                     "share_growth_pct": dilution_history.get("growth_pct"),
-                    "announced_capacity_to_market_cap": dilution_financing.get(
-                        "announced_capacity_to_market_cap"
+                    "largest_announced_financing_to_market_cap": (
+                        dilution_financing.get(
+                            "largest_announced_financing_to_market_cap"
+                        )
+                        if dilution_financing.get(
+                            "largest_announced_financing_to_market_cap"
+                        )
+                        is not None
+                        else dilution_financing.get(
+                            "announced_capacity_to_market_cap"
+                        )
                     ),
-                    "explicit_overhang_to_float": dilution_financing.get(
-                        "explicit_overhang_to_float"
+                    "largest_explicit_issuable_to_float": (
+                        dilution_financing.get(
+                            "largest_explicit_issuable_to_float"
+                        )
+                        if dilution_financing.get(
+                            "largest_explicit_issuable_to_float"
+                        )
+                        is not None
+                        else dilution_financing.get(
+                            "explicit_overhang_to_float"
+                        )
+                    ),
+                    "same_day_date_only_events_excluded": int(
+                        _number(
+                            dilution_financing.get(
+                                "same_day_date_only_events_excluded"
+                            ),
+                            0,
+                        )
+                        or 0
+                    ),
+                    "future_timestamp_events_excluded": int(
+                        _number(
+                            dilution_financing.get(
+                                "future_timestamp_events_excluded"
+                            ),
+                            0,
+                        )
+                        or 0
+                    ),
+                    "share_growth_risk_suppressed_by_split": (
+                        dilution.get(
+                            "share_growth_risk_suppressed_by_split"
+                        )
+                        is True
                     ),
                     "remaining_capacity_verified": dilution_financing.get(
                         "remaining_capacity_verified"
