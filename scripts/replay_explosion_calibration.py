@@ -8,12 +8,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 import yfinance as yf
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from options_radar.research_attribution import (
+    add_causal_replay_features,
+    evaluate_replay_feature_ablation,
+)
 from scripts.replay_explosion_lab import build_replay_frame, evaluate_replay
 
 OUTPUT_PATH = Path("data/replay/explosion_replay_report.json")
@@ -28,7 +33,8 @@ def _utc_now() -> str:
 
 def _download_frame(symbol: str, period: str, target_return_pct: float = 25.0):
     history = yf.download(symbol, period=period, interval="1d", auto_adjust=False, progress=False, threads=False)
-    return build_replay_frame(history, target_return_pct=target_return_pct)
+    frame = build_replay_frame(history, target_return_pct=target_return_pct)
+    return add_causal_replay_features(frame)
 
 
 def _aggregate(frames: dict[str, Any], threshold: float) -> dict[str, Any]:
@@ -106,6 +112,10 @@ def run(archetypes: list[str], controls: list[str], period: str, thresholds: lis
                 "symbol": symbol,
                 "role": "archetype" if symbol in archetypes else "negative_control",
                 "metrics": metrics,
+                "open_source_feature_ablation": evaluate_replay_feature_ablation(
+                    frame,
+                    threshold=recommended_threshold,
+                ),
                 "largest_event": _largest_event(frame, recommended_threshold),
             }
         )
@@ -119,12 +129,25 @@ def run(archetypes: list[str], controls: list[str], period: str, thresholds: lis
     control_signals = sum(int(row.get("signals", 0)) for row in control_metrics)
     control_rows = sum(int(row.get("rows", 0)) for row in control_metrics)
 
+    combined_frame = (
+        pd.concat(list(frames.values()), axis=0)
+        if frames
+        else pd.DataFrame()
+    )
+    open_source_feature_ablation = evaluate_replay_feature_ablation(
+        combined_frame,
+        threshold=recommended_threshold,
+    )
+
     payload = {
         "generated_at": _utc_now(),
         "purpose": "hindsight-safe threshold calibration with explosion archetypes and stable negative controls",
         "score_is_probability": False,
         "live_threshold_auto_changed": False,
-        "warning": "Price/volume replay cannot reconstruct historical SEC float, catalyst or borrow state; recommendation is research-only.",
+        "warning": (
+            "Price/volume replay cannot reconstruct historical SEC float, catalyst or borrow state. "
+            "SMC replay features are causally delayed before evaluation; all attribution remains research-only."
+        ),
         "forward_label": f"max close return over next 5 sessions >= {target_return_pct:g}%",
         "target_return_pct": target_return_pct,
         "period": period,
@@ -135,6 +158,7 @@ def run(archetypes: list[str], controls: list[str], period: str, thresholds: lis
         "recommended_metrics": recommended,
         "archetype_largest_event_catch_rate": round(sum(bool(v) for v in archetype_event_catches) / len(archetype_event_catches), 4) if archetype_event_catches else 0.0,
         "negative_control_signal_rate": round(control_signals / control_rows, 4) if control_rows else 0.0,
+        "open_source_feature_ablation": open_source_feature_ablation,
         "errors": errors,
         "results": per_symbol,
     }
