@@ -112,6 +112,38 @@
       "use": "Interactive Arabic candlestick display for published OHLC bars, entry zone, targets, and invalidation levels.",
       "live_decision_authority": false,
       "reason": "Presentation only; TradingView attribution is retained and the chart cannot bypass data-quality or V11 gates."
+    },
+    {
+      "repo": "kdricha0602/microcap-momentum-scanner",
+      "license": "MIT",
+      "decision": "CONCEPTS_INTEGRATED_INDEPENDENT_IMPLEMENTATION",
+      "use": "Low-float, RVOL, dollar-volume, early-move and material-catalyst gates for the research-only Microcap Hunter.",
+      "live_decision_authority": false,
+      "reason": "No upstream code copied. GHAZIBOT uses its existing Nasdaq/Yahoo/Data Fabric/SEC evidence and preserves provenance rather than adopting third-party scrapers."
+    },
+    {
+      "repo": "jefrnc/sekd",
+      "license": "MIT",
+      "decision": "CONCEPTS_INTEGRATED_INDEPENDENT_IMPLEMENTATION",
+      "use": "Dilution-risk review concepts: ATM/shelf/registered-direct/public-offering/warrant/convertible and reverse-split context for microcaps.",
+      "live_decision_authority": false,
+      "reason": "No Go code or Finviz extraction copied. Existing SEC/catalyst evidence feeds a local fail-closed risk penalty; high dilution blocks strict WATCH."
+    },
+    {
+      "repo": "aimaduddin/us-stock-screener",
+      "license": "MIT",
+      "decision": "CONCEPTS_REVIEWED_NO_SCRAPER_MERGE",
+      "use": "Premarket low-float/RVOL discovery and session-aware small-cap screening concepts.",
+      "live_decision_authority": false,
+      "reason": "Finviz/Webull/StockAnalysis scraping is deliberately not added to production evidence. The useful screening concepts are implemented against existing permitted sources."
+    },
+    {
+      "repo": "areed1192/python-sec",
+      "license": "MIT",
+      "decision": "NOT_NEEDED_CORE",
+      "use": "SEC EDGAR client and structured filing access patterns reviewed.",
+      "live_decision_authority": false,
+      "reason": "GHAZIBOT already has official SEC ticker, submissions and Company Facts clients plus EdgarTools shadow parsing; another SEC client would duplicate architecture."
     }
   ]
 }
