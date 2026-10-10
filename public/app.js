@@ -212,6 +212,7 @@ function renderAll(data) {
   byId("rejected-count").textContent = number(data.summary?.rejected_opportunities, 0);
   byId("disclaimer").textContent = data.disclaimer || "النتائج بحثية وليست توصية استثمارية.";
   renderStocks(byId("stock-search").value || ""); renderOptions(); renderCatalysts(); renderRejected(); renderCalibration(); renderAlerts(); renderStatus();
+  if (typeof renderMarketChart === "function") renderMarketChart(data);
 }
 async function fetchRadarData() {
   const failures = [];
