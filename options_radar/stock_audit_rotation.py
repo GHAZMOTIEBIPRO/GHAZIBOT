@@ -102,7 +102,7 @@ def fair_symbols_needing_backfill(
     current = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
     cooldown = timedelta(hours=max(1, int(retry_cooldown_hours)))
     records = audit.get("records") if isinstance(audit.get("records"), dict) else {}
-    candidates: dict[str, tuple[int, datetime, int]] = {}
+    candidates: dict[str, tuple[int, float, int]] = {}
 
     for row in records.values():
         if not isinstance(row, dict) or not _needs_more_evidence(row):
