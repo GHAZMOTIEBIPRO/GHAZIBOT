@@ -322,7 +322,15 @@ class ResilientCatalystScanner(CatalystScanner):
     def scan(self, symbols: Iterable[str], lookback_days: int = 7) -> pd.DataFrame:
         frame = super().scan(symbols, lookback_days=lookback_days)
         if frame.empty:
-            for column in ("event_value", "share_count", "confidence", "purpose"):
+            for column in (
+                "event_value",
+                "share_count",
+                "confidence",
+                "purpose",
+                "accession_number",
+                "published_at",
+                "observed_at",
+            ):
                 frame[column] = pd.Series(dtype="object")
             return frame
 
@@ -337,10 +345,21 @@ class ResilientCatalystScanner(CatalystScanner):
                 "share_count": None,
                 "confidence": 0.62 if "FDA" in source else 0.38 if "Yahoo" in source else 0.6,
                 "purpose": "fda_record" if "FDA" in source else "secondary_news",
+                "accession_number": "",
+                "published_at": None,
+                "observed_at": None,
             }
 
         meta_rows = frame.apply(metadata, axis=1, result_type="expand")
-        for column in ("event_value", "share_count", "confidence", "purpose"):
+        for column in (
+            "event_value",
+            "share_count",
+            "confidence",
+            "purpose",
+            "accession_number",
+            "published_at",
+            "observed_at",
+        ):
             frame[column] = meta_rows[column] if column in meta_rows else None
         return frame
 
