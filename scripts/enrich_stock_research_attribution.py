@@ -46,7 +46,7 @@ def _download_daily(symbol: str, period: str):
 def enrich(
     audit_path: str | Path,
     *,
-    period: str = "1y",
+    period: str = "2y",
     max_workers: int = 6,
 ) -> dict[str, Any]:
     destination = Path(audit_path)
@@ -115,7 +115,7 @@ def main() -> None:
         description="Attach causal SMC/chart/SEC research features to audited stock outcomes."
     )
     parser.add_argument("--audit", default="data/live/stock_outcome_audit.json")
-    parser.add_argument("--period", default="1y")
+    parser.add_argument("--period", default="2y")
     parser.add_argument("--max-workers", type=int, default=6)
     args = parser.parse_args()
     audit = enrich(
