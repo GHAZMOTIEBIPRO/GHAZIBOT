@@ -94,3 +94,20 @@ def test_bad_chart_asymmetry_is_penalized_even_with_liquidity():
 
     assert result["components"]["target_response"]["score"] < 55
     assert result["components"]["target_invalidation_asymmetry"]["score"] < 45
+
+def test_iv_below_realized_volatility_improves_buyer_value_context():
+    cheap = grade_underlying_option_response(
+        _contract(iv=0.30, realized_volatility_30d=0.55, iv_rank=35)
+    )
+    rich = grade_underlying_option_response(
+        _contract(iv=0.80, realized_volatility_30d=0.35, iv_rank=35)
+    )
+
+    cheap_detail = cheap["details"]["volatility_value"]
+    rich_detail = rich["details"]["volatility_value"]
+    assert cheap_detail["iv_to_realized_vol_ratio"] < 1.0
+    assert rich_detail["iv_to_realized_vol_ratio"] > 2.0
+    assert cheap["components"]["volatility_value"]["score"] > rich[
+        "components"
+    ]["volatility_value"]["score"]
+
