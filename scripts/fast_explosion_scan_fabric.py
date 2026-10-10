@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 
 from options_radar.data_fabric_runtime import install_data_fabric
 from options_radar.data_fabric_singleflight import install_data_fabric_singleflight
+from options_radar.free_autonomy import enforce_free_autonomy_environment
 from options_radar.hybrid_fetcher import DataFetcher
 from options_radar.market_clock import market_clock_state
 from options_radar.microcap_hunter import assess_microcap_candidate
@@ -23,9 +24,10 @@ from options_radar.provider_preflight import install_provider_preflight
 from options_radar.settings import Settings
 
 # Install data acquisition before the institutional runner creates any fetchers.
-# Unconfigured providers are removed before fan-out; single-flight then shares
-# only concurrently overlapping identical fetches and never retains a completed
-# stock response as a cross-request cache.
+# If a Tradier Brokerage token exists, free-autonomy upgrades an inherited
+# sandbox URL to the production endpoint. Provider/readiness gates still decide
+# whether the returned evidence is fresh enough for its role.
+enforce_free_autonomy_environment()
 install_data_fabric()
 install_provider_preflight()
 install_data_fabric_singleflight()
