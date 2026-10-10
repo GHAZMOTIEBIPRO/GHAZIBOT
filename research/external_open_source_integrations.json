@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-10",
+  "generated_at": "2026-10-11",
   "policy": {
     "zero_cost": true,
     "copy_code_only_with_compatible_license": true,
@@ -144,6 +144,38 @@
       "use": "SEC EDGAR client and structured filing access patterns reviewed.",
       "live_decision_authority": false,
       "reason": "GHAZIBOT already has official SEC ticker, submissions and Company Facts clients plus EdgarTools shadow parsing; another SEC client would duplicate architecture."
+    },
+    {
+      "repo": "csnyder256/option-contract-grader",
+      "license": "MIT",
+      "decision": "CONCEPTS_INTEGRATED_INDEPENDENT_IMPLEMENTATION",
+      "use": "Chart-linked long-option grading: target response, invalidation asymmetry, local elasticity, liquidity hard cap, theta drag and IV-history value.",
+      "live_decision_authority": false,
+      "reason": "GHAZIBOT reuses its own premium-target/V11 architecture and independently implements a shadow response grade. No live primary selection or V11 rule is weakened."
+    },
+    {
+      "repo": "csnyder256/shadow-options-trading-lab",
+      "license": "MIT",
+      "decision": "CONCEPTS_REVIEWED_SHADOW_VALIDATION",
+      "use": "Worst-fill mindset, explicit rejection reasons, stale-OI cautions and research-before-promotion policy for option-contract selection.",
+      "live_decision_authority": false,
+      "reason": "The lab's validation discipline informs GHAZIBOT research policy; strategy execution code is not copied."
+    },
+    {
+      "repo": "SC0511-dev/us-stock-screener",
+      "license": "MIT",
+      "decision": "CONCEPTS_INTEGRATED_INDEPENDENT_IMPLEMENTATION",
+      "use": "VCP-like range contraction, HH/HL or LH/LL structure, Bollinger squeeze, volume dry-up, EMA stack and proximity to 52-week extremes.",
+      "live_decision_authority": false,
+      "reason": "These factors are implemented independently as Explosion Setup V3 shadow features and do not change the existing stock score."
+    },
+    {
+      "repo": "simonlin1212/global-stock-data",
+      "license": "Apache-2.0",
+      "decision": "SOURCE_GOVERNANCE_REVIEWED_NO_BLIND_PROVIDER_MERGE",
+      "use": "Free-data source catalog and source-rights separation across SEC/Treasury/FINRA/CBOE/Yahoo and other public endpoints.",
+      "live_decision_authority": false,
+      "reason": "GHAZIBOT already has SEC, Treasury, FINRA and provider provenance. External source availability is not treated as permission or as independent evidence automatically."
     }
   ]
 }
