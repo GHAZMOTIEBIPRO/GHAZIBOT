@@ -163,7 +163,14 @@ def _checkpoint_due(
     checkpoints: dict[str, Any],
 ) -> str | None:
     elapsed = (now - created).total_seconds() / 60.0
-    for label, target in CHECKPOINT_MINUTES.items():
+    # Prefer the latest due checkpoint. If a run skips the 15m window and
+    # lands exactly around 60m, that observation belongs to 60m rather than
+    # consuming the older checkpoint and losing the more informative horizon.
+    for label, target in sorted(
+        CHECKPOINT_MINUTES.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    ):
         if label in checkpoints:
             continue
         if target <= elapsed <= target + 45:
