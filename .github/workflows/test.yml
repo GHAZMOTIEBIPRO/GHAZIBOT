@@ -37,6 +37,7 @@ jobs:
           python -m scripts.run_options_radar_fabric --help >/dev/null
           python -m scripts.run_stream_gateway --help >/dev/null
           python scripts/fast_explosion_scan_fabric.py --help >/dev/null
+          python scripts/enrich_microcap_sec_dilution.py --help >/dev/null
           python scripts/market_clock_gate.py --help >/dev/null
           python -m scripts.send_independent_path_alerts --help >/dev/null
           python -m scripts.send_strict_options_alerts --help >/dev/null
@@ -81,6 +82,7 @@ jobs:
             options_radar/explosion_cause.py \
             options_radar/explosion_hunter_profile.py \
             options_radar/microcap_hunter.py \
+            options_radar/sec_dilution_engine.py \
             options_radar/breakout_pressure.py \
             options_radar/catalyst_impact.py \
             options_radar/clinicaltrials_registry.py \
@@ -133,6 +135,7 @@ jobs:
             scripts/fast_explosion_scan_runner.py \
             scripts/fast_explosion_scan_fabric.py \
             scripts/explosion_hunter_research.py \
+            scripts/enrich_microcap_sec_dilution.py \
             scripts/market_clock_gate.py \
             scripts/prune_actions_artifacts.py \
             scripts/validate_open_source_greeks.py \
@@ -203,6 +206,8 @@ jobs:
             tests/test_explosion_hunter_profile.py \
             tests/test_explosion_hunter_research.py \
             tests/test_microcap_hunter.py \
+            tests/test_sec_dilution_engine.py \
+            tests/test_enrich_microcap_sec_dilution.py \
             tests/test_fast_explosion_scan.py \
             tests/test_stock_walk_forward.py \
             tests/test_data_fabric.py \
