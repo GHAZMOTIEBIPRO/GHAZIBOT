@@ -218,3 +218,35 @@ def test_confirmed_stage_wins_over_watch_when_v11_approves():
     assert primary["production_alert_eligible"] is True
     assert primary["watch_alert_eligible"] is False
     assert primary["alert_stage"] == "CONFIRMED"
+
+def test_response_shadow_ranks_chart_linked_contract_without_changing_live_primary():
+    payload = _payload("bullish")
+    # Add a very liquid, chart-responsive alternative with lower legacy rank.
+    responsive = _contract(
+        "call",
+        21,
+        10.0,
+        79,
+        delta=0.58,
+        vol_oi=1.5,
+        spread=0.03,
+    )
+    responsive["open_interest"] = 5000
+    responsive["volume"] = 3000
+    responsive["theta"] = -0.01
+    payload["expiry_radar"]["tabs"]["all_expirations"]["calls"].append(responsive)
+
+    intel = build_option_contract_intelligence(payload)
+    item = intel["by_symbol"]["TEST"]
+
+    assert item["primary"]["contract_symbol"] == "TEST-14-call-10.5"
+    assert item["response_shadow_changes_live_primary"] is False
+    assert item["response_candidates_scored"] >= 3
+    assert item["response_shadow_best"]["underlying_response_grade"][
+        "research_only"
+    ] is True
+    assert item["response_shadow_best"]["underlying_response_grade"][
+        "decision_authority"
+    ] is False
+    assert "underlying_response_grade" in item["primary"]
+
