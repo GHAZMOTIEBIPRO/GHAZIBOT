@@ -228,17 +228,46 @@ def enrich(
     return state
 
 
+def propagate_to_fast_payload(
+    state: dict[str, Any],
+    fast_payload: dict[str, Any],
+) -> dict[str, Any]:
+    symbols = state.get("symbols")
+    symbols = symbols if isinstance(symbols, dict) else {}
+    for collection_name in ("top", "actionable"):
+        rows = fast_payload.get(collection_name)
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            symbol = str(row.get("symbol") or "").upper()
+            evidence = symbols.get(symbol)
+            if not isinstance(evidence, dict):
+                continue
+            if isinstance(evidence.get("sec_dilution_v2"), dict):
+                row["sec_dilution_v2"] = evidence["sec_dilution_v2"]
+            if isinstance(evidence.get("microcap_hunter"), dict):
+                row["microcap_hunter"] = evidence["microcap_hunter"]
+    if isinstance(state.get("sec_dilution_v2"), dict):
+        fast_payload["sec_dilution_v2"] = state["sec_dilution_v2"]
+    fast_payload["sec_dilution_v2_changes_live_score"] = False
+    return fast_payload
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Research-only SEC dilution enrichment for Fast Microcap Hunter"
     )
     parser.add_argument("--state", default="data/live/fast_market_state.json")
     parser.add_argument("--latest", default="public/data/latest.json")
+    parser.add_argument("--fast", default="data/live/fast_explosion_scan.json")
     parser.add_argument("--max-symbols", type=int, default=None)
     args = parser.parse_args()
 
     state_path = Path(args.state)
     latest_path = Path(args.latest)
+    fast_path = Path(args.fast)
     if not state_path.exists():
         print("SEC dilution V2: no fast-market state; nothing to enrich")
         return 0
@@ -254,6 +283,13 @@ def main() -> int:
         maximum_symbols=maximum,
     )
     _write_json(state_path, result)
+    if fast_path.exists():
+        fast_payload = _load_json(fast_path, {})
+        if isinstance(fast_payload, dict):
+            _write_json(
+                fast_path,
+                propagate_to_fast_payload(result, fast_payload),
+            )
 
     summary = result.get("sec_dilution_v2") or {}
     print(
