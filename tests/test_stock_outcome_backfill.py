@@ -44,6 +44,17 @@ def _state(
         "cause_accession": "0000000000-26-000002",
         "cause_observed_at": signal_time.isoformat(),
         "cause_point_in_time_frozen": True,
+        "time_normalized_rvol_entry": {
+            "available": True,
+            "ratio": 2.5,
+            "pace_percentile": 90,
+            "sample_sessions": 12,
+            "cutoff_clock_et": "10:15",
+            "source_role": "same-clock regular-session cumulative 5m volume",
+            "frozen_at": signal_time.isoformat(),
+            "research_only": True,
+            "live_score_adjustment": False,
+        },
         "microcap_hunter_entry": {
             "stage": "PRIORITY",
             "score": 88,
@@ -283,6 +294,7 @@ def test_frozen_catalyst_source_metadata_survives_audit_record():
     assert "sec.gov" in result["cause_url"]
     assert result["cause_point_in_time_frozen"] is True
     assert result["cause_accession"] == "0000000000-26-000002"
+    assert result["time_normalized_rvol_entry"]["ratio"] == 2.5
     assert result["microcap_hunter_entry"]["stage"] == "PRIORITY"
     assert result["sec_dilution_v2_entry"]["risk_score"] == 82
 
