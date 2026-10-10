@@ -31,6 +31,8 @@ HIGH_VALUE_FORMS = (
     "SC 13G",
     "SC 13G/A",
     "4",
+    "144",
+    "144/A",
     "S-1",
     "S-1/A",
     "S-3",
@@ -41,6 +43,8 @@ HIGH_VALUE_FORMS = (
 )
 STRUCTURED_FULL_FETCH_FORMS = {
     "4",
+    "144",
+    "144/A",
     "SC 13D",
     "SC 13D/A",
     "SC 13G",
@@ -187,6 +191,8 @@ class StrictCatalystScanner(ResilientCatalystScanner):
             rank = 0
             if form == "4" and low.endswith(".xml"):
                 rank += 30
+            if form in {"144", "144/A"} and low.endswith(".xml"):
+                rank += 30
             if form.startswith("SC 13") and "13" in low:
                 rank += 20
             if form.startswith("424B") and "424b" in low:
@@ -283,7 +289,7 @@ class StrictCatalystScanner(ResilientCatalystScanner):
 
                 company_text = re.sub(r"\([^)]*CIK[^)]*\)", " ", title, flags=re.I)
                 company_text = re.sub(
-                    r"\b(8-K|6-K|SC 13D/A|SC 13D|SC 13G/A|SC 13G|FORM 4|424B5|S-1/A|S-1|S-3/A|S-3|F-1|F-3|4)\b",
+                    r"\b(8-K|6-K|SC 13D/A|SC 13D|SC 13G/A|SC 13G|FORM 4|FORM 144|144/A|144|424B5|S-1/A|S-1|S-3/A|S-3|F-1|F-3|4)\b",
                     " ",
                     company_text,
                     flags=re.I,
@@ -350,7 +356,7 @@ class StrictCatalystScanner(ResilientCatalystScanner):
                     evidence = "Schedule 13G"
                     confidence = 0.82
                     purpose = "passive_ownership"
-                elif form == "4":
+                elif form in {"4", "144", "144/A"}:
                     continue
                 elif form in {"S-1", "S-1/A", "S-3", "S-3/A", "F-1", "F-3", "424B5"} and score == 0:
                     score = -12 if form == "424B5" else -8
