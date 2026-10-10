@@ -8,6 +8,7 @@ on:
       - "data/replay_ping.txt"
       - "options_radar/research_attribution.py"
       - "scripts/replay_explosion_calibration.py"
+      - "scripts/replay_explosion_lab.py"
       - "requirements-research.txt"
       - ".github/workflows/explosion-replay-lab.yml"
   schedule:
@@ -59,6 +60,11 @@ jobs:
           assert attribution['sec_replay_status'] == 'not_reconstructed_historically'
           assert attribution['causal_guards']['fvg_shift_bars'] == 1
           assert attribution['causal_guards']['swing_shift_bars'] == 20
+          v2 = report['supply_vacuum_v2']
+          assert v2['research_only'] is True
+          assert v2['live_threshold_auto_changed'] is False
+          assert v2['score_is_probability'] is False
+          assert isinstance(v2['threshold_sweep'], list)
           PY
 
       - name: Persist calibration report

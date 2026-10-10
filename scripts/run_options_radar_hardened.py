@@ -148,6 +148,9 @@ def _run_learning(payload: dict, settings: Settings) -> None:
         summary["learning_calibration_sample_size"] = int(
             learning.get("calibration_sample_size", 0)
         )
+        summary["learning_research_sample_size"] = int(
+            learning.get("research_sample_size", 0)
+        )
     except Exception as exc:
         payload.setdefault("errors", {})["outcome_learning"] = (
             f"{type(exc).__name__}: {exc}"
@@ -236,6 +239,7 @@ def main() -> None:
         f"free_signals={summary.get('free_directional_signals', 0)} "
         f"research={summary.get('research_contracts_selected', 0)} "
         f"learning_samples={summary.get('learning_calibration_sample_size', 0)} "
+        f"research_outcomes={summary.get('learning_research_sample_size', 0)} "
         f"provider_readiness={summary.get('provider_readiness', 'UNKNOWN')} "
         f"blocked={summary.get('production_alerts_blocked', False)}"
     )

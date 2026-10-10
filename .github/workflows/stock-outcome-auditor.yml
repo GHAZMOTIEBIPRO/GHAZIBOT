@@ -34,8 +34,8 @@ jobs:
       PAID_MARKET_DATA_ALLOWED: "false"
       STOCK_OUTCOME_PATH: data/live/stock_outcomes.json
       STOCK_OUTCOME_AUDIT_PATH: data/live/stock_outcome_audit.json
-      STOCK_OUTCOME_AUDIT_MAX_SYMBOLS: "80"
-      STOCK_OUTCOME_AUDIT_RETRY_COOLDOWN_HOURS: "18"
+      STOCK_OUTCOME_AUDIT_MAX_SYMBOLS: "160"
+      STOCK_OUTCOME_AUDIT_RETRY_COOLDOWN_HOURS: "2"
 
     steps:
       - uses: actions/checkout@v4
@@ -96,11 +96,11 @@ jobs:
           assert invalid_policy['deleted'] is False
 
           rotation = audit['rotation']
-          assert rotation['policy'] == 'never_attempted_first_then_cooled_down_retries'
-          assert int(rotation['retry_cooldown_hours']) >= 18
-          assert int(rotation['maximum_symbols_per_pass']) == 80
+          assert rotation['policy'] == 'recoverable_recent_first_then_cooled_down_retries'
+          assert int(rotation['retry_cooldown_hours']) >= 2
+          assert int(rotation['maximum_symbols_per_pass']) == 160
           assert rotation['terminal_events_do_not_require_1d_to_leave_queue'] is True
-          assert int(rotation['selected_symbol_count']) <= 80
+          assert int(rotation['selected_symbol_count']) <= 160
 
           bias = audit['bias_guard']
           assert bias['survivorship_bias_addressed_by_following_disappeared_signals'] is True

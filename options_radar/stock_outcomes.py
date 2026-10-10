@@ -237,6 +237,7 @@ class StockOutcomeTracker:
                 cause_source,
                 cause_url,
             ) = self._cause_fields(row)
+            cause_payload = row.get("cause") if isinstance(row.get("cause"), dict) else {}
             score = _number(row.get("score"), 0.0) or 0.0
             state = {
                 "signal_id": signal_id,
@@ -255,6 +256,19 @@ class StockOutcomeTracker:
                 "entry_cause_status": cause_status,
                 "cause_source": cause_source,
                 "cause_url": cause_url,
+                "cause_headline": str(cause_payload.get("headline") or "")[:300],
+                "cause_published_at": (
+                    cause_payload.get("published_at")
+                    or cause_payload.get("filed_at")
+                    or cause_payload.get("event_at")
+                ),
+                "cause_accession": str(
+                    cause_payload.get("accession")
+                    or cause_payload.get("accession_number")
+                    or ""
+                )[:80],
+                "cause_observed_at": now.isoformat(),
+                "cause_point_in_time_frozen": True,
                 "follow_through_target_pct": target,
                 "failure_threshold_pct": stop,
                 "observations": 1,

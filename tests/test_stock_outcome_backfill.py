@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from options_radar.stock_audit_rotation import fair_symbols_needing_backfill
 from options_radar.stock_outcome_backfill import (
     StockOutcomeBackfillAuditor,
     evaluate_stock_event_from_bars,
@@ -39,6 +40,10 @@ def _state(
         "entry_cause_status": "OFFICIAL_CONFIRMED",
         "cause_source": "SEC EDGAR",
         "cause_url": "https://www.sec.gov/Archives/test",
+        "cause_published_at": "2026-08-10T14:00:00+00:00",
+        "cause_accession": "0000000000-26-000002",
+        "cause_observed_at": signal_time.isoformat(),
+        "cause_point_in_time_frozen": True,
         "follow_through_target_pct": target,
         "failure_threshold_pct": stop,
         "terminal_outcome": snapshot,
@@ -234,8 +239,10 @@ def test_workflow_is_free_silent_and_persisted_by_stock_vault():
     vault = (root / ".github/workflows/stock-state-vault.yml").read_text(encoding="utf-8")
     durable = (root / "options_radar/durable_stock_state.py").read_text(encoding="utf-8")
     runner = (root / "scripts/run_stock_outcome_audit.py").read_text(encoding="utf-8")
+    orchestrator = (root / ".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
 
     assert 'cron: "12 22 * * 1-5"' in workflow
+    assert 'dispatch_if_stale stock-outcome-auditor.yml 70 "Stock Outcome Auditor"' in orchestrator
     assert 'PAID_MARKET_DATA_ALLOWED: "false"' in workflow
     assert "TELEGRAM" not in workflow
     assert "stock-outcome-audit-state" in workflow
@@ -260,4 +267,63 @@ def test_frozen_catalyst_source_metadata_survives_audit_record():
     assert result["entry_evidence_state"] == "OFFICIAL_CONFIRMED"
     assert result["cause_source"] == "SEC EDGAR"
     assert "sec.gov" in result["cause_url"]
+    assert result["cause_point_in_time_frozen"] is True
+    assert result["cause_accession"] == "0000000000-26-000002"
+
+def test_recoverable_recent_stock_events_outrank_expired_intraday_history():
+    now = datetime(2026, 10, 10, 18, 0, tzinfo=timezone.utc)
+    audit = {
+        "records": {
+            "old": {
+                "symbol": "OLD",
+                "signal_time": (now - timedelta(days=90)).isoformat(),
+                "signal_session_valid": True,
+                "audit_status": "unavailable",
+                "audit_attempt_count": 1,
+                "audit_last_attempt_at": (now - timedelta(days=3)).isoformat(),
+                "coverage": {"60m": False},
+            },
+            "recent": {
+                "symbol": "NEW",
+                "signal_time": (now - timedelta(hours=2)).isoformat(),
+                "signal_session_valid": True,
+                "audit_status": "pending",
+                "audit_attempt_count": 1,
+                "audit_last_attempt_at": (now - timedelta(hours=3)).isoformat(),
+                "coverage": {"60m": False},
+            },
+        }
+    }
+
+    selected = fair_symbols_needing_backfill(
+        audit,
+        now=now,
+        maximum_symbols=10,
+        retry_cooldown_hours=2,
+    )
+
+    assert selected == ["NEW"]
+    assert audit["records"]["old"]["audit_recovery_state"] == "provider_5m_retention_exceeded"
+
+
+def test_never_attempted_expired_event_gets_one_honest_attempt():
+    now = datetime(2026, 10, 10, 18, 0, tzinfo=timezone.utc)
+    audit = {
+        "records": {
+            "old": {
+                "symbol": "OLD",
+                "signal_time": (now - timedelta(days=90)).isoformat(),
+                "signal_session_valid": True,
+                "audit_status": "pending",
+                "audit_attempt_count": 0,
+                "coverage": {"60m": False},
+            }
+        }
+    }
+    assert fair_symbols_needing_backfill(
+        audit,
+        now=now,
+        maximum_symbols=10,
+        retry_cooldown_hours=2,
+    ) == ["OLD"]
 

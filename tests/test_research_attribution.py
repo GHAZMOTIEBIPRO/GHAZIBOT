@@ -77,6 +77,10 @@ def _record(**overrides):
         "cause_url": "https://www.sec.gov/Archives/example",
         "cause_tier": "A_OFFICIAL",
         "entry_evidence_state": "OFFICIAL_CONFIRMED",
+        "cause_published_at": "2026-04-11T14:00:00+00:00",
+        "cause_observed_at": "2026-04-11T15:00:00+00:00",
+        "cause_accession": "0000000000-26-000001",
+        "cause_point_in_time_frozen": True,
     }
     row.update(overrides)
     return row
@@ -97,6 +101,8 @@ def test_stock_features_join_sec_chart_and_hindsight_safe_smc(monkeypatch):
 
     assert features["decision_authority"] is False
     assert features["sec"]["official_sec_evidence"] is True
+    assert features["sec"]["point_in_time_sec_evidence"] is True
+    assert features["sec"]["chronology_verified"] is True
     assert features["chart"]["direction_alignment"] is True
     assert features["smc"]["direction_alignment"] is True
     assert features["aligned_evidence_count"] == 3
@@ -113,6 +119,7 @@ def test_stock_attribution_measures_lift_without_live_authority():
                 "sec": {
                     "source_metadata_available": True,
                     "official_sec_evidence": aligned,
+                    "point_in_time_sec_evidence": aligned,
                 },
                 "chart": {"direction_alignment": aligned},
                 "smc": {"direction_alignment": aligned},
@@ -163,3 +170,15 @@ def test_replay_ablation_never_changes_threshold_authority():
     assert report["live_threshold_auto_changed"] is False
     assert report["variants"]["chart_and_smc_fvg"]["precision"] >= report["baseline"]["precision"]
     assert report["sec_replay_status"] == "not_reconstructed_historically"
+
+def test_future_sec_filing_is_not_upgraded_to_point_in_time_evidence(monkeypatch):
+    monkeypatch.setitem(sys.modules, "smartmoneyconcepts", SimpleNamespace(smc=_FakeSmc))
+    features = build_stock_research_features(
+        _record(cause_published_at="2026-04-12T14:00:00+00:00"),
+        _history(),
+    )
+
+    assert features["sec"]["official_sec_evidence"] is True
+    assert features["sec"]["point_in_time_sec_evidence"] is False
+    assert features["sec"]["chronology_verified"] is False
+

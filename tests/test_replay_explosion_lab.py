@@ -33,6 +33,7 @@ def test_replay_score_does_not_change_when_only_future_prices_change():
     second = build_replay_frame(changed)
 
     assert np.isclose(first.loc[cutoff, "replay_score"], second.loc[cutoff, "replay_score"], equal_nan=True)
+    assert np.isclose(first.loc[cutoff, "replay_score_v2"], second.loc[cutoff, "replay_score_v2"], equal_nan=True)
 
 
 def test_replay_evaluator_reports_forward_explosion_windows():
@@ -42,3 +43,15 @@ def test_replay_evaluator_reports_forward_explosion_windows():
     assert metrics["positive_windows"] > 0
     assert 0.0 <= metrics["precision"] <= 1.0
     assert 0.0 <= metrics["recall"] <= 1.0
+
+def test_supply_vacuum_v2_is_research_score_and_evaluable():
+    frame = build_replay_frame(_history())
+    assert "supply_vacuum_proxy" in frame
+    assert "volatility_contraction_ratio" in frame
+    assert "replay_score_v2" in frame
+
+    metrics = evaluate_replay(frame, threshold=55, score_column="replay_score_v2")
+    assert metrics["score_column"] == "replay_score_v2"
+    assert metrics["rows"] > 20
+    assert 0.0 <= metrics["precision"] <= 1.0
+

@@ -235,6 +235,8 @@ def test_chart_and_sec_research_cohorts_never_create_score_adjustments():
             {
                 "chart_side_alignment": 0.8 if aligned else -0.8,
                 "chart_available_timeframes": 3,
+                "research_chart_structure_alignment": 0.9 if aligned else -0.9,
+                "research_chart_structure_timeframes": 3,
                 "sec_catalyst": aligned,
                 "catalyst_source": "SEC EDGAR" if aligned else "",
             }
@@ -244,11 +246,87 @@ def test_chart_and_sec_research_cohorts_never_create_score_adjustments():
     calibration = build_calibration(state, minimum_sample=100)
 
     chart = calibration["research_features"]["chart_side_alignment"]
+    structure = calibration["research_features"]["classical_structure_alignment"]
     sec = calibration["research_features"]["sec_catalyst"]
     assert chart["aligned"]["mean_return_pct"] == 12
+    assert structure["aligned"]["mean_return_pct"] == 12
     assert chart["opposed"]["mean_return_pct"] == -6
     assert chart["aligned"]["score_adjustment"] == 0.0
     assert sec["sec_official_context"]["score_adjustment"] == 0.0
     assert calibration["research_feature_policy"]["live_score_adjustment"] is False
     assert calibration["active"] is False
+
+def test_research_directional_signal_is_tracked_without_weakening_training_gate(tmp_path, monkeypatch):
+    monkeypatch.setenv("OPTIONS_RESEARCH_TRACK_MIN_SCORE", "75")
+    settings = _settings(tmp_path)
+    fetcher = FakeFetcher()
+    now = datetime(2026, 8, 14, 14, 45, tzinfo=timezone.utc)
+    research_row = _signal(
+        signal_grade="B+",
+        strict_grade="B+",
+        strict_score=80,
+        bid=0.0,
+        ask=0.0,
+        last=5.0,
+        data_quality=0.45,
+        source="fallback-research",
+        freshness_label="unofficial research data",
+    )
+    payload = {
+        "path": "options",
+        "provider_readiness": {
+            "production_quote_ready": False,
+            "status": "FALLBACK_ONLY",
+        },
+        "free_directional_signals": [],
+        "research_directional_signals": [research_row],
+    }
+
+    result = update_outcome_learning(payload, settings=settings, fetcher=fetcher, now=now)
+
+    assert result["tracked_new"] == 1
+    state = json.loads(settings.outcome_path.read_text(encoding="utf-8"))
+    signal = next(iter(state["signals"].values()))
+    assert signal["mode"] == "research_shadow"
+    assert signal["research_only"] is True
+    assert signal["entry_training_eligible"] is False
+    assert signal["entry_quote_method"] == "last_to_last"
+
+
+def test_research_mid_or_last_outcomes_are_measured_but_never_activate_learning():
+    state = {"signals": {}}
+    for index in range(120):
+        aligned = index < 60
+        state["signals"][str(index)] = {
+            "entry_quote_method": "last_to_last",
+            "entry_training_eligible": False,
+            "features": {
+                "delta": 0.45,
+                "dte": 28,
+                "gamma_context_alignment": 0.0,
+                "vol_to_oi_ratio": 1.5,
+                "spread_pct": 0.2,
+                "chart_side_alignment": 0.8 if aligned else -0.8,
+                "research_chart_structure_alignment": 0.9 if aligned else -0.9,
+                "sec_catalyst": aligned,
+            },
+            "checkpoints": {
+                "60m": {
+                    "quote_method": "last_to_last",
+                    "training_quote_eligible": False,
+                    "return_pct": 15 if aligned else -10,
+                }
+            },
+        }
+
+    calibration = build_calibration(state, minimum_sample=100)
+
+    assert calibration["research_sample_size"] == 120
+    assert calibration["shadow_sample_size"] == 0
+    assert calibration["sample_size"] == 0
+    assert calibration["active"] is False
+    assert calibration["global_research"]["mean_return_pct"] == 2.5
+    assert calibration["research_features"]["chart_side_alignment"]["aligned"]["mean_return_pct"] == 15
+    assert calibration["research_features"]["classical_structure_alignment"]["aligned"]["mean_return_pct"] == 15
+    assert calibration["research_features"]["chart_side_alignment"]["aligned"]["score_adjustment"] == 0.0
 

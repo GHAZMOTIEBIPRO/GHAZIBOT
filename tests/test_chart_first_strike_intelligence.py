@@ -39,15 +39,23 @@ def _frame(rows: int, *, freq: str, bullish: bool = True) -> pd.DataFrame:
 
 
 class _FakeFetcher:
-    def __init__(self, daily: pd.DataFrame, intraday: pd.DataFrame):
+    def __init__(
+        self,
+        daily: pd.DataFrame,
+        intraday: pd.DataFrame,
+        hourly: pd.DataFrame | None = None,
+    ):
         self.daily = daily
         self.intraday = intraday
+        self.hourly = hourly if hourly is not None else _frame(120, freq="1h")
         self.calls: list[str] = []
 
     def fetch_stock_bars(self, symbol: str, *, interval: str, **kwargs):
         self.calls.append(interval)
         if interval == "1d":
             return SimpleNamespace(data=self.daily, source="yahoo")
+        if interval == "1h":
+            return SimpleNamespace(data=self.hourly, source="yahoo")
         if interval == "5m":
             return SimpleNamespace(data=self.intraday, source="yahoo")
         raise AssertionError(f"unexpected external interval {interval}")
@@ -85,11 +93,14 @@ def _valid_contract(**updates):
     return row
 
 
-def test_chart_context_fetches_only_daily_and_5m_and_builds_15m_locally() -> None:
+def test_chart_context_adds_hourly_shadow_structure_and_builds_15m_locally() -> None:
     fetcher = _FakeFetcher(_frame(260, freq="1D"), _frame(120, freq="5min"))
     chart = build_chart_context("XYZ", fetcher=fetcher)
-    assert fetcher.calls == ["1d", "5m"]
+    assert fetcher.calls == ["1d", "1h", "5m"]
     assert chart["available_timeframes"] == 3
+    assert chart["research_structure"]["available_timeframes"] == 3
+    assert chart["research_structure"]["direction"] == "bullish"
+    assert chart["research_structure"]["live_score_adjustment"] is False
     assert chart["timeframes"]["15m"]["available"] is True
     assert chart["institutional_activity_proxy_only"] is True
     assert chart["direction"] == "bullish"
@@ -170,6 +181,13 @@ def test_contract_enrichment_explains_strike_choice() -> None:
         "available_timeframes": 3,
         "reasons_ar": ["15m: فوق VWAP"],
         "institutional_activity_proxy_score": 70.0,
+        "research_structure": {
+            "score": 72.0,
+            "direction": "bullish",
+            "available_timeframes": 3,
+            "live_score_adjustment": False,
+            "decision_authority": False,
+        },
     }
     gamma_map = {
         "spot": 100.0,
@@ -193,3 +211,5 @@ def test_contract_enrichment_explains_strike_choice() -> None:
     assert enriched["expected_move_1sigma"] is not None
     assert any("OI" in reason for reason in enriched["strike_reasons_ar"])
     assert enriched["institutional_activity_proxy_only"] is True
+    assert enriched["research_chart_structure_alignment"] > 0
+    assert enriched["research_chart_structure_decision_authority"] is False

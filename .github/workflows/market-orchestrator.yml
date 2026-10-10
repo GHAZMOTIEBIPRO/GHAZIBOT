@@ -74,6 +74,7 @@ jobs:
             dispatch_if_stale free-gex-validation.yml 18 "Free GEX Validation"
             dispatch_if_stale options-radar.yml 18 "Full Omega Radar + Contract Guardian"
             dispatch_if_stale adaptive-review.yml 70 "Adaptive Evidence Review"
+            dispatch_if_stale stock-outcome-auditor.yml 70 "Stock Outcome Auditor"
           fi
 
       - name: Scheduling policy
@@ -85,5 +86,6 @@ jobs:
           Options Contract -> Options Research Enrichment
           Stock/Options -> Cross Confirmation / state / dashboard
           News Flash remains independent 24x7.
-          End-of-day auditors and weekly research labs remain independent.
+          Stock Outcome Auditor receives intraday coverage dispatch here plus its end-of-day fallback.
+          Other end-of-day auditors and weekly research labs remain independent.
           EOF

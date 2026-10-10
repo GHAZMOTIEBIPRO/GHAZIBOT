@@ -98,11 +98,14 @@ jobs:
             options_radar/free_contract_volume_store.py \
             options_radar/occ_free_context.py \
             options_radar/options_consensus.py \
+            options_radar/chart_strike_intelligence.py \
             options_radar/outcome_learning.py \
             options_radar/durable_state.py \
             options_radar/durable_stock_state.py \
             options_radar/stock_outcome_archive.py \
             options_radar/stock_outcome_backfill.py \
+            options_radar/stock_audit_rotation.py \
+            options_radar/stock_outcomes.py \
             options_radar/research_attribution.py \
             options_radar/stock_walk_forward.py \
             options_radar/adaptive_learning.py \
@@ -135,6 +138,8 @@ jobs:
             scripts/run_stock_outcome_audit.py \
             scripts/enrich_stock_research_attribution.py \
             scripts/run_stock_walk_forward.py \
+            scripts/replay_explosion_lab.py \
+            scripts/replay_explosion_calibration.py \
             scripts/run_contract_guardian.py \
             scripts/guardian_delivery_audit.py \
             scripts/send_contract_guardian_updates.py \
@@ -188,6 +193,9 @@ jobs:
             tests/test_stock_outcome_archive.py \
             tests/test_stock_outcome_backfill.py \
             tests/test_research_attribution.py \
+            tests/test_chart_first_strike_intelligence.py \
+            tests/test_replay_explosion_lab.py \
+            tests/test_explosion_hunter_calibration_100pct.py \
             tests/test_stock_walk_forward.py \
             tests/test_data_fabric.py \
             tests/test_stream_overlay.py \
