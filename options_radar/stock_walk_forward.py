@@ -262,6 +262,12 @@ def run_stock_walk_forward(audit: dict[str, Any]) -> dict[str, Any]:
             "ready": gate.ready,
         },
         "research_passed": False,
+        "open_source_feature_attribution": (
+            audit.get("open_source_feature_attribution")
+            if isinstance(audit.get("open_source_feature_attribution"), dict)
+            else {}
+        ),
+        "open_source_features_change_walk_forward_score": False,
     }
 
     if not gate.ready:
