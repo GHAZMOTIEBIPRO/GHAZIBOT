@@ -45,11 +45,17 @@ def test_form4_open_market_purchase_uses_disclosed_value() -> None:
 def test_dilution_and_13d_classification() -> None:
     dilution = classify_dilution(
         "424B5",
-        "We entered into an at-the-market equity distribution agreement to sell up to $25 million of common stock.",
+        (
+            "We entered into an at-the-market equity distribution agreement "
+            "to sell up to $25 million of common stock, including warrants "
+            "to purchase 3,000,000 shares."
+        ),
     )
     assert dilution is not None
     assert dilution.score <= -24
     assert dilution.event_value == 25_000_000
+    assert dilution.share_count == 3_000_000
+    assert "explicit issuable shares" in dilution.evidence
     active = classify_13d_purpose(
         "Item 4 Purpose of Transaction. The reporting person may nominate directors and engage with the board regarding strategic alternatives."
     )
