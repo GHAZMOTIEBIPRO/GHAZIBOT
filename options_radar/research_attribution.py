@@ -189,6 +189,41 @@ def _sec_dilution_features(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _time_normalized_rvol_features(record: dict[str, Any]) -> dict[str, Any]:
+    entry = (
+        record.get("time_normalized_rvol_entry")
+        if isinstance(record.get("time_normalized_rvol_entry"), dict)
+        else {}
+    )
+    available = entry.get("available") is True
+    ratio = _number(entry.get("ratio"), float("nan"))
+    frozen_at = pd.to_datetime(entry.get("frozen_at"), utc=True, errors="coerce")
+    signal_time = pd.to_datetime(record.get("signal_time"), utc=True, errors="coerce")
+    chronology_verified = bool(
+        available
+        and math.isfinite(ratio)
+        and pd.notna(frozen_at)
+        and pd.notna(signal_time)
+        and frozen_at <= signal_time
+        and entry.get("research_only") is True
+        and entry.get("live_score_adjustment") is not True
+    )
+    return {
+        "available": available,
+        "chronology_verified": chronology_verified,
+        "ratio": round(ratio, 4) if chronology_verified else None,
+        "pace_percentile": (
+            _number(entry.get("pace_percentile"), float("nan"))
+            if chronology_verified
+            else None
+        ),
+        "sample_sessions": int(_number(entry.get("sample_sessions"), 0)),
+        "high_2x": bool(ratio >= 2.0) if chronology_verified else None,
+        "high_3x": bool(ratio >= 3.0) if chronology_verified else None,
+        "decision_authority": False,
+    }
+
+
 def build_stock_research_features(
     record: dict[str, Any],
     history: pd.DataFrame,
@@ -199,6 +234,7 @@ def build_stock_research_features(
     smc = build_smc_research_features(completed, direction)
     sec = _sec_features(record)
     sec_dilution = _sec_dilution_features(record)
+    time_rvol = _time_normalized_rvol_features(record)
 
     aligned_count = sum(
         (
@@ -222,6 +258,7 @@ def build_stock_research_features(
         "live_alert_weights_changed": False,
         "sec": sec,
         "sec_dilution_v2": sec_dilution,
+        "time_normalized_rvol": time_rvol,
         "chart": chart,
         "smc": smc,
         "aligned_evidence_count": int(aligned_count),
@@ -343,6 +380,18 @@ def evaluate_stock_research_attribution(
         value = sec_features.get("point_in_time_sec_evidence")
         return value if isinstance(value, bool) else None
 
+    def high_time_rvol(row: dict[str, Any]) -> bool | None:
+        features = row.get("research_features") or {}
+        volume = (
+            features.get("time_normalized_rvol")
+            if isinstance(features.get("time_normalized_rvol"), dict)
+            else {}
+        )
+        if volume.get("chronology_verified") is not True:
+            return None
+        value = volume.get("high_2x")
+        return value if isinstance(value, bool) else None
+
     def high_sec_dilution(row: dict[str, Any]) -> bool | None:
         features = row.get("research_features") or {}
         dilution = (
@@ -388,6 +437,11 @@ def evaluate_stock_research_attribution(
                 high_sec_dilution,
                 minimum_sample=minimum_sample,
             ),
+            "time_normalized_rvol_ge_2x": _factor_report(
+                rows,
+                high_time_rvol,
+                minimum_sample=minimum_sample,
+            ),
             "chart_direction_alignment": _factor_report(rows, chart, minimum_sample=minimum_sample),
             "smc_fvg_alignment": _factor_report(rows, smc, minimum_sample=minimum_sample),
             "two_of_three_alignment": _factor_report(rows, combined, minimum_sample=minimum_sample),
@@ -400,6 +454,7 @@ def evaluate_stock_research_attribution(
             "legacy_sec_rows_without_frozen_chronology_are_not_upgraded": True,
             "sec_dilution_v2_requires_entry_time_observation": True,
             "announced_capacity_is_not_assumed_remaining_capacity": True,
+            "same_clock_rvol_requires_entry_time_frozen_research_evidence": True,
             "no_factor_changes_live_scores": True,
             "walk_forward_review_required_before_any_promotion": True,
         },

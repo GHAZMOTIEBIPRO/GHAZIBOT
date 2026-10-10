@@ -258,6 +258,11 @@ class StockOutcomeTracker:
                 if isinstance(dilution.get("financing"), dict)
                 else {}
             )
+            time_rvol = (
+                row.get("time_normalized_rvol")
+                if isinstance(row.get("time_normalized_rvol"), dict)
+                else {}
+            )
             score = _number(row.get("score"), 0.0) or 0.0
             state = {
                 "signal_id": signal_id,
@@ -294,6 +299,26 @@ class StockOutcomeTracker:
                     "score": _number(microcap.get("score"), None),
                     "flags": list(microcap.get("flags") or [])[:20],
                     "research_only": microcap.get("research_only") is True,
+                },
+                "time_normalized_rvol_entry": {
+                    "available": time_rvol.get("available") is True,
+                    "ratio": _number(time_rvol.get("ratio"), None),
+                    "pace_percentile": _number(
+                        time_rvol.get("pace_percentile"),
+                        None,
+                    ),
+                    "sample_sessions": int(
+                        _number(time_rvol.get("sample_sessions"), 0) or 0
+                    ),
+                    "cutoff_clock_et": str(
+                        time_rvol.get("cutoff_clock_et") or ""
+                    ),
+                    "source_role": str(time_rvol.get("source_role") or ""),
+                    "frozen_at": now.isoformat(),
+                    "research_only": time_rvol.get("research_only") is True,
+                    "live_score_adjustment": time_rvol.get(
+                        "live_score_adjustment"
+                    ) is True,
                 },
                 "sec_dilution_v2_entry": {
                     "available": dilution.get("available") is True,

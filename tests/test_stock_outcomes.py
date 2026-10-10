@@ -23,6 +23,16 @@ def _stock(price: float, *, stage: str = "IGNITION", score: float = 82.0):
             "flags": [],
             "research_only": True,
         },
+        "time_normalized_rvol": {
+            "available": True,
+            "ratio": 2.5,
+            "pace_percentile": 90,
+            "sample_sessions": 12,
+            "cutoff_clock_et": "10:15",
+            "source_role": "same-clock regular-session cumulative 5m volume",
+            "research_only": True,
+            "live_score_adjustment": False,
+        },
         "sec_dilution_v2": {
             "available": True,
             "risk_score": 82,
@@ -60,6 +70,8 @@ def test_stock_outcome_tracks_mature_follow_through(tmp_path):
     assert state["terminal_outcome"] == "success"
     assert state["mfe_pct"] >= 12.0
     assert state["microcap_hunter_entry"]["stage"] == "PRIORITY"
+    assert state["time_normalized_rvol_entry"]["ratio"] == 2.5
+    assert state["time_normalized_rvol_entry"]["live_score_adjustment"] is False
     assert state["sec_dilution_v2_entry"]["risk_score"] == 82
     assert state["sec_dilution_v2_entry"]["remaining_capacity_verified"] is False
 

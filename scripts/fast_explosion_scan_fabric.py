@@ -21,6 +21,7 @@ from options_radar.hybrid_fetcher import DataFetcher
 from options_radar.market_clock import market_clock_state
 from options_radar.microcap_hunter import assess_microcap_candidate
 from options_radar.provider_preflight import install_provider_preflight
+from options_radar.time_normalized_volume import time_normalized_rvol
 from options_radar.settings import Settings
 
 # Install data acquisition before the institutional runner creates any fetchers.
@@ -57,7 +58,7 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
         result = fetcher.fetch_stock_bars(
             candidate.symbol,
             interval="5m",
-            start=now - timedelta(days=3),
+            start=now - timedelta(days=35),
             end=now,
         )
         frame = result.data
@@ -98,6 +99,12 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
 
         current_volume = _number(getattr(candidate, "volume", 0.0))
         rvol = current_volume / average_volume_20d if average_volume_20d > 0 else 0.0
+        time_rvol = time_normalized_rvol(
+            frame,
+            now=now,
+            minimum_sessions=5,
+            maximum_sessions=20,
+        )
         metadata = result.metadata or {} if hasattr(result, "metadata") else {}
         audit = metadata.get("data_fabric", {}) if isinstance(metadata, dict) else {}
         stream = metadata.get("stream_reference") if isinstance(metadata, dict) else None
@@ -125,6 +132,7 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
                 if rvol > 0
                 else ""
             ),
+            "time_normalized_rvol": time_rvol.as_dict(),
             "nasdaq_vs_fabric_divergence_pct": round(divergence, 6),
             "selected_close_divergence_pct": audit.get("selected_close_divergence_pct"),
             "stream_reference": stream if isinstance(stream, dict) else None,
@@ -156,6 +164,9 @@ def _persist_validation(ranked: list[Any]) -> None:
             if validation.get("rvol"):
                 row["rvol"] = validation["rvol"]
                 row["rvol_source"] = validation.get("rvol_source") or ""
+            time_rvol = validation.get("time_normalized_rvol")
+            if isinstance(time_rvol, dict):
+                row["time_normalized_rvol"] = time_rvol
             row["microcap_hunter"] = assess_microcap_candidate(
                 {"symbol": candidate.symbol, **row}
             ).as_dict()
@@ -219,6 +230,9 @@ def _rank_market_with_fabric(rows, news_events, structural):
             candidate.data_fabric_validation = {"available": False, "not_checked": True}
             continue
         candidate.data_fabric_validation = validation
+        time_rvol = validation.get("time_normalized_rvol")
+        if isinstance(time_rvol, dict):
+            candidate.time_normalized_rvol = time_rvol
         if not validation.get("available"):
             candidate.reasons.append("بيانات التحقق المتعدد غير متاحة؛ لا ترقية للثقة")
             continue

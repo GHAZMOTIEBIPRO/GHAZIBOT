@@ -223,6 +223,7 @@ class FastCandidate:
     news_headline: str
     news_source: str
     reasons: list[str]
+    time_normalized_rvol: dict[str, Any] | None = None
 
 
 def _stage(score: float, move: float, turnover: float) -> str:
