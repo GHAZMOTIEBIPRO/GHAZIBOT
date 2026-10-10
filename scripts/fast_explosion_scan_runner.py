@@ -9,7 +9,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from options_radar.explosion_hunter_profile import is_verified_sec_url
 from options_radar.institutional_radar import assess_candidate, should_promote
+from options_radar.microcap_hunter import assess_microcap_candidate
 from scripts import fast_explosion_scan as base
 
 LATEST_PATH = Path("public/data/latest.json")
@@ -29,14 +31,23 @@ def _valid_common(symbol: str, name: str) -> bool:
     return not any(token in normalized for token in base.NON_COMMON_NAME_TOKENS)
 
 
-def _deep_catalyst_news(known_symbols: set[str] | None = None) -> list[base.NewsEvent]:
+def _deep_catalyst_map() -> dict[str, dict]:
     try:
         payload = json.loads(LATEST_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return []
+        return {}
     omega = payload.get("omega") if isinstance(payload, dict) and isinstance(payload.get("omega"), dict) else {}
     intelligence = omega.get("catalyst_intelligence") if isinstance(omega.get("catalyst_intelligence"), dict) else {}
     by_symbol = intelligence.get("by_symbol") if isinstance(intelligence.get("by_symbol"), dict) else {}
+    return {
+        str(symbol).upper().strip(): cluster
+        for symbol, cluster in by_symbol.items()
+        if isinstance(cluster, dict) and str(symbol).strip()
+    }
+
+
+def _deep_catalyst_news(known_symbols: set[str] | None = None) -> list[base.NewsEvent]:
+    by_symbol = _deep_catalyst_map()
     today = datetime.now(timezone.utc).date()
     events: list[base.NewsEvent] = []
     for raw_symbol, cluster in by_symbol.items():
@@ -145,29 +156,81 @@ def _rank_market_with_institutional_engine(rows, news_events, structural):
             if should_promote(prior_stage, assessment.stage, assessment.score - prior_score):
                 promoted_count += 1
 
+    catalyst_clusters = _deep_catalyst_map()
+    best_news: dict[str, base.NewsEvent] = {}
+    for event in news_events:
+        current = best_news.get(event.symbol)
+        if current is None or (event.relevance, event.sentiment) > (
+            current.relevance,
+            current.sentiment,
+        ):
+            best_news[event.symbol] = event
+
+    state_rows: dict[str, dict] = {}
+    for candidate in ranked:
+        structural_row = structural.get(candidate.symbol, {})
+        cluster = catalyst_clusters.get(candidate.symbol, {})
+        event = best_news.get(candidate.symbol)
+        average_volume = base._number(structural_row.get("average_volume"))
+        rvol = candidate.volume / average_volume if average_volume > 0 else 0.0
+
+        catalyst_url = str(cluster.get("primary_url") or "")
+        if not is_verified_sec_url(catalyst_url) and event is not None:
+            event_url = str(event.url or "")
+            catalyst_url = event_url if is_verified_sec_url(event_url) else ""
+
+        row = {
+            "base_score": round(raw_scores[candidate.symbol], 2),
+            "score": round(float(candidate.score), 2),
+            "stage": candidate.stage,
+            "price": round(float(candidate.price), 6),
+            "day_move_pct": round(float(candidate.move_pct), 4),
+            "move_pct": round(float(candidate.move_pct), 4),
+            "volume": round(float(candidate.volume), 2),
+            "market_cap": round(float(candidate.market_cap), 2),
+            "dollar_volume": round(float(candidate.dollar_volume), 2),
+            "turnover_pct": round(float(candidate.turnover_pct), 5),
+            "supply_score": round(float(candidate.supply_score), 2),
+            "float_shares": base._number(structural_row.get("float_shares")) or None,
+            "shares_outstanding": base._number(structural_row.get("shares_outstanding")) or None,
+            "average_volume": average_volume or None,
+            "rvol": round(rvol, 4) if rvol > 0 else None,
+            "rvol_source": (
+                "nasdaq cumulative session volume / structural average daily volume"
+                if rvol > 0
+                else ""
+            ),
+            "news_score": round(float(candidate.news_score), 2),
+            "news_headline": candidate.news_headline,
+            "news_url": str(event.url or "") if event is not None else "",
+            "official_catalyst_url": catalyst_url,
+            "catalyst_score": base._number(
+                cluster.get("catalyst_quality"),
+                base._number(cluster.get("materiality")),
+            ),
+            "catalyst_event_type": str(cluster.get("event_type") or ""),
+            "catalyst_headline": str(
+                cluster.get("headline") or cluster.get("title") or ""
+            ),
+            "dilution_risk": base._number(cluster.get("dilution_risk")),
+            "confidence": str(getattr(candidate, "institutional_confidence", "D")),
+            "earlyness": round(float(getattr(candidate, "institutional_earlyness", 0.0)), 2),
+            "anomaly": round(float(getattr(candidate, "institutional_anomaly", 0.0)), 2),
+            "acceleration": round(float(getattr(candidate, "institutional_acceleration", 0.0)), 2),
+            "risk_penalty": round(float(getattr(candidate, "institutional_risk_penalty", 0.0)), 2),
+            "send_priority": round(float(getattr(candidate, "institutional_priority", 0.0)), 2),
+        }
+        microcap = assess_microcap_candidate({"symbol": candidate.symbol, **row})
+        row["microcap_hunter"] = microcap.as_dict()
+        state_rows[candidate.symbol] = row
+
     state = {
         "generated_at": base._utc_now(),
         "source": "BLACK BOX Omega institutional-style full-market state memory",
         "score_is_probability": False,
+        "microcap_hunter_research_only": True,
         "previous_snapshot_age_minutes": round(age_minutes, 2) if previous else None,
-        "symbols": {
-            candidate.symbol: {
-                "base_score": round(raw_scores[candidate.symbol], 2),
-                "score": round(float(candidate.score), 2),
-                "stage": candidate.stage,
-                "move_pct": round(float(candidate.move_pct), 4),
-                "volume": round(float(candidate.volume), 2),
-                "turnover_pct": round(float(candidate.turnover_pct), 5),
-                "supply_score": round(float(candidate.supply_score), 2),
-                "confidence": str(getattr(candidate, "institutional_confidence", "D")),
-                "earlyness": round(float(getattr(candidate, "institutional_earlyness", 0.0)), 2),
-                "anomaly": round(float(getattr(candidate, "institutional_anomaly", 0.0)), 2),
-                "acceleration": round(float(getattr(candidate, "institutional_acceleration", 0.0)), 2),
-                "risk_penalty": round(float(getattr(candidate, "institutional_risk_penalty", 0.0)), 2),
-                "send_priority": round(float(getattr(candidate, "institutional_priority", 0.0)), 2),
-            }
-            for candidate in ranked
-        },
+        "symbols": state_rows,
     }
     base._save(FAST_MARKET_STATE_PATH, state)
 
