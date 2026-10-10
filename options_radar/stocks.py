@@ -344,6 +344,14 @@ class StockRadar:
             "breakout_proximity_atr": breakout_pressure.breakout_distance_atr,
             "weekly_breakout_confluence": breakout_pressure.weekly_confluence,
             "breakout_pressure_reasons": "؛ ".join(breakout_pressure.reasons),
+            "explosion_setup_v3": breakout_pressure.research_v3 or {},
+            "explosion_setup_v3_stage": (
+                (breakout_pressure.research_v3 or {}).get("stage")
+            ),
+            "explosion_setup_v3_quality_count": (
+                (breakout_pressure.research_v3 or {}).get("quality_count")
+            ),
+            "explosion_setup_v3_live_score_adjustment": False,
             "sector_vs_market": round(float(sector["sector_vs_market"]), 6),
             "rejection_reason": rejection_reason,
         }
