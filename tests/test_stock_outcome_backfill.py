@@ -239,8 +239,10 @@ def test_workflow_is_free_silent_and_persisted_by_stock_vault():
     vault = (root / ".github/workflows/stock-state-vault.yml").read_text(encoding="utf-8")
     durable = (root / "options_radar/durable_stock_state.py").read_text(encoding="utf-8")
     runner = (root / "scripts/run_stock_outcome_audit.py").read_text(encoding="utf-8")
+    orchestrator = (root / ".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
 
-    assert 'cron: "17 14-22/2 * * 1-5"' in workflow
+    assert 'cron: "12 22 * * 1-5"' in workflow
+    assert 'dispatch_if_stale stock-outcome-auditor.yml 70 "Stock Outcome Auditor"' in orchestrator
     assert 'PAID_MARKET_DATA_ALLOWED: "false"' in workflow
     assert "TELEGRAM" not in workflow
     assert "stock-outcome-audit-state" in workflow
