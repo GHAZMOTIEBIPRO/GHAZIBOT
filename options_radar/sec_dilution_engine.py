@@ -250,8 +250,11 @@ def financing_overhang(
     *,
     market_cap: float,
     float_shares: float,
+    as_of: date | datetime | None = None,
 ) -> dict[str, Any]:
+    cutoff = _as_of_date(as_of)
     relevant: list[dict[str, Any]] = []
+    considered: list[dict[str, Any]] = []
     maximum_dollars = 0.0
     active_financing = False
     reverse_split = False
@@ -259,6 +262,10 @@ def financing_overhang(
     for event in events:
         if not isinstance(event, dict):
             continue
+        event_date = _parse_date(event.get("event_date"))
+        if event_date is not None and event_date > cutoff:
+            continue
+        considered.append(event)
         form = str(event.get("form") or "").upper()
         text = _event_text(event)
         purpose = str(event.get("purpose") or "").lower()
@@ -296,7 +303,7 @@ def financing_overhang(
             }
         )
 
-    shares = explicit_share_overhang(events)
+    shares = explicit_share_overhang(considered)
     overhang_shares = _number(shares.get("maximum_explicit_shares"))
     return {
         "event_count": len(relevant),
@@ -313,6 +320,8 @@ def financing_overhang(
         if overhang_shares > 0 and float_shares > 0
         else None,
         "events": relevant[:12],
+        "as_of": cutoff.isoformat(),
+        "future_events_excluded": True,
         "remaining_capacity_verified": False,
         "remaining_capacity_note": (
             "A filing's announced maximum amount is not treated as remaining capacity "
@@ -377,6 +386,7 @@ def assess_sec_dilution(
         events,
         market_cap=market_cap,
         float_shares=float_shares,
+        as_of=as_of,
     )
 
     share_risk, reasons = _growth_risk(history)
