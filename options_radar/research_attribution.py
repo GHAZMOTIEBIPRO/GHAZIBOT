@@ -124,6 +124,20 @@ def _sec_features(record: dict[str, Any]) -> dict[str, Any]:
     url = str(record.get("cause_url") or "")
     official = record.get("official_cause") is True
     sec_identified = "sec" in source.lower() or "sec.gov" in url.lower()
+
+    signal_time = pd.to_datetime(record.get("signal_time"), utc=True, errors="coerce")
+    published_at = pd.to_datetime(record.get("cause_published_at"), utc=True, errors="coerce")
+    observed_at = pd.to_datetime(record.get("cause_observed_at"), utc=True, errors="coerce")
+    frozen = record.get("cause_point_in_time_frozen") is True
+    chronology_verified = bool(
+        frozen
+        and pd.notna(signal_time)
+        and pd.notna(published_at)
+        and pd.notna(observed_at)
+        and published_at <= signal_time
+        and observed_at <= signal_time
+    )
+    point_in_time_sec = bool(official and sec_identified and chronology_verified)
     return {
         "source_metadata_available": bool(source or url),
         "source": source[:160],
@@ -131,6 +145,11 @@ def _sec_features(record: dict[str, Any]) -> dict[str, Any]:
         "official_cause": official,
         "sec_identified": sec_identified,
         "official_sec_evidence": bool(official and sec_identified),
+        "point_in_time_sec_evidence": point_in_time_sec,
+        "chronology_verified": chronology_verified,
+        "published_at": record.get("cause_published_at"),
+        "observed_at": record.get("cause_observed_at"),
+        "accession": str(record.get("cause_accession") or "")[:80],
         "cause_tier": str(record.get("cause_tier") or "unknown"),
         "entry_evidence_state": str(record.get("entry_evidence_state") or "unknown"),
     }
@@ -148,7 +167,7 @@ def build_stock_research_features(
 
     aligned_count = sum(
         (
-            sec.get("official_sec_evidence") is True,
+            sec.get("point_in_time_sec_evidence") is True,
             chart.get("direction_alignment") is True,
             smc.get("direction_alignment") is True,
         )
@@ -280,6 +299,14 @@ def evaluate_stock_research_attribution(
         value = sec_features.get("official_sec_evidence")
         return value if isinstance(value, bool) else None
 
+    def point_in_time_sec(row: dict[str, Any]) -> bool | None:
+        features = row.get("research_features") or {}
+        sec_features = features.get("sec") if isinstance(features.get("sec"), dict) else {}
+        if sec_features.get("source_metadata_available") is not True:
+            return None
+        value = sec_features.get("point_in_time_sec_evidence")
+        return value if isinstance(value, bool) else None
+
     def chart(row: dict[str, Any]) -> bool | None:
         features = row.get("research_features") or {}
         value = ((features.get("chart") or {}).get("direction_alignment"))
@@ -303,6 +330,11 @@ def evaluate_stock_research_attribution(
         "baseline": baseline,
         "factors": {
             "official_sec_evidence": _factor_report(rows, sec, minimum_sample=minimum_sample),
+            "point_in_time_sec_evidence": _factor_report(
+                rows,
+                point_in_time_sec,
+                minimum_sample=minimum_sample,
+            ),
             "chart_direction_alignment": _factor_report(rows, chart, minimum_sample=minimum_sample),
             "smc_fvg_alignment": _factor_report(rows, smc, minimum_sample=minimum_sample),
             "two_of_three_alignment": _factor_report(rows, combined, minimum_sample=minimum_sample),
@@ -311,6 +343,8 @@ def evaluate_stock_research_attribution(
             "daily_bars_on_signal_date_excluded": True,
             "smc_confirmation_lag_enforced": True,
             "sec_evidence_uses_entry_time_frozen_source_metadata": True,
+            "point_in_time_sec_requires_published_before_signal": True,
+            "legacy_sec_rows_without_frozen_chronology_are_not_upgraded": True,
             "no_factor_changes_live_scores": True,
             "walk_forward_review_required_before_any_promotion": True,
         },
