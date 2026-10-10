@@ -11,15 +11,18 @@ NY = ZoneInfo("America/New_York")
 def _bars(*, current_multiplier: float = 2.0) -> pd.DataFrame:
     rows = []
     volumes = []
-    start = datetime(2026, 9, 21, 9, 30, tzinfo=NY)
     session_days = [
-        datetime(2026, 9, 21 + offset, 9, 30, tzinfo=NY)
-        for offset in range(0, 5)
-    ] + [
-        datetime(2026, 9, 28 + offset, 9, 30, tzinfo=NY)
-        for offset in range(0, 5)
+        datetime(2026, 9, 21, 9, 30, tzinfo=NY),
+        datetime(2026, 9, 22, 9, 30, tzinfo=NY),
+        datetime(2026, 9, 23, 9, 30, tzinfo=NY),
+        datetime(2026, 9, 24, 9, 30, tzinfo=NY),
+        datetime(2026, 9, 25, 9, 30, tzinfo=NY),
+        datetime(2026, 9, 28, 9, 30, tzinfo=NY),
+        datetime(2026, 9, 29, 9, 30, tzinfo=NY),
+        datetime(2026, 9, 30, 9, 30, tzinfo=NY),
+        datetime(2026, 10, 1, 9, 30, tzinfo=NY),
+        datetime(2026, 10, 2, 9, 30, tzinfo=NY),
     ]
-    # Avoid weekends by explicitly using two Mon-Fri blocks.
     for day in session_days:
         for minutes in (0, 5, 10, 15, 20, 25, 30):
             rows.append((day + timedelta(minutes=minutes)).astimezone(timezone.utc))
