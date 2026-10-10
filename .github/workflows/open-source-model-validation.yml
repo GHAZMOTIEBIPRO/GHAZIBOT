@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/open-source-model-validation.yml"
       - "scripts/validate_open_source_greeks.py"
+      - "scripts/validate_open_source_research.py"
+      - "options_radar/open_source_research.py"
       - "requirements-research.txt"
   schedule:
     - cron: "40 9 * * 0"
@@ -38,10 +40,15 @@ jobs:
       - name: Validate modeled Greeks against MIT reference libraries
         run: python -m scripts.validate_open_source_greeks
 
+      - name: Validate EdgarTools and hindsight-safe SMC bridges
+        run: python -m scripts.validate_open_source_research
+
       - name: Upload validation evidence
         uses: actions/upload-artifact@v4
         with:
           name: open-source-model-validation
-          path: public/data/open_source_greeks_validation.json
+          path: |
+            public/data/open_source_greeks_validation.json
+            public/data/open_source_research_validation.json
           if-no-files-found: error
           retention-days: 14

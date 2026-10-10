@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-07",
+  "generated_at": "2026-10-10",
   "policy": {
     "zero_cost": true,
     "copy_code_only_with_compatible_license": true,
@@ -88,6 +88,30 @@
       "use": "Provider-abstraction concepts reviewed for future adapters.",
       "live_decision_authority": false,
       "reason": "OpenBB is an abstraction layer over upstream providers, not a new independent source family. Current data_fabric already preserves provider provenance; adding a hard dependency now would add weight without new execution-grade evidence."
+    },
+    {
+      "repo": "dgunning/edgartools",
+      "license": "MIT",
+      "decision": "INTEGRATED_RESEARCH_SHADOW",
+      "use": "Optional SEC filing parsing/enrichment validation layered above the existing official SEC endpoints.",
+      "live_decision_authority": false,
+      "reason": "Official SEC APIs remain authoritative. The optional bridge cannot create or upgrade a trading signal."
+    },
+    {
+      "repo": "joshyattridge/smart-money-concepts",
+      "license": "MIT",
+      "decision": "INTEGRATED_RESEARCH_SHADOW_WITH_CAUSAL_GUARD",
+      "use": "FVG and market-structure research validation with explicit confirmation lag for forward-looking swing labels.",
+      "live_decision_authority": false,
+      "reason": "Upstream swing labels use candles before and after the candidate pivot, so the newest swing_length bars are excluded from live research evidence."
+    },
+    {
+      "repo": "tradingview/lightweight-charts",
+      "license": "Apache-2.0",
+      "decision": "INTEGRATED_UI",
+      "use": "Interactive Arabic candlestick display for published OHLC bars, entry zone, targets, and invalidation levels.",
+      "live_decision_authority": false,
+      "reason": "Presentation only; TradingView attribution is retained and the chart cannot bypass data-quality or V11 gates."
     }
   ]
 }

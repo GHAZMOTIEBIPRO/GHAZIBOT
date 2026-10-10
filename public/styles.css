@@ -151,3 +151,30 @@ footer p { margin: 5px 0; }
   .catalyst-row { grid-template-columns: 70px 1fr; }
   .catalyst-row a { grid-column: 1 / -1; }
 }
+
+.market-chart-shell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.market-chart {
+  width: 100%;
+  min-height: 520px;
+  direction: ltr;
+}
+.chart-attribution {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 8px 0 0;
+}
+.chart-attribution a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .market-chart { min-height: 420px; }
+}
+

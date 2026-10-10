@@ -192,6 +192,8 @@ def _closed_payload(
         "flow_summary": {},
         "provider_audit": {},
         "stocks": [],
+        "charts": {},
+        "chart_errors": {},
         "options": [],
         "top_calls": [],
         "top_puts": [],
@@ -208,9 +210,10 @@ def _closed_payload(
 def main(argv: list[str] | None = None) -> int:
     from options_radar.calibration import build_calibration_report
     from options_radar.catalysts import CatalystScanner
+    from options_radar.chart_payload import build_chart_bundle
     from options_radar.journal import SignalJournal
     from options_radar.market_clock import market_clock_state
-    from options_radar.providers import load_universe
+    from options_radar.providers import get_price_history, load_universe
     from options_radar.scanner import OptionsRadar
     from options_radar.settings import Settings
     from options_radar.stocks import StockRadar
@@ -554,6 +557,13 @@ def main(argv: list[str] | None = None) -> int:
         stock_records,
         _best_options_by_symbol(options),
     )
+    charts, chart_errors = build_chart_bundle(
+        stock_records,
+        get_price_history,
+        max_symbols=6,
+        max_bars=160,
+        period="6mo",
+    )
 
     payload = {
         "schema_version": 5,
@@ -604,6 +614,8 @@ def main(argv: list[str] | None = None) -> int:
         "performance": performance,
         "calibration": calibration,
         "stocks": stock_records,
+        "charts": _json_value(charts),
+        "chart_errors": _json_value(chart_errors),
         "options": option_records,
         "top_calls": call_records,
         "top_puts": put_records,
