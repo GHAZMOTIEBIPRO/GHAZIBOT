@@ -199,3 +199,29 @@ def test_occ_monthly_queries_completed_month_end_only() -> None:
     assert session.calls[1]["params"]["reportDate"] == "20260831"
     assert result["report_date_policy"] == "completed_month_business_end"
 
+def test_occ_html_failures_open_report_family_circuit_for_remaining_symbols() -> None:
+    session = _Session([
+        _Response(200, "<html>blocked or no report</html>"),
+        _Response(200, "<html>blocked or no report</html>"),
+    ])
+    client = OccFreeVolumeClient(session=session, min_interval_seconds=0)
+
+    first = client.fetch_report(
+        "MSFT",
+        "weekly",
+        reference_date=date(2026, 10, 10),
+    )
+    second = client.fetch_report(
+        "AAPL",
+        "weekly",
+        reference_date=date(2026, 10, 10),
+    )
+
+    assert first["success"] is False
+    assert first["circuit_open"] is True
+    assert len(first["attempts"]) == 2
+    assert second["success"] is False
+    assert second["circuit_open"] is True
+    assert second["attempts"] == []
+    assert len(session.calls) == 2
+
