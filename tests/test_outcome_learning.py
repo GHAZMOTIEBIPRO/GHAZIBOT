@@ -235,6 +235,8 @@ def test_chart_and_sec_research_cohorts_never_create_score_adjustments():
             {
                 "chart_side_alignment": 0.8 if aligned else -0.8,
                 "chart_available_timeframes": 3,
+                "research_chart_structure_alignment": 0.9 if aligned else -0.9,
+                "research_chart_structure_timeframes": 3,
                 "sec_catalyst": aligned,
                 "catalyst_source": "SEC EDGAR" if aligned else "",
             }
@@ -244,8 +246,10 @@ def test_chart_and_sec_research_cohorts_never_create_score_adjustments():
     calibration = build_calibration(state, minimum_sample=100)
 
     chart = calibration["research_features"]["chart_side_alignment"]
+    structure = calibration["research_features"]["classical_structure_alignment"]
     sec = calibration["research_features"]["sec_catalyst"]
     assert chart["aligned"]["mean_return_pct"] == 12
+    assert structure["aligned"]["mean_return_pct"] == 12
     assert chart["opposed"]["mean_return_pct"] == -6
     assert chart["aligned"]["score_adjustment"] == 0.0
     assert sec["sec_official_context"]["score_adjustment"] == 0.0
@@ -303,6 +307,7 @@ def test_research_mid_or_last_outcomes_are_measured_but_never_activate_learning(
                 "vol_to_oi_ratio": 1.5,
                 "spread_pct": 0.2,
                 "chart_side_alignment": 0.8 if aligned else -0.8,
+                "research_chart_structure_alignment": 0.9 if aligned else -0.9,
                 "sec_catalyst": aligned,
             },
             "checkpoints": {
@@ -322,5 +327,6 @@ def test_research_mid_or_last_outcomes_are_measured_but_never_activate_learning(
     assert calibration["active"] is False
     assert calibration["global_research"]["mean_return_pct"] == 2.5
     assert calibration["research_features"]["chart_side_alignment"]["aligned"]["mean_return_pct"] == 15
+    assert calibration["research_features"]["classical_structure_alignment"]["aligned"]["mean_return_pct"] == 15
     assert calibration["research_features"]["chart_side_alignment"]["aligned"]["score_adjustment"] == 0.0
 
