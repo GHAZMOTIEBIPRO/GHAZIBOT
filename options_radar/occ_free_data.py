@@ -48,6 +48,57 @@ def _latest_business_dates(reference: date | None = None, lookback_days: int = 8
     return dates
 
 
+def _last_business_day(year: int, month: int) -> date:
+    if month == 12:
+        first_next = date(year + 1, 1, 1)
+    else:
+        first_next = date(year, month + 1, 1)
+    candidate = first_next - timedelta(days=1)
+    while candidate.weekday() >= 5:
+        candidate -= timedelta(days=1)
+    return candidate
+
+
+def _report_dates(
+    report_key: str,
+    reference: date | None = None,
+    *,
+    periods: int = 6,
+) -> list[date]:
+    """Return period-appropriate OCC report dates.
+
+    Daily reports use recent business days. Weekly reports use Fridays only.
+    Monthly reports use completed calendar months only; querying arbitrary
+    current-month business dates can return OCC HTML/no-report pages.
+    """
+
+    current = reference or datetime.now(timezone.utc).date()
+    if report_key == "daily":
+        return _latest_business_dates(current, lookback_days=max(8, periods))
+
+    if report_key == "weekly":
+        days_since_friday = (current.weekday() - 4) % 7
+        friday = current - timedelta(days=days_since_friday)
+        return [friday - timedelta(days=7 * offset) for offset in range(max(1, periods))]
+
+    if report_key == "monthly":
+        first_current = date(current.year, current.month, 1)
+        previous_month_day = first_current - timedelta(days=1)
+        output: list[date] = []
+        year = previous_month_day.year
+        month = previous_month_day.month
+        for _ in range(max(1, periods)):
+            output.append(_last_business_day(year, month))
+            if month == 1:
+                year -= 1
+                month = 12
+            else:
+                month -= 1
+        return output
+
+    raise ValueError(f"Unsupported OCC report key: {report_key}")
+
+
 def _row_value(row: dict[str, Any], aliases: set[str]) -> Any:
     for key, value in row.items():
         if _normalise_key(key) in aliases:
@@ -199,7 +250,7 @@ class OccFreeVolumeClient:
     ) -> dict[str, Any]:
         report_type = OCC_REPORT_TYPES[report_key]
         attempts: list[dict[str, Any]] = []
-        for report_date in _latest_business_dates(reference_date):
+        for report_date in _report_dates(report_key, reference_date):
             compact = report_date.strftime("%Y%m%d")
             params = {
                 "reportDate": compact,
@@ -237,6 +288,13 @@ class OccFreeVolumeClient:
                     "report_key": report_key,
                     "report_type": report_type,
                     "report_date": compact,
+                    "report_date_policy": (
+                        "recent_business_day"
+                        if report_key == "daily"
+                        else "completed_week_friday"
+                        if report_key == "weekly"
+                        else "completed_month_business_end"
+                    ),
                     "fetched_at": datetime.now(timezone.utc).isoformat(),
                     "context_only": True,
                     "not_live_quote": True,

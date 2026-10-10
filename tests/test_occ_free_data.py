@@ -165,3 +165,37 @@ def test_occ_context_enriches_but_never_promotes_to_a() -> None:
     assert enriched["expiry_radar"]["policy"]["occ_cannot_create_tier_a"] is True
     assert enriched["expiry_radar"]["summary"]["occ_requested_symbols"] == 1
     assert enriched["expiry_radar"]["summary"]["occ_requested_reports"] == 1
+
+def test_occ_weekly_queries_fridays_instead_of_every_business_day() -> None:
+    session = _Session([
+        _Response(404),
+        _Response(200, "Symbol,Call Volume,Put Volume\nMSFT,120,80\n"),
+    ])
+    client = OccFreeVolumeClient(session=session, min_interval_seconds=0)
+    result = client.fetch_report(
+        "MSFT",
+        "weekly",
+        reference_date=date(2026, 10, 10),
+    )
+    assert result["success"] is True
+    assert session.calls[0]["params"]["reportDate"] == "20261009"
+    assert session.calls[1]["params"]["reportDate"] == "20261002"
+    assert result["report_date_policy"] == "completed_week_friday"
+
+
+def test_occ_monthly_queries_completed_month_end_only() -> None:
+    session = _Session([
+        _Response(404),
+        _Response(200, "Symbol,Call Volume,Put Volume\nMSFT,1000,900\n"),
+    ])
+    client = OccFreeVolumeClient(session=session, min_interval_seconds=0)
+    result = client.fetch_report(
+        "MSFT",
+        "monthly",
+        reference_date=date(2026, 10, 10),
+    )
+    assert result["success"] is True
+    assert session.calls[0]["params"]["reportDate"] == "20260930"
+    assert session.calls[1]["params"]["reportDate"] == "20260831"
+    assert result["report_date_policy"] == "completed_month_business_end"
+

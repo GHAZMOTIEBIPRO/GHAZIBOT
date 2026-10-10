@@ -22,6 +22,11 @@ _DILUTION_TERMS = (
     "convertible",
 )
 _REVERSE_SPLIT_TERMS = ("reverse split", "reverse stock split")
+_PROPOSED_SALE_TERMS = (
+    "form 144",
+    "proposed affiliate sale",
+    "proposed sale notice",
+)
 _MATERIAL_CATALYST_TERMS = (
     "fda",
     "approval",
@@ -221,6 +226,7 @@ def assess_microcap_candidate(row: dict[str, Any]) -> MicrocapAssessment:
     text = _text(row)
     dilution_context = dilution_risk >= 45 or any(term in text for term in _DILUTION_TERMS)
     reverse_split_context = any(term in text for term in _REVERSE_SPLIT_TERMS)
+    proposed_sale_context = any(term in text for term in _PROPOSED_SALE_TERMS)
     material_text = any(term in text for term in _MATERIAL_CATALYST_TERMS)
 
     float_component = _float_score(float_shares)
@@ -272,6 +278,11 @@ def assess_microcap_candidate(row: dict[str, Any]) -> MicrocapAssessment:
     if reverse_split_context:
         flags.append("REVERSE_SPLIT_CONTEXT")
         risk_penalty += 12.0
+
+    if proposed_sale_context:
+        flags.append("FORM144_PROPOSED_SALE_CONTEXT")
+        risk_penalty += 8.0
+        reasons.append("SEC Form 144 proposed sale adds supply-risk context; execution not assumed")
 
     if dilution_context:
         flags.append("DILUTION_REVIEW")

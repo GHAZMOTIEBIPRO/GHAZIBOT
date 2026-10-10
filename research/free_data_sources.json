@@ -1,7 +1,47 @@
 {
   "name": "GHAZI BLACK BOX — Free Research Source Registry",
-  "policy": "shadow_research_only",
+  "policy": "health_and_shadow_research_only",
   "sources": [
+    {
+      "name": "U.S. Treasury yield curve",
+      "role": "official macro rates context",
+      "use": "official_macro_context",
+      "family": "us_treasury",
+      "signal_authority": false,
+      "url": "https://home.treasury.gov/"
+    },
+    {
+      "name": "FINRA Reg SHO daily short-sale volume",
+      "role": "official short-sale volume context; not short interest",
+      "use": "official_market_context",
+      "family": "finra",
+      "signal_authority": false,
+      "url": "https://api.finra.org/"
+    },
+    {
+      "name": "OCC Volume Query",
+      "role": "official aggregate options call/put volume for period context",
+      "use": "official_market_context",
+      "family": "occ",
+      "signal_authority": false,
+      "url": "https://www.theocc.com/market-data/market-data-reports/other-market-data-info/batch-processing/volume-query-batch-processing"
+    },
+    {
+      "name": "SEC Form 144 electronic filings",
+      "role": "proposed affiliate-sale supply context; not proof of execution",
+      "use": "official_supply_risk_context",
+      "family": "sec_edgar",
+      "signal_authority": false,
+      "url": "https://www.sec.gov/submit-filings/filer-support-resources/how-do-i-guides/file-form-144-electronically"
+    },
+    {
+      "name": "SEC EDGAR submissions + Company Facts",
+      "role": "official filings identity fundamentals share history and fallback when EFTS is blocked",
+      "use": "official_primary_or_fallback",
+      "family": "sec_edgar",
+      "signal_authority": false,
+      "url": "https://data.sec.gov/"
+    },
     {
       "name": "Alexduanran/spx-0dte-archive",
       "role": "SPX/SPXW intraday bars and 0DTE GEX history",
@@ -30,5 +70,6 @@
       "signal_authority": false,
       "url": "https://github.com/MitchelTurner/GEX"
     }
-  ]
+  ],
+  "version": "FREE_DATA_FABRIC_V2"
 }

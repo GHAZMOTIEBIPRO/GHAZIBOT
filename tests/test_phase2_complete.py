@@ -10,6 +10,7 @@ from options_radar.advanced_signals import (
     classify_13d_purpose,
     classify_dilution,
     is_standard_occ_contract,
+    parse_form144_notice,
     parse_form4_transactions,
 )
 from options_radar.calibration import build_calibration_report
@@ -179,3 +180,35 @@ def test_public_page_contains_rejected_and_calibration_sections() -> None:
     assert 'data-tab="results"' in html
     assert "renderRejected" in javascript
     assert "renderCalibration" in javascript
+
+def test_form144_is_proposed_sale_context_not_execution_proof() -> None:
+    raw = """
+    <edgarSubmission>
+      <formData>
+        <issuerInfo>
+          <nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold>Jane Doe</nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold>
+          <relationshipsToIssuer><relationshipToIssuer>Officer</relationshipToIssuer></relationshipsToIssuer>
+        </issuerInfo>
+        <securitiesInformation>
+          <noOfUnitsSold>250000</noOfUnitsSold>
+          <aggregateMarketValue>3750000</aggregateMarketValue>
+          <noOfUnitsOutstanding>10000000</noOfUnitsOutstanding>
+          <approxSaleDate>10/15/2026</approxSaleDate>
+        </securitiesInformation>
+        <securitiesSoldInPast3Months>
+          <amountOfSecuritiesSold>50000</amountOfSecuritiesSold>
+          <grossProceeds>700000</grossProceeds>
+        </securitiesSoldInPast3Months>
+      </formData>
+    </edgarSubmission>
+    """
+    result = parse_form144_notice(raw)
+    assert result is not None
+    assert result.purpose == "proposed_sale_notice"
+    assert result.share_count == 250_000
+    assert result.event_value == 3_750_000
+    assert result.score == -10
+    assert "not an executed-sale confirmation" in result.evidence
+    assert "2.500% of reported units outstanding" in result.evidence
+    assert result.confidence >= 0.95
+
