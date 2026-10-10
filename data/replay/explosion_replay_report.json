@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-10T10:17:12.494895+00:00",
+  "generated_at": "2026-10-10T16:18:45.985983+00:00",
   "purpose": "hindsight-safe threshold calibration with explosion archetypes and stable negative controls",
   "score_is_probability": false,
   "live_threshold_auto_changed": false,
@@ -24,6 +24,7 @@
   "threshold_sweep": [
     {
       "threshold": 40.0,
+      "score_column": "replay_score",
       "true_positive": 31,
       "false_positive": 3261,
       "false_negative": 33,
@@ -35,6 +36,7 @@
     },
     {
       "threshold": 45.0,
+      "score_column": "replay_score",
       "true_positive": 24,
       "false_positive": 2603,
       "false_negative": 40,
@@ -46,6 +48,7 @@
     },
     {
       "threshold": 50.0,
+      "score_column": "replay_score",
       "true_positive": 16,
       "false_positive": 1719,
       "false_negative": 48,
@@ -57,6 +60,7 @@
     },
     {
       "threshold": 55.0,
+      "score_column": "replay_score",
       "true_positive": 12,
       "false_positive": 1124,
       "false_negative": 52,
@@ -68,6 +72,7 @@
     },
     {
       "threshold": 60.0,
+      "score_column": "replay_score",
       "true_positive": 7,
       "false_positive": 801,
       "false_negative": 57,
@@ -79,6 +84,7 @@
     },
     {
       "threshold": 65.0,
+      "score_column": "replay_score",
       "true_positive": 5,
       "false_positive": 580,
       "false_negative": 59,
@@ -90,6 +96,7 @@
     },
     {
       "threshold": 70.0,
+      "score_column": "replay_score",
       "true_positive": 4,
       "false_positive": 372,
       "false_negative": 60,
@@ -101,6 +108,7 @@
     },
     {
       "threshold": 75.0,
+      "score_column": "replay_score",
       "true_positive": 2,
       "false_positive": 242,
       "false_negative": 62,
@@ -112,6 +120,7 @@
     },
     {
       "threshold": 80.0,
+      "score_column": "replay_score",
       "true_positive": 2,
       "false_positive": 140,
       "false_negative": 62,
@@ -125,6 +134,7 @@
   "recommended_research_threshold": 80.0,
   "recommended_metrics": {
     "threshold": 80.0,
+    "score_column": "replay_score",
     "true_positive": 2,
     "false_positive": 140,
     "false_negative": 62,
@@ -133,6 +143,135 @@
     "recall": 0.0312,
     "false_positive_rate": 0.0286,
     "research_utility": 0.0023
+  },
+  "supply_vacuum_v2": {
+    "research_only": true,
+    "live_threshold_auto_changed": false,
+    "score_is_probability": false,
+    "threshold_sweep": [
+      {
+        "threshold": 40.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 33,
+        "false_positive": 3221,
+        "false_negative": 31,
+        "true_negative": 1675,
+        "precision": 0.0101,
+        "recall": 0.5156,
+        "false_positive_rate": 0.6579,
+        "research_utility": -0.1486
+      },
+      {
+        "threshold": 45.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 26,
+        "false_positive": 2419,
+        "false_negative": 38,
+        "true_negative": 2477,
+        "precision": 0.0106,
+        "recall": 0.4062,
+        "false_positive_rate": 0.4941,
+        "research_utility": -0.0994
+      },
+      {
+        "threshold": 50.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 22,
+        "false_positive": 1503,
+        "false_negative": 42,
+        "true_negative": 3393,
+        "precision": 0.0144,
+        "recall": 0.3438,
+        "false_positive_rate": 0.307,
+        "research_utility": -0.005
+      },
+      {
+        "threshold": 55.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 19,
+        "false_positive": 984,
+        "false_negative": 45,
+        "true_negative": 3912,
+        "precision": 0.0189,
+        "recall": 0.2969,
+        "false_positive_rate": 0.201,
+        "research_utility": 0.0422
+      },
+      {
+        "threshold": 60.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 15,
+        "false_positive": 732,
+        "false_negative": 49,
+        "true_negative": 4164,
+        "precision": 0.0201,
+        "recall": 0.2344,
+        "false_positive_rate": 0.1495,
+        "research_utility": 0.041
+      },
+      {
+        "threshold": 65.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 10,
+        "false_positive": 489,
+        "false_negative": 54,
+        "true_negative": 4407,
+        "precision": 0.02,
+        "recall": 0.1562,
+        "false_positive_rate": 0.0999,
+        "research_utility": 0.0288
+      },
+      {
+        "threshold": 70.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 5,
+        "false_positive": 302,
+        "false_negative": 59,
+        "true_negative": 4594,
+        "precision": 0.0163,
+        "recall": 0.0781,
+        "false_positive_rate": 0.0617,
+        "research_utility": 0.0078
+      },
+      {
+        "threshold": 75.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 4,
+        "false_positive": 175,
+        "false_negative": 60,
+        "true_negative": 4721,
+        "precision": 0.0223,
+        "recall": 0.0625,
+        "false_positive_rate": 0.0357,
+        "research_utility": 0.0181
+      },
+      {
+        "threshold": 80.0,
+        "score_column": "replay_score_v2",
+        "true_positive": 2,
+        "false_positive": 105,
+        "false_negative": 62,
+        "true_negative": 4791,
+        "precision": 0.0187,
+        "recall": 0.0312,
+        "false_positive_rate": 0.0214,
+        "research_utility": 0.0084
+      }
+    ],
+    "recommended_research_threshold": 65.0,
+    "recommended_metrics": {
+      "threshold": 65.0,
+      "score_column": "replay_score_v2",
+      "true_positive": 10,
+      "false_positive": 489,
+      "false_negative": 54,
+      "true_negative": 4407,
+      "precision": 0.02,
+      "recall": 0.1562,
+      "false_positive_rate": 0.0999,
+      "research_utility": 0.0288
+    },
+    "promotion_policy": "V2 must beat baseline out-of-sample on precision/recall trade-off without unacceptable false-positive expansion before any live use."
   },
   "archetype_largest_event_catch_rate": 0.2,
   "negative_control_signal_rate": 0.0415,
@@ -208,6 +347,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 5,
         "positive_windows": 28,
         "true_positive": 0,
@@ -297,6 +437,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 6,
         "positive_windows": 16,
         "true_positive": 2,
@@ -386,6 +527,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 12,
         "positive_windows": 0,
         "true_positive": 0,
@@ -475,6 +617,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 6,
         "positive_windows": 5,
         "true_positive": 0,
@@ -564,6 +707,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 10,
         "positive_windows": 15,
         "true_positive": 0,
@@ -653,6 +797,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 13,
         "positive_windows": 0,
         "true_positive": 0,
@@ -742,6 +887,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 17,
         "positive_windows": 0,
         "true_positive": 0,
@@ -831,6 +977,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 28,
         "positive_windows": 0,
         "true_positive": 0,
@@ -920,6 +1067,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 24,
         "positive_windows": 0,
         "true_positive": 0,
@@ -1009,6 +1157,7 @@
       "metrics": {
         "rows": 496,
         "threshold": 80.0,
+        "score_column": "replay_score",
         "signals": 21,
         "positive_windows": 0,
         "true_positive": 0,
