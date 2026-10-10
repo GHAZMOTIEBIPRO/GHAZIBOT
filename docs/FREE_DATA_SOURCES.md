@@ -56,6 +56,24 @@ Barchart, Market Chameleon, Unusual Whales, Cboe, and social-network pages may b
 - The history is persisted across GitHub Actions runs and becomes useful for anomaly baselines only after enough distinct prior sessions accumulate.
 - This history is research-only and cannot prove a sweep, buy-to-open, dealer positioning, or execution-grade option pricing.
 
+## Enable MarketData.app free historical research
+
+The adapter is already wired into the options radar. It stays inactive until the repository has a token.
+
+1. Create a free MarketData.app account and copy its API token.
+2. In the GitHub repository, open **Settings → Secrets and variables → Actions → New repository secret**.
+3. Use the exact secret name `MARKETDATA_TOKEN`, then save the token as its value. Do not commit it to the repository or paste it into issues, Telegram, or logs.
+4. Run **GHAZI Stocks and Options Radar** from GitHub Actions and inspect that run's logs and result artifact for a successful `marketdata` `option_volume_history` attempt.
+
+This enables historical contract-volume research only. It does not change the live option quote provider, make quotes execution-grade, or promote V11. A Yahoo-only quote chain should continue to show `FALLBACK_ONLY` after the token is added.
+
+## Contract Guardian interpretation
+
+- Telegram acceptance confirms message delivery, not quote quality or trading readiness.
+- Untimestamped contract values remain indicative observations. They do not establish P&L, MFE/MAE, target achievement, or a V11 signal.
+- Provisional target/stop states remain provisional until the underlying price and its source have verifiable timestamps.
+- Premium targets are modeled research ranges, not guaranteed prices.
+
 ## Evidence policy
 
 - A different website name does not automatically mean an independent evidence class.
