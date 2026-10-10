@@ -215,6 +215,7 @@ class ResilientCatalystScanner(CatalystScanner):
                 advanced = enrich_sec_event(form, raw_filing or clean_filing)
                 score, category, evidence = _score_text(f"{base_text} {clean_filing}")
                 event_value = None
+                share_count = None
                 confidence = 0.7
                 purpose = "keyword_event"
                 if advanced is not None:
@@ -222,6 +223,7 @@ class ResilientCatalystScanner(CatalystScanner):
                     category = advanced.category
                     evidence = advanced.evidence
                     event_value = advanced.event_value
+                    share_count = advanced.share_count
                     confidence = advanced.confidence
                     purpose = advanced.purpose
                 elif form == "4":
@@ -232,6 +234,7 @@ class ResilientCatalystScanner(CatalystScanner):
                 final_url = urljoin(SEC_BASE, filing_url)
                 self._event_meta[(symbol, final_url, form)] = {
                     "event_value": event_value,
+                    "share_count": share_count,
                     "confidence": confidence,
                     "purpose": purpose,
                 }
@@ -319,7 +322,7 @@ class ResilientCatalystScanner(CatalystScanner):
     def scan(self, symbols: Iterable[str], lookback_days: int = 7) -> pd.DataFrame:
         frame = super().scan(symbols, lookback_days=lookback_days)
         if frame.empty:
-            for column in ("event_value", "confidence", "purpose"):
+            for column in ("event_value", "share_count", "confidence", "purpose"):
                 frame[column] = pd.Series(dtype="object")
             return frame
 
@@ -331,12 +334,13 @@ class ResilientCatalystScanner(CatalystScanner):
             source = str(row.get("source", ""))
             return {
                 "event_value": None,
+                "share_count": None,
                 "confidence": 0.62 if "FDA" in source else 0.38 if "Yahoo" in source else 0.6,
                 "purpose": "fda_record" if "FDA" in source else "secondary_news",
             }
 
         meta_rows = frame.apply(metadata, axis=1, result_type="expand")
-        for column in ("event_value", "confidence", "purpose"):
+        for column in ("event_value", "share_count", "confidence", "purpose"):
             frame[column] = meta_rows[column] if column in meta_rows else None
         return frame
 
