@@ -59,6 +59,29 @@ def main() -> int:
     summary["guardian_tracked_contracts"] = report["tracked_total"]
     summary["guardian_active_contracts"] = report["active_count"]
     summary["guardian_terminal_contracts"] = report["terminal_count"]
+    response_ab = (
+        report.get("response_shadow_ab")
+        if isinstance(report.get("response_shadow_ab"), dict)
+        else {}
+    )
+    summary["response_shadow_ab_pairs"] = int(
+        response_ab.get("tracked_pairs", 0) or 0
+    )
+    summary["response_shadow_ab_60m_pairs"] = int(
+        (
+            response_ab.get("checkpoints", {}).get("60m", {})
+            if isinstance(response_ab.get("checkpoints"), dict)
+            else {}
+        ).get("n", 0)
+        or 0
+    )
+    summary["response_shadow_ab_review_ready"] = bool(
+        (
+            response_ab.get("promotion_gate", {})
+            if isinstance(response_ab.get("promotion_gate"), dict)
+            else {}
+        ).get("evidence_ready_for_manual_review")
+    )
 
     _save(state_path, updated_state)
     _save(output_path, report)
@@ -68,7 +91,9 @@ def main() -> int:
         "Contract Guardian: "
         f"tracked={report['tracked_total']} "
         f"active={report['active_count']} "
-        f"terminal={report['terminal_count']}"
+        f"terminal={report['terminal_count']} "
+        f"response_ab={response_ab.get('tracked_pairs', 0)} "
+        f"response_ab_60m={summary['response_shadow_ab_60m_pairs']}"
     )
     return 0
 
