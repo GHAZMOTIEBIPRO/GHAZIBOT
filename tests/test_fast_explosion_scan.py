@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from scripts.fast_explosion_scan_runner import rank_market
 
 
@@ -60,3 +62,14 @@ def test_common_ticker_ending_r_is_not_dropped_only_for_suffix():
     ]
     ranked = rank_market(rows, news_events=[], structural={})
     assert ranked and ranked[0].symbol == "ABCR"
+
+def test_fast_radar_enables_free_autonomy_before_data_fabric():
+    root = Path(__file__).resolve().parents[1]
+    fabric = (root / "scripts/fast_explosion_scan_fabric.py").read_text(encoding="utf-8")
+    runner = (root / "scripts/fast_explosion_scan_runner.py").read_text(encoding="utf-8")
+
+    assert "enforce_free_autonomy_environment()\ninstall_data_fabric()" in fabric
+    assert '"microcap_hunter"' in runner
+    assert '"float_shares"' in runner
+    assert '"official_catalyst_url"' in runner
+
