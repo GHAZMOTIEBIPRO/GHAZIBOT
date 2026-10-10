@@ -108,6 +108,26 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
         metadata = result.metadata or {} if hasattr(result, "metadata") else {}
         audit = metadata.get("data_fabric", {}) if isinstance(metadata, dict) else {}
         stream = metadata.get("stream_reference") if isinstance(metadata, dict) else None
+        transport_source_count = int(
+            audit.get("transport_source_count")
+            or audit.get("source_count")
+            or 0
+        )
+        independent_source_count = int(
+            audit.get("independent_source_count") or 0
+        )
+        time_rvol_payload = time_rvol.as_dict()
+        time_rvol_payload.update(
+            {
+                "selected_source": str(result.source or ""),
+                "fabric_transport_source_count": transport_source_count,
+                "fabric_independent_source_count": independent_source_count,
+                "fabric_consensus_pass": bool(
+                    audit.get("consensus_pass", True)
+                ),
+                "provider_quote_timestamp": provider_quote_timestamp,
+            }
+        )
         candidate_price = _number(getattr(candidate, "price", 0.0))
         divergence = (
             abs(candidate_price - latest) / latest
@@ -118,7 +138,9 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
             "available": True,
             "selected_source": result.source,
             "daily_source": daily_source,
-            "fabric_source_count": int(audit.get("source_count") or 0),
+            "fabric_source_count": transport_source_count,
+            "fabric_transport_source_count": transport_source_count,
+            "fabric_independent_source_count": independent_source_count,
             "fabric_sources": list(audit.get("sources") or []),
             "fabric_consensus_pass": bool(audit.get("consensus_pass", True)),
             "fabric_latest_close": round(latest, 6),
@@ -132,7 +154,7 @@ def _validate_candidate(fetcher: DataFetcher, candidate: Any) -> tuple[str, dict
                 if rvol > 0
                 else ""
             ),
-            "time_normalized_rvol": time_rvol.as_dict(),
+            "time_normalized_rvol": time_rvol_payload,
             "nasdaq_vs_fabric_divergence_pct": round(divergence, 6),
             "selected_close_divergence_pct": audit.get("selected_close_divergence_pct"),
             "stream_reference": stream if isinstance(stream, dict) else None,
@@ -189,6 +211,81 @@ def _persist_validation(ranked: list[Any]) -> None:
     runner.base._save(runner.FAST_MARKET_STATE_PATH, payload)
 
 
+def _apply_validation_to_candidate(
+    candidate: Any,
+    validation: dict[str, Any],
+    *,
+    regular: bool,
+    discovery_divergence: float,
+) -> None:
+    candidate.data_fabric_validation = validation
+    time_rvol = validation.get("time_normalized_rvol")
+    if isinstance(time_rvol, dict):
+        candidate.time_normalized_rvol = time_rvol
+    if not validation.get("available"):
+        candidate.reasons.append("بيانات التحقق المتعدد غير متاحة؛ لا ترقية للثقة")
+        return
+
+    transports = int(
+        validation.get("fabric_transport_source_count")
+        or validation.get("fabric_source_count")
+        or 0
+    )
+    independent = int(
+        validation.get("fabric_independent_source_count") or 0
+    )
+    divergence = _number(validation.get("nasdaq_vs_fabric_divergence_pct"))
+    consensus = bool(validation.get("fabric_consensus_pass", True))
+
+    # Confidence can only increase when at least two independent source families
+    # agree. Multiple Yahoo transports are never counted as independent evidence.
+    if independent >= 2 and consensus:
+        candidate.reasons.insert(
+            1,
+            f"Data Fabric: توافق {independent} عائلات مصادر مستقلة",
+        )
+        candidate.institutional_priority = min(
+            100.0,
+            float(
+                getattr(
+                    candidate,
+                    "institutional_priority",
+                    candidate.score,
+                )
+            )
+            + 2.0,
+        )
+
+    if regular and transports >= 2 and divergence > discovery_divergence:
+        candidate.reasons.append(
+            f"تحذير بيانات: Nasdaq/Fabric مختلفان {divergence * 100:.1f}%"
+        )
+        candidate.institutional_priority = max(
+            0.0,
+            float(
+                getattr(
+                    candidate,
+                    "institutional_priority",
+                    candidate.score,
+                )
+            )
+            - 12.0,
+        )
+    elif transports >= 2 and not consensus:
+        candidate.reasons.append("حاجز بيانات: اختلاف واضح بين مزودي الأسعار")
+        candidate.institutional_priority = max(
+            0.0,
+            float(
+                getattr(
+                    candidate,
+                    "institutional_priority",
+                    candidate.score,
+                )
+            )
+            - 10.0,
+        )
+
+
 def _rank_market_with_fabric(rows, news_events, structural):
     ranked = _original_rank(rows, news_events=news_events, structural=structural)
     if not ranked:
@@ -229,62 +326,12 @@ def _rank_market_with_fabric(rows, news_events, structural):
         if validation is None:
             candidate.data_fabric_validation = {"available": False, "not_checked": True}
             continue
-        candidate.data_fabric_validation = validation
-        time_rvol = validation.get("time_normalized_rvol")
-        if isinstance(time_rvol, dict):
-            candidate.time_normalized_rvol = time_rvol
-        if not validation.get("available"):
-            candidate.reasons.append("بيانات التحقق المتعدد غير متاحة؛ لا ترقية للثقة")
-            continue
-        sources = int(validation.get("fabric_source_count") or 0)
-        divergence = _number(validation.get("nasdaq_vs_fabric_divergence_pct"))
-        consensus = bool(validation.get("fabric_consensus_pass", True))
-        if sources >= 2 and consensus:
-            candidate.reasons.insert(
-                1,
-                f"Data Fabric: توافق {sources} مصادر مستقلة",
-            )
-            candidate.institutional_priority = min(
-                100.0,
-                float(
-                    getattr(
-                        candidate,
-                        "institutional_priority",
-                        candidate.score,
-                    )
-                )
-                + 2.0,
-            )
-        if regular and sources >= 2 and divergence > discovery_divergence:
-            candidate.reasons.append(
-                f"تحذير بيانات: Nasdaq/Fabric مختلفان {divergence * 100:.1f}%"
-            )
-            # Microcaps can move several percent inside one 5-minute bucket. This
-            # is a strong penalty, not an automatic invalidation of the stock path.
-            candidate.institutional_priority = max(
-                0.0,
-                float(
-                    getattr(
-                        candidate,
-                        "institutional_priority",
-                        candidate.score,
-                    )
-                )
-                - 12.0,
-            )
-        elif sources >= 2 and not consensus:
-            candidate.reasons.append("حاجز بيانات: اختلاف واضح بين مزودي الأسعار")
-            candidate.institutional_priority = max(
-                0.0,
-                float(
-                    getattr(
-                        candidate,
-                        "institutional_priority",
-                        candidate.score,
-                    )
-                )
-                - 10.0,
-            )
+        _apply_validation_to_candidate(
+            candidate,
+            validation,
+            regular=regular,
+            discovery_divergence=discovery_divergence,
+        )
 
     _persist_validation(ranked)
     ranked.sort(
