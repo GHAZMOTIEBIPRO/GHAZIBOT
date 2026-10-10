@@ -37,8 +37,17 @@ def _download_frame(symbol: str, period: str, target_return_pct: float = 25.0):
     return add_causal_replay_features(frame)
 
 
-def _aggregate(frames: dict[str, Any], threshold: float) -> dict[str, Any]:
-    metrics = [evaluate_replay(frame, threshold=threshold) for frame in frames.values() if frame is not None and not frame.empty]
+def _aggregate(
+    frames: dict[str, Any],
+    threshold: float,
+    *,
+    score_column: str = "replay_score",
+) -> dict[str, Any]:
+    metrics = [
+        evaluate_replay(frame, threshold=threshold, score_column=score_column)
+        for frame in frames.values()
+        if frame is not None and not frame.empty
+    ]
     tp = sum(int(row.get("true_positive", 0)) for row in metrics)
     fp = sum(int(row.get("false_positive", 0)) for row in metrics)
     fn = sum(int(row.get("false_negative", 0)) for row in metrics)
@@ -49,6 +58,7 @@ def _aggregate(frames: dict[str, Any], threshold: float) -> dict[str, Any]:
     utility = recall * 0.60 + precision * 0.25 - fpr * 0.70
     return {
         "threshold": threshold,
+        "score_column": score_column,
         "true_positive": tp,
         "false_positive": fp,
         "false_negative": fn,
@@ -99,6 +109,19 @@ def run(archetypes: list[str], controls: list[str], period: str, thresholds: lis
     pool = viable or sweep
     recommended = max(pool, key=lambda row: (row["research_utility"], row["recall"], row["precision"])) if pool else {}
     recommended_threshold = float(recommended.get("threshold", 60.0))
+
+    v2_sweep = [
+        _aggregate(frames, threshold, score_column="replay_score_v2")
+        for threshold in thresholds
+    ]
+    v2_viable = [row for row in v2_sweep if row["false_positive_rate"] <= 0.12]
+    v2_pool = v2_viable or v2_sweep
+    v2_recommended = (
+        max(v2_pool, key=lambda row: (row["research_utility"], row["recall"], row["precision"]))
+        if v2_pool
+        else {}
+    )
+    v2_recommended_threshold = float(v2_recommended.get("threshold", 60.0))
 
     per_symbol = []
     for symbol in all_symbols:
@@ -156,6 +179,18 @@ def run(archetypes: list[str], controls: list[str], period: str, thresholds: lis
         "threshold_sweep": sweep,
         "recommended_research_threshold": recommended_threshold,
         "recommended_metrics": recommended,
+        "supply_vacuum_v2": {
+            "research_only": True,
+            "live_threshold_auto_changed": False,
+            "score_is_probability": False,
+            "threshold_sweep": v2_sweep,
+            "recommended_research_threshold": v2_recommended_threshold,
+            "recommended_metrics": v2_recommended,
+            "promotion_policy": (
+                "V2 must beat baseline out-of-sample on precision/recall trade-off "
+                "without unacceptable false-positive expansion before any live use."
+            ),
+        },
         "archetype_largest_event_catch_rate": round(sum(bool(v) for v in archetype_event_catches) / len(archetype_event_catches), 4) if archetype_event_catches else 0.0,
         "negative_control_signal_rate": round(control_signals / control_rows, 4) if control_rows else 0.0,
         "open_source_feature_ablation": open_source_feature_ablation,
@@ -168,6 +203,7 @@ def run(archetypes: list[str], controls: list[str], period: str, thresholds: lis
         "Replay calibration:",
         f"symbols={len(frames)}/{len(all_symbols)}",
         f"recommended={recommended_threshold:.0f}",
+        f"v2_recommended={v2_recommended_threshold:.0f}",
         f"catch_rate={payload['archetype_largest_event_catch_rate']:.2%}",
         f"control_signal_rate={payload['negative_control_signal_rate']:.2%}",
     )
