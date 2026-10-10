@@ -146,12 +146,22 @@ def _chart_alignment_bucket(row: dict[str, Any]) -> str:
     return "mixed"
 
 
+def _classical_structure_bucket(row: dict[str, Any]) -> str:
+    value = _number(row.get("research_chart_structure_alignment"))
+    if value >= 0.40:
+        return "aligned"
+    if value <= -0.40:
+        return "opposed"
+    return "mixed"
+
+
 def _sec_catalyst_bucket(row: dict[str, Any]) -> str:
     return "sec_official_context" if row.get("sec_catalyst") is True else "other_or_none"
 
 
 RESEARCH_FEATURE_BINS = {
     "chart_side_alignment": _chart_alignment_bucket,
+    "classical_structure_alignment": _classical_structure_bucket,
     "sec_catalyst": _sec_catalyst_bucket,
 }
 
@@ -248,6 +258,12 @@ def _features(row: dict[str, Any]) -> dict[str, Any]:
         "side_consensus_score": _number(row.get("side_consensus_score")),
         "chart_side_alignment": _number(row.get("chart_side_alignment")),
         "chart_available_timeframes": int(_number(row.get("chart_available_timeframes"))),
+        "research_chart_structure_alignment": _number(
+            row.get("research_chart_structure_alignment")
+        ),
+        "research_chart_structure_timeframes": int(
+            _number(row.get("research_chart_structure_timeframes"))
+        ),
         "catalyst_source": catalyst_source[:160],
         "sec_catalyst": sec_catalyst,
         "learning_adjustment": _number(row.get("learning_adjustment")),
