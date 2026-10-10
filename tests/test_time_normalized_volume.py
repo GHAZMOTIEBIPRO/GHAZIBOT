@@ -49,9 +49,9 @@ def test_same_clock_rvol_compares_only_volume_available_by_current_minute():
     assert result.available is True
     assert result.ratio == 2.0
     assert result.sample_sessions == 10
-    assert result.current_cumulative_volume == 10_000.0
-    assert result.historical_median_cumulative_volume == 5_000.0
-    assert result.cutoff_clock_et == "09:50"
+    assert result.current_cumulative_volume == 8_000.0
+    assert result.historical_median_cumulative_volume == 4_000.0
+    assert result.cutoff_clock_et == "09:45"
     assert result.research_only is True
     assert result.live_score_adjustment is False
     assert result.decision_authority is False
@@ -75,8 +75,8 @@ def test_future_current_session_bars_do_not_leak_into_same_clock_rvol():
 
     assert result.available is True
     assert result.ratio == 2.0
-    assert result.current_cumulative_volume == 6_000.0
-    assert result.historical_median_cumulative_volume == 3_000.0
+    assert result.current_cumulative_volume == 4_000.0
+    assert result.historical_median_cumulative_volume == 2_000.0
 
 
 def test_current_session_is_excluded_from_historical_baseline():
@@ -85,7 +85,7 @@ def test_current_session_is_excluded_from_historical_baseline():
 
     assert result.available is True
     assert result.ratio == 8.0
-    assert result.historical_median_cumulative_volume == 7_000.0
+    assert result.historical_median_cumulative_volume == 6_000.0
 
 
 def test_premarket_fails_closed_without_extended_hours_history():
