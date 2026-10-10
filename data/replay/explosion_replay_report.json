@@ -1,10 +1,11 @@
 {
-  "generated_at": "2026-10-04T15:29:00.556300+00:00",
+  "generated_at": "2026-10-10T10:17:12.494895+00:00",
   "purpose": "hindsight-safe threshold calibration with explosion archetypes and stable negative controls",
   "score_is_probability": false,
   "live_threshold_auto_changed": false,
-  "warning": "Price/volume replay cannot reconstruct historical SEC float, catalyst or borrow state; recommendation is research-only.",
-  "forward_label": "max close return over next 5 sessions >= 25%",
+  "warning": "Price/volume replay cannot reconstruct historical SEC float, catalyst or borrow state. SMC replay features are causally delayed before evaluation; all attribution remains research-only.",
+  "forward_label": "max close return over next 5 sessions >= 100%",
+  "target_return_pct": 100.0,
   "period": "2y",
   "archetypes": [
     "RGC",
@@ -23,135 +24,263 @@
   "threshold_sweep": [
     {
       "threshold": 40.0,
-      "true_positive": 120,
-      "false_positive": 3187,
-      "false_negative": 171,
-      "true_negative": 1522,
-      "precision": 0.0363,
-      "recall": 0.4124,
-      "false_positive_rate": 0.6768,
-      "research_utility": -0.2173
+      "true_positive": 31,
+      "false_positive": 3261,
+      "false_negative": 33,
+      "true_negative": 1635,
+      "precision": 0.0094,
+      "recall": 0.4844,
+      "false_positive_rate": 0.6661,
+      "research_utility": -0.1733
     },
     {
       "threshold": 45.0,
-      "true_positive": 86,
-      "false_positive": 2554,
-      "false_negative": 205,
-      "true_negative": 2155,
-      "precision": 0.0326,
-      "recall": 0.2955,
-      "false_positive_rate": 0.5424,
-      "research_utility": -0.1942
+      "true_positive": 24,
+      "false_positive": 2603,
+      "false_negative": 40,
+      "true_negative": 2293,
+      "precision": 0.0091,
+      "recall": 0.375,
+      "false_positive_rate": 0.5317,
+      "research_utility": -0.1449
     },
     {
       "threshold": 50.0,
-      "true_positive": 63,
-      "false_positive": 1682,
-      "false_negative": 228,
-      "true_negative": 3027,
-      "precision": 0.0361,
-      "recall": 0.2165,
-      "false_positive_rate": 0.3572,
-      "research_utility": -0.1111
+      "true_positive": 16,
+      "false_positive": 1719,
+      "false_negative": 48,
+      "true_negative": 3177,
+      "precision": 0.0092,
+      "recall": 0.25,
+      "false_positive_rate": 0.3511,
+      "research_utility": -0.0935
     },
     {
       "threshold": 55.0,
-      "true_positive": 47,
-      "false_positive": 1103,
-      "false_negative": 244,
-      "true_negative": 3606,
-      "precision": 0.0409,
-      "recall": 0.1615,
-      "false_positive_rate": 0.2342,
-      "research_utility": -0.0568
+      "true_positive": 12,
+      "false_positive": 1124,
+      "false_negative": 52,
+      "true_negative": 3772,
+      "precision": 0.0106,
+      "recall": 0.1875,
+      "false_positive_rate": 0.2296,
+      "research_utility": -0.0456
     },
     {
       "threshold": 60.0,
-      "true_positive": 28,
-      "false_positive": 788,
-      "false_negative": 263,
-      "true_negative": 3921,
-      "precision": 0.0343,
-      "recall": 0.0962,
-      "false_positive_rate": 0.1673,
-      "research_utility": -0.0508
+      "true_positive": 7,
+      "false_positive": 801,
+      "false_negative": 57,
+      "true_negative": 4095,
+      "precision": 0.0087,
+      "recall": 0.1094,
+      "false_positive_rate": 0.1636,
+      "research_utility": -0.0467
     },
     {
       "threshold": 65.0,
-      "true_positive": 22,
-      "false_positive": 569,
-      "false_negative": 269,
-      "true_negative": 4140,
-      "precision": 0.0372,
-      "recall": 0.0756,
-      "false_positive_rate": 0.1208,
-      "research_utility": -0.0299
+      "true_positive": 5,
+      "false_positive": 580,
+      "false_negative": 59,
+      "true_negative": 4316,
+      "precision": 0.0085,
+      "recall": 0.0781,
+      "false_positive_rate": 0.1185,
+      "research_utility": -0.0339
     },
     {
       "threshold": 70.0,
-      "true_positive": 18,
-      "false_positive": 364,
-      "false_negative": 273,
-      "true_negative": 4345,
-      "precision": 0.0471,
-      "recall": 0.0619,
-      "false_positive_rate": 0.0773,
-      "research_utility": -0.0052
+      "true_positive": 4,
+      "false_positive": 372,
+      "false_negative": 60,
+      "true_negative": 4524,
+      "precision": 0.0106,
+      "recall": 0.0625,
+      "false_positive_rate": 0.076,
+      "research_utility": -0.013
     },
     {
       "threshold": 75.0,
-      "true_positive": 10,
-      "false_positive": 236,
-      "false_negative": 281,
-      "true_negative": 4473,
-      "precision": 0.0407,
-      "recall": 0.0344,
-      "false_positive_rate": 0.0501,
-      "research_utility": -0.0043
+      "true_positive": 2,
+      "false_positive": 242,
+      "false_negative": 62,
+      "true_negative": 4654,
+      "precision": 0.0082,
+      "recall": 0.0312,
+      "false_positive_rate": 0.0494,
+      "research_utility": -0.0138
     },
     {
       "threshold": 80.0,
-      "true_positive": 5,
-      "false_positive": 139,
-      "false_negative": 286,
-      "true_negative": 4570,
-      "precision": 0.0347,
-      "recall": 0.0172,
-      "false_positive_rate": 0.0295,
-      "research_utility": -0.0017
+      "true_positive": 2,
+      "false_positive": 140,
+      "false_negative": 62,
+      "true_negative": 4756,
+      "precision": 0.0141,
+      "recall": 0.0312,
+      "false_positive_rate": 0.0286,
+      "research_utility": 0.0023
     }
   ],
   "recommended_research_threshold": 80.0,
   "recommended_metrics": {
     "threshold": 80.0,
-    "true_positive": 5,
-    "false_positive": 139,
-    "false_negative": 286,
-    "true_negative": 4570,
-    "precision": 0.0347,
-    "recall": 0.0172,
-    "false_positive_rate": 0.0295,
-    "research_utility": -0.0017
+    "true_positive": 2,
+    "false_positive": 140,
+    "false_negative": 62,
+    "true_negative": 4756,
+    "precision": 0.0141,
+    "recall": 0.0312,
+    "false_positive_rate": 0.0286,
+    "research_utility": 0.0023
   },
   "archetype_largest_event_catch_rate": 0.2,
-  "negative_control_signal_rate": 0.0424,
+  "negative_control_signal_rate": 0.0415,
+  "open_source_feature_ablation": {
+    "available": true,
+    "smc_available": true,
+    "threshold": 80.0,
+    "decision_authority": false,
+    "live_threshold_auto_changed": false,
+    "baseline": {
+      "signals": 142,
+      "true_positive": 2,
+      "false_positive": 140,
+      "false_negative": 62,
+      "true_negative": 4756,
+      "precision": 0.0141,
+      "recall": 0.0312,
+      "false_positive_rate": 0.0286
+    },
+    "variants": {
+      "chart_confirmed": {
+        "signals": 40,
+        "true_positive": 0,
+        "false_positive": 40,
+        "false_negative": 64,
+        "true_negative": 4856,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_positive_rate": 0.0082,
+        "precision_lift_pp_vs_baseline": -1.41,
+        "recall_change_pp_vs_baseline": -3.12,
+        "false_positive_rate_change_pp_vs_baseline": -2.04
+      },
+      "smc_fvg_confirmed": {
+        "signals": 0,
+        "true_positive": 0,
+        "false_positive": 0,
+        "false_negative": 64,
+        "true_negative": 4896,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_positive_rate": 0.0,
+        "precision_lift_pp_vs_baseline": -1.41,
+        "recall_change_pp_vs_baseline": -3.12,
+        "false_positive_rate_change_pp_vs_baseline": -2.86
+      },
+      "chart_and_smc_fvg": {
+        "signals": 0,
+        "true_positive": 0,
+        "false_positive": 0,
+        "false_negative": 64,
+        "true_negative": 4896,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_positive_rate": 0.0,
+        "precision_lift_pp_vs_baseline": -1.41,
+        "recall_change_pp_vs_baseline": -3.12,
+        "false_positive_rate_change_pp_vs_baseline": -2.86
+      }
+    },
+    "sec_replay_status": "not_reconstructed_historically",
+    "causal_guards": {
+      "fvg_shift_bars": 1,
+      "swing_shift_bars": 20,
+      "forward_labels_not_used_in_features": true
+    }
+  },
   "errors": {},
   "results": [
     {
       "symbol": "RGC",
       "role": "archetype",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
-        "signals": 4,
-        "positive_windows": 93,
+        "signals": 5,
+        "positive_windows": 28,
         "true_positive": 0,
-        "false_positive": 4,
-        "false_negative": 93,
-        "true_negative": 403,
+        "false_positive": 5,
+        "false_negative": 28,
+        "true_negative": 463,
         "precision": 0.0,
         "recall": 0.0,
-        "false_positive_rate": 0.0098
+        "false_positive_rate": 0.0107
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 5,
+          "true_positive": 0,
+          "false_positive": 5,
+          "false_negative": 28,
+          "true_negative": 463,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0107
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 1,
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 28,
+            "true_negative": 467,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0021,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -0.86
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 28,
+            "true_negative": 468,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -1.07
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 28,
+            "true_negative": 468,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -1.07
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2025-06-16",
@@ -166,17 +295,81 @@
       "symbol": "BNAI",
       "role": "archetype",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
         "signals": 6,
-        "positive_windows": 75,
+        "positive_windows": 16,
         "true_positive": 2,
         "false_positive": 4,
-        "false_negative": 73,
-        "true_negative": 421,
+        "false_negative": 14,
+        "true_negative": 476,
         "precision": 0.3333,
-        "recall": 0.0267,
-        "false_positive_rate": 0.0094
+        "recall": 0.125,
+        "false_positive_rate": 0.0083
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 6,
+          "true_positive": 2,
+          "false_positive": 4,
+          "false_negative": 14,
+          "true_negative": 476,
+          "precision": 0.3333,
+          "recall": 0.125,
+          "false_positive_rate": 0.0083
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 1,
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 16,
+            "true_negative": 479,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0021,
+            "precision_lift_pp_vs_baseline": -33.33,
+            "recall_change_pp_vs_baseline": -12.5,
+            "false_positive_rate_change_pp_vs_baseline": -0.62
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 16,
+            "true_negative": 480,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": -33.33,
+            "recall_change_pp_vs_baseline": -12.5,
+            "false_positive_rate_change_pp_vs_baseline": -0.83
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 16,
+            "true_negative": 480,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": -33.33,
+            "recall_change_pp_vs_baseline": -12.5,
+            "false_positive_rate_change_pp_vs_baseline": -0.83
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2026-01-26",
@@ -191,17 +384,81 @@
       "symbol": "ATXG",
       "role": "archetype",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
         "signals": 12,
-        "positive_windows": 38,
-        "true_positive": 2,
-        "false_positive": 10,
-        "false_negative": 36,
-        "true_negative": 452,
-        "precision": 0.1667,
-        "recall": 0.0526,
-        "false_positive_rate": 0.0216
+        "positive_windows": 0,
+        "true_positive": 0,
+        "false_positive": 12,
+        "false_negative": 0,
+        "true_negative": 484,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_positive_rate": 0.0242
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 12,
+          "true_positive": 0,
+          "false_positive": 12,
+          "false_negative": 0,
+          "true_negative": 484,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0242
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 2,
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 0,
+            "true_negative": 494,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.004,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.02
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.42
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.42
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2025-09-22",
@@ -216,17 +473,81 @@
       "symbol": "HOLO",
       "role": "archetype",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
         "signals": 6,
-        "positive_windows": 27,
+        "positive_windows": 5,
         "true_positive": 0,
         "false_positive": 6,
-        "false_negative": 27,
-        "true_negative": 467,
+        "false_negative": 5,
+        "true_negative": 485,
         "precision": 0.0,
         "recall": 0.0,
-        "false_positive_rate": 0.0127
+        "false_positive_rate": 0.0122
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 6,
+          "true_positive": 0,
+          "false_positive": 6,
+          "false_negative": 5,
+          "true_negative": 485,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0122
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 2,
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 5,
+            "true_negative": 489,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0041,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -0.81
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 5,
+            "true_negative": 491,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -1.22
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 5,
+            "true_negative": 491,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -1.22
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2024-12-30",
@@ -241,17 +562,81 @@
       "symbol": "MLGO",
       "role": "archetype",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
         "signals": 10,
-        "positive_windows": 55,
-        "true_positive": 1,
-        "false_positive": 9,
-        "false_negative": 54,
-        "true_negative": 436,
-        "precision": 0.1,
-        "recall": 0.0182,
-        "false_positive_rate": 0.0202
+        "positive_windows": 15,
+        "true_positive": 0,
+        "false_positive": 10,
+        "false_negative": 15,
+        "true_negative": 471,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_positive_rate": 0.0208
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 10,
+          "true_positive": 0,
+          "false_positive": 10,
+          "false_negative": 15,
+          "true_negative": 471,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0208
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 15,
+            "true_negative": 481,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.08
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 15,
+            "true_negative": 481,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.08
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 15,
+            "true_negative": 481,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.08
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2025-03-24",
@@ -266,17 +651,81 @@
       "symbol": "AAPL",
       "role": "negative_control",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
         "signals": 13,
         "positive_windows": 0,
         "true_positive": 0,
         "false_positive": 13,
         "false_negative": 0,
-        "true_negative": 487,
+        "true_negative": 483,
         "precision": 0.0,
         "recall": 0.0,
-        "false_positive_rate": 0.026
+        "false_positive_rate": 0.0262
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 13,
+          "true_positive": 0,
+          "false_positive": 13,
+          "false_negative": 0,
+          "true_negative": 483,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0262
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 4,
+            "true_positive": 0,
+            "false_positive": 4,
+            "false_negative": 0,
+            "true_negative": 492,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0081,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -1.81
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.62
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.62
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2025-04-09",
@@ -291,17 +740,81 @@
       "symbol": "MSFT",
       "role": "negative_control",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
-        "signals": 18,
-        "positive_windows": 3,
+        "signals": 17,
+        "positive_windows": 0,
         "true_positive": 0,
-        "false_positive": 18,
-        "false_negative": 3,
+        "false_positive": 17,
+        "false_negative": 0,
         "true_negative": 479,
         "precision": 0.0,
         "recall": 0.0,
-        "false_positive_rate": 0.0362
+        "false_positive_rate": 0.0343
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 17,
+          "true_positive": 0,
+          "false_positive": 17,
+          "false_negative": 0,
+          "true_negative": 479,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0343
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 6,
+            "true_positive": 0,
+            "false_positive": 6,
+            "false_negative": 0,
+            "true_negative": 490,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0121,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.22
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -3.43
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -3.43
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2026-07-30",
@@ -316,17 +829,81 @@
       "symbol": "KO",
       "role": "negative_control",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
-        "signals": 30,
+        "signals": 28,
         "positive_windows": 0,
         "true_positive": 0,
-        "false_positive": 30,
+        "false_positive": 28,
         "false_negative": 0,
-        "true_negative": 470,
+        "true_negative": 468,
         "precision": 0.0,
         "recall": 0.0,
-        "false_positive_rate": 0.06
+        "false_positive_rate": 0.0565
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 28,
+          "true_positive": 0,
+          "false_positive": 28,
+          "false_negative": 0,
+          "true_negative": 468,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0565
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 7,
+            "true_positive": 0,
+            "false_positive": 7,
+            "false_negative": 0,
+            "true_negative": 489,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0141,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -4.24
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -5.65
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -5.65
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2026-07-28",
@@ -341,17 +918,81 @@
       "symbol": "JNJ",
       "role": "negative_control",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
         "signals": 24,
         "positive_windows": 0,
         "true_positive": 0,
         "false_positive": 24,
         "false_negative": 0,
-        "true_negative": 476,
+        "true_negative": 472,
         "precision": 0.0,
         "recall": 0.0,
-        "false_positive_rate": 0.048
+        "false_positive_rate": 0.0484
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 24,
+          "true_positive": 0,
+          "false_positive": 24,
+          "false_negative": 0,
+          "true_negative": 472,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0484
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 9,
+            "true_positive": 0,
+            "false_positive": 9,
+            "false_negative": 0,
+            "true_negative": 487,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0181,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -3.03
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -4.84
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -4.84
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2025-07-16",
@@ -366,17 +1007,81 @@
       "symbol": "XOM",
       "role": "negative_control",
       "metrics": {
-        "rows": 500,
+        "rows": 496,
         "threshold": 80.0,
         "signals": 21,
         "positive_windows": 0,
         "true_positive": 0,
         "false_positive": 21,
         "false_negative": 0,
-        "true_negative": 479,
+        "true_negative": 475,
         "precision": 0.0,
         "recall": 0.0,
-        "false_positive_rate": 0.042
+        "false_positive_rate": 0.0423
+      },
+      "open_source_feature_ablation": {
+        "available": true,
+        "smc_available": true,
+        "threshold": 80.0,
+        "decision_authority": false,
+        "live_threshold_auto_changed": false,
+        "baseline": {
+          "signals": 21,
+          "true_positive": 0,
+          "false_positive": 21,
+          "false_negative": 0,
+          "true_negative": 475,
+          "precision": 0.0,
+          "recall": 0.0,
+          "false_positive_rate": 0.0423
+        },
+        "variants": {
+          "chart_confirmed": {
+            "signals": 8,
+            "true_positive": 0,
+            "false_positive": 8,
+            "false_negative": 0,
+            "true_negative": 488,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0161,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -2.62
+          },
+          "smc_fvg_confirmed": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -4.23
+          },
+          "chart_and_smc_fvg": {
+            "signals": 0,
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "true_negative": 496,
+            "precision": 0.0,
+            "recall": 0.0,
+            "false_positive_rate": 0.0,
+            "precision_lift_pp_vs_baseline": 0.0,
+            "recall_change_pp_vs_baseline": 0.0,
+            "false_positive_rate_change_pp_vs_baseline": -4.23
+          }
+        },
+        "sec_replay_status": "not_reconstructed_historically",
+        "causal_guards": {
+          "fvg_shift_bars": 1,
+          "swing_shift_bars": 20,
+          "forward_labels_not_used_in_features": true
+        }
       },
       "largest_event": {
         "largest_up_day": "2025-04-09",
