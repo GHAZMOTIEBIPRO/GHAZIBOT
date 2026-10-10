@@ -155,6 +155,40 @@ def _sec_features(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _sec_dilution_features(record: dict[str, Any]) -> dict[str, Any]:
+    entry = (
+        record.get("sec_dilution_v2_entry")
+        if isinstance(record.get("sec_dilution_v2_entry"), dict)
+        else {}
+    )
+    available = entry.get("available") is True
+    signal_time = pd.to_datetime(record.get("signal_time"), utc=True, errors="coerce")
+    observed_at = pd.to_datetime(entry.get("observed_at"), utc=True, errors="coerce")
+    chronology_verified = bool(
+        available
+        and pd.notna(signal_time)
+        and pd.notna(observed_at)
+        and observed_at <= signal_time
+    )
+    risk = _number(entry.get("risk_score"), float("nan"))
+    valid_risk = math.isfinite(risk) and chronology_verified
+    return {
+        "available": available,
+        "chronology_verified": chronology_verified,
+        "risk_score": round(risk, 4) if valid_risk else None,
+        "risk_label": str(entry.get("risk_label") or ""),
+        "high_risk": bool(risk >= 70) if valid_risk else None,
+        "elevated_or_high": bool(risk >= 45) if valid_risk else None,
+        "share_growth_pct": entry.get("share_growth_pct"),
+        "announced_capacity_to_market_cap": entry.get(
+            "announced_capacity_to_market_cap"
+        ),
+        "explicit_overhang_to_float": entry.get("explicit_overhang_to_float"),
+        "remaining_capacity_verified": entry.get("remaining_capacity_verified") is True,
+        "decision_authority": False,
+    }
+
+
 def build_stock_research_features(
     record: dict[str, Any],
     history: pd.DataFrame,
@@ -164,6 +198,7 @@ def build_stock_research_features(
     chart = build_chart_research_features(completed, direction)
     smc = build_smc_research_features(completed, direction)
     sec = _sec_features(record)
+    sec_dilution = _sec_dilution_features(record)
 
     aligned_count = sum(
         (
@@ -186,6 +221,7 @@ def build_stock_research_features(
         "decision_authority": False,
         "live_alert_weights_changed": False,
         "sec": sec,
+        "sec_dilution_v2": sec_dilution,
         "chart": chart,
         "smc": smc,
         "aligned_evidence_count": int(aligned_count),
@@ -307,6 +343,18 @@ def evaluate_stock_research_attribution(
         value = sec_features.get("point_in_time_sec_evidence")
         return value if isinstance(value, bool) else None
 
+    def high_sec_dilution(row: dict[str, Any]) -> bool | None:
+        features = row.get("research_features") or {}
+        dilution = (
+            features.get("sec_dilution_v2")
+            if isinstance(features.get("sec_dilution_v2"), dict)
+            else {}
+        )
+        if dilution.get("chronology_verified") is not True:
+            return None
+        value = dilution.get("high_risk")
+        return value if isinstance(value, bool) else None
+
     def chart(row: dict[str, Any]) -> bool | None:
         features = row.get("research_features") or {}
         value = ((features.get("chart") or {}).get("direction_alignment"))
@@ -335,6 +383,11 @@ def evaluate_stock_research_attribution(
                 point_in_time_sec,
                 minimum_sample=minimum_sample,
             ),
+            "high_sec_dilution_v2": _factor_report(
+                rows,
+                high_sec_dilution,
+                minimum_sample=minimum_sample,
+            ),
             "chart_direction_alignment": _factor_report(rows, chart, minimum_sample=minimum_sample),
             "smc_fvg_alignment": _factor_report(rows, smc, minimum_sample=minimum_sample),
             "two_of_three_alignment": _factor_report(rows, combined, minimum_sample=minimum_sample),
@@ -345,6 +398,8 @@ def evaluate_stock_research_attribution(
             "sec_evidence_uses_entry_time_frozen_source_metadata": True,
             "point_in_time_sec_requires_published_before_signal": True,
             "legacy_sec_rows_without_frozen_chronology_are_not_upgraded": True,
+            "sec_dilution_v2_requires_entry_time_observation": True,
+            "announced_capacity_is_not_assumed_remaining_capacity": True,
             "no_factor_changes_live_scores": True,
             "walk_forward_review_required_before_any_promotion": True,
         },
