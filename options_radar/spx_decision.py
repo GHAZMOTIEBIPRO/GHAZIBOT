@@ -28,7 +28,7 @@ def build_spx_trade_map(payload: dict[str, Any]) -> dict[str, Any]:
     or_low = _num(payload.get("opening_range_low"))
     age = _num(payload.get("age_minutes"), 999.0)
 
-    if spot <= 0 or vwap <= 0 or age > 20:
+    if spot <= 0 or vwap <= 0 or age < 0 or age > 20:
         return {
             "version": "SPX_TRADE_MAP_V1",
             "state": "DATA_INSUFFICIENT",
@@ -100,3 +100,4 @@ def build_spx_trade_map(payload: dict[str, Any]) -> dict[str, Any]:
         "research_only": True,
         "gamma_is_verified_dealer_inventory": False,
     }
+
