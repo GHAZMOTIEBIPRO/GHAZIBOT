@@ -120,7 +120,23 @@ def time_normalized_rvol(
             reason="premarket_not_comparable_to_regular_session_profile",
         )
 
-    cutoff = min(minute, close_minute)
+    completed_cutoff = (minute // 5) * 5 - 5
+    cutoff = min(completed_cutoff, close_minute)
+    if cutoff < open_minute:
+        return TimeNormalizedVolume(
+            available=False,
+            ratio=None,
+            pace_percentile=None,
+            current_cumulative_volume=None,
+            historical_median_cumulative_volume=None,
+            sample_sessions=0,
+            session_date=session_date.isoformat(),
+            cutoff_minute_et=None,
+            cutoff_clock_et=local_now.strftime("%H:%M"),
+            source_role="intraday_bar_volume_profile",
+            reason="no_completed_regular_session_5m_bar",
+        )
+
     current = frame[
         (frame["_session"] == session_date)
         & (frame["_minute"] <= cutoff)
