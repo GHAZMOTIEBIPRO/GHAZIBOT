@@ -10,6 +10,7 @@ from .breakout_pressure import analyze_breakout_pressure
 from .catalysts import best_catalyst_map
 from .indicators import TechnicalSnapshot, analyze_technical, market_regime
 from .providers import get_price_history
+from .realized_volatility import realized_volatility_context
 from .sectors import sector_context
 from .settings import Settings
 
@@ -238,6 +239,7 @@ class StockRadar:
             setup_side,
             relative_strength_20d=sector["relative_strength_20d"],
         )
+        realized_volatility = realized_volatility_context(history, window=30)
 
         if setup_side == "call":
             entry_low = max(technical.ema9, close_price - 0.30 * atr)
@@ -319,6 +321,7 @@ class StockRadar:
             "invalidation": round(stop, 2),
             "rsi": round(technical.rsi14, 1),
             "relative_volume": round(technical.relative_volume20, 2),
+            "realized_volatility_30d": realized_volatility,
             "avg_dollar_volume": round(avg_dollar_volume, 0),
             "breakout": trigger_confirmed,
             "technical_direction": technical.direction,
@@ -344,6 +347,14 @@ class StockRadar:
             "breakout_proximity_atr": breakout_pressure.breakout_distance_atr,
             "weekly_breakout_confluence": breakout_pressure.weekly_confluence,
             "breakout_pressure_reasons": "؛ ".join(breakout_pressure.reasons),
+            "explosion_setup_v3": breakout_pressure.research_v3 or {},
+            "explosion_setup_v3_stage": (
+                (breakout_pressure.research_v3 or {}).get("stage")
+            ),
+            "explosion_setup_v3_quality_count": (
+                (breakout_pressure.research_v3 or {}).get("quality_count")
+            ),
+            "explosion_setup_v3_live_score_adjustment": False,
             "sector_vs_market": round(float(sector["sector_vs_market"]), 6),
             "rejection_reason": rejection_reason,
         }
