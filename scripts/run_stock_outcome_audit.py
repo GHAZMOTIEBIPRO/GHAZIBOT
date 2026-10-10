@@ -23,7 +23,7 @@ DEFAULT_STOCK_OUTCOMES = Path(os.getenv("STOCK_OUTCOME_PATH", "data/live/stock_o
 DEFAULT_AUDIT = Path(os.getenv("STOCK_OUTCOME_AUDIT_PATH", "data/live/stock_outcome_audit.json"))
 MIN_INDEPENDENT_SESSIONS = 10
 MIN_60M_COVERAGE_PCT = 90.0
-DEFAULT_RETRY_COOLDOWN_HOURS = 18
+DEFAULT_RETRY_COOLDOWN_HOURS = 2
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -212,7 +212,7 @@ def run(
         "audit_provider_order": ["yahoo"],
     }
     audit["rotation"] = {
-        "policy": "never_attempted_first_then_cooled_down_retries",
+        "policy": "recoverable_recent_first_then_cooled_down_retries",
         "retry_cooldown_hours": max(1, int(retry_cooldown_hours)),
         "maximum_symbols_per_pass": max(1, int(maximum_symbols)),
         "selected_symbols_this_pass": symbols,
@@ -239,7 +239,7 @@ def main() -> None:
     parser.add_argument(
         "--max-symbols",
         type=int,
-        default=int(os.getenv("STOCK_OUTCOME_AUDIT_MAX_SYMBOLS", "80")),
+        default=int(os.getenv("STOCK_OUTCOME_AUDIT_MAX_SYMBOLS", "160")),
     )
     parser.add_argument(
         "--retry-cooldown-hours",
