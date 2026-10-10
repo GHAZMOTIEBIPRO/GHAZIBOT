@@ -14,6 +14,7 @@ import pandas as pd
 
 CHECKPOINT_MINUTES: dict[str, int] = {"15m": 15, "30m": 30, "60m": 60}
 MAX_LEARNING_ADJUSTMENT = 4.0
+DEFAULT_RESEARCH_TRACK_MIN_SCORE = 75.0
 SCHEMA_VERSION = 1
 
 
@@ -263,9 +264,24 @@ def _rows_for_tracking(payload: dict[str, Any]) -> tuple[str, list[dict[str, Any
     if readiness.get("production_quote_ready") is True and production_rows:
         minimum = _number(os.getenv("OPTIONS_ALERT_MIN_SCORE", "85"), 85.0)
         return "production", production_rows, minimum
-    rows = payload.get("free_directional_signals") or []
-    minimum = _number(os.getenv("OPTIONS_FREE_ALERT_MIN_SCORE", "87"), 87.0)
-    return "free", [row for row in rows if isinstance(row, dict)], minimum
+
+    free_rows = [
+        row for row in (payload.get("free_directional_signals") or [])
+        if isinstance(row, dict)
+    ]
+    if free_rows:
+        minimum = _number(os.getenv("OPTIONS_FREE_ALERT_MIN_SCORE", "87"), 87.0)
+        return "free", free_rows, minimum
+
+    research_rows = [
+        row for row in (payload.get("research_directional_signals") or [])
+        if isinstance(row, dict)
+    ]
+    minimum = _number(
+        os.getenv("OPTIONS_RESEARCH_TRACK_MIN_SCORE", str(DEFAULT_RESEARCH_TRACK_MIN_SCORE)),
+        DEFAULT_RESEARCH_TRACK_MIN_SCORE,
+    )
+    return "research_shadow", research_rows, minimum
 
 
 def _start_signals(
@@ -278,7 +294,9 @@ def _start_signals(
     for row in rows:
         grade = str(row.get("signal_grade") or row.get("strict_grade") or "")
         strict = _number(row.get("strict_score"))
-        if grade not in {"A", "A+"} or strict < minimum:
+        if strict < minimum:
+            continue
+        if mode != "research_shadow" and grade not in {"A", "A+"}:
             continue
         contract = str(row.get("contract_symbol") or "").upper().replace(" ", "")
         symbol = str(row.get("symbol") or "").upper().strip()
@@ -299,6 +317,8 @@ def _start_signals(
             "session_date": now.date().isoformat(),
             "session_close_at": close_at.isoformat() if close_at else None,
             "mode": mode,
+            "research_only": mode == "research_shadow",
+            "decision_authority": False if mode == "research_shadow" else None,
             "symbol": symbol,
             "direction": direction,
             "contract_symbol": contract,
@@ -358,6 +378,10 @@ def _observation(signal: dict[str, Any], row: dict[str, Any], now: datetime) -> 
     last = _number(row.get("last"))
     if desired == "ask_to_bid" and bid > 0:
         mark, method = bid, "ask_to_bid"
+    elif desired == "mid_to_mid" and bid > 0 and ask >= bid:
+        mark, method = (bid + ask) / 2.0, "mid_to_mid"
+    elif desired == "last_to_last" and last > 0:
+        mark, method = last, "last_to_last"
     else:
         quote = _quote(row, entry=False)
         if quote is None:
@@ -452,6 +476,7 @@ def _stats(values: list[float]) -> dict[str, Any]:
 
 
 def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, Any]:
+    research_records: list[tuple[dict[str, Any], float]] = []
     shadow_records: list[tuple[dict[str, Any], float]] = []
     records: list[tuple[dict[str, Any], float]] = []
     signals = state.get("signals") if isinstance(state.get("signals"), dict) else {}
@@ -462,17 +487,25 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
         features = signal.get("features") if isinstance(signal.get("features"), dict) else {}
         if not isinstance(checkpoint, dict) or not features:
             continue
-        if checkpoint.get("quote_method") != "ask_to_bid" or signal.get("entry_quote_method") != "ask_to_bid":
-            continue
         value = _number(checkpoint.get("return_pct"), float("nan"))
         if not math.isfinite(value):
+            continue
+
+        entry_method = str(signal.get("entry_quote_method") or "")
+        checkpoint_method = str(checkpoint.get("quote_method") or "")
+        if entry_method and checkpoint_method == entry_method:
+            research_records.append((features, value))
+
+        if checkpoint_method != "ask_to_bid" or entry_method != "ask_to_bid":
             continue
         shadow_records.append((features, value))
         if signal.get("entry_training_eligible") is True and checkpoint.get("training_quote_eligible") is True:
             records.append((features, value))
 
+    research_returns = [value for _, value in research_records]
     shadow_returns = [value for _, value in shadow_records]
     returns = [value for _, value in records]
+    global_research_stats = _stats(research_returns)
     global_shadow_stats = _stats(shadow_returns)
     global_stats = _stats(returns)
     active = len(records) >= minimum_sample
@@ -504,7 +537,7 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
     research_feature_output: dict[str, Any] = {}
     for feature, bin_fn in RESEARCH_FEATURE_BINS.items():
         buckets: dict[str, list[float]] = {}
-        for features, value in shadow_records:
+        for features, value in research_records:
             buckets.setdefault(bin_fn(features), []).append(value)
         research_feature_output[feature] = {
             label: {
@@ -522,6 +555,7 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
         "active": active,
         "sample_size": len(records),
         "shadow_sample_size": len(shadow_records),
+        "research_sample_size": len(research_records),
         "minimum_sample": minimum_sample,
         "training_checkpoint": "60m",
         "training_quote_method": "ask_to_bid",
@@ -529,12 +563,16 @@ def build_calibration(state: dict[str, Any], minimum_sample: int) -> dict[str, A
         "max_total_adjustment": MAX_LEARNING_ADJUSTMENT,
         "global": global_stats,
         "global_shadow": global_shadow_stats,
+        "global_research": global_research_stats,
         "features": feature_output,
         "research_features": research_feature_output,
         "research_feature_policy": {
             "live_score_adjustment": False,
             "decision_authority": False,
-            "purpose": "Measure CALL/PUT 60m outcome separation from chart alignment and frozen SEC catalyst context.",
+            "purpose": (
+                "Measure CALL/PUT 60m outcome separation from chart alignment and frozen SEC catalyst context. "
+                "Research samples may use consistent mid/last marks but can never activate live score learning."
+            ),
         },
         "policy": "Bayesian-shrunk bounded score adjustment; never bypasses hard execution/risk blockers.",
     }
@@ -631,8 +669,13 @@ def update_outcome_learning(
         "calibration_active": calibration.get("active") is True,
         "calibration_sample_size": int(_number(calibration.get("sample_size"))),
         "shadow_sample_size": int(_number(calibration.get("shadow_sample_size"))),
+        "research_sample_size": int(_number(calibration.get("research_sample_size"))),
         "calibration_minimum_sample": int(_number(calibration.get("minimum_sample"))),
         "global_60m": calibration.get("global") or {},
         "global_shadow_60m": calibration.get("global_shadow") or {},
-        "policy": "Shadow outcomes include free data, but score learning activates only from timely eligible quotes; hard blockers always win.",
+        "global_research_60m": calibration.get("global_research") or {},
+        "policy": (
+            "Research outcomes may accumulate from consistent fallback quote methods. "
+            "Score learning still activates only from timely eligible ask-to-bid quotes; hard blockers always win."
+        ),
     }
