@@ -294,6 +294,62 @@ jobs:
           echo "Failed to persist runtime state after fresh-state retries."
           exit 1
 
+      - name: Mirror fresh safe health metadata to main for Vercel
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          metadata_dir="$(mktemp -d)"
+          trap 'rm -rf "$metadata_dir"' EXIT
+
+          for relative in public/data/health.json public/data/data-status.json; do
+            test -s "$relative"
+            PYTHONPATH=. python - "$relative" <<'PY'
+          import json
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from scripts.runtime_state_vault import validate_runtime_file
+
+          path = Path(sys.argv[1])
+          validate_runtime_file(path)
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          generated = datetime.fromisoformat(
+              str(payload.get("generated_at") or "").replace("Z", "+00:00")
+          )
+          if generated.tzinfo is None:
+              generated = generated.replace(tzinfo=timezone.utc)
+          age_minutes = (datetime.now(timezone.utc) - generated.astimezone(timezone.utc)).total_seconds() / 60
+          if age_minutes < -5 or age_minutes > 180:
+              raise SystemExit(f"{path} is not fresh enough to mirror (age={age_minutes:.1f}m)")
+          print(f"Validated fresh safe metadata: {path} (age={age_minutes:.1f}m)")
+          PY
+            cp "$relative" "$metadata_dir/$(basename "$relative")"
+          done
+
+          git config user.name "BLACK BOX Omega Vercel Metadata"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          for attempt in 1 2 3; do
+            git fetch origin +refs/heads/main:refs/remotes/origin/main
+            git reset --hard origin/main
+            cp "$metadata_dir/health.json" public/data/health.json
+            cp "$metadata_dir/data-status.json" public/data/data-status.json
+            git add public/data/health.json public/data/data-status.json
+            if git diff --cached --quiet; then
+              echo "Vercel runtime metadata is already current."
+              exit 0
+            fi
+            git commit -m "state: mirror fresh runtime health metadata [skip ci]"
+            if git push origin HEAD:refs/heads/main; then
+              echo "Fresh safe Vercel metadata mirrored to main."
+              exit 0
+            fi
+            git reset --hard origin/main
+            sleep "$attempt"
+          done
+          echo "Could not mirror fresh safe Vercel metadata after retries." >&2
+          exit 1
+
       - name: Upload result files
         if: always()
         uses: actions/upload-artifact@v4

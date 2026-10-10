@@ -124,3 +124,9 @@ def test_vercel_and_workflow_keep_metadata_authority_on_main() -> None:
     assert "git push origin HEAD:main" in workflow
     assert "state/runtime/public/data/health.json" in workflow
     assert "state/runtime/public/data/data-status.json" in workflow
+
+    omega_workflow = (ROOT / ".github/workflows/options-radar.yml").read_text(encoding="utf-8")
+    assert "Mirror fresh safe health metadata to main for Vercel" in omega_workflow
+    assert "validate_runtime_file(path)" in omega_workflow
+    assert "age_minutes > 180" in omega_workflow
+    assert "git push origin HEAD:refs/heads/main" in omega_workflow
