@@ -206,7 +206,16 @@ def assess_microcap_candidate(row: dict[str, Any]) -> MicrocapAssessment:
     catalyst = _clamp(
         _number(row.get("catalyst_score"), _number(row.get("news_score"), 0.0))
     )
-    dilution_risk = _clamp(_number(row.get("dilution_risk")))
+    sec_dilution = (
+        row.get("sec_dilution_v2")
+        if isinstance(row.get("sec_dilution_v2"), dict)
+        else {}
+    )
+    sec_dilution_risk = _clamp(_number(sec_dilution.get("risk_score")))
+    dilution_risk = max(
+        _clamp(_number(row.get("dilution_risk"))),
+        sec_dilution_risk,
+    )
     official_sec = _official_sec_url(row.get("official_catalyst_url"))
 
     text = _text(row)
@@ -267,8 +276,17 @@ def assess_microcap_candidate(row: dict[str, Any]) -> MicrocapAssessment:
     if dilution_context:
         flags.append("DILUTION_REVIEW")
         risk_penalty += 16.0
+        if sec_dilution_risk >= 45:
+            flags.append("SEC_DILUTION_V2_ELEVATED")
+            reasons.extend(
+                str(reason)
+                for reason in (sec_dilution.get("reasons") or [])[:3]
+                if str(reason).strip()
+            )
         if dilution_risk >= 70:
             flags.append("HIGH_DILUTION_RISK")
+            if sec_dilution_risk >= 70:
+                flags.append("SEC_DILUTION_V2_HIGH")
             risk_penalty += 18.0
 
     if official_sec:
