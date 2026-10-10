@@ -43,6 +43,124 @@ def _first_text(element: ET.Element, names: tuple[str, ...]) -> str:
     return ""
 
 
+
+def parse_form144_notice(raw: str) -> EventEnrichment | None:
+    """Parse electronic SEC Form 144 proposed-sale notices.
+
+    Form 144 is a notice of a proposed sale, not proof that the sale executed.
+    The result is therefore supply-risk context only and deliberately receives
+    a smaller negative score than an executed Form 4 open-market sale or an
+    active financing/dilution filing.
+    """
+
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError:
+        return None
+
+    proposed_shares = 0.0
+    proposed_value = 0.0
+    outstanding = 0.0
+    approximate_dates: list[str] = []
+
+    for node in root.iter():
+        if node.tag.rsplit("}", 1)[-1] != "securitiesInformation":
+            continue
+        shares = _clean_number(_first_text(node, ("noOfUnitsSold", "numberOfUnitsToBeSold")))
+        value = _clean_number(_first_text(node, ("aggregateMarketValue",)))
+        units_out = _clean_number(_first_text(node, ("noOfUnitsOutstanding",)))
+        sale_date = _first_text(node, ("approxSaleDate",))
+        if shares is not None and shares > 0:
+            proposed_shares += shares
+        if value is not None and value > 0:
+            proposed_value += value
+        if units_out is not None and units_out > 0:
+            outstanding = max(outstanding, units_out)
+        if sale_date:
+            approximate_dates.append(sale_date)
+
+    past_shares = 0.0
+    past_proceeds = 0.0
+    for node in root.iter():
+        if node.tag.rsplit("}", 1)[-1] != "securitiesSoldInPast3Months":
+            continue
+        shares = _clean_number(_first_text(node, ("amountOfSecuritiesSold",)))
+        proceeds = _clean_number(_first_text(node, ("grossProceeds",)))
+        if shares is not None and shares > 0:
+            past_shares += shares
+        if proceeds is not None and proceeds > 0:
+            past_proceeds += proceeds
+
+    if proposed_shares <= 0 and proposed_value <= 0:
+        return None
+
+    ratio = proposed_shares / outstanding if outstanding > 0 else None
+    score = -3
+    if ratio is not None:
+        if ratio >= 0.03:
+            score = -14
+        elif ratio >= 0.01:
+            score = -10
+        elif ratio >= 0.005:
+            score = -7
+        elif ratio >= 0.001:
+            score = -5
+    elif proposed_value >= 25_000_000:
+        score = -6
+    elif proposed_value >= 5_000_000:
+        score = -4
+
+    seller = _first_text(
+        root,
+        (
+            "nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold",
+            "nameOfPersonForWhoseAccount",
+        ),
+    )
+    relationships = sorted(
+        {
+            str(node.text or "").strip()
+            for node in root.iter()
+            if node.tag.rsplit("}", 1)[-1] == "relationshipToIssuer"
+            and str(node.text or "").strip()
+        }
+    )
+
+    evidence_parts = [
+        "Form 144 proposed sale notice; not an executed-sale confirmation",
+        f"proposed {proposed_shares:,.0f} shares" if proposed_shares > 0 else "",
+        f"aggregate market value ${proposed_value:,.0f}" if proposed_value > 0 else "",
+        (
+            f"proposed shares are {ratio * 100:.3f}% of reported units outstanding"
+            if ratio is not None
+            else ""
+        ),
+        f"seller {seller}" if seller else "",
+        f"relationship {', '.join(relationships)}" if relationships else "",
+        (
+            f"approx sale date {approximate_dates[0]}"
+            if approximate_dates
+            else ""
+        ),
+        (
+            f"past 3m disclosed sales {past_shares:,.0f} shares / ${past_proceeds:,.0f}"
+            if past_shares > 0 or past_proceeds > 0
+            else ""
+        ),
+    ]
+    evidence = "; ".join(part for part in evidence_parts if part)
+
+    return EventEnrichment(
+        score=score,
+        category="Form 144 proposed affiliate sale — supply context",
+        evidence=evidence,
+        event_value=proposed_value if proposed_value > 0 else None,
+        share_count=proposed_shares if proposed_shares > 0 else None,
+        confidence=0.96,
+        purpose="proposed_sale_notice",
+    )
+
+
 def parse_form4_transactions(raw: str) -> EventEnrichment | None:
     """Parse open-market Form 4 transactions and calculate disclosed value.
 
@@ -283,6 +401,8 @@ def enrich_sec_event(form: str, raw_text: str) -> EventEnrichment | None:
     upper = form.upper()
     if upper == "4":
         return parse_form4_transactions(raw_text)
+    if upper in {"144", "144/A"}:
+        return parse_form144_notice(raw_text)
     if upper.startswith("SC 13D"):
         return classify_13d_purpose(raw_text)
     return classify_dilution(upper, raw_text)
