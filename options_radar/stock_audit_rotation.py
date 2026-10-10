@@ -128,16 +128,18 @@ def fair_symbols_needing_backfill(
             continue
 
         if attempts <= 0:
+            # Preserve fair FIFO order among never-attempted records. A recent
+            # signal must not jump ahead of an older never-attempted signal.
             tier = 0 if within_recovery_window else 3
+            recency_key = created.timestamp()
         else:
             if last_attempt is not None and current - last_attempt < cooldown:
                 continue
-            if coverage.get("60m") is not True:
-                tier = 0
-            else:
-                tier = 1
+            # Once every event has had an honest first attempt, prioritize
+            # recoverable records that are still missing the strict 60m point.
+            tier = 1 if coverage.get("60m") is not True else 2
+            recency_key = -created.timestamp()
 
-        recency_key = -created.timestamp() if within_recovery_window else created.timestamp()
         priority = (tier, recency_key, attempts)
         previous = candidates.get(symbol)
         if previous is None or priority < previous:
