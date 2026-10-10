@@ -18,6 +18,7 @@ class EventEnrichment:
     category: str
     evidence: str
     event_value: float | None = None
+    share_count: float | None = None
     confidence: float = 0.5
     purpose: str = ""
 
@@ -196,6 +197,36 @@ def _extract_currency_amounts(text: str) -> list[float]:
     return values
 
 
+def _extract_issuable_share_counts(text: str) -> list[float]:
+    multipliers = {"thousand": 1_000.0, "million": 1_000_000.0, "billion": 1_000_000_000.0}
+    patterns = (
+        re.compile(
+            r"(?:warrants?\s+(?:to\s+purchase|exercisable\s+for)|"
+            r"convertible\s+into|issuable\s+upon\s+(?:exercise|conversion)\s+of|"
+            r"offering\s+of|sell\s+up\s+to|issue\s+and\s+sell)"
+            r"[^0-9]{0,100}([0-9][0-9,]*(?:\.[0-9]+)?)\s*"
+            r"(thousand|million|billion)?\s+"
+            r"(?:shares?|common shares?|ordinary shares?|ads|adss)\b",
+            re.I,
+        ),
+        re.compile(
+            r"up\s+to\s+([0-9][0-9,]*(?:\.[0-9]+)?)\s*"
+            r"(thousand|million|billion)?\s+"
+            r"(?:shares?|common shares?|ordinary shares?|ads|adss)\b",
+            re.I,
+        ),
+    )
+    values: list[float] = []
+    for pattern in patterns:
+        for match in pattern.finditer(text):
+            base = float(match.group(1).replace(",", ""))
+            multiplier = multipliers.get((match.group(2) or "").lower(), 1.0)
+            value = base * multiplier
+            if value > 0:
+                values.append(value)
+    return values
+
+
 def classify_dilution(form: str, text: str) -> EventEnrichment | None:
     normalized = re.sub(r"\s+", " ", text.lower())
     if form.upper() not in _DILUTION_FORMS and not any(
@@ -228,16 +259,21 @@ def classify_dilution(form: str, text: str) -> EventEnrichment | None:
 
     amounts = _extract_currency_amounts(text)
     event_value = max(amounts) if amounts else None
+    share_counts = _extract_issuable_share_counts(text)
+    share_count = max(share_counts) if share_counts else None
     evidence = f"Form {form}; {category}"
     if event_value is not None:
         evidence += f"; disclosed amount up to ${event_value:,.0f}"
         if event_value >= 100_000_000:
             score = min(score, -25)
+    if share_count is not None:
+        evidence += f"; explicit issuable shares up to {share_count:,.0f}"
     return EventEnrichment(
         score=score,
         category=category,
         evidence=evidence,
         event_value=event_value,
+        share_count=share_count,
         confidence=confidence,
         purpose="dilution",
     )
