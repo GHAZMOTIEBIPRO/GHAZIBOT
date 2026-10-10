@@ -5,6 +5,7 @@ from typing import Any
 
 from .option_explosion import score_option_explosion
 from .premium_target_engine import build_premium_target_scenarios
+from .underlying_option_response import grade_underlying_option_response
 from .v11_gate import evaluate_v11_signal
 
 _INDEX_ROOTS = {"SPX", "SPXW", "NDX", "XND", "SPY", "QQQ"}
@@ -334,7 +335,10 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             continue
 
         choices: list[dict[str, Any]] = []
-        for score, row, detail in ranked[:3]:
+        # Keep the production-facing primary selection unchanged, but score a
+        # wider research pool so the chart-linked response grader can identify
+        # a better-reacting contract without gaining live decision authority.
+        for score, row, detail in ranked[:12]:
             choices.append(
                 {
                     "symbol": symbol,
@@ -418,6 +422,21 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
                 stock,
                 opportunity,
             )
+            choice["underlying_response_grade"] = grade_underlying_option_response(
+                choice
+            )
+
+        response_ranked = sorted(
+            choices,
+            key=lambda item: _number(
+                (
+                    item.get("underlying_response_grade")
+                    if isinstance(item.get("underlying_response_grade"), dict)
+                    else {}
+                ).get("score")
+            ),
+            reverse=True,
+        )
 
         primary = choices[0]
         primary["option_explosion"] = score_option_explosion(primary)
@@ -446,7 +465,11 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             "catalyst_cause_status_ar": catalyst.get("cause_status_ar") or "السبب الأساسي غير مثبت رسميًا",
             "catalyst_explosion_impact": catalyst.get("explosion_impact") or {},
             "primary": choices[0],
-            "alternatives": choices[1:],
+            "alternatives": choices[1:3],
+            "response_shadow_best": response_ranked[0],
+            "response_shadow_alternatives": response_ranked[1:3],
+            "response_candidates_scored": len(choices),
+            "response_shadow_changes_live_primary": False,
             "contract_count_considered": len(ranked),
             "contracts_rejected_for_horizon": rejected_for_horizon[symbol],
         }
@@ -462,6 +485,8 @@ def build_option_contract_intelligence(payload: dict[str, Any]) -> dict[str, Any
             "occ_is_official_aggregate_context_only": True,
             "sweep_claim_requires_trade_quote_level_evidence": True,
             "automatic_execution": False,
+            "underlying_response_shadow_only": True,
+            "underlying_response_does_not_change_v11_or_live_primary": True,
             "research_only": True,
         },
         "contracts_seen": len(contracts),
