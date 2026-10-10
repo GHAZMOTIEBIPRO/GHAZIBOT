@@ -49,6 +49,7 @@ jobs:
           python -m scripts.options_performance_auditor --help >/dev/null
           python -m scripts.run_adaptive_learning --help >/dev/null
           python -m scripts.run_stock_outcome_audit --help >/dev/null
+          python -m scripts.enrich_stock_research_attribution --help >/dev/null
           python -m scripts.run_stock_walk_forward --help >/dev/null
           python -m scripts.run_contract_guardian --help >/dev/null
           python -m scripts.send_contract_guardian_updates --help >/dev/null
@@ -102,6 +103,7 @@ jobs:
             options_radar/durable_stock_state.py \
             options_radar/stock_outcome_archive.py \
             options_radar/stock_outcome_backfill.py \
+            options_radar/research_attribution.py \
             options_radar/stock_walk_forward.py \
             options_radar/adaptive_learning.py \
             options_radar/data_fabric.py \
@@ -131,6 +133,7 @@ jobs:
             scripts/enrich_stock_radar_research.py \
             scripts/run_adaptive_learning.py \
             scripts/run_stock_outcome_audit.py \
+            scripts/enrich_stock_research_attribution.py \
             scripts/run_stock_walk_forward.py \
             scripts/run_contract_guardian.py \
             scripts/guardian_delivery_audit.py \
@@ -184,6 +187,7 @@ jobs:
             tests/test_durable_options_state.py \
             tests/test_stock_outcome_archive.py \
             tests/test_stock_outcome_backfill.py \
+            tests/test_research_attribution.py \
             tests/test_stock_walk_forward.py \
             tests/test_data_fabric.py \
             tests/test_stream_overlay.py \
