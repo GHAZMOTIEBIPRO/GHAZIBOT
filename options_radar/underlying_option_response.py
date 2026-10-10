@@ -179,22 +179,48 @@ def _decay_component(contract: dict[str, Any]) -> tuple[float, dict[str, Any]]:
 
 
 def _volatility_component(contract: dict[str, Any]) -> tuple[float, dict[str, Any]]:
+    iv = _number(contract.get("iv"), float("nan"))
+    hv = _number(contract.get("realized_volatility_30d"), float("nan"))
     iv_rank = _number(contract.get("iv_rank"), float("nan"))
     iv_percentile = _number(contract.get("iv_percentile"), float("nan"))
-    values: list[float] = []
+
+    value_parts: list[tuple[float, float]] = []
+    iv_hv_ratio = None
+    if math.isfinite(iv) and iv > 0 and math.isfinite(hv) and hv > 0:
+        iv_hv_ratio = iv / hv
+        # For a long-option buyer, IV below realized volatility is favorable.
+        # This is a value heuristic, not a forecast that realized vol persists.
+        ratio_score = _clamp(100.0 * (1.55 - iv_hv_ratio))
+        value_parts.append((ratio_score, 0.60))
+
+    rank_values: list[float] = []
     if math.isfinite(iv_rank):
-        values.append(_clamp(100.0 - iv_rank))
+        rank_values.append(_clamp(100.0 - iv_rank))
     if math.isfinite(iv_percentile):
-        values.append(_clamp(100.0 - iv_percentile))
-    if not values:
-        return 50.0, {"available": False, "reason": "iv_history_not_mature"}
-    score = sum(values) / len(values)
+        rank_values.append(_clamp(100.0 - iv_percentile))
+    if rank_values:
+        value_parts.append((sum(rank_values) / len(rank_values), 0.40))
+
+    if not value_parts:
+        return 50.0, {
+            "available": False,
+            "reason": "missing_realized_vol_and_iv_history",
+        }
+
+    weight_sum = sum(weight for _, weight in value_parts)
+    score = sum(value * weight for value, weight in value_parts) / weight_sum
     return _clamp(score), {
         "available": True,
+        "iv": round(iv, 6) if math.isfinite(iv) else None,
+        "realized_volatility_30d": round(hv, 6) if math.isfinite(hv) else None,
+        "iv_to_realized_vol_ratio": (
+            round(iv_hv_ratio, 4) if iv_hv_ratio is not None else None
+        ),
         "iv_rank": round(iv_rank, 2) if math.isfinite(iv_rank) else None,
         "iv_percentile": (
             round(iv_percentile, 2) if math.isfinite(iv_percentile) else None
         ),
+        "note": "IV/HV is buyer-value context, not an empirical return probability",
     }
 
 
