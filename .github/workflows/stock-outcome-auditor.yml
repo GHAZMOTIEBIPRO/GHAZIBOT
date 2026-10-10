@@ -59,7 +59,7 @@ jobs:
         run: >-
           python -m scripts.enrich_stock_research_attribution
           --audit "$STOCK_OUTCOME_AUDIT_PATH"
-          --period 1y
+          --period 2y
           --max-workers 6
 
       - name: Validate coverage, rotation, session and no-promotion guards
