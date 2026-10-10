@@ -81,3 +81,16 @@ def test_sec_dilution_v2_high_risk_overrides_benign_catalyst_text():
     assert "SEC_DILUTION_V2_HIGH" in result.flags
     assert "HIGH_DILUTION_RISK" in result.flags
 
+def test_form144_is_supply_context_but_not_hard_dilution_block():
+    clean = assess_microcap_candidate(_strong())
+    form144 = assess_microcap_candidate(
+        _strong(
+            catalyst_headline=(
+                "Form 144 proposed affiliate sale notice filed with SEC"
+            ),
+        )
+    )
+    assert "FORM144_PROPOSED_SALE_CONTEXT" in form144.flags
+    assert form144.score < clean.score
+    assert "HIGH_DILUTION_RISK" not in form144.flags
+
