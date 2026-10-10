@@ -226,6 +226,10 @@ def explicit_share_overhang(events: list[dict[str, Any]]) -> dict[str, Any]:
     for event in events:
         if not isinstance(event, dict):
             continue
+        explicit = _number(event.get("share_count"))
+        if explicit > 0:
+            counts.append(explicit)
+            sources.append(str(event.get("form") or event.get("purpose") or "filing"))
         text = _event_text(event)
         for pattern in _SHARE_PATTERNS:
             for match in pattern.finditer(text):
