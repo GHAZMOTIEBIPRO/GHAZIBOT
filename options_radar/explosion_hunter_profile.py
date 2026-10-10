@@ -96,7 +96,11 @@ def classify_candidate(row: dict, *, profile: HunterProfile = PROFILE, now: date
         flags.append("CHASE_RISK")
 
     microcap = assess_microcap_candidate(row)
-    if microcap.stage == "AVOID_RISK":
+    if (
+        microcap.stage == "AVOID_RISK"
+        or microcap.dilution_context
+        or microcap.reverse_split_context
+    ):
         flags.append("MICROCAP_DILUTION_OR_STRUCTURE_RISK")
 
     stage = "WATCH" if not flags else "RESEARCH_ONLY"
