@@ -199,10 +199,10 @@ def test_workflow_uses_larger_fair_batch_but_remains_free_and_silent():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github/workflows/stock-outcome-auditor.yml").read_text(encoding="utf-8")
     runner = (root / "scripts/run_stock_outcome_audit.py").read_text(encoding="utf-8")
-    assert 'STOCK_OUTCOME_AUDIT_MAX_SYMBOLS: "80"' in workflow
-    assert 'STOCK_OUTCOME_AUDIT_RETRY_COOLDOWN_HOURS: "18"' in workflow
+    assert 'STOCK_OUTCOME_AUDIT_MAX_SYMBOLS: "160"' in workflow
+    assert 'STOCK_OUTCOME_AUDIT_RETRY_COOLDOWN_HOURS: "2"' in workflow
     assert 'PAID_MARKET_DATA_ALLOWED: "false"' in workflow
     assert "TELEGRAM" not in workflow
     assert 'providers=["yahoo"]' in runner
-    assert "never_attempted_first_then_cooled_down_retries" in runner
+    assert "recoverable_recent_first_then_cooled_down_retries" in runner
     assert "terminal_events_do_not_require_1d_to_leave_queue" in runner
