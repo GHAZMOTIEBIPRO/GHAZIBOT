@@ -77,10 +77,13 @@ def load_calibration(path: Path | str) -> dict[str, Any]:
             "active": False,
             "sample_size": 0,
             "shadow_sample_size": 0,
+            "research_sample_size": 0,
             "minimum_sample": 0,
             "global": {},
             "global_shadow": {},
+            "global_research": {},
             "features": {},
+            "research_features": {},
         },
     )
 
