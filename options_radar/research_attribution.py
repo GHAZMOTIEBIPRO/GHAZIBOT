@@ -271,7 +271,10 @@ def evaluate_stock_research_attribution(
 
     def sec(row: dict[str, Any]) -> bool | None:
         features = row.get("research_features") or {}
-        value = ((features.get("sec") or {}).get("official_sec_evidence"))
+        sec_features = features.get("sec") if isinstance(features.get("sec"), dict) else {}
+        if sec_features.get("source_metadata_available") is not True:
+            return None
+        value = sec_features.get("official_sec_evidence")
         return value if isinstance(value, bool) else None
 
     def chart(row: dict[str, Any]) -> bool | None:
