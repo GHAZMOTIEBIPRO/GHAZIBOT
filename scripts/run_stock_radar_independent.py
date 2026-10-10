@@ -170,6 +170,9 @@ def run(*, fast_path: str | Path = DEFAULT_FAST, output_path: str | Path = DEFAU
                 "source": cause.get("primary_source"),
                 "source_tier": cause.get("source_tier"),
                 "url": cause.get("primary_url"),
+                "published_at": cause.get("published_at"),
+                "observed_at": cause.get("observed_at"),
+                "accession_number": cause.get("accession_number"),
                 "official_confirmed": official,
             }
         else:
