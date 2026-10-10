@@ -40,6 +40,10 @@ def _state(
         "entry_cause_status": "OFFICIAL_CONFIRMED",
         "cause_source": "SEC EDGAR",
         "cause_url": "https://www.sec.gov/Archives/test",
+        "cause_published_at": "2026-08-10T14:00:00+00:00",
+        "cause_accession": "0000000000-26-000002",
+        "cause_observed_at": signal_time.isoformat(),
+        "cause_point_in_time_frozen": True,
         "follow_through_target_pct": target,
         "failure_threshold_pct": stop,
         "terminal_outcome": snapshot,
@@ -261,6 +265,8 @@ def test_frozen_catalyst_source_metadata_survives_audit_record():
     assert result["entry_evidence_state"] == "OFFICIAL_CONFIRMED"
     assert result["cause_source"] == "SEC EDGAR"
     assert "sec.gov" in result["cause_url"]
+    assert result["cause_point_in_time_frozen"] is True
+    assert result["cause_accession"] == "0000000000-26-000002"
 
 def test_recoverable_recent_stock_events_outrank_expired_intraday_history():
     now = datetime(2026, 10, 10, 18, 0, tzinfo=timezone.utc)
