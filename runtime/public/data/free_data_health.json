@@ -1,31 +1,123 @@
 {
-  "generated_at": "2026-10-09T20:04:39.904580+00:00",
-  "policy": "health_only_never_signal_authority",
-  "overall": "healthy",
+  "version": "FREE_DATA_FABRIC_V2",
+  "generated_at": "2026-10-10T23:27:18.610163+00:00",
+  "policy": {
+    "health_only_never_signal_authority": true,
+    "same_family_does_not_increase_source_quorum": true,
+    "official_outage_does_not_promote_shadow_source": true,
+    "failed_source_fails_closed": true
+  },
+  "overall": "partial",
+  "official_sources_ok": 1,
+  "official_sources_total": 5,
+  "shadow_sources_ok": 2,
+  "shadow_sources_total": 2,
+  "families": {
+    "sec_edgar": {
+      "sources": 2,
+      "ok_sources": 0,
+      "official": true
+    },
+    "occ": {
+      "sources": 1,
+      "ok_sources": 0,
+      "official": true
+    },
+    "us_treasury": {
+      "sources": 1,
+      "ok_sources": 0,
+      "official": true
+    },
+    "finra": {
+      "sources": 1,
+      "ok_sources": 1,
+      "official": true
+    },
+    "github_gamma_research": {
+      "sources": 2,
+      "ok_sources": 2,
+      "official": false
+    }
+  },
   "sources": [
     {
-      "name": "dhawalc/spx-gamma-levels",
+      "name": "SEC submissions",
+      "family": "sec_edgar",
+      "authority": "official",
+      "role": "identity_and_filings_fallback",
+      "signal_authority": false,
+      "independent_family_key": "sec_edgar",
+      "ok": false,
+      "status": 403,
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "SEC Company Facts",
+      "family": "sec_edgar",
+      "authority": "official",
+      "role": "fundamentals_and_share_history",
+      "signal_authority": false,
+      "independent_family_key": "sec_edgar",
+      "ok": false,
+      "status": 403,
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "OCC batch documentation",
+      "family": "occ",
+      "authority": "official",
+      "role": "options_volume_context_contract",
+      "signal_authority": false,
+      "independent_family_key": "occ",
+      "ok": false,
+      "status": 403,
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "U.S. Treasury yield curve",
+      "family": "us_treasury",
+      "authority": "official",
+      "role": "macro_context",
+      "signal_authority": false,
+      "independent_family_key": "us_treasury",
+      "ok": false,
+      "error": "TimeoutError: The read operation timed out"
+    },
+    {
+      "name": "FINRA Reg SHO",
+      "family": "finra",
+      "authority": "official",
+      "role": "daily_short_sale_volume_context",
+      "signal_authority": false,
+      "independent_family_key": "finra",
       "ok": true,
-      "bytes": 355,
-      "status": 200
+      "status": 200,
+      "bytes_sampled": 156,
+      "content_type": "text/plain"
+    },
+    {
+      "name": "dhawalc/spx-gamma-levels",
+      "family": "github_gamma_research",
+      "authority": "open_source_shadow",
+      "role": "gamma_cross_validation",
+      "signal_authority": false,
+      "independent_family_key": "github_gamma_research",
+      "ok": true,
+      "status": 200,
+      "bytes_sampled": 355,
+      "content_type": "text/plain; charset=utf-8"
     },
     {
       "name": "Alexduanran/spx-0dte-archive",
+      "family": "github_gamma_research",
+      "authority": "open_source_shadow",
+      "role": "gamma_history_validation",
+      "signal_authority": false,
+      "independent_family_key": "github_gamma_research",
       "ok": true,
-      "bytes": 68367,
-      "status": 200
-    },
-    {
-      "name": "itsfabtrading/Gex-Multi",
-      "ok": true,
-      "bytes": 19016,
-      "status": 200
-    },
-    {
-      "name": "MitchelTurner/GEX",
-      "ok": true,
-      "bytes": 29449,
-      "status": 200
+      "status": 200,
+      "bytes_sampled": 68367,
+      "content_type": "text/plain; charset=utf-8"
     }
   ]
 }
