@@ -34,6 +34,11 @@ def _state(
         "entry_score": 82.0,
         "entry_score_band": "80-89",
         "market_regime": "risk_on",
+        "official_cause": True,
+        "entry_evidence_state": "OFFICIAL_CONFIRMED",
+        "entry_cause_status": "OFFICIAL_CONFIRMED",
+        "cause_source": "SEC EDGAR",
+        "cause_url": "https://www.sec.gov/Archives/test",
         "follow_through_target_pct": target,
         "failure_threshold_pct": stop,
         "terminal_outcome": snapshot,
@@ -244,3 +249,15 @@ def test_workflow_is_free_silent_and_persisted_by_stock_vault():
     assert "stock-outcome-audit-state" in vault
     assert "stock_outcome_audit.json" in vault
     assert "state/stocks/stock_outcome_audit.json" in durable
+
+def test_frozen_catalyst_source_metadata_survives_audit_record():
+    result = evaluate_stock_event_from_bars(
+        _state(),
+        _complete_flat_bars(target_touch="target"),
+        now=BASE + timedelta(days=2),
+    )
+    assert result["official_cause"] is True
+    assert result["entry_evidence_state"] == "OFFICIAL_CONFIRMED"
+    assert result["cause_source"] == "SEC EDGAR"
+    assert "sec.gov" in result["cause_url"]
+
