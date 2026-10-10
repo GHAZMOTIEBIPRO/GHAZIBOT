@@ -29,3 +29,6 @@ def test_calibration_report_records_target(tmp_path: Path):
     assert report["target_return_pct"] == 100
     assert "100%" in report["forward_label"]
     assert report["live_threshold_auto_changed"] is False
+    assert report["supply_vacuum_v2"]["research_only"] is True
+    assert report["supply_vacuum_v2"]["live_threshold_auto_changed"] is False
+    assert report["supply_vacuum_v2"]["score_is_probability"] is False
