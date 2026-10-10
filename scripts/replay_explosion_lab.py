@@ -74,12 +74,65 @@ def build_replay_frame(history: pd.DataFrame, *, target_return_pct: float = 25.0
     compression_component = _clamp_series(100.0 - frame["compression_pct"].fillna(30.0) * 3.0)
     near_high_component = _clamp_series(100.0 - frame["distance_to_20d_high_pct"].abs().fillna(30.0) * 4.0)
 
+    true_range = pd.concat(
+        [
+            frame["High"] - frame["Low"],
+            (frame["High"] - previous_close).abs(),
+            (frame["Low"] - previous_close).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+    frame["atr20_pct"] = (
+        true_range.rolling(20, min_periods=10).mean()
+        / frame["Close"].replace(0, np.nan)
+        * 100.0
+    )
+    prior_atr20 = frame["atr20_pct"].shift(1).rolling(20, min_periods=10).mean()
+    frame["volatility_contraction_ratio"] = (
+        frame["atr20_pct"] / prior_atr20.replace(0, np.nan)
+    )
+
+    prior_volume20 = frame["Volume"].shift(3).rolling(20, min_periods=10).mean()
+    recent_volume3 = frame["Volume"].rolling(3, min_periods=3).mean()
+    frame["volume_streak_3d"] = recent_volume3 / prior_volume20.replace(0, np.nan)
+
+    pressure_raw = (
+        frame["rvol"].clip(lower=0).fillna(0)
+        * frame["volume_accel"].clip(lower=0).fillna(0)
+        * frame["volume_streak_3d"].clip(lower=0).fillna(0)
+    )
+    price_penalty = 1.0 + frame["day_move_pct"].abs().fillna(0) / 10.0
+    frame["supply_vacuum_proxy"] = pressure_raw / price_penalty
+
+    vacuum_component = _clamp_series(
+        25.0 + np.log1p(frame["supply_vacuum_proxy"].clip(lower=0).fillna(0)) * 28.0
+    )
+    contraction_component = _clamp_series(
+        100.0 - (frame["volatility_contraction_ratio"].fillna(1.5) - 0.55) * 90.0
+    )
+    volume_streak_component = _clamp_series(
+        20.0 + frame["volume_streak_3d"].fillna(0) * 28.0
+    )
+
     frame["replay_score"] = (
         rvol_component * 0.28
         + volume_component * 0.26
         + price_lag_component * 0.22
         + compression_component * 0.14
         + near_high_component * 0.10
+    ).clip(0, 100)
+
+    # V2 is a research-only supply-vacuum proxy. It deliberately uses only
+    # information available by the end of the current replay session.
+    frame["replay_score_v2"] = (
+        rvol_component * 0.20
+        + volume_component * 0.17
+        + price_lag_component * 0.18
+        + compression_component * 0.08
+        + near_high_component * 0.07
+        + vacuum_component * 0.16
+        + contraction_component * 0.06
+        + volume_streak_component * 0.08
     ).clip(0, 100)
 
     # Labels are forward-looking and deliberately computed only after signal features exist.
@@ -93,11 +146,16 @@ def build_replay_frame(history: pd.DataFrame, *, target_return_pct: float = 25.0
     return frame.replace([np.inf, -np.inf], np.nan)
 
 
-def evaluate_replay(frame: pd.DataFrame, threshold: float = 60.0) -> dict[str, Any]:
-    if frame.empty:
+def evaluate_replay(
+    frame: pd.DataFrame,
+    threshold: float = 60.0,
+    *,
+    score_column: str = "replay_score",
+) -> dict[str, Any]:
+    if frame.empty or score_column not in frame.columns:
         return {"rows": 0, "signals": 0, "positive_windows": 0, "true_positive": 0, "false_positive": 0}
-    valid = frame.dropna(subset=["replay_score", "future_5d_max_return_pct"]).copy()
-    signal = valid["replay_score"] >= threshold
+    valid = frame.dropna(subset=[score_column, "future_5d_max_return_pct"]).copy()
+    signal = valid[score_column] >= threshold
     positive = valid["explosion_label"].astype(bool)
     tp = int((signal & positive).sum())
     fp = int((signal & ~positive).sum())
@@ -109,6 +167,7 @@ def evaluate_replay(frame: pd.DataFrame, threshold: float = 60.0) -> dict[str, A
     return {
         "rows": int(len(valid)),
         "threshold": threshold,
+        "score_column": score_column,
         "signals": int(signal.sum()),
         "positive_windows": int(positive.sum()),
         "true_positive": tp,
