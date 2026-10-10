@@ -7,13 +7,11 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import requests
-
 from .sec_efts import _display_identity, _document_url
+from .sec_efts_resilience import request_efts_json
 from .settings import Settings
 
 LOGGER = logging.getLogger(__name__)
-EFTS_URL = "https://efts.sec.gov/LATEST/search-index"
 _SYMBOL = re.compile(r"^[A-Z][A-Z0-9.-]{0,6}$")
 
 
@@ -112,14 +110,6 @@ ATTENTION_QUERIES: tuple[AttentionQuery, ...] = (
 )
 
 
-def _headers(settings: Settings) -> dict[str, str]:
-    return {
-        "User-Agent": settings.sec_user_agent,
-        "Accept": "application/json",
-        "Accept-Encoding": "gzip, deflate",
-    }
-
-
 def _item_materiality(items: list[str]) -> tuple[float, list[str]]:
     bonus = 0.0
     reasons: list[str] = []
@@ -151,6 +141,7 @@ def discover_attention_events(
     end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=max(1, lookback_days))
     events: dict[tuple[str, str], dict[str, Any]] = {}
+    source_unavailable = False
 
     for spec in ATTENTION_QUERIES:
         offset = 0
@@ -163,16 +154,19 @@ def discover_attention_events(
                 "from": offset,
             }
             try:
-                response = requests.get(
-                    EFTS_URL,
-                    params=params,
-                    headers=_headers(settings),
+                payload = request_efts_json(
+                    settings,
+                    params,
+                    max_attempts=2,
                     timeout=35,
                 )
-                response.raise_for_status()
-                payload = response.json()
             except Exception as exc:
-                LOGGER.warning("Precision SEC EFTS failed for %s: %s", spec.family, exc)
+                LOGGER.warning(
+                    "Precision SEC EFTS unavailable; stopping remaining query families after %s: %s",
+                    spec.family,
+                    exc,
+                )
+                source_unavailable = True
                 break
 
             hits = ((payload.get("hits") or {}).get("hits") or [])
@@ -222,6 +216,8 @@ def discover_attention_events(
                 break
             offset += 100
             time.sleep(0.18)
+        if source_unavailable:
+            break
 
     return sorted(
         events.values(),
