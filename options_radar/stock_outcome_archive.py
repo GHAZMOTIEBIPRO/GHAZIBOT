@@ -74,6 +74,11 @@ def _archive_record(state: dict[str, Any]) -> dict[str, Any]:
         "official_cause": bool(state.get("official_cause")),
         "entry_evidence_state": state.get("entry_evidence_state", "LEGACY_UNKNOWN"),
         "entry_cause_status": state.get("entry_cause_status", "LEGACY_UNKNOWN"),
+        "time_normalized_rvol_entry": (
+            dict(state.get("time_normalized_rvol_entry"))
+            if isinstance(state.get("time_normalized_rvol_entry"), dict)
+            else {}
+        ),
         "microcap_hunter_entry": (
             dict(state.get("microcap_hunter_entry"))
             if isinstance(state.get("microcap_hunter_entry"), dict)
