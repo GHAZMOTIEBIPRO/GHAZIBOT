@@ -64,3 +64,20 @@ def test_chasing_very_extended_move_is_penalized():
     late = assess_microcap_candidate(_strong(day_move_pct=62))
     assert "CHASE_RISK" in late.flags
     assert late.score < early.score
+
+def test_sec_dilution_v2_high_risk_overrides_benign_catalyst_text():
+    result = assess_microcap_candidate(
+        _strong(
+            dilution_risk=5,
+            catalyst_headline="FDA approval and strategic partnership",
+            sec_dilution_v2={
+                "risk_score": 92,
+                "risk_label": "HIGH",
+                "reasons": ["reported shares +100.0% over 90d"],
+            },
+        )
+    )
+    assert result.stage == "AVOID_RISK"
+    assert "SEC_DILUTION_V2_HIGH" in result.flags
+    assert "HIGH_DILUTION_RISK" in result.flags
+

@@ -228,3 +228,43 @@ def test_stock_vault_and_adaptive_workflow_preserve_shadow_only_policy():
 
     assert "git pull --rebase origin bot-state" in options_vault
     assert "for attempt in 1 2 3" in options_vault
+
+def test_archive_preserves_microcap_and_sec_dilution_entry_research(tmp_path):
+    stock = tmp_path / "stock.json"
+    archive = tmp_path / "archive.json"
+    _write(
+        stock,
+        {
+            "signals": {
+                "s1": {
+                    "signal_id": "s1",
+                    "signal_time": "2026-08-13T14:00:00+00:00",
+                    "symbol": "TEST",
+                    "direction": "up",
+                    "entry_price": 10.0,
+                    "stage": "IGNITION",
+                    "score": 82.0,
+                    "score_band": "80-89",
+                    "terminal_outcome": "success",
+                    "checkpoints": {"60m": {"directional_return_pct": 10.0}},
+                    "microcap_hunter_entry": {
+                        "stage": "PRIORITY",
+                        "score": 88,
+                        "research_only": True,
+                    },
+                    "sec_dilution_v2_entry": {
+                        "available": True,
+                        "risk_score": 82,
+                        "risk_label": "HIGH",
+                        "research_only": True,
+                        "decision_authority": False,
+                    },
+                }
+            }
+        },
+    )
+    payload = update_stock_outcome_archive(stock, archive)
+    row = payload["records"]["s1"]
+    assert row["microcap_hunter_entry"]["stage"] == "PRIORITY"
+    assert row["sec_dilution_v2_entry"]["risk_score"] == 82
+

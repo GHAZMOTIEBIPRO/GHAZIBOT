@@ -238,6 +238,26 @@ class StockOutcomeTracker:
                 cause_url,
             ) = self._cause_fields(row)
             cause_payload = row.get("cause") if isinstance(row.get("cause"), dict) else {}
+            microcap = (
+                row.get("microcap_hunter")
+                if isinstance(row.get("microcap_hunter"), dict)
+                else {}
+            )
+            dilution = (
+                row.get("sec_dilution_v2")
+                if isinstance(row.get("sec_dilution_v2"), dict)
+                else {}
+            )
+            dilution_history = (
+                dilution.get("share_history")
+                if isinstance(dilution.get("share_history"), dict)
+                else {}
+            )
+            dilution_financing = (
+                dilution.get("financing")
+                if isinstance(dilution.get("financing"), dict)
+                else {}
+            )
             score = _number(row.get("score"), 0.0) or 0.0
             state = {
                 "signal_id": signal_id,
@@ -269,6 +289,31 @@ class StockOutcomeTracker:
                 )[:80],
                 "cause_observed_at": now.isoformat(),
                 "cause_point_in_time_frozen": True,
+                "microcap_hunter_entry": {
+                    "stage": str(microcap.get("stage") or ""),
+                    "score": _number(microcap.get("score"), None),
+                    "flags": list(microcap.get("flags") or [])[:20],
+                    "research_only": microcap.get("research_only") is True,
+                },
+                "sec_dilution_v2_entry": {
+                    "available": dilution.get("available") is True,
+                    "risk_score": _number(dilution.get("risk_score"), None),
+                    "risk_label": str(dilution.get("risk_label") or ""),
+                    "confidence": _number(dilution.get("confidence"), None),
+                    "observed_at": dilution.get("observed_at"),
+                    "share_growth_pct": dilution_history.get("growth_pct"),
+                    "announced_capacity_to_market_cap": dilution_financing.get(
+                        "announced_capacity_to_market_cap"
+                    ),
+                    "explicit_overhang_to_float": dilution_financing.get(
+                        "explicit_overhang_to_float"
+                    ),
+                    "remaining_capacity_verified": dilution_financing.get(
+                        "remaining_capacity_verified"
+                    ) is True,
+                    "research_only": dilution.get("research_only") is True,
+                    "decision_authority": dilution.get("decision_authority") is True,
+                },
                 "follow_through_target_pct": target,
                 "failure_threshold_pct": stop,
                 "observations": 1,

@@ -171,6 +171,16 @@ def _base_record(state: dict[str, Any]) -> dict[str, Any]:
         "cause_accession": state.get("cause_accession"),
         "cause_observed_at": state.get("cause_observed_at"),
         "cause_point_in_time_frozen": bool(state.get("cause_point_in_time_frozen")),
+        "microcap_hunter_entry": (
+            dict(state.get("microcap_hunter_entry"))
+            if isinstance(state.get("microcap_hunter_entry"), dict)
+            else {}
+        ),
+        "sec_dilution_v2_entry": (
+            dict(state.get("sec_dilution_v2_entry"))
+            if isinstance(state.get("sec_dilution_v2_entry"), dict)
+            else {}
+        ),
         "follow_through_target_pct": state.get("follow_through_target_pct"),
         "failure_threshold_pct": state.get("failure_threshold_pct"),
         "snapshot_terminal_outcome": state.get("terminal_outcome", "open"),

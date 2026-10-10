@@ -327,6 +327,7 @@ class StrictCatalystScanner(ResilientCatalystScanner):
                 advanced = enrich_sec_event(form, raw_filing or clean_filing)
                 score, category, evidence = _score_text(f"{base_text} {clean_filing}")
                 event_value = None
+                share_count = None
                 confidence = 0.72
                 purpose = "keyword_event"
 
@@ -335,6 +336,7 @@ class StrictCatalystScanner(ResilientCatalystScanner):
                     category = advanced.category
                     evidence = advanced.evidence
                     event_value = advanced.event_value
+                    share_count = advanced.share_count
                     confidence = advanced.confidence
                     purpose = advanced.purpose
                 elif form in {"SC 13G", "SC 13G/A"}:
@@ -356,6 +358,7 @@ class StrictCatalystScanner(ResilientCatalystScanner):
 
                 meta = {
                     "event_value": event_value,
+                    "share_count": share_count,
                     "confidence": confidence,
                     "purpose": purpose,
                     "accession_number": accession,
@@ -412,12 +415,13 @@ class StrictCatalystScanner(ResilientCatalystScanner):
             frame = pd.concat([frame, official_frame], ignore_index=True, sort=False)
 
         if frame.empty:
-            for column in ("event_value", "confidence", "purpose", "accession_number"):
+            for column in ("event_value", "share_count", "confidence", "purpose", "accession_number"):
                 frame[column] = pd.Series(dtype="object")
             return frame
 
         for column, default in (
             ("event_value", None),
+            ("share_count", None),
             ("confidence", 0.0),
             ("purpose", ""),
             ("evidence", ""),

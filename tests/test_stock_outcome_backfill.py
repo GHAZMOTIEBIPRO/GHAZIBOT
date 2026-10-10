@@ -44,6 +44,20 @@ def _state(
         "cause_accession": "0000000000-26-000002",
         "cause_observed_at": signal_time.isoformat(),
         "cause_point_in_time_frozen": True,
+        "microcap_hunter_entry": {
+            "stage": "PRIORITY",
+            "score": 88,
+            "flags": [],
+            "research_only": True,
+        },
+        "sec_dilution_v2_entry": {
+            "available": True,
+            "risk_score": 82,
+            "risk_label": "HIGH",
+            "observed_at": signal_time.isoformat(),
+            "research_only": True,
+            "decision_authority": False,
+        },
         "follow_through_target_pct": target,
         "failure_threshold_pct": stop,
         "terminal_outcome": snapshot,
@@ -269,6 +283,8 @@ def test_frozen_catalyst_source_metadata_survives_audit_record():
     assert "sec.gov" in result["cause_url"]
     assert result["cause_point_in_time_frozen"] is True
     assert result["cause_accession"] == "0000000000-26-000002"
+    assert result["microcap_hunter_entry"]["stage"] == "PRIORITY"
+    assert result["sec_dilution_v2_entry"]["risk_score"] == 82
 
 def test_recoverable_recent_stock_events_outrank_expired_intraday_history():
     now = datetime(2026, 10, 10, 18, 0, tzinfo=timezone.utc)

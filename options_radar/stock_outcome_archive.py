@@ -74,6 +74,16 @@ def _archive_record(state: dict[str, Any]) -> dict[str, Any]:
         "official_cause": bool(state.get("official_cause")),
         "entry_evidence_state": state.get("entry_evidence_state", "LEGACY_UNKNOWN"),
         "entry_cause_status": state.get("entry_cause_status", "LEGACY_UNKNOWN"),
+        "microcap_hunter_entry": (
+            dict(state.get("microcap_hunter_entry"))
+            if isinstance(state.get("microcap_hunter_entry"), dict)
+            else {}
+        ),
+        "sec_dilution_v2_entry": (
+            dict(state.get("sec_dilution_v2_entry"))
+            if isinstance(state.get("sec_dilution_v2_entry"), dict)
+            else {}
+        ),
         "follow_through_target_pct": state.get("follow_through_target_pct"),
         "failure_threshold_pct": state.get("failure_threshold_pct"),
         "terminal_outcome": state.get("terminal_outcome"),
