@@ -322,8 +322,9 @@ class OccFreeVolumeClient:
                     }
                 response.raise_for_status()
 
-                validation = classify_http_response(response.status_code, response.headers.get("Content-Type", ""), response.content)
                 clean_text = str(response.text or "").lstrip("\ufeff").strip()
+                headers = getattr(response, "headers", {}) or {}
+                validation = classify_http_response(response.status_code, headers.get("Content-Type", ""), clean_text)
                 if not validation.accepted and validation.reason not in {"empty_payload", "html_instead_of_data"}:
                     raise ValueError(f"OCC invalid response: {validation.reason}")
                 if not validation.accepted or not clean_text or clean_text.startswith("<"):
