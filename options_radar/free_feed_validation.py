@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from dataclasses import dataclass
-from typing import Mapping
 
 
 @dataclass(frozen=True)
@@ -60,9 +60,25 @@ def validate_csv_feed(
     return FeedValidation(True, "csv_valid")
 
 
+def validate_json_feed(status: int, content_type: str, body: bytes | str, required_keys: tuple[str, ...] = ()) -> FeedValidation:
+    """Reject HTTP-success error pages and incomplete official JSON responses."""
+    base = classify_http_response(status, content_type, body)
+    if not base.accepted:
+        return base
+    try:
+        parsed = json.loads(body)
+    except (ValueError, UnicodeDecodeError):
+        return FeedValidation(False, "malformed_json")
+    if not isinstance(parsed, dict):
+        return FeedValidation(False, "unexpected_json_shape")
+    if not all(key in parsed for key in required_keys):
+        return FeedValidation(False, "missing_required_keys")
+    return FeedValidation(True, "json_valid")
+
+
 def source_metadata(*, provider: str, source_url: str, observed_at: str,
                     quote_timestamp: str | None = None,
-                    quote_timestamp_kind: str | None = None) -> dict[str, str | None]:
+                    quote_timestamp_kind: str | None = None) -> dict[str, str | bool | None]:
     """Preserve distinct observation and quote timestamps; never infer one from the other."""
     return {
         "provider": provider,
