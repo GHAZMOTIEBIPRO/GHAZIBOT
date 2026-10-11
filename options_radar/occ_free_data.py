@@ -14,6 +14,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from .free_feed_validation import classify_http_response
+
 LOGGER = logging.getLogger(__name__)
 
 OCC_VOLUME_QUERY_URL = "https://marketdata.theocc.com/volume-query"
@@ -320,8 +322,11 @@ class OccFreeVolumeClient:
                     }
                 response.raise_for_status()
 
+                validation = classify_http_response(response.status_code, response.headers.get("Content-Type", ""), response.content)
                 clean_text = str(response.text or "").lstrip("\ufeff").strip()
-                if not clean_text or clean_text.startswith("<"):
+                if not validation.accepted and validation.reason not in {"empty_payload", "html_instead_of_data"}:
+                    raise ValueError(f"OCC invalid response: {validation.reason}")
+                if not validation.accepted or not clean_text or clean_text.startswith("<"):
                     html_failures += 1
                     message = "OCC response is empty or HTML instead of CSV"
                     attempts[-1]["error"] = message
