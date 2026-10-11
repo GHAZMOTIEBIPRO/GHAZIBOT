@@ -11,6 +11,7 @@ from typing import Any
 
 import requests
 
+from .free_feed_validation import validate_json_feed
 from .settings import Settings
 
 LOGGER = logging.getLogger(__name__)
@@ -183,7 +184,12 @@ def _query_hits(
             timeout=30,
         )
         response.raise_for_status()
+        validation = validate_json_feed(response.status_code, response.headers.get("Content-Type", ""), response.content, ("hits",))
+        if not validation.accepted:
+            raise ValueError(f"SEC EFTS rejected response: {validation.reason}")
         payload = response.json()
+        if not isinstance(payload.get("hits"), dict) or not isinstance(payload["hits"].get("hits"), list):
+            raise ValueError("SEC EFTS missing hits array")
         if payload.get("timed_out"):
             raise RuntimeError(f"SEC EFTS timed out for {spec.name}")
         hits = ((payload.get("hits") or {}).get("hits") or [])
