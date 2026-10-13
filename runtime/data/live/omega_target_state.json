@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-13T19:25:55.683777+00:00",
+  "updated_at": "2026-10-13T20:53:45.243689+00:00",
   "signals": {
     "59708341a9a99a9a5ebc": {
       "signal_id": "59708341a9a99a9a5ebc",
@@ -14881,17 +14881,1322 @@
         ]
       },
       "last_updated": "2026-10-13T19:25:55.683777+00:00"
+    },
+    "9b2931f9d76587ada52a": {
+      "signal_id": "9b2931f9d76587ada52a",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "BNTX",
+      "direction": "DOWNSIDE",
+      "entry_price": 89.01,
+      "invalidation": 94.62,
+      "opportunity_tier": "B",
+      "explosion_rank": 68.0,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 83.4,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 77.8,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 77.79,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:BNTX failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:BNTX failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "05d388dc1723bcd2539f": {
+      "signal_id": "05d388dc1723bcd2539f",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "GS",
+      "direction": "DOWNSIDE",
+      "entry_price": 891.91,
+      "invalidation": 926.28,
+      "opportunity_tier": "C",
+      "explosion_rank": 55.2,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 857.54,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 823.17,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 788.8,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:GS failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:GS failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "594271d83c098df2f266": {
+      "signal_id": "594271d83c098df2f266",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "CAT",
+      "direction": "DOWNSIDE",
+      "entry_price": 772.78,
+      "invalidation": 813.13,
+      "opportunity_tier": "C",
+      "explosion_rank": 54.4,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 732.43,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 692.08,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 692.07,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:CAT failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:CAT failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "308ee76487d69d6782d1": {
+      "signal_id": "308ee76487d69d6782d1",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "SOFI",
+      "direction": "DOWNSIDE",
+      "entry_price": 15.24,
+      "invalidation": 16.06,
+      "opportunity_tier": "C",
+      "explosion_rank": 53.9,
+      "explosion_cause": "CATALYST_REPRICING",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 14.42,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 13.61,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 13.6,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:SOFI failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:SOFI failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "f8818230855398afd853": {
+      "signal_id": "f8818230855398afd853",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "MRNA",
+      "direction": "UPSIDE",
+      "entry_price": 216.25,
+      "invalidation": 193.47,
+      "opportunity_tier": "C",
+      "explosion_rank": 53.5,
+      "explosion_cause": "CATALYST_REPRICING",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 239.03,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 261.8,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 261.81,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:MRNA failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:MRNA failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "918afd8d1ba482bde092": {
+      "signal_id": "918afd8d1ba482bde092",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "AMGN",
+      "direction": "UPSIDE",
+      "entry_price": 412.84,
+      "invalidation": 397.56,
+      "opportunity_tier": "C",
+      "explosion_rank": 51.4,
+      "explosion_cause": "CATALYST_REPRICING",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 428.12,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 443.39,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 443.4,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:AMGN failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:AMGN failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "1b86e19d1b24663b7f5f": {
+      "signal_id": "1b86e19d1b24663b7f5f",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "RIVN",
+      "direction": "DOWNSIDE",
+      "entry_price": 13.37,
+      "invalidation": 14.25,
+      "opportunity_tier": "C",
+      "explosion_rank": 45.3,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 12.49,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 11.62,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 11.61,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:RIVN failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:RIVN failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "31c92f16ad7cfd4cd9bb": {
+      "signal_id": "31c92f16ad7cfd4cd9bb",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "IOVA",
+      "direction": "UPSIDE",
+      "entry_price": 14.5,
+      "invalidation": 13.2,
+      "opportunity_tier": "C",
+      "explosion_rank": 43.9,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 15.8,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 17.1,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 18.4,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:IOVA failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:IOVA failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "33c7c37f61feb23228c0": {
+      "signal_id": "33c7c37f61feb23228c0",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "META",
+      "direction": "UPSIDE",
+      "entry_price": 762.5,
+      "invalidation": 726.69,
+      "opportunity_tier": "C",
+      "explosion_rank": 43.3,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 798.31,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 834.12,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 834.13,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:META failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:META failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "bfc6a98203e6b93689a3": {
+      "signal_id": "bfc6a98203e6b93689a3",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "MSFT",
+      "direction": "UPSIDE",
+      "entry_price": 543.45,
+      "invalidation": 526.3,
+      "opportunity_tier": "C",
+      "explosion_rank": 42.2,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 560.6,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 577.75,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 594.9,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:MSFT failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:MSFT failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "e72cb338eb28cb0b31e9": {
+      "signal_id": "e72cb338eb28cb0b31e9",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "GOOGL",
+      "direction": "UPSIDE",
+      "entry_price": 353.78,
+      "invalidation": 341.59,
+      "opportunity_tier": "C",
+      "explosion_rank": 41.2,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 365.97,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 378.16,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 378.17,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:GOOGL failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:GOOGL failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "7668e982b6ed994a6265": {
+      "signal_id": "7668e982b6ed994a6265",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "CVX",
+      "direction": "UPSIDE",
+      "entry_price": 217.73,
+      "invalidation": 211.24,
+      "opportunity_tier": "C",
+      "explosion_rank": 41.0,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 224.22,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 230.7,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 230.71,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:CVX failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:CVX failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "89a37eda9aa8af8ca0c3": {
+      "signal_id": "89a37eda9aa8af8ca0c3",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "AMZN",
+      "direction": "UPSIDE",
+      "entry_price": 258.58,
+      "invalidation": 250.03,
+      "opportunity_tier": "C",
+      "explosion_rank": 39.3,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 267.13,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 275.67,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 275.68,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:AMZN failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:AMZN failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "5312fb2e7978c2f1294e": {
+      "signal_id": "5312fb2e7978c2f1294e",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "XOM",
+      "direction": "UPSIDE",
+      "entry_price": 174.08,
+      "invalidation": 168.88,
+      "opportunity_tier": "C",
+      "explosion_rank": 37.8,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 179.28,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 184.47,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 184.48,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:XOM failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:XOM failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
+    },
+    "1cdfcf89720f25ba9fd5": {
+      "signal_id": "1cdfcf89720f25ba9fd5",
+      "signal_time": "2026-10-13T20:51:43.421292+00:00",
+      "symbol": "MRVL",
+      "direction": "UPSIDE",
+      "entry_price": 268.73,
+      "invalidation": 245.92,
+      "opportunity_tier": "C",
+      "explosion_rank": 33.6,
+      "explosion_cause": "CATALYST_REPRICING",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 291.53,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T2": {
+          "label": "T2",
+          "price": 314.33,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        },
+        "T3": {
+          "label": "T3",
+          "price": 314.33,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "OPEN",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 0,
+          "matured": false
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": null,
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:MRVL failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1h",
+            "ok": false,
+            "error": "DataUnavailableError: stock_bars:MRVL failed across all providers: yahooquery: empty response | yahoo: empty response"
+          },
+          {
+            "interval": "1d",
+            "ok": false,
+            "source": "yahooquery"
+          }
+        ]
+      }
     }
   },
   "decision_authority": false,
   "summary": {
-    "signals": 188,
-    "targets": 564,
+    "signals": 203,
+    "targets": 609,
     "matured_targets": 561,
     "hits": 1,
     "failed": 0,
     "matured_misses": 560,
     "ambiguous": 0,
-    "open": 3
+    "open": 48
   }
 }
