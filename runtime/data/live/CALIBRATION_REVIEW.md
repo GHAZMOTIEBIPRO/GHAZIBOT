@@ -3,7 +3,7 @@
 - **Model version:** `2026.08-omega-reengineering`
 - **Status:** **READY FOR INDEPENDENT REVIEW**
 - **Mature signals (1d checkpoint):** **215/100**
-- **Raw priced signals:** **226**
+- **Raw priced signals:** **227**
 - **Five-day mature signals:** **193**
 - **Decision:** Eligible for independent score recalibration review
 
@@ -16,8 +16,8 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
 | 80-89 | 6 | 6 | 5 | 0.0% | 0.0% | 100.0% | 0.25 | -69.24 |
-| 70-79 | 93 | 93 | 89 | 20.2% | 7.9% | 74.2% | 19.04 | -80.96 |
-| 60-69 | 127 | 127 | 121 | 6.6% | 5.0% | 87.6% | 47.95 | -75.39 |
+| 70-79 | 93 | 93 | 89 | 20.2% | 7.9% | 74.2% | 19.04 | -80.99 |
+| 60-69 | 128 | 128 | 121 | 6.6% | 5.0% | 87.6% | 47.95 | -75.39 |
 | 0-59 | 0 | 0 | 0 | — | — | — | — | — |
 
 ## Catalyst groups
