@@ -69,6 +69,7 @@ def test_no_partial_unqualified_or_invalid_session_records_in_metrics():
     audit = _audit()
     audit["records"]["0"]["signal_session_valid"] = False
     audit["records"]["1"]["coverage"]["60m"] = False
+    audit["records"]["1"]["checkpoints"]["60m"]["coverage_qualified"] = False
     result = build_quantstats_research(
         audit, minimum_records=24,
         quantstats_module=SimpleNamespace(stats=_ReferenceQuantStats()),
