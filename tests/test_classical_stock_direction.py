@@ -98,6 +98,7 @@ def test_company_universe_is_large_company_only_and_excludes_funds_indexes():
     forbidden = {"SPY", "QQQ", "IWM", "SPX", "VIX", "RUT", "NDX"}
     assert not forbidden.intersection(DEFAULT_COMPANIES)
     assert len(DEFAULT_COMPANIES) >= 48
+    assert "MU" in DEFAULT_COMPANIES[:48]  # Avoid silently excluding a monitored ticker.
     assert {"AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "JPM", "XOM"}.issubset(
         DEFAULT_COMPANIES
     )
