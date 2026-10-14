@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import json
 import math
 import os
+import re
+from email.utils import parsedate_to_datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import requests
 
 from options_radar.classical_stock_direction import build_direction
 from options_radar.market_bars import fetch_bars
@@ -17,6 +22,7 @@ from options_radar.optionable_universe import IndependentOptionableUniverse
 from options_radar.settings import Settings
 
 DEFAULT_OUTPUT = Path("public/data/classical_direction_latest.json")
+CBOE_C1_UNDERLYINGS = "https://cdn.cboe.com/data/us/options/market_statistics/symbol_reference/cone-underlying.csv"
 
 # Curated U.S. mega/large-cap operating companies with deep underlying liquidity.
 # OCC verification is mandatory at runtime. ETFs and indexes are intentionally excluded.
@@ -100,6 +106,47 @@ def _intraday_lookback_days() -> int:
     except ValueError:
         days = 30
     return max(30, min(55, days))
+
+
+
+def _official_cboe_underlyings(
+    *,
+    session: requests.Session | None = None,
+    now: datetime | None = None,
+) -> tuple[set[str], str | None, str | None]:
+    """Read one official Cboe exchange listing if OCC is unreachable.
+
+    Cboe C1 is a subset, not the national OCC universe. A stale/unverifiable
+    file is not authoritative even for research-only classical direction.
+    """
+    reference = now or datetime.now(timezone.utc)
+    try:
+        response = (session or requests.Session()).get(CBOE_C1_UNDERLYINGS, timeout=20)
+        response.raise_for_status()
+        modified_raw = response.headers.get("Last-Modified")
+        if not modified_raw:
+            raise ValueError("Cboe listing has no verifiable Last-Modified header")
+        modified = parsedate_to_datetime(modified_raw)
+        if modified.tzinfo is None:
+            raise ValueError("Cboe Last-Modified has no timezone")
+        modified = modified.astimezone(timezone.utc)
+        age = reference.astimezone(timezone.utc) - modified
+        if age < timedelta(0) or age > timedelta(days=7):
+            raise ValueError("Cboe listing is outside the 7-day freshness bound")
+        reader = csv.DictReader(io.StringIO(response.text.lstrip("\ufeff")))
+        key = next((name for name in (reader.fieldnames or []) if name.strip().lower() == "symbol"), None)
+        if key is None:
+            raise ValueError("Cboe listing missing official Symbol column")
+        symbols = {
+            str(row.get(key) or "").strip().upper()
+            for row in reader
+        }
+        symbols = {name for name in symbols if re.fullmatch(r"[A-Z][A-Z0-9.\\-]{0,9}", name)}
+        if len(symbols) < 100:
+            raise ValueError("Cboe listing unexpectedly small or malformed")
+        return symbols, modified.isoformat(), None
+    except (requests.RequestException, ValueError, TypeError, OverflowError) as exc:
+        return set(), None, f"{type(exc).__name__}: {exc}"[:240]
 
 
 def _resample_regular_session(frame: pd.DataFrame, minutes: int) -> pd.DataFrame:
@@ -231,10 +278,17 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
     )
 
     official_set = set(universe.official_symbols)
+    cboe_set: set[str] = set()
+    cboe_last_modified: str | None = None
+    cboe_error: str | None = None
     if universe.official_verified:
         symbols = [symbol for symbol in requested if symbol in official_set]
     else:
-        symbols = []
+        # Classical signals are underlying-only; Cboe C1 confirms a subset of
+        # listed stock-option underlyings without granting any option execution authority.
+        cboe_set, cboe_last_modified, cboe_error = _official_cboe_underlyings()
+        symbols = [symbol for symbol in requested if symbol in cboe_set]
+    optionability_verified = universe.official_verified or bool(cboe_set)
 
     settings = Settings()
     settings.validate()
@@ -272,7 +326,11 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
                 + pd.Timedelta(minutes=15)
             ).isoformat()
             result["avg_dollar_volume_20d"] = dollar_volume
-            result["optionability_verified_by_occ"] = True
+            result["optionability_verified_by_occ"] = bool(universe.official_verified)
+            result["optionability_verified_by_cboe"] = bool(not universe.official_verified and symbol in cboe_set)
+            result["optionability_source"] = (
+                "OCC_DLP" if universe.official_verified else "CBOE_C1_EXCHANGE_LISTING_T_MINUS_1"
+            )
             result["signal_source"] = "UNDERLYING_CLASSICAL_TECHNICALS_ONLY"
             result["uses_option_chain_data"] = False
             result["market_data_sources"] = bundle["sources"]
@@ -301,7 +359,7 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
     coverage = evaluated / len(symbols) if symbols else 0.0
     operational_status = (
         "READY"
-        if universe.official_verified and coverage >= min_data_coverage
+        if optionability_verified and coverage >= min_data_coverage
         else "DEGRADED"
         if evaluated
         else "FAILED"
@@ -318,6 +376,7 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
         "summary": {
             "companies_requested": len(requested),
             "occ_optionability_verified": universe.official_verified,
+            "cboe_optionability_verified": bool(cboe_set),
             "companies_verified": len(symbols),
             "signals": len(signals),
             "calls": sum(row.get("decision") == "CALL" for row in signals),
@@ -332,6 +391,8 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
         "policy": {
             "company_only": True,
             "occ_used_only_for_optionability_verification": True,
+            "cboe_fallback_classical_underlying_only": True,
+            "cboe_listing_never_grants_option_execution_authority": True,
             "option_chain_data_used_for_direction": False,
             "options_flow_used": False,
             "greeks_used": False,
@@ -361,6 +422,9 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
             "occ_source": universe.source,
             "occ_cache_used": universe.cache_used,
             "occ_errors": universe.errors,
+            "cboe_last_modified": cboe_last_modified,
+            "cboe_error": cboe_error,
+            "cboe_reference_source": CBOE_C1_UNDERLYINGS if cboe_set else None,
         },
         "market_data": {
             "provider_order_daily": settings.daily_provider_order,
@@ -374,7 +438,7 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
         "errors": errors,
         "limitations_ar": [
             "CALL وPUT هنا يعبران عن اتجاه متوقع للسهم نفسه فقط؛ لا يتم اختيار عقد أو سترايك أو تاريخ انتهاء.",
-            "وجود خيارات على الشركة يتم التحقق منه عبر OCC، لكن بيانات العقود نفسها لا تدخل في القرار.",
+            "أهلية الخيارات تتحقق من OCC أو من قائمة Cboe C1 الرسمية المحدودة عند تعطل OCC؛ ولا تدخل بيانات العقود في قرار الاتجاه.",
             "لا يستخدم هذا المسار RSI أو MACD أو VWAP أو ICT/SMC أو اليونانيات أو تدفق الأوبشن.",
             "إذا لم تتفق القراءة اليومية والساعة و15 دقيقة فالمخرَج WAIT ولا يرسل البوت تنبيه اتجاه.",
         ],
