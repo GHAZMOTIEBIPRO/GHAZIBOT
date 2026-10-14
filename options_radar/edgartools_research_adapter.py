@@ -5,6 +5,7 @@ Never treats a filing as proof of a bullish price move.
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 
@@ -20,6 +21,11 @@ def recent_company_filings(symbol: str, *, limit: int = 5) -> dict[str, Any]:
     except ImportError:
         return {"symbol": ticker, "status": "UNAVAILABLE", "reason": "edgartools_not_installed", "filings": []}
     try:
+        from edgar import set_identity  # type: ignore[import-not-found]
+        identity = os.getenv("SEC_EDGAR_IDENTITY", "").strip()
+        if not identity:
+            return {"symbol": ticker, "status": "UNAVAILABLE", "reason": "sec_identity_not_configured", "filings": []}
+        set_identity(identity)
         company = Company(ticker)
         filings = company.get_filings(form=list(SUPPORTED_FORMS)).head(max(1, min(int(limit), 20)))
         output = []
