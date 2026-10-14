@@ -102,6 +102,12 @@ def send_from_file(
             "message_id": getattr(receipt, "message_id", None),
         }
         sent += 1
+        # Commit each successful receipt; a later network failure must not
+        # cause earlier delivered reminders to repeat on the next run.
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        partial = state_path.with_suffix(".tmp")
+        partial.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+        partial.replace(state_path)
     cutoff = current - timedelta(days=3)
     for key, row in list(registry.items()):
         try:
