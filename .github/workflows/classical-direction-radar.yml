@@ -19,6 +19,7 @@ on:
       - "scripts/send_classical_direction_alerts.py"
       - "tests/test_classical_stock_direction.py"
       - "tests/test_classical_signal_consistency.py"
+      - "tests/test_classical_cboe_fallback.py"
 
 concurrency:
   group: black-box-omega-classical-direction
@@ -141,7 +142,8 @@ jobs:
           for row in payload.get('signals', []):
               assert row['decision'] in {'CALL', 'PUT'}
               assert row['uses_option_chain_data'] is False
-              assert row['optionability_verified_by_occ'] is True
+              assert (row['optionability_verified_by_occ'] is True or row['optionability_verified_by_cboe'] is True)
+              assert row['optionability_source'] in {'OCC_DLP', 'CBOE_C1_EXCHANGE_LISTING_T_MINUS_1'}
           print('Classical direction semantics passed.')
           PY
 
