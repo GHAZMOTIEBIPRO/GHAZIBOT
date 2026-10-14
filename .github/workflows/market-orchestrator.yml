@@ -2,12 +2,25 @@ name: BLACK BOX Omega Market Orchestrator
 
 on:
   workflow_dispatch:
+  # GitHub schedule events are best-effort and can be skipped. An *already*
+  # independent successful News Flash run can wake the same cadence owner.
+  # Child workflows remain workflow_dispatch-only: no duplicate schedulers.
+  workflow_run:
+    workflows: ["BLACK BOX News Flash 24x7"]
+    branches: [main]
+    types: [completed]
+  # Deploying a change to the cadence workflow bootstraps one verification run.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/market-orchestrator.yml"
   schedule:
     - cron: "2-57/5 8-23 * * 1-5"
 
 concurrency:
   group: black-box-omega-market-orchestrator
-  cancel-in-progress: true
+  # A newer rescue event must not cancel an active child-dispatch run.
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -15,12 +28,38 @@ permissions:
 
 jobs:
   dispatch:
+    # Never dispatch children from failed/cancelled upstream news-flash runs.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
       GH_TOKEN: ${{ github.token }}
 
     steps:
+      - name: Diagnose missing scheduler heartbeat (no trading side effects)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Cadence invocation source: $GITHUB_EVENT_NAME"
+          if [[ "$GITHUB_EVENT_NAME" != "workflow_run" ]]; then
+            echo "Normal schedule, manual dispatch, or changed-workflow bootstrap."
+            exit 0
+          fi
+          last_schedule="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow market-orchestrator.yml --event schedule --branch main --limit 1 --json createdAt --jq '.[0].createdAt // empty' 2>/dev/null || true)"
+          if [[ -z "$last_schedule" ]]; then
+            echo "::warning title=Omega schedule missing::No recent central scheduler run available. Independent News Flash wakeup is acting as fallback."
+            exit 0
+          fi
+          last_epoch="$(date -u -d "$last_schedule" +%s)"
+          now_epoch="$(date -u +%s)"
+          age=$(( (now_epoch - last_epoch) / 60 ))
+          echo "Last scheduled Market Orchestrator run age: ${age} minutes"
+          if (( age > 20 )); then
+            echo "::warning title=Omega scheduler overdue::Central schedule is overdue by ${age} minutes; recovering through News Flash workflow_run."
+          fi
+
       - name: Dispatch stale market engines
         shell: bash
         run: |
@@ -52,7 +91,7 @@ jobs:
             max_age="$2"
             label="$3"
             age="$(age_minutes "$workflow")"
-            echo "$label: workflow=$workflow age=\${age}m max=\${max_age}m"
+            echo "$label: workflow=$workflow age=${age}m max=${max_age}m"
             if (( age > max_age )); then
               echo "Dispatching $label"
               gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref main
@@ -80,7 +119,8 @@ jobs:
       - name: Scheduling policy
         run: |
           cat <<'EOF'
-          Core market cadence is owned here.
+          Core market cadence is owned here, including wakeups from successful News Flash runs.
+          A fallback wakeup does not guarantee five-minute execution when GitHub omits all schedules.
           workflow_run chains still own dependent stages:
           Fast Explosion -> Stock Radar
           Options Contract -> Options Research Enrichment
