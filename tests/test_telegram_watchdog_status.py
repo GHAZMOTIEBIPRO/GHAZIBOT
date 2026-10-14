@@ -118,8 +118,6 @@ def test_history_api_reads_single_workflow_main_completed(monkeypatch):
 
 
 def test_history_api_failure_does_not_create_false_recovery(monkeypatch):
-    import scripts.telegram_watchdog_status as watcher
-
     def bad_get(*args, **kwargs):
         raise requests.Timeout("provider unavailable")
 
