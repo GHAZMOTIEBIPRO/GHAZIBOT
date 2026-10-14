@@ -4,10 +4,14 @@ import argparse
 import hashlib
 import html
 import json
+import math
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import exchange_calendars as xcals
+import pandas as pd
 
 from options_radar.telegram_transport import send_html_message
 
@@ -83,6 +87,8 @@ def _message(row: dict[str, Any]) -> str:
         f"قوة المتابعة: <b>{_priority_ar(row.get('priority'))}</b>",
         f"درجة توافق الأطر: <b>{int(row.get('agreement_pct') or 0)}/100</b> (ليست نسبة نجاح)",
         f"الأفق: <b>{_safe(row.get('horizon') or '1-5 جلسات تداول')}</b>",
+        f"آخر شمعة 15د مكتملة: <b>{_safe(row.get('intraday_bar_closed_at') or 'غير متاحة')}</b> (UTC)",
+        f"مصدر الشموع: <b>{_safe((row.get('market_data_sources') or {}).get('intraday') or 'غير متاح')}</b> — قد تكون البيانات مؤخرة",
         "",
         "📐 <b>اتفاق الاتجاه</b>",
         f"اليومي: <b>{_frame_ar(daily)}</b> | الساعة: <b>{_frame_ar(hourly)}</b> | 15د: <b>{_frame_ar(intraday)}</b>",
@@ -113,15 +119,64 @@ def _message(row: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _consistent_signal(row: dict[str, Any]) -> bool:
+    """Reject contradictions between the signal, its own 15m bar and stop level."""
+    try:
+        price = float(row["price"])
+        stop = float(row["invalidation_level"])
+        intraday = row["intraday"]
+        last_close = float(intraday["close"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if not all(math.isfinite(v) and v > 0 for v in (price, stop, last_close)):
+        return False
+    if abs(price - last_close) > max(price, last_close) * 0.001:
+        return False
+    direction = str(row.get("decision") or "").upper()
+    expected = "BULLISH" if direction == "CALL" else "BEARISH"
+    if direction not in {"CALL", "PUT"}:
+        return False
+    if any(str((row.get(frame) or {}).get("direction") or "").upper() != expected for frame in ("daily", "hourly", "intraday")):
+        return False
+    return price > stop if direction == "CALL" else price < stop
+
+
+
+def _fresh_session_bar(row: dict[str, Any], *, now: datetime | None = None) -> bool:
+    """Only send on a live NYSE session using a completed, recently observed 15m bar.
+
+    The timestamp comes from the provider bar index; never from generated_at.
+    Outside regular sessions, including manual dispatch, no alert is sent.
+    """
+    raw = row.get("intraday_bar_closed_at")
+    if not isinstance(raw, str) or not raw.strip():
+        return False
+    try:
+        closed = pd.Timestamp(raw)
+        reference = pd.Timestamp(now if now is not None else datetime.now(timezone.utc))
+        if closed.tzinfo is None or reference.tzinfo is None:
+            return False
+        closed = closed.tz_convert("UTC")
+        reference = reference.tz_convert("UTC")
+        calendar = xcals.get_calendar("XNYS")
+        minute = reference.floor("min")
+        if not calendar.is_open_on_minute(minute):
+            return False
+        session = calendar.minute_to_session(minute, direction="none")
+        if closed < calendar.session_open(session) + pd.Timedelta(minutes=15):
+            return False
+        return bool(closed <= reference and reference - closed <= pd.Timedelta(minutes=45))
+    except (ValueError, TypeError, KeyError, OverflowError):
+        return False
+
+
 def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
     if payload.get("path") != "classical_direction":
         raise RuntimeError("Expected classical_direction payload")
     maximum = max(1, min(5, int(os.getenv("CLASSICAL_ALERT_MAX", "3"))))
-    signals = [
-        row
-        for row in payload.get("signals", [])
-        if isinstance(row, dict) and row.get("decision") in {"CALL", "PUT"}
-    ]
+    candidates = [row for row in payload.get("signals", []) if isinstance(row, dict) and row.get("decision") in {"CALL", "PUT"}]
+    signals = [row for row in candidates if _consistent_signal(row) and _fresh_session_bar(row)]
+    state["blocked_invalid_or_stale"] = len(candidates) - len(signals)
     signals.sort(
         key=lambda row: (
             1 if row.get("priority") == "HIGH" else 0,
