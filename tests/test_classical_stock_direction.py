@@ -158,6 +158,7 @@ def test_arabic_message_states_direction_and_underlying_only_method():
 def test_sender_deduplicates_same_direction(monkeypatch):
     sent: list[str] = []
     monkeypatch.setattr(sender, "_send", sent.append)
+    monkeypatch.setattr(sender, "_fresh_session_bar", lambda row: True)
     row = build_direction("AAPL", _frame(), _frame(count=180), _frame(count=180)).as_dict()
     row["rank_score"] = 80
     payload = {"path": "classical_direction", "signals": [row]}
