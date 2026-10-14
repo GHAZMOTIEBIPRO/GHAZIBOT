@@ -14,6 +14,7 @@ on:
       - "requirements-research.txt"
       - "options_radar/durable_stock_state.py"
       - "scripts/run_stock_outcome_audit.py"
+      - "scripts/run_quantstats_stock_shadow.py"
   schedule:
     - cron: "12 22 * * 1-5"
 
@@ -141,12 +142,34 @@ jobs:
           print('Stock outcome audit fair-rotation safety validation passed.')
           PY
 
+      - name: Generate QuantStats descriptive signal-quality research
+        run: >-
+          python -m scripts.run_quantstats_stock_shadow
+          --audit "$STOCK_OUTCOME_AUDIT_PATH"
+          --output data/live/quantstats_stock_signals_shadow.json
+
+      - name: Verify non-executable QuantStats research contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('data/live/quantstats_stock_signals_shadow.json').read_text())
+          assert payload['decision_authority'] is False
+          assert payload['live_alert_weights_changed'] is False
+          assert payload['realized_portfolio_pnl'] is False
+          assert payload['annualized_metrics_allowed'] is False
+          assert payload['status'] in {'INSUFFICIENT_EVIDENCE','RESEARCH_METRICS_ONLY','UNAVAILABLE'}
+          assert payload['source'] == 'stock_outcome_audit_60m'
+          print(f"QuantStats shadow audit: {payload['status']}")
+          PY
+
       - name: Stage audit state
         if: always()
         shell: bash
         run: |
           mkdir -p .stock-audit-upload
           cp -f data/live/stock_outcome_audit.json .stock-audit-upload/stock_outcome_audit.json 2>/dev/null || true
+          cp -f data/live/quantstats_stock_signals_shadow.json .stock-audit-upload/quantstats_stock_signals_shadow.json 2>/dev/null || true
 
       - name: Upload stock outcome audit
         if: always()
