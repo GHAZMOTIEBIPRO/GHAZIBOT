@@ -41,6 +41,11 @@ jobs:
       - name: Install open-source research validators
         run: pip install -r requirements-research.txt
 
+      - name: Full Ruff verification for QuantStats signal research
+        run: |
+          pip install 'ruff>=0.9,<1.0'
+          ruff check scripts/run_quantstats_stock_shadow.py tests/test_quantstats_stock_shadow.py
+
       - name: Validate modeled Greeks against MIT reference libraries
         run: python -m scripts.validate_open_source_greeks
 
