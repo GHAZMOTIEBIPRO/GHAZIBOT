@@ -9,6 +9,11 @@ on:
       - "options_radar/free_public_intelligence.py"
       - "scripts/send_free_macro_reminders.py"
       - "requirements.txt"
+  pull_request:
+    paths:
+      - ".github/workflows/company-news-watch.yml"
+      - "options_radar/free_public_intelligence.py"
+      - "tests/test_free_public_intelligence.py"
 
 concurrency:
   group: black-box-company-news-watch
@@ -33,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           fetch-depth: 1
 
       - uses: actions/setup-python@v5
@@ -53,6 +58,21 @@ jobs:
           --output public/data/free_public_intelligence.json
           --symbols "MU,NVDA,RGC,BNAI,RKLB,AMD,AAPL,TSLA"
 
+      - name: Diagnose official BLS feed event shape (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          python - <<'PY'
+          import requests
+          from options_radar.free_public_intelligence import BLS_ICS
+          response = requests.get(BLS_ICS, timeout=15, headers={'User-Agent': 'GHAZIBOT-Free-Research/1.0'})
+          response.raise_for_status()
+          raw = response.text
+          first = raw.split('BEGIN:VEVENT', 1)
+          sample = first[1].split('END:VEVENT', 1)[0] if len(first) == 2 else ''
+          print(f"BLS feed diagnostic: bytes={len(raw)} vevents={raw.count('BEGIN:VEVENT')}")
+          print('BLS first VEVENT sanitized sample:', repr(sample[:1600]))
+          PY
+
       - name: Upload public intelligence context (research only)
         if: always()
         uses: actions/upload-artifact@v4
@@ -63,7 +83,7 @@ jobs:
           retention-days: 14
 
       - name: Restore Telegram destination when chat secret is absent
-        if: github.event_name != 'push' && env.TELEGRAM_CHAT_ID == ''
+        if: github.event_name == 'workflow_dispatch' && env.TELEGRAM_CHAT_ID == ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -88,11 +108,11 @@ jobs:
           exit 0
 
       - name: Resolve Telegram destination
-        if: github.event_name != 'push'
+        if: github.event_name == 'workflow_dispatch'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
       - name: Restore company news state and SEC ticker cache
-        if: github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        if: github.event_name == 'workflow_dispatch' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -118,7 +138,7 @@ jobs:
           exit 0
 
       - name: Scan material company news and official catalysts
-        if: github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        if: github.event_name == 'workflow_dispatch' && env.TELEGRAM_READY == 'true'
         run: >-
           python -m scripts.send_material_news_alerts
           --universe data/universe.txt
@@ -127,14 +147,14 @@ jobs:
           --max-symbols 120
 
       - name: Send deduplicated official economic calendar reminders
-        if: github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        if: github.event_name == 'workflow_dispatch' && env.TELEGRAM_READY == 'true'
         run: >-
           python -m scripts.send_free_macro_reminders
           --context public/data/free_public_intelligence.json
           --state data/live/company_news_alert_state.json
 
       - name: Stage news state and SEC ticker cache
-        if: always() && github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        if: always() && github.event_name == 'workflow_dispatch' && env.TELEGRAM_READY == 'true'
         shell: bash
         run: |
           mkdir -p .news-state-upload
@@ -147,7 +167,7 @@ jobs:
           exit 0
 
       - name: Upload news state
-        if: always() && github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        if: always() && github.event_name == 'workflow_dispatch' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: company-news-state
