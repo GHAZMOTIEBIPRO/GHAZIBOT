@@ -11,6 +11,8 @@ on:
       - "options_radar/edgartools_research_adapter.py"
       - "tests/test_edgartools_research_adapter.py"
       - "requirements-research.txt"
+      - "scripts/run_quantstats_stock_shadow.py"
+      - "tests/test_quantstats_stock_shadow.py"
   schedule:
     - cron: "40 9 * * 0"
 
@@ -39,11 +41,29 @@ jobs:
       - name: Install open-source research validators
         run: pip install -r requirements-research.txt
 
+      - name: Full Ruff verification for QuantStats signal research
+        run: |
+          pip install 'ruff>=0.9,<1.0'
+          ruff check scripts/run_quantstats_stock_shadow.py tests/test_quantstats_stock_shadow.py
+
       - name: Validate modeled Greeks against MIT reference libraries
         run: python -m scripts.validate_open_source_greeks
 
       - name: Validate EdgarTools and hindsight-safe SMC bridges
         run: python -m scripts.validate_open_source_research
+
+      - name: Validate actual Apache-licensed QuantStats non-annualized metrics
+        run: |
+          python - <<'PY'
+          import quantstats as qs
+          import pandas as pd
+          returns = pd.Series([0.02, -0.01, 0.01, -0.005], dtype='float64')
+          rate = float(qs.stats.win_rate(returns))
+          factor = float(qs.stats.profit_factor(returns))
+          assert 0 <= rate <= 1
+          assert factor > 0
+          print(f"QuantStats runtime smoke: win_rate={rate:.3f} profit_factor={factor:.3f}")
+          PY
 
       - name: SEC EdgarTools real-filing smoke (manual only, requires configured identity)
         if: github.event_name == 'workflow_dispatch'
