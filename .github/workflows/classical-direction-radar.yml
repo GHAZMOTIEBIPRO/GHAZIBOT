@@ -19,6 +19,7 @@ on:
       - "scripts/send_classical_direction_alerts.py"
       - "tests/test_classical_stock_direction.py"
       - "tests/test_classical_signal_consistency.py"
+      - "tests/test_classical_cboe_fallback.py"
 
 concurrency:
   group: black-box-omega-classical-direction
@@ -107,6 +108,17 @@ jobs:
           print(f"reason={'regular_session' if is_open else 'market_closed'}")
           PY
 
+      - name: Verify Cboe exchange-listing fallback endpoint (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          python - <<'PY'
+          from scripts.run_classical_direction_radar import _official_cboe_underlyings
+          symbols, last_modified, error = _official_cboe_underlyings()
+          print(f"Cboe fallback validation: listed={len(symbols)} last_modified={last_modified} error={error}")
+          if error or len(symbols) < 100:
+              raise RuntimeError(f"Cboe fallback unavailable: {error}")
+          PY
+
       - name: Run classical direction radar
         if: steps.market.outputs.scan == 'true'
         run: >-
@@ -141,7 +153,8 @@ jobs:
           for row in payload.get('signals', []):
               assert row['decision'] in {'CALL', 'PUT'}
               assert row['uses_option_chain_data'] is False
-              assert row['optionability_verified_by_occ'] is True
+              assert (row['optionability_verified_by_occ'] is True or row['optionability_verified_by_cboe'] is True)
+              assert row['optionability_source'] in {'OCC_DLP', 'CBOE_C1_EXCHANGE_LISTING_T_MINUS_1'}
           print('Classical direction semantics passed.')
           PY
 

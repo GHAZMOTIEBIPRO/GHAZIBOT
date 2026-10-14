@@ -89,6 +89,7 @@ def _message(row: dict[str, Any]) -> str:
         f"الأفق: <b>{_safe(row.get('horizon') or '1-5 جلسات تداول')}</b>",
         f"آخر شمعة 15د مكتملة: <b>{_safe(row.get('intraday_bar_closed_at') or 'غير متاحة')}</b> (UTC)",
         f"مصدر الشموع: <b>{_safe((row.get('market_data_sources') or {}).get('intraday') or 'غير متاح')}</b> — قد تكون البيانات مؤخرة",
+        f"مصدر التحقق من أهلية الخيارات: <b>{_safe(row.get('optionability_source') or 'غير متاح')}</b> (لا يثبت جودة أو سعر العقد)",
         "",
         "📐 <b>اتفاق الاتجاه</b>",
         f"اليومي: <b>{_frame_ar(daily)}</b> | الساعة: <b>{_frame_ar(hourly)}</b> | 15د: <b>{_frame_ar(intraday)}</b>",
