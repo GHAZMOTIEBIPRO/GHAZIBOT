@@ -81,6 +81,23 @@ INDEX_HINTS = (
 )
 
 
+def _incremental_outcome(metrics: dict) -> str:
+    """Classify an incremental SEC run without treating an empty result as success."""
+
+    blocked = int(metrics.get("access_blocked", 0) or 0)
+    feeds_requested = int(metrics.get("feeds_requested", 0) or 0)
+    entries_seen = int(metrics.get("feed_entries_seen", 0) or 0)
+    if blocked and not feeds_requested:
+        return "ACCESS_BLOCKED"
+    if blocked:
+        return "PARTIAL_ACCESS_BLOCKED"
+    if feeds_requested and not entries_seen:
+        return "NO_FILINGS"
+    if feeds_requested:
+        return "FILINGS_SCANNED"
+    return "NO_FEED_REQUESTS"
+
+
 class StrictCatalystScanner(ResilientCatalystScanner):
     """Ground official events, cache processed accessions and demote secondary news."""
 
@@ -98,6 +115,8 @@ class StrictCatalystScanner(ResilientCatalystScanner):
             "document_fetches": 0,
             "prefilter_skips": 0,
             "events_emitted": 0,
+            "access_blocked": 0,
+            "request_failures": 0,
         }
 
     def _load_accession_state(self) -> dict:
@@ -157,6 +176,7 @@ class StrictCatalystScanner(ResilientCatalystScanner):
             **self._sec_incremental_metrics,
             "processed_accessions": len(pruned),
             "updated_at": self._accession_state["updated_at"],
+            "outcome": _incremental_outcome(self._sec_incremental_metrics),
         }
         status_tmp = self._incremental_status_path.with_suffix(".json.tmp")
         status_tmp.write_text(
@@ -269,7 +289,11 @@ class StrictCatalystScanner(ResilientCatalystScanner):
                 response.raise_for_status()
                 root = ET.fromstring(response.content)
                 self._sec_incremental_metrics["feeds_requested"] += 1
-            except Exception:
+            except Exception as exc:
+                self._sec_incremental_metrics["request_failures"] += 1
+                response_status = getattr(getattr(exc, "response", None), "status_code", None)
+                if response_status == 403 or "403" in str(exc):
+                    self._sec_incremental_metrics["access_blocked"] += 1
                 continue
 
             for entry in root.findall("atom:entry", namespace):

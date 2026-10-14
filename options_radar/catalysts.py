@@ -27,6 +27,7 @@ SEC_SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
 LOCAL_CIK_MAP = Path("data/sec_cik_map.json")
 COMPANY_ALIASES = Path("data/company_aliases.json")
 OPENFDA_DRUGSFDA = "https://api.fda.gov/drug/drugsfda.json"
+FDA_NAME_SIMILARITY_THRESHOLD = 0.72
 
 POSITIVE_PATTERNS: dict[str, tuple[int, str]] = {
     "fda approval": (25, "FDA approval"),
@@ -421,7 +422,13 @@ class CatalystScanner:
                 similarity = _name_similarity(sponsor, company)
                 if similarity > best_similarity:
                     best_symbol, best_similarity = symbol, similarity
-            if best_similarity < 0.34 or (allowed_symbols and best_symbol not in allowed_symbols):
+            # A low Jaccard score can match unrelated sponsors that share one
+            # generic word. FDA records are allowed to enrich a symbol only
+            # after a high-confidence name match.
+            if (
+                best_similarity < FDA_NAME_SIMILARITY_THRESHOLD
+                or (allowed_symbols and best_symbol not in allowed_symbols)
+            ):
                 continue
             products = item.get("products") or []
             product_name = "Drug application"
