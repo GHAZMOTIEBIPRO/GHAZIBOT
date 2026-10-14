@@ -293,9 +293,15 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
     ):
         try:
             pieces[key] = fn(session=session, now=current, **opts)
+        except requests.HTTPError as exc:
+            pieces[key] = []
+            code = getattr(getattr(exc, "response", None), "status_code", None)
+            # The upstream may reject shared runners (e.g. GDELT HTTP 429).
+            # Never retry a 429 aggressively or manufacture fallback articles.
+            errors[key] = f"HTTP_{code}" if isinstance(code, int) else "HTTP_ERROR"
         except (requests.RequestException, ValueError, TypeError, KeyError) as exc:
             pieces[key] = []
-            errors[key] = f"{type(exc).__name__}: {exc}"[:240]
+            errors[key] = type(exc).__name__
     pieces["alpaca_iex"] = alpaca_iex_health(session=session, now=current)
     return {
         "schema": "free_public_intelligence_v1",
