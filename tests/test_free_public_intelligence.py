@@ -9,7 +9,6 @@ from options_radar.free_public_intelligence import (
     FED_MONETARY,
     GDELT_DOC,
     alpaca_iex_health,
-    bls_upcoming,
     build_context,
     fed_monetary_updates,
     gdelt_attention,
