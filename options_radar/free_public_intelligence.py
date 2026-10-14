@@ -106,10 +106,10 @@ def gdelt_attention(
     )
     payload = response.json()
     if not isinstance(payload, dict):
-        raise ValueError("GDELT returned invalid JSON")
+        raise TypeError("GDELT returned invalid JSON")
     articles = payload.get("articles", [])
     if not isinstance(articles, list):
-        raise ValueError("GDELT article schema invalid")
+        raise TypeError("GDELT article schema invalid")
     output: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
     for row in articles[:75]:
@@ -128,7 +128,7 @@ def gdelt_attention(
         for symbol in watch:
             mentioned = bool(re.search(
                 rf"(?<![A-Z0-9])(?:\${re.escape(symbol)}|(?:NASDAQ|NYSE|AMEX)\s*:\s*{re.escape(symbol)})(?![A-Z0-9])",
-                title, flags=re.I,
+                title, flags=re.IGNORECASE,
             ))
             if not mentioned or (symbol, url) in seen:
                 continue
