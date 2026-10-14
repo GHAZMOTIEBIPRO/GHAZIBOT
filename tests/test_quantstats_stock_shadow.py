@@ -69,9 +69,12 @@ def test_no_partial_unqualified_or_invalid_session_records_in_metrics():
     audit = _audit()
     audit["records"]["0"]["signal_session_valid"] = False
     audit["records"]["1"]["coverage"]["60m"] = False
-    result = build_quantstats_research(audit, quantstats_module=SimpleNamespace(stats=_ReferenceQuantStats()))
-    # The reference stats would assert 24 inputs if gate incorrectly passed.
-    assert result["status"] == "INSUFFICIENT_EVIDENCE" or result["counts"]["eligible_decisive_observations"] == 22
+    result = build_quantstats_research(
+        audit, minimum_records=24,
+        quantstats_module=SimpleNamespace(stats=_ReferenceQuantStats()),
+    )
+    assert result["status"] == "INSUFFICIENT_EVIDENCE"
+    assert result["counts"]["eligible_decisive_observations"] == 22
 
 
 def test_missing_or_undefined_event_metrics_never_claim_accuracy():
