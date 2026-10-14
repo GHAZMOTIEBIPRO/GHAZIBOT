@@ -8,6 +8,8 @@ on:
       - "scripts/validate_open_source_greeks.py"
       - "scripts/validate_open_source_research.py"
       - "options_radar/open_source_research.py"
+      - "options_radar/edgartools_research_adapter.py"
+      - "tests/test_edgartools_research_adapter.py"
       - "requirements-research.txt"
   schedule:
     - cron: "40 9 * * 0"
@@ -43,6 +45,20 @@ jobs:
       - name: Validate EdgarTools and hindsight-safe SMC bridges
         run: python -m scripts.validate_open_source_research
 
+      - name: SEC EdgarTools real-filing smoke (manual only, requires configured identity)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          SEC_EDGAR_IDENTITY: ${{ secrets.SEC_USER_AGENT }}
+        shell: bash
+        run: |
+          mkdir -p public/data
+          if [[ -z "$SEC_EDGAR_IDENTITY" ]]; then
+            echo '{"status":"NOT_RUN","reason":"SEC_USER_AGENT secret absent"}' > public/data/edgartools_sec_smoke.json
+            echo "Live SEC smoke NOT RUN: SEC_USER_AGENT must be set."
+          else
+            python -m options_radar.edgartools_research_adapter --symbol MU --limit 3 > public/data/edgartools_sec_smoke.json
+          fi
+
       - name: Upload validation evidence
         uses: actions/upload-artifact@v4
         with:
@@ -50,5 +66,6 @@ jobs:
           path: |
             public/data/open_source_greeks_validation.json
             public/data/open_source_research_validation.json
+            public/data/edgartools_sec_smoke.json
           if-no-files-found: error
           retention-days: 14
