@@ -3,7 +3,7 @@
     "WBD": {
       "source": "yahooquery",
       "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
-      "fetched_at": "2026-10-14T22:30:20.658832+03:00",
+      "fetched_at": "2026-10-15T00:40:16.041184+03:00",
       "attempts": [
         {
           "provider": "yahooquery",
@@ -18,7 +18,7 @@
           "provider": "yahoo",
           "operation": "stock_bars",
           "success": true,
-          "elapsed_ms": 71,
+          "elapsed_ms": 106,
           "rows": 1,
           "status_code": null,
           "error": null
@@ -61,17 +61,17 @@
         }
       }
     },
-    "BAC": {
+    "BNTX": {
       "source": "yahooquery",
       "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
-      "fetched_at": "2026-10-14T22:30:21.384156+03:00",
+      "fetched_at": "2026-10-15T00:40:17.613297+03:00",
       "attempts": [
         {
           "provider": "yahooquery",
           "operation": "stock_bars",
           "success": true,
           "elapsed_ms": 0,
-          "rows": 2,
+          "rows": 1,
           "status_code": null,
           "error": null
         },
@@ -79,15 +79,15 @@
           "provider": "yahoo",
           "operation": "stock_bars",
           "success": true,
-          "elapsed_ms": 89,
-          "rows": 2,
+          "elapsed_ms": 70,
+          "rows": 1,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
-        "symbol": "BAC",
-        "interval": "5m",
+        "symbol": "BNTX",
+        "interval": "1d",
         "successful_sources": [
           "yahooquery",
           "yahoo"
@@ -99,8 +99,8 @@
           "yahoo"
         ],
         "latest_close_by_source": {
-          "yahooquery": 51.380001068115234,
-          "yahoo": 51.380001068115234
+          "yahooquery": 88.66000366210938,
+          "yahoo": 88.66000366210938
         },
         "latest_close_dispersion_pct": 0.0,
         "cross_source_confirmed": false,
@@ -122,17 +122,17 @@
         }
       }
     },
-    "ORCL": {
+    "RIOT": {
       "source": "yahooquery",
       "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
-      "fetched_at": "2026-10-14T22:30:22.108920+03:00",
+      "fetched_at": "2026-10-15T00:40:18.996564+03:00",
       "attempts": [
         {
           "provider": "yahooquery",
           "operation": "stock_bars",
           "success": true,
           "elapsed_ms": 0,
-          "rows": 2,
+          "rows": 1,
           "status_code": null,
           "error": null
         },
@@ -140,15 +140,15 @@
           "provider": "yahoo",
           "operation": "stock_bars",
           "success": true,
-          "elapsed_ms": 116,
-          "rows": 2,
+          "elapsed_ms": 99,
+          "rows": 1,
           "status_code": null,
           "error": null
         }
       ],
       "metadata": {
-        "symbol": "ORCL",
-        "interval": "5m",
+        "symbol": "RIOT",
+        "interval": "1d",
         "successful_sources": [
           "yahooquery",
           "yahoo"
@@ -160,191 +160,8 @@
           "yahoo"
         ],
         "latest_close_by_source": {
-          "yahooquery": 130.25,
-          "yahoo": 130.26499938964844
-        },
-        "latest_close_dispersion_pct": 0.0058,
-        "cross_source_confirmed": false,
-        "provider_preflight": {
-          "configured_providers": [
-            "yahooquery",
-            "yahoo"
-          ],
-          "skipped_unconfigured": [
-            "tradier",
-            "alpaca",
-            "twelve_data",
-            "polygon",
-            "alpha_vantage"
-          ],
-          "adapter_attempts_avoided": 5,
-          "credentials_exposed": false,
-          "decision_authority": false
-        }
-      }
-    },
-    "CRWV": {
-      "source": "yahooquery",
-      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
-      "fetched_at": "2026-10-14T22:30:23.050502+03:00",
-      "attempts": [
-        {
-          "provider": "yahooquery",
-          "operation": "stock_bars",
-          "success": true,
-          "elapsed_ms": 0,
-          "rows": 2,
-          "status_code": null,
-          "error": null
-        },
-        {
-          "provider": "yahoo",
-          "operation": "stock_bars",
-          "success": true,
-          "elapsed_ms": 84,
-          "rows": 2,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "CRWV",
-        "interval": "5m",
-        "successful_sources": [
-          "yahooquery",
-          "yahoo"
-        ],
-        "source_count": 2,
-        "transport_source_count": 2,
-        "independent_source_count": 1,
-        "source_families": [
-          "yahoo"
-        ],
-        "latest_close_by_source": {
-          "yahooquery": 65.37000274658203,
-          "yahoo": 65.38999938964844
-        },
-        "latest_close_dispersion_pct": 0.0153,
-        "cross_source_confirmed": false,
-        "provider_preflight": {
-          "configured_providers": [
-            "yahooquery",
-            "yahoo"
-          ],
-          "skipped_unconfigured": [
-            "tradier",
-            "alpaca",
-            "twelve_data",
-            "polygon",
-            "alpha_vantage"
-          ],
-          "adapter_attempts_avoided": 5,
-          "credentials_exposed": false,
-          "decision_authority": false
-        }
-      }
-    },
-    "GILD": {
-      "source": "yahooquery",
-      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
-      "fetched_at": "2026-10-14T22:30:23.905668+03:00",
-      "attempts": [
-        {
-          "provider": "yahooquery",
-          "operation": "stock_bars",
-          "success": true,
-          "elapsed_ms": 0,
-          "rows": 2,
-          "status_code": null,
-          "error": null
-        },
-        {
-          "provider": "yahoo",
-          "operation": "stock_bars",
-          "success": true,
-          "elapsed_ms": 115,
-          "rows": 2,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "GILD",
-        "interval": "5m",
-        "successful_sources": [
-          "yahooquery",
-          "yahoo"
-        ],
-        "source_count": 2,
-        "transport_source_count": 2,
-        "independent_source_count": 1,
-        "source_families": [
-          "yahoo"
-        ],
-        "latest_close_by_source": {
-          "yahooquery": 153.47000122070312,
-          "yahoo": 153.47000122070312
-        },
-        "latest_close_dispersion_pct": 0.0,
-        "cross_source_confirmed": false,
-        "provider_preflight": {
-          "configured_providers": [
-            "yahooquery",
-            "yahoo"
-          ],
-          "skipped_unconfigured": [
-            "tradier",
-            "alpaca",
-            "twelve_data",
-            "polygon",
-            "alpha_vantage"
-          ],
-          "adapter_attempts_avoided": 5,
-          "credentials_exposed": false,
-          "decision_authority": false
-        }
-      }
-    },
-    "LLY": {
-      "source": "yahooquery",
-      "freshness": "multi-source validation (2 sources); base=yahooquery; unofficial Yahoo fallback via alternate endpoint; may be delayed",
-      "fetched_at": "2026-10-14T22:30:24.358525+03:00",
-      "attempts": [
-        {
-          "provider": "yahooquery",
-          "operation": "stock_bars",
-          "success": true,
-          "elapsed_ms": 0,
-          "rows": 2,
-          "status_code": null,
-          "error": null
-        },
-        {
-          "provider": "yahoo",
-          "operation": "stock_bars",
-          "success": true,
-          "elapsed_ms": 75,
-          "rows": 2,
-          "status_code": null,
-          "error": null
-        }
-      ],
-      "metadata": {
-        "symbol": "LLY",
-        "interval": "5m",
-        "successful_sources": [
-          "yahooquery",
-          "yahoo"
-        ],
-        "source_count": 2,
-        "transport_source_count": 2,
-        "independent_source_count": 1,
-        "source_families": [
-          "yahoo"
-        ],
-        "latest_close_by_source": {
-          "yahooquery": 1209.8399658203125,
-          "yahoo": 1209.8399658203125
+          "yahooquery": 15.100000381469727,
+          "yahoo": 15.100000381469727
         },
         "latest_close_dispersion_pct": 0.0,
         "cross_source_confirmed": false,
