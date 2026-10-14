@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-14T18:09:45.468549+00:00",
+  "updated_at": "2026-10-14T19:30:18.222868+00:00",
   "signals": {
     "59708341a9a99a9a5ebc": {
       "signal_id": "59708341a9a99a9a5ebc",
@@ -18624,16 +18624,411 @@
         ]
       },
       "last_updated": "2026-10-14T18:09:45.468549+00:00"
+    },
+    "7928b09ba2d06636dccd": {
+      "signal_id": "7928b09ba2d06636dccd",
+      "signal_time": "2026-10-14T19:28:09.708850+00:00",
+      "symbol": "BAC",
+      "direction": "DOWNSIDE",
+      "entry_price": 51.28,
+      "invalidation": 53.29,
+      "opportunity_tier": "B",
+      "explosion_rank": 74.8,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 49.28,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T2": {
+          "label": "T2",
+          "price": 47.28,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T3": {
+          "label": "T3",
+          "price": 45.28,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": "5m",
+        "source": "yahooquery",
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": true,
+            "source": "yahooquery"
+          }
+        ]
+      },
+      "last_updated": "2026-10-14T19:30:18.222868+00:00"
+    },
+    "86a152f1d01209a687fe": {
+      "signal_id": "86a152f1d01209a687fe",
+      "signal_time": "2026-10-14T19:28:09.708850+00:00",
+      "symbol": "ORCL",
+      "direction": "DOWNSIDE",
+      "entry_price": 130.38,
+      "invalidation": 141.06,
+      "opportunity_tier": "C",
+      "explosion_rank": 61.2,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 119.7,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T2": {
+          "label": "T2",
+          "price": 109.02,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T3": {
+          "label": "T3",
+          "price": 109.02,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": "5m",
+        "source": "yahooquery",
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": true,
+            "source": "yahooquery"
+          }
+        ]
+      },
+      "last_updated": "2026-10-14T19:30:18.222868+00:00"
+    },
+    "bedbbe907cd0ff2184b3": {
+      "signal_id": "bedbbe907cd0ff2184b3",
+      "signal_time": "2026-10-14T19:28:09.708850+00:00",
+      "symbol": "CRWV",
+      "direction": "DOWNSIDE",
+      "entry_price": 65.34,
+      "invalidation": 73.52,
+      "opportunity_tier": "C",
+      "explosion_rank": 61.0,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 57.16,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T2": {
+          "label": "T2",
+          "price": 48.99,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T3": {
+          "label": "T3",
+          "price": 48.98,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": "5m",
+        "source": "yahooquery",
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": true,
+            "source": "yahooquery"
+          }
+        ]
+      },
+      "last_updated": "2026-10-14T19:30:18.222868+00:00"
+    },
+    "72327b578098db425fc2": {
+      "signal_id": "72327b578098db425fc2",
+      "signal_time": "2026-10-14T19:28:09.708850+00:00",
+      "symbol": "GILD",
+      "direction": "UPSIDE",
+      "entry_price": 153.35,
+      "invalidation": 147.8,
+      "opportunity_tier": "C",
+      "explosion_rank": 54.6,
+      "explosion_cause": "CATALYST_REPRICING",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 158.91,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T2": {
+          "label": "T2",
+          "price": 164.47,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T3": {
+          "label": "T3",
+          "price": 170.03,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": "5m",
+        "source": "yahooquery",
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": true,
+            "source": "yahooquery"
+          }
+        ]
+      },
+      "last_updated": "2026-10-14T19:30:18.222868+00:00"
+    },
+    "dd00945630966a8cb243": {
+      "signal_id": "dd00945630966a8cb243",
+      "signal_time": "2026-10-14T19:28:09.708850+00:00",
+      "symbol": "LLY",
+      "direction": "UPSIDE",
+      "entry_price": 1210.81,
+      "invalidation": 1159.17,
+      "opportunity_tier": "C",
+      "explosion_rank": 52.6,
+      "explosion_cause": "CATALYST_REPRICING",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 1262.46,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T2": {
+          "label": "T2",
+          "price": 1314.1,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T3": {
+          "label": "T3",
+          "price": 1314.11,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": "5m",
+        "source": "yahooquery",
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": true,
+            "source": "yahooquery"
+          }
+        ]
+      },
+      "last_updated": "2026-10-14T19:30:18.222868+00:00"
     }
   },
   "decision_authority": false,
   "summary": {
-    "signals": 235,
-    "targets": 705,
-    "matured_targets": 702,
+    "signals": 240,
+    "targets": 720,
+    "matured_targets": 717,
     "hits": 4,
     "failed": 0,
-    "matured_misses": 698,
+    "matured_misses": 713,
     "ambiguous": 0,
     "open": 3
   }
