@@ -214,7 +214,7 @@ def parse_bls_calendar(
                         if re.fullmatch(r"\d{8}T\d{6}Z", raw_date):
                             dt = datetime.strptime(raw_date, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
                         elif re.fullmatch(r"\d{8}T\d{6}", raw_date):
-                            tz = NY if zone in ("", "America/New_York", "US/Eastern") else ZoneInfo(zone)
+                            tz = NY if zone in ("", "America/New_York", "US/Eastern", "US-Eastern") else ZoneInfo(zone)
                             dt = datetime.strptime(raw_date, "%Y%m%dT%H%M%S").replace(tzinfo=tz).astimezone(UTC)
                     except (ValueError, KeyError):
                         dt = None
