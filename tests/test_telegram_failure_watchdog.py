@@ -17,5 +17,21 @@ def test_failure_alert_includes_branch_and_event_context():
     text = Path(".github/workflows/telegram-failure-watchdog.yml").read_text(encoding="utf-8")
     assert "RUN_BRANCH:" in text
     assert "RUN_EVENT:" in text
-    assert "الفرع:" in text
-    assert "نوع التشغيل:" in text
+    assert "RUN_BRANCH:" in text
+    assert "RUN_EVENT:" in text
+    assert "python -m scripts.telegram_watchdog_status --send" in text
+    from scripts.telegram_watchdog_status import render_message
+    message = render_message("failure", {
+        "name": "Classical Direction", "conclusion": "failure", "branch": "main",
+        "event": "push", "id": "123", "url": "https://github.com/test/repo/actions/runs/123",
+    })
+    assert "الفرع:" in message
+    assert "نوع التشغيل:" in message
+
+
+def test_watchdog_recovery_only_for_classical_success_and_main():
+    text = Path(".github/workflows/telegram-failure-watchdog.yml").read_text(encoding="utf-8")
+    assert "github.event.workflow_run.name == 'BLACK BOX Omega Classical Direction Radar'" in text
+    assert "github.event.workflow_run.conclusion == 'success'" in text
+    assert "steps.classify.outputs.notify == 'true'" in text
+    assert "WATCHDOG_KIND:" in text
