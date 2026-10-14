@@ -37,6 +37,24 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
+      - name: Build free GDELT and official macro context
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+        run: >-
+          python -m options_radar.free_public_intelligence
+          --output public/data/free_public_intelligence.json
+          --symbols "MU,NVDA,RGC,BNAI,RKLB,AMD,AAPL,TSLA"
+
+      - name: Upload public intelligence context (research only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: free-public-intelligence
+          path: public/data/free_public_intelligence.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Restore Telegram destination when chat secret is absent
         if: env.TELEGRAM_CHAT_ID == ''
         shell: bash
@@ -99,6 +117,13 @@ jobs:
           --state data/live/company_news_alert_state.json
           --lookback-days 3
           --max-symbols 120
+
+      - name: Send deduplicated official economic calendar reminders
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_free_macro_reminders
+          --context public/data/free_public_intelligence.json
+          --state data/live/company_news_alert_state.json
 
       - name: Stage news state and SEC ticker cache
         if: always() && env.TELEGRAM_READY == 'true'
