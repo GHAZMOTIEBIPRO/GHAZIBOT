@@ -113,6 +113,30 @@ def _message(row: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _consistent_signal(row: dict[str, Any]) -> bool:
+    """Reject contradictions between the signal, its own 15m bar and stop level."""
+    import math
+
+    try:
+        price = float(row["price"])
+        stop = float(row["invalidation_level"])
+        intraday = row["intraday"]
+        last_close = float(intraday["close"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if not all(math.isfinite(v) and v > 0 for v in (price, stop, last_close)):
+        return False
+    if abs(price - last_close) > max(price, last_close) * 0.001:
+        return False
+    direction = str(row.get("decision") or "").upper()
+    expected = "BULLISH" if direction == "CALL" else "BEARISH"
+    if direction not in {"CALL", "PUT"}:
+        return False
+    if any(str((row.get(frame) or {}).get("direction") or "").upper() != expected for frame in ("daily", "hourly", "intraday")):
+        return False
+    return price > stop if direction == "CALL" else price < stop
+
+
 def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
     if payload.get("path") != "classical_direction":
         raise RuntimeError("Expected classical_direction payload")
@@ -120,7 +144,7 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
     signals = [
         row
         for row in payload.get("signals", [])
-        if isinstance(row, dict) and row.get("decision") in {"CALL", "PUT"}
+        if isinstance(row, dict) and row.get("decision") in {"CALL", "PUT"} and _consistent_signal(row)
     ]
     signals.sort(
         key=lambda row: (
