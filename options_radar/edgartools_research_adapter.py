@@ -5,6 +5,8 @@ Never treats a filing as proof of a bullish price move.
 """
 from __future__ import annotations
 
+import argparse
+import json
 import os
 from typing import Any
 
@@ -45,3 +47,18 @@ def recent_company_filings(symbol: str, *, limit: int = 5) -> dict[str, Any]:
         return {"symbol": ticker, "status": "RESEARCH", "filings": output}
     except Exception as exc:
         return {"symbol": ticker, "status": "UNAVAILABLE", "reason": type(exc).__name__, "filings": []}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Optional SEC EdgarTools research-only smoke")
+    parser.add_argument("--symbol", required=True)
+    parser.add_argument("--limit", type=int, default=5)
+    args = parser.parse_args()
+    result = recent_company_filings(args.symbol, limit=args.limit)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result["status"] != "RESEARCH":
+        raise SystemExit(2)
+
+
+if __name__ == "__main__":
+    main()
