@@ -18,6 +18,7 @@ on:
       - "scripts/run_classical_direction_radar.py"
       - "scripts/send_classical_direction_alerts.py"
       - "tests/test_classical_stock_direction.py"
+      - "tests/test_classical_signal_consistency.py"
 
 concurrency:
   group: black-box-omega-classical-direction
@@ -79,9 +80,15 @@ jobs:
 
           event = os.getenv('GITHUB_EVENT_NAME')
           if event == 'workflow_dispatch':
+              cal = xcals.get_calendar('XNYS')
+              minute = pd.Timestamp(datetime.now(timezone.utc)).floor('min')
+              try:
+                  is_open = bool(cal.is_open_on_minute(minute))
+              except Exception:
+                  is_open = False
               print('scan=true')
-              print('send=true')
-              print('reason=manual_dispatch')
+              print(f"send={'true' if is_open else 'false'}")
+              print(f"reason={'manual_regular_session' if is_open else 'manual_market_closed'}")
               raise SystemExit
           if event in {'push', 'pull_request'}:
               print('scan=true')
