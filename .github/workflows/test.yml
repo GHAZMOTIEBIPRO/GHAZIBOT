@@ -251,6 +251,13 @@ jobs:
             tests/test_options_performance_auditor.py \
             --select E9,F63,F7,F82
 
+      - name: Full Ruff enforcement for Telegram watchdog changes
+        run: >-
+          ruff check
+          scripts/telegram_watchdog_status.py
+          tests/test_telegram_watchdog_status.py
+          tests/test_telegram_failure_watchdog.py
+
       - name: Repository Ruff baseline
         continue-on-error: true
         run: ruff check .
