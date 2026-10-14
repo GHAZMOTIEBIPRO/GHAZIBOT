@@ -10,8 +10,8 @@ import argparse
 import json
 import os
 import re
-import time
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -45,6 +45,11 @@ def _iso(value: Any) -> datetime | None:
         value_dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         return value_dt.astimezone(UTC) if value_dt.tzinfo else None
     except ValueError:
+        pass
+    try:
+        value_dt = parsedate_to_datetime(raw)
+        return value_dt.astimezone(UTC) if value_dt.tzinfo else None
+    except (ValueError, TypeError, OverflowError):
         return None
 
 
