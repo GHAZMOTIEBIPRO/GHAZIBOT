@@ -108,6 +108,17 @@ jobs:
           print(f"reason={'regular_session' if is_open else 'market_closed'}")
           PY
 
+      - name: Verify Cboe exchange-listing fallback endpoint (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          python - <<'PY'
+          from scripts.run_classical_direction_radar import _official_cboe_underlyings
+          symbols, last_modified, error = _official_cboe_underlyings()
+          print(f"Cboe fallback validation: listed={len(symbols)} last_modified={last_modified} error={error}")
+          if error or len(symbols) < 100:
+              raise RuntimeError(f"Cboe fallback unavailable: {error}")
+          PY
+
       - name: Run classical direction radar
         if: steps.market.outputs.scan == 'true'
         run: >-
