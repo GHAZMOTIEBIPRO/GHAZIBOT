@@ -266,6 +266,11 @@ def run(*, output_path: str | Path = DEFAULT_OUTPUT, max_symbols: int = 48) -> d
                 bundle["hourly"],
                 bundle["intraday"],
             ).as_dict()
+            # Provider 15m bar CLOSE time, not payload generation or quote time.
+            result["intraday_bar_closed_at"] = (
+                pd.Timestamp(bundle["intraday"].index[-1]).tz_convert("UTC")
+                + pd.Timedelta(minutes=15)
+            ).isoformat()
             result["avg_dollar_volume_20d"] = dollar_volume
             result["optionability_verified_by_occ"] = True
             result["signal_source"] = "UNDERLYING_CLASSICAL_TECHNICALS_ONLY"
