@@ -258,6 +258,13 @@ jobs:
           tests/test_telegram_watchdog_status.py
           tests/test_telegram_failure_watchdog.py
 
+      - name: Full Ruff public-feed bridge gate
+        run: >-
+          ruff check
+          options_radar/free_public_intelligence.py
+          scripts/send_free_macro_reminders.py
+          tests/test_free_public_intelligence.py
+
       - name: Repository Ruff baseline
         continue-on-error: true
         run: ruff check .
