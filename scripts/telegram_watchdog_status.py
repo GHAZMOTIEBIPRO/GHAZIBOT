@@ -19,7 +19,7 @@ TERMINAL = FAILURES | {"success"}
 def _run_number(value: Any) -> int:
     try:
         result = int(value)
-        return result if result > 0 else 0
+        return max(0, result)
     except (TypeError, ValueError):
         return 0
 
@@ -175,8 +175,7 @@ def _output(values: dict[str, str]) -> None:
     if not path:
         return
     with open(path, "a", encoding="utf-8") as handle:
-        for key, value in values.items():
-            handle.write(f"{key}={value}\n")
+        handle.write("".join(f"{key}={value}\n" for key, value in values.items()))
 
 
 def main() -> int:
