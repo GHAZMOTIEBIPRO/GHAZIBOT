@@ -4,6 +4,7 @@ import json
 from types import SimpleNamespace
 
 from options_radar.operations import _read_sec_efts_status
+from options_radar.strict_catalysts import _incremental_outcome
 from options_radar.universe import _sec_ticker_map
 
 
@@ -39,3 +40,9 @@ def test_sec_fulltext_status_is_public_and_structured(tmp_path, monkeypatch):
     assert result["available"] is False
     assert result["http_status"] == 403
     assert "shared runner" in result["message"]
+
+
+def test_incremental_sec_status_distinguishes_empty_feed_from_blocked_access():
+    assert _incremental_outcome({"feeds_requested": 12, "feed_entries_seen": 0}) == "NO_FILINGS"
+    assert _incremental_outcome({"feeds_requested": 0, "feed_entries_seen": 0, "access_blocked": 12}) == "ACCESS_BLOCKED"
+    assert _incremental_outcome({"feeds_requested": 12, "feed_entries_seen": 3}) == "FILINGS_SCANNED"

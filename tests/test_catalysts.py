@@ -9,7 +9,12 @@ import requests
 pytest.importorskip("yfinance")
 
 import options_radar.catalysts as catalysts_module
-from options_radar.catalysts import CatalystScanner, _score_text, best_catalyst_map
+from options_radar.catalysts import (
+    CatalystScanner,
+    _name_similarity,
+    _score_text,
+    best_catalyst_map,
+)
 from options_radar.settings import Settings
 
 
@@ -35,6 +40,12 @@ def test_best_catalyst_map_applies_negative_risk_to_positive_event() -> None:
     result = best_catalyst_map(frame)["XYZ"]
     assert result["score"] == 10
     assert result["negative_score"] == -10
+
+
+def test_name_similarity_does_not_promote_single_shared_token_to_fda_match() -> None:
+    # A single shared token previously passed the FDA path's 0.34 threshold.
+    assert _name_similarity("Acme Health", "Acme Therapeutics") == pytest.approx(1 / 3)
+    assert catalysts_module.FDA_NAME_SIMILARITY_THRESHOLD > 1 / 3
 
 
 def test_sec_ticker_map_403_without_cache_degrades_instead_of_crashing(tmp_path, monkeypatch) -> None:
