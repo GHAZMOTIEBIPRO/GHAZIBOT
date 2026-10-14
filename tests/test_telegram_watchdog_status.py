@@ -1,9 +1,10 @@
+import requests
+
 from scripts.telegram_watchdog_status import (
     classify_transition,
     fetch_completed_runs,
     render_message,
 )
-
 
 WORKFLOW_ID = 100
 
@@ -97,8 +98,6 @@ def test_render_message_escapes_untrusted_github_names():
 
 
 def test_history_api_reads_single_workflow_main_completed(monkeypatch):
-    import scripts.telegram_watchdog_status as watcher
-
     class Response:
         def raise_for_status(self):
             return None
@@ -112,18 +111,17 @@ def test_history_api_reads_single_workflow_main_completed(monkeypatch):
         assert timeout <= 20
         return Response()
 
-    monkeypatch.setattr(watcher.requests, "get", fake_get)
+    monkeypatch.setattr("scripts.telegram_watchdog_status.requests.get", fake_get)
     assert len(fetch_completed_runs(
         repository="GHAZMOTIEBIPRO/GHAZIBOT", workflow_id=WORKFLOW_ID, token="token"
     )) == 2
 
 
 def test_history_api_failure_does_not_create_false_recovery(monkeypatch):
-    import requests
     import scripts.telegram_watchdog_status as watcher
 
     def bad_get(*args, **kwargs):
         raise requests.Timeout("provider unavailable")
 
-    monkeypatch.setattr(watcher.requests, "get", bad_get)
+    monkeypatch.setattr("scripts.telegram_watchdog_status.requests.get", bad_get)
     assert fetch_completed_runs(repository="o/r", workflow_id=WORKFLOW_ID, token="token") is None
