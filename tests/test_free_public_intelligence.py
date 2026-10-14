@@ -208,3 +208,20 @@ def test_no_unverified_macro_or_post_release_notifies():
     row["authority"] = "OFFICIAL_SCHEDULE"
     row["scheduled_at"] = (NOW - timedelta(minutes=1)).isoformat()
     assert select_macro_reminders(data, {}, now=NOW) == []
+
+
+def test_gdelt_429_is_explicit_and_never_retried_or_fake_articles():
+    from types import SimpleNamespace
+
+    refusal = requests.HTTPError("429 rejected", response=SimpleNamespace(status_code=429))
+    session = Session({
+        GDELT_DOC: refusal,
+        FED_MONETARY: Response(content=FED),
+        BLS_ICS: Response(content=ICS.encode()),
+    })
+    context = build_context(symbols=["MU"], session=session, now=NOW)
+    assert context["status"] == "DEGRADED"
+    assert context["source_errors"]["gdelt_attention"] == "HTTP_429"
+    assert context["gdelt_attention"] == []
+    assert sum(url == GDELT_DOC for url, *_ in session.calls) == 1
+    assert len(context["bls_upcoming"]) == 2
