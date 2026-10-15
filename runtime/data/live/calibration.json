@@ -1,8 +1,8 @@
 {
   "sample_size": 241,
   "raw_priced_sample": 241,
-  "priced_sample": 226,
-  "matured_sample": 226,
+  "priced_sample": 229,
+  "matured_sample": 229,
   "five_day_sample": 197,
   "maturity_checkpoint": "1d",
   "minimum_sample": 100,
@@ -39,27 +39,27 @@
       "band": "70-79",
       "signals": 98,
       "observed": 98,
-      "priced": 91,
-      "matured": 91,
-      "target_1_rate": 0.1978021978021978,
-      "target_2_rate": 0.07692307692307693,
-      "stop_rate": 0.7582417582417582,
+      "priced": 93,
+      "matured": 93,
+      "target_1_rate": 0.1935483870967742,
+      "target_2_rate": 0.07526881720430108,
+      "stop_rate": 0.7526881720430108,
       "ambiguous_rate": 0.0,
-      "average_mfe_pct": 18.654238461538462,
-      "average_mae_pct": -83.61721758241758
+      "average_mfe_pct": 18.276502150537635,
+      "average_mae_pct": -82.51557096774194
     },
     {
       "band": "60-69",
       "signals": 135,
       "observed": 135,
-      "priced": 128,
-      "matured": 128,
-      "target_1_rate": 0.0703125,
-      "target_2_rate": 0.046875,
-      "stop_rate": 0.8359375,
+      "priced": 129,
+      "matured": 129,
+      "target_1_rate": 0.06976744186046512,
+      "target_2_rate": 0.046511627906976744,
+      "stop_rate": 0.8294573643410853,
       "ambiguous_rate": 0.0,
-      "average_mfe_pct": 46.9880578125,
-      "average_mae_pct": -73.54044609375
+      "average_mfe_pct": 46.638211627906976,
+      "average_mae_pct": -73.20863333333332
     },
     {
       "band": "0-59",
@@ -86,11 +86,11 @@
     },
     {
       "catalyst": "bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen",
-      "signals": 57,
-      "target_1_rate": 0.21052631578947367,
-      "stop_rate": 0.7192982456140351,
+      "signals": 59,
+      "target_1_rate": 0.2033898305084746,
+      "stop_rate": 0.6949152542372882,
       "ambiguous_rate": 0.0,
-      "average_mfe_pct": 20.480842105263164
+      "average_mfe_pct": 19.834411864406785
     },
     {
       "catalyst": "bearish EMA stack; MACD/RSI bearish momentum",
@@ -147,6 +147,14 @@
       "stop_rate": 1.0,
       "ambiguous_rate": 0.0,
       "average_mfe_pct": 7.6806
+    },
+    {
+      "catalyst": "Clinical trial registry update",
+      "signals": 1,
+      "target_1_rate": 0.0,
+      "stop_rate": 1.0,
+      "ambiguous_rate": 0.0,
+      "average_mfe_pct": 1.2146
     }
   ],
   "warning": "Same-scan quotes are monitoring observations, not mature evidence. The review gate counts only signals with a 1d checkpoint. New path-aware records keep stop-first terminal and never count same-bar ambiguity as a win. Legacy observed flags are used only when terminal_outcome is absent."
