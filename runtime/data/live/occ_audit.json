@@ -11,10 +11,10 @@
   "requested_reports": 15,
   "successful_symbols": 0,
   "successful_reports": 0,
-  "elapsed_seconds": 0.8671,
+  "elapsed_seconds": 12.9471,
   "audit": {
-    "GILD": {
-      "symbol": "GILD",
+    "PFE": {
+      "symbol": "PFE",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
@@ -39,13 +39,13 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 278,
+              "elapsed_ms": 3889,
               "error": "OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20260831",
               "status_code": 200,
-              "elapsed_ms": 82,
+              "elapsed_ms": 3215,
               "error": "OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -66,13 +66,13 @@
             {
               "report_date": "20261009",
               "status_code": 200,
-              "elapsed_ms": 83,
+              "elapsed_ms": 3275,
               "error": "OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20261002",
               "status_code": 200,
-              "elapsed_ms": 184,
+              "elapsed_ms": 2562,
               "error": "OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -81,8 +81,8 @@
         }
       }
     },
-    "PFE": {
-      "symbol": "PFE",
+    "GILD": {
+      "symbol": "GILD",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
@@ -125,48 +125,6 @@
     },
     "AMGN": {
       "symbol": "AMGN",
-      "source": "OCC",
-      "official": true,
-      "free_no_key": true,
-      "context_only": true,
-      "requested_reports": [
-        "monthly",
-        "weekly"
-      ],
-      "successful_reports": 0,
-      "reports": {
-        "monthly": {
-          "success": false,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "monthly",
-          "report_type": "M",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [],
-          "circuit_open": true,
-          "error": "OCC monthly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
-        },
-        "weekly": {
-          "success": false,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "weekly",
-          "report_type": "W",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [],
-          "circuit_open": true,
-          "error": "OCC weekly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
-        }
-      }
-    },
-    "ORCL": {
-      "symbol": "ORCL",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
@@ -344,6 +302,48 @@
       ],
       "successful_reports": 0,
       "reports": {
+        "weekly": {
+          "success": false,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "weekly",
+          "report_type": "W",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [],
+          "circuit_open": true,
+          "error": "OCC weekly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
+        }
+      }
+    },
+    "ORCL": {
+      "symbol": "ORCL",
+      "source": "OCC",
+      "official": true,
+      "free_no_key": true,
+      "context_only": true,
+      "requested_reports": [
+        "monthly",
+        "weekly"
+      ],
+      "successful_reports": 0,
+      "reports": {
+        "monthly": {
+          "success": false,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "monthly",
+          "report_type": "M",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [],
+          "circuit_open": true,
+          "error": "OCC monthly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
+        },
         "weekly": {
           "success": false,
           "source": "OCC Volume Query",
