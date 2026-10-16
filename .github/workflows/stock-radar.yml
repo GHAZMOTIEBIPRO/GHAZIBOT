@@ -7,6 +7,12 @@ on:
         description: "Specific successful Fast Explosion Radar run ID for same-cycle validation"
         required: false
         type: string
+  # Registration-only smoke after this workflow file is deployed to main.
+  # Absolutely no price scan, Telegram, secret access or market signal on push.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/stock-radar.yml"
 
 concurrency:
   group: black-box-omega-stock-radar
@@ -17,7 +23,24 @@ permissions:
   actions: read
 
 jobs:
+  verify-workflow-registration:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Confirm GitHub accepted Stock Radar workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Stock Radar registration smoke PASS on $GITHUB_SHA"
+          echo "No stock scan, Telegram sends, or secret access permitted in this job."
+          echo "Stock Radar registered at commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+
   deep-stock-validation:
+    # The only path permitted to examine stocks and deliver Telegram alerts.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
