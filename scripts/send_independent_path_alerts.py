@@ -246,8 +246,8 @@ def _send_daily_stock_status(payload: dict[str, Any], state: dict[str, Any], *, 
         f"الأسهم التي شملها المسح: <b>{market:,}</b>\n"
         f"مرشحو الرادار الأولي: <b>{candidates}</b>\n"
         f"أسهم تحقّق منها المسار المتعمق: <b>{verified}</b>\n"
-        "الإشارات الجديدة المؤهلة: <b>0</b>\n"
-        "النتيجة: <b>لا توجد حاليًا فرصة تستوفي معايير WATCH/CONFIRMED.</b>\n"
+        "التنبيهات الجديدة المرسلة في هذا التشغيل: <b>0</b>\n"
+        "النتيجة: <b>لم تُرسل تنبيهات جديدة؛ قد تكون الفرص المؤهلة سبق إرسالها.</b>\n"
         "وقت إعداد التقرير: " + _safe(generated.astimezone(timezone.utc).isoformat(), 44) + " UTC\n"
         "<i>رسالة حالة معلوماتية فقط، وليست توصية شراء. "
         "وقت التقرير لا يثبت حداثة أسعار كل سهم.</i>"
@@ -331,7 +331,7 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
     state["last_eligible_count"] = eligible
     state["last_filtered_count"] = suppressed_score_or_stage
     state["last_duplicate_count"] = suppressed_duplicate
-    state["last_status_sent"] = bool(eligible == 0 and _send_daily_stock_status(payload, state))
+    state["last_status_sent"] = bool(sent == 0 and _send_daily_stock_status(payload, state))
     print(
         "Stock delivery audit:"
         f" candidates={len(rows)} eligible={eligible} sent={sent}"
