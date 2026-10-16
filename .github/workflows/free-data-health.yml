@@ -32,6 +32,27 @@ jobs:
         with: {python-version: "3.12"}
       - name: Check public sources without failing the pipeline
         run: python options_radar/free_data_health.py
+      - name: Surface degraded official sources in Actions summary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          payload = json.loads(Path('public/data/free_data_health.json').read_text(encoding='utf-8'))
+          failed = [row for row in payload.get('sources', []) if row.get('authority') == 'official' and not row.get('ok')]
+          lines = [
+              '## Free data provider health',
+              f"Overall: **{payload.get('overall', 'unknown')}**",
+              f"Official sources: **{payload.get('official_sources_ok', 0)}/{payload.get('official_sources_total', 0)}** healthy",
+          ]
+          for row in failed:
+              lines.append(f"- {row.get('name', 'unknown')}: {str(row.get('error') or row.get('status') or 'unavailable')[:180]}")
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('\\n'.join(lines) + '\\n')
+          if failed:
+              print(f"::warning title=Official data degraded::{len(failed)} official sources failed; health-only checks do not certify live signal readiness")
+          PY
       - name: Publish health snapshot to durable bot-state
         run: |
           set -euo pipefail
