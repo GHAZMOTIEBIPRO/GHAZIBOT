@@ -69,20 +69,51 @@ jobs:
           mkdir -p data/live
           current="${{ inputs.source_run_id }}"
           if [[ -n "$current" ]]; then
-            # Fail closed if an unexpected run, branch, or unfinished scan
-            # tries to provide market evidence for a stock alert.
             if [[ ! "$current" =~ ^[0-9]+$ ]]; then
-              echo "::error::Invalid source_run_id"; exit 1
+              echo "::error::Invalid Fast Radar source run ID"
+              exit 1
             fi
             status=""
             conclusion=""
             for attempt in {1..18}; do
-              metadata="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$current" \
-                --jq '[.name,.head_branch,.status,.conclusion] | @tsv' 2>/dev/null || true)"
-              IFS=
+              metadata="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$current" 2>/dev/null || true)"
+              source_name="$(printf '%s' "$metadata" | jq -r '.name // empty')"
+              source_branch="$(printf '%s' "$metadata" | jq -r '.head_branch // empty')"
+              status="$(printf '%s' "$metadata" | jq -r '.status // empty')"
+              conclusion="$(printf '%s' "$metadata" | jq -r '.conclusion // empty')"
+              if [[ "$source_name" != "BLACK BOX Omega Fast Explosion Radar" || "$source_branch" != "main" ]]; then
+                echo "::error::Source is not a main-branch Fast Explosion Radar run"
+                exit 1
+              fi
+              if [[ "$status" == "completed" ]]; then break; fi
+              echo "Waiting for source Fast Radar #$current ($attempt/18)"
+              sleep 5
+            done
+            if [[ "$status" != "completed" || "$conclusion" != "success" ]]; then
+              echo "::error::Fast Radar did not finish successfully: $status $conclusion"
+              exit 1
+            fi
+            restored=false
+            for attempt in {1..4}; do
+              rm -f data/live/fast_explosion_scan.json
+              if gh run download "$current" -n fast-market-state -D data/live >/dev/null 2>&1 \
+                && [[ -s data/live/fast_explosion_scan.json ]]; then
+                restored=true
+                break
+              fi
+              sleep 3
+            done
+            if [[ "$restored" != "true" ]]; then
+              echo "::error::Exact successful Fast Radar artifact is missing: $current"
+              exit 1
+            fi
+            echo "Stock Radar source verified: #$current, main, completed/success, matching artifact"
+          else
+            # Explicit manual mode only: take the latest successfully finished
+            # fast scan, then reject it below if older than the freshness gate.
             for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
               if gh run download "$run_id" -n fast-market-state -D data/live >/dev/null 2>&1; then
-                [[ -f data/live/fast_explosion_scan.json ]] && break
+                [[ -s data/live/fast_explosion_scan.json ]] && break
               fi
             done
           fi
