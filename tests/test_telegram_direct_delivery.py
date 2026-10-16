@@ -1,4 +1,9 @@
 from pathlib import Path
+import shutil
+import subprocess
+
+import pytest
+import yaml
 
 
 def _workflow(name: str) -> str:
@@ -92,5 +97,27 @@ def test_fast_radar_explicitly_dispatches_stock_validation_for_same_run():
     assert '"$source_branch" != "main"' in stock
     assert '"$status" != "completed" || "$conclusion" != "success"' in stock
     assert 'gh run download "$current" -n fast-market-state' in stock
-    assert "Missing Fast Radar artifact from exact source run" in stock
+    assert "Exact successful Fast Radar artifact is missing" in stock
+    assert 'source_name="$(printf' in stock
+    assert 'source_branch="$(printf' in stock
+    assert 'Stock Radar source verified' in stock
     assert "Stock Telegram not ready" in stock
+
+
+def test_stock_radar_workflow_yaml_parses_and_embedded_bash_compiles():
+    """Prevent the exact zero-job GitHub invalid-workflow regression."""
+    raw = _workflow("stock-radar.yml")
+    parsed = yaml.safe_load(raw)
+    assert isinstance(parsed, dict)
+    assert "deep-stock-validation" in parsed["jobs"]
+    steps = parsed["jobs"]["deep-stock-validation"]["steps"]
+    item = next(step for step in steps if step.get("name") == "Restore fresh stock discovery payload")
+    shell = item["run"]
+    assert "source_name" in shell and "source_branch" in shell
+    assert "Stock Radar source verified" in shell
+    assert "if [[ -n" in shell
+    assert "fi" in shell
+    if shutil.which("bash") is None:
+        pytest.skip("Bash unavailable in this environment")
+    check = subprocess.run(["bash", "-n"], input=shell, text=True, capture_output=True, check=False)
+    assert check.returncode == 0, check.stderr
