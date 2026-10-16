@@ -40,7 +40,7 @@ def test_one_fresh_no_signal_full_market_scan_reports_truth_once(monkeypatch):
     assert len(sent) == 1
     assert "7,019" in sent[0]
     assert "ليست توصية شراء" in sent[0]
-    assert "الإشارات الجديدة المؤهلة: <b>0</b>" in sent[0]
+    assert "التنبيهات الجديدة المرسلة في هذا التشغيل: <b>0</b>" in sent[0]
     assert sender.send_stocks(payload, state) == 0
     assert state["last_status_sent"] is False
     assert len(sent) == 1
@@ -103,4 +103,8 @@ def test_deduplicated_opportunity_remains_not_a_new_one(monkeypatch):
     assert sender.send_stocks(payload, state) == 1
     assert sender.send_stocks(payload, state) == 0
     assert state["last_duplicate_count"] == 1
-    assert len(sent) == 1
+    assert state["last_status_sent"] is True
+    assert len(sent) == 2
+    assert "سبق إرسالها" in sent[1]
+    assert sender.send_stocks(payload, state) == 0
+    assert len(sent) == 2
