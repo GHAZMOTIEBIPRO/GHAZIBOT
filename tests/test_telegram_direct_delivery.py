@@ -119,6 +119,8 @@ def test_stock_registration_smoke_is_isolated_from_real_alert_job():
     deep = jobs["deep-stock-validation"]
     assert verify["if"] == "github.event_name == 'push'"
     assert deep["if"] == "github.event_name == 'workflow_dispatch'"
+    assert "black-box-stock-registration" in parsed["concurrency"]["group"]
+    assert "black-box-omega-stock-radar" in parsed["concurrency"]["group"]
     assert verify["permissions"] == {"contents": "read"}
     assert not any("TELEGRAM" in str(step.get("env", "")) for step in verify["steps"])
     assert not any("telegram_transport" in str(step.get("run", "")) for step in verify["steps"])
