@@ -15,19 +15,19 @@
 | Band | Signals | Observed | Mature | Target 1 | Target 2 | Stop | Avg MFE % | Avg MAE % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 90-100 | 0 | 0 | 0 | — | — | — | — | — |
-| 80-89 | 6 | 6 | 5 | 0.0% | 0.0% | 100.0% | 0.25 | -79.38 |
-| 70-79 | 98 | 98 | 94 | 19.1% | 7.4% | 75.5% | 18.31 | -82.93 |
-| 60-69 | 135 | 135 | 129 | 7.0% | 4.7% | 85.3% | 46.74 | -73.89 |
-| 0-59 | 2 | 2 | 2 | 0.0% | 0.0% | 0.0% | 43.09 | -3.78 |
+| 80-89 | 6 | 6 | 5 | 0.0% | 0.0% | 100.0% | 0.25 | -79.50 |
+| 70-79 | 98 | 98 | 94 | 19.1% | 7.4% | 76.6% | 18.31 | -83.13 |
+| 60-69 | 135 | 135 | 129 | 7.0% | 4.7% | 85.3% | 46.76 | -73.95 |
+| 0-59 | 2 | 2 | 2 | 0.0% | 0.0% | 0.0% | 44.64 | -3.78 |
 
 ## Catalyst groups
 
 | Catalyst | Mature signals | Target 1 | Stop | Avg MFE % |
 |---|---:|---:|---:|---:|
 | bullish EMA stack; MACD/RSI bullish momentum | 95 | 9.5% | 85.3% | 47.63 |
-| bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 59 | 20.3% | 69.5% | 20.27 |
-| bearish EMA stack; MACD/RSI bearish momentum | 42 | 0.0% | 95.2% | 22.80 |
-| bullish EMA stack | 18 | 0.0% | 88.9% | 37.16 |
+| bearish EMA stack; 20-day breakdown with relative volume; MACD/RSI bearish momen | 59 | 20.3% | 69.5% | 20.34 |
+| bearish EMA stack; MACD/RSI bearish momentum | 42 | 0.0% | 95.2% | 22.87 |
+| bullish EMA stack | 18 | 0.0% | 94.4% | 37.16 |
 | Secondary mention — Acquisition | 6 | 100.0% | 0.0% | -0.84 |
 | bullish EMA stack; 20-day breakout with relative volume; MACD/RSI bullish moment | 4 | 0.0% | 100.0% | -0.01 |
 | FDA approval record — verify materiality | 2 | 0.0% | 0.0% | 185.53 |
