@@ -28,7 +28,8 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
+  # Only the verified Fast Radar job may dispatch its dependent Stock Radar.
+  actions: write
 
 jobs:
   scan:
@@ -132,6 +133,20 @@ jobs:
             data/live/provider_health.json
           if-no-files-found: warn
           retention-days: 2
+
+      - name: Dispatch dependent stock validation using this exact scan
+        if: steps.market_day.outputs.open == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -s data/live/fast_explosion_scan.json
+          # The original workflow_run chain has not reliably fired Stock Radar.
+          # Use a single explicit same-cycle handoff, not a competing schedule.
+          gh workflow run stock-radar.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f source_run_id="$GITHUB_RUN_ID"
+          echo "Requested Stock Radar for completed Fast Radar artifact: source_run_id=$GITHUB_RUN_ID"
 
       - name: Closed-market status
         if: steps.market_day.outputs.open != 'true'
