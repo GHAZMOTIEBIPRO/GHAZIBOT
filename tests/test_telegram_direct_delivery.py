@@ -77,9 +77,20 @@ def test_delivery_state_accepts_completed_runs_but_core_state_remains_success_on
     assert "gh run list --workflow options-contract-radar.yml --status success --branch main" in options
 
 
-def test_stock_radar_waits_for_fresh_fast_radar_instead_of_racing_on_push():
-    text = _workflow("stock-radar.yml")
-    assert "workflow_run:" in text
-    assert '"BLACK BOX Omega Fast Explosion Radar"' in text
-    assert "\n  push:\n" not in text
-    assert "github.event.workflow_run.conclusion == 'success'" in text
+def test_fast_radar_explicitly_dispatches_stock_validation_for_same_run():
+    fast = _workflow("fast-explosion-radar.yml")
+    stock = _workflow("stock-radar.yml")
+    assert "actions: write" in fast
+    assert 'gh workflow run stock-radar.yml' in fast
+    assert '-f source_run_id="$GITHUB_RUN_ID"' in fast
+    assert fast.index("name: fast-market-state") < fast.index("Dispatch dependent stock validation")
+    assert "workflow_run:" not in stock
+    assert "\n  push:\n" not in stock
+    assert "source_run_id:" in stock
+    assert 'current="${{ inputs.source_run_id }}"' in stock
+    assert '"BLACK BOX Omega Fast Explosion Radar"' in stock
+    assert '"$source_branch" != "main"' in stock
+    assert '"$status" != "completed" || "$conclusion" != "success"' in stock
+    assert 'gh run download "$current" -n fast-market-state' in stock
+    assert "Missing Fast Radar artifact from exact source run" in stock
+    assert "Stock Telegram not ready" in stock
