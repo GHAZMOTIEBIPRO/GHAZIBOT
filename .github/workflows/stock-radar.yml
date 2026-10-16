@@ -2,10 +2,11 @@ name: BLACK BOX Omega Stock Radar
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - "BLACK BOX Omega Fast Explosion Radar"
-    types: [completed]
+    inputs:
+      source_run_id:
+        description: "Specific successful Fast Explosion Radar run ID for same-cycle validation"
+        required: false
+        type: string
 
 concurrency:
   group: black-box-omega-stock-radar
@@ -17,7 +18,6 @@ permissions:
 
 jobs:
   deep-stock-validation:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -67,12 +67,236 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p data/live
-          current=""
-          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            current="${{ github.event.workflow_run.id }}"
-          fi
+          current="${{ inputs.source_run_id }}"
           if [[ -n "$current" ]]; then
-            gh run download "$current" -n fast-market-state -D data/live || true
+            # Fail closed if an unexpected run, branch, or unfinished scan
+            # tries to provide market evidence for a stock alert.
+            if [[ ! "$current" =~ ^[0-9]+$ ]]; then
+              echo "::error::Invalid source_run_id"; exit 1
+            fi
+            status=""
+            conclusion=""
+            for attempt in {1..18}; do
+              metadata="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$current" \
+                --jq '[.name,.head_branch,.status,.conclusion] | @tsv' 2>/dev/null || true)"
+              IFS=
+            for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              if gh run download "$run_id" -n fast-market-state -D data/live >/dev/null 2>&1; then
+                [[ -f data/live/fast_explosion_scan.json ]] && break
+              fi
+            done
+          fi
+          test -s data/live/fast_explosion_scan.json
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          payload = json.loads(Path('data/live/fast_explosion_scan.json').read_text(encoding='utf-8'))
+          raw = str(payload.get('generated_at') or '').replace('Z', '+00:00')
+          if not raw:
+              raise SystemExit('Fast stock discovery has no generated_at; refusing stale fallback.')
+          stamp = datetime.fromisoformat(raw)
+          if stamp.tzinfo is None:
+              stamp = stamp.replace(tzinfo=timezone.utc)
+          age = (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+          maximum = float(os.getenv('STOCK_DISCOVERY_MAX_AGE_MINUTES', '90'))
+          if age < -5 or age > maximum:
+              raise SystemExit(f'Fast stock discovery age {age:.1f}m exceeds safe maximum {maximum:.1f}m.')
+          print(f'Fresh stock discovery accepted: age={age:.1f}m max={maximum:.1f}m')
+          PY
+
+      - name: Restore stock outcome state
+        if: steps.market_day.outputs.open == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .stock-state-restore data/live
+          for run_id in $(gh run list --workflow stock-radar.yml --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .stock-state-restore && mkdir -p .stock-state-restore
+            if gh run download "$run_id" -n stock-radar-state -D .stock-state-restore >/dev/null 2>&1; then
+              cp -f .stock-state-restore/stock_outcomes.json data/live/stock_outcomes.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Restore adaptive learning model
+        if: steps.market_day.outputs.open == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .learning-restore data/live
+          for run_id in $(gh run list --workflow adaptive-review.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -rf .learning-restore && mkdir -p .learning-restore
+            if gh run download "$run_id" -n adaptive-learning-state -D .learning-restore >/dev/null 2>&1; then
+              cp -f .learning-restore/adaptive_learning.json data/live/adaptive_learning.json 2>/dev/null || true
+              break
+            fi
+          done
+
+      - name: Deep validate stock causes with official-first policy
+        if: steps.market_day.outputs.open == 'true'
+        run: >-
+          python -m scripts.run_stock_radar_independent
+          --fast data/live/fast_explosion_scan.json
+          --output public/data/stocks_latest.json
+
+      - name: Add regime, outcome and shadow-learning evidence
+        if: steps.market_day.outputs.open == 'true'
+        run: python -m scripts.enrich_stock_radar_research --payload public/data/stocks_latest.json
+
+      - name: Validate stock-path independence and learning guard
+        if: steps.market_day.outputs.open == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('public/data/stocks_latest.json').read_text(encoding='utf-8'))
+          assert payload['path'] == 'stocks'
+          assert payload['independent_from_options_radar'] is True
+          assert payload['policy']['options_flow_required'] is False
+          assert payload['policy']['ludp_is_price_confirmation_not_primary_cause'] is True
+          assert payload['policy']['adaptive_learning_changes_live_alerts'] is False
+          for row in payload.get('stocks', []):
+              assert row.get('independent_from_options_radar') is True
+              assert row.get('options_required_for_stock_signal') is False
+              shadow = row.get('shadow_analysis') or {}
+              assert shadow.get('live_alert_eligibility_changed') is False
+              explosion = row.get('explosion_cause') or {}
+              manipulation = row.get('manipulation_risk') or {}
+              assert explosion.get('causation_proven') is False
+              assert manipulation.get('is_accusation') is False
+              assert row.get('alert_stage') in {'WATCH','CONFIRMED','NO_CHASE','NONE'}
+          print('Independent stock path + shadow-learning guard passed.')
+          PY
+
+      - name: Upload independent stock radar
+        if: steps.market_day.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-stock-radar
+          path: public/data/stocks_latest.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stage stock learning state
+        if: steps.market_day.outputs.open == 'true'
+        shell: bash
+        run: |
+          mkdir -p .stock-state-upload data/live
+          if [[ ! -f data/live/stock_outcomes.json ]]; then
+            printf '%s\n' '{"schema_version":1,"updated_at":null,"signals":{}}' > data/live/stock_outcomes.json
+          fi
+          cp -f data/live/stock_outcomes.json .stock-state-upload/stock_outcomes.json
+
+      - name: Upload stock learning state
+        if: steps.market_day.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-radar-state
+          path: .stock-state-upload/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 30
+
+      - name: Restore centralized Telegram destination for direct delivery
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml stock-radar.yml stock-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+
+      - name: Resolve Telegram destination for direct delivery
+        if: steps.market_day.outputs.open == 'true'
+        run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+
+      - name: Restore direct stock Telegram dedupe state
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live .stock-telegram-restore
+          printf '{"sent":{}}\n' > data/live/stock_alert_state.json
+          # Delivery state is valid evidence even when a prior run failed after
+          # sending one message. Core market/learning state above remains success-only.
+          for workflow in stock-radar.yml stock-telegram-alerts.yml; do
+            for run_id in $(gh run list --workflow "$workflow" --status completed --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -rf .stock-telegram-restore && mkdir -p .stock-telegram-restore
+              if gh run download "$run_id" -n stock-telegram-state -D .stock-telegram-restore >/dev/null 2>&1; then
+                if [[ -s .stock-telegram-restore/stock_alert_state.json ]]; then
+                  cp .stock-telegram-restore/stock_alert_state.json data/live/stock_alert_state.json
+                  break 2
+                fi
+              fi
+            done
+          done
+
+      - name: Send qualified stock alert directly after persisted validation
+        if: steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_independent_path_alerts
+          --path stocks
+          --payload public/data/stocks_latest.json
+          --state data/live/stock_alert_state.json
+
+      - name: Upload direct stock Telegram state
+        if: always() && steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-telegram-state
+          path: data/live/stock_alert_state.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Closed-market status
+        if: steps.market_day.outputs.open != 'true'
+        run: echo "Stock radar skipped because New York is outside the 04:00-20:00 stock activity window or today is not an XNYS trading day; no historical discovery can be promoted as fresh."
+\t' read -r source_name source_branch status conclusion <<< "$metadata"
+              if [[ "$source_name" != "BLACK BOX Omega Fast Explosion Radar" || "$source_branch" != "main" ]]; then
+                echo "::error::Source run is not a main-branch Fast Explosion Radar run"
+                exit 1
+              fi
+              if [[ "$status" == "completed" ]]; then break; fi
+              echo "Waiting for Fast Radar #$current to complete ($attempt/18)"
+              sleep 5
+            done
+            if [[ "$status" != "completed" || "$conclusion" != "success" ]]; then
+              echo "::error::Fast Radar source not completed successfully: $status $conclusion"
+              exit 1
+            fi
+            restored=false
+            for attempt in {1..4}; do
+              rm -f data/live/fast_explosion_scan.json
+              if gh run download "$current" -n fast-market-state -D data/live >/dev/null 2>&1 \
+                  && [[ -s data/live/fast_explosion_scan.json ]]; then
+                restored=true
+                break
+              fi
+              sleep 3
+            done
+            if [[ "$restored" != "true" ]]; then
+              echo "::error::Missing Fast Radar artifact from exact source run $current"
+              exit 1
+            fi
+            echo "Verified source Fast Radar #$current, main, completed/success, artifact present"
           fi
           if [[ -z "$current" && ! -f data/live/fast_explosion_scan.json ]]; then
             for run_id in $(gh run list --workflow fast-explosion-radar.yml --status success --branch main --limit 6 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
