@@ -90,7 +90,13 @@ def test_fast_radar_explicitly_dispatches_stock_validation_for_same_run():
     assert '-f source_run_id="$GITHUB_RUN_ID"' in fast
     assert fast.index("name: fast-market-state") < fast.index("Dispatch dependent stock validation")
     assert "workflow_run:" not in stock
-    assert "\n  push:\n" not in stock
+    assert "\n  push:\n" in stock
+    assert '.github/workflows/stock-radar.yml' in stock
+    assert "verify-workflow-registration:" in stock
+    assert "if: github.event_name == 'push'" in stock
+    assert "if: github.event_name == 'workflow_dispatch'" in stock
+    assert "No stock scan, Telegram sends, or secret access permitted in this job." in stock
+    assert stock.index("verify-workflow-registration:") < stock.index("deep-stock-validation:")
     assert "source_run_id:" in stock
     assert 'current="${{ inputs.source_run_id }}"' in stock
     assert '"BLACK BOX Omega Fast Explosion Radar"' in stock
@@ -102,6 +108,20 @@ def test_fast_radar_explicitly_dispatches_stock_validation_for_same_run():
     assert 'source_branch="$(printf' in stock
     assert 'Stock Radar source verified' in stock
     assert "Stock Telegram not ready" in stock
+
+
+def test_stock_registration_smoke_is_isolated_from_real_alert_job():
+    """A deployment smoke must never send a Telegram message to a user."""
+    raw = _workflow("stock-radar.yml")
+    parsed = yaml.safe_load(raw)
+    jobs = parsed["jobs"]
+    verify = jobs["verify-workflow-registration"]
+    deep = jobs["deep-stock-validation"]
+    assert verify["if"] == "github.event_name == 'push'"
+    assert deep["if"] == "github.event_name == 'workflow_dispatch'"
+    assert verify["permissions"] == {"contents": "read"}
+    assert not any("TELEGRAM" in str(step.get("env", "")) for step in verify["steps"])
+    assert not any("telegram_transport" in str(step.get("run", "")) for step in verify["steps"])
 
 
 def test_stock_radar_workflow_yaml_parses_and_embedded_bash_compiles():
