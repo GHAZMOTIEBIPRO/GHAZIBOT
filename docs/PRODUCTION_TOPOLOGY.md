@@ -27,6 +27,8 @@ Purpose:
 
 It is **not** the final options engine and does not depend on options data.
 
+**Same-cycle handoff:** After uploading its `fast-market-state` artifact, Fast Radar explicitly dispatches `stock-radar.yml` through the GitHub API with its own numeric `source_run_id`. This replaces the former best-effort dependent `workflow_run` chain, which was not producing Stock Radar runs in the observed runtime. The stock job waits for that exact main-branch upstream run to finish successfully, downloads its matching artifact, and still rejects stale or invalid scans. The market orchestrator remains the only periodic owner; Stock Radar gets **no** independent cron or push trigger.
+
 ### 2) Independent stock radar + Telegram delivery
 
 Workflow: `.github/workflows/stock-radar.yml`
@@ -39,6 +41,8 @@ Purpose:
 - durable stock state continuity.
 
 Stock alert decisions remain independent of the options path.
+
+When an actual fresh full-market scan has **zero** WATCH/CONFIRMED-qualified stocks, the existing Telegram sender may emit **one informative status per U.S. market session**, explicitly saying that no opportunity is qualified. The status is not a trade alert, does not alter thresholds and is persisted in the same existing Telegram state artifact. Logs always disclose qualified/filtered/duplicate counts or missing Telegram readiness.
 
 ### 3) Independent options contract radar + Telegram delivery
 
