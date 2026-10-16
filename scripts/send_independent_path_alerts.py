@@ -6,7 +6,8 @@ import html
 import json
 import math
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
 
@@ -205,6 +206,58 @@ def _record(fp: str, text: str, result: Any, **extra: Any) -> dict[str, Any]:
     }
 
 
+
+def _send_daily_stock_status(payload: dict[str, Any], state: dict[str, Any], *, now: datetime | None = None) -> bool:
+    """One informational daily heartbeat for a fresh, verified full-market scan.
+
+    This is *not* an opportunity and cannot upgrade an unqualified ticker.
+    A generated_at timestamp is observation time, never quote freshness.
+    """
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None or payload.get("architecture") != "independent_stock_radar_v1":
+        return False
+    if payload.get("independent_from_options_radar") is not True:
+        return False
+    try:
+        generated = datetime.fromisoformat(str(payload.get("generated_at") or "").replace("Z", "+00:00"))
+        upstream = datetime.fromisoformat(str(payload.get("source_fast_scan_generated_at") or "").replace("Z", "+00:00"))
+        if generated.tzinfo is None or upstream.tzinfo is None:
+            return False
+        if not (timedelta(0) <= current - generated <= timedelta(minutes=40)):
+            return False
+        if not (timedelta(0) <= current - upstream <= timedelta(minutes=60)):
+            return False
+    except (TypeError, ValueError, OverflowError):
+        return False
+    summary = payload.get("summary")
+    if not isinstance(summary, dict):
+        return False
+    market = int(_number(summary.get("market_rows_seen")))
+    candidates = int(_number(summary.get("fast_actionable")))
+    verified = int(_number(summary.get("stocks_deep_validated")))
+    if market < 1000 or candidates < 0 or verified < 0 or verified > market:
+        return False
+    session = current.astimezone(ZoneInfo("America/New_York")).date().isoformat()
+    if state.get("last_stock_status_date") == session:
+        return False
+    message = (
+        "📊 <b>BLACK BOX Ω | تقرير متابعة الأسهم الأمريكية</b>\n"
+        f"تاريخ الجلسة: <b>{_safe(session)}</b>\n"
+        f"الأسهم التي شملها المسح: <b>{market:,}</b>\n"
+        f"مرشحو الرادار الأولي: <b>{candidates}</b>\n"
+        f"أسهم تحقّق منها المسار المتعمق: <b>{verified}</b>\n"
+        "الإشارات الجديدة المؤهلة: <b>0</b>\n"
+        "النتيجة: <b>لا توجد حاليًا فرصة تستوفي معايير WATCH/CONFIRMED.</b>\n"
+        "وقت إعداد التقرير: " + _safe(generated.astimezone(timezone.utc).isoformat(), 44) + " UTC\n"
+        "<i>رسالة حالة معلوماتية فقط، وليست توصية شراء. "
+        "وقت التقرير لا يثبت حداثة أسعار كل سهم.</i>"
+    )
+    receipt = _send(message)
+    state["last_stock_status_date"] = session
+    state["last_stock_status_message_id"] = getattr(receipt, "message_id", None)
+    return True
+
+
 def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
     confirmed_minimum = _number(os.getenv("STOCK_ALERT_MIN_SCORE", "72"), 72.0)
     watch_minimum = _number(os.getenv("STOCK_WATCH_MIN_SCORE", "62"), 62.0)
@@ -220,6 +273,9 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
     )
     sent_map = state.setdefault("sent", {})
     sent = 0
+    eligible = 0
+    suppressed_duplicate = 0
+    suppressed_score_or_stage = 0
     for row in rows:
         if configured_maximum > 0 and sent >= configured_maximum:
             break
@@ -231,12 +287,16 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
         ).upper()
         if alert_stage == "WATCH":
             if score < watch_minimum:
+                suppressed_score_or_stage += 1
                 continue
         elif alert_stage == "CONFIRMED":
             if score < confirmed_minimum:
+                suppressed_score_or_stage += 1
                 continue
         else:
+            suppressed_score_or_stage += 1
             continue
+        eligible += 1
         symbol = str(row.get("symbol") or "").upper()
         cause = row.get("cause") if isinstance(row.get("cause"), dict) else {}
         explosion = row.get("explosion_cause") if isinstance(row.get("explosion_cause"), dict) else {}
@@ -254,6 +314,7 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
             ]
         )
         if _stored_fingerprint(sent_map.get(symbol)) == fp:
+            suppressed_duplicate += 1
             continue
         text = _stock_message(row)
         result = _send(text)
@@ -267,6 +328,17 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
             alert_stage=alert_stage,
         )
         sent += 1
+    state["last_eligible_count"] = eligible
+    state["last_filtered_count"] = suppressed_score_or_stage
+    state["last_duplicate_count"] = suppressed_duplicate
+    state["last_status_sent"] = bool(eligible == 0 and _send_daily_stock_status(payload, state))
+    print(
+        "Stock delivery audit:"
+        f" candidates={len(rows)} eligible={eligible} sent={sent}"
+        f" score_or_stage_filtered={suppressed_score_or_stage}"
+        f" duplicates={suppressed_duplicate}"
+        f" daily_status_sent={state['last_status_sent']}"
+    )
     state["last_run_at"] = datetime.now(timezone.utc).isoformat()
     state["last_sent_count"] = sent
     state["path"] = "stocks"
