@@ -15,7 +15,8 @@ on:
       - ".github/workflows/stock-radar.yml"
 
 concurrency:
-  group: black-box-omega-stock-radar
+  # Read-only registration checks must never cancel a real stock alert job.
+  group: ${{ github.event_name == 'push' && 'black-box-stock-registration' || 'black-box-omega-stock-radar' }}
   cancel-in-progress: true
 
 permissions:
