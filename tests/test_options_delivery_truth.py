@@ -106,6 +106,8 @@ def test_old_telegram_state_is_never_verified_for_new_scan():
 
 def test_e2e_artifact_is_written_for_closed_market_runs():
     workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/options-contract-radar.yml").read_text(encoding="utf-8")
+    # Running a file path hides the repository root from sys.path on Actions.
+    assert "python -m scripts.write_e2e_delivery_evidence" in workflow
     assert "--market-open" in workflow
     section = workflow.split("name: Record non-sensitive options E2E delivery evidence", 1)[1]
     assert "if: always()" in section.split("name: Upload options E2E delivery evidence")[0]
