@@ -62,7 +62,7 @@ def test_closed_market_e2e_records_skip_not_delivery():
         run_id="closed-session", now=NOW, market_open=False,
     )
     assert evidence["diagnosis"]["reason_code"] == "MARKET_CLOSED"
-    assert evidence["diagnosis"]["new_messages_confirmed_for_scan"] is None
+    assert evidence["diagnosis"]["new_messages_reported_for_scan"] is None
     assert evidence["diagnosis"]["delivery_state_current_scan"] is False
     assert evidence["market_scan"]["candidate_count"] == 0
 
@@ -85,11 +85,11 @@ def test_old_telegram_state_is_never_verified_for_new_scan():
     old_state = {"last_sent_count": 7, "last_run_at": "2026-10-16T15:00:00Z"}
     output = build_evidence(payload, old_state, run_id="replay", now=NOW)
     assert output["diagnosis"]["delivery_state_current_scan"] is False
-    assert output["diagnosis"]["new_messages_confirmed_for_scan"] is None
+    assert output["diagnosis"]["new_messages_reported_for_scan"] is None
     current = dict(old_state, last_run_at=(NOW + timedelta(seconds=25)).isoformat())
     accepted = build_evidence(payload, current, run_id="fresh", now=NOW + timedelta(minutes=1))
     assert accepted["diagnosis"]["delivery_state_current_scan"] is True
-    assert accepted["diagnosis"]["new_messages_confirmed_for_scan"] == 7
+    assert accepted["diagnosis"]["new_messages_reported_for_scan"] == 7
 
 
 def test_e2e_artifact_is_written_for_closed_market_runs():
