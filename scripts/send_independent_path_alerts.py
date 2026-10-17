@@ -185,6 +185,19 @@ def _option_message(row: dict[str, Any]) -> str:
         f"⚡ Flow <b>{flow_score:.0f}</b> | Δ <b>{delta:+.2f}</b> | Θ <b>{theta:.3f}</b> | IV <b>{iv:.0%}</b> | V/OI <b>{ratio:.2f}×</b>",
         f"📊 Vol/OI <b>{volume:,}/{oi:,}</b> | بيانات <b>{_safe(readiness.get('status') or 'UNKNOWN', 80)}</b>",
     ]
+    # Explain quote provenance without promoting research-only data to execution authority.
+    observed = str(row.get("quote_timestamp") or row.get("quote_asof") or "").strip()
+    source = str(row.get("quote_source") or row.get("provider") or "").strip()
+    if observed or source:
+        lines.append(
+            "🕒 <b>مصدر/وقت السعر:</b> "
+            + _safe(source or "غير محدد", 90)
+            + " | " + _safe(observed or "وقت التحديث غير موثق", 80)
+        )
+    else:
+        lines.append("🕒 <b>حداثة السعر:</b> غير موثقة في رسالة العقد")
+    lines.append("📍 <b>المرحلة:</b> CONFIRMED — اجتاز بوابة بيانات الخيارات V11")
+    lines.append("🎯 <b>أهداف العقد ووقفه:</b> غير محددة ما لم تتوفر مستويات محسوبة وموثقة")
     if reasons:
         lines.append(f"✅ {_safe(' | '.join(reasons[:2]), 420)}")
     lines.extend(
