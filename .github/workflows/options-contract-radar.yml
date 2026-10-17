@@ -356,7 +356,7 @@ jobs:
         env:
           TELEGRAM_READY: ${{ env.TELEGRAM_READY }}
         run: >-
-          python scripts/write_e2e_delivery_evidence.py
+          python -m scripts.write_e2e_delivery_evidence
           --payload public/data/options_latest.json
           --state data/live/options_telegram_alert_state.json
           --output data/live/e2e_delivery_evidence.json
