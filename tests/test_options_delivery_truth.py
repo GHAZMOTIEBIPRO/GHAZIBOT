@@ -67,6 +67,18 @@ def test_closed_market_e2e_records_skip_not_delivery():
     assert evidence["market_scan"]["candidate_count"] == 0
 
 
+def test_closed_session_drops_cached_candidates():
+    cached = {
+        "generated_at": "2026-10-16T15:00:00Z",
+        "directional_signals": [{"symbol": "SPY", "direction": "CALL"}],
+    }
+    evidence = build_evidence(cached, {}, run_id="closed-cache", now=NOW, market_open=False)
+    assert evidence["diagnosis"]["reason_code"] == "MARKET_CLOSED"
+    assert evidence["market_scan"]["candidate_count"] == 0
+    assert evidence["candidates"] == []
+    assert evidence["telegram"]["message_ids_are_historical"] is True
+
+
 def test_research_only_options_explains_why_no_execution_signals():
     payload = {
         "generated_at": NOW.isoformat(),
