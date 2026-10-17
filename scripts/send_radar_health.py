@@ -81,20 +81,60 @@ def _reason_ar(reason: str) -> str:
     return "يوجد سبب تقني مسجل في النظام؛ راجع السجل التفصيلي عند الحاجة."
 
 
-def maybe_send(path_name: str, payload: dict[str, Any], state: dict[str, Any]) -> bool:
+def maybe_send(
+    path_name: str,
+    payload: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> bool:
+    """Notify for health transitions and meaningful options data impairment.
+
+    The radar-health workflow only calls this in a verified open NYSE session.
+    A once-per-UTC-day impairment notice is diagnostic, never a CALL/PUT signal.
+    """
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    now = now.astimezone(timezone.utc)
     health = payload.get("health") if isinstance(payload.get("health"), dict) else {}
     current = str(health.get("status") or "UNKNOWN").upper()
     if current not in RANK:
         return False
     states = state.setdefault("paths", {})
-    previous = str((states.get(path_name) or {}).get("status") or "UNKNOWN").upper()
+    prior = states.get(path_name) if isinstance(states.get(path_name), dict) else {}
+    previous = str(prior.get("status") or "UNKNOWN").upper()
+    readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
+    provider_status = str(readiness.get("status") or "UNKNOWN").upper()
+    quote_ready = readiness.get("production_quote_ready") is True
+    former_provider = str(prior.get("provider_status") or "UNKNOWN").upper()
+    former_quote_ready = prior.get("production_quote_ready")
     changed = previous != current
-    should_send = changed and (current != "HEALTHY" or previous in {"DEGRADED", "CRITICAL"})
+    provider_changed = (
+        path_name == "options"
+        and (provider_status != former_provider or (
+            isinstance(former_quote_ready, bool) and former_quote_ready != quote_ready
+        ))
+        and former_provider != "UNKNOWN"
+    )
+    impaired = (
+        path_name == "options"
+        and current == "DEGRADED"
+        and bool(readiness)
+        and not quote_ready
+    )
+    # Market-session health is already gated in the workflow. Never send on
+    # every 15-minute tick; only once per day while the quote gate is blocked.
+    daily_advisory = impaired and prior.get("last_advisory_date") != now.date().isoformat()
+    should_send = (
+        (changed and (current != "HEALTHY" or previous in {"DEGRADED", "CRITICAL"}))
+        or provider_changed
+        or daily_advisory
+    )
     if should_send:
         icon = "🚨" if current == "CRITICAL" else ("⚠️" if current == "DEGRADED" else "✅")
         label = "مسار الأسهم" if path_name == "stocks" else "مسار عقود الأوبشن"
         reasons = [str(item) for item in health.get("reasons", []) if str(item).strip()]
-        readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
 
         lines = [
             f"{icon} <b>بلاك بوكس Ω | صحة البوت</b>",
@@ -130,6 +170,8 @@ def maybe_send(path_name: str, payload: dict[str, Any], state: dict[str, Any]) -
         lines.extend(["", "🧭 <b>وش يعني هذا لك؟</b>"])
         if current == "HEALTHY":
             lines.append("المسار عاد للعمل بصورة سليمة، ويمكنه استئناف التنبيهات وفق شروطه المعتادة.")
+        elif path_name == "options" and quote_ready:
+            lines.append("تحسنت أهلية الأسعار؛ لا يثبت ذلك صدور فرصة أو اكتمال تدفق الصفقات، وتبقى شروط V11 سارية.")
         elif path_name == "options" and readiness.get("production_quote_ready") is not True:
             lines.append("لن أعتمد عقود الأوبشن كتوصيات إنتاجية من هذا المصدر. سيستمر الجمع والبحث والتعلم فقط إلى أن تصبح البيانات الحية صالحة.")
         elif current == "CRITICAL":
@@ -140,8 +182,14 @@ def maybe_send(path_name: str, payload: dict[str, Any], state: dict[str, Any]) -
         _send("\n".join(lines))
     states[path_name] = {
         "status": current,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": now.isoformat(),
         "metrics": health.get("metrics", {}),
+        "provider_status": provider_status if path_name == "options" else None,
+        "production_quote_ready": quote_ready if path_name == "options" else None,
+        "last_advisory_date": (
+            now.date().isoformat() if path_name == "options" and impaired and should_send
+            else prior.get("last_advisory_date")
+        ),
     }
     return should_send
 
