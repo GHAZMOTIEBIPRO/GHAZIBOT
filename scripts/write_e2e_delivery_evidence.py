@@ -165,7 +165,7 @@ def build_evidence(
             "note_ar": diagnosis_ar,
             "market_open_verified": market_open,
             "delivery_state_current_scan": state_matches_payload,
-            "new_messages_confirmed_for_scan": (
+            "new_messages_reported_for_scan": (
                 int(_number(state.get("last_sent_count")) or 0) if state_matches_payload else None
             ),
         },
