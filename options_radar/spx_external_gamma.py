@@ -9,6 +9,8 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 
+from options_radar.gammagrid_research import load_gammagrid_research_snapshot
+
 
 SQUAWKFLOW_URL = os.getenv(
     "SPX_GAMMA_LEVELS_URL",
@@ -134,5 +136,9 @@ def build_spx_external_context(timeout: int = 12) -> dict[str, Any]:
     except Exception as exc:
         context["intraday_0dte"] = {"available": False}
         context["errors"]["intraday_0dte"] = f"{type(exc).__name__}: {exc}"
+    # Opt-in operator export. It never adds a source vote to the existing GEX
+    # consensus, since GammaGrid chains share the Yahoo source family.
+    snapshot_path = os.getenv("GAMMAGRID_RESEARCH_SNAPSHOT_PATH", "").strip()
+    context["gammagrid_research"] = load_gammagrid_research_snapshot(snapshot_path)
     context["available"] = bool(context["sources"])
     return context
