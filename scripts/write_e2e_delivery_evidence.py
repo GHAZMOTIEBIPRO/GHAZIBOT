@@ -4,7 +4,7 @@ import argparse
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -93,7 +93,48 @@ def _candidate_evidence(row: dict[str, Any], state: dict[str, Any]) -> dict[str,
     }
 
 
-def build_evidence(payload: dict[str, Any], state: dict[str, Any], *, run_id: str, now: datetime) -> dict[str, Any]:
+def _parse_utc(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return value.astimezone(timezone.utc) if value.tzinfo else None
+
+
+def _delivery_diagnosis(
+    payload: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    market_open: bool | None,
+    candidates: int,
+    readiness: dict[str, Any],
+) -> tuple[str, str]:
+    if market_open is False:
+        return "MARKET_CLOSED", "السوق الأمريكي مغلق؛ لم يبدأ فحص العقود ولم يحاول البوت إرسال توصيات."
+    if market_open is None:
+        return "SESSION_UNVERIFIED", "تعذّر التحقق من جلسة السوق؛ لا يمكن إثبات تنفيذ فحص العقود."
+    if not payload:
+        return "PAYLOAD_MISSING", "الفحص لم ينتج ملف عقود قابلًا للتحقق."
+    if readiness.get("production_quote_ready") is not True:
+        return "NO_EXECUTION_GRADE_QUOTES", (
+            "بيانات الأوبشن المتوفرة بحثية أو متأخرة؛ لا تتوافر أسعار تنفيذية موثقة. "
+            "نجاح التشغيل لا يعني وجود عقود مؤهلة للإرسال."
+        )
+    if candidates == 0:
+        return "NO_CANDIDATES", "مصدر الأسعار جاهز، لكن لم تظهر عقود مرشحة في هذه الدورة."
+    if state.get("blocked_reason"):
+        return "SENDER_BLOCKED", "أوقف مرسل العقود عملية الإرسال وسجل سبب الحظر."
+    if state.get("last_sent_count", 0):
+        return "SENDER_REPORTED_MESSAGES", "ذكر مرسل Telegram إرسال رسائل؛ يلزم ربط التقرير بنفس دورة التشغيل."
+    return "NO_REPORTED_SEND", "لم يُسجل إرسال جديد؛ قد تكون الإشارات غير مؤهلة أو مكررة."
+
+
+def build_evidence(
+    payload: dict[str, Any], state: dict[str, Any], *, run_id: str,
+    now: datetime, market_open: bool | None = True,
+) -> dict[str, Any]:
     readiness = payload.get("provider_readiness") if isinstance(payload.get("provider_readiness"), dict) else {}
     rows: list[dict[str, Any]] = []
     for key in ("production_directional_signals", "free_directional_signals", "research_directional_signals", "directional_signals"):
@@ -102,7 +143,32 @@ def build_evidence(payload: dict[str, Any], state: dict[str, Any], *, run_id: st
             rows.extend(row for row in value if isinstance(row, dict))
             if rows:
                 break
+    diagnosis, diagnosis_ar = _delivery_diagnosis(
+        payload, state, market_open=market_open,
+        candidates=len(rows), readiness=readiness,
+    )
+    state_run = _parse_utc(state.get("last_run_at"))
+    payload_time = _parse_utc(payload.get("generated_at"))
+    # State restored from earlier runs can contain valid historic message IDs.
+    # It must not be called evidence of delivery in this scan.
+    state_matches_payload = (
+        market_open is True
+        and state_run is not None
+        and payload_time is not None
+        and payload_time - state_run <= timedelta(minutes=2)
+        and state_run >= payload_time - timedelta(minutes=2)
+        and state_run <= now.astimezone(timezone.utc) + timedelta(minutes=5)
+    )
     return {
+        "diagnosis": {
+            "reason_code": diagnosis,
+            "note_ar": diagnosis_ar,
+            "market_open_verified": market_open,
+            "delivery_state_current_scan": state_matches_payload,
+            "new_messages_confirmed_for_scan": (
+                int(_number(state.get("last_sent_count")) or 0) if state_matches_payload else None
+            ),
+        },
         "schema_version": 1,
         "decision_authority": False,
         "contains_secrets": False,
@@ -140,11 +206,20 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--run-id", default=os.getenv("GITHUB_RUN_ID", "unknown"))
     parser.add_argument("--now", default=None)
+    parser.add_argument(
+        "--market-open", choices=("true", "false", "unknown"), default="true",
+        help="Verified XNYS session gate from the originating workflow",
+    )
     args = parser.parse_args()
     now = datetime.fromisoformat(args.now.replace("Z", "+00:00")) if args.now else datetime.now(timezone.utc)
-    evidence = build_evidence(_load(args.payload, {}), _load(args.state, {"sent": {}}), run_id=args.run_id, now=now)
+    market_open = {"true": True, "false": False, "unknown": None}[args.market_open]
+    evidence = build_evidence(
+        _load(args.payload, {}), _load(args.state, {"sent": {}}),
+        run_id=args.run_id, now=now, market_open=market_open,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Options E2E diagnosis: {evidence['diagnosis']['reason_code']}; sender-run-evidence={evidence['diagnosis']['delivery_state_current_scan']}")
     print(args.output)
     return 0
 
