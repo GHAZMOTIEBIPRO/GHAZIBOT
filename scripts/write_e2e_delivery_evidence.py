@@ -143,6 +143,10 @@ def build_evidence(
             rows.extend(row for row in value if isinstance(row, dict))
             if rows:
                 break
+    # A cached payload cannot become fresh scan evidence on a closed/unknown
+    # session, even if a previous file survived the checkout.
+    if market_open is not True:
+        rows = []
     diagnosis, diagnosis_ar = _delivery_diagnosis(
         payload, state, market_open=market_open,
         candidates=len(rows), readiness=readiness,
@@ -195,6 +199,7 @@ def build_evidence(
             ),
             "mode": state.get("mode"),
             "blocked_reason": state.get("blocked_reason"),
+            "message_ids_are_historical": not state_matches_payload,
         },
     }
 
