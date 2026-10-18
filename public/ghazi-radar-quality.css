@@ -1,0 +1,32 @@
+/* GHAZI RADAR public quality transparency, responsive and accessible */
+.brand-subtitle { margin: 9px 0 0; font-weight: 600; color: var(--accent-2); letter-spacing: .01em; }
+.ghazi-quality-panel { margin: 0 0 22px; padding: 18px; border-radius: 20px;
+  border: 1px solid rgba(89,167,255,.30); background: var(--surface); }
+.ghazi-quality-heading { display: flex; justify-content: space-between; gap: 14px; align-items: start; }
+.ghazi-quality-heading h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.ghazi-quality-heading p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.7; }
+.ghazi-quality-badge { display: inline-block; border-radius: 99px; font-size: .77rem;
+  color: var(--warning); background: rgba(255,202,105,.09); padding: 7px 11px; white-space: normal; }
+.ghazi-quality-badge.ghazi-current { color: var(--accent); background: rgba(78,225,160,.09); }
+.ghazi-quality-badge.ghazi-degraded { color: var(--danger); background: rgba(255,118,118,.09); }
+.ghazi-quality-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-top: 15px; }
+.ghazi-quality-metrics article { border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+  background: rgba(255,255,255,.025); }
+.ghazi-quality-metrics span { display: block; color: var(--muted); font-size: .78rem; }
+.ghazi-quality-metrics strong { display: block; margin-top: 4px; font-size: 1.4rem; }
+.ghazi-quality-readiness { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 16px; }
+.ghazi-quality-readiness p { color: var(--muted); font-size: .82rem; line-height: 1.65; margin: 10px 0 0; }
+.ghazi-quality-readiness strong { color: var(--text); }
+.ghazi-quality-warning { border-right: 3px solid var(--warning); padding: 10px 12px;
+  background: rgba(255,202,105,.07); font-size: .81rem; line-height: 1.85; margin: 13px 0; }
+.ghazi-quality-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.ghazi-quality-footer a { color: var(--accent-2); font-size: .82rem; text-decoration: none; }
+.ghazi-quality-footer button { margin-right: auto; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-2); color: var(--text); padding: 9px 12px; cursor: pointer; }
+.ghazi-quality-footer button:disabled { opacity: .6; cursor: wait; }
+@media(max-width:720px) {
+  .ghazi-quality-heading { flex-direction: column; }
+  .ghazi-quality-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .ghazi-quality-readiness { grid-template-columns: 1fr; }
+  .ghazi-quality-footer button { margin-right: 0; width: 100%; }
+}
