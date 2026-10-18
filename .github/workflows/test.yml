@@ -272,6 +272,7 @@ jobs:
       - name: JavaScript syntax gate
         run: |
           node --check public/app.js
+          node tests/frontend_data_freshness.cjs
           node --check public/phase51.js
           node --check public/phase60.js
           node --check public/phase62.js
