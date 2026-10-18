@@ -60,16 +60,26 @@
       result.why.push("لا توجد شموع 15 دقيقة مكتملة من الجلسة الحالية أو مصدرها متأخر");
       return result;
     }
+    // An underlying 5m candle must also be closed and recent; the presence of
+    // a daily or 15m indicator does NOT manufacture 5m confirmation.
+    if(!s.current_m5_confirmed || !n.current_m5_confirmed ||
+       !isFresh(s.m5_source_bar_start,20,now) ||
+       !isFresh(n.m5_source_bar_start,20,now)) {
+      result.why.push("لا تتوفر شموع 5 دقائق مكتملة وحديثة من SPX وNDX؛ WAIT");
+      return result;
+    }
+    const five=[s.m5?.bias,n.m5?.bias];
     // Fresh index research isn't a licensed executable options feed.
-    result.why.push("SPX وNDX: ساعة "+hours.join("/")+"، 15 دقيقة "+quarters.join("/"));
+    result.why.push("SPX وNDX: ساعة "+hours.join("/")+
+      "، 15 دقيقة "+quarters.join("/")+"، 5 دقائق "+five.join("/"));
     if(!health || !isFresh(health.generated_at,180,now)) {
       result.why.push("تقرير جودة مصادر البوت غير متاح");return result;
     }
     const ready=health.option_provider_readiness||{};
-    const up=hours.every(x=>x==="UP")&&quarters.every(x=>x==="UP");
-    const down=hours.every(x=>x==="DOWN")&&quarters.every(x=>x==="DOWN");
+    const up=hours.every(x=>x==="UP")&&quarters.every(x=>x==="UP")&&five.every(x=>x==="UP");
+    const down=hours.every(x=>x==="DOWN")&&quarters.every(x=>x==="DOWN")&&five.every(x=>x==="DOWN");
     if(!up&&!down){
-      result.reason="SPX وNDX غير متوافقين على الساعة و15 دقيقة؛ انتظار";
+      result.reason="SPX وNDX غير متوافقين على الساعة و15 و5 دقائق؛ انتظار";
       return result;
     }
     if(v.daily?.bias==="UP"&&up){
@@ -77,8 +87,8 @@
       result.why.push("VIX في اتجاه صاعد بحثيًا");return result;
     }
     result.state=up?"UP_WATCH":"DOWN_WATCH";
-    result.reason=up?"اتجاه SPX وNDX صعودي على فريمين — مراقبة بحثية فقط":
-      "اتجاه SPX وNDX هبوطي على فريمين — مراقبة بحثية فقط";
+    result.reason=up?"اتجاه SPX وNDX صعودي على 3 فريمات — مراقبة بحثية فقط":
+      "اتجاه SPX وNDX هبوطي على 3 فريمات — مراقبة بحثية فقط";
     result.why.push(ready.production_quote_ready===true && ready.production_flow_ready===true ?
       "التقرير يدّعي بيانات أوبشن مؤهلة؛ يلزم التحقق من صلاحية كل عقد منفردًا":
       "أسعار وتدفقات الأوبشن غير مؤهلة للتنفيذ؛ لا توجد توصية عقد");
