@@ -16,16 +16,16 @@ from pathlib import Path
 import pandas as pd
 
 from scripts.build_index_chart_snapshot import pack_bars
-from scripts.stock_chart_retention import retain_valid_history
 from scripts.build_index_context import (
     NY, clean_bars, completed_daily, last_finished_five_min,
     last_finished_intraday, technical,
 )
+from scripts.stock_chart_retention import retain_valid_history
 
 SMALL_WATCH = ("RGC", "BNAI", "RGTI", "SOUN", "IONQ", "RKLB", "ASTS", "SOFI", "PLTR")
 LARGE_WATCH = ("AAPL", "NVDA", "MSFT", "TSLA", "AMD", "MU", "AVGO")
 WATCH = SMALL_WATCH + LARGE_WATCH
-FIVE_MIN = frozenset(SMALL_WATCH)
+FIVE_MIN = frozenset(WATCH)  # Completed 5m Yahoo history on every fixed watch symbol
 MAX_BYTES = 700_000
 MAX_DYNAMIC = 4
 _SYMBOL = re.compile(r"^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$")
@@ -205,8 +205,8 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
             "discovered_requested": len(dynamic),
             "discovered_symbols": list(dynamic),
             "discovered_with_charts": sum(s in fresh for s in dynamic),
-            "with_daily": sum("1d" in x["intervals"] for x in data.values()),
-            "with_15m": sum("15m" in x["intervals"] for x in data.values()),
+            "with_daily": sum("1d" in x["intervals"] for x in fresh.values()),
+            "with_15m": sum("15m" in x["intervals"] for x in fresh.values()),
             "with_5m": sum("5m" in x["intervals"] for x in fresh.values()),
             "with_daily_including_historical": sum(
                 "1d" in x["intervals"] for x in data.values()),

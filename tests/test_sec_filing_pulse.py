@@ -143,3 +143,60 @@ def test_stale_mirror_ticker_mismatch_cannot_publish_another_issuer_news():
                    agent="Test tester@example.com",pause=lambda _:None,max_symbols=1)
     assert result["filings"]==[]
     assert result["coverage"]["errors"]["RGC"]=="SEC_ISSUER_TICKER_NOT_CONFIRMED"
+
+
+def test_official_sec_403_opens_bounded_automatic_retry_without_repeating_calls():
+    from datetime import timedelta
+
+    refused=requests.HTTPError("403",response=SimpleNamespace(status_code=403))
+    session=Session({
+        TICKERS_URL:refused,
+        FALLBACK_TICKER_MAP:{"RGC":"0000000111"},
+        f"{SUBMISSIONS_BASE}CIK0000000111.json":refused,
+    })
+    first=collect({"stocks":[]},now=NOW,session=session,
+                  agent="Research tester@example.com",pause=lambda _:None,
+                  max_symbols=1)
+    assert first["status"]=="UNAVAILABLE"
+    assert first["refusal_reason"]=="HTTP_403"
+    assert first["source_retry_after"]==(NOW+timedelta(hours=6)).isoformat()
+    first_call_count=len(session.calls)
+    quiet=collect({"stocks":[]},now=NOW+timedelta(hours=1),session=session,
+                  agent="Research tester@example.com",pause=lambda _:None,
+                  max_symbols=1,previous=first)
+    assert quiet["status"]=="UNAVAILABLE"
+    assert quiet["coverage"]["errors"]=={"sec_api":"COOLDOWN_ACTIVE"}
+    assert quiet["source_retry_after"]==first["source_retry_after"]
+    assert quiet["filings"]==[]
+    assert len(session.calls)==first_call_count
+    recovered=Session({
+        TICKERS_URL:{"0":{"ticker":"RGC","cik_str":111,"title":"Regencell"}},
+        f"{SUBMISSIONS_BASE}CIK0000000111.json":report(111,["8-K"]),
+    })
+    later=collect({"stocks":[]},now=NOW+timedelta(hours=7),
+                  session=recovered,agent="Research tester@example.com",
+                  pause=lambda _:None,max_symbols=1,previous=quiet)
+    assert later["coverage"]["issuers_inspected"]==1
+    assert later["coverage"]["filings_verified"]==1
+    assert later["source_retry_after"] is None
+    assert recovered.calls
+
+
+def test_tampered_sec_cooldown_cannot_disable_official_requests():
+    from datetime import timedelta
+
+    previous={
+        "schema":"ghazi.sec_issuer_pulse.v1",
+        "generated_at":NOW.isoformat(),
+        "source_retry_after":(NOW+timedelta(days=30)).isoformat(),
+        "refusal_reason":"HTTP_403",
+    }
+    session=Session({
+        TICKERS_URL:{"0":{"ticker":"RGC","cik_str":111,"title":"Regencell"}},
+        f"{SUBMISSIONS_BASE}CIK0000000111.json":report(111,["8-K"]),
+    })
+    result=collect({"stocks":[]},now=NOW,session=session,
+                  agent="Research tester@example.com",pause=lambda _:None,
+                  max_symbols=1,previous=previous)
+    assert session.calls and session.calls[0][0]==TICKERS_URL
+    assert result["coverage"]["filings_verified"]==1

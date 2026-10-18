@@ -19,14 +19,14 @@ record for every incoming Git commit.
 Both mirror owners now consult a single pure helper
 `scripts/vercel_metadata_budget_guard.py` after reading latest main.
 They only create a new main metadata snapshot when the *oldest* incoming
-health/status timestamp is at least 90 minutes later than the *newest*
+health/status timestamp is at least 6 hours later than the *newest*
 existing static timestamp. Older/out-of-order updates are refused.
 
 - The canonical runtime `bot-state` publisher is **not throttled**.
 - Browser runtime components independently consume latest `bot-state`
   JSON with displayed timestamps; option execution gates are unchanged.
 - Static `/health` and `/data-status` endpoints can lag the real runtime
-  by up to roughly 90 minutes plus scan delay; treat their embedded
+  by up to roughly 6 hours plus scan delay; treat their embedded
   `generated_at` as authoritative, not as a live heartbeat.
 - Health publishing is not disabled; first/missing status snapshots still
   publish, with explicit fail-closed timezone checks.

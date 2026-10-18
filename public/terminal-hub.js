@@ -234,8 +234,12 @@
     const retries=Object.entries(feed?.source_cooldowns||{})
       .filter(([,meta])=>typeof meta?.retry_after==="string")
       .map(([key,meta])=>key+" بعد "+stamp(meta.retry_after)).slice(0,3);
+    const secRetry=validDate(sec?.source_retry_after);
     put("terminal-news-status",
-      "SEC: "+String(sec?.status||"غير متاح")+" · أخبار بحثية: "+stories.length+
+      "SEC: "+String(sec?.status||"غير متاح")+
+      (secRetry!==null && secRetry>Date.now()?
+        " · فحص SEC الرسمي التالي بعد "+stamp(sec.source_retry_after):"")+
+      " · أخبار بحثية: "+stories.length+
       " · أحدث تقرير أخبار: "+stamp(feed?.generated_at)+
       (errors.length?" · أعطال موثقة: "+errors.slice(0,3).join("، "):"")+
       (retries.length?" · إعادة المحاولة التلقائية: "+retries.join("، "):"")+
@@ -511,7 +515,11 @@
     const val=(key)=>metrics[key]?.count>0 &&
       Number.isFinite(metrics[key]?.median)?metrics[key].median:null;
     const gex=val("gex"),flip=val("flip"),cw=val("call_wall"),pw=val("put_wall");
-    put("terminal-gamma-status","SHADOW — سياق تجريبي");
+    const gexSources=Number.isInteger(data.independent_numerical_gex_sources)?
+      data.independent_numerical_gex_sources:(metrics.gex?.count||0);
+    put("terminal-gamma-status",gexSources<2?
+      "SHADOW — جاما من مصدر رقمي واحد أو بلا بيانات":
+      "SHADOW — توافق تجريبي غير معتمد");
     for(const [label,value,suffix] of [
       ["GEX بحثي (وحدة المصدر)",gex,""],
       ["Gamma Flip",flip,""],
@@ -520,11 +528,11 @@
       grid?.append(putMetric(label,value===null?"غير متاح":fmt(value,1)+suffix));
     }
     const actual=data.integrated_engines?.ghazi_gex_multi?.available===true;
-    const families=metrics.gex?.count||0;
-    const note="مصادر GEX رقمية: "+families+
+    const note="مصادر GEX رقمية: "+gexSources+
       " · محرك السلسلة المتكاملة: "+(actual?"يملك مدخلاً بحثياً":"لا توجد سلسلة عقود صالحة")+
       " · "+(symbol==="SPY"?"هذه مستويات SPX وليست قيم خيارات SPY. ":"")+
-      "الأرقام قد تأتي من مزود واحد ولا تثبت تمركز صانع السوق أو اتجاه الغد. "+
+      (gexSources<2?"لا يوجد نصاب مستقل لتأكيد قيمة GEX. ":"")+
+      "الأرقام لا تثبت تمركز صانع السوق أو اتجاه الغد. "+
       "التقرير: "+stamp(data.generated_at)+".";
     put("terminal-gamma-note",note);
   }

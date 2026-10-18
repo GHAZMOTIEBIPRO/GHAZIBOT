@@ -2,7 +2,7 @@
 
 The canonical runtime data stays on bot-state and updates at the existing
 cadence. Only the public static fallback is mirrored to main at most once
-per 90 minutes, avoiding Vercel Hobby's 100 deployments/24h limit.
+per 6 hours, reducing Vercel Hobby deployment quota pressure.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-MIN_INTERVAL_MINUTES = 90
+MIN_INTERVAL_MINUTES = 360  # Four static fallbacks/day; live runtime continues on bot-state.
 
 
 def _stamp(data: dict) -> datetime | None:

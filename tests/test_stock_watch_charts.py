@@ -47,7 +47,7 @@ def test_weekend_history_not_promoted_to_current_and_no_faked_5m():
     assert out["intervals"]["5m"]["current_session_confirmed"] is False
     assert out["intervals"]["15m"]["current_session_confirmed"] is False
     large=pack_symbol("AAPL",candles("1d"),candles("15m"),None,now=weekend)
-    assert "5m" not in large["intervals"]
+    assert "5m" not in large["intervals"]  # No source candles means no invented frame.
     assert large["market_cap_verified"] is False
 
 
@@ -73,6 +73,8 @@ def test_provider_failures_are_explicit_and_no_live_authority():
     assert out["provider_source_family"]=="yahoo"
     assert set(SMALL_WATCH).issubset(set(WATCH))
     assert len(out["symbols"]["RGC"]["intervals"]["1d"]["bars"])<=110
+    assert "5m" in out["symbols"]["AAPL"]["intervals"]
+    assert FIVE_MIN == frozenset(WATCH)
 
 
 def test_absent_candles_never_become_zero_or_live_prices():

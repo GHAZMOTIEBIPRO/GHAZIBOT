@@ -8,7 +8,7 @@ import pandas as pd
 
 from options_radar.free_public_intelligence import google_issuer_attention
 from scripts.build_stock_watch_charts import (
-    FIVE_MIN, SMALL_WATCH, collect, load_dynamic_symbols, pack_symbol,
+    FIVE_MIN, WATCH, collect, load_dynamic_symbols, pack_symbol,
 )
 
 NOW = datetime(2026, 10, 18, 14, 0, tzinfo=timezone.utc)
@@ -86,7 +86,7 @@ def test_new_radar_stock_gets_real_bars_and_keeps_research_only():
     assert "15m" in rows["intervals"]
     assert "5m" in rows["intervals"]
     assert pack_symbol("NEWX", candles("1d"), None, None, now=NOW) is None
-    assert FIVE_MIN == frozenset(SMALL_WATCH)
+    assert FIVE_MIN == frozenset(WATCH)
 
 
 def test_new_symbols_use_same_single_state_file_without_fake_quotes():

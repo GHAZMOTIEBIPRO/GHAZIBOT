@@ -5,7 +5,7 @@ import io
 import json
 import math
 import urllib.request
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -37,11 +37,30 @@ def num(x: Any) -> float | None:
         return None
 
 
-def fetch_json_source(name: str, url: str) -> dict[str, Any]:
+def _source_date_ok(value: Any, *, now: datetime | None = None) -> bool:
+    """Weekend-safe research date gate, never a provider quote timestamp."""
+    if not isinstance(value, str):
+        return False
+    try:
+        day = date.fromisoformat(value)
+    except ValueError:
+        return False
+    today = (now or datetime.now(timezone.utc)).astimezone(timezone.utc).date()
+    age = (today - day).days
+    return 0 <= age <= 5
+
+
+def fetch_json_source(name: str, url: str, *, now: datetime | None = None) -> dict[str, Any]:
     raw = json.loads(get(url).decode("utf-8"))
     if name == "dhawalc/spx-gamma-levels":
         return {
-            "available": True, "source": name, "spot": num(raw.get("spot")),
+            "available": (_source_date_ok(raw.get("date"), now=now)
+                          and num(raw.get("spot")) is not None
+                          and num(raw.get("spot")) > 0),
+            "source": name,
+            "source_observation_date": raw.get("date"),
+            "quote_timestamp_verified": False,
+            "spot": num(raw.get("spot")),
             "gex": num(raw.get("net_gex_dollars")),
             "flip": num(raw.get("zero_gamma_flip")),
             "call_wall": num(raw.get("call_wall")),
@@ -51,13 +70,19 @@ def fetch_json_source(name: str, url: str) -> dict[str, Any]:
     raise ValueError("unsupported JSON source")
 
 
-def fetch_archive(url: str) -> dict[str, Any]:
+def fetch_archive(url: str, *, now: datetime | None = None) -> dict[str, Any]:
     rows = list(csv.DictReader(io.StringIO(get(url).decode("utf-8"))))
     if not rows:
         raise ValueError("archive empty")
     r = rows[-1]
+    date_text = str(r.get("date") or "")
     return {
-        "available": True, "source": "Alexduanran/spx-0dte-archive",
+        "available": (_source_date_ok(date_text, now=now)
+                      and num(r.get("spot")) is not None
+                      and num(r.get("spot")) > 0),
+        "source": "Alexduanran/spx-0dte-archive",
+        "source_observation_date": date_text,
+        "quote_timestamp_verified": False,
         "spot": num(r.get("spot")), "gex": num(r.get("net_0dte_gex")),
         "flip": num(r.get("gamma_flip_proxy")),
         "call_wall": num(r.get("call_wall")), "put_wall": num(r.get("put_wall")),
@@ -73,10 +98,14 @@ def fetch_cboe(url: str) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("unexpected CBOE payload")
     options = data.get("options") or []
-    spxw = [x for x in options if str(x.get("option", "")).upper().startswith("SPXW")]
+    spxw = [x for x in options if isinstance(x, dict)
+            and str(x.get("option", "")).upper().startswith("SPXW")]
+    spot = num(data.get("current_price") or data.get("price"))
     return {
-        "available": True, "source": "CBOE delayed public",
-        "spot": num(data.get("current_price") or data.get("price")),
+        "available": bool(spxw and spot is not None and spot > 0),
+        "source": "CBOE delayed public",
+        "quote_timestamp_verified": False,
+        "spot": spot,
         "contracts": len(spxw),
         "spxw_0dte": True,
         "note_ar": "CBOE العام مؤخر؛ ليس مصدراً لتنفيذ لحظي.",
@@ -147,6 +176,8 @@ def build() -> dict[str, Any]:
     ]
     if usable < 2:
         reasons.append("عدد المصادر القابلة للمقارنة أقل من 2.")
+    if metrics["gex"]["count"] < 2:
+        reasons.append("لا يوجد مصدران مستقلان على الأقل لقيمة GEX الرقمية؛ لا نعرض هذا كتوافق جاما موثق.")
     if agreement < 0.60:
         reasons.append("التوافق الحالي أقل من 60%.")
 
@@ -155,6 +186,9 @@ def build() -> dict[str, Any]:
         "policy": "shadow_validation_never_signal_authority",
         "decision": decision,
         "source_count_available": usable,
+        "independent_numerical_gex_sources": metrics["gex"]["count"],
+        "gamma_consensus_verified": False,
+        "quote_timestamp_verified": False,
         "agreement_score": round(agreement, 3),
         "metrics": metrics,
         "sources": rows,
