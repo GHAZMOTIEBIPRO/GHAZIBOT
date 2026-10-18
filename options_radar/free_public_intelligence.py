@@ -91,7 +91,7 @@ def gdelt_attention(
     """Match only exchange-ticker/$ticker mentions, not ambiguous bare words."""
     current = now or datetime.now(UTC)
     watch = list(dict.fromkeys(str(s).strip().upper() for s in symbols))
-    watch = [s for s in watch if _SYMBOL_RE.fullmatch(s)][:8]
+    watch = [s for s in watch if _SYMBOL_RE.fullmatch(s)][:12]
     if not watch:
         return []
     # One bounded query; free public API may throttle/return partial coverage.

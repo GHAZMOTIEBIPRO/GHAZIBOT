@@ -28,5 +28,12 @@ assert.ok(script.includes("ghazi.sec_issuer_pulse.v1"));
 assert.ok(script.includes("OFFERING_OR_DILUTION_REVIEW"));
 assert.ok(script.includes("sec_filing_pulse.json"));
 assert.ok(script.includes("positive_news_inferred"));
+assert.ok(html.includes('id="gdelt-news-list"'));
+assert.ok(html.includes('id="gdelt-source-status"'));
+assert.ok(script.includes("gdelt_doc_v2"));
+assert.ok(script.includes('x.authority==="ATTENTION_ONLY"'));
+assert.ok(script.includes("independent_confirmation===false"));
+assert.ok(script.includes("free_public_intelligence.json"));
+
 
 console.log("GHAZI Radar visible indices and official catalyst source filters: PASS");
