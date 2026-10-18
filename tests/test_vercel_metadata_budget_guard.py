@@ -15,11 +15,12 @@ def event(offset:int)->dict:
 
 
 def test_mirror_stays_stable_for_frequent_bot_state_scans():
-    assert MIN_INTERVAL_MINUTES==90
+    assert MIN_INTERVAL_MINUTES==360
     assert should_mirror(event(0),event(0),event(5),event(5)) is False
     assert should_mirror(event(0),event(0),event(89),event(89)) is False
-    assert should_mirror(event(0),event(0),event(90),event(90)) is True
-    assert should_mirror(event(0),event(0),event(150),event(150)) is True
+    assert should_mirror(event(0),event(0),event(90),event(90)) is False
+    assert should_mirror(event(0),event(0),event(150),event(150)) is False
+    assert should_mirror(event(0),event(0),event(360),event(360)) is True
 
 
 def test_mirror_does_not_replace_newer_file_with_an_older_runtime_snapshot():
