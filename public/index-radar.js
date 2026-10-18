@@ -65,6 +65,8 @@
     const body=text("div","","ghazi-index-values");
     addMetric(body,"آخر إغلاق مكتمل",fmt(row.last_completed_close));
     addMetric(body,"آخر جلسة مكتملة",row.last_completed_session_date||"—");
+    if (["SPX","NDX","SPY","QQQ"].includes(symbol))
+      addMetric(body,"5 دقائق",BIAS[row.m5?.bias]||"غير متاح");
     addMetric(body,"15 دقيقة",BIAS[row.m15?.bias]||"غير متاح");
     addMetric(body,"ساعة",BIAS[row.h1?.bias]||"غير متاح");
     addMetric(body,"RSI14 اليومي",fmt(day.rsi14,1));
@@ -76,6 +78,8 @@
     addMetric(body,"قمة/قاع الأسبوع السابق",level(levels.previous_week));
     addMetric(body,"قمة/قاع الشهر السابق",level(levels.previous_month));
     if(row.kind==="etf_proxy")addMetric(body,"VWAP جلسة اليوم",fmt(row.vwap_today));
+    if(row.current_m5_confirmed===true && row.m5_source_bar_start)
+      addMetric(body,"آخر شمعة 5m مكتملة",formatTime(row.m5_source_bar_start));
     if(row.current_intraday_bar_confirmed===true) {
       addMetric(body,"آخر إغلاق 15m مكتمل",fmt(row.last_finished_intraday_close));
       addMetric(body,"تغير الجلسة من الإغلاق السابق",row.change_from_last_completed_close_pct==null?"—":fmt(row.change_from_last_completed_close_pct)+"%");
