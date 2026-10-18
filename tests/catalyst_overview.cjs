@@ -51,3 +51,10 @@ assert.ok(html.includes('id="google-issuer-source-status"'));
 assert.ok(script.includes("google_news_attention"));
 assert.ok(script.includes("NEWS_SEARCH_ATTENTION_ONLY"));
 assert.ok(script.includes("new URL(url).hostname!==\"news.google.com\""));
+
+assert.ok(html.includes('id="google-issuer-news-list"'));
+assert.ok(html.includes('id="google-issuer-source-status"'));
+assert.ok(script.includes("google_news_attention"));
+assert.ok(script.includes('NEWS_SEARCH_ATTENTION_ONLY'));
+assert.ok(script.includes('new URL(url).hostname!=="news.google.com"'));
+assert.ok(script.includes("positive_catalyst_verified===false"));
