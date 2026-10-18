@@ -437,3 +437,67 @@ def test_google_http_403_stops_remaining_issuer_lookups():
     assert rows==[]
     assert errors=={"RGC":"HTTP_403"}
     assert len(session.calls)==1
+
+
+
+def test_news_rotation_covers_all_interest_stocks_across_two_windows():
+    from datetime import datetime, timezone
+
+    from options_radar.free_public_intelligence import (
+        GOOGLE_NEWS_MAX_ISSUERS,
+        google_issuer_attention,
+    )
+    symbols=["RGC","BNAI","RKLB","IONQ","SOUN","ASTS","RGTI",
+             "MU","NVDA","AMD","AAPL","TSLA","PLTR"]
+    class Recording:
+        def __init__(self):
+            self.calls=[]
+        def get(self,url,*,params=None,headers=None,timeout=None):
+            self.calls.append(params["q"])
+            return Response(content=b'<rss version="2.0"><channel></channel></rss>')
+    all_names=[]
+    for hour in (12,13,14):
+        session=Recording()
+        now=datetime(2026,10,18,hour,0,tzinfo=timezone.utc)
+        items, errors=google_issuer_attention(symbols,session=session,now=now)
+        assert errors=={}
+        assert items==[]
+        assert len(session.calls)<=GOOGLE_NEWS_MAX_ISSUERS
+        all_names.extend(session.calls)
+    assert any("Rigetti" in q for q in all_names)
+    assert any("Regencell" in q for q in all_names)
+    assert len(set(all_names))>=11
+
+
+def test_retained_issuer_news_never_rewrites_publication_time_or_authority():
+    from options_radar.free_public_intelligence import retain_verified_news_context
+    base={
+        "schema":"free_public_intelligence_v1",
+        "generated_at":NOW.isoformat(),"google_news_attention":[],
+    }
+    previous={
+        "generated_at":(NOW-timedelta(hours=2)).isoformat(),
+        "google_news_attention":[{
+            "symbol":"RKLB","headline":"Rocket Lab announces NASA launch agreement",
+            "url":"https://news.google.com/rss/articles/rocket-old",
+            "published_at":(NOW-timedelta(days=1)).isoformat(),
+            "authority":"NEWS_SEARCH_ATTENTION_ONLY",
+            "issuer_release_authenticated":False,
+            "positive_catalyst_verified":False,"market_direction":"UNKNOWN",
+        },{
+            "symbol":"RGC","headline":"Regencell Bioscience announces financing",
+            "url":"https://evil.invalid/unsafe",
+            "published_at":(NOW-timedelta(days=1)).isoformat(),
+            "authority":"NEWS_SEARCH_ATTENTION_ONLY",
+            "issuer_release_authenticated":False,
+            "positive_catalyst_verified":False,"market_direction":"UNKNOWN",
+        }]
+    }
+    result=retain_verified_news_context(base,previous,now=NOW)
+    assert len(result["google_news_attention"])==1
+    item=result["google_news_attention"][0]
+    assert item["symbol"]=="RKLB"
+    assert item["published_at"]==(NOW-timedelta(days=1)).isoformat()
+    assert item["first_collected_at"]==previous["generated_at"]
+    assert item["positive_catalyst_verified"] is False
+    assert result["google_news_retention"]["historical_stories_preserved"]==1

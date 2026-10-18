@@ -80,6 +80,7 @@
         <header class="terminal-section-head"><div><p class="terminal-overline">HIGH VOLATILITY WATCH</p>
           <h3>الأسهم الصغيرة والمضاربية</h3><p>الشركات الناشئة وأسهم الحركة العالية؛ لا تُصنّف شركة بأنها صغيرة فعليًا إلا عند توافر بيانات رسملتها.</p></div></header>
         <div id="terminal-small-grid" class="terminal-stock-grid"><p class="terminal-empty">جاري تحميل الأسهم…</p></div>
+        <p id="terminal-stock-chart-health" class="terminal-footnote">جاري فحص تغطية شارتات الأسهم الصغيرة من مصادر مجانية…</p>
         <p id="terminal-small-note" class="terminal-footnote">القائمة للمراقبة البحثية، وليست ضمانًا لانفجار سعري أو إثباتًا لرسملة سوقية صغيرة.</p>
       </section>
       <section class="terminal-panel" id="terminal-panel-news" aria-label="الأخبار والمحركات" hidden>
@@ -104,6 +105,13 @@
           <span id="terminal-chart-date">—</span></div>
         <div id="terminal-candle-chart" class="terminal-candle-chart" role="img" aria-label="مخطط الشموع اليابانية من بيانات أسعار السوق المنشورة"></div>
         <div id="terminal-chart-levels" class="terminal-chart-metrics"></div>
+        <div id="terminal-chart-scenario" class="terminal-chart-reading" role="status">حساب السيناريو الفني بعد تحميل شموع مكتملة.</div>
+        <section id="terminal-gamma-panel" class="terminal-gamma-panel" aria-label="قراءة Gamma بحثية">
+          <h4>Gamma / GEX · بحثي فقط <span id="terminal-gamma-status">تقييم مصادر جاما…</span></h4>
+          <div id="terminal-gamma-metrics" class="terminal-chart-metrics"></div>
+          <p id="terminal-gamma-note" class="terminal-footnote">لا يُستنتج GEX الحقيقي من شارت السعر، ويحتاج سلسلة عقود وخيارات ومعطيات مصدر واضحة.</p>
+        </section>
+
         <p id="terminal-chart-reading" class="terminal-chart-reading" role="status">عند اختيار الرمز، تُعرض قراءة الشارت ومصدر الشموع وحالة حداثتها.</p>
         <p class="terminal-footnote">المصدر Yahoo عبر محرك GitHub البحثي، بيانات قد تتأخر. الأسعار ليست NBBO أو OPRA، والقراءة ليست أمر تداول.</p>
       </section>
@@ -617,6 +625,6 @@
   <script src="./expiry-radar.js?v=20260807-omega" defer></script>
   <script src="./omega.js?v=20260807-omega" defer></script>
   <script src="./market-chart.js?v=20261010-open-source" defer></script>
-  <script src="./terminal-hub.js?v=20261018-1" defer></script>
+  <script src="./terminal-hub.js?v=20261018-2" defer></script>
 </body>
 </html>
