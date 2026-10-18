@@ -3,24 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="GHAZIBOT Ω — رادار بحثي للأسهم والعقود والمحفزات مع فصل هوية الانتهاء عن DTE وطبقات DAY/SWING/Explosion.">
+  <meta name="description" content="GHAZI RADAR — رادار عربي مجاني للأسهم الأمريكية والمؤشرات وعقود الخيارات، مع شفافية جودة المصادر وحداثة التقارير.">
+  <meta name="theme-color" content="#080b12">
+  <meta property="og:title" content="GHAZI RADAR">
+  <meta property="og:description" content="رادار الأسهم والمؤشرات والأوبشن — مع مصدر البيانات ووقت تحديثها وحالتها البحثية.">
   <meta name="ghazi-ui-build" content="2026-08-07.omega">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>GHAZIBOT Ω — Research Radar</title>
+  <title>GHAZI RADAR | الأسهم الأمريكية والأوبشن</title>
   <link rel="stylesheet" href="./styles.css?v=20260807-omega">
   <link rel="stylesheet" href="./phase60.css?v=20260807-omega">
   <link rel="stylesheet" href="./phase62.css?v=20260807-omega">
   <link rel="stylesheet" href="./omega.css?v=20260807-omega">
+  <link rel="stylesheet" href="./ghazi-radar-quality.css?v=20261018-1">
 </head>
 <body>
   <div class="page-shell">
     <header class="hero">
       <div>
-        <p class="eyebrow">GHAZIBOT Ω · RESEARCH RADAR</p>
-        <h1>رادار القرار البحثي للأسهم والعقود</h1>
-        <p class="hero-copy">يفصل جودة المحفز عن الاتجاه، وهوية سلسلة الانتهاء عن DTE، وجودة السهم عن جودة العقد. Ranking Score ليس احتمال ربح.</p>
+        <p class="eyebrow">GHAZI RADAR · POWERED BY BLACK BOX Ω</p>
+        <h1>GHAZI RADAR</h1>
+        <p class="brand-subtitle">رادار الأسهم الأمريكية والمؤشرات وعقود الخيارات</p>
+        <p class="hero-copy">منصة بحثية مجانية؛ تعرض جودة البيانات ووقت التقرير ومصدر التسعير وحدود الأوبشن بوضوح. درجة الترتيب ليست نسبة ربح، ووقت إعداد التقرير ليس وقت عرض السعر.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -31,6 +36,36 @@
         </div>
       </div>
     </header>
+
+
+    <section class="ghazi-quality-panel" aria-labelledby="ghazi-quality-heading">
+      <div class="ghazi-quality-heading">
+        <div>
+          <h2 id="ghazi-quality-heading">شفافية البيانات قبل الإشارات</h2>
+          <p>الأولوية للمصادر المستقلة الصالحة، لا لعدد المواقع. الأرقام من سجل الحالة المنشور وليست أسعارًا لحظية.</p>
+        </div>
+        <span id="ghazi-quality-badge" class="ghazi-quality-badge" aria-live="polite">جاري فحص مصادر التقرير…</span>
+      </div>
+      <div class="ghazi-quality-metrics">
+        <article><span>مصادر أسهم نشطة</span><strong id="ghazi-stock-sources">—</strong></article>
+        <article><span>مصادر أوبشن نشطة</span><strong id="ghazi-option-sources">—</strong></article>
+        <article><span>سلاسل أوبشن للبحث</span><strong id="ghazi-research-chains">—</strong></article>
+        <article><span>عقود مؤهلة للعرض</span><strong id="ghazi-approved-contracts">—</strong></article>
+      </div>
+      <div class="ghazi-quality-readiness">
+        <p><strong>تأهيل أسعار الأوبشن:</strong> <span id="ghazi-option-readiness">قيد الفحص</span></p>
+        <p><strong>إثبات تدفق الأوبشن:</strong> <span id="ghazi-flow-readiness">قيد الفحص</span></p>
+        <p><strong>مصادر سلاسل العقود:</strong> <span id="ghazi-chain-providers">—</span></p>
+        <p><strong>وقت إنشاء تقرير السلامة (الرياض):</strong> <time id="ghazi-report-time">—</time></p>
+        <p><strong>حالة SEC Full-Text:</strong> <span id="ghazi-sec-status">—</span></p>
+      </div>
+      <p class="ghazi-quality-warning" id="ghazi-quality-note" role="status">لا تُعتمد أسعار الأوبشن للتنفيذ إلا إذا اجتازت بوابة جودة البيانات الحية.</p>
+      <div class="ghazi-quality-footer">
+        <a href="./data/data-status.json" target="_blank" rel="noopener">تقرير جودة البيانات المنشور ↗</a>
+        <a href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT" target="_blank" rel="noopener">المصدر البرمجي المفتوح ↗</a>
+        <button type="button" id="ghazi-check-quality">تحديث فحص المصادر</button>
+      </div>
+    </section>
 
     <section class="separation-banner" aria-label="الفصل بين محركات الرادار">
       <article class="separation-card">
@@ -253,7 +288,7 @@
       <div>
         <p id="disclaimer">الدرجات بحثية وليست أوامر شراء أو ضمان ربح.</p>
         <p id="refresh-result" class="refresh-result">زر التحميل يجلب آخر ملف منشور ويعرض وقت جلبه بدقة.</p>
-        <p class="refresh-result"><strong>نسخة الواجهة: 2026-08-07.Ω</strong></p>
+        <p class="refresh-result"><strong>GHAZI RADAR · الإصدار العام البحثي</strong></p>
       </div>
       <div class="footer-actions">
         <a class="secondary-button action-link" href="https://github.com/GHAZMOTIEBIPRO/GHAZIBOT/actions/workflows/options-radar.yml" target="_blank" rel="noopener">تشغيل فحص جديد عبر GitHub</a>
@@ -262,7 +297,8 @@
     </footer>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js" defer></script>
-  <script src="./app.js?v=20261010-open-source" defer></script>
+  <script src="./ghazi-radar-quality.js?v=20261018-1" defer></script>
+  <script src="./app.js?v=20261018-ghazi-radar" defer></script>
   <script src="./phase51.js?v=20260807-omega" defer></script>
   <script src="./phase60.js?v=20260807-omega" defer></script>
   <script src="./phase62.js?v=20260807-omega" defer></script>
