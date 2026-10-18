@@ -1,0 +1,67 @@
+name: GHAZI RADAR Market Index Research
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_index_context.py"
+      - ".github/workflows/index-radar.yml"
+  # Bounded scans at five weekday windows; no continuous Yahoo scraping.
+  schedule:
+    - cron: "25 14,16,18,20,22 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-radar-index-context
+  cancel-in-progress: false
+
+jobs:
+  publish-index-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app/requirements.txt
+      - name: Install existing pandas and market feed tools
+        run: pip install -r app/requirements.txt
+      - name: Produce bounded research snapshot with completed-bar checks
+        run: >-
+          python app/scripts/build_index_context.py
+          --output state/runtime/public/data/index_radar.json
+      - name: Commit only the index research snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Index Research"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/index_radar.json
+          if git diff --cached --quiet; then
+            echo "No change in index research snapshot."
+            exit 0
+          fi
+          git commit -m "state: research-only index levels [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Could not publish index research state safely" >&2
+          exit 1
