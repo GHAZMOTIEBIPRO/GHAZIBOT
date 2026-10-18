@@ -39,7 +39,7 @@
     show("ghazi-option-readiness","غير مؤكد");
     show("ghazi-flow-readiness","غير مؤكد");
     ["ghazi-stock-price-families", "ghazi-context-families",
-     "ghazi-cross-chains", "ghazi-options-blockers"].forEach((id) => show(id, "—"));
+     "ghazi-cross-chains", "ghazi-options-blockers", "ghazi-contract-rejections"].forEach((id) => show(id, "—"));
   }
   function render(result) {
     const { payload: data, url } = result;
@@ -78,6 +78,18 @@
     show("ghazi-options-blockers", Array.isArray(coverage.blocking_codes) ?
       (coverage.blocking_codes.length ? coverage.blocking_codes.map((x) => blockersAR[x] || x).join("؛ ") : "لا يوجد عائق مسجل")
       : "ستظهر بعد تحديث التقرير التالي");
+    const rejectionNames = {
+      spread_above_15pct: "سبريد أكبر من 15%",
+      delta_outside_030_060: "Delta خارج 0.30–0.60",
+      invalid_bid_ask: "Bid/Ask غير صالح",
+      option_volume_below_200: "حجم العقد أقل من 200",
+      vol_to_oi_below_1_5: "Vol/OI أقل من 1.5",
+      bid_side_or_neutral_trade: "الصفقة غير مؤكدة على Ask",
+    };
+    const rejectionCounts = Object.entries(coverage.top_option_rejection_reasons || {})
+      .filter(([, count]) => Number.isSafeInteger(count) && count > 0).slice(0, 6);
+    show("ghazi-contract-rejections", rejectionCounts.length ? rejectionCounts.map(([key, count]) =>
+      (rejectionNames[key] || key) + ": " + integer(count)).join("؛ ") : "لا توجد إحصاءات رفض موثقة");
     const sec = sources.sec_fulltext;
     show("ghazi-sec-status", sec && sec.available === true ? "متاح في آخر فحص" :
       sec && sec.available === false ? "غير متاح؛ تحقق من مسارات الإفصاح البديلة" : "غير مؤكد");
