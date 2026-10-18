@@ -16,6 +16,9 @@ class Response:
     def raise_for_status(self):
         return None
 
+    def json(self):
+        return {"articles": []}
+
 
 class Session:
     def __init__(self, refuse=True):
