@@ -178,10 +178,12 @@
       news.replaceChildren();
       const recent=asDate(newsContext?.generated_at) &&
         Date.now()-asDate(newsContext.generated_at).getTime()<=48*60*60000;
-      const articles=recent&&Array.isArray(newsContext.gdelt_attention)?
-        newsContext.gdelt_attention:[];
+      const articles=recent?[
+        ...(Array.isArray(newsContext.gdelt_attention)?newsContext.gdelt_attention:[]),
+        ...(Array.isArray(newsContext.yahoo_rss_attention)?newsContext.yahoo_rss_attention:[])
+      ]:[];
       const included=articles.filter(x=>
-        x && x.source==="gdelt_doc_v2" &&
+        x && ["gdelt_doc_v2","yahoo_finance_rss"].includes(x.source) &&
         x.authority==="ATTENTION_ONLY" &&
         x.official_confirmed===false &&
         x.independent_confirmation===false &&
@@ -191,22 +193,25 @@
       for(const a of included){
         const item=node("article","","ghazi-catalyst-primary");
         item.append(node("h4",String(a.symbol||"—")+" · خبر مرصود غير مؤكد"));
+        const provider=a.source==="yahoo_finance_rss"?"Yahoo Finance RSS":"GDELT";
         item.append(node("p",String(a.headline||"—")+
-          " · وقت رصد GDELT: "+time(a.observed_at)+
-          " · ليس خبرًا رسميًا أو مؤشر صعود مثبتًا"));
+          " · المصدر: "+provider+
+          " · "+(a.published_at_reported?"تاريخ نشر مبلغ عنه: "+time(a.published_at_reported):
+              "وقت رصد المصدر: "+time(a.observed_at))+
+          " · خبر تجميعي لا يثبت اتجاه السعر"));
         const link=node("a","اقرأ الخبر الأصلي ↗");
         link.href=safeNewsLink(a.url);link.rel="noopener noreferrer";
         link.target="_blank";item.append(link);news.append(item);
       }
       if(!included.length)news.append(node("p",
-        "لا توجد عناوين تطابق رموز الأسهم بوضوح في نافذة البحث أو المصدر غير متاح؛ لا يعني ذلك عدم وجود أخبار أخرى."));
+        "لا توجد أخبار قابلة للتحقق من عنوانها ورمزها في GDELT أو Yahoo Finance RSS حاليًا؛ هذا لا يعني عدم وجود أخبار أخرى."));
       const errors=newsContext?.source_errors||{};
       set("gdelt-source-status",newsContext?
         "آخر فحص "+time(newsContext.generated_at)+
-        " · نتائج البحث المسموح عرضها "+n(included.length,0)+
-        (errors.gdelt_attention?
-          " · تعذر جلب GDELT: "+String(errors.gdelt_attention):
-          " · المصدر تجميعي وليس دليلاً رسميًا"):
+        " · عناوين مرتبطة بأسهم "+n(included.length,0)+
+        (errors.gdelt_attention?" · GDELT: "+String(errors.gdelt_attention):"")+
+        (errors.yahoo_rss_attention?" · Yahoo RSS: "+String(errors.yahoo_rss_attention):"")+
+        " · المصدران تجميعيان لا يؤكدان أثر الخبر":
         "لم تصل تغذية GDELT المنشورة؛ يظهر قسم SEC منفصلًا.");
     }
     const list=el("catalyst-official-list");
