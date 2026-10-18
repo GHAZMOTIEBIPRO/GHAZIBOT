@@ -38,6 +38,8 @@
      "ghazi-sec-status"].forEach((id) => show(id, "—"));
     show("ghazi-option-readiness","غير مؤكد");
     show("ghazi-flow-readiness","غير مؤكد");
+    ["ghazi-stock-price-families", "ghazi-context-families",
+     "ghazi-cross-chains", "ghazi-options-blockers"].forEach((id) => show(id, "—"));
   }
   function render(result) {
     const { payload: data, url } = result;
@@ -60,6 +62,22 @@
     show("ghazi-chain-providers", Array.isArray(readiness.sources) && readiness.sources.length ?
       readiness.sources.join("، ") : "لا يوجد مصدر مثبت");
     show("ghazi-report-time", timeRiyadh(data.generated_at));
+    const coverage = data.coverage_diagnostics || {};
+    const named = (items) => Array.isArray(items) ?
+      (items.length ? items.join("، ") : "لا يوجد مصدر مؤكد في هذا التقرير") : "لم تُصدر بيانات تفصيلية بعد";
+    show("ghazi-stock-price-families", named(coverage.stock_price_source_families_reported));
+    show("ghazi-context-families", named(coverage.stock_non_price_context_sources_reported));
+    show("ghazi-cross-chains", integer(coverage.option_cross_source_chains_reported));
+    const blockersAR = {
+      NO_VERIFIED_OPTION_PROVIDER_FAMILY: "لا توجد عائلة بيانات عقود مثبتة",
+      YAHOO_RESEARCH_ONLY: "سلاسل Yahoo البحثية غير صالحة للتنفيذ",
+      NO_INDEPENDENT_CROSS_SOURCE_CHAIN: "لا يوجد تأكيد مستقل لسلاسل العقود",
+      NO_EXECUTION_GRADE_OPTION_QUOTE: "لا يوجد Bid/Ask تنفيذي حديث وموثق",
+      NO_VERIFIED_OPTION_TRADE_FLOW: "لا توجد بيانات تدفق عقود تنفيذية مؤكدة",
+    };
+    show("ghazi-options-blockers", Array.isArray(coverage.blocking_codes) ?
+      (coverage.blocking_codes.length ? coverage.blocking_codes.map((x) => blockersAR[x] || x).join("؛ ") : "لا يوجد عائق مسجل")
+      : "ستظهر بعد تحديث التقرير التالي");
     const sec = sources.sec_fulltext;
     show("ghazi-sec-status", sec && sec.available === true ? "متاح في آخر فحص" :
       sec && sec.available === false ? "غير متاح؛ تحقق من مسارات الإفصاح البديلة" : "غير مؤكد");
