@@ -8,6 +8,8 @@ from options_radar.free_public_intelligence import (
     BLS_ICS,
     FED_MONETARY,
     GDELT_DOC,
+    PRESS_WIRE_RSS,
+    press_wire_attention,
     alpaca_iex_health,
     build_context,
     fed_monetary_updates,
@@ -237,3 +239,88 @@ def test_single_bounded_gdelt_query_covers_12_explicit_smallcap_symbols():
     assert '"PLTR"' in params["query"]
     assert '"RGC"' in params["query"]
     assert params["maxrecords"]==75
+
+
+
+def test_press_wire_issuer_name_matching_is_not_bullish_authority():
+    from email.utils import format_datetime
+    published=format_datetime(NOW-timedelta(minutes=45))
+    rss=(
+        '<?xml version="1.0"?><rss version="2.0"><channel><title>Newswire</title>'
+        '<item><title>Rocket Lab reports signed payload agreement</title>'
+        '<link>https://www.prnewswire.com/news-releases/rocket-lab-agreement.html</link>'
+        f'<pubDate>{published}</pubDate></item>'
+        '<item><title>RGC in a new risk grading system</title>'
+        '<link>https://www.prnewswire.com/news-releases/unrelated.html</link>'
+        f'<pubDate>{published}</pubDate></item>'
+        '<item><title>Regencell Bioscience highlights upcoming event</title>'
+        '<link>https://www.prnewswire.com/news-releases/regencell-event.html</link>'
+        f'<pubDate>{published}</pubDate></item>'
+        '</channel></rss>'
+    ).encode()
+    globe=b'<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>'
+    session=Session({
+        PRESS_WIRE_RSS["prnewswire"]:Response(content=rss),
+        PRESS_WIRE_RSS["globenewswire"]:Response(content=globe),
+    })
+    rows, errors=press_wire_attention(["RKLB","RGC","MU"],session=session,now=NOW)
+    assert errors=={}
+    assert set(r["symbol"] for r in rows)=={"RKLB","RGC"}
+    assert len(rows)==2  # Do not match bare RGC without issuer name.
+    assert all(r["authority"]=="PRESS_RELEASE_DISCOVERY_ONLY" for r in rows)
+    assert all(r["issuer_release_authenticated"] is False for r in rows)
+    assert all(r["positive_catalyst_verified"] is False for r in rows)
+    assert all(r["market_direction"]=="UNKNOWN" for r in rows)
+    assert len(session.calls)==2
+
+
+def test_press_wire_rejects_malicious_links_wrong_publisher_stale_items():
+    from email.utils import format_datetime
+    recent=format_datetime(NOW-timedelta(minutes=1))
+    stale=format_datetime(NOW-timedelta(days=9))
+    rss=(
+        '<rss version="2.0"><channel>'
+        '<item><title>Micron Technology announcement</title>'
+        '<link>https://evil.test/fake</link>'
+        f'<pubDate>{recent}</pubDate></item>'
+        '<item><title>Micron Technology older story</title>'
+        '<link>https://www.prnewswire.com/old.html</link>'
+        f'<pubDate>{stale}</pubDate></item>'
+        '<item><title>NYSE:MU Micron valid research item</title>'
+        '<link>https://www.prnewswire.com/valid.html</link>'
+        f'<pubDate>{recent}</pubDate></item>'
+        '</channel></rss>'
+    ).encode()
+    session=Session({
+        PRESS_WIRE_RSS["prnewswire"]:Response(content=rss),
+        PRESS_WIRE_RSS["globenewswire"]:requests.ConnectionError("blocked"),
+    })
+    rows, errors=press_wire_attention(["MU"],session=session,now=NOW)
+    assert len(rows)==1
+    assert rows[0]["symbol"]=="MU"
+    assert errors["globenewswire"]=="ConnectionError"
+
+
+def test_press_wire_works_independently_even_when_gdelt_is_rate_limited():
+    from email.utils import format_datetime
+    ts=format_datetime(NOW-timedelta(hours=1))
+    rss=(
+        '<rss version="2.0"><channel>'
+        '<item><title>Rocket Lab announces test launch</title>'
+        '<link>https://www.prnewswire.com/rocket-lab-test.html</link>'
+        f'<pubDate>{ts}</pubDate></item>'
+        '</channel></rss>'
+    ).encode()
+    session=Session({
+        GDELT_DOC:requests.HTTPError("429",response=SimpleNamespace(status_code=429)),
+        FED_MONETARY:Response(content=FED),
+        BLS_ICS:Response(content=ICS.encode()),
+        PRESS_WIRE_RSS["prnewswire"]:Response(content=rss),
+        PRESS_WIRE_RSS["globenewswire"]:Response(
+            content=b'<rss version="2.0"><channel></channel></rss>'),
+    })
+    result=build_context(symbols=["RKLB"],session=session,now=NOW)
+    assert result["source_errors"]["gdelt_attention"]=="HTTP_429"
+    assert len(result["press_wire_attention"])==1
+    assert result["press_wire_attention"][0]["positive_catalyst_verified"] is False
+    assert result["status"]=="DEGRADED"
