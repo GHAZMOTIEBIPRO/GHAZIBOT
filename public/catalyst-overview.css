@@ -1,0 +1,29 @@
+/* Always-visible index/news overview for mobile GHAZI RADAR */
+.ghazi-market-feature{margin:0 0 18px;padding:16px;border:1px solid var(--border);
+  background:var(--surface);border-radius:18px}
+.ghazi-market-heading{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:10px}
+.ghazi-market-heading h2{font-size:clamp(1.13rem,3.2vw,1.55rem);margin:2px 0 7px}
+.ghazi-market-heading p{color:var(--muted);font-size:.85rem;line-height:1.8;margin:0}
+.ghazi-market-pulse-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ghazi-market-pulse{background:var(--surface-2);border:1px solid var(--border);
+  border-radius:12px;padding:13px;min-width:0}
+.ghazi-market-pulse strong{font-size:1.23rem}
+.ghazi-market-pulse .ghazi-market-figure{font-size:1.3rem;font-weight:750;
+  margin:6px 0;direction:ltr;text-align:right}
+.ghazi-market-pulse dl{margin:9px 0 0;display:grid;gap:6px}
+.ghazi-market-pulse dl div{display:flex;justify-content:space-between;gap:9px}
+.ghazi-market-pulse dt{color:var(--muted);font-size:.77rem}
+.ghazi-market-pulse dd{margin:0;font-weight:600;font-size:.8rem}
+.ghazi-market-pulse p{font-size:.8rem;line-height:1.7;overflow-wrap:anywhere}
+.ghazi-market-pulse small{color:var(--muted);display:block;line-height:1.6}
+.ghazi-market-subtitle{font-size:.99rem;margin:18px 0 9px}
+.ghazi-catalyst-primary-list{display:grid;gap:8px}
+.ghazi-catalyst-primary{border:1px solid var(--border);padding:12px;border-radius:10px;
+  background:var(--surface-2)}
+.ghazi-catalyst-primary h4{margin:0 0 6px;font-size:.9rem}
+.ghazi-catalyst-primary p{margin:0;color:var(--muted);line-height:1.65;font-size:.8rem;overflow-wrap:anywhere}
+.ghazi-catalyst-primary a,.ghazi-market-pulse a{color:var(--accent-2)}
+@media(max-width:920px){.ghazi-market-pulse-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.ghazi-market-heading{flex-direction:column;align-items:stretch}
+  .ghazi-market-pulse-grid{grid-template-columns:1fr}
+  .ghazi-market-feature{padding:12px}}
