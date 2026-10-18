@@ -17,8 +17,8 @@ import pandas as pd
 
 from scripts.build_index_chart_snapshot import pack_bars
 from scripts.build_index_context import (
-    NY, clean_bars, completed_daily, last_finished_five_min,
-    last_finished_intraday, technical,
+    NY, clean_bars, completed_daily, hourly_from_quarters,
+    last_finished_five_min, last_finished_intraday, technical,
 )
 from scripts.stock_chart_retention import retain_valid_history
 
@@ -112,7 +112,8 @@ def pack_symbol(
     needs_5m = symbol in FIVE_MIN or symbol in dynamic_watch
     clean_5 = (last_finished_five_min(clean_bars(minute5_raw, intraday=True), now)
                if needs_5m else pd.DataFrame())
-    sessions = {"1d": clean_day, "15m": clean_15}
+    sessions = {"1d": clean_day, "15m": clean_15,
+                "1h": hourly_from_quarters(clean_15)}
     if needs_5m:
         sessions["5m"] = clean_5
     frame_out = {}
@@ -125,14 +126,18 @@ def pack_symbol(
         age = ((now - last.to_pydatetime().astimezone(timezone.utc)).total_seconds()/60
                if unit != "1d" else None)
         same = unit != "1d" and last.date() == now_ny.date()
+        complete_age = age - 60 if unit == "1h" and age is not None else age
         frame_out[unit] = {
             "bars": bars,
             "provider_bar_start_or_date": (int(last.timestamp()) if unit != "1d"
                                            else last.date().isoformat()),
-            "current_session_confirmed": bool(same and age is not None and
-                                              0 <= age <= (20 if unit == "5m" else 45)),
-            "technical": technical(frame, fast=9 if unit == "5m" else 20,
-                                   slow=21 if unit == "5m" else 50),
+            "current_session_confirmed": bool(
+                same and complete_age is not None and
+                0 <= complete_age <= (20 if unit == "5m" else 45)
+            ),
+            "technical": technical(frame, fast=9 if unit in ("5m", "1h") else 20,
+                                   slow=21 if unit in ("5m", "1h") else 50),
+            "derived_from": ("four_completed_15m_yahoo_bars" if unit == "1h" else None),
             "research_only": True,
         }
     if not frame_out:
@@ -207,11 +212,14 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
             "discovered_with_charts": sum(s in fresh for s in dynamic),
             "with_daily": sum("1d" in x["intervals"] for x in fresh.values()),
             "with_15m": sum("15m" in x["intervals"] for x in fresh.values()),
+            "with_1h": sum("1h" in x["intervals"] for x in fresh.values()),
             "with_5m": sum("5m" in x["intervals"] for x in fresh.values()),
             "with_daily_including_historical": sum(
                 "1d" in x["intervals"] for x in data.values()),
             "with_15m_including_historical": sum(
                 "15m" in x["intervals"] for x in data.values()),
+            "with_1h_including_historical": sum(
+                "1h" in x["intervals"] for x in data.values()),
             "with_5m_including_historical": sum(
                 "5m" in x["intervals"] for x in data.values()),
             "errors": errors,

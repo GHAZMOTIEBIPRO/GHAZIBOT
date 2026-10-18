@@ -110,7 +110,7 @@ def retain_valid_history(previous, current, *, now, actively_scanned, max_extra=
         existing = result.get(symbol)
         present = dict(existing.get("intervals") or {}) if isinstance(existing, dict) else {}
         additions = {}
-        for timeframe in ("1d", "15m", "5m"):
+        for timeframe in ("1d", "1h", "15m", "5m"):
             frame = intervals.get(timeframe)
             if timeframe not in present and _valid_bars(frame, timeframe, now):
                 preserved = dict(frame)
