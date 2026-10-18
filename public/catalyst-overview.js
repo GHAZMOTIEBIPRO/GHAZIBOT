@@ -196,7 +196,13 @@
       for(const story of included){
         const article=node("article","","ghazi-catalyst-primary");
         article.append(node("h4",story.symbol+" · بحث إخباري غير رسمي"));
+        const topicLabels={
+          RISK_OR_ADVERSE_EVENT_MENTION:"حدث قد يحمل مخاطر — لا تفترض ارتفاعًا",
+          FINANCIAL_REPORT_MENTION:"خبر نتائج مالية — المضمون يحتاج قراءة",
+          CORPORATE_EVENT_MENTION:"خبر حدث مؤسسي — اتجاه الأثر غير مثبت",
+        };
         article.append(node("p",String(story.headline||"بدون عنوان")+
+          " · التصنيف: "+(topicLabels[story.event_topic]||"خبر بحثي غير مؤكد")+
           " · تاريخ النشر في محرك التجميع: "+time(story.published_at)+
           " · يجب التأكد من المصدر الأصلي واسم الشركة"));
         const link=node("a","مراجعة نتيجة البحث الإخباري ↗");

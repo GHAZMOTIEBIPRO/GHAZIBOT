@@ -29,3 +29,18 @@ Safeguards:
 Reference URLs:
 https://news.google.com/rss/search?q=Rocket%20Lab%20stock&hl=en-US&gl=US&ceid=US:en
 https://github.com/underloam/xnews/blob/main/src/sources/google.urls.ts
+
+## Precision filter after first real ingestion
+
+The first successful 2026-10-18 GitHub runner collected 36 company-name
+matching Google News headlines, but a manual sample showed generic Yahoo
+quote portal pages and opinion-only “Buy/Sell/Hold” articles. These are not
+company catalysts. The feed now removes stock quote/forecast portals and
+headlines without a named company event; it caps research stories at four
+per issuer so RKLB cannot overwhelm the feed. A possible loss, delay, or
+financing risk is labeled for review instead of treated as positive news.
+
+This is a **keyword-based topic filter**, not issuer authentication, complete
+coverage, semantic event classification, accurate sentiment, or a calibrated
+win probability. It can miss headlines that use unfamiliar event wording;
+that tradeoff is intentional to prioritize relevance over volume.
