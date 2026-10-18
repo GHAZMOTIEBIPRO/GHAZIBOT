@@ -43,7 +43,7 @@ _CORPORATE_SUFFIX = re.compile(
 _NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 &'.,/()-]{4,105}$")
 _MAX_BYTES = 650_000
 _MIN_SOURCE_ROWS = 100
-_MAX_DISCOVERIES = 8
+_MAX_DISCOVERIES = 24
 
 
 def _utc(value: Any) -> datetime | None:
@@ -66,6 +66,15 @@ def clean_issuer_name(value: Any) -> str | None:
     if not isinstance(value, str) or _BAD_SECURITY.search(value):
         return None
     name = re.sub(r"\s+", " ", value).strip()
+    # Nasdaq often formats the instrument as "Issuer - Class A Common Stock".
+    # A security suffix cannot be used as the issuer's news-search name.
+    if " - " in name:
+        left, right = name.split(" - ", 1)
+        if re.search(
+            r"\b(?:Common Stock|Common Shares?|Ordinary Shares?|"
+            r"Class [A-Z]|American Depositary)\b", right, re.IGNORECASE,
+        ):
+            name = left
     name = _SECURITY_SUFFIX.sub("", name)
     name = _CORPORATE_SUFFIX.sub("", name).strip(" ,.-")
     if not _NAME.fullmatch(name) or len(name) < 6:
