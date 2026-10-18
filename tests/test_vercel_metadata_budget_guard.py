@@ -30,8 +30,9 @@ def test_mirror_does_not_replace_newer_file_with_an_older_runtime_snapshot():
 def test_missing_or_invalid_existing_metadata_repairs_one_static_fallback():
     assert should_mirror({},event(0),event(1),event(1)) is True
     assert should_mirror(event(0),{},event(1),event(1)) is True
-    assert should_mirror(event(0),event(0),
-                         {"generated_at":"2026-10-18T10:10:00"},event(120)) is not True
+    with pytest.raises(ValueError, match="timezone-aware"):
+        should_mirror(event(0),event(0),
+                      {"generated_at":"2026-10-18T10:10:00"},event(120))
 
 
 def test_bad_input_never_promoted():
