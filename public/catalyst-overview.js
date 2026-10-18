@@ -8,6 +8,10 @@
     "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/decision_brief.json",
     "./data/decision_brief.json",
   ];
+  const SEC_URLS=[
+    "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/sec_filing_pulse.json",
+    "./data/sec_filing_pulse.json",
+  ];
   const el = id => document.getElementById(id);
   const set=(id,value)=>{if(el(id))el(id).textContent=value;};
   const n=(v,d=2)=>typeof v==="number"&&Number.isFinite(v)
@@ -42,6 +46,16 @@
       throw Error("invalid report");
     return data;
   }
+  async function fetchSecOne(url){
+    const response=await fetch(url+"?v="+Date.now(),{cache:"no-store"});
+    if(!response.ok)throw Error("HTTP "+response.status);
+    const data=await response.json();
+    if(!data||data.schema!=="ghazi.sec_issuer_pulse.v1"||
+       !data.policy||data.policy.positive_news_inferred!==false||
+       !asDate(data.generated_at)||asDate(data.generated_at).getTime()>Date.now()+300000)
+      throw Error("untrusted SEC evidence");
+    return data;
+  }
   function fallbackWatch(report) {
     return (Array.isArray(report.stocks)?report.stocks:[])
       .filter(s=>["CALL","UP"].includes(s.direction_research))
@@ -52,7 +66,7 @@
         has_primary_publication:false,
       }));
   }
-  function render(report) {
+  function render(report,secPulse) {
     const stamp=asDate(report.source_generated_at);
     const delta=(Date.now()-stamp.getTime())/60000;
     const current=delta>=-5 && delta<=7*24*60;
@@ -62,8 +76,36 @@
       " · الأسعار إن ظهرت هي أسعار وقت الرصد وليست لحظية.");
     const focus=report.catalyst_focus?.schema==="ghazi.catalyst_focus.v1"
       ?report.catalyst_focus:null;
-    const events=Array.isArray(focus?.issuer_primary_events)?focus.issuer_primary_events:[];
-    const watch=Array.isArray(focus?.upside_watch)?focus.upside_watch:fallbackWatch(report);
+    const currentSec=secPulse && asDate(secPulse.generated_at) &&
+      Date.now()-asDate(secPulse.generated_at).getTime()<=7*24*60*60000;
+    const secFilings=currentSec&&Array.isArray(secPulse.filings)?secPulse.filings:[];
+    const filingsForDisplay=secFilings.filter(x=>
+      x.original_filing_confirmed===true&&safeOfficial(x.source_url)
+    ).map(x=>({
+      symbol:x.symbol,source_url:x.source_url,source:"SEC EDGAR",
+      form:x.form,event_type:x.event_type,
+      headline:x.issuer+" — "+x.form+" ("+x.event_type+")",
+      published_at:x.filing_date
+    }));
+    const events=[...filingsForDisplay,...(
+      Array.isArray(focus?.issuer_primary_events)?focus.issuer_primary_events:[]
+    )];
+
+    const baseWatch=Array.isArray(focus?.upside_watch)?focus.upside_watch:fallbackWatch(report);
+    // Joining filings with a ticker never proves a bullish catalyst.
+    // Offering/registration filings specifically warn of dilution risks.
+    const watch=baseWatch.map(row=>{
+      const filing=secFilings.find(x=>x.symbol===row.symbol &&
+        x.original_filing_confirmed===true &&
+        x.event_type!=="OFFERING_OR_DILUTION_REVIEW" && safeOfficial(x.source_url));
+      return filing?{...row,has_primary_publication:true,
+        source:"SEC EDGAR",source_url:filing.source_url,
+        headline:filing.form+" — event significance not confirmed",
+        research_label:row.rvol>=1.5?
+          "PRIMARY_EVENT_PLUS_RELATIVE_VOLUME_WATCH":
+          "PRIMARY_EVENT_BUT_VOLUME_UNCONFIRMED"}:row;
+    });
+
     const grid=el("catalyst-upside-grid");
     if(grid){
       grid.replaceChildren();
@@ -96,10 +138,22 @@
       }
       if(!watch.length)grid.append(node("p","لا يوجد حاليًا سهم يطابق شروط مراقبة الصعود في بيانات الرادار المنشورة."));
     }
+    if(!secPulse){
+      set("sec-filing-source-status","تعذر الوصول إلى تغذية SEC المستقلة؛ نعرض سجل الرادار البحثي فقط.");
+    }else{
+      const coverage=secPulse.coverage||{};
+      set("sec-filing-source-status",
+        "SEC EDGAR: "+String(secPulse.status||"غير محدد")+
+        " · شركات فُحصت "+n(coverage.issuers_inspected,0)+
+        " · إفصاحات أصلية "+n(coverage.filings_verified,0)+
+        " · آخر فحص "+time(secPulse.generated_at)+
+        " · لا يعني صدور 8-K وحده ارتفاع السعر.");
+    }
     const list=el("catalyst-official-list");
     if(list){
       list.replaceChildren();
-      const allowed=events.filter(e=>safeOfficial(e.source_url)).slice(0,12);
+      const seenLinks=new Set();
+      const allowed=events.filter(e=>{const url=safeOfficial(e.source_url);if(!url||seenLinks.has(url))return false;seenLinks.add(url);return true;}).slice(0,16);
       for(const e of allowed){
         const article=node("article","","ghazi-catalyst-primary");
         article.append(node("h4",String(e.symbol||"—")+" · "+String(e.form||e.source||"حدث رسمي")));
@@ -121,10 +175,16 @@
   }
   async function refresh(){
     const btn=el("catalyst-overview-refresh");if(btn)btn.disabled=true;
-    const results=await Promise.allSettled(URLS.map(fetchOne));
+    const [results,secResults]=await Promise.all([
+      Promise.allSettled(URLS.map(fetchOne)),
+      Promise.allSettled(SEC_URLS.map(fetchSecOne)),
+    ]);
+
     const data=results.filter(x=>x.status==="fulfilled").map(x=>x.value);
     data.sort((a,b)=>Date.parse(b.source_generated_at)-Date.parse(a.source_generated_at));
-    if(data.length)render(data[0]);
+    const secReports=secResults.filter(x=>x.status==="fulfilled").map(x=>x.value);
+    secReports.sort((a,b)=>Date.parse(b.generated_at)-Date.parse(a.generated_at));
+    if(data.length)render(data[0],secReports[0]||null);
     else set("catalyst-overview-status","تعذر جلب تقرير الأخبار من المصدر والنسخة الاحتياطية. لا توجد قائمة مؤكدة يمكن عرضها.");
     if(btn)btn.disabled=false;
   }
