@@ -92,13 +92,14 @@ def atr14(frame: pd.DataFrame) -> float | None:
     return safe(result)
 
 
-def technical(frame: pd.DataFrame) -> dict:
+def technical(frame: pd.DataFrame, *, fast: int = 20, slow: int = 50) -> dict:
     if frame is None or frame.empty:
-        return {"bias": "UNAVAILABLE", "rsi14": None, "ema20": None,
-                "ema50": None, "atr14": None}
+        return {"bias": "UNAVAILABLE", "rsi14": None, "ema_fast": None,
+                "ema_slow": None, "fast_period": fast, "slow_period": slow,
+                "atr14": None}
     prices = frame["Close"]
-    ema20 = safe(prices.ewm(span=20, adjust=False).mean().iloc[-1]) if len(prices) >= 20 else None
-    ema50 = safe(prices.ewm(span=50, adjust=False).mean().iloc[-1]) if len(prices) >= 50 else None
+    ema20 = safe(prices.ewm(span=fast, adjust=False).mean().iloc[-1]) if len(prices) >= fast else None
+    ema50 = safe(prices.ewm(span=slow, adjust=False).mean().iloc[-1]) if len(prices) >= slow else None
     close = safe(prices.iloc[-1])
     rsi = rsi14(prices)
     bias = "MIXED"
@@ -107,10 +108,10 @@ def technical(frame: pd.DataFrame) -> dict:
             bias = "UP"
         elif close < ema20 < ema50 and rsi <= 45:
             bias = "DOWN"
-    elif len(prices) < 50:
+    elif len(prices) < slow:
         bias = "INSUFFICIENT"
-    return {"bias": bias, "rsi14": rsi, "ema20": ema20, "ema50": ema50,
-            "atr14": atr14(frame)}
+    return {"bias": bias, "rsi14": rsi, "ema_fast": ema20, "ema_slow": ema50,
+            "fast_period": fast, "slow_period": slow, "atr14": atr14(frame)}
 
 
 def completed_daily(daily: pd.DataFrame, now: datetime) -> pd.DataFrame:
@@ -184,7 +185,7 @@ def analyze(symbol: str, daily_raw: pd.DataFrame | None,
     d = technical(daily)
     q15 = technical(intraday)
     hour = hourly_from_quarters(intraday)
-    q60 = technical(hour)
+    q60 = technical(hour, fast=9, slow=21)
     today_bars = intraday.loc[intraday.index.date == today]
     vwap = None
     if not today_bars.empty and today_bars["Volume"].sum() > 0:
@@ -241,7 +242,7 @@ def make_report(daily: dict[str, pd.DataFrame],
                      "intraday_current": sum(x["current_intraday_bar_confirmed"] for x in rows.values())},
         "data_role": "RESEARCH_ONLY_NOT_LICENSED_EXECUTION",
         "index_options_signal_authority": False,
-        "method": "Confirmed completed 15m bars; daily EMA20/50, RSI14, ATR14, previous completed session/week/month levels",
+        "method": "Confirmed completed 15m bars; daily 20/50 EMA, 15m 20/50 EMA, 1H 9/21 EMA, RSI14, ATR14; previous completed session/week/month levels",
         "symbols": rows,
         "disclaimer": (
             "Yahoo data is unofficial and may be delayed, incomplete or unavailable. "
