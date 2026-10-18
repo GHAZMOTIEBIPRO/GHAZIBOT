@@ -253,6 +253,47 @@ def press_wire_attention(
     return output[:40], errors
 
 
+_GENERIC_STOCK_PAGE = re.compile(
+    r"(?:stock price[, ]+news[, ]+quote|stock price (?:today|forecast)|"
+    r"quote\s*(?:&|and)\s*history|buy,\s*sell,?\s*or\s*hold|"
+    r"price predictions?|stock forecasts?|latest stock quote)",
+    re.IGNORECASE,
+)
+_NEWS_EVENT_TERMS = re.compile(
+    r"\b(?:announce[ds]?|announcing|contract(?:s)?|agreement(?:s)?|"
+    r"partnership|deal|award(?:s)?|launch(?:es|ed)?|delay(?:ed|s)?|"
+    r"mission|approval|approved|FDA|clinical trial|phase [123]|"
+    r"acquisition|merger|spectrum purchase|offering|dilution|"
+    r"filing|filed|reports?|results?|earnings|revenue|loss(?:es)?|"
+    r"guidance|funding|financing|debt|lawsuit|settlement|"
+    r"investigation|bankruptcy|share buyback|dividend|"
+    r"quarterly|annual loss|annual results)\b",
+    re.IGNORECASE,
+)
+_RISK_NEWS_TERMS = re.compile(
+    r"\b(?:loss(?:es)?|delay(?:ed|s)?|offering|dilution|"
+    r"bankruptcy|debt|lawsuit|investigation|"
+    r"negative guidance|share sale|shelf registration)\b",
+    re.IGNORECASE,
+)
+_FINANCIAL_NEWS_TERMS = re.compile(
+    r"\b(?:quarterly|annual results|annual loss|reports?|results?|"
+    r"earnings|revenue|guidance)\b",
+    re.IGNORECASE,
+)
+
+
+def classify_issuer_news_headline(title: str) -> str | None:
+    """Precision-first *topic*, never publisher verification or prediction."""
+    if _GENERIC_STOCK_PAGE.search(title) or not _NEWS_EVENT_TERMS.search(title):
+        return None
+    if _RISK_NEWS_TERMS.search(title):
+        return "RISK_OR_ADVERSE_EVENT_MENTION"
+    if _FINANCIAL_NEWS_TERMS.search(title):
+        return "FINANCIAL_REPORT_MENTION"
+    return "CORPORATE_EVENT_MENTION"
+
+
 def google_issuer_attention(
     symbols: list[str], *, session: Any = requests, now: datetime | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, str]]:
@@ -301,7 +342,11 @@ def google_issuer_attention(
                                      r"(?![A-Za-z0-9])", title, re.IGNORECASE)
                            for alias in aliases):
                     continue
+                topic = classify_issuer_news_headline(title)
+                if topic is None:
+                    continue  # Price portal, generic opinion, or no named event.
                 events.append({
+                    "event_topic": topic,
                     "symbol": symbol, "headline": title, "url": link,
                     "published_at": published.isoformat(),
                     "source": "google_news_rss",
@@ -324,7 +369,17 @@ def google_issuer_attention(
     unique: dict[tuple[str, str], dict[str, Any]] = {}
     for item in events:
         unique.setdefault((item["symbol"], item["url"]), item)
-    return sorted(unique.values(), key=lambda x: x["published_at"], reverse=True)[:36], errors
+    # Balance coverage across issuers; a high-profile stock cannot take
+    # every public slot by filling an entire RSS page with near duplicates.
+    balanced: list[dict[str, Any]] = []
+    per_symbol: dict[str, int] = {}
+    for item in sorted(unique.values(), key=lambda x: x["published_at"], reverse=True):
+        symbol = item["symbol"]
+        if per_symbol.get(symbol, 0) >= 4:
+            continue
+        balanced.append(item)
+        per_symbol[symbol] = per_symbol.get(symbol, 0) + 1
+    return balanced[:24], errors
 
 
 def fed_monetary_updates(
