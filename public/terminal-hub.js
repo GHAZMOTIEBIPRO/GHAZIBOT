@@ -373,7 +373,7 @@
       if(!INDEX_ORDER.includes(symbol)&&!state.stockCharts){
         await loadStockCharts();
         refreshSymbols();
-        if(state.stockCharts?.charts?.[symbol])return renderChart();
+        if(uniqueValidBars(state.stockCharts?.charts?.[symbol]?.bars).length>=2)return renderChart();
       }
       return;
     }
