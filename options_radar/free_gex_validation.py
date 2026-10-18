@@ -75,6 +75,7 @@ def fetch_archive(url: str, *, now: datetime | None = None) -> dict[str, Any]:
     if not rows:
         raise ValueError("archive empty")
     r = rows[-1]
+    date_text = str(r.get("date") or "")
     return {
         "available": (_source_date_ok(date_text, now=now)
                       and num(r.get("spot")) is not None
