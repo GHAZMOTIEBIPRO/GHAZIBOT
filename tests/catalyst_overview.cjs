@@ -34,6 +34,10 @@ assert.ok(script.includes("gdelt_doc_v2"));
 assert.ok(script.includes('x.authority==="ATTENTION_ONLY"'));
 assert.ok(script.includes("independent_confirmation===false"));
 assert.ok(script.includes("free_public_intelligence.json"));
+assert.ok(script.includes("yahoo_finance_rss"));
+assert.ok(script.includes("published_at_reported"));
+assert.ok(script.includes("independent_confirmation===false"));
+
 
 
 console.log("GHAZI Radar visible indices and official catalyst source filters: PASS");
