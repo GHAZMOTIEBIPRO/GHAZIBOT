@@ -37,6 +37,16 @@ def _successful_providers(audit: dict[str, Any]) -> list[str]:
         if not isinstance(item, dict) or not item.get("success"):
             continue
         provider = str(item.get("provider") or "").strip().lower()
+        # Aliases for the same underlying feed cannot form an independent
+        # quorum; Yahoo/YFinance/YahooQuery are one non-executable source.
+        provider = {
+            "yfinance": "yahoo",
+            "yahooquery": "yahoo",
+            "yahoo/yfinance": "yahoo",
+            "polygon_options": "polygon_massive",
+            "polygon": "polygon_massive",
+            "massive": "polygon_massive",
+        }.get(provider, provider)
         if provider and provider not in output:
             output.append(provider)
     return output

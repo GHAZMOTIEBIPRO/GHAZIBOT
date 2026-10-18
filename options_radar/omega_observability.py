@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .provider_readiness import assess_provider_readiness
+from .source_coverage import coverage_diagnostics
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -122,6 +123,8 @@ def build_data_status(payload: dict[str, Any]) -> dict[str, Any]:
         "option_provider": payload.get("options_provider"),
         "option_provider_readiness": provider_readiness,
         "source_status": {
+            # These legacy totals include non-price context; never treat them
+            # as independent equity market quote providers.
             "active_stock_sources": source_summary.get("active_stock_sources", 0),
             "active_option_sources": source_summary.get("active_option_sources", 0),
             "option_provider_readiness": (
@@ -139,6 +142,11 @@ def build_data_status(payload: dict[str, Any]) -> dict[str, Any]:
                 else None
             ),
         },
+        "coverage_diagnostics": coverage_diagnostics(
+            source_network,
+            provider_readiness,
+            payload.get("rejected") if isinstance(payload.get("rejected"), list) else [],
+        ),
         "row_counts": {
             "stocks": len(stocks),
             "options": len(options),
