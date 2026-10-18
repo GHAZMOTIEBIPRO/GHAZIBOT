@@ -359,6 +359,15 @@ jobs:
           for attempt in 1 2 3; do
             git fetch origin +refs/heads/main:refs/remotes/origin/main
             git reset --hard origin/main
+            budget_action="$(PYTHONPATH=. python scripts/vercel_metadata_budget_guard.py \
+              --old-health public/data/health.json \
+              --old-status public/data/data-status.json \
+              --new-health "$metadata_dir/health.json" \
+              --new-status "$metadata_dir/data-status.json")"
+            if [[ "$budget_action" == "SKIP" ]]; then
+              echo "Skip Vercel metadata-only main commit; bot-state stays fresh."
+              exit 0
+            fi
             cp "$metadata_dir/health.json" public/data/health.json
             cp "$metadata_dir/data-status.json" public/data/data-status.json
             git add public/data/health.json public/data/data-status.json
