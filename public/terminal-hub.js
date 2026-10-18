@@ -145,14 +145,25 @@
       const a=txt("a","آخر خبر بحثي: "+String(headline.headline||"").slice(0,90)+" ↗");
       a.href=safeResearch(headline.url);a.target="_blank";a.rel="noopener noreferrer";
       a.className="terminal-stock-news";card.append(a);
+    }else{
+      card.append(txt("small",state.news?.status==="DEGRADED"?
+        "لا يوجد عنوان مطابق مثبت لهذا السهم؛ بعض مصادر الأخبار متعثرة حاليًا.":
+        "لا يوجد عنوان خبر مطابق ومؤرخ في أحدث رصد؛ لا نفترض وجود محفز.","terminal-stock-news-missing"));
     }
     card.append(chartButton(symbol));return card;
   }
   function renderStocks(kind){
     const wrap=$(kind==="large"?"terminal-large-grid":"terminal-small-grid");
     if(!wrap)return;wrap.replaceChildren();
-    const list=kind==="large"?LARGE:VOLATILE;
     const scan=Array.isArray(state.brief?.stocks)?state.brief.stocks:[];
+    // Automatically surface newly scanned tickers, even before Yahoo returns
+    // candles. They are unclassified watch stocks, NOT verified microcaps.
+    const symbolOK=s=>typeof s==="string"&&
+      /^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$/.test(s);
+    const dynamic=[...scan.map(x=>x?.symbol),
+      ...Object.keys(state.watchCharts?.symbols||{})].filter(s=>
+      symbolOK(s)&&!LARGE.includes(s)&&!INDEX_ORDER.includes(s));
+    const list=kind==="large"?LARGE:[...new Set([...VOLATILE,...dynamic])].slice(0,25);
     const lookup=new Map(scan.map(x=>[x.symbol,x]));
     const news=Array.isArray(state.news?.google_news_attention)?state.news.google_news_attention:[];
     const sorted=[...list].sort((a,b)=>(lookup.get(b)?.score||0)-(lookup.get(a)?.score||0));
@@ -363,7 +374,11 @@
     const chartNames=Object.keys(state.charts?.symbols||{});
     const watched=Object.keys(state.watchCharts?.symbols||{});
     const fallback=Object.keys(state.stockCharts?.charts||{});
-    const known=[...new Set([...INDEX_ORDER,...LARGE,...VOLATILE,...watched,...fallback])];
+    const discoveries=(state.brief?.stocks||[]).map(x=>x?.symbol)
+      .filter(s=>typeof s==="string"&&
+        /^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$/.test(s)).slice(0,40);
+    const known=[...new Set([...INDEX_ORDER,...LARGE,...VOLATILE,
+      ...discoveries,...watched,...fallback])];
     select.replaceChildren();
     for(const symbol of known){
       const option=txt("option",symbol+" · "+(I_NAMES[symbol]||"سهم"));
