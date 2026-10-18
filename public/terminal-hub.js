@@ -231,10 +231,14 @@
       "لا تتوفر أخبار حديثة مؤهلة للعرض من المصدر البحثي.","terminal-empty"));
     const errors=[...(Object.entries(feed?.source_errors||{})).map(([k,v])=>k+": "+v),
       ...(Object.entries(sec?.coverage?.errors||{})).map(([k,v])=>"SEC "+k+": "+v)];
+    const retries=Object.entries(feed?.source_cooldowns||{})
+      .filter(([,meta])=>typeof meta?.retry_after==="string")
+      .map(([key,meta])=>key+" بعد "+stamp(meta.retry_after)).slice(0,3);
     put("terminal-news-status",
       "SEC: "+String(sec?.status||"غير متاح")+" · أخبار بحثية: "+stories.length+
       " · أحدث تقرير أخبار: "+stamp(feed?.generated_at)+
       (errors.length?" · أعطال موثقة: "+errors.slice(0,3).join("، "):"")+
+      (retries.length?" · إعادة المحاولة التلقائية: "+retries.join("، "):"")+
       " · العنوان الإخباري لا يثبت قوة أثر الخبر.");
   }
   function uniqueValidBars(rows){
