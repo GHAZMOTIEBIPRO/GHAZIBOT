@@ -4812,7 +4812,7 @@
       "research_features": {
         "version": "OPEN_SOURCE_ATTRIBUTION_V1",
         "asof_signal_time": "2026-08-13T14:05:45.367917+00:00",
-        "completed_daily_bars": 455,
+        "completed_daily_bars": 0,
         "decision_authority": false,
         "live_alert_weights_changed": false,
         "sec": {
@@ -4864,41 +4864,17 @@
           "decision_authority": false
         },
         "chart": {
-          "available": true,
-          "direction_alignment": false,
-          "breakout_alignment": false,
-          "bullish_stack": false,
-          "bearish_stack": true,
-          "completed_bar_date": "2026-08-12",
-          "close": 2.42,
-          "ema9": 2.792363,
-          "ema21": 3.112532,
-          "ema50": 3.56794,
-          "prior_high_20": 5.36,
-          "prior_low_20": 2.4
+          "available": false,
+          "direction_alignment": null,
+          "reason": "insufficient_completed_daily_bars"
         },
         "smc": {
-          "available": true,
-          "direction_alignment": false,
-          "fvg_side": "bearish",
-          "last_confirmed_fvg": {
-            "index": 452,
-            "FVG": -1.0,
-            "Top": 2.6500000953674316,
-            "Bottom": 2.640000104904175,
-            "MitigatedIndex": 454.0
-          },
-          "last_confirmed_swing": {
-            "index": 418,
-            "HighLow": 1.0,
-            "Level": 5.900000095367432
-          },
-          "swing_confirmation_lag_bars": 20,
-          "fvg_confirmation_lag_bars": 1,
-          "live_decision_authority": false
+          "available": false,
+          "direction_alignment": null,
+          "reason": "ValueError: OHLC history is empty"
         },
         "aligned_evidence_count": 0,
-        "available_evidence_count": 2
+        "available_evidence_count": 0
       }
     },
     "16aa52b7665d6b4af29d": {
@@ -45586,8 +45562,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 6,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 7,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -47657,8 +47633,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 6,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 7,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -68357,7 +68333,9 @@
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
       },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:INLF failed across all providers: yahoo: empty response"
+      "audit_last_attempt_error": "DataUnavailableError: stock_bars:INLF failed across all providers: yahoo: empty response",
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "0642356c03e6eb138c61": {
       "signal_id": "0642356c03e6eb138c61",
@@ -73387,7 +73365,9 @@
         "aligned_evidence_count": 2,
         "available_evidence_count": 2
       },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:BFRI failed across all providers: yahoo: empty response"
+      "audit_last_attempt_error": "DataUnavailableError: stock_bars:BFRI failed across all providers: yahoo: empty response",
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "3715a2320f89ca7ea16a": {
       "signal_id": "3715a2320f89ca7ea16a",
@@ -73743,7 +73723,9 @@
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
       },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:SKYQ failed across all providers: yahoo: empty response"
+      "audit_last_attempt_error": "DataUnavailableError: stock_bars:SKYQ failed across all providers: yahoo: empty response",
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "62d4ce939503774eaf95": {
       "signal_id": "62d4ce939503774eaf95",
@@ -75155,7 +75137,7 @@
         "low": 2.8416,
         "close": 2.86
       },
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T15:11:27.277206+00:00",
@@ -75202,7 +75184,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -75514,7 +75496,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T15:11:27.277206+00:00",
@@ -75561,7 +75543,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -75604,7 +75586,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T15:11:27.277206+00:00",
@@ -75651,7 +75633,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -76438,8 +76420,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 7,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 8,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -76793,8 +76775,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 7,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 8,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -76934,7 +76916,7 @@
         "low": 3.8619,
         "close": 3.935
       },
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T17:07:59.229460+00:00",
@@ -76981,7 +76963,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -77289,7 +77271,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T18:02:05.783258+00:00",
@@ -77336,7 +77318,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -77425,9 +77407,9 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
-      "audit_last_attempt_result": "fetch_and_evaluate_success",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
+      "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
       "signal_session_date": "2026-08-21",
@@ -77521,7 +77503,8 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      }
+      },
+      "audit_last_attempt_error": "DataUnavailableError: stock_bars:KPTI failed across all providers: yahoo: empty response"
     },
     "a18b92b8a602deb12902": {
       "signal_id": "a18b92b8a602deb12902",
@@ -77725,7 +77708,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T19:54:01.264330+00:00",
@@ -77772,7 +77755,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -77906,7 +77889,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T20:52:44.224751+00:00",
@@ -77953,7 +77936,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -78087,7 +78070,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-21T20:52:44.224751+00:00",
@@ -78134,7 +78117,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -78453,7 +78436,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-24T09:14:41.965511+00:00",
@@ -78500,7 +78483,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -82633,7 +82616,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-24T17:13:53.327012+00:00",
@@ -82680,7 +82663,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -84529,7 +84512,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-25T09:09:32.956012+00:00",
@@ -84576,7 +84559,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -84665,8 +84648,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 6,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 7,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -90065,7 +90048,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-25T20:54:32.408672+00:00",
@@ -90112,7 +90095,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -90366,8 +90349,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 2,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 3,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -90733,9 +90716,9 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
-      "audit_last_attempt_result": "fetch_and_evaluate_success",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
+      "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-25",
@@ -90829,7 +90812,8 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      }
+      },
+      "audit_last_attempt_error": "DataUnavailableError: stock_bars:ELPW failed across all providers: yahoo: empty response"
     },
     "82c5f9853b90d0d0941e": {
       "signal_id": "82c5f9853b90d0d0941e",
@@ -91079,9 +91063,9 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
-      "audit_last_attempt_result": "fetch_and_evaluate_success",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
+      "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-26",
@@ -91175,7 +91159,8 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      }
+      },
+      "audit_last_attempt_error": "DataUnavailableError: stock_bars:ELPW failed across all providers: yahoo: empty response"
     },
     "a7a900eefd00a15ded0b": {
       "signal_id": "a7a900eefd00a15ded0b",
@@ -91558,7 +91543,7 @@
         "low": 5.38,
         "close": 5.53
       },
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-26T11:01:24.416216+00:00",
@@ -91605,7 +91590,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -95115,7 +95100,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-28T20:26:20.548811+00:00",
@@ -95162,7 +95147,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -97529,7 +97514,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-02T13:00:02.066450+00:00",
@@ -97576,7 +97561,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -97619,7 +97604,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-02T13:00:02.066450+00:00",
@@ -97666,7 +97651,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -98748,7 +98733,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-03T13:03:02.554751+00:00",
@@ -98795,7 +98780,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -98843,7 +98828,7 @@
         "low": 4.615,
         "close": 4.64
       },
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-03T13:03:02.554751+00:00",
@@ -98890,7 +98875,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -100540,7 +100525,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T12:56:56.300244+00:00",
@@ -100587,7 +100572,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -100721,7 +100706,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T16:53:06.328664+00:00",
@@ -100768,7 +100753,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -101112,8 +101097,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 7,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 8,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -101248,7 +101233,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T21:40:01.147466+00:00",
@@ -101295,7 +101280,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -101338,7 +101323,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T21:40:01.147466+00:00",
@@ -101385,7 +101370,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -102091,7 +102076,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-21T22:30:39.523466+00:00",
@@ -102138,7 +102123,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -102186,7 +102171,7 @@
         "low": 4.5117,
         "close": 4.5901
       },
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-21T22:30:39.523466+00:00",
@@ -102233,7 +102218,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -102367,7 +102352,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-21T22:30:39.523466+00:00",
@@ -102414,7 +102399,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -103508,8 +103493,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 7,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 8,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -103644,7 +103629,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-22T23:31:13.108200+00:00",
@@ -103691,7 +103676,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -103899,7 +103884,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-22T23:31:13.108200+00:00",
@@ -103946,7 +103931,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -106300,7 +106285,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-23T21:00:48.585909+00:00",
@@ -106347,7 +106332,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -106527,8 +106512,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 6,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_attempt_count": 7,
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -107837,7 +107822,7 @@
         "low": 11.27,
         "close": 11.2812
       },
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-25T13:44:31.928807+00:00",
@@ -107884,7 +107869,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -108204,7 +108189,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-25T21:24:15.404230+00:00",
@@ -108251,7 +108236,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -108294,7 +108279,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-25T21:24:15.404230+00:00",
@@ -108341,7 +108326,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -110809,7 +110794,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T14:53:26.766876+00:00",
@@ -110856,7 +110841,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -110899,7 +110884,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T14:53:26.766876+00:00",
@@ -110946,7 +110931,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -110989,7 +110974,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T14:53:26.766876+00:00",
@@ -111036,7 +111021,7 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -111256,7 +111241,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-18T10:39:52.661121+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T22:23:03.266473+00:00",
@@ -111303,14 +111288,14 @@
         "one_day_max_lag_minutes": 15
       },
       "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-17T00:22:45.963531+00:00",
+      "audit_last_attempt_at": "2026-10-18T10:39:52.661121+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-10-02"
     }
   },
-  "updated_at": "2026-10-17T00:22:45.963531+00:00",
+  "updated_at": "2026-10-18T10:39:52.661121+00:00",
   "mode": "HISTORICAL_5M_OUTCOME_AUDIT",
   "decision_authority": false,
   "live_alert_weights_changed": false,
@@ -111363,16 +111348,15 @@
       "2026-10-02"
     ]
   },
-  "attempted_symbols_this_pass": 39,
+  "attempted_symbols_this_pass": 36,
   "errors": {
     "JDZG": "DataUnavailableError: stock_bars:JDZG failed across all providers: yahoo: empty response",
     "NCI": "DataUnavailableError: stock_bars:NCI failed across all providers: yahoo: empty response",
     "KSCP": "DataUnavailableError: stock_bars:KSCP failed across all providers: yahoo: empty response",
+    "ELPW": "DataUnavailableError: stock_bars:ELPW failed across all providers: yahoo: empty response",
     "ADCT": "DataUnavailableError: stock_bars:ADCT failed across all providers: yahoo: empty response",
     "STAK": "DataUnavailableError: stock_bars:STAK failed across all providers: yahoo: empty response",
-    "SKYQ": "DataUnavailableError: stock_bars:SKYQ failed across all providers: yahoo: empty response",
-    "BFRI": "DataUnavailableError: stock_bars:BFRI failed across all providers: yahoo: empty response",
-    "INLF": "DataUnavailableError: stock_bars:INLF failed across all providers: yahoo: empty response",
+    "KPTI": "DataUnavailableError: stock_bars:KPTI failed across all providers: yahoo: empty response",
     "BANL": "DataUnavailableError: stock_bars:BANL failed across all providers: yahoo: empty response"
   },
   "promotion_gate": {
@@ -111400,7 +111384,7 @@
       "yahoo"
     ]
   },
-  "updated_records_this_pass": 38,
+  "updated_records_this_pass": 35,
   "durable_stock_state": {
     "attempted": true,
     "branch_available": true,
@@ -111440,17 +111424,14 @@
       "KSCP",
       "NA",
       "ELPW",
-      "ADCT",
       "FATE",
+      "ADCT",
       "BTCS",
       "STAK",
       "FEMY",
       "DFDV",
       "TAOX",
       "BRLS",
-      "SKYQ",
-      "BFRI",
-      "INLF",
       "ATOM",
       "PAR",
       "PAYS",
@@ -111465,7 +111446,7 @@
       "BANL",
       "RZLT"
     ],
-    "selected_symbol_count": 39,
+    "selected_symbol_count": 36,
     "never_attempted_records_remaining": 0,
     "terminal_events_do_not_require_1d_to_leave_queue": true
   },
@@ -111566,16 +111547,16 @@
           "mean_60m_return_pct": -0.763
         },
         "absent": {
-          "n": 279,
-          "success_rate": 0.4301,
-          "positive_60m_rate": 0.4875,
-          "mean_60m_return_pct": 1.4983
+          "n": 278,
+          "success_rate": 0.4317,
+          "positive_60m_rate": 0.4892,
+          "mean_60m_return_pct": 1.6205
         },
         "minimum_sample_each_side": 10,
-        "unknown_or_unavailable": 15,
+        "unknown_or_unavailable": 16,
         "sample_ready": true,
-        "success_rate_lift_pp": -5.27,
-        "mean_60m_return_lift_pct": -2.2613
+        "success_rate_lift_pp": -5.43,
+        "mean_60m_return_lift_pct": -2.3835
       },
       "smc_fvg_alignment": {
         "present": {
@@ -111585,16 +111566,16 @@
           "mean_60m_return_pct": 2.233
         },
         "absent": {
-          "n": 166,
-          "success_rate": 0.4096,
-          "positive_60m_rate": 0.4398,
-          "mean_60m_return_pct": -0.0152
+          "n": 165,
+          "success_rate": 0.4121,
+          "positive_60m_rate": 0.4424,
+          "mean_60m_return_pct": 0.1816
         },
         "minimum_sample_each_side": 10,
-        "unknown_or_unavailable": 14,
+        "unknown_or_unavailable": 15,
         "sample_ready": true,
-        "success_rate_lift_pp": 2.15,
-        "mean_60m_return_lift_pct": 2.2482
+        "success_rate_lift_pp": 1.9,
+        "mean_60m_return_lift_pct": 2.0514
       },
       "two_of_three_alignment": {
         "present": {
