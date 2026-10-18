@@ -1,0 +1,34 @@
+/* GHAZI RADAR decision room: attention to provenance and no-trade. */
+.ghazi-decision-banner { display:flex; gap:18px; justify-content:space-between; align-items:center;
+  border:1px solid rgba(89,167,255,.32); background:var(--surface);padding:20px;
+  border-radius:18px;margin:0 0 18px; }
+.ghazi-decision-banner strong { color:var(--accent-2);font-size:.86rem; }
+.ghazi-decision-banner h2 {margin:8px 0;font-size:clamp(1.7rem,4vw,2.4rem)}
+.ghazi-decision-banner p {margin:0 0 6px;line-height:1.7}
+.ghazi-decision-banner small {color:var(--muted);line-height:1.7;display:block}
+.ghazi-decision-refresh {background:var(--surface-2);color:var(--text);border:1px solid var(--border);
+  padding:12px 16px;border-radius:11px;flex:0 0 auto;cursor:pointer}
+.ghazi-decision-refresh:disabled {opacity:.5}
+.ghazi-decision-section{margin:0 0 22px;border:1px solid var(--border);padding:15px;border-radius:16px;
+  background:var(--surface)}
+.ghazi-decision-section h3 {margin:0 0 12px;font-size:1rem}
+.ghazi-decision-section>p {color:var(--muted);line-height:1.8;font-size:.85rem}
+.ghazi-decision-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ghazi-decision-stock,.ghazi-decision-catalyst{border:1px solid var(--border);padding:13px;
+  background:rgba(255,255,255,.025);border-radius:11px;min-width:0}
+.ghazi-decision-card-top{display:flex;gap:7px;justify-content:space-between}
+.ghazi-decision-card-top strong{font-size:1.2rem}
+.ghazi-decision-card-top small{color:var(--muted)}
+.ghazi-decision-stock p,.ghazi-decision-catalyst p {line-height:1.8;font-size:.82rem;overflow-wrap:anywhere}
+.ghazi-decision-stock a,.ghazi-decision-catalyst a{color:var(--accent-2);font-size:.82rem}
+.ghazi-decision-note,.ghazi-decision-updated {color:var(--muted);font-size:.8rem;line-height:1.7}
+.ghazi-decision-results {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.ghazi-decision-results article {padding:13px;border:1px solid var(--border);border-radius:11px}
+.ghazi-decision-results span {display:block;color:var(--muted);font-size:.77rem}
+.ghazi-decision-results strong{display:block;font-size:1.25rem;margin:7px 0 0}
+.ghazi-decision-warning {border-right:3px solid var(--warning);padding:12px;
+  background:rgba(255,202,105,.07)}
+@media(max-width:870px) { .ghazi-decision-results{grid-template-columns:repeat(3,minmax(0,1fr));} }
+@media(max-width:650px) {.ghazi-decision-banner{flex-direction:column;align-items:stretch}
+  .ghazi-decision-list{grid-template-columns:1fr}
+  .ghazi-decision-results{grid-template-columns:repeat(2,minmax(0,1fr));}}

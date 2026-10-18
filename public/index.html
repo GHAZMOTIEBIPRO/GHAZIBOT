@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261018-1">
   <link rel="stylesheet" href="./contract-risk-lab.css?v=20261018-1">
   <link rel="stylesheet" href="./index-radar.css?v=20261018-1">
+  <link rel="stylesheet" href="./decision-room.css?v=20261018-1">
 </head>
 <body>
   <div class="page-shell">
@@ -91,6 +92,16 @@
       </article>
     </section>
 
+    <section class="ghazi-decision-banner" aria-label="قرار السوق البحثي" >
+      <div>
+        <strong>غرفة القرار · SPX / NDX / VIX</strong>
+        <h2 id="decision-main-state" aria-live="polite">WAIT</h2>
+        <p id="decision-main-reason">لا توجد بيانات كافية لإصدار قراءة موثوقة حتى الآن.</p>
+        <small id="decision-data-basis">نفحص اتجاه الساعة و15 دقيقة وحداثة بيانات المصدر.</small>
+      </div>
+      <button id="decision-room-refresh" type="button" class="ghazi-decision-refresh">فحص البيانات</button>
+    </section>
+
     <section class="summary-grid" aria-label="ملخص الرادار">
       <article class="metric-card"><span>حالة السوق</span><strong id="market-regime">—</strong></article>
       <article class="metric-card"><span>وضع النموذج</span><strong id="mode-label">—</strong></article>
@@ -121,6 +132,7 @@
 
     <nav class="tabs" aria-label="أقسام الرادار">
       <button class="tab-button active" data-tab="omega">Ω Command Center</button>
+      <button class="tab-button" data-tab="decision">غرفة القرار والنتائج</button>
       <button class="tab-button" data-tab="stocks">رادار الأسهم</button>
       <button class="tab-button" data-tab="chart">الشارت</button>
       <button class="tab-button" data-tab="options">رادار العقود</button>
@@ -137,6 +149,37 @@
     </nav>
 
     <main>
+      <section id="tab-decision" class="tab-panel" aria-labelledby="decision-panel-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="decision-panel-heading">غرفة القرار وسجل المصداقية</h2>
+            <p>مراقبة الاتجاه لا تساوي توصية CALL أو PUT. المرشحون أدناه من ماسح الأسهم القائم ومصادره، والسجل يوثق أول ظهور فقط.</p>
+          </div>
+        </div>
+        <p class="ghazi-decision-updated" id="decision-room-update" role="status">فحص تقارير المؤشرات والأسهم والنتائج…</p>
+        <div class="ghazi-decision-section">
+          <h3>أفضل مرشحي الأسهم — بحث فقط</h3>
+          <div id="decision-stock-list" class="ghazi-decision-list"><p>بانتظار تقرير الرادار.</p></div>
+        </div>
+        <div class="ghazi-decision-section">
+          <h3>المحفزات والأخبار الرسمية</h3>
+          <p>لا نعتمد على اسم SEC أو مصدر صحفي وحده لإثبات أثر الخبر؛ يُعرض تصنيف المصدر كما نشره المحرك الأصلي.</p>
+          <div id="decision-catalysts" class="ghazi-decision-list"><p>بانتظار تقارير المحفزات.</p></div>
+        </div>
+        <div class="ghazi-decision-section">
+          <h3>سجل الإشارات والنتائج البحثية</h3>
+          <div class="ghazi-decision-results">
+            <article><span>فرص رُصدت للمرة الأولى (سجل محتفظ به)</span><strong id="decision-first-sightings">—</strong></article>
+            <article><span>العينة المؤهلة للتدقيق التاريخي</span><strong id="decision-outcome-sample">—</strong></article>
+            <article><span>نتائج معها شموع تغطي 60 دقيقة</span><strong id="decision-outcome-covered">—</strong></article>
+            <article><span>حالات نتيجة غامضة</span><strong id="decision-outcome-ambiguity">—</strong></article>
+            <article><span>نسبة نجاح مثبتة بعد التكاليف</span><strong id="decision-outcome-win-rate">غير مثبت</strong></article>
+          </div>
+          <p id="decision-outcome-status" class="ghazi-decision-updated">بانتظار تقرير مدقق النتائج.</p>
+          <p id="decision-results-warning" class="ghazi-decision-warning">لا توجد نسبة نجاح مثبتة حتى الآن.</p>
+        </div>
+      </section>
+
       <section id="tab-indices" class="tab-panel" aria-labelledby="ghazi-indices-heading">
         <div class="section-heading">
           <div>
@@ -436,6 +479,7 @@
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-market-overview.js"></script>
   <script src="./contract-risk-lab.js?v=20261018-1" defer></script>
   <script src="./index-radar.js?v=20261018-1" defer></script>
+  <script src="./decision-room.js?v=20261018-1" defer></script>
   <script src="./ghazi-radar-quality.js?v=20261018-1" defer></script>
   <script src="./bls-macro.js?v=20261018-1" defer></script>
   <script src="./app.js?v=20261018-ghazi-radar" defer></script>
