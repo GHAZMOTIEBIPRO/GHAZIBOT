@@ -147,7 +147,9 @@
         " · شركات فُحصت "+n(coverage.issuers_inspected,0)+
         " · إفصاحات أصلية "+n(coverage.filings_verified,0)+
         " · آخر فحص "+time(secPulse.generated_at)+
-        " · لا يعني صدور 8-K وحده ارتفاع السعر.");
+        " · لا يعني صدور 8-K وحده ارتفاع السعر."+
+        (String(secPulse.ticker_mapping_source||"").startsWith("UNVERIFIED")?
+          " · خريطة CIK احتياطية قديمة؛ لا ينشر مستند إلا إذا أكد SEC الرمز والجهة." : ""));
     }
     const list=el("catalyst-official-list");
     if(list){
