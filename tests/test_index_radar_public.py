@@ -43,7 +43,7 @@ def intraday_bars() -> pd.DataFrame:
 def test_intraday_does_not_use_unfinished_candle() -> None:
     now = datetime(2026, 10, 16, 15, 46, tzinfo=NY)
     done = last_finished_intraday(clean_bars(intraday_bars(), intraday=True), now)
-    assert done.index[-1].strftime("%H:%M") == "15:15"
+    assert done.index[-1].strftime("%H:%M") == "15:30"
     assert done.index[-1] + pd.Timedelta(minutes=15) <= now
 
 
