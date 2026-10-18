@@ -22,4 +22,11 @@ assert.ok(html.indexOf('id="indices-overview"')<html.indexOf('<nav class="tabs"'
 assert.ok(html.indexOf('id="catalyst-overview"')<html.indexOf('<nav class="tabs"'));
 assert.ok(html.includes("catalyst-overview.js"));
 assert.ok(html.includes("index-radar.js"));
+assert.ok(html.includes('id="sec-filing-source-status"'));
+const script=fs.readFileSync("public/catalyst-overview.js","utf8");
+assert.ok(script.includes("ghazi.sec_issuer_pulse.v1"));
+assert.ok(script.includes("OFFERING_OR_DILUTION_REVIEW"));
+assert.ok(script.includes("sec_filing_pulse.json"));
+assert.ok(script.includes("positive_news_inferred"));
+
 console.log("GHAZI Radar visible indices and official catalyst source filters: PASS");
