@@ -20,6 +20,11 @@ from zoneinfo import ZoneInfo
 import feedparser
 import requests
 
+from options_radar.github_listing_discovery import (
+    resolve_public_issuers,
+    symbols_from_brief,
+)
+
 GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 BLS_ICS = "https://www.bls.gov/schedule/news_release/bls.ics"
 FED_MONETARY = "https://www.federalreserve.gov/feeds/press_monetary.xml"
@@ -307,6 +312,7 @@ def classify_issuer_news_headline(title: str) -> str | None:
 
 def google_issuer_attention(
     symbols: list[str], *, session: Any = requests, now: datetime | None = None,
+    dynamic_names: dict[str, str] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, str]]:
     """Six bounded issuer-name RSS searches; source is NOT an official API.
 
@@ -318,11 +324,26 @@ def google_issuer_attention(
                   "RGTI", "SOFI", "MU", "NVDA", "AMD", "AAPL",
                   "TSLA", "PLTR", "MSFT", "AVGO")
     requested = {str(s).upper().strip() for s in symbols}
-    eligible = [s for s in preference if s in requested and s in ISSUER_NAMES]
-    # Cover all followed issuers in rotating bounded batches; do not turn
-    # six per cycle into unbounded Google requests. Small test/watch subsets
-    # fit in one batch without altering their selection semantics.
-    if len(eligible) > GOOGLE_NEWS_MAX_ISSUERS:
+    directory = {s: (name,) for s, name in (dynamic_names or {}).items()
+                 if s not in ISSUER_NAMES and _SYMBOL_RE.fullmatch(s)
+                 and isinstance(name, str) and len(name) >= 6}
+    names = {**ISSUER_NAMES, **directory}
+    # Same maximum six RSS calls; unlisted dynamic candidates never get
+    # searched by ambiguous bare ticker.
+    eligible = [s for s in preference if s in requested and s in names]
+    dynamic = sorted(s for s in directory if s in requested)
+    # Reserve up to two slots per hourly rotation for new discoveries, while
+    # preserving the six-request hard cap and coverage of curated names.
+    if dynamic:
+        hour = int(current.timestamp() // 3600)
+        curated_slots = 4
+        curated_batches = max(1, (len(eligible) + curated_slots - 1)//curated_slots)
+        extra_batches = max(1, (len(dynamic) + 1)//2)
+        start_curated = (hour % curated_batches)*curated_slots
+        start_dynamic = (hour % extra_batches)*2
+        selected = eligible[start_curated:start_curated+curated_slots]
+        selected += dynamic[start_dynamic:start_dynamic+2]
+    elif len(eligible) > GOOGLE_NEWS_MAX_ISSUERS:
         shift = int(current.timestamp() // 3600) % (
             (len(eligible)+GOOGLE_NEWS_MAX_ISSUERS-1)//GOOGLE_NEWS_MAX_ISSUERS
         )
@@ -333,7 +354,7 @@ def google_issuer_attention(
     events: list[dict[str, Any]] = []
     errors: dict[str, str] = {}
     for symbol in selected:
-        name = ISSUER_NAMES[symbol][0]
+        name = names[symbol][0]
         # Do not rely on fuzzy ticker matching: retrieve by issuer's precise
         # name, then verify the title. No article body or scraping.
         query = f'"{name}" stock when:7d'
@@ -360,7 +381,7 @@ def google_issuer_attention(
                 # The title must match the precise company, never a bare
                 # ticker like AI/MU/RGC. Require first full name or a curated
                 # unambiguous alternate issuer name.
-                aliases = ISSUER_NAMES[symbol]
+                aliases = names[symbol]
                 if not any(re.search(r"(?<![A-Za-z0-9])" + re.escape(alias) +
                                      r"(?![A-Za-z0-9])", title, re.IGNORECASE)
                            for alias in aliases):
@@ -376,6 +397,8 @@ def google_issuer_attention(
                     "source_family": "unofficial_google_news_search_rss",
                     "authority": "NEWS_SEARCH_ATTENTION_ONLY",
                     "issuer_name_in_headline": True,
+                    "issuer_name_source": ("github_public_listing_mirrors" if symbol in directory
+                                           else "curated_static_issuer_names"),
                     "issuer_release_authenticated": False,
                     "official_sec_filing": False,
                     "positive_catalyst_verified": False,
@@ -586,7 +609,8 @@ def update_source_cooldowns(existing: dict, errors: dict, *, now: datetime) -> d
 
 
 def build_context(*, symbols: list[str], now: datetime | None = None,
-                  session: Any = requests, prior_cooldowns: dict | None = None) -> dict[str, Any]:
+                  session: Any = requests, prior_cooldowns: dict | None = None,
+                  dynamic_names: dict[str, str] | None = None) -> dict[str, Any]:
     current = now or datetime.now(UTC)
     cooldowns = prior_cooldowns or {}
     pieces: dict[str, Any] = {}
@@ -627,7 +651,7 @@ def build_context(*, symbols: list[str], now: datetime | None = None,
         errors["google_news_attention"] = "COOLDOWN_ACTIVE"
     else:
         google_items, google_errors = google_issuer_attention(
-            symbols, session=session, now=current,
+            symbols, session=session, now=current, dynamic_names=dynamic_names,
         )
     pieces["google_news_attention"] = google_items
     errors.update({"google_news_" + key: value for key, value in google_errors.items()})
@@ -654,13 +678,21 @@ def build_context(*, symbols: list[str], now: datetime | None = None,
     }
 
 
-def retain_verified_news_context(current: dict, previous: dict, *, now: datetime) -> dict:
+def retain_verified_news_context(
+    current: dict, previous: dict, *, now: datetime,
+    dynamic_names: dict[str, str] | None = None,
+) -> dict:
     """Preserve historical *published* RSS headlines across rotated batches.
 
     Retention is not a provider refresh: original publication time stays
     unchanged, and previous collection timestamp is retained separately.
     Filter stale or unverified/unmatched stories to fail closed.
     """
+    names = {**ISSUER_NAMES, **{
+        s: (name,) for s, name in (dynamic_names or {}).items()
+        if s not in ISSUER_NAMES and _SYMBOL_RE.fullmatch(s)
+        and isinstance(name, str) and len(name) >= 6
+    }}
     valid = []
     current_urls = {(x.get("symbol"),x.get("url")) for x in
                     current.get("google_news_attention",[]) if isinstance(x,dict)}
@@ -674,14 +706,14 @@ def retain_verified_news_context(current: dict, previous: dict, *, now: datetime
         symbol = str(item.get("symbol") or "")
         url = _https(item.get("url"), ("news.google.com",))
         headline = str(item.get("headline") or "")
-        if (symbol not in ISSUER_NAMES or not url or
+        if (symbol not in names or not url or
                 item.get("authority") != "NEWS_SEARCH_ATTENTION_ONLY" or
                 item.get("positive_catalyst_verified") is not False or
                 item.get("issuer_release_authenticated") is not False or
                 item.get("market_direction") != "UNKNOWN" or
                 classify_issuer_news_headline(headline) is None):
             continue
-        aliases = ISSUER_NAMES[symbol]
+        aliases = names[symbol]
         if not any(re.search(r"(?<![A-Za-z0-9])" + re.escape(alias) +
                              r"(?![A-Za-z0-9])", headline, re.IGNORECASE)
                    for alias in aliases):
@@ -720,6 +752,7 @@ def main() -> None:
     parser.add_argument("--output", default="public/data/free_public_intelligence.json")
     parser.add_argument("--symbols", default=",".join(WATCH_DEFAULT))
     parser.add_argument("--previous", type=Path, default=None)
+    parser.add_argument("--discovery-brief", type=Path, default=None)
     args = parser.parse_args()
     symbols = [x.strip().upper() for x in args.symbols.split(",") if x.strip()]
     current = datetime.now(UTC)
@@ -731,12 +764,28 @@ def main() -> None:
         except (ValueError, TypeError, OSError):
             previous = {}
     cooldowns = valid_source_cooldowns(previous, now=current)
-    payload = build_context(symbols=symbols, now=current, prior_cooldowns=cooldowns)
+    scanned = symbols_from_brief(args.discovery_brief, now=current)
+    extra = [s for s in scanned if s not in ISSUER_NAMES and s not in symbols][:24]
+    directory = resolve_public_issuers(
+        extra, now=current, previous=previous, session=requests,
+    ) if extra else {
+        "source_family": "github_public_listing_mirrors",
+        "status": "NO_NEW_ISSUERS", "issuers": {}, "research_only": True,
+    }
+    dynamic_names = directory.get("issuers", {})
+    symbols.extend(s for s in extra if s in dynamic_names)
+    payload = build_context(
+        symbols=symbols, now=current, prior_cooldowns=cooldowns,
+        dynamic_names=dynamic_names,
+    )
+    payload["issuer_directory"] = directory
     if (isinstance(previous, dict)
             and previous.get("schema") == "free_public_intelligence_v1"
             and _iso(previous.get("generated_at")) is not None):
         payload["_new_stories"] = list(payload.get("google_news_attention") or [])
-        payload = retain_verified_news_context(payload, previous, now=current)
+        payload = retain_verified_news_context(
+            payload, previous, now=current, dynamic_names=dynamic_names,
+        )
     dest = Path(args.output)
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(".tmp")
