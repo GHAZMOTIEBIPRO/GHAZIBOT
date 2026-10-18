@@ -45,7 +45,8 @@ jobs:
       - name: Collect real daily and intraday candles
         run: |
           PYTHONPATH=app python -m scripts.build_stock_watch_charts \
-            --output state/runtime/public/data/stock_watch_charts.json
+            --output state/runtime/public/data/stock_watch_charts.json \
+            --discovery-source state/runtime/public/data/decision_brief.json
       - name: Persist isolated stock chart feed
         shell: bash
         run: |
