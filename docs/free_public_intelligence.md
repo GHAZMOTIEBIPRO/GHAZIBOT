@@ -20,3 +20,17 @@ pytest -q tests/test_free_public_intelligence.py
 ```
 
 Inspect `schema`, `source_errors`, `gdelt_attention`, `fed_monetary`, `bls_upcoming`, `alpaca_iex`, and `policy`. A READY research context does **not** verify live options or imply Telegram delivery; the generated timestamp is a *local observation of the scan*, never quote freshness. Public-source access and licenses may change.
+
+## Visible GHAZI RADAR news watch (October 2026)
+
+The existing Company News Watch workflow now publishes its already-built
+`free_public_intelligence.json` as a **single owned** bot-state file. It
+does not create a duplicate scheduler. The website shows only article
+headlines with unambiguous ticker tagging, original HTTPS article links
+and GDELT **observed_at** time (NOT publication time).
+
+These are explicitly SECONDARY UNCONFIRMED NEWS LEADS, not issuer
+press releases, SEC filings, trading recommendations or proof of a
+positive catalyst. Missing GDELT results and HTTP 429 cannot be replaced
+with invented article links. The SEC issuer filing feed remains separate,
+and SEC 403 is reported without misrepresenting the GDELT substitute.
