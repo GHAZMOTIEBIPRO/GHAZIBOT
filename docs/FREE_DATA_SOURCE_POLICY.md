@@ -10,6 +10,7 @@ The radar uses only sources whose public documentation permits programmatic acce
 - Nasdaq public market-movers response as best-effort universe discovery.
 - Yahoo/yfinance as an unofficial research fallback, explicitly labelled as such.
 - U.S. Treasury public daily yield-curve XML feed for slow-moving macro context.
+- U.S. Bureau of Labor Statistics unregistered public API v1: official monthly CPI, unemployment and payroll context via one daily batch (not prices, option-flow evidence, or signals). BLS limits unregistered use to 25 calls/day and requires source/retrieval-date attribution.
 
 ## Optional free-account integrations
 

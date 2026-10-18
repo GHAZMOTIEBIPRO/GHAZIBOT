@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="./phase62.css?v=20260807-omega">
   <link rel="stylesheet" href="./omega.css?v=20260807-omega">
   <link rel="stylesheet" href="./ghazi-radar-quality.css?v=20261018-1">
+  <link rel="stylesheet" href="./bls-macro.css?v=20261018-1">
 </head>
 <body>
   <div class="page-shell">
@@ -116,6 +117,7 @@
       <button class="tab-button" data-tab="chart">الشارت</button>
       <button class="tab-button" data-tab="options">رادار العقود</button>
       <button class="tab-button" data-tab="spx0dte">SPX 0DTE</button>
+      <button class="tab-button" data-tab="macro">الاقتصاد الأمريكي</button>
       <button class="tab-button" data-tab="sources">شبكة المصادر</button>
       <button class="tab-button" data-tab="catalysts">الأخبار الرسمية</button>
       <button class="tab-button" data-tab="rejected">المرفوضة</button>
@@ -124,6 +126,27 @@
     </nav>
 
     <main>
+      <section id="tab-macro" class="tab-panel" aria-labelledby="ghazi-macro-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="ghazi-macro-heading">المؤشرات الاقتصادية الأمريكية — المصدر الرسمي BLS</h2>
+            <p class="ghazi-macro-intro">التضخم والبطالة والوظائف ببيانات شهرية رسمية مجانية، لا أسعار سوق لحظية. هذه الصفحة سياق اقتصادي مستقل، ولا تصدر توصيات CALL أو PUT.</p>
+          </div>
+          <button id="bls-macro-refresh" class="secondary-button" type="button">تحقق من آخر بيانات BLS</button>
+        </div>
+        <div class="ghazi-macro-grid">
+          <article><span>التضخم السنوي CPI</span><strong id="bls-cpi">—</strong><small id="bls-cpi-period">—</small></article>
+          <article><span>التضخم الأساسي السنوي</span><strong id="bls-core">—</strong><small id="bls-core-period">—</small></article>
+          <article><span>البطالة الأمريكية</span><strong id="bls-unemployment">—</strong><small id="bls-unemployment-period">—</small></article>
+          <article><span>التغير الشهري للوظائف غير الزراعية*</span><strong id="bls-payroll">—</strong><small id="bls-payroll-period">—</small></article>
+        </div>
+        <p id="bls-source-status" class="reasons" role="status">لم تصل القراءة الرسمية بعد.</p>
+        <div class="ghazi-macro-attribution">
+          <strong>حدود البيانات:</strong> المؤشرات شهرية، وليست فورية. التضخم السنوي محسوب من المؤشر غير المعدل موسميًا. البطالة والوظائف سلسلتان معدلتان موسميًا. *تغير الوظائف محسوب من المستويات التي قد تُراجع لاحقًا، وليس قراءة الخبر لحظة صدوره.
+          <p>بيانات من <a href="https://www.bls.gov/developers/" target="_blank" rel="noopener">U.S. Bureau of Labor Statistics</a>. لا يضمن BLS جودة التحليلات المشتقة بعد تنزيل بياناته. ولا تُستعمل هذه الصفحة لتأكيد تدفقات الأوبشن أو تجاوز شروط جودة العقود.</p>
+        </div>
+      </section>
+
       <section id="tab-omega" class="tab-panel active">
         <div class="section-heading">
           <div>
@@ -298,6 +321,7 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js" defer></script>
   <script src="./ghazi-radar-quality.js?v=20261018-1" defer></script>
+  <script src="./bls-macro.js?v=20261018-1" defer></script>
   <script src="./app.js?v=20261018-ghazi-radar" defer></script>
   <script src="./phase51.js?v=20260807-omega" defer></script>
   <script src="./phase60.js?v=20260807-omega" defer></script>

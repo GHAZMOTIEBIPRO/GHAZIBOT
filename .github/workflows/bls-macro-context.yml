@@ -1,0 +1,63 @@
+name: GHAZI RADAR Official BLS Macro
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/bls_macro_context.py"
+      - ".github/workflows/bls-macro-context.yml"
+  # BLS releases monthly, so one weekday batch conserves its keyless API quota.
+  schedule:
+    - cron: "17 15 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-radar-bls-macro
+  cancel-in-progress: false
+
+jobs:
+  update-macro-context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch one official BLS v1 batch without private credentials
+        run: >-
+          python app/scripts/bls_macro_context.py
+          --output state/runtime/public/data/bls_macro.json
+      - name: Publish only the BLS context document to durable state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Macro Context"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/bls_macro.json
+          if git diff --cached --quiet; then
+            echo "BLS monthly context unchanged."
+            exit 0
+          fi
+          git commit -m "state: official BLS monthly context [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Failed to publish BLS data after retries." >&2
+          exit 1
