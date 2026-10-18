@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import time
 from datetime import datetime, timezone
@@ -23,23 +24,95 @@ from scripts.build_index_context import (
 SMALL_WATCH = ("RGC", "BNAI", "RGTI", "SOUN", "IONQ", "RKLB", "ASTS", "SOFI", "PLTR")
 LARGE_WATCH = ("AAPL", "NVDA", "MSFT", "TSLA", "AMD", "MU", "AVGO")
 WATCH = SMALL_WATCH + LARGE_WATCH
-FIVE_MIN = frozenset(("RGC", "BNAI", "RGTI", "SOUN"))
+FIVE_MIN = frozenset(SMALL_WATCH)
 MAX_BYTES = 700_000
+MAX_DYNAMIC = 4
+_SYMBOL = re.compile(r"^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$")
+_NON_STOCK = frozenset(("SPX", "NDX", "DJI", "RUT", "VIX", "SPY", "QQQ", "IWM", "DIA"))
+
+
+def valid_dynamic_symbols(symbols) -> tuple[str, ...]:
+    """Only stock-like identifiers from a trusted radar snapshot, never URLs."""
+    out = []
+    for value in symbols:
+        if not isinstance(value, str):
+            continue
+        symbol = value.strip().upper()
+        if (_SYMBOL.fullmatch(symbol) and symbol not in WATCH
+                and symbol not in _NON_STOCK and symbol not in out):
+            out.append(symbol)
+        if len(out) >= MAX_DYNAMIC:
+            break
+    return tuple(out)
+
+
+def load_dynamic_symbols(path: Path | None, *, now: datetime) -> tuple[str, ...]:
+    """Rotate new radar discoveries without increasing the fixed Yahoo budget.
+
+    Expired, malformed or future-dated decision snapshots NEVER seed a fetch.
+    Chart selection is independent from option-signal authorization.
+    """
+    if path is None or now.tzinfo is None:
+        return ()
+    try:
+        if path.stat().st_size > 180_000:
+            return ()
+        report = json.loads(path.read_text(encoding="utf-8"))
+        if report.get("schema") != "ghazi.public_decision.v1":
+            return ()
+        timestamp = report.get("source_generated_at") or report.get("generated_at")
+        when = datetime.fromisoformat(str(timestamp).replace("Z", "+00:00"))
+        if when.tzinfo is None:
+            return ()
+        age = (now - when).total_seconds()
+        if not (-300 <= age <= 72 * 3600):
+            return ()
+        rows = report.get("stocks")
+        if not isinstance(rows, list):
+            return ()
+    except (OSError, ValueError, TypeError, AttributeError):
+        return ()
+    ranked = []
+    for row in rows[:150]:
+        if not isinstance(row, dict):
+            continue
+        symbol = row.get("symbol")
+        score = row.get("score")
+        if not isinstance(symbol, str) or not _SYMBOL.fullmatch(symbol):
+            continue
+        if symbol in WATCH or symbol in _NON_STOCK:
+            continue
+        if not isinstance(score, (int, float)) or not math.isfinite(score):
+            continue
+        ranked.append((float(score), symbol))
+    candidates = list(dict.fromkeys(
+        symbol for _, symbol in sorted(ranked, key=lambda x: -x[0])
+    ))
+    if len(candidates) <= MAX_DYNAMIC:
+        return valid_dynamic_symbols(candidates)
+    # Keep top two actionable research sightings, rotate remaining slots
+    # every six hours so lower-ranked new symbols are not forever uncharted.
+    primary = candidates[:2]
+    tail = candidates[2:]
+    shift = int(now.timestamp() // (6 * 3600)) % len(tail)
+    rotating = tail[shift:] + tail[:shift]
+    return valid_dynamic_symbols(primary + rotating[:MAX_DYNAMIC - 2])
 
 
 def pack_symbol(
     symbol: str, daily_raw: pd.DataFrame | None,
     minute15_raw: pd.DataFrame | None, minute5_raw: pd.DataFrame | None, *,
-    now: datetime,
+    now: datetime, dynamic_watch: tuple[str, ...] = (),
 ) -> dict | None:
-    if symbol not in WATCH or now.tzinfo is None:
+    if (symbol not in WATCH and symbol not in dynamic_watch) or now.tzinfo is None:
         return None
     clean_day = completed_daily(clean_bars(daily_raw, intraday=False), now)
     clean_15 = last_finished_intraday(clean_bars(minute15_raw, intraday=True), now)
+    needs_5m = symbol in FIVE_MIN or symbol in dynamic_watch
     clean_5 = (last_finished_five_min(clean_bars(minute5_raw, intraday=True), now)
-               if symbol in FIVE_MIN else pd.DataFrame())
+               if needs_5m else pd.DataFrame())
     sessions = {"1d": clean_day, "15m": clean_15}
-    if symbol in FIVE_MIN:
+    if needs_5m:
         sessions["5m"] = clean_5
     frame_out = {}
     now_ny = now.astimezone(NY)
@@ -64,8 +137,9 @@ def pack_symbol(
     if not frame_out:
         return None
     return {
-        "symbol": symbol, "category": "VOLATILE_GROWTH_WATCH" if symbol in SMALL_WATCH
-                                      else "LARGE_ESTABLISHED_WATCH",
+        "symbol": symbol, "category": ("VOLATILE_GROWTH_WATCH" if symbol in SMALL_WATCH
+                                      else "RADAR_DISCOVERY_WATCH" if symbol in dynamic_watch
+                                      else "LARGE_ESTABLISHED_WATCH"),
         "market_cap_verified": False,
         "intervals": frame_out,
         "source": "Yahoo Finance yfinance (unofficial research, may be delayed)",
@@ -73,18 +147,21 @@ def pack_symbol(
     }
 
 
-def collect(*, now: datetime, provider=None, delay=lambda _: None) -> dict:
+def collect(*, now: datetime, provider=None, delay=lambda _: None,
+            dynamic_symbols=()) -> dict:
     if now.tzinfo is None:
         raise ValueError("aware now required")
     if provider is None:
         import yfinance as provider
+    dynamic = valid_dynamic_symbols(dynamic_symbols)
+    watch = WATCH + dynamic
     data = {}
     errors = {}
-    for symbol in WATCH:
+    for symbol in watch:
         ticker = provider.Ticker(symbol)
         received = {}
         for unit, period in (("1d", "3mo"), ("15m", "5d"), ("5m", "5d")):
-            if unit == "5m" and symbol not in FIVE_MIN:
+            if unit == "5m" and symbol not in FIVE_MIN and symbol not in dynamic:
                 continue
             try:
                 frame = ticker.history(period=period, interval=unit,
@@ -97,7 +174,7 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None) -> dict:
                 received[unit] = None
             delay(.15)  # bounded transport; do not spin retry on Yahoo rate limit.
         item = pack_symbol(symbol, received.get("1d"), received.get("15m"),
-                           received.get("5m"), now=now)
+                           received.get("5m"), now=now, dynamic_watch=dynamic)
         if item is not None:
             data[symbol] = item
     if not data:
@@ -110,7 +187,10 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None) -> dict:
         "provider_source_family": "yahoo",
         "symbols": data,
         "coverage": {
-            "requested": len(WATCH), "with_valid_charts": len(data),
+            "requested": len(watch), "with_valid_charts": len(data),
+            "discovered_requested": len(dynamic),
+            "discovered_symbols": list(dynamic),
+            "discovered_with_charts": sum(s in data for s in dynamic),
             "with_daily": sum("1d" in x["intervals"] for x in data.values()),
             "with_15m": sum("15m" in x["intervals"] for x in data.values()),
             "with_5m": sum("5m" in x["intervals"] for x in data.values()),
@@ -127,8 +207,11 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None) -> dict:
 def main() -> int:
     p=argparse.ArgumentParser()
     p.add_argument("--output",type=Path,required=True)
+    p.add_argument("--discovery-source",type=Path,default=None)
     args=p.parse_args()
-    report=collect(now=datetime.now(timezone.utc),delay=time.sleep)
+    now=datetime.now(timezone.utc)
+    dynamic=load_dynamic_symbols(args.discovery_source,now=now)
+    report=collect(now=now,delay=time.sleep,dynamic_symbols=dynamic)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     temp=args.output.with_suffix(args.output.suffix+".tmp")
     temp.write_text(json.dumps(report,ensure_ascii=False,allow_nan=False,separators=(",",":"))+"\n",
