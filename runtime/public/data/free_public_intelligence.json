@@ -1,15 +1,17 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-10-18T11:53:12.958576+00:00",
+  "generated_at": "2026-10-18T12:41:51.783632+00:00",
   "status": "DEGRADED",
   "source_errors": {
-    "gdelt_attention": "HTTP_429"
+    "gdelt_attention": "HTTP_429",
+    "press_wire_globenewswire": "HTTP_403"
   },
   "decision_authority": false,
   "live_alert_weights_changed": false,
   "is_independent_executable_market_data": false,
   "policy": {
     "gdelt_attention_not_official_confirmation": true,
+    "press_wire_is_discovery_not_issuer_or_bullish_confirmation": true,
     "bls_calendar_is_schedule_not_release_result": true,
     "fed_rss_publication_is_not_upcoming_fomc_calendar": true,
     "alpaca_iex_not_national_market_or_opra": true,
@@ -39,6 +41,7 @@
       "price_direction": "UNKNOWN"
     }
   ],
+  "press_wire_attention": [],
   "alpaca_iex": {
     "provider": "alpaca_iex",
     "feed": "iex",
