@@ -134,9 +134,15 @@
     card.append(pair("RVOL",fmt(entry?.rvol,2)));
     card.append(pair("درجة ترتيب بحثية",fmt(entry?.score,1)));
     card.append(pair("عناوين أخبار مطابقة",String(newsCount)));
-    const stockSeries=state.watchCharts?.symbols?.[symbol]?.intervals;
+    const stockInfo=state.watchCharts?.symbols?.[symbol];
+    const stockSeries=stockInfo?.intervals;
     card.append(pair("شموع يومية / 15 دقيقة",
       (stockSeries?.["1d"]?.bars?.length||0)+" / "+(stockSeries?.["15m"]?.bars?.length||0)));
+    if(stockInfo?.historical_cache_only===true){
+      card.append(pair("حالة الشارت","محفوظ سابقًا — غير محدث"));
+    }else if(stockInfo?.has_retained_timeframes===true){
+      card.append(pair("حالة الشارت","بعض الفريمات محفوظة من فحص سابق"));
+    }
     card.append(txt("p",entry?"السعر عند التقرير: "+stamp(state.brief?.source_generated_at):
       "لم يظهر هذا السهم في تقرير الفرص الأخير. لا يوجد سعر مُثبت في هذا القسم."));
     const headline=Array.isArray(state.news?.google_news_attention)?
@@ -172,11 +178,14 @@
       wrap.append(stockCard(symbol,lookup.get(symbol),related.length,kind));
     }
     if(kind==="small")put("terminal-stock-chart-health",
-      state.watchCharts?"تغطية شارتات المراقبة: "+
-        (state.watchCharts.coverage?.with_daily||0)+" من "+
-        (state.watchCharts.coverage?.requested||0)+" سهمًا بشموع يومية · نشر "+
+      state.watchCharts?"شارتات جُمعت في آخر دورة: "+
+        (state.watchCharts.coverage?.with_valid_charts||0)+" من "+
+        (state.watchCharts.coverage?.requested||0)+" سهمًا مطلوبًا · "+
+        "رموز بها شموع محفوظة: "+
+        (state.watchCharts.coverage?.retained_symbols_count||0)+
+        " (ليست أسعارًا محدثة) · التقرير: "+
         stamp(state.watchCharts.generated_at):
-        "لا يوجد تقرير شارتات الأسهم الخاصة بعد؛ سيُجلب آليًا بعد مهمة المؤشرات، ولا نخترع شموعًا.");
+        "لم تصل بيانات شارتات جديدة؛ لا نخترع شموعًا أو بيانات لحظية.");
     put(kind==="large"?"terminal-large-note":"terminal-small-note",
       (kind==="large"?"قائمة الشركات الكبيرة والمعروفة":"قائمة الشركات المضاربية/مرتفعة الحركة؛ لا يُحسم حجم الرسملة دون مصدر مستقل")+
       " · وقت فحص الأسهم: "+stamp(state.brief?.source_generated_at)+
@@ -414,7 +423,7 @@
       put("terminal-chart-spot","—");put("terminal-chart-direction","لا توجد شموع OHLC منشورة");
       put("terminal-chart-date","—");
       put("terminal-chart-reading","لا توجد شموع مكتملة لهذا الرمز/الفريم في التقرير المتاح. لا نرسم شارتًا تقديريًا. "+
-        (!INDEX_ORDER.includes(symbol)?"الأسهم تُعرض يوميًا فقط عندما تُنشر شموعها في تقرير الرادار.":"المؤشرات تحتاج نشر ملف شموع المؤشرات."));
+        (!INDEX_ORDER.includes(symbol)?"فريمات الأسهم تعتمد على توفر المصدر وقد تختفي أو تتأخر.":"المؤشرات تحتاج نشر ملف شموع المؤشرات."));
       put("terminal-chart-scenario","لا تُعرض أهداف ATR دون شموع مكتملة كافية.");
       renderGamma(symbol);
       if(!INDEX_ORDER.includes(symbol)&&!state.stockCharts &&
@@ -454,7 +463,11 @@
       "لا يمكن حساب نطاق ATR موثوق لهذا الشارت؛ تحتاج 15 شمعة على الأقل.");
     renderGamma(symbol);
     const current=frame?.current_session_confirmed===true;
-    const freshnessText=isDaily?"شارت جلسات يومية مكتملة":
+    const retainedBar=frame?.historical_cache_only===true;
+    const freshnessText=retainedBar?
+      "شموع محفوظة من فحص سابق بتاريخ "+stamp(frame.cached_source_generated_at)+
+      "؛ البيانات غير محدثة وليست سعرًا حاليًا":
+      isDaily?"شارت جلسات يومية مكتملة (وليس سعرًا لحظيًا)":
       current?"شموع الجلسة الحالية مكتملة لكن المصدر غير مرخّص لحظيًا":
       "شموع مكتملة من جلسة قديمة/متأخرة، لا تستخدمها كسعر مباشر";
     const context=bias==="UP"?"السعر أعلى EMA20 وEMA50 مع RSI داعم للصعود":
