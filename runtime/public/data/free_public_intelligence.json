@@ -1,6 +1,6 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-10-18T21:01:50.698147+00:00",
+  "generated_at": "2026-10-18T22:57:59.504747+00:00",
   "status": "DEGRADED",
   "source_errors": {
     "gdelt_attention": "COOLDOWN_ACTIVE",
@@ -8,6 +8,10 @@
     "press_wire_globenewswire": "COOLDOWN_ACTIVE"
   },
   "source_cooldowns": {
+    "press_wire_prnewswire": {
+      "last_error": "HTTP_404",
+      "retry_after": "2026-10-20T15:06:34.092694+00:00"
+    },
     "gdelt_attention": {
       "last_error": "HTTP_429",
       "retry_after": "2026-10-19T02:50:42.357016+00:00"
@@ -15,10 +19,6 @@
     "press_wire_globenewswire": {
       "last_error": "HTTP_403",
       "retry_after": "2026-10-19T14:50:42.357016+00:00"
-    },
-    "press_wire_prnewswire": {
-      "last_error": "HTTP_404",
-      "retry_after": "2026-10-20T15:06:34.092694+00:00"
     }
   },
   "decision_authority": false,
@@ -111,7 +111,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T18:38:24.535078+00:00"
+      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -237,7 +237,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T18:38:24.535078+00:00"
+      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -457,6 +457,24 @@
     },
     {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
+      "symbol": "OXY",
+      "headline": "Occidental Petroleum Corp. stock outperforms competitors despite losses on the day - MarketWatch",
+      "url": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxPeXVHNC1FMC1QUWtCeEtpazRHbnctclNtcFNWbmVzZjhrc0ktZTBnUm4weE5LLW5KcFRoV1p3czRSd08tdllxMmZtUklHalJWRHBDcTc4ZXZCVGRSMlZQNTN6cm5pY2YycUwtc2F0QVhfQTZBcmtRU1JXZ0JMYkI4ZTIxUVFadENYNlhrS005ZlZYaHNOV0FmTFM0U2VkM1lDWTQ0eEM4bGQ3UDhzWUdBX0k5YkFrZHRMbnREUG0xelFmSjN2aE1Wd2JzbmVpeVl4c1RTVFhhY0w?oc=5",
+      "published_at": "2026-10-15T20:45:00+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
+    },
+    {
+      "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
       "symbol": "RKLB",
       "headline": "Rocket Lab Stock Tumbles On Latest Neutron Launch Delay - Investor's Business Daily",
       "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPQU9ybkJ4UHg4WEpnWExJYVJpS3JPTWo4aHlwbjQ0N2dmbnNTVVZMSkV2aTlaZUxpUFhzcEY2X29IdU5CTVVmX0J6ZjBYMkgwV1Nfa3l5Q2pUdlBUaVFheHR0OGVZWXVjQlZ5QzAyOThOUFpWVXEzTE1kVm9WUk5Ndjk4cWxaTTdMNExxZWd4TzQ?oc=5",
@@ -490,6 +508,24 @@
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
       "first_collected_at": "2026-10-18T15:06:34.092694+00:00"
+    },
+    {
+      "event_topic": "FINANCIAL_REPORT_MENTION",
+      "symbol": "NVDA",
+      "headline": "Micron vs. NVIDIA: Which AI Stock Is the Better Buy After Earnings? - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxNTXN1dzBRLVdJMURmaVJ2OFo0Slo1M1ZseVU5OU54bGZSc3JfUGk2dUZvOC1NcnljQ3RiWEQ0ZVFER0F0NGsxMGZOU1YxbHZkc091NXhtblBHNE00WHF2S0QzRlhnajFxNll1RGJBYk5QQk5wNlVnNTlGTGk3amdVUDE3MjVtRG51M3BCR2xjZHVEbF9f?oc=5",
+      "published_at": "2026-10-15T18:00:00+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "curated_static_issuer_names",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -726,6 +762,24 @@
       "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
     },
     {
+      "event_topic": "FINANCIAL_REPORT_MENTION",
+      "symbol": "ORCL",
+      "headline": "Top Stock Reports for Oracle, American Express & Progressive - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQZlVCUDVqMUh6VHU3dGZvdkRSem5zN3BnYzlveVhtUUdTbHdwT3Y4LTc2OU02SUpRbFNsaW1CZEt4Um04NlpWWkRteVcybi1oVFlJZ0FrVHJfVGFzVnpqU2VSMlVtVVJBUUwtS1pQTnpsbHZaNzAzdHdubER3aF9idVNrY0EwRXplV01ySWtCSHpTMGJPNUZJZHlweUpsR28?oc=5",
+      "published_at": "2026-10-12T19:24:00+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
+    },
+    {
       "event_topic": "CORPORATE_EVENT_MENTION",
       "symbol": "IONQ",
       "headline": "IonQ to acquire cybersecurity firm Elisity in an all-stock deal for up to $1.3 billion - CNBC",
@@ -742,24 +796,6 @@
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
       "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
-    },
-    {
-      "event_topic": "FINANCIAL_REPORT_MENTION",
-      "symbol": "AMD",
-      "headline": "Advanced Micro Devices (AMD) Stock Falls After AI Revenue Reset Shakes Demand Outlook - Yahoo Finance",
-      "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPV19sb0haMmNnSjNrVjdoNTFwYWp3bHA2U3J3Z0FkNzZyWHRYYmhnUHpUZ2xmNmxIYUxVMUxyNGNjeDJ5MzJmcVZhNnFmejJjZVhyVGJIUkNEUHhXZWZFYmltRDNjVGVpUGVBQm5sbHdGU2psRXFtckE0bXQ0bkdrOHlKeWdNS2ZDR1p6dmQ0N3VpMjFIbnJMTHdwRVUzQQ?oc=5",
-      "published_at": "2026-10-11T22:10:47+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "curated_static_issuer_names",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T18:38:24.535078+00:00"
     }
   ],
   "alpaca_iex": {
@@ -807,7 +843,7 @@
     "not_live_listing_or_price": true
   },
   "google_news_retention": {
-    "historical_stories_preserved": 25,
+    "historical_stories_preserved": 36,
     "note": "Older stories keep publication timestamps; not refreshed quotes"
   }
 }
