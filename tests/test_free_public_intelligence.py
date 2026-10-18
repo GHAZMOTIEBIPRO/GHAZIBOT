@@ -441,11 +441,12 @@ def test_google_http_403_stops_remaining_issuer_lookups():
 
 
 def test_news_rotation_covers_all_interest_stocks_across_two_windows():
-    from options_radar.free_public_intelligence import (
-        GOOGLE_NEWS_MAX_ISSUERS, GOOGLE_NEWS_RSS, google_issuer_attention,
-    )
     from datetime import datetime, timezone
-    from email.utils import format_datetime
+
+    from options_radar.free_public_intelligence import (
+        GOOGLE_NEWS_MAX_ISSUERS,
+        google_issuer_attention,
+    )
     symbols=["RGC","BNAI","RKLB","IONQ","SOUN","ASTS","RGTI",
              "MU","NVDA","AMD","AAPL","TSLA","PLTR"]
     class Recording:
