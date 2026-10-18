@@ -57,6 +57,11 @@ ISSUER_NAMES = {
 UTC = timezone.utc
 NY = ZoneInfo("America/New_York")
 WATCH_DEFAULT = ("MU", "NVDA", "RGC", "BNAI", "RKLB", "AMD")
+_COOLDOWN_HOURS = {"HTTP_429": 12, "HTTP_403": 24, "HTTP_404": 48}
+_COOLDOWN_SOURCES = frozenset((
+    "gdelt_attention", "press_wire_prnewswire",
+    "press_wire_globenewswire", "google_news_attention",
+))
 _SYMBOL_RE = re.compile(r"^[A-Z][A-Z0-9.\-]{1,6}$")
 _ICS_DT_RE = re.compile(r"^(?P<key>DTSTART)(?:;TZID=(?P<tz>[^:]+)|;VALUE=DATE)?:(?P<value>.+)$")
 
@@ -176,6 +181,7 @@ def gdelt_attention(
 
 def press_wire_attention(
     symbols: list[str], *, session: Any = requests, now: datetime | None = None,
+    skip_publishers: frozenset[str] = frozenset(),
 ) -> tuple[list[dict[str, Any]], dict[str, str]]:
     """Bounded two-feed wire RSS discovery; does NOT verify issuer/impact.
 
@@ -192,6 +198,9 @@ def press_wire_attention(
     errors: dict[str, str] = {}
     seen: set[tuple[str, str]] = set()
     for publisher, url in PRESS_WIRE_RSS.items():
+        if publisher in skip_publishers:
+            errors[publisher] = "COOLDOWN_ACTIVE"
+            continue
         try:
             response = _get(
                 url, session=session, headers={"Accept": "application/rss+xml, application/xml"},
@@ -538,8 +547,48 @@ def alpaca_iex_health(
         return {**base, "status": "UNAVAILABLE", "error": type(exc).__name__}
 
 
-def build_context(*, symbols: list[str], now: datetime | None = None, session: Any = requests) -> dict[str, Any]:
+def valid_source_cooldowns(previous: dict, *, now: datetime) -> dict[str, dict]:
+    """Honor only bounded source refusals from a recent first-party report."""
+    if not isinstance(previous, dict) or previous.get("schema") != "free_public_intelligence_v1":
+        return {}
+    report_time = _iso(previous.get("generated_at"))
+    if report_time is None or not timedelta(0) <= now - report_time <= timedelta(days=7):
+        return {}
+    raw = previous.get("source_cooldowns")
+    if not isinstance(raw, dict):
+        return {}
+    active = {}
+    for key in _COOLDOWN_SOURCES:
+        item = raw.get(key)
+        if not isinstance(item, dict) or item.get("last_error") not in _COOLDOWN_HOURS:
+            continue
+        until = _iso(item.get("retry_after"))
+        if until is not None and timedelta(0) < until - now <= timedelta(hours=48):
+            active[key] = {"last_error": item["last_error"],
+                           "retry_after": until.isoformat()}
+    return active
+
+
+def update_source_cooldowns(existing: dict, errors: dict, *, now: datetime) -> dict:
+    """Bounded circuit breaker; original 403/404/429 remain explicit."""
+    active = dict(existing)
+    for key in _COOLDOWN_SOURCES:
+        error = errors.get(key)
+        if key == "google_news_attention" and error is None:
+            error = next((v for k, v in errors.items()
+                          if k.startswith("google_news_") and v in _COOLDOWN_HOURS), None)
+        if error in _COOLDOWN_HOURS:
+            active[key] = {
+                "last_error": error,
+                "retry_after": (now + timedelta(hours=_COOLDOWN_HOURS[error])).isoformat(),
+            }
+    return active
+
+
+def build_context(*, symbols: list[str], now: datetime | None = None,
+                  session: Any = requests, prior_cooldowns: dict | None = None) -> dict[str, Any]:
     current = now or datetime.now(UTC)
+    cooldowns = prior_cooldowns or {}
     pieces: dict[str, Any] = {}
     errors: dict[str, str] = {}
     for key, fn, opts in (
@@ -547,6 +596,10 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
         ("fed_monetary", fed_monetary_updates, {}),
         ("bls_upcoming", bls_upcoming, {}),
     ):
+        if key in cooldowns:
+            pieces[key] = []
+            errors[key] = "COOLDOWN_ACTIVE"
+            continue
         try:
             pieces[key] = fn(session=session, now=current, **opts)
         except requests.HTTPError as exc:
@@ -560,18 +613,32 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
             errors[key] = type(exc).__name__
     # Press-wire RSS operates independently from GDELT 429 and SEC 403.
     # These are publisher-distributed titles, not SEC or issuer confirmation.
-    press_items, press_errors = press_wire_attention(symbols, session=session, now=current)
+    skipped = frozenset(
+        key.removeprefix("press_wire_") for key in cooldowns
+        if key.startswith("press_wire_")
+    )
+    press_items, press_errors = press_wire_attention(
+        symbols, session=session, now=current, skip_publishers=skipped,
+    )
     pieces["press_wire_attention"] = press_items
     errors.update({"press_wire_" + k: v for k, v in press_errors.items()})
-    google_items, google_errors = google_issuer_attention(symbols, session=session, now=current)
+    if "google_news_attention" in cooldowns:
+        google_items, google_errors = [], {}
+        errors["google_news_attention"] = "COOLDOWN_ACTIVE"
+    else:
+        google_items, google_errors = google_issuer_attention(
+            symbols, session=session, now=current,
+        )
     pieces["google_news_attention"] = google_items
     errors.update({"google_news_" + key: value for key, value in google_errors.items()})
     pieces["alpaca_iex"] = alpaca_iex_health(session=session, now=current)
+    updated_cooldowns = update_source_cooldowns(cooldowns, errors, now=current)
     return {
         "schema": "free_public_intelligence_v1",
         "generated_at": current.isoformat(),
         "status": "READY" if not errors else "DEGRADED",
         "source_errors": errors,
+        "source_cooldowns": updated_cooldowns,
         "decision_authority": False, "live_alert_weights_changed": False,
         "is_independent_executable_market_data": False,
         "policy": {
@@ -655,17 +722,21 @@ def main() -> None:
     parser.add_argument("--previous", type=Path, default=None)
     args = parser.parse_args()
     symbols = [x.strip().upper() for x in args.symbols.split(",") if x.strip()]
-    payload = build_context(symbols=symbols)
-    if args.previous and args.previous.is_file():
+    current = datetime.now(UTC)
+    previous = {}
+    if (args.previous and args.previous.is_file()
+            and args.previous.stat().st_size <= 200_000):
         try:
-            previous=json.loads(args.previous.read_text(encoding="utf-8"))
-            if (previous.get("schema")=="free_public_intelligence_v1"
-                    and _iso(previous.get("generated_at")) is not None):
-                payload["_new_stories"]=list(payload.get("google_news_attention") or [])
-                payload=retain_verified_news_context(
-                    payload,previous,now=datetime.fromisoformat(payload["generated_at"]))
-        except (ValueError,TypeError,OSError,KeyError):
-            pass  # Never prevent the current report on a broken old cache.
+            previous = json.loads(args.previous.read_text(encoding="utf-8"))
+        except (ValueError, TypeError, OSError):
+            previous = {}
+    cooldowns = valid_source_cooldowns(previous, now=current)
+    payload = build_context(symbols=symbols, now=current, prior_cooldowns=cooldowns)
+    if (isinstance(previous, dict)
+            and previous.get("schema") == "free_public_intelligence_v1"
+            and _iso(previous.get("generated_at")) is not None):
+        payload["_new_stories"] = list(payload.get("google_news_attention") or [])
+        payload = retain_verified_news_context(payload, previous, now=current)
     dest = Path(args.output)
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(".tmp")
