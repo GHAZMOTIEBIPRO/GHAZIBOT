@@ -1,8 +1,8 @@
 {
   "status": "degraded",
-  "generated_at": "2026-10-18T14:33:47.875915+00:00",
-  "dataset_age_minutes": 2.3,
-  "last_successful_refresh": "2026-10-18T14:33:47.875915+00:00",
+  "generated_at": "2026-10-18T21:03:49.615175+00:00",
+  "dataset_age_minutes": 2.2,
+  "last_successful_refresh": "2026-10-18T21:03:49.615175+00:00",
   "option_provider": "phase5_hybrid",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
@@ -30,14 +30,14 @@
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-10-18T14:32:00.826073+00:00",
+      "checked_at": "2026-10-18T21:02:00.646454+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
       "start_date": "2026-10-04",
       "end_date": "2026-10-18",
       "event_count": 0,
-      "message": "SEC EFTS circuit is open after a previous 403; no HTTP request was sent. Retry after 2026-10-18T15:33:10.686399+00:00. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
+      "message": "SEC EFTS circuit is open after a previous 403; no HTTP request was sent. Retry after 2026-10-18T22:11:34.621130+00:00. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
       "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
       "fallbacks_active": [
         "SEC latest-form Atom feeds",
@@ -46,9 +46,9 @@
       ],
       "http_status": 403,
       "error_type": "SecEftsCircuitOpen",
-      "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 187, in request_efts_json\n    _raise_if_circuit_open()\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 124, in _raise_if_circuit_open\n    raise SecEftsCircuitOpen(retry_after)\noptions_radar.sec_efts_resilience.SecEftsCircuitOpen: SEC EFTS circuit is open after a previous 403; no HTTP request was sent. Retry after 2026-10-18T15:33:10.686399+00:00. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n",
+      "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 187, in request_efts_json\n    _raise_if_circuit_open()\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 124, in _raise_if_circuit_open\n    raise SecEftsCircuitOpen(retry_after)\noptions_radar.sec_efts_resilience.SecEftsCircuitOpen: SEC EFTS circuit is open after a previous 403; no HTTP request was sent. Retry after 2026-10-18T22:11:34.621130+00:00. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n",
       "circuit_state": "open",
-      "circuit_retry_after": "2026-10-18T15:33:10.686399+00:00"
+      "circuit_retry_after": "2026-10-18T22:11:34.621130+00:00"
     }
   },
   "coverage_diagnostics": {
@@ -76,12 +76,12 @@
       "NO_VERIFIED_OPTION_TRADE_FLOW"
     ],
     "top_option_rejection_reasons": {
-      "spread_above_15pct": 141,
-      "delta_outside_030_060": 141,
-      "invalid_bid_ask": 32,
-      "option_volume_below_200": 18,
-      "vol_to_oi_below_1_5": 17,
-      "bid_side_or_neutral_trade": 1
+      "spread_above_15pct": 178,
+      "invalid_bid_ask": 71,
+      "delta_outside_030_060": 68,
+      "option_volume_below_200": 27,
+      "vol_to_oi_below_1_5": 4,
+      "bid_side_or_neutral_trade": 2
     },
     "public_licensing_notice": "Personal-use brokerage API access does not grant public market-data redistribution rights. Do not expose tokens or unlicensed raw quotes."
   },
@@ -112,7 +112,7 @@
     "access_blocked": 16,
     "request_failures": 16,
     "processed_accessions": 0,
-    "updated_at": "2026-10-18T14:32:12.438313+00:00",
+    "updated_at": "2026-10-18T21:02:11.227878+00:00",
     "outcome": "ACCESS_BLOCKED"
   },
   "run_duration_seconds": null,
