@@ -330,11 +330,19 @@ def google_issuer_attention(
     # Same maximum six RSS calls; unlisted dynamic candidates never get
     # searched by ambiguous bare ticker.
     eligible = [s for s in preference if s in requested and s in names]
-    eligible.extend(sorted(s for s in directory if s in requested))
-    # Cover all followed issuers in rotating bounded batches; do not turn
-    # six per cycle into unbounded Google requests. Small test/watch subsets
-    # fit in one batch without altering their selection semantics.
-    if len(eligible) > GOOGLE_NEWS_MAX_ISSUERS:
+    dynamic = sorted(s for s in directory if s in requested)
+    # Reserve up to two slots per hourly rotation for new discoveries, while
+    # preserving the six-request hard cap and coverage of curated names.
+    if dynamic:
+        hour = int(current.timestamp() // 3600)
+        curated_slots = 4
+        curated_batches = max(1, (len(eligible) + curated_slots - 1)//curated_slots)
+        extra_batches = max(1, (len(dynamic) + 1)//2)
+        start_curated = (hour % curated_batches)*curated_slots
+        start_dynamic = (hour % extra_batches)*2
+        selected = eligible[start_curated:start_curated+curated_slots]
+        selected += dynamic[start_dynamic:start_dynamic+2]
+    elif len(eligible) > GOOGLE_NEWS_MAX_ISSUERS:
         shift = int(current.timestamp() // 3600) % (
             (len(eligible)+GOOGLE_NEWS_MAX_ISSUERS-1)//GOOGLE_NEWS_MAX_ISSUERS
         )
