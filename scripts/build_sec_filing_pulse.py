@@ -158,8 +158,33 @@ def parse_submissions(symbol: str, cik: int, issuer: str, payload: dict, *,
     return rows
 
 
+def _active_refusal_cooldown(previous: dict | None, now: datetime) -> str | None:
+    """Persist a bounded official-SEC refusal, not a fabricated lack of filings."""
+    if not isinstance(previous, dict) or previous.get("schema") != "ghazi.sec_issuer_pulse.v1":
+        return None
+    try:
+        reported = datetime.fromisoformat(
+            str(previous["generated_at"]).replace("Z", "+00:00")
+        )
+        retry = datetime.fromisoformat(
+            str(previous["source_retry_after"]).replace("Z", "+00:00")
+        )
+        if reported.tzinfo is None or retry.tzinfo is None:
+            return None
+        if not (timedelta(0) <= now-reported <= timedelta(days=2)):
+            return None
+        if not (timedelta(0) < retry-now <= timedelta(hours=6)):
+            return None
+        if previous.get("refusal_reason") not in ("HTTP_403", "HTTP_429"):
+            return None
+        return retry.astimezone(timezone.utc).isoformat()
+    except (KeyError, ValueError, TypeError, OverflowError):
+        return None
+
+
 def collect(brief: dict, *, now: datetime, session: Any = requests,
-            agent: str, pause: Any=time.sleep, max_symbols:int=MAX_SYMBOLS) -> dict:
+            agent: str, pause: Any=time.sleep, max_symbols:int=MAX_SYMBOLS,
+            previous: dict | None = None) -> dict:
     if now.tzinfo is None:
         raise ValueError("Timezone-aware now required")
     now=now.astimezone(timezone.utc)
@@ -168,12 +193,17 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
     reports=[]
     inspected=0
     map_origin="OFFICIAL_SEC_TICKER_MAP"
-    try:
-        mapping=ticker_cik_map(_get(session,TICKERS_URL,agent))
-    except (requests.RequestException,ValueError,TypeError) as exc:
-        mapping={}
-        failures["ticker_map"]=getattr(getattr(exc,"response",None),"status_code",None) or type(exc).__name__
-    if not mapping:
+    cooldown = _active_refusal_cooldown(previous, now)
+    mapping = {}
+    if cooldown:
+        map_origin = "OFFICIAL_SEC_ACCESS_COOLDOWN"
+        failures["sec_api"] = "COOLDOWN_ACTIVE"
+    else:
+        try:
+            mapping=ticker_cik_map(_get(session,TICKERS_URL,agent))
+        except (requests.RequestException,ValueError,TypeError) as exc:
+            failures["ticker_map"]=getattr(getattr(exc,"response",None),"status_code",None) or type(exc).__name__
+    if not mapping and not cooldown:
         # A mirror is a *lookup only* and cannot authenticate a company by
         # itself. All mirrored matches require ticker confirmation by the
         # fresh official SEC issuer JSON before publishing any filing.
@@ -221,10 +251,27 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
     status=("UNAVAILABLE" if inspected==0 else
             "PARTIAL" if failures else
             "OK" if filings else "NO_RECENT_FILINGS")
+    refusal = None
+    if not cooldown and inspected == 0:
+        # Failed official endpoints may reject shared GitHub runner IPs.
+        # Cooldown is scoped to the report; no speculative mirror is verified.
+        errors = {str(value) for value in failures.values()}
+        if "403" in errors or "HTTP_403" in errors:
+            refusal = "HTTP_403"
+        elif "429" in errors or "HTTP_429" in errors:
+            refusal = "HTTP_429"
+    retry_after = (
+        cooldown if cooldown else
+        (now + timedelta(hours=6 if refusal == "HTTP_403" else 2)).isoformat()
+        if refusal else None
+    )
     return {
         "schema":"ghazi.sec_issuer_pulse.v1",
         "generated_at":now.isoformat(),
         "status":status,
+        "source_retry_after": retry_after,
+        "refusal_reason": (previous.get("refusal_reason")
+                           if cooldown and isinstance(previous, dict) else refusal),
         "source":"US SEC EDGAR submissions and official ticker-CIK map",
         "coverage":{
             "symbols_requested":len(selected),"issuers_inspected":inspected,
@@ -255,8 +302,14 @@ def main() -> int:
         raise ValueError("unexpected market research source schema")
     import os
     agent=os.getenv("SEC_USER_AGENT","GHAZI Market Research ghazi-bot@users.noreply.github.com")
+    previous = None
+    if args.output.is_file() and args.output.stat().st_size <= 1_000_000:
+        try:
+            previous = json.loads(args.output.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            previous = None
     result=collect(brief,now=datetime.now(timezone.utc),agent=agent,
-                   max_symbols=max(1,min(30,args.max_symbols)))
+                   max_symbols=max(1,min(30,args.max_symbols)),previous=previous)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     temp=args.output.with_suffix(args.output.suffix+".tmp")
     temp.write_text(json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False)+"\n",encoding="utf-8")
