@@ -8,11 +8,13 @@ from options_radar.free_public_intelligence import (
     BLS_ICS,
     FED_MONETARY,
     GDELT_DOC,
+    GOOGLE_NEWS_RSS,
     PRESS_WIRE_RSS,
     alpaca_iex_health,
     build_context,
     fed_monetary_updates,
     gdelt_attention,
+    google_issuer_attention,
     parse_bls_calendar,
     press_wire_attention,
 )
@@ -324,3 +326,63 @@ def test_press_wire_works_independently_even_when_gdelt_is_rate_limited():
     assert len(result["press_wire_attention"])==1
     assert result["press_wire_attention"][0]["positive_catalyst_verified"] is False
     assert result["status"]=="DEGRADED"
+
+
+
+def test_google_rss_requires_named_issuer_and_keeps_news_non_official():
+    from email.utils import format_datetime
+    recent=format_datetime(NOW-timedelta(minutes=35))
+    rss=(
+        '<rss version="2.0"><channel>'
+        '<item><title>Rocket Lab announces new engineering mission - Wire</title>'
+        '<link>https://news.google.com/rss/articles/rocket123</link>'
+        f'<pubDate>{recent}</pubDate></item>'
+        '<item><title>RGC named in another unrelated subject</title>'
+        '<link>https://news.google.com/rss/articles/bare123</link>'
+        f'<pubDate>{recent}</pubDate></item>'
+        '<item><title>Regencell Bioscience responds to report - Publisher</title>'
+        '<link>https://news.google.com/rss/articles/regencell123</link>'
+        f'<pubDate>{recent}</pubDate></item>'
+        '</channel></rss>'
+    ).encode()
+    session=Session({GOOGLE_NEWS_RSS:Response(content=rss)})
+    data, errors=google_issuer_attention(["RKLB","RGC"],session=session,now=NOW)
+    assert errors=={}
+    assert {e["symbol"] for e in data}=={"RGC","RKLB"}
+    assert len(data)==2
+    assert all(e["source"]=="google_news_rss" for e in data)
+    assert all(e["authority"]=="NEWS_SEARCH_ATTENTION_ONLY" for e in data)
+    assert all(e["positive_catalyst_verified"] is False for e in data)
+    assert all(e["issuer_release_authenticated"] is False for e in data)
+    assert len(session.calls)==2
+    assert all("when:7d" in params["q"] for _,params,_,_ in session.calls)
+    assert all(params["ceid"]=="US:en" for _,params,_,_ in session.calls)
+
+
+def test_google_rss_explicitly_reports_rate_limit_without_faking_news():
+    refusal=requests.HTTPError("429",response=SimpleNamespace(status_code=429))
+    session=Session({GOOGLE_NEWS_RSS:refusal})
+    rows, errors=google_issuer_attention(["RGC","BNAI"],session=session,now=NOW)
+    assert rows==[]
+    assert errors=={"RGC":"HTTP_429","BNAI":"HTTP_429"}
+    assert len(session.calls)==2
+
+
+def test_google_rss_rejects_non_aggregator_links_and_stale_articles():
+    from email.utils import format_datetime
+    recent=format_datetime(NOW-timedelta(minutes=20))
+    older=format_datetime(NOW-timedelta(days=10))
+    rss=(
+        '<rss version="2.0"><channel>'
+        '<item><title>Rocket Lab contract update</title>'
+        '<link>https://evil.invalid/fake</link>'
+        f'<pubDate>{recent}</pubDate></item>'
+        '<item><title>Rocket Lab old mission</title>'
+        '<link>https://news.google.com/rss/articles/old</link>'
+        f'<pubDate>{older}</pubDate></item>'
+        '</channel></rss>'
+    ).encode()
+    session=Session({GOOGLE_NEWS_RSS:Response(content=rss)})
+    items, errors=google_issuer_attention(["RKLB"],session=session,now=NOW)
+    assert items==[]
+    assert errors=={}
