@@ -1,0 +1,15 @@
+/* Third-party TradingView web components are display-only and may be delayed. */
+.ghazi-tv-widget {
+  margin: 0 0 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.ghazi-tv-widget h3 { font-size: 1rem; margin: 0 0 16px; }
+.ghazi-tv-widget tv-ticker-tape { display: block; min-height: 65px; direction: ltr; }
+.ghazi-tv-widget tv-market-overview { display: block; min-height: 440px; direction: ltr; }
+@media (max-width: 640px) {
+  .ghazi-tv-widget { padding: 10px; }
+  .ghazi-tv-widget tv-market-overview { min-height: 480px; }
+}
