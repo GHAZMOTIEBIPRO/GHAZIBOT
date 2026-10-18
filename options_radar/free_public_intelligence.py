@@ -306,7 +306,18 @@ def google_issuer_attention(
     preference = ("RGC", "BNAI", "RKLB", "IONQ", "SOUN", "ASTS",
                   "RGTI", "MU", "NVDA", "AMD", "AAPL", "TSLA", "PLTR")
     requested = {str(s).upper().strip() for s in symbols}
-    selected = [s for s in preference if s in requested and s in ISSUER_NAMES][:GOOGLE_NEWS_MAX_ISSUERS]
+    eligible = [s for s in preference if s in requested and s in ISSUER_NAMES]
+    # Cover all followed issuers in rotating bounded batches; do not turn
+    # six per cycle into unbounded Google requests. Small test/watch subsets
+    # fit in one batch without altering their selection semantics.
+    if len(eligible) > GOOGLE_NEWS_MAX_ISSUERS:
+        shift = int(current.timestamp() // 3600) % (
+            (len(eligible)+GOOGLE_NEWS_MAX_ISSUERS-1)//GOOGLE_NEWS_MAX_ISSUERS
+        )
+        selected = eligible[shift*GOOGLE_NEWS_MAX_ISSUERS:
+                            (shift+1)*GOOGLE_NEWS_MAX_ISSUERS]
+    else:
+        selected = eligible
     events: list[dict[str, Any]] = []
     errors: dict[str, str] = {}
     for symbol in selected:
@@ -573,13 +584,83 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
     }
 
 
+def retain_verified_news_context(current: dict, previous: dict, *, now: datetime) -> dict:
+    """Preserve historical *published* RSS headlines across rotated batches.
+
+    Retention is not a provider refresh: original publication time stays
+    unchanged, and previous collection timestamp is retained separately.
+    Filter stale or unverified/unmatched stories to fail closed.
+    """
+    valid = []
+    for item in (current.get("google_news_attention") or []) + (
+            previous.get("google_news_attention") or []):
+        if not isinstance(item, dict):
+            continue
+        published = _iso(item.get("published_at"))
+        if published is None or not timedelta(minutes=-3) <= now-published <= timedelta(days=7):
+            continue
+        symbol = str(item.get("symbol") or "")
+        url = _https(item.get("url"), ("news.google.com",))
+        headline = str(item.get("headline") or "")
+        if (symbol not in ISSUER_NAMES or not url or
+                item.get("authority") != "NEWS_SEARCH_ATTENTION_ONLY" or
+                item.get("positive_catalyst_verified") is not False or
+                item.get("issuer_release_authenticated") is not False or
+                item.get("market_direction") != "UNKNOWN" or
+                classify_issuer_news_headline(headline) is None):
+            continue
+        aliases = ISSUER_NAMES[symbol]
+        if not any(re.search(r"(?<![A-Za-z0-9])" + re.escape(alias) +
+                             r"(?![A-Za-z0-9])", headline, re.IGNORECASE)
+                   for alias in aliases):
+            continue
+        safe = dict(item)
+        safe["first_collected_at"] = str(
+            item.get("first_collected_at") or
+            previous.get("generated_at") or current.get("generated_at"))
+        safe["published_at"] = published.isoformat()
+        valid.append(safe)
+    by_identity = {}
+    for item in valid:
+        by_identity.setdefault((item["symbol"], item["url"]), item)
+    balanced = []
+    per_symbol = {}
+    for item in sorted(by_identity.values(), key=lambda x:x["published_at"],reverse=True):
+        symbol=item["symbol"]
+        if per_symbol.get(symbol,0)>=4:
+            continue
+        per_symbol[symbol]=per_symbol.get(symbol,0)+1
+        balanced.append(item)
+    current["google_news_attention"] = balanced[:48]
+    current["google_news_retention"] = {
+        "historical_stories_preserved": sum(
+            x["url"] not in {a.get("url") for a in current.get("_new_stories",[])}
+            for x in balanced
+        ),
+        "note": "Older stories keep publication timestamps; not refreshed quotes",
+    }
+    current.pop("_new_stories",None)
+    return current
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyless GDELT/Fed/BLS research context + optional Alpaca IEX health")
     parser.add_argument("--output", default="public/data/free_public_intelligence.json")
     parser.add_argument("--symbols", default=",".join(WATCH_DEFAULT))
+    parser.add_argument("--previous", type=Path, default=None)
     args = parser.parse_args()
     symbols = [x.strip().upper() for x in args.symbols.split(",") if x.strip()]
     payload = build_context(symbols=symbols)
+    if args.previous and args.previous.is_file():
+        try:
+            previous=json.loads(args.previous.read_text(encoding="utf-8"))
+            if (previous.get("schema")=="free_public_intelligence_v1"
+                    and _iso(previous.get("generated_at")) is not None):
+                payload["_new_stories"]=list(payload.get("google_news_attention") or [])
+                payload=retain_verified_news_context(
+                    payload,previous,now=datetime.fromisoformat(payload["generated_at"]))
+        except (ValueError,TypeError,OSError,KeyError):
+            pass  # Never prevent the current report on a broken old cache.
     dest = Path(args.output)
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(".tmp")
