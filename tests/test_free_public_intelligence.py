@@ -364,8 +364,8 @@ def test_google_rss_explicitly_reports_rate_limit_without_faking_news():
     session=Session({GOOGLE_NEWS_RSS:refusal})
     rows, errors=google_issuer_attention(["RGC","BNAI"],session=session,now=NOW)
     assert rows==[]
-    assert errors=={"RGC":"HTTP_429","BNAI":"HTTP_429"}
-    assert len(session.calls)==2
+    assert errors=={"RGC":"HTTP_429"}
+    assert len(session.calls)==1  # host-level refusal must not trigger burst
 
 
 def test_google_rss_rejects_non_aggregator_links_and_stale_articles():
