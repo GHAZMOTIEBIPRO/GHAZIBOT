@@ -1,0 +1,65 @@
+name: GHAZI Stock Watch OHLC Charts
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["GHAZI RADAR Market Index Research"]
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_stock_watch_charts.py"
+      - ".github/workflows/stock-watch-charts.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-stock-watch-charts
+  cancel-in-progress: false
+
+jobs:
+  stock-chart-research:
+    # A failed upstream cannot trigger fabricated zero-data reports.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app/requirements.txt
+      - name: Install existing research dependencies
+        run: python -m pip install -r app/requirements.txt
+      - name: Collect real daily and intraday candles
+        run: |
+          PYTHONPATH=app python -m scripts.build_stock_watch_charts \
+            --output state/runtime/public/data/stock_watch_charts.json
+      - name: Persist isolated stock chart feed
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Stock Watch"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/stock_watch_charts.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "state: completed research stock candles [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Could not safely persist stock candle report" >&2
+          exit 1
