@@ -50,6 +50,8 @@ ISSUER_NAMES = {
     "SHOP": ("Shopify Inc.",),
     "GILD": ("Gilead Sciences",),
     "SOFI": ("SoFi Technologies",),
+    "MSFT": ("Microsoft Corporation", "Microsoft"),
+    "AVGO": ("Broadcom Inc.", "Broadcom"),
 }
 
 UTC = timezone.utc
@@ -304,7 +306,8 @@ def google_issuer_attention(
     """
     current = now or datetime.now(UTC)
     preference = ("RGC", "BNAI", "RKLB", "IONQ", "SOUN", "ASTS",
-                  "RGTI", "MU", "NVDA", "AMD", "AAPL", "TSLA", "PLTR")
+                  "RGTI", "SOFI", "MU", "NVDA", "AMD", "AAPL",
+                  "TSLA", "PLTR", "MSFT", "AVGO")
     requested = {str(s).upper().strip() for s in symbols}
     eligible = [s for s in preference if s in requested and s in ISSUER_NAMES]
     # Cover all followed issuers in rotating bounded batches; do not turn
