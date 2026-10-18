@@ -186,7 +186,7 @@ def analyze(symbol: str, daily_raw: pd.DataFrame | None,
     q15 = technical(intraday)
     hour = hourly_from_quarters(intraday)
     q60 = technical(hour, fast=9, slow=21)
-    today_bars = intraday.loc[intraday.index.date == today]
+    today_bars = intraday.loc[intraday.index.date == today] if not intraday.empty else intraday
     vwap = None
     if not today_bars.empty and today_bars["Volume"].sum() > 0:
         typical = (today_bars["High"] + today_bars["Low"] + today_bars["Close"]) / 3
