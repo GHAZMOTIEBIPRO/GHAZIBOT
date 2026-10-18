@@ -16,6 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from scripts.build_index_chart_snapshot import pack_bars
+from scripts.stock_chart_retention import retain_valid_history
 from scripts.build_index_context import (
     NY, clean_bars, completed_daily, last_finished_five_min,
     last_finished_intraday, technical,
@@ -148,7 +149,7 @@ def pack_symbol(
 
 
 def collect(*, now: datetime, provider=None, delay=lambda _: None,
-            dynamic_symbols=()) -> dict:
+            dynamic_symbols=(), previous=None) -> dict:
     if now.tzinfo is None:
         raise ValueError("aware now required")
     if provider is None:
@@ -179,6 +180,12 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
             data[symbol] = item
     if not data:
         raise ValueError("No independently valid watched stock candles; preserve old report")
+    # Cached bars are explicitly historical; never count them as fresh
+    # observations or conceal provider failures.
+    fresh = dict(data)
+    data, retained, retained_intervals = retain_valid_history(
+        previous, data, now=now, actively_scanned=watch, max_extra=12
+    )
     report = {
         "schema": "ghazi.stock_charts.v1",
         "generated_at": now.astimezone(timezone.utc).isoformat(),
@@ -187,16 +194,31 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
         "provider_source_family": "yahoo",
         "symbols": data,
         "coverage": {
-            "requested": len(watch), "with_valid_charts": len(data),
+            "requested": len(watch), "with_valid_charts": len(fresh),
+            "fresh_symbols": sorted(fresh),
+            "retained_symbols": retained,
+            "retained_symbols_count": len(retained),
+            "retained_timeframes_count": retained_intervals,
+            "historical_only_symbols": sorted(set(data) - set(fresh)),
+            "charts_including_historical": len(data),
+            "retention_max_days": 7,
             "discovered_requested": len(dynamic),
             "discovered_symbols": list(dynamic),
-            "discovered_with_charts": sum(s in data for s in dynamic),
+            "discovered_with_charts": sum(s in fresh for s in dynamic),
             "with_daily": sum("1d" in x["intervals"] for x in data.values()),
             "with_15m": sum("15m" in x["intervals"] for x in data.values()),
-            "with_5m": sum("5m" in x["intervals"] for x in data.values()),
+            "with_5m": sum("5m" in x["intervals"] for x in fresh.values()),
+            "with_daily_including_historical": sum(
+                "1d" in x["intervals"] for x in data.values()),
+            "with_15m_including_historical": sum(
+                "15m" in x["intervals"] for x in data.values()),
+            "with_5m_including_historical": sum(
+                "5m" in x["intervals"] for x in data.values()),
             "errors": errors,
         },
-        "disclaimer": "Free Yahoo OHLC is research-only. No live quote, market-cap certainty, option flow or trade permission.",
+        "disclaimer": ("Free Yahoo OHLC is research-only; retained bars may be days old "
+                       "and never become live quotes. No market-cap certainty, "
+                       "option flow or trade permission."),
     }
     raw=json.dumps(report,ensure_ascii=False,allow_nan=False,separators=(",",":"))
     if len(raw.encode())>MAX_BYTES:
@@ -211,7 +233,13 @@ def main() -> int:
     args=p.parse_args()
     now=datetime.now(timezone.utc)
     dynamic=load_dynamic_symbols(args.discovery_source,now=now)
-    report=collect(now=now,delay=time.sleep,dynamic_symbols=dynamic)
+    previous=None
+    if args.output.is_file() and args.output.stat().st_size <= 800_000:
+        try:
+            previous=json.loads(args.output.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            previous=None
+    report=collect(now=now,delay=time.sleep,dynamic_symbols=dynamic,previous=previous)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     temp=args.output.with_suffix(args.output.suffix+".tmp")
     temp.write_text(json.dumps(report,ensure_ascii=False,allow_nan=False,separators=(",",":"))+"\n",
