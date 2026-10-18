@@ -14,6 +14,14 @@ fi
 # decision-room and index-radar modules added after the old allowlist.
 # Data snapshots and health metadata refresh independently from bot-state;
 # they must not exhaust the free Vercel deployment quota.
+# Preserve the existing /health and /data-status contract on main; these
+# two tiny metadata files are part of the official status endpoints.
+if ! git diff --quiet HEAD^ HEAD -- public/data/health.json public/data/data-status.json; then
+  echo "New public health metadata; build the status endpoints."
+  exit 1
+fi
+# Existing public/app.js public/index.html public/styles.css plus EVERY future
+# nested frontend file now triggers a deployment.
 if git diff --quiet HEAD^ HEAD -- \
   ':(glob)public/**' ':(exclude,glob)public/data/**' \
   vercel.json .vercelignore scripts/vercel-ignore-build.sh; then
