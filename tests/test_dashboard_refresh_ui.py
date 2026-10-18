@@ -14,7 +14,7 @@ def test_dashboard_separates_call_and_put_contracts() -> None:
     assert 'sideLabel(option.option_type) === "PUT"' in javascript
 
 
-def test_dashboard_shows_exact_riyadh_fetch_time() -> None:
+def test_dashboard_shows_exact_riyadh_report_time_without_claiming_quote_time() -> None:
     html = Path("public/index.html").read_text(encoding="utf-8")
     javascript = Path("public/app.js").read_text(encoding="utf-8")
 
@@ -22,7 +22,8 @@ def test_dashboard_shows_exact_riyadh_fetch_time() -> None:
     assert 'id="page-loaded-at"' in html
     assert 'id="refresh-result"' in html
     assert 'Asia/Riyadh' in javascript
-    assert 'وقت جلب السوق' in javascript
+    assert 'وقت إنشاء التقرير' in javascript
+    assert 'ليس وقت تسعير العقد' in javascript
     assert 'لا يوجد ملف أحدث' in javascript
 
 
