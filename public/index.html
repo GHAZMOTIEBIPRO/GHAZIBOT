@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="./bls-macro.css?v=20261018-1">
   <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261018-1">
   <link rel="stylesheet" href="./contract-risk-lab.css?v=20261018-1">
+  <link rel="stylesheet" href="./index-radar.css?v=20261018-1">
 </head>
 <body>
   <div class="page-shell">
@@ -124,6 +125,7 @@
       <button class="tab-button" data-tab="chart">الشارت</button>
       <button class="tab-button" data-tab="options">رادار العقود</button>
       <button class="tab-button" data-tab="risklab">مختبر مخاطر العقود</button>
+      <button class="tab-button" data-tab="indices">رادار المؤشرات</button>
       <button class="tab-button" data-tab="spx0dte">SPX 0DTE</button>
       <button class="tab-button" data-tab="liveview">السوق وشارتاته</button>
       <button class="tab-button" data-tab="macro">الاقتصاد الأمريكي</button>
@@ -135,6 +137,24 @@
     </nav>
 
     <main>
+      <section id="tab-indices" class="tab-panel" aria-labelledby="ghazi-indices-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="ghazi-indices-heading">رادار المؤشرات الأمريكية — SPX · NDX · DJI · RUT · VIX</h2>
+            <p>تحليل اتجاه يومي وساعة و15 دقيقة، وقمم وقيعان آخر جلسة مكتملة والأسبوع والشهر السابق، مع EMA وRSI وATR. الصناديق SPY/QQQ/IWM/DIA للقياس النسبي فقط.</p>
+          </div>
+          <button class="ghazi-index-refresh" id="index-radar-refresh" type="button">فحص آخر تقرير</button>
+        </div>
+        <div class="ghazi-index-summary">
+          <strong id="index-radar-consensus">WAIT — بانتظار بيانات المؤشرات</strong>
+          <p id="index-radar-consensus-description">الاتجاه بحثي وليس إشارة CALL أو PUT. لا تُحتسب العقود أو Gamma دون مصدر مستقل مؤهل.</p>
+        </div>
+        <p id="index-radar-status" class="ghazi-index-footnote" role="status">جاري فحص تقرير المؤشرات المنشور…</p>
+        <div id="index-radar-grid" class="ghazi-index-grid" aria-live="polite"></div>
+        <p id="index-radar-source-note" class="ghazi-index-footnote">البيانات قد تتأخر وتكون غير مكتملة. الزمن المعروض لآخر شمعة مكتملة وليس ضمانًا لعرض سعر قابل للتنفيذ.</p>
+        <p class="ghazi-index-footnote">مفاهيم المؤشرات بنيت على أدوات <a href="https://github.com/ranaroussi/yfinance" target="_blank" rel="noopener">yfinance</a> و<a href="https://github.com/bukosabino/ta" target="_blank" rel="noopener">مكتبة TA</a>، بحساب مستقل دون نسخ الشيفرات. مصدر Yahoo ليس تغذية تداول مرخصة، وSPY ليس SPX ولا QQQ هو NDX. لا تتغير بوابة V11.</p>
+      </section>
+
       <section id="tab-liveview" class="tab-panel" aria-labelledby="ghazi-liveview-heading">
         <div class="section-heading">
           <div>
@@ -415,6 +435,7 @@
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-market-overview.js"></script>
   <script src="./contract-risk-lab.js?v=20261018-1" defer></script>
+  <script src="./index-radar.js?v=20261018-1" defer></script>
   <script src="./ghazi-radar-quality.js?v=20261018-1" defer></script>
   <script src="./bls-macro.js?v=20261018-1" defer></script>
   <script src="./app.js?v=20261018-ghazi-radar" defer></script>
