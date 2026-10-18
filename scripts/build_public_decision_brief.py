@@ -135,7 +135,6 @@ def catalyst_focus(payload: dict, stocks: list[dict], *, as_of: datetime) -> dic
             if str(row.get("source") or "").lower().startswith("clinicaltrials"):
                 rejected_registry += 1
             continue
-        day = timestamp(item["published_at"])
         # Event dates like YYYY-MM-DD carry no time-of-day; do not invent one.
         from datetime import date
         try:
