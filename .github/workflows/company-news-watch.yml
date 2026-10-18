@@ -49,6 +49,13 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+        with:
+          ref: bot-state
+          path: .ghazi-news-state
+          fetch-depth: 0
+
       - name: Build free GDELT and official macro context
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
@@ -56,14 +63,8 @@ jobs:
         run: >-
           python -m options_radar.free_public_intelligence
           --output public/data/free_public_intelligence.json
-          --symbols "MU,NVDA,RGC,BNAI,RKLB,AMD,AAPL,TSLA,IONQ,SOUN,ASTS,PLTR"
-
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request'
-        with:
-          ref: bot-state
-          path: .ghazi-news-state
-          fetch-depth: 0
+          --previous .ghazi-news-state/runtime/public/data/free_public_intelligence.json
+          --symbols "MU,NVDA,RGC,BNAI,RKLB,AMD,AAPL,TSLA,IONQ,SOUN,ASTS,RGTI,SOFI,PLTR"
 
       - name: Publish bounded public news attention to independent bot-state path
         if: github.event_name != 'pull_request'
