@@ -2,6 +2,11 @@ name: GHAZI RADAR Official BLS Macro
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/bls_macro_context.py"
+      - ".github/workflows/bls-macro-context.yml"
   # BLS releases monthly, so one weekday batch conserves its keyless API quota.
   schedule:
     - cron: "17 15 * * 1-5"
