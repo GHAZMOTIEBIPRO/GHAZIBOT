@@ -43,8 +43,8 @@ class ListingSession:
         self.calls.append(url)
         if "nasdaq-listed.csv" in url:
             return Response(listing_csv("Symbol", "Security Name", [
-                ("DKNG", "DraftKings Inc. Class A Common Stock"),
-                ("REGN", "Regeneron Pharmaceuticals, Inc. Common Stock"),
+                ("DKNG", "DraftKings Inc. - Class A Common Stock"),
+                ("REGN", "Regeneron Pharmaceuticals, Inc. - Common Stock"),
                 ("FUND", "Broad Dividend ETF"),
                 ("WARR", "Company One Warrants"),
             ]))
@@ -101,6 +101,7 @@ def test_directory_cache_limits_provider_calls_and_never_fakes_issuer():
 
 def test_listing_cleaning_rejects_derivatives_and_ambiguous_names():
     assert clean_issuer_name("Chevron Corporation Common Stock") == "Chevron"
+    assert clean_issuer_name("DraftKings Inc. - Class A Common Stock") == "DraftKings"
     for name in ("XYZ ETF", "A1 Warrant", "Two Rights", "BAD Units",
                  "<script>alert()</script>", "A", "Holdings"):
         assert clean_issuer_name(name) is None
@@ -147,7 +148,7 @@ def test_new_stocks_receive_company_name_news_without_more_than_six_queries():
     symbols = list(names)+["RGC","RKLB","AAPL","NVDA","AMD","SOFI","TSLA","AVGO"]
     session = NewsSession()
     result, errors = google_issuer_attention(
-        symbols, session=session, now=NOW, dynamic_names=names,
+        symbols, session=session, now=NOW+timedelta(hours=1), dynamic_names=names,
     )
     assert errors == {}
     assert len(session.calls) <= GOOGLE_NEWS_MAX_ISSUERS
