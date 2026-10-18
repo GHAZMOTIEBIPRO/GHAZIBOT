@@ -47,6 +47,29 @@ def test_intraday_does_not_use_unfinished_candle() -> None:
     assert done.index[-1] + pd.Timedelta(minutes=15) <= now
 
 
+def test_completed_five_min_candles_are_distinct_from_incomplete_candles() -> None:
+    from scripts.build_index_context import last_finished_five_min
+    now = datetime(2026, 10, 16, 15, 46, tzinfo=NY)
+    stamps = pd.date_range("2026-10-16 09:30", periods=80, freq="5min", tz=NY)
+    prices = [440 + i*0.11 for i in range(80)]
+    bars = pd.DataFrame({
+        "Open":prices, "High":[x+0.3 for x in prices],
+        "Low":[x-0.3 for x in prices],"Close":prices,
+        "Volume":[1000 for _ in prices],
+    },index=stamps)
+    complete = last_finished_five_min(clean_bars(bars, intraday=True), now)
+    assert complete.index[-1].strftime("%H:%M") == "15:40"
+    assert all((complete.index + pd.Timedelta(minutes=5)) <= pd.Timestamp(now))
+    result = analyze("SPX", daily_bars(), intraday_bars(), now=now, five_min_raw=bars)
+    assert result["current_m5_confirmed"] is True
+    assert result["m5"]["ema_fast"] is not None
+    assert result["m5"]["bias"] != "STALE"
+    stale = analyze("SPX", daily_bars(), intraday_bars(),
+                    now=datetime(2026,10,18,10,tzinfo=NY), five_min_raw=bars)
+    assert stale["current_m5_confirmed"] is False
+    assert stale["m5"]["bias"] == "STALE"
+
+
 def test_daily_bar_not_promoted_until_after_close_buffer() -> None:
     frame = clean_bars(daily_bars(), intraday=False)
     before = completed_daily(frame, datetime(2026, 10, 16, 15, 46, tzinfo=NY))
