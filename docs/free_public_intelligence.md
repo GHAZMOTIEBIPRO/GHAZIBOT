@@ -34,3 +34,23 @@ press releases, SEC filings, trading recommendations or proof of a
 positive catalyst. Missing GDELT results and HTTP 429 cannot be replaced
 with invented article links. The SEC issuer filing feed remains separate,
 and SEC 403 is reported without misrepresenting the GDELT substitute.
+
+## Yahoo Finance RSS fallback (October 18, 2026)
+
+GDELT repeatedly returned HTTP 429 on GitHub-hosted Actions, with zero
+retrievable headline leads. The existing **same** free news job now also
+tries two bounded Yahoo Finance RSS multi-ticker batches, no API key
+required: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=RKLB,RGC`.
+It only publishes articles whose *headline itself* names the requested
+symbol (explicit exchange notation, $TICKER, or carefully curated
+unambiguous issuer name). A symbol in the requested RSS URL alone does
+not establish the company's involvement.
+
+RSS `published_at_reported` is a publisher-supplied timestamp, separate
+from `observed_at` (the collector run). Articles may lag, disappear,
+have syndication licensing, or be unavailable from GitHub IPs.
+Yahoo RSS is one **Yahoo** family, not an independent quote provider,
+nor primary SEC/FDA proof. Every article remains `ATTENTION_ONLY` with
+`official_confirmed=false` and `market_direction=UNKNOWN`.
+A missing/blocked feed is recorded under `source_errors`, and no
+news or positive stock-return signals are fabricated.
