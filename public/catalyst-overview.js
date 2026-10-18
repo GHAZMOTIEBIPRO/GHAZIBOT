@@ -173,6 +173,47 @@
         (String(secPulse.ticker_mapping_source||"").startsWith("UNVERIFIED")?
           " · خريطة CIK احتياطية قديمة؛ لا ينشر مستند إلا إذا أكد SEC الرمز والجهة." : ""));
     }
+    const googleContainer=el("google-issuer-news-list");
+    if(googleContainer){
+      googleContainer.replaceChildren();
+      const freshContext=asDate(newsContext?.generated_at) &&
+        Date.now()-asDate(newsContext.generated_at).getTime()<=48*60*60000;
+      const googleStories=freshContext&&Array.isArray(newsContext?.google_news_attention)?
+        newsContext.google_news_attention:[];
+      const included=googleStories.filter(item=>{
+        const url=safeNewsLink(item?.url);
+        if(!url || new URL(url).hostname!=="news.google.com")return false;
+        const stamp=asDate(item.published_at);
+        return item.source==="google_news_rss" &&
+          item.authority==="NEWS_SEARCH_ATTENTION_ONLY" &&
+          item.issuer_release_authenticated===false &&
+          item.positive_catalyst_verified===false &&
+          item.market_direction==="UNKNOWN" &&
+          typeof item.symbol==="string" &&
+          /^[A-Z][A-Z0-9.-]{0,8}$/.test(item.symbol) &&
+          stamp && Date.now()-stamp.getTime() <= 7*24*60*60000;
+      }).slice(0,16);
+      for(const story of included){
+        const article=node("article","","ghazi-catalyst-primary");
+        article.append(node("h4",story.symbol+" · بحث إخباري غير رسمي"));
+        article.append(node("p",String(story.headline||"بدون عنوان")+
+          " · تاريخ النشر في محرك التجميع: "+time(story.published_at)+
+          " · يجب التأكد من المصدر الأصلي واسم الشركة"));
+        const link=node("a","مراجعة نتيجة البحث الإخباري ↗");
+        link.href=safeNewsLink(story.url);
+        link.rel="noopener noreferrer";link.target="_blank";
+        article.append(link);googleContainer.append(article);
+      }
+      if(!included.length)googleContainer.append(node("p",
+        "لا توجد عناوين بحث مطابقة وواضحة في آخر فحص، أو فشل مصدر RSS. لا يعني ذلك عدم وجود أخبار."));
+      const errors=newsContext?.source_errors||{};
+      const blocked=Object.entries(errors).filter(([k])=>k.startsWith("google_news_"));
+      set("google-issuer-source-status",
+        "آخر تجميع: "+time(newsContext?.generated_at)+
+        " · عناوين مطابقة: "+n(included.length,0)+
+        " · طلبات معطلة: "+n(blocked.length,0)+
+        " · مصدر تجميعي غير رسمي، لا يوثّق صعودًا أو إفصاحًا للشركة.");
+    }
     const wireContainer=el("press-wire-news-list");
     if(wireContainer){
       wireContainer.replaceChildren();
