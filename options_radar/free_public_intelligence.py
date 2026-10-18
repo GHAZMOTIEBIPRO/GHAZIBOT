@@ -24,6 +24,7 @@ GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 BLS_ICS = "https://www.bls.gov/schedule/news_release/bls.ics"
 FED_MONETARY = "https://www.federalreserve.gov/feeds/press_monetary.xml"
 ALPACA_LATEST = "https://data.alpaca.markets/v2/stocks/SPY/bars/latest"
+YAHOO_FINANCE_RSS = "https://feeds.finance.yahoo.com/rss/2.0/headline"
 UTC = timezone.utc
 NY = ZoneInfo("America/New_York")
 WATCH_DEFAULT = ("MU", "NVDA", "RGC", "BNAI", "RKLB", "AMD")
@@ -142,6 +143,76 @@ def gdelt_attention(
                 "price_or_option_quote": False,
             })
     return output[:40]
+
+
+def yahoo_rss_attention(
+    symbols: list[str], *, session: Any=requests, now: datetime | None=None,
+) -> list[dict[str, Any]]:
+    """Two bounded keyless ticker-group RSS pulls, explicit headline matching.
+
+    Yahoo is one upstream family for market-news aggregation; do not count
+    it as independent confirmation for Yahoo price bars or official issuer
+    events. A feed selected by symbol is *not* proof of issuer identity.
+    """
+    current=now or datetime.now(UTC)
+    watch=list(dict.fromkeys(str(x).strip().upper() for x in symbols))
+    watch=[x for x in watch if _SYMBOL_RE.fullmatch(x)][:12]
+    if not watch:
+        return []
+    # Tightly curated unambiguous issuer names for otherwise non-ticker RSS headlines.
+    issuer_names={
+        "RGC":("Regencell",),"BNAI":("Brand Engagement Network",),
+        "RKLB":("Rocket Lab",),"SOUN":("SoundHound",),
+        "ASTS":("AST SpaceMobile",),"IONQ":("IonQ",),
+        "MU":("Micron Technology",),"NVDA":("Nvidia",),
+        "AMD":("Advanced Micro Devices",),"AAPL":("Apple Inc",),
+        "TSLA":("Tesla",),"PLTR":("Palantir",),
+    }
+    found=[]
+    seen=set()
+    for start in (0,6):
+        batch=watch[start:start+6]
+        if not batch:continue
+        response=_get(YAHOO_FINANCE_RSS,session=session,params={
+            "s":",".join(batch),"region":"US","lang":"en-US",
+        },headers={"Accept":"application/rss+xml,application/xml"})
+        parsed=feedparser.parse(response.content)
+        if parsed.bozo and not parsed.entries:
+            raise ValueError("Yahoo RSS invalid XML")
+        for entry in parsed.entries[:30]:
+            title=str(entry.get("title") or "").strip()[:210]
+            url=_https(entry.get("link"))
+            published=_iso(entry.get("published") or entry.get("updated"))
+            if not title or not url or published is None:
+                continue
+            age=current-published
+            if age<timedelta(minutes=-5) or age>timedelta(hours=72):
+                continue
+            for symbol in batch:
+                ticker_tag=bool(re.search(
+                    rf"(?<![A-Z0-9])(?:\${re.escape(symbol)}|(?:NASDAQ|NYSE|AMEX)\s*:\s*{re.escape(symbol)}|\({re.escape(symbol)}\))(?![A-Z0-9])",
+                    title,flags=re.IGNORECASE,
+                ))
+                issuer_tag=any(re.search(r"(?<![a-z])"+re.escape(name)+r"(?![a-z])",title,re.IGNORECASE)
+                               for name in issuer_names.get(symbol,()))
+                if not ticker_tag and not issuer_tag:
+                    continue
+                key=(symbol,url)
+                if key in seen:continue
+                seen.add(key)
+                found.append({
+                    "symbol":symbol,"headline":title,"url":url,
+                    "published_at_reported":published.isoformat(),
+                    "observed_at":current.isoformat(),
+                    "source":"yahoo_finance_rss",
+                    "source_family":"yahoo_news_aggregation",
+                    "ticker_association":"HEADLINE_TAG_OR_UNIQUE_ISSUER_MENTION",
+                    "authority":"ATTENTION_ONLY",
+                    "official_confirmed":False,"independent_confirmation":False,
+                    "market_direction":"UNKNOWN","price_or_option_quote":False,
+                })
+    found.sort(key=lambda x:x["published_at_reported"],reverse=True)
+    return found[:30]
 
 
 def fed_monetary_updates(
@@ -288,6 +359,7 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
     errors: dict[str, str] = {}
     for key, fn, opts in (
         ("gdelt_attention", gdelt_attention, {"symbols": symbols}),
+        ("yahoo_rss_attention", yahoo_rss_attention, {"symbols": symbols}),
         ("fed_monetary", fed_monetary_updates, {}),
         ("bls_upcoming", bls_upcoming, {}),
     ):
@@ -312,6 +384,7 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
         "is_independent_executable_market_data": False,
         "policy": {
             "gdelt_attention_not_official_confirmation": True,
+            "yahoo_rss_is_not_primary_nor_independent_market_price_confirmation": True,
             "bls_calendar_is_schedule_not_release_result": True,
             "fed_rss_publication_is_not_upcoming_fomc_calendar": True,
             "alpaca_iex_not_national_market_or_opra": True,
@@ -337,6 +410,7 @@ def main() -> None:
         "Free public context:"
         f" status={payload['status']}"
         f" gdelt={len(payload['gdelt_attention'])}"
+        f" yahoo_rss={len(payload['yahoo_rss_attention'])}"
         f" fed={len(payload['fed_monetary'])}"
         f" bls={len(payload['bls_upcoming'])}"
         f" alpaca={payload['alpaca_iex']['status']}"
