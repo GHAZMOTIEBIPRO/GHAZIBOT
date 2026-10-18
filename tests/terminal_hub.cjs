@@ -9,7 +9,7 @@ const make=(n=65)=>Array.from({length:n},(_,i)=>({
 // Valid calendar dates, with no fabricated missing sessions.
 const base=make(12).slice(0,12);
 const cleaned=uniqueValidBars([...base,{time:"2026-08-10",open:-1,high:5,low:1,close:3}]);
-assert.equal(cleaned.length,11); // invalid row with same time must not replace valid one
+assert.equal(cleaned.length,12); // invalid row with same time must not replace valid one
 const candles=Array.from({length:65},(_,i)=>({
   time:Date.UTC(2026,6,1+i)/1000,open:100+i*.75,close:100.5+i*.75,
   high:101+i*.75,low:99+i*.75
