@@ -9,12 +9,12 @@ from options_radar.free_public_intelligence import (
     FED_MONETARY,
     GDELT_DOC,
     PRESS_WIRE_RSS,
-    press_wire_attention,
     alpaca_iex_health,
     build_context,
     fed_monetary_updates,
     gdelt_attention,
     parse_bls_calendar,
+    press_wire_attention,
 )
 from scripts.send_free_macro_reminders import (
     format_macro_message,
@@ -265,7 +265,7 @@ def test_press_wire_issuer_name_matching_is_not_bullish_authority():
     })
     rows, errors=press_wire_attention(["RKLB","RGC","MU"],session=session,now=NOW)
     assert errors=={}
-    assert set(r["symbol"] for r in rows)=={"RKLB","RGC"}
+    assert {r["symbol"] for r in rows}=={"RKLB","RGC"}
     assert len(rows)==2  # Do not match bare RGC without issuer name.
     assert all(r["authority"]=="PRESS_RELEASE_DISCOVERY_ONLY" for r in rows)
     assert all(r["issuer_release_authenticated"] is False for r in rows)
