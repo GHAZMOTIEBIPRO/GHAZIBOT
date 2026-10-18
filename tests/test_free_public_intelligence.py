@@ -225,3 +225,15 @@ def test_gdelt_429_is_explicit_and_never_retried_or_fake_articles():
     assert context["gdelt_attention"] == []
     assert sum(url == GDELT_DOC for url, *_ in session.calls) == 1
     assert len(context["bls_upcoming"]) == 2
+
+
+def test_single_bounded_gdelt_query_covers_12_explicit_smallcap_symbols():
+    watch=["RGC","BNAI","RKLB","SOUN","ASTS","IONQ","MU","NVDA","AMD","AAPL","TSLA","PLTR"]
+    session=Session({GDELT_DOC:Response(json_value={"articles":[]})})
+    output=gdelt_attention(watch,session=session,now=NOW)
+    assert output==[]
+    assert len(session.calls)==1
+    params=session.calls[0][1]
+    assert '"PLTR"' in params["query"]
+    assert '"RGC"' in params["query"]
+    assert params["maxrecords"]==75
