@@ -365,8 +365,8 @@ def test_google_rss_explicitly_reports_rate_limit_without_faking_news():
     session=Session({GOOGLE_NEWS_RSS:refusal})
     rows, errors=google_issuer_attention(["RGC","BNAI"],session=session,now=NOW)
     assert rows==[]
-    assert errors=={"RGC":"HTTP_429","BNAI":"HTTP_429"}
-    assert len(session.calls)==2
+    assert errors=={"RGC":"HTTP_429"}
+    assert len(session.calls)==1  # one host-wide refusal, no redundant burst
 
 
 def test_google_rss_rejects_non_aggregator_links_and_stale_articles():
@@ -427,3 +427,13 @@ def test_google_issuer_feed_limits_per_company_to_avoid_dominant_stock():
     assert all(row["symbol"]=="RKLB" for row in rows)
     assert all(row["event_topic"]=="CORPORATE_EVENT_MENTION" for row in rows)
     assert all(row["positive_catalyst_verified"] is False for row in rows)
+
+
+
+def test_google_http_403_stops_remaining_issuer_lookups():
+    refusal=requests.HTTPError("403",response=SimpleNamespace(status_code=403))
+    session=Session({GOOGLE_NEWS_RSS:refusal})
+    rows, errors=google_issuer_attention(["RGC","BNAI","RKLB"],session=session,now=NOW)
+    assert rows==[]
+    assert errors=={"RGC":"HTTP_403"}
+    assert len(session.calls)==1

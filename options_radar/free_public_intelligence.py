@@ -362,6 +362,10 @@ def google_issuer_attention(
         except requests.HTTPError as exc:
             status = getattr(getattr(exc, "response", None), "status_code", None)
             errors[symbol] = f"HTTP_{status}" if isinstance(status, int) else "HTTP_ERROR"
+            # A provider-wide refusal must stop this run, not produce an
+            # unnecessary burst across all six requested issuer searches.
+            if status in (403, 429):
+                break
         except (requests.RequestException, ValueError, TypeError) as exc:
             errors[symbol] = type(exc).__name__
     # Publisher articles can repeat across searches; keep issuer+article
