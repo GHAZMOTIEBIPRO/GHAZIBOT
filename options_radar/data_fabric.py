@@ -414,23 +414,51 @@ def reconcile_option_chains(
     return result, audit
 
 
+def _stock_bar_is_daily(frame: pd.DataFrame) -> bool:
+    """Distinguish exchange-session 1d candles from 5m/15m candles."""
+    if len(frame) < 2:
+        return False  # Do not guess bar granularity from one row.
+    stamps = pd.to_datetime(frame.index, utc=True, errors="coerce")
+    if stamps.isna().any():
+        return False
+    deltas = stamps.to_series().diff().dropna()
+    return not deltas.empty and deltas.median() >= pd.Timedelta(hours=12)
+
+
+def _same_stock_candle(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    """Daily: same NY trading date. Intraday: same provider bar-start minute.
+
+    Comparing two latest bars of different sessions is not independent
+    price confirmation, regardless of how close their numeric prices are.
+    """
+    a, b = left["latest_at"], right["latest_at"]
+    if pd.isna(a) or pd.isna(b):
+        return False
+    if left["daily"] and right["daily"]:
+        return a.tz_convert("America/New_York").date() == b.tz_convert("America/New_York").date()
+    if left["daily"] != right["daily"]:
+        return False
+    return a.floor("min") == b.floor("min")
+
+
 def reconcile_stock_bars(
     frames: dict[str, pd.DataFrame],
     *,
     freshness: dict[str, str] | None = None,
     max_close_divergence_pct: float = 0.025,
 ) -> tuple[pd.DataFrame, str, dict[str, Any]]:
-    """Choose one complete bar series, using other providers only as validation."""
+    """Choose an intact feed; independently confirm only SAME candle.
+
+    Transport aliases (yfinance/yahooquery) count as a single upstream
+    family. Missing/mismatched candles are not a consensus PASS. No
+    synthesized prices and no exposure of credential/quote payloads.
+    """
     freshness = freshness or {}
     candidates: list[dict[str, Any]] = []
     static_quality = {
-        "tradier": 0.90,
-        "alpaca": 0.88,
-        "tiingo": 0.84,
-        "finnhub": 0.80,
-        "twelve_data": 0.70,
-        "polygon_massive": 0.68,
-        "alpha_vantage": 0.62,
+        "tradier": 0.90, "alpaca": 0.88, "tiingo": 0.84,
+        "finnhub": 0.80, "twelve_data": 0.70,
+        "polygon_massive": 0.68, "alpha_vantage": 0.62,
         "yahoo": 0.52,
     }
     for provider, frame in frames.items():
@@ -439,33 +467,49 @@ def reconcile_stock_bars(
         clean = frame.dropna(subset=["Close"]).sort_index()
         if clean.empty:
             continue
-        latest = clean.iloc[-1]
-        candidates.append(
-            {
-                "provider": provider,
-                "frame": clean,
-                "close": _number(latest.get("Close")),
-                "latest_at": pd.to_datetime(clean.index[-1], utc=True, errors="coerce"),
-                "quality": static_quality.get(_provider_family(provider), 0.60),
-                "rows": len(clean),
-            }
-        )
+        stamp = pd.to_datetime(clean.index[-1], utc=True, errors="coerce")
+        close = _number(clean.iloc[-1].get("Close"))
+        if pd.isna(stamp) or close <= 0:
+            continue
+        family = _provider_family(provider)
+        tier = _source_tier(provider, freshness.get(provider, ""))
+        candidates.append({
+            "provider": provider, "family": family,
+            "frame": clean, "close": close,
+            "latest_at": stamp,
+            "daily": _stock_bar_is_daily(clean),
+            "quality": static_quality.get(family, 0.60),
+            "rows": len(clean),
+            "tier": tier,
+        })
     if not candidates:
-        return pd.DataFrame(), "", {"source_count": 0}
+        return pd.DataFrame(), "", {"source_count": 0, "consensus_pass": False}
 
-    valid_closes = [item["close"] for item in candidates if item["close"] > 0]
-    centre = median(valid_closes) if valid_closes else 0.0
-    for item in candidates:
-        divergence = abs(item["close"] - centre) / centre if centre > 0 and item["close"] > 0 else 1.0
-        item["close_divergence_pct"] = divergence
-        item["score"] = item["quality"] - min(0.45, divergence * 3.0)
-        tier = _source_tier(item["provider"], freshness.get(item["provider"], ""))
-        if tier == "DELAYED_OR_INDICATIVE":
-            item["score"] -= 0.05
-    candidates.sort(key=lambda item: (item["score"], item["rows"]), reverse=True)
-    chosen = candidates[0]
-    families = list(dict.fromkeys(_provider_family(item["provider"]) for item in candidates))
-    audit = {
+    # Prefer a recent bar over a trusted-but-older last quote. If timestamps
+    # are the same, quality determines the intact selected series.
+    candidates.sort(
+        key=lambda item: (item["latest_at"].value, item["quality"], item["rows"]),
+        reverse=True,
+    )
+    newest = candidates[0]
+    comparable = [item for item in candidates if _same_stock_candle(item, newest)]
+    comparable.sort(key=lambda item: (item["quality"], item["rows"]), reverse=True)
+    chosen = comparable[0]
+    # Dedupe aliases *before* deciding independent price consensus.
+    families = list(dict.fromkeys(item["family"] for item in candidates))
+    matched_families: dict[str, dict[str, Any]] = {}
+    for item in comparable:
+        matched_families.setdefault(item["family"], item)
+    matched = list(matched_families.values())
+    closes = [item["close"] for item in matched]
+    centre = median(closes)
+    divergence = max(abs(item["close"] - centre) / centre for item in matched)
+    agreement = (
+        len(matched) >= 2
+        and divergence <= max_close_divergence_pct
+        and len({item["family"] for item in matched}) >= 2
+    )
+    return chosen["frame"], chosen["provider"], {
         "source_count": len(candidates),
         "transport_source_count": len(candidates),
         "independent_source_count": len(families),
@@ -473,13 +517,33 @@ def reconcile_stock_bars(
         "sources": [item["provider"] for item in candidates],
         "selected_source": chosen["provider"],
         "latest_close": chosen["close"],
-        "median_latest_close": round(centre, 6) if centre > 0 else None,
-        "selected_close_divergence_pct": round(chosen["close_divergence_pct"], 6),
-        "max_close_divergence_pct": round(max(item["close_divergence_pct"] for item in candidates), 6),
-        "consensus_pass": bool(len(candidates) < 2 or chosen["close_divergence_pct"] <= max_close_divergence_pct),
-        "policy": "select one intact series; other feeds validate latest close only",
+        "median_latest_close": round(centre, 6),
+        "selected_close_divergence_pct": round(
+            abs(chosen["close"] - centre) / centre, 6
+        ),
+        "max_close_divergence_pct": round(divergence, 6),
+        "consensus_pass": bool(agreement),
+        "matched_bar_source_count": len(comparable),
+        "matched_bar_independent_source_count": len(matched),
+        "matched_bar_source_families": list(matched_families),
+        "unmatched_bar_provider_count": len(candidates) - len(comparable),
+        "bar_start_or_session": (
+            chosen["latest_at"].tz_convert("America/New_York").date().isoformat()
+            if chosen["daily"] else chosen["latest_at"].isoformat()
+        ),
+        "bar_granularity": "1d" if chosen["daily"] else "intraday",
+        "reason": (
+            "MATCHED_INDEPENDENT_BAR_AGREEMENT" if agreement
+            else "PRICE_DISAGREEMENT" if len(matched) >= 2
+            else "NO_INDEPENDENT_MATCHED_CANDLE"
+        ),
+        "selected_source_tier": chosen["tier"],
+        "quote_execution_eligible": False,
+        "policy": (
+            "intact newest-candle series; compare only exact same 1d NY session"
+            " or minute start, dedupe same-origin vendor aliases; no quote rights inferred"
+        ),
     }
-    return chosen["frame"], chosen["provider"], audit
 
 
 _HEALTH_SINGLETON_LOCK = threading.Lock()
