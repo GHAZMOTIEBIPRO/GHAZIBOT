@@ -272,6 +272,7 @@ jobs:
       - name: JavaScript syntax gate
         run: |
           node --check public/app.js
+          node --check public/index-radar.js
           node --check public/contract-risk-lab.js
           node tests/contract_risk_lab.cjs
           node --check public/ghazi-radar-quality.js
