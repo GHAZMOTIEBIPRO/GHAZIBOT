@@ -121,6 +121,7 @@
       <button class="tab-button" data-tab="chart">الشارت</button>
       <button class="tab-button" data-tab="options">رادار العقود</button>
       <button class="tab-button" data-tab="spx0dte">SPX 0DTE</button>
+      <button class="tab-button" data-tab="liveview">السوق وشارتاته</button>
       <button class="tab-button" data-tab="macro">الاقتصاد الأمريكي</button>
       <button class="tab-button" data-tab="sources">شبكة المصادر</button>
       <button class="tab-button" data-tab="catalysts">الأخبار الرسمية</button>
@@ -130,6 +131,24 @@
     </nav>
 
     <main>
+      <section id="tab-liveview" class="tab-panel" aria-labelledby="ghazi-liveview-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="ghazi-liveview-heading">المؤشرات والأسهم الأمريكية — عرض TradingView</h2>
+            <p>لوحة عامة مجانية للتصفح اليومي؛ قد تتأخر الأسعار بحسب البورصة والمزود. لا تدخل بيانات هذه الأدوات تلقائيًا في محركات BLACK BOX ولا تؤهّل أي عقد للتنفيذ.</p>
+          </div>
+        </div>
+        <div class="ghazi-tv-widget">
+          <h3>SPX · Nasdaq · SPY · QQQ · VIX · الأسهم الأكثر متابعة</h3>
+          <tv-ticker-tape symbols="FOREXCOM:SPXUSD,FOREXCOM:NSXUSD,AMEX:SPY,NASDAQ:QQQ,CBOE:VIX,NASDAQ:NVDA,NASDAQ:AAPL,NASDAQ:TSLA,NASDAQ:AMD" show-hover></tv-ticker-tape>
+        </div>
+        <div class="ghazi-tv-widget">
+          <h3>الأسهم الأمريكية الأكثر صعودًا وهبوطًا ونشاطًا</h3>
+          <tv-market-overview mode="market-movers"></tv-market-overview>
+        </div>
+        <p class="reasons">تُعرض الأسعار والشارتات بواسطة TradingView مع احتفاظها بعلامتها ومصادرها وتوقيتاتها. هذا التضمين لا يمنح GHAZI RADAR واجهة بيانات API ولا حقوق إعادة نشر أسعار العقود. <a href="https://www.tradingview.com/widget/" target="_blank" rel="noopener">مصدر أدوات TradingView ↗</a></p>
+      </section>
+
       <section id="tab-macro" class="tab-panel" aria-labelledby="ghazi-macro-heading">
         <div class="section-heading">
           <div>
@@ -324,6 +343,8 @@
     </footer>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js" defer></script>
+  <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
+  <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-market-overview.js"></script>
   <script src="./ghazi-radar-quality.js?v=20261018-1" defer></script>
   <script src="./bls-macro.js?v=20261018-1" defer></script>
   <script src="./app.js?v=20261018-ghazi-radar" defer></script>
