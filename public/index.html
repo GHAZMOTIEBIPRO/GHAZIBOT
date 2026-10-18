@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="./index-radar.css?v=20261018-1">
   <link rel="stylesheet" href="./catalyst-overview.css?v=20261018-2">
   <link rel="stylesheet" href="./decision-room.css?v=20261018-1">
+  <link rel="stylesheet" href="./terminal-hub.css?v=20261018-1">
 </head>
 <body>
   <div class="page-shell">
@@ -44,6 +45,77 @@
     </header>
 
 
+    <section class="terminal-shell" id="ghazi-terminal" aria-labelledby="terminal-title">
+      <div class="terminal-intro">
+        <div>
+          <p class="terminal-kicker"><span class="terminal-led"></span> MARKET INTELLIGENCE · FREE RESEARCH</p>
+          <h2 id="terminal-title">مركز قراءة السوق الأمريكي</h2>
+          <p>اختر السوق، راجع الشارت والمستويات، ثم تحقق من تاريخ البيانات ومصدر الخبر. الأقسام مفصولة لتسهيل الاستخدام اليومي.</p>
+        </div>
+        <div class="terminal-health"><span id="terminal-data-state">فحص آخر تقارير السوق…</span>
+          <small id="terminal-data-time">المصدر: Yahoo بحثي · SEC / الأخبار منفصلان</small></div>
+      </div>
+      <nav class="terminal-nav" aria-label="أقسام GHAZI RADAR">
+        <button class="terminal-tab active" type="button" data-terminal-tab="indices" aria-selected="true">المؤشرات <span>09</span></button>
+        <button class="terminal-tab" type="button" data-terminal-tab="large" aria-selected="false">الأسهم الكبيرة</button>
+        <button class="terminal-tab" type="button" data-terminal-tab="small" aria-selected="false">الصغيرة والمضاربية</button>
+        <button class="terminal-tab" type="button" data-terminal-tab="news" aria-selected="false">الأخبار والمحركات</button>
+        <button class="terminal-tab" type="button" data-terminal-tab="chart" aria-selected="false">قراءة الشارت</button>
+        <button class="terminal-tab terminal-tab-advanced" type="button" data-terminal-tab="advanced" aria-selected="false">الأدوات المتقدمة ↗</button>
+      </nav>
+      <section class="terminal-panel active" id="terminal-panel-indices" aria-label="المؤشرات الأمريكية">
+        <header class="terminal-section-head"><div><p class="terminal-overline">US INDICES</p>
+          <h3>المؤشرات الأمريكية</h3><p>SPX · NDX · Dow · Russell · VIX والصناديق المرتبطة بها. الأسعار من آخر شموع مكتملة وليست أسعار تنفيذ.</p></div>
+          <button class="terminal-action" data-chart-symbol="SPX" type="button">شارت SPX <span>↗</span></button></header>
+        <div id="terminal-index-grid" class="terminal-index-grid"><p class="terminal-empty">جاري تحميل تحليل المؤشرات…</p></div>
+        <p id="terminal-index-footnote" class="terminal-footnote">المصدر: Yahoo / yfinance · الأرقام بحثية وقد تتأخر، وSPX ليس SPY.</p>
+      </section>
+      <section class="terminal-panel" id="terminal-panel-large" aria-label="الأسهم الأمريكية الكبيرة" hidden>
+        <header class="terminal-section-head"><div><p class="terminal-overline">LARGE CAP WATCH</p>
+          <h3>الأسهم الأمريكية الكبيرة</h3><p>أبل، إنفيديا، مايكروسوفت، أمازون، تسلا وغيرها. ترتيب الفرص من التقرير البحثي، وليس من توصيات شراء حية.</p></div></header>
+        <div id="terminal-large-grid" class="terminal-stock-grid"><p class="terminal-empty">جاري تحميل الأسهم…</p></div>
+        <p id="terminal-large-note" class="terminal-footnote">قائمة متابعة للشركات المعروفة وكبيرة الحجم؛ التصنيف لا يعادل التحقق اللحظي من القيمة السوقية.</p>
+      </section>
+      <section class="terminal-panel" id="terminal-panel-small" aria-label="الأسهم الصغيرة والمضاربية" hidden>
+        <header class="terminal-section-head"><div><p class="terminal-overline">HIGH VOLATILITY WATCH</p>
+          <h3>الأسهم الصغيرة والمضاربية</h3><p>الشركات الناشئة وأسهم الحركة العالية؛ لا تُصنّف شركة بأنها صغيرة فعليًا إلا عند توافر بيانات رسملتها.</p></div></header>
+        <div id="terminal-small-grid" class="terminal-stock-grid"><p class="terminal-empty">جاري تحميل الأسهم…</p></div>
+        <p id="terminal-small-note" class="terminal-footnote">القائمة للمراقبة البحثية، وليست ضمانًا لانفجار سعري أو إثباتًا لرسملة سوقية صغيرة.</p>
+      </section>
+      <section class="terminal-panel" id="terminal-panel-news" aria-label="الأخبار والمحركات" hidden>
+        <header class="terminal-section-head"><div><p class="terminal-overline">CATALYST & RISK DESK</p>
+          <h3>الأخبار والمحفزات</h3><p>الإفصاحات الرسمية أولًا، ثم الأخبار المرتبطة بالشركات، مع فصل التحذيرات عن الأحداث المحتملة.</p></div></header>
+        <div id="terminal-news-status" class="terminal-data-warning">جاري التحقق من المصادر…</div>
+        <div class="terminal-news-columns"><div><h4>الأخبار والملفات الرسمية <span>SEC</span></h4>
+          <div id="terminal-official-news" class="terminal-news-list"><p class="terminal-empty">فحص SEC جارٍ…</p></div></div>
+          <div><h4>الأخبار البحثية <span>Google News / RSS</span></h4>
+          <div id="terminal-public-news" class="terminal-news-list"><p class="terminal-empty">قراءة الأخبار…</p></div></div></div>
+      </section>
+      <section class="terminal-panel" id="terminal-panel-chart" aria-label="شارت الأسعار والتحليل الفني" hidden>
+        <header class="terminal-section-head"><div><p class="terminal-overline">OHLC · TECHNICAL READING</p>
+          <h3>الشارت والقراءة الفنية</h3><p>شموع سعريّة أصلية، EMA20/EMA50، RSI14 وATR14، ومستويات آخر جلسة. لا تتم تعبئة أي شمعة غير مكتملة.</p></div></header>
+        <div class="terminal-chart-toolbar">
+          <label>الرمز <select id="terminal-chart-symbol" aria-label="اختيار الرمز"><option value="SPX">SPX — S&P 500</option></select></label>
+          <label>الفريم <select id="terminal-chart-timeframe" aria-label="الفريم"><option value="1d">يومي</option><option value="15m">15 دقيقة</option><option value="5m">5 دقائق</option></select></label>
+          <label class="terminal-check"><input id="terminal-show-ema" type="checkbox" checked> عرض EMA20/50</label>
+        </div>
+        <div class="terminal-price-heading"><div><strong id="terminal-chart-spot">—</strong>
+          <span id="terminal-chart-direction">بانتظار بيانات الشارت</span></div>
+          <span id="terminal-chart-date">—</span></div>
+        <div id="terminal-candle-chart" class="terminal-candle-chart" role="img" aria-label="مخطط الشموع اليابانية من بيانات أسعار السوق المنشورة"></div>
+        <div id="terminal-chart-levels" class="terminal-chart-metrics"></div>
+        <p id="terminal-chart-reading" class="terminal-chart-reading" role="status">عند اختيار الرمز، تُعرض قراءة الشارت ومصدر الشموع وحالة حداثتها.</p>
+        <p class="terminal-footnote">المصدر Yahoo عبر محرك GitHub البحثي، بيانات قد تتأخر. الأسعار ليست NBBO أو OPRA، والقراءة ليست أمر تداول.</p>
+      </section>
+      <section class="terminal-panel" id="terminal-panel-advanced" aria-label="الأدوات المتقدمة" hidden>
+        <header class="terminal-section-head"><div><p class="terminal-overline">OMEGA ADVANCED WORKSPACE</p>
+          <h3>المحركات والتقارير المتقدمة</h3><p>عقود الأوبشن، SPX 0DTE، سلامة البيانات، النتائج التاريخية، مختبر المخاطر والتقارير التقنية.</p></div>
+          <button id="terminal-toggle-legacy" class="terminal-action" type="button" aria-expanded="false">عرض لوحة الأدوات التفصيلية ↓</button></header>
+        <p class="terminal-footnote">ستبقى جميع الوظائف القديمة متاحة دون حذف، لكنها مخفية افتراضيًا لتسهيل قراءة المنصة.</p>
+      </section>
+    </section>
+
+    <div id="legacy-dashboard" hidden>
     <section id="indices-overview" class="ghazi-market-feature" aria-labelledby="market-index-title">
       <div class="ghazi-market-heading">
         <div>
@@ -527,6 +599,7 @@
         <button id="refresh-button" class="secondary-button">تحميل آخر البيانات المنشورة</button>
       </div>
     </footer>
+    </div><!-- /legacy-dashboard -->
   </div>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js" defer></script>
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
@@ -544,5 +617,6 @@
   <script src="./expiry-radar.js?v=20260807-omega" defer></script>
   <script src="./omega.js?v=20260807-omega" defer></script>
   <script src="./market-chart.js?v=20261010-open-source" defer></script>
+  <script src="./terminal-hub.js?v=20261018-1" defer></script>
 </body>
 </html>

@@ -313,13 +313,20 @@ def fetch_frames() -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame], di
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--charts-output", type=Path, default=None)
     args = parser.parse_args()
     daily, intraday, five_min = fetch_frames()
-    result = make_report(daily, intraday, now=datetime.now(timezone.utc), five_min=five_min)
+    now = datetime.now(timezone.utc)
+    result = make_report(daily, intraday, now=now, five_min=five_min)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix+".tmp")
     temporary.write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)+"\n", encoding="utf-8")
     temporary.replace(args.output)
+    if args.charts_output is not None:
+        from scripts.build_index_chart_snapshot import chart_report, write_chart_report
+        charts = chart_report(daily, intraday, five_min, now=now)
+        write_chart_report(args.charts_output, charts)
+        print("GHAZI INDEX OHLC:", charts["coverage"])
     print("GHAZI INDEX RADAR:", result["coverage"])
     return 0
 
