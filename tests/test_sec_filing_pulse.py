@@ -1,0 +1,108 @@
+"""Offline SEC CIK identity and filings source verification for free public radar."""
+from datetime import datetime, timezone
+from types import SimpleNamespace
+
+import requests
+
+from scripts.build_sec_filing_pulse import (
+    SUBMISSIONS_BASE, TICKERS_URL, collect, parse_submissions,
+    symbols_from_brief, ticker_cik_map,
+)
+
+NOW=datetime(2026,10,18,12,tzinfo=timezone.utc)
+
+
+def report(cik,forms,dates=None,docs=None):
+    n=len(forms)
+    return {
+        "cik":cik,
+        "filings":{"recent":{
+            "form":forms,
+            "filingDate":dates or ["2026-10-16"]*n,
+            "accessionNumber":[f"0000000001-26-{i+1:06d}" for i in range(n)],
+            "primaryDocument":docs or [f"document{i}.htm" for i in range(n)],
+        }},
+    }
+
+
+class Response:
+    content=b'{}'
+    def __init__(self,payload):
+        self.payload=payload
+    def raise_for_status(self):
+        return None
+    def json(self):
+        return self.payload
+
+
+class Session:
+    def __init__(self, replies):
+        self.replies=replies
+        self.calls=[]
+    def get(self,url,*,headers=None,timeout=None):
+        self.calls.append((url,headers,timeout))
+        p=self.replies[url]
+        if isinstance(p,Exception):
+            raise p
+        return Response(p)
+
+
+def test_official_issuer_filing_identity_and_dilution_warning():
+    mapping={"0":{"ticker":"RGC","cik_str":111,"title":"Regencell"},
+             "1":{"ticker":"BNAI","cik_str":222,"title":"Brand Engagement Network"}}
+    session=Session({
+        TICKERS_URL:mapping,
+        f"{SUBMISSIONS_BASE}CIK0000000111.json":report(111,["8-K","S-3"]),
+        f"{SUBMISSIONS_BASE}CIK0000000222.json":report(222,["10-Q"]),
+    })
+    out=collect({"stocks":[]},now=NOW,session=session,
+                agent="Research test@example.com",pause=lambda _:None,max_symbols=2)
+    assert out["status"]=="OK"
+    assert out["coverage"]["issuers_inspected"]==2
+    assert out["coverage"]["filings_verified"]==3
+    assert all(x["original_filing_confirmed"] is True for x in out["filings"])
+    assert all(x["positive_price_impact_verified"] is False for x in out["filings"])
+    assert all(x["price_direction"]=="UNKNOWN" for x in out["filings"])
+    offering=next(x for x in out["filings"] if x["form"]=="S-3")
+    assert offering["event_type"]=="OFFERING_OR_DILUTION_REVIEW"
+    assert "/Archives/edgar/data/111/" in offering["source_url"]
+    assert all(v[1]["User-Agent"]=="Research test@example.com" for v in session.calls)
+
+
+def test_cik_mismatch_and_path_traversal_do_not_emit_filings():
+    forged=report(111,["8-K","10-K","8-K"])
+    forged["filings"]["recent"]["primaryDocument"]=["../bad","ok.htm","sub/path.htm"]
+    assert parse_submissions("RGC",999,"Unrelated",forged,now=NOW)==[]
+    got=parse_submissions("RGC",111,"Real Company",forged,now=NOW)
+    assert len(got)==1
+    assert got[0]["form"]=="10-K"
+    assert got[0]["issuer_cik_mapping_used"] is True
+
+
+def test_unknown_or_malformed_ticker_map_fails_closed():
+    assert ticker_cik_map({"0":{"ticker":"AVGO","cik_str":"nan"}})=={}
+    assert "RGC" in symbols_from_brief({"stocks":[
+        {"symbol":"AAPL","direction_research":"UP","rvol":4.5}
+    ]})
+    refused=requests.HTTPError("Access denied",
+        response=SimpleNamespace(status_code=403))
+    session=Session({TICKERS_URL:refused})
+    out=collect({"stocks":[]},now=NOW,session=session,
+                agent="Test test@example.com",pause=lambda _:None)
+    assert out["status"]=="UNAVAILABLE"
+    assert out["coverage"]["issuers_inspected"]==0
+    assert out["coverage"]["filings_verified"]==0
+    assert not out["filings"]
+    assert out["coverage"]["errors"]["ticker_map"]==403
+    assert out["policy"]["positive_news_inferred"] is False
+
+
+def test_missing_recent_sec_filings_is_not_bullish_market_news():
+    session=Session({
+        TICKERS_URL:{"0":{"ticker":"RGC","cik_str":111,"title":"Regencell"}},
+        f"{SUBMISSIONS_BASE}CIK0000000111.json":report(111,["8-K"],dates=["2026-06-01"])
+    })
+    out=collect({"stocks":[]},now=NOW,session=session,
+                agent="Test test@example.com",pause=lambda _:None,max_symbols=1)
+    assert out["status"]=="NO_RECENT_FILINGS"
+    assert out["filings"]==[]

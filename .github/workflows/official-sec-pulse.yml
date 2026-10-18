@@ -1,0 +1,70 @@
+name: GHAZI RADAR Official SEC Issuer Filings
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_sec_filing_pulse.py"
+      - ".github/workflows/official-sec-pulse.yml"
+  schedule:
+    - cron: "18 12,17,22 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-official-sec-issuer-pulse
+  cancel-in-progress: false
+
+jobs:
+  build-official-filings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Radar Research ghazi-bot@users.noreply.github.com' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install small free requests dependency
+        run: python -m pip install requests
+      - name: Scan bounded official SEC issuer submissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python app/scripts/build_sec_filing_pulse.py \
+            --brief state/runtime/public/data/decision_brief.json \
+            --output state/runtime/public/data/sec_filing_pulse.json \
+            --max-symbols 24
+      - name: Publish independent research-only SEC report to bot-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR SEC Research"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/sec_filing_pulse.json
+          if git diff --cached --quiet; then
+            echo "No SEC report changes"
+            exit 0
+          fi
+          git commit -m "state: SEC issuer filing pulse [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "SEC data report state publication failed" >&2
+          exit 1
