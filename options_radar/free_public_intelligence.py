@@ -592,6 +592,8 @@ def retain_verified_news_context(current: dict, previous: dict, *, now: datetime
     Filter stale or unverified/unmatched stories to fail closed.
     """
     valid = []
+    current_urls = {(x.get("symbol"),x.get("url")) for x in
+                    current.get("google_news_attention",[]) if isinstance(x,dict)}
     for item in (current.get("google_news_attention") or []) + (
             previous.get("google_news_attention") or []):
         if not isinstance(item, dict):
@@ -615,9 +617,9 @@ def retain_verified_news_context(current: dict, previous: dict, *, now: datetime
                    for alias in aliases):
             continue
         safe = dict(item)
-        safe["first_collected_at"] = str(
-            item.get("first_collected_at") or
-            previous.get("generated_at") or current.get("generated_at"))
+        safe["first_collected_at"] = str(item.get("first_collected_at") or (
+            current.get("generated_at") if (symbol,url) in current_urls
+            else previous.get("generated_at") or current.get("generated_at")) )
         safe["published_at"] = published.isoformat()
         valid.append(safe)
     by_identity = {}
@@ -634,7 +636,7 @@ def retain_verified_news_context(current: dict, previous: dict, *, now: datetime
     current["google_news_attention"] = balanced[:48]
     current["google_news_retention"] = {
         "historical_stories_preserved": sum(
-            x["url"] not in {a.get("url") for a in current.get("_new_stories",[])}
+            (x["symbol"],x["url"]) not in current_urls
             for x in balanced
         ),
         "note": "Older stories keep publication timestamps; not refreshed quotes",
