@@ -764,7 +764,7 @@ def main() -> None:
             previous = {}
     cooldowns = valid_source_cooldowns(previous, now=current)
     scanned = symbols_from_brief(args.discovery_brief, now=current)
-    extra = [s for s in scanned if s not in ISSUER_NAMES and s not in symbols][:8]
+    extra = [s for s in scanned if s not in ISSUER_NAMES and s not in symbols][:24]
     directory = resolve_public_issuers(
         extra, now=current, previous=previous, session=requests,
     ) if extra else {
