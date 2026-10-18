@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="./ghazi-radar-quality.css?v=20261018-1">
   <link rel="stylesheet" href="./bls-macro.css?v=20261018-1">
   <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261018-1">
+  <link rel="stylesheet" href="./contract-risk-lab.css?v=20261018-1">
 </head>
 <body>
   <div class="page-shell">
@@ -122,6 +123,7 @@
       <button class="tab-button" data-tab="stocks">رادار الأسهم</button>
       <button class="tab-button" data-tab="chart">الشارت</button>
       <button class="tab-button" data-tab="options">رادار العقود</button>
+      <button class="tab-button" data-tab="risklab">مختبر مخاطر العقود</button>
       <button class="tab-button" data-tab="spx0dte">SPX 0DTE</button>
       <button class="tab-button" data-tab="liveview">السوق وشارتاته</button>
       <button class="tab-button" data-tab="macro">الاقتصاد الأمريكي</button>
@@ -232,6 +234,71 @@
           <p id="market-chart-note" class="reasons">جاري تجهيز الشارت…</p>
           <p class="chart-attribution">Powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts</a>.</p>
         </div>
+      </section>
+
+            <section id="tab-risklab" class="tab-panel" aria-labelledby="risklab-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="risklab-title">مختبر مخاطر عقود CALL / PUT</h2>
+            <p>حاسبة مجانية تعمل داخل المتصفح، دون تسجيل أو بيانات حية أو طلبات API. أدخل Bid وAsk بنفسك من مصدر مرخّص لك. لا تؤهّل أي إشارة للتنفيذ ولا تتجاوز شروط V11.</p>
+          </div>
+        </div>
+        <div class="risklab-shell">
+          <form id="ghazi-risk-form" class="risklab-form" novalidate>
+            <label>نوع العقد
+              <select name="side"><option value="CALL">CALL — شراء كول</option><option value="PUT">PUT — شراء بوت</option></select>
+            </label>
+            <label>رأس المال (بالدولار)
+              <input name="capital" type="number" min="1" max="1000000000000" step="any" value="30000" inputmode="decimal" required>
+            </label>
+            <label>المخاطرة القصوى من رأس المال %
+              <input name="riskPct" type="number" min="0.01" max="100" step="0.1" value="1.5" inputmode="decimal" required>
+            </label>
+            <label>السعر الحالي للسهم
+              <input name="spot" type="number" min="0.01" step="any" value="500" inputmode="decimal" required>
+            </label>
+            <label>Strike — سعر تنفيذ العقد
+              <input name="strike" type="number" min="0.01" step="any" value="500" inputmode="decimal" required>
+            </label>
+            <label>Bid — أفضل طلب شراء للعقد
+              <input name="bid" type="number" min="0" step="any" value="2.40" inputmode="decimal" required>
+            </label>
+            <label>Ask — أقل سعر بيع للعقد
+              <input name="ask" type="number" min="0.01" step="any" value="2.60" inputmode="decimal" required>
+            </label>
+            <label>عمولة الوسيط لكل عملية/عقد بالدولار
+              <input name="fee" type="number" min="0" step="any" value="0.65" inputmode="decimal" required>
+            </label>
+            <label>سعر Bid المستهدف لاحقًا للعقد (افتراض يدوي)
+              <input name="targetBid" type="number" min="0" step="any" value="4.20" inputmode="decimal" required>
+            </label>
+            <label>سعر Bid لوقف الخسارة لاحقًا (افتراض يدوي)
+              <input name="stopBid" type="number" min="0" step="any" value="1.60" inputmode="decimal" required>
+            </label>
+            <button type="submit" class="risklab-go">احسب المخاطرة والسيناريوهات</button>
+          </form>
+          <div class="risklab-output">
+            <p id="risk-error" class="risklab-error" role="alert"></p>
+            <div class="risklab-grid">
+              <article><span>الميزانية المعرضة للخطر</span><strong id="risk-budget">—</strong></article>
+              <article><span>أقصى عدد عقود وفق خسارة كامل القسط</span><strong id="risk-count">—</strong></article>
+              <article><span>التكلفة الإجمالية</span><strong id="risk-debit">—</strong></article>
+              <article><span>أقصى خسارة محتملة للقسط المدفوع</span><strong id="risk-maxloss">—</strong></article>
+              <article><span>نسبة السبريد الحالية</span><strong id="risk-spread">—</strong></article>
+              <article><span>تعادل العقد عند الانتهاء</span><strong id="risk-breakeven">—</strong></article>
+              <article><span>صافي الربح عند Bid الهدف الافتراضي</span><strong id="risk-target">—</strong></article>
+              <article><span>صافي النتيجة عند Bid الوقف الافتراضي</span><strong id="risk-stop">—</strong></article>
+              <article><span>عائد/خسارة مخططان</span><strong id="risk-rr">—</strong></article>
+              <article><span>الربح الأقصى النظري عند الانتهاء</span><strong id="risk-maxprofit">—</strong></article>
+            </div>
+            <p id="risk-flags" class="risklab-warnings" role="status">—</p>
+            <h3>الربح والخسارة عند تاريخ انتهاء العقد — لعقد واحد</h3>
+            <svg id="risk-payoff-chart" viewBox="0 0 680 240" role="img" aria-label="الرسم النظري للربح والخسارة عند انتهاء عقد كول أو بوت" preserveAspectRatio="xMidYMid meet"></svg>
+            <p class="risklab-small">الرسم يفترض التنفيذ عند الانتهاء ويحسم قسط الشراء وعمولتي الدخول والخروج تقديريًا. يختلف التسليم والتسوية بين العقود؛ خيارات SPX نقدية التسوية وعقود بعض الأسهم قد تُمارس بالتسليم. لا يدخل IV أو Theta أو Gamma أو السيولة المستقبلية في الرسم.</p>
+          </div>
+        </div>
+        <p class="risklab-disclaimer"><strong>مهم:</strong> قد تخسر كامل القسط حتى مع خطة وقف الخسارة؛ الأوامر قد تنزلق أو لا تُنفذ. الخيارات القياسية عادة مضاعفها 100 سهم، أما العقود المعدلة أو غير القياسية فلا تنطبق عليها هذه الحاسبة. سعر Bid/Ask يدوي وليس توصية تداول أو تسعيرًا حيًا. الأرقام الأولية مثال توضيحي فقط.</p>
+        <p class="risklab-credit">هذا المختبر مستقل ويعتمد مبادئ إدارة المخاطر الموثقة في مشاريع <a href="https://github.com/ranaroussi/quantstats" target="_blank" rel="noopener">QuantStats</a> (موجود أصلًا في التحليل الخلفي) وأدوات الخيارات المفتوحة. لا تُسحب أسعار العقود من أي موقع ولا تُنشر بيانات لا نملك ترخيصها.</p>
       </section>
 
       <section id="tab-options" class="tab-panel">
@@ -347,6 +414,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js" defer></script>
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-market-overview.js"></script>
+  <script src="./contract-risk-lab.js?v=20261018-1" defer></script>
   <script src="./ghazi-radar-quality.js?v=20261018-1" defer></script>
   <script src="./bls-macro.js?v=20261018-1" defer></script>
   <script src="./app.js?v=20261018-ghazi-radar" defer></script>
