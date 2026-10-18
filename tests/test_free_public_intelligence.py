@@ -449,7 +449,8 @@ def test_news_rotation_covers_all_interest_stocks_across_two_windows():
     symbols=["RGC","BNAI","RKLB","IONQ","SOUN","ASTS","RGTI",
              "MU","NVDA","AMD","AAPL","TSLA","PLTR"]
     class Recording:
-        calls=[]
+        def __init__(self):
+            self.calls=[]
         def get(self,url,*,params=None,headers=None,timeout=None):
             self.calls.append(params["q"])
             return Response(content=b'<rss version="2.0"><channel></channel></rss>')
