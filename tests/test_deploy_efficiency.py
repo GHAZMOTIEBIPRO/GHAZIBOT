@@ -23,4 +23,6 @@ def test_dashboard_reads_live_github_data_with_local_fallback() -> None:
     app = Path("public/app.js").read_text(encoding="utf-8")
     assert "raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/main/public/data/latest.json" in app
     assert '"./data/latest.json"' in app
-    assert "for (const url of DATA_URLS)" in app
+    assert "fetchDataFreshnessRank" in app
+    assert "for (const [position, index] of order.entries())" in app
+    assert "DATA_META_URLS" in app
