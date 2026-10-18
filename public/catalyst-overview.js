@@ -12,6 +12,10 @@
     "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/sec_filing_pulse.json",
     "./data/sec_filing_pulse.json",
   ];
+  const GDELT_URLS=[
+    "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/free_public_intelligence.json",
+    "./data/free_public_intelligence.json",
+  ];
   const el = id => document.getElementById(id);
   const set=(id,value)=>{if(el(id))el(id).textContent=value;};
   const n=(v,d=2)=>typeof v==="number"&&Number.isFinite(v)
@@ -56,6 +60,24 @@
       throw Error("untrusted SEC evidence");
     return data;
   }
+  async function fetchNewsContext(url){
+    const response=await fetch(url+"?v="+Date.now(),{cache:"no-store"});
+    if(!response.ok)throw Error("HTTP "+response.status);
+    const data=await response.json();
+    if(!data || data.schema!=="free_public_intelligence_v1" ||
+       data.decision_authority!==false ||
+       !asDate(data.generated_at) ||
+       asDate(data.generated_at).getTime()>Date.now()+300000)
+      throw Error("invalid news context");
+    return data;
+  }
+  function safeNewsLink(url){
+    try {
+      const x=new URL(url);
+      return x.protocol==="https:"&&x.hostname&&!x.username&&!x.password?
+        url:null;
+    }catch(_){return null;}
+  }
   function fallbackWatch(report) {
     return (Array.isArray(report.stocks)?report.stocks:[])
       .filter(s=>["CALL","UP"].includes(s.direction_research))
@@ -66,7 +88,7 @@
         has_primary_publication:false,
       }));
   }
-  function render(report,secPulse) {
+  function render(report,secPulse,newsContext) {
     const stamp=asDate(report.source_generated_at);
     const delta=(Date.now()-stamp.getTime())/60000;
     const current=delta>=-5 && delta<=7*24*60;
@@ -151,6 +173,42 @@
         (String(secPulse.ticker_mapping_source||"").startsWith("UNVERIFIED")?
           " · خريطة CIK احتياطية قديمة؛ لا ينشر مستند إلا إذا أكد SEC الرمز والجهة." : ""));
     }
+    const news=el("gdelt-news-list");
+    if(news){
+      news.replaceChildren();
+      const recent=asDate(newsContext?.generated_at) &&
+        Date.now()-asDate(newsContext.generated_at).getTime()<=48*60*60000;
+      const articles=recent&&Array.isArray(newsContext.gdelt_attention)?
+        newsContext.gdelt_attention:[];
+      const included=articles.filter(x=>
+        x && x.source==="gdelt_doc_v2" &&
+        x.authority==="ATTENTION_ONLY" &&
+        x.official_confirmed===false &&
+        x.independent_confirmation===false &&
+        x.market_direction==="UNKNOWN" &&
+        safeNewsLink(x.url)
+      ).slice(0,12);
+      for(const a of included){
+        const item=node("article","","ghazi-catalyst-primary");
+        item.append(node("h4",String(a.symbol||"—")+" · خبر مرصود غير مؤكد"));
+        item.append(node("p",String(a.headline||"—")+
+          " · وقت رصد GDELT: "+time(a.observed_at)+
+          " · ليس خبرًا رسميًا أو مؤشر صعود مثبتًا"));
+        const link=node("a","اقرأ الخبر الأصلي ↗");
+        link.href=safeNewsLink(a.url);link.rel="noopener noreferrer";
+        link.target="_blank";item.append(link);news.append(item);
+      }
+      if(!included.length)news.append(node("p",
+        "لا توجد عناوين تطابق رموز الأسهم بوضوح في نافذة البحث أو المصدر غير متاح؛ لا يعني ذلك عدم وجود أخبار أخرى."));
+      const errors=newsContext?.source_errors||{};
+      set("gdelt-source-status",newsContext?
+        "آخر فحص "+time(newsContext.generated_at)+
+        " · نتائج البحث المسموح عرضها "+n(included.length,0)+
+        (errors.gdelt_attention?
+          " · تعذر جلب GDELT: "+String(errors.gdelt_attention):
+          " · المصدر تجميعي وليس دليلاً رسميًا"):
+        "لم تصل تغذية GDELT المنشورة؛ يظهر قسم SEC منفصلًا.");
+    }
     const list=el("catalyst-official-list");
     if(list){
       list.replaceChildren();
@@ -177,16 +235,19 @@
   }
   async function refresh(){
     const btn=el("catalyst-overview-refresh");if(btn)btn.disabled=true;
-    const [results,secResults]=await Promise.all([
+    const [results,secResults,newsResults]=await Promise.all([
       Promise.allSettled(URLS.map(fetchOne)),
       Promise.allSettled(SEC_URLS.map(fetchSecOne)),
+      Promise.allSettled(GDELT_URLS.map(fetchNewsContext)),
     ]);
 
     const data=results.filter(x=>x.status==="fulfilled").map(x=>x.value);
     data.sort((a,b)=>Date.parse(b.source_generated_at)-Date.parse(a.source_generated_at));
     const secReports=secResults.filter(x=>x.status==="fulfilled").map(x=>x.value);
     secReports.sort((a,b)=>Date.parse(b.generated_at)-Date.parse(a.generated_at));
-    if(data.length)render(data[0],secReports[0]||null);
+    const newsContexts=newsResults.filter(x=>x.status==="fulfilled").map(x=>x.value);
+    newsContexts.sort((a,b)=>Date.parse(b.generated_at)-Date.parse(a.generated_at));
+    if(data.length)render(data[0],secReports[0]||null,newsContexts[0]||null);
     else set("catalyst-overview-status","تعذر جلب تقرير الأخبار من المصدر والنسخة الاحتياطية. لا توجد قائمة مؤكدة يمكن عرضها.");
     if(btn)btn.disabled=false;
   }
