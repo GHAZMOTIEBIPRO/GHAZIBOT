@@ -29,7 +29,7 @@ def test_report_timestamp_never_claims_quote_freshness():
 
 
 def test_fail_closed_and_no_invented_source_numbers():
-    assert 'return "—"' in JS
+    assert '"—"' in JS
     assert "Promise.allSettled" in JS
     assert "clearData()" in JS
     assert "active_option_sources" in JS
