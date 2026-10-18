@@ -31,3 +31,18 @@ filing confirmation.
 
 If the public SEC service blocks shared CI runners, the report must explicitly
 show UNAVAILABLE instead of inventing documents or bullish outcomes.
+
+## Blocked official ticker-map mitigation (2026-10-18)
+
+GitHub hosted runners returned HTTP 403 for the primary SEC ticker/CIK map.
+As an optional *lookup candidate only*, the system uses the MIT-licensed
+jadchaar/sec-cik-mapper SEC-derived ticker file, last publicly updated
+2025-02-28. **It is stale and not accepted as issuer proof**. Filings may be
+published only if fresh data.sec.gov submissions return the expected CIK
+**and** explicitly list the nominated ticker in their own tickers array.
+The issuer name comes from that fresh SEC response, not the mirror.
+If data.sec.gov also returns HTTP 403, status remains UNAVAILABLE and no
+filings are fabricated. This is not an exchange licensed market feed.
+
+Mapping URL:
+https://github.com/jadchaar/sec-cik-mapper/blob/main/mappings/stocks/ticker_to_cik.json

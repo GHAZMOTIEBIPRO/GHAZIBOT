@@ -18,6 +18,7 @@ from typing import Any
 import requests
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
+FALLBACK_TICKER_MAP = "https://raw.githubusercontent.com/jadchaar/sec-cik-mapper/main/mappings/stocks/ticker_to_cik.json"
 SUBMISSIONS_BASE = "https://data.sec.gov/submissions/"
 MAX_SYMBOLS = 24
 MAX_FILINGS = 70
@@ -79,6 +80,22 @@ def ticker_cik_map(payload: dict) -> dict[str,tuple[int,str]]:
         except (ValueError,TypeError):continue
         if TICKER.fullmatch(symbol) and cik>0:
             result[symbol]=(cik,str(row.get("title") or symbol)[:125])
+    return result
+
+
+def mirror_ticker_cik_map(payload: dict) -> dict[str,tuple[int,str]]:
+    """Third-party 2025 SEC-derived ticker map, CIK verified on SEC itself.
+
+    This is *not* independent SEC confirmation; use only to nominate a CIK.
+    Publication requires that fresh data.sec.gov submissions list the ticker.
+    """
+    result={}
+    for symbol,raw_cik in payload.items():
+        ticker=str(symbol).upper().strip()
+        try:cik=int(raw_cik)
+        except (ValueError,TypeError):continue
+        if TICKER.fullmatch(ticker) and cik>0:
+            result[ticker]=(cik,ticker)
     return result
 
 
@@ -150,11 +167,23 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
     failures={}
     reports=[]
     inspected=0
+    map_origin="OFFICIAL_SEC_TICKER_MAP"
     try:
         mapping=ticker_cik_map(_get(session,TICKERS_URL,agent))
     except (requests.RequestException,ValueError,TypeError) as exc:
         mapping={}
         failures["ticker_map"]=getattr(getattr(exc,"response",None),"status_code",None) or type(exc).__name__
+    if not mapping:
+        # A mirror is a *lookup only* and cannot authenticate a company by
+        # itself. All mirrored matches require ticker confirmation by the
+        # fresh official SEC issuer JSON before publishing any filing.
+        try:
+            mapping=mirror_ticker_cik_map(_get(session,FALLBACK_TICKER_MAP,agent))
+            map_origin="UNVERIFIED_2025_MIRROR_REQUIRES_SEC_TICKER_CONFIRMATION"
+        except (requests.RequestException,ValueError,TypeError) as exc:
+            mapping={}
+            code=getattr(getattr(exc,"response",None),"status_code",None)
+            failures["mirror_ticker_map"]=f"HTTP_{code}" if code else type(exc).__name__
     if mapping:
         for symbol in selected:
             entry=mapping.get(symbol)
@@ -168,6 +197,13 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
                 if int(result.get("cik",-1))!=cik:
                     failures[symbol]="CIK_RESPONSE_MISMATCH"
                     continue
+                if map_origin!="OFFICIAL_SEC_TICKER_MAP":
+                    declared=result.get("tickers")
+                    if (not isinstance(declared,list)
+                            or symbol not in {str(x).upper() for x in declared}):
+                        failures[symbol]="SEC_ISSUER_TICKER_NOT_CONFIRMED"
+                        continue
+                    issuer=str(result.get("name") or symbol)[:125]
                 inspected+=1
                 reports.extend(parse_submissions(symbol,cik,issuer,result,now=now))
             except (requests.RequestException,ValueError,TypeError) as exc:
@@ -194,6 +230,8 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
             "symbols_requested":len(selected),"issuers_inspected":inspected,
             "filings_verified":len(filings),"errors":failures,
         },
+        "ticker_mapping_source":map_origin,
+        "ticker_mapping_mirror_snapshot_date":("2025-02-28" if map_origin.startswith("UNVERIFIED") else None),
         "filings":filings,
         "policy":{
             "free_no_api_key":True,

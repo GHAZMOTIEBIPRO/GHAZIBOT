@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import requests
 
 from scripts.build_sec_filing_pulse import (
-    SUBMISSIONS_BASE, TICKERS_URL, collect, parse_submissions,
+    SUBMISSIONS_BASE, TICKERS_URL, FALLBACK_TICKER_MAP, collect, parse_submissions,
     symbols_from_brief, ticker_cik_map,
 )
 
@@ -86,7 +86,8 @@ def test_unknown_or_malformed_ticker_map_fails_closed():
     ]})
     refused=requests.HTTPError("Access denied",
         response=SimpleNamespace(status_code=403))
-    session=Session({TICKERS_URL:refused})
+    session=Session({TICKERS_URL:refused,
+      FALLBACK_TICKER_MAP:requests.ConnectionError("mirror also unavailable")})
     out=collect({"stocks":[]},now=NOW,session=session,
                 agent="Test test@example.com",pause=lambda _:None)
     assert out["status"]=="UNAVAILABLE"
@@ -106,3 +107,39 @@ def test_missing_recent_sec_filings_is_not_bullish_market_news():
                 agent="Test test@example.com",pause=lambda _:None,max_symbols=1)
     assert out["status"]=="NO_RECENT_FILINGS"
     assert out["filings"]==[]
+
+
+def test_stale_mirror_can_nominate_cik_only_when_current_sec_confirms_ticker():
+    denied=requests.HTTPError("403",
+        response=SimpleNamespace(status_code=403))
+    submitted=report(111,["8-K"])
+    submitted["tickers"]=["RGC"]
+    submitted["name"]="Official Regencell EDGAR registrant"
+    session=Session({
+        TICKERS_URL:denied,
+        FALLBACK_TICKER_MAP:{"RGC":"0000000111"},
+        f"{SUBMISSIONS_BASE}CIK0000000111.json":submitted,
+    })
+    result=collect({"stocks":[]},now=NOW,session=session,
+                   agent="Test tester@example.com",pause=lambda _:None,max_symbols=1)
+    assert result["coverage"]["filings_verified"]==1
+    assert result["ticker_mapping_source"].startswith("UNVERIFIED_2025_MIRROR")
+    assert result["ticker_mapping_mirror_snapshot_date"]=="2025-02-28"
+    assert result["filings"][0]["issuer"]=="Official Regencell EDGAR registrant"
+    assert result["status"]=="PARTIAL"  # Initial SEC ticker map was blocked.
+    assert result["coverage"]["errors"]["ticker_map"]==403
+
+
+def test_stale_mirror_ticker_mismatch_cannot_publish_another_issuer_news():
+    denied=requests.HTTPError("403", response=SimpleNamespace(status_code=403))
+    submitted=report(111,["8-K"])
+    submitted["tickers"]=["UNRELATED"]
+    session=Session({
+        TICKERS_URL:denied,
+        FALLBACK_TICKER_MAP:{"RGC":"0000000111"},
+        f"{SUBMISSIONS_BASE}CIK0000000111.json":submitted,
+    })
+    result=collect({"stocks":[]},now=NOW,session=session,
+                   agent="Test tester@example.com",pause=lambda _:None,max_symbols=1)
+    assert result["filings"]==[]
+    assert result["coverage"]["errors"]["RGC"]=="SEC_ISSUER_TICKER_NOT_CONFIRMED"
