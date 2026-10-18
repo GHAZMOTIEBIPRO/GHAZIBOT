@@ -1,5 +1,5 @@
 """Research-only hourly OHLC: exactly four CLOSED 15-minute Yahoo bars, no request."""
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
