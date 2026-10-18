@@ -61,15 +61,16 @@ function renderFreshness(data) {
   if (!data.generated_at) {
     dot.classList.add("stale");
     label.textContent = "بانتظار أول فحص";
-    updated.textContent = "وقت جلب السوق: غير متاح";
+    updated.textContent = "وقت إنشاء التقرير: غير متاح";
     return;
   }
   const timestamp = new Date(data.generated_at);
   const ageMinutes = (Date.now() - timestamp.getTime()) / 60000;
-  if (ageMinutes <= 90) { dot.classList.add("fresh"); label.textContent = "البيانات حديثة"; }
-  else if (ageMinutes <= 360) { dot.classList.add("stale"); label.textContent = "البيانات متأخرة"; }
-  else { dot.classList.add("error"); label.textContent = "التحديث متوقف أو قديم"; }
-  updated.textContent = `وقت جلب السوق: ${formatRiyadhTime(timestamp)} — الرياض`;
+  if (!Number.isFinite(ageMinutes) || ageMinutes < -5) { dot.classList.add("error"); label.textContent = "تعذر التحقق من وقت التقرير"; }
+  else if (ageMinutes <= 90) { dot.classList.add("fresh"); label.textContent = "ملف التقرير حديث"; }
+  else if (ageMinutes <= 360) { dot.classList.add("stale"); label.textContent = "ملف التقرير متأخر"; }
+  else { dot.classList.add("error"); label.textContent = "ملف التقرير قديم"; }
+  updated.textContent = `وقت إنشاء التقرير: ${formatRiyadhTime(timestamp)} — الرياض (ليس وقت تسعير العقد)`;
 }
 
 function optionMini(option) {
@@ -245,10 +246,10 @@ async function loadData(manual = false) {
     if (manual) {
       const hasNewerData = previousGeneratedAt && new Date(data.generated_at) > new Date(previousGeneratedAt);
       byId("refresh-result").textContent = hasNewerData
-        ? `تم تحميل بيانات أحدث. وقت جلب السوق: ${formatRiyadhTime(data.generated_at)} — الرياض.`
-        : `تم التحقق الآن. لا يوجد ملف أحدث؛ آخر جلب للسوق: ${formatRiyadhTime(data.generated_at)} — الرياض.`;
+        ? `تم تحميل بيانات أحدث. وقت إنشاء التقرير: ${formatRiyadhTime(data.generated_at)} — الرياض.`
+        : `تم التحقق الآن. لا يوجد ملف أحدث؛ آخر إنشاء تقرير: ${formatRiyadhTime(data.generated_at)} — الرياض.`;
     } else {
-      byId("refresh-result").textContent = `تم تحميل آخر ملف منشور. وقت جلب السوق: ${formatRiyadhTime(data.generated_at)} — الرياض.`;
+      byId("refresh-result").textContent = `تم تحميل آخر ملف منشور. وقت إنشاء التقرير: ${formatRiyadhTime(data.generated_at)} — الرياض.`;
     }
   } catch (error) {
     byId("freshness-dot").className = "status-dot error";
