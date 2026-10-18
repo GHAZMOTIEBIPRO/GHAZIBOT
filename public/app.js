@@ -3,6 +3,12 @@ const DATA_URLS = [
   "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/main/public/data/latest.json",
   "./data/latest.json",
 ];
+// Tiny metadata avoids downloading multiple multi-MB snapshots on each refresh.
+const DATA_META_URLS = [
+  "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/data-status.json",
+  "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/main/public/data/data-status.json",
+  "./data/data-status.json",
+];
 const LIVE_STATUS_URL = "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/live_dashboard_status.json";
 const RIYADH_TIME_ZONE = "Asia/Riyadh";
 let radarData = null;
@@ -215,15 +221,47 @@ function renderAll(data) {
   renderStocks(byId("stock-search").value || ""); renderOptions(); renderCatalysts(); renderRejected(); renderCalibration(); renderAlerts(); renderStatus();
   if (typeof renderMarketChart === "function") renderMarketChart(data);
 }
+async function fetchDataFreshnessRank() {
+  // Report generation time is used to choose files; it never certifies a quote.
+  const now = Date.now();
+  const readings = await Promise.allSettled(DATA_META_URLS.map(async (url) => {
+    const response = await fetch(url + "?check=" + now, { cache: "no-store" });
+    if (!response.ok) throw new Error("status " + response.status);
+    const status = await response.json();
+    const ms = Date.parse(status?.generated_at || "");
+    if (!Number.isFinite(ms) || ms > now + 5 * 60000) throw new Error("invalid metadata");
+    return ms;
+  }));
+  const times = readings.map((r) => r.status === "fulfilled" ? r.value : -Infinity);
+  const order = DATA_URLS.map((_, index) => index).sort((a, b) => times[b] - times[a] || a - b);
+  return { times, order };
+}
+
 async function fetchRadarData() {
   const failures = [];
-  for (const url of DATA_URLS) {
+  const { times, order } = await fetchDataFreshnessRank();
+  let best = null;
+  for (const [position, index] of order.entries()) {
+    const url = DATA_URLS[index];
     try {
-      const response = await fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) { failures.push(`${url}: ${String(error)}`); }
+      const response = await fetch(url + (url.includes("?") ? "&" : "?") + "t=" + Date.now(),
+        { cache: "no-store" });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      const generated = Date.parse(data?.generated_at || "");
+      if (!Number.isFinite(generated) || generated > Date.now() + 5 * 60000)
+        throw new Error("missing/invalid provider-generated report timestamp");
+      if (!best || generated > best.generated) best = { data, generated };
+      // A different published status is markedly newer than this actual
+      // payload: check that file too. Otherwise stop to save bandwidth.
+      const newerPossible = order.slice(position + 1)
+        .some((later) => times[later] > best.generated + 10 * 60000);
+      if (!newerPossible) return best.data;
+    } catch (error) {
+      failures.push(url + ": " + String(error));
+    }
   }
+  if (best) return best.data;
   throw new Error(failures.join(" | "));
 }
 async function fetchLiveStatus() {
