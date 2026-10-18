@@ -8,6 +8,8 @@ from options_radar.free_public_intelligence import (
     BLS_ICS,
     FED_MONETARY,
     GDELT_DOC,
+    YAHOO_FINANCE_RSS,
+    yahoo_rss_attention,
     alpaca_iex_health,
     build_context,
     fed_monetary_updates,
@@ -237,3 +239,51 @@ def test_single_bounded_gdelt_query_covers_12_explicit_smallcap_symbols():
     assert '"PLTR"' in params["query"]
     assert '"RGC"' in params["query"]
     assert params["maxrecords"]==75
+
+def test_yahoo_finance_rss_safely_extracts_ticker_tagged_stories_only():
+    xml = b'''<?xml version="1.0"?><rss version="2.0"><channel>
+      <title>Yahoo Finance headlines</title>
+      <item><title>Rocket Lab (RKLB) announces satellite milestone</title>
+        <link>https://finance.yahoo.com/news/rocket-lab-example</link>
+        <pubDate>Wed, 14 Oct 2026 12:00:00 GMT</pubDate></item>
+      <item><title>Unrelated research update</title>
+        <link>https://finance.yahoo.com/news/unrelated</link>
+        <pubDate>Wed, 14 Oct 2026 12:00:00 GMT</pubDate></item>
+    </channel></rss>'''
+    s = Session({YAHOO_FINANCE_RSS: Response(content=xml)})
+    items = yahoo_rss_attention(["RKLB","MU"],session=s,now=NOW)
+    assert len(items)==1
+    assert items[0]["symbol"]=="RKLB"
+    assert items[0]["source"]=="yahoo_finance_rss"
+    assert items[0]["authority"]=="ATTENTION_ONLY"
+    assert items[0]["independent_confirmation"] is False
+    assert items[0]["official_confirmed"] is False
+    assert items[0]["market_direction"]=="UNKNOWN"
+    assert items[0]["published_at_reported"]=="2026-10-14T12:00:00+00:00"
+    assert len(s.calls)==1
+
+
+def test_yahoo_rss_does_not_assign_ambiguous_titles_to_requested_symbol():
+    xml = b'''<?xml version="1.0"?><rss version="2.0"><channel>
+      <item><title>Potential partnership for biotechnology sector</title>
+        <link>https://finance.yahoo.com/news/sector-example</link>
+        <pubDate>Wed, 14 Oct 2026 12:00:00 GMT</pubDate></item>
+    </channel></rss>'''
+    session = Session({YAHOO_FINANCE_RSS: Response(content=xml)})
+    assert yahoo_rss_attention(["RGC"],session=session,now=NOW)==[]
+
+
+def test_yahoo_rss_rejection_is_diagnostic_not_invented_news():
+    rejected = requests.HTTPError("429",response=SimpleNamespace(status_code=429))
+    session=Session({
+        GDELT_DOC:Response(json_value={"articles":[]}),
+        YAHOO_FINANCE_RSS:rejected,
+        FED_MONETARY:Response(content=FED),
+        BLS_ICS:Response(content=ICS.encode()),
+    })
+    result=build_context(symbols=["RKLB"],session=session,now=NOW)
+    assert result["yahoo_rss_attention"] == []
+    assert result["source_errors"]["yahoo_rss_attention"]=="HTTP_429"
+    assert result["status"]=="DEGRADED"
+    assert len([x for x in session.calls if x[0]==YAHOO_FINANCE_RSS])==1
+
