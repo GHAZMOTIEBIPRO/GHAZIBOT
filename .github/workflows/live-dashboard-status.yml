@@ -195,6 +195,15 @@ jobs:
           set -euo pipefail
           test -s state/runtime/public/data/health.json
           test -s state/runtime/public/data/data-status.json
+          budget_action="$(PYTHONPATH=publisher python publisher/scripts/vercel_metadata_budget_guard.py \
+            --old-health publisher/public/data/health.json \
+            --old-status publisher/public/data/data-status.json \
+            --new-health state/runtime/public/data/health.json \
+            --new-status state/runtime/public/data/data-status.json)"
+          if [[ "$budget_action" == "SKIP" ]]; then
+            echo "Skip static metadata-only deploy; live bot-state remains current."
+            exit 0
+          fi
           cp -f state/runtime/public/data/health.json publisher/public/data/health.json
           cp -f state/runtime/public/data/data-status.json publisher/public/data/data-status.json
           PYTHONPATH=publisher python - <<'PY'
