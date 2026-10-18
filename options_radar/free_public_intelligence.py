@@ -24,6 +24,32 @@ GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 BLS_ICS = "https://www.bls.gov/schedule/news_release/bls.ics"
 FED_MONETARY = "https://www.federalreserve.gov/feeds/press_monetary.xml"
 ALPACA_LATEST = "https://data.alpaca.markets/v2/stocks/SPY/bars/latest"
+PRESS_WIRE_RSS = {
+    "prnewswire": "https://www.prnewswire.com/rss/news-releases-list.rss",
+    "globenewswire": "https://www.globenewswire.com/RssFeed/orgclass/1/feedTitle/GlobeNewswire%20-%20News%20about%20Public%20Companies",
+}
+# A source's generic release title is only issuer-related when the specific
+# company name OR a strict exchange-qualified ticker appears in that headline.
+# Do NOT associate bare RGC, MU, AI, etc with unrelated companies.
+ISSUER_NAMES = {
+    "RGC": ("Regencell Bioscience", "Regencell"),
+    "BNAI": ("Brand Engagement Network",),
+    "RKLB": ("Rocket Lab",),
+    "IONQ": ("IonQ",),
+    "RGTI": ("Rigetti Computing", "Rigetti"),
+    "ASTS": ("AST SpaceMobile",),
+    "SOUN": ("SoundHound AI",),
+    "MU": ("Micron Technology",),
+    "NVDA": ("NVIDIA Corporation", "NVIDIA"),
+    "AMD": ("Advanced Micro Devices",),
+    "AAPL": ("Apple Inc.",),
+    "TSLA": ("Tesla Inc.", "Tesla, Inc.",),
+    "PLTR": ("Palantir Technologies",),
+    "SHOP": ("Shopify Inc.",),
+    "GILD": ("Gilead Sciences",),
+    "SOFI": ("SoFi Technologies",),
+}
+
 UTC = timezone.utc
 NY = ZoneInfo("America/New_York")
 WATCH_DEFAULT = ("MU", "NVDA", "RGC", "BNAI", "RKLB", "AMD")
@@ -142,6 +168,87 @@ def gdelt_attention(
                 "price_or_option_quote": False,
             })
     return output[:40]
+
+
+def press_wire_attention(
+    symbols: list[str], *, session: Any = requests, now: datetime | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """Bounded two-feed wire RSS discovery; does NOT verify issuer/impact.
+
+    The free feeds are intended for RSS readers. Do not fetch release bodies,
+    bypass controls, store copyrighted article content, or imply official
+    issuer attribution. Avoid ambiguous bare ticker matches.
+    """
+    current = now or datetime.now(UTC)
+    watch = [
+        x for x in dict.fromkeys(str(s).upper().strip() for s in symbols)
+        if x in ISSUER_NAMES
+    ][:16]
+    output: list[dict[str, Any]] = []
+    errors: dict[str, str] = {}
+    seen: set[tuple[str, str]] = set()
+    for publisher, url in PRESS_WIRE_RSS.items():
+        try:
+            response = _get(
+                url, session=session, headers={"Accept": "application/rss+xml, application/xml"},
+            )
+            feed = feedparser.parse(response.content)
+            if feed.bozo and not feed.entries:
+                raise ValueError("Invalid publisher RSS XML")
+            if not feed.entries and b"<rss" not in response.content[:1000].lower():
+                raise ValueError("Publisher RSS missing expected format")
+            entries = list(feed.entries)[:110]
+            allowed_hosts = (
+                ("www.prnewswire.com", "prnewswire.com")
+                if publisher == "prnewswire" else
+                ("www.globenewswire.com", "globenewswire.com")
+            )
+            for item in entries:
+                title = str(item.get("title") or "").strip()[:250]
+                link = _https(item.get("link"), allowed_hosts)
+                published = _iso(item.get("published") or item.get("updated"))
+                if not title or not link or published is None:
+                    continue
+                age = current - published
+                if age < timedelta(minutes=-3) or age > timedelta(days=7):
+                    continue
+                for symbol in watch:
+                    aliases = ISSUER_NAMES[symbol]
+                    company_mention = any(
+                        re.search(r"(?<![A-Za-z0-9])" + re.escape(alias) +
+                                  r"(?![A-Za-z0-9])", title, re.IGNORECASE)
+                        for alias in aliases
+                    )
+                    exchange_mention = bool(re.search(
+                        rf"(?<![A-Z0-9])(?:\${re.escape(symbol)}|"
+                        rf"(?:NASDAQ|NYSE|AMEX)\s*:\s*{re.escape(symbol)})(?![A-Z0-9])",
+                        title, re.IGNORECASE,
+                    ))
+                    if not (company_mention or exchange_mention):
+                        continue
+                    if (symbol, link) in seen:
+                        continue
+                    seen.add((symbol, link))
+                    output.append({
+                        "symbol": symbol, "headline": title, "url": link,
+                        "published_at": published.isoformat(),
+                        "source": publisher,
+                        "source_family": "press_wire_syndication",
+                        "authority": "PRESS_RELEASE_DISCOVERY_ONLY",
+                        "company_mentioned_in_headline": True,
+                        "issuer_release_authenticated": False,
+                        "positive_catalyst_verified": False,
+                        "official_sec_filing": False,
+                        "market_direction": "UNKNOWN",
+                        "price_or_option_quote": False,
+                    })
+        except requests.HTTPError as exc:
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            errors[publisher] = f"HTTP_{status}" if isinstance(status, int) else "HTTP_ERROR"
+        except (requests.RequestException, ValueError, TypeError) as exc:
+            errors[publisher] = type(exc).__name__
+    output.sort(key=lambda item: item["published_at"], reverse=True)
+    return output[:40], errors
 
 
 def fed_monetary_updates(
@@ -302,6 +409,11 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
         except (requests.RequestException, ValueError, TypeError, KeyError) as exc:
             pieces[key] = []
             errors[key] = type(exc).__name__
+    # Press-wire RSS operates independently from GDELT 429 and SEC 403.
+    # These are publisher-distributed titles, not SEC or issuer confirmation.
+    press_items, press_errors = press_wire_attention(symbols, session=session, now=current)
+    pieces["press_wire_attention"] = press_items
+    errors.update({"press_wire_" + k: v for k, v in press_errors.items()})
     pieces["alpaca_iex"] = alpaca_iex_health(session=session, now=current)
     return {
         "schema": "free_public_intelligence_v1",
@@ -312,6 +424,7 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
         "is_independent_executable_market_data": False,
         "policy": {
             "gdelt_attention_not_official_confirmation": True,
+            "press_wire_is_discovery_not_issuer_or_bullish_confirmation": True,
             "bls_calendar_is_schedule_not_release_result": True,
             "fed_rss_publication_is_not_upcoming_fomc_calendar": True,
             "alpaca_iex_not_national_market_or_opra": True,
@@ -337,6 +450,7 @@ def main() -> None:
         "Free public context:"
         f" status={payload['status']}"
         f" gdelt={len(payload['gdelt_attention'])}"
+        f" presswire={len(payload['press_wire_attention'])}"
         f" fed={len(payload['fed_monetary'])}"
         f" bls={len(payload['bls_upcoming'])}"
         f" alpaca={payload['alpaca_iex']['status']}"

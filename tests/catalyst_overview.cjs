@@ -37,3 +37,11 @@ assert.ok(script.includes("free_public_intelligence.json"));
 
 
 console.log("GHAZI Radar visible indices and official catalyst source filters: PASS");
+
+assert.ok(html.includes('id="press-wire-news-list"'));
+assert.ok(html.includes('id="press-wire-source-status"'));
+assert.ok(script.includes("press_wire_attention"));
+assert.ok(script.includes("PRESS_RELEASE_DISCOVERY_ONLY"));
+assert.ok(script.includes("issuer_release_authenticated===false"));
+assert.ok(script.includes("positive_catalyst_verified===false"));
+assert.ok(script.includes("market_direction==="));

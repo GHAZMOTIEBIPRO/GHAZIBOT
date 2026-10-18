@@ -173,6 +173,55 @@
         (String(secPulse.ticker_mapping_source||"").startsWith("UNVERIFIED")?
           " · خريطة CIK احتياطية قديمة؛ لا ينشر مستند إلا إذا أكد SEC الرمز والجهة." : ""));
     }
+    const wireContainer=el("press-wire-news-list");
+    if(wireContainer){
+      wireContainer.replaceChildren();
+      const reports=Array.isArray(newsContext?.press_wire_attention)
+        ? newsContext.press_wire_attention:[];
+      const current=asDate(newsContext?.generated_at)&&
+        Date.now()-asDate(newsContext.generated_at).getTime()<=48*60*60000;
+      const accepted=(current?reports:[]).filter(item=>{
+        const url=safeNewsLink(item?.url);
+        if(!url)return false;
+        const host=new URL(url).hostname.toLowerCase();
+        const publisherDomain=item.source==="prnewswire"?
+          ["prnewswire.com","www.prnewswire.com"]:
+          item.source==="globenewswire"?
+          ["globenewswire.com","www.globenewswire.com"]:[];
+        return publisherDomain.includes(host) &&
+          item.authority==="PRESS_RELEASE_DISCOVERY_ONLY" &&
+          item.issuer_release_authenticated===false &&
+          item.positive_catalyst_verified===false &&
+          item.market_direction==="UNKNOWN" &&
+          typeof item.symbol==="string" &&
+          /^[A-Z][A-Z0-9.-]{0,8}$/.test(item.symbol) &&
+          asDate(item.published_at);
+      }).slice(0,16);
+      for(const item of accepted){
+        const row=node("article","","ghazi-catalyst-primary");
+        row.append(node("h4",item.symbol+" · "+(item.source==="prnewswire"?
+          "PR Newswire":"GlobeNewswire")+" — للبحث"));
+        row.append(node("p",String(item.headline||"—")+
+          " · تاريخ نشر الموزّع: "+time(item.published_at)+
+          " · لا يُثبت هوية الشركة المصدرة أو اتجاه السهم"));
+        const link=node("a","قراءة البيان عند الناشر ↗");
+        link.href=safeNewsLink(item.url);
+        link.target="_blank";link.rel="noopener noreferrer";
+        row.append(link);
+        wireContainer.append(row);
+      }
+      if(!accepted.length) wireContainer.append(node("p",
+        "لا توجد بيانات صحفية حديثة تطابق أسماء الشركات بصورة واضحة، أو تعذر وصول المصدر. لا يعني ذلك غياب الأخبار من السوق."));
+      const errors=newsContext?.source_errors||{};
+      const feedErrors=["press_wire_prnewswire","press_wire_globenewswire"]
+        .filter(k=>errors[k])
+        .map(k=>k.replace("press_wire_","")+": "+String(errors[k]));
+      set("press-wire-source-status",
+        "آخر جمع: "+time(newsContext?.generated_at)+
+        " · أخبار مطابقة للأسماء: "+n(accepted.length,0)+
+        (feedErrors.length?" · تعثر "+feedErrors.join("، "):"")+
+        " · ليست إفصاحات SEC أو بيانات أسعار.");
+    }
     const news=el("gdelt-news-list");
     if(news){
       news.replaceChildren();
