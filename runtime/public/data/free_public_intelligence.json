@@ -1,0 +1,52 @@
+{
+  "schema": "free_public_intelligence_v1",
+  "generated_at": "2026-10-18T11:53:12.958576+00:00",
+  "status": "DEGRADED",
+  "source_errors": {
+    "gdelt_attention": "HTTP_429"
+  },
+  "decision_authority": false,
+  "live_alert_weights_changed": false,
+  "is_independent_executable_market_data": false,
+  "policy": {
+    "gdelt_attention_not_official_confirmation": true,
+    "bls_calendar_is_schedule_not_release_result": true,
+    "fed_rss_publication_is_not_upcoming_fomc_calendar": true,
+    "alpaca_iex_not_national_market_or_opra": true,
+    "no_quote_or_freshness_fabrication": true
+  },
+  "gdelt_attention": [],
+  "fed_monetary": [
+    {
+      "title": "Minutes of the Board's discount rate meetings on August 17, September 9, and September 16, 2026",
+      "published_at": "2026-10-13T18:00:00+00:00",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261013a.htm",
+      "source": "federal_reserve_monetary_rss",
+      "authority": "OFFICIAL_PUBLICATION",
+      "event_type": "RELEASED_NEWS",
+      "price_direction": "UNKNOWN"
+    }
+  ],
+  "bls_upcoming": [
+    {
+      "title": "Employment Cost Index",
+      "scheduled_at": "2026-10-30T12:30:00+00:00",
+      "source": "bls_official_ical",
+      "url": "https://www.bls.gov/schedule/news_release/bls.ics",
+      "authority": "OFFICIAL_SCHEDULE",
+      "event_type": "UPCOMING_RELEASE",
+      "economic_result_available": false,
+      "price_direction": "UNKNOWN"
+    }
+  ],
+  "alpaca_iex": {
+    "provider": "alpaca_iex",
+    "feed": "iex",
+    "source_family": "alpaca_iex",
+    "execution_grade": false,
+    "opra_options": false,
+    "quote_freshness_verified": false,
+    "stock_bar_only": true,
+    "status": "NOT_CONFIGURED"
+  }
+}
