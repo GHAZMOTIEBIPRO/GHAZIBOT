@@ -165,8 +165,10 @@
     render(...data);
     if(btn)btn.disabled=false;
   }
-  if(el("decision-room-refresh"))el("decision-room-refresh").addEventListener("click",refresh);
-  refresh();
-  setInterval(refresh,10*60*1000);
   if(typeof module!=="undefined"&&module.exports)module.exports={decision};
+  if(typeof document!=="undefined") {
+    if(el("decision-room-refresh"))el("decision-room-refresh").addEventListener("click",refresh);
+    refresh();
+    setInterval(refresh,10*60*1000);
+  }
 })();
