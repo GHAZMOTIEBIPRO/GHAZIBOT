@@ -28,6 +28,7 @@ SYMBOLS = {
     "DIA": ("DIA", "SPDR Dow Jones ETF", "etf_proxy"),
 }
 REQUIRED = ("Open", "High", "Low", "Close")
+FIVE_MIN_SYMBOLS = ("SPX", "NDX", "SPY", "QQQ")  # Bounded: only two core indices and ETFs
 
 
 def clean_bars(frame: pd.DataFrame | None, *, intraday: bool) -> pd.DataFrame:
@@ -134,6 +135,15 @@ def last_finished_intraday(frame: pd.DataFrame, now: datetime) -> pd.DataFrame:
     return finished.between_time("09:30", "15:45")
 
 
+def last_finished_five_min(frame: pd.DataFrame, now: datetime) -> pd.DataFrame:
+    """Use only 5-minute candles that have fully closed (ET market hours)."""
+    if frame.empty:
+        return frame
+    now = now.astimezone(NY)
+    completed = frame.loc[frame.index + pd.Timedelta(minutes=5) <= now]
+    return completed.between_time("09:30", "15:55")
+
+
 def previous_period_range(frame: pd.DataFrame, now: datetime, *, kind: str) -> dict:
     if frame.empty:
         return {"high": None, "low": None, "period": None}
@@ -171,10 +181,12 @@ def hourly_from_quarters(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def analyze(symbol: str, daily_raw: pd.DataFrame | None,
-            intraday_raw: pd.DataFrame | None, *, now: datetime) -> dict:
+            intraday_raw: pd.DataFrame | None, *, now: datetime,
+            five_min_raw: pd.DataFrame | None = None) -> dict:
     yahoo, display_name, kind = SYMBOLS[symbol]
     daily = completed_daily(clean_bars(daily_raw, intraday=False), now)
     intraday = last_finished_intraday(clean_bars(intraday_raw, intraday=True), now)
+    minute5 = last_finished_five_min(clean_bars(five_min_raw, intraday=True), now)
     last_daily = daily.iloc[-1] if not daily.empty else None
     latest_intraday = intraday.iloc[-1] if not intraday.empty else None
     quote_time = intraday.index[-1] if latest_intraday is not None else None
@@ -183,6 +195,14 @@ def analyze(symbol: str, daily_raw: pd.DataFrame | None,
     intraday_age = (now - quote_time.to_pydatetime().astimezone(timezone.utc)).total_seconds()/60 if same_session else None
     is_recent = same_session and intraday_age is not None and 0 <= intraday_age <= 45
     d = technical(daily)
+    q5 = technical(minute5, fast=9, slow=21)
+    last5 = minute5.index[-1] if not minute5.empty else None
+    five_age = ((now - last5.to_pydatetime().astimezone(timezone.utc)).total_seconds() / 60
+                if last5 is not None and last5.date() == today else None)
+    is_five_recent = bool(
+        five_age is not None and 0 <= five_age <= 20
+        and symbol in FIVE_MIN_SYMBOLS
+    )
     q15 = technical(intraday)
     hour = hourly_from_quarters(intraday)
     q60 = technical(hour, fast=9, slow=21)
@@ -208,7 +228,15 @@ def analyze(symbol: str, daily_raw: pd.DataFrame | None,
     # Never display a current 15m/1h direction if intraday bars are stale.
     return {
         "symbol": symbol, "yahoo_symbol": yahoo, "name": display_name, "kind": kind,
-        "daily": d, "m15": q15 if is_recent else {**q15, "bias": "STALE"},
+        "daily": d,
+        "m5": (
+            q5 if is_five_recent
+            else {**q5, "bias": "STALE" if symbol in FIVE_MIN_SYMBOLS else "UNAVAILABLE"}
+        ),
+        "m5_source_bar_start": last5.isoformat() if last5 is not None else None,
+        "current_m5_confirmed": is_five_recent,
+        "last_finished_5m_age_minutes": round(five_age, 1) if five_age is not None else None,
+        "m15": q15 if is_recent else {**q15, "bias": "STALE"},
         "h1": q60 if is_recent else {**q60, "bias": "STALE"},
         "last_completed_close": previous_close,
         "last_completed_session_date": last_daily_date,
@@ -226,12 +254,15 @@ def analyze(symbol: str, daily_raw: pd.DataFrame | None,
 
 
 def make_report(daily: dict[str, pd.DataFrame],
-                intraday: dict[str, pd.DataFrame], *, now: datetime) -> dict:
+                intraday: dict[str, pd.DataFrame], *, now: datetime,
+                five_min: dict[str, pd.DataFrame] | None = None) -> dict:
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
     rows = {}
+    five_min = five_min or {}
     for symbol in SYMBOLS:
-        rows[symbol] = analyze(symbol, daily.get(symbol), intraday.get(symbol), now=now)
+        rows[symbol] = analyze(symbol, daily.get(symbol), intraday.get(symbol), now=now,
+                               five_min_raw=five_min.get(symbol))
     valid = sum(bool(x["last_completed_session_date"]) for x in rows.values())
     if not valid:
         raise ValueError("No validated index history; preserve previous report")
@@ -239,10 +270,11 @@ def make_report(daily: dict[str, pd.DataFrame],
         "schema": "ghazi.index_research.v1",
         "generated_at": now.astimezone(timezone.utc).isoformat(),
         "coverage": {"symbols_requested": len(SYMBOLS), "daily_validated": valid,
-                     "intraday_current": sum(x["current_intraday_bar_confirmed"] for x in rows.values())},
+                     "intraday_current": sum(x["current_intraday_bar_confirmed"] for x in rows.values()),
+                     "five_min_current": sum(x["current_m5_confirmed"] for x in rows.values())},
         "data_role": "RESEARCH_ONLY_NOT_LICENSED_EXECUTION",
         "index_options_signal_authority": False,
-        "method": "Confirmed completed 15m bars; daily 20/50 EMA, 15m 20/50 EMA, 1H 9/21 EMA, RSI14, ATR14; previous completed session/week/month levels",
+        "method": "Completed 5m+15m bars; 5m/1H EMA9/21, daily/15m EMA20/50, RSI14, ATR14; previous completed session/week/month levels",
         "symbols": rows,
         "disclaimer": (
             "Yahoo data is unofficial and may be delayed, incomplete or unavailable. "
@@ -252,9 +284,9 @@ def make_report(daily: dict[str, pd.DataFrame],
     }
 
 
-def fetch_frames() -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
+def fetch_frames() -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
     import yfinance as yf  # Optional at import-time: tests are always offline.
-    daily, intraday = {}, {}
+    daily, intraday, five_min = {}, {}, {}
     for symbol, (ticker, _, _) in SYMBOLS.items():
         try:
             daily[symbol] = yf.Ticker(ticker).history(
@@ -268,15 +300,22 @@ def fetch_frames() -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
             )
         except Exception:
             intraday[symbol] = pd.DataFrame()
-    return daily, intraday
+        if symbol in FIVE_MIN_SYMBOLS:
+            try:
+                five_min[symbol] = yf.Ticker(ticker).history(
+                    period="5d", interval="5m", auto_adjust=False, prepost=False
+                )
+            except Exception:
+                five_min[symbol] = pd.DataFrame()
+    return daily, intraday, five_min
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    daily, intraday = fetch_frames()
-    result = make_report(daily, intraday, now=datetime.now(timezone.utc))
+    daily, intraday, five_min = fetch_frames()
+    result = make_report(daily, intraday, now=datetime.now(timezone.utc), five_min=five_min)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix+".tmp")
     temporary.write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)+"\n", encoding="utf-8")
