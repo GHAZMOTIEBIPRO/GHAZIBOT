@@ -24,6 +24,8 @@ GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 BLS_ICS = "https://www.bls.gov/schedule/news_release/bls.ics"
 FED_MONETARY = "https://www.federalreserve.gov/feeds/press_monetary.xml"
 ALPACA_LATEST = "https://data.alpaca.markets/v2/stocks/SPY/bars/latest"
+GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
+GOOGLE_NEWS_MAX_ISSUERS = 6
 PRESS_WIRE_RSS = {
     "prnewswire": "https://www.prnewswire.com/rss/news-releases-list.rss",
     "globenewswire": "https://www.globenewswire.com/RssFeed/orgclass/1/feedTitle/GlobeNewswire%20-%20News%20about%20Public%20Companies",
@@ -251,6 +253,80 @@ def press_wire_attention(
     return output[:40], errors
 
 
+def google_issuer_attention(
+    symbols: list[str], *, session: Any = requests, now: datetime | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """Six bounded issuer-name RSS searches; source is NOT an official API.
+
+    RSS may change or block hosted runners. Only headlines explicitly naming
+    the *queried* issuer qualify; Google matching/translation is not evidence.
+    """
+    current = now or datetime.now(UTC)
+    preference = ("RGC", "BNAI", "RKLB", "IONQ", "SOUN", "ASTS",
+                  "RGTI", "MU", "NVDA", "AMD", "AAPL", "TSLA", "PLTR")
+    requested = {str(s).upper().strip() for s in symbols}
+    selected = [s for s in preference if s in requested and s in ISSUER_NAMES][:GOOGLE_NEWS_MAX_ISSUERS]
+    events: list[dict[str, Any]] = []
+    errors: dict[str, str] = {}
+    for symbol in selected:
+        name = ISSUER_NAMES[symbol][0]
+        # Do not rely on fuzzy ticker matching: retrieve by issuer's precise
+        # name, then verify the title. No article body or scraping.
+        query = f'"{name}" stock when:7d'
+        try:
+            response = _get(
+                GOOGLE_NEWS_RSS, session=session,
+                params={"q": query, "hl": "en-US", "gl": "US", "ceid": "US:en"},
+                headers={"Accept": "application/rss+xml, application/xml"},
+            )
+            parsed = feedparser.parse(response.content)
+            if parsed.bozo and not parsed.entries:
+                raise ValueError("Google RSS could not be parsed")
+            if not parsed.entries and b"<rss" not in response.content[:1000].lower():
+                raise ValueError("Google RSS missing expected feed")
+            for item in list(parsed.entries)[:20]:
+                title = str(item.get("title") or "").strip()[:250]
+                link = _https(item.get("link"), ("news.google.com",))
+                published = _iso(item.get("published") or item.get("updated"))
+                if not title or not link or published is None:
+                    continue
+                age = current - published
+                if not timedelta(minutes=-3) <= age <= timedelta(days=7):
+                    continue
+                # The title must match the precise company, never a bare
+                # ticker like AI/MU/RGC. Require first full name or a curated
+                # unambiguous alternate issuer name.
+                aliases = ISSUER_NAMES[symbol]
+                if not any(re.search(r"(?<![A-Za-z0-9])" + re.escape(alias) +
+                                     r"(?![A-Za-z0-9])", title, re.IGNORECASE)
+                           for alias in aliases):
+                    continue
+                events.append({
+                    "symbol": symbol, "headline": title, "url": link,
+                    "published_at": published.isoformat(),
+                    "source": "google_news_rss",
+                    "source_family": "unofficial_google_news_search_rss",
+                    "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+                    "issuer_name_in_headline": True,
+                    "issuer_release_authenticated": False,
+                    "official_sec_filing": False,
+                    "positive_catalyst_verified": False,
+                    "market_direction": "UNKNOWN",
+                    "price_or_option_quote": False,
+                })
+        except requests.HTTPError as exc:
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            errors[symbol] = f"HTTP_{status}" if isinstance(status, int) else "HTTP_ERROR"
+        except (requests.RequestException, ValueError, TypeError) as exc:
+            errors[symbol] = type(exc).__name__
+    # Publisher articles can repeat across searches; keep issuer+article
+    # identity and first observed publication time intact.
+    unique: dict[tuple[str, str], dict[str, Any]] = {}
+    for item in events:
+        unique.setdefault((item["symbol"], item["url"]), item)
+    return sorted(unique.values(), key=lambda x: x["published_at"], reverse=True)[:36], errors
+
+
 def fed_monetary_updates(
     *, session: Any = requests, now: datetime | None = None,
 ) -> list[dict[str, Any]]:
@@ -414,6 +490,9 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
     press_items, press_errors = press_wire_attention(symbols, session=session, now=current)
     pieces["press_wire_attention"] = press_items
     errors.update({"press_wire_" + k: v for k, v in press_errors.items()})
+    google_items, google_errors = google_issuer_attention(symbols, session=session, now=current)
+    pieces["google_news_attention"] = google_items
+    errors.update({"google_news_" + key: value for key, value in google_errors.items()})
     pieces["alpaca_iex"] = alpaca_iex_health(session=session, now=current)
     return {
         "schema": "free_public_intelligence_v1",
@@ -425,6 +504,7 @@ def build_context(*, symbols: list[str], now: datetime | None = None, session: A
         "policy": {
             "gdelt_attention_not_official_confirmation": True,
             "press_wire_is_discovery_not_issuer_or_bullish_confirmation": True,
+            "google_news_rss_is_unofficial_search_not_official_confirmation": True,
             "bls_calendar_is_schedule_not_release_result": True,
             "fed_rss_publication_is_not_upcoming_fomc_calendar": True,
             "alpaca_iex_not_national_market_or_opra": True,
@@ -451,6 +531,7 @@ def main() -> None:
         f" status={payload['status']}"
         f" gdelt={len(payload['gdelt_attention'])}"
         f" presswire={len(payload['press_wire_attention'])}"
+        f" gnews={len(payload['google_news_attention'])}"
         f" fed={len(payload['fed_monetary'])}"
         f" bls={len(payload['bls_upcoming'])}"
         f" alpaca={payload['alpaca_iex']['status']}"
