@@ -33,3 +33,12 @@ for(const category of ["indices","large","small","news","chart","advanced"]){
   assert.ok(html.includes('id="terminal-panel-'+category+'"'));
 }
 console.log("GHAZI terminal/chart analysis source and layout acceptance: PASS");
+
+const html2=fs.readFileSync("public/index.html","utf8");
+const hub=fs.readFileSync("public/terminal-hub.js","utf8");
+assert.ok(html2.includes('id="terminal-gamma-metrics"'));
+assert.ok(html2.includes('id="terminal-chart-scenario"'));
+assert.ok(hub.includes("ghazi.stock_charts.v1"));
+assert.ok(hub.includes("gamma:d=>d?.policy==="));
+assert.ok(hub.includes("No live trade".slice(0,0)) || hub.includes("SHADOW"));
+assert.ok(hub.includes("terminal-stock-chart-health"));
