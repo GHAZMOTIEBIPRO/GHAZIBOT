@@ -141,6 +141,13 @@ jobs:
       - name: Validate Omega export contract
         run: python scripts/validate_omega_export.py public/data/latest.json
 
+      - name: Freeze first-observed public stock research candidates and export compact brief
+        run: >-
+          python -m scripts.build_public_decision_brief
+          --source public/data/latest.json
+          --brief public/data/decision_brief.json
+          --journal data/live/public_first_sightings.json
+
       - name: Update Omega T1 T2 T3 target-learning evidence
         if: github.event_name != 'push'
         continue-on-error: true
