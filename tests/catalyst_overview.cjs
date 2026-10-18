@@ -45,3 +45,9 @@ assert.ok(script.includes("PRESS_RELEASE_DISCOVERY_ONLY"));
 assert.ok(script.includes("issuer_release_authenticated===false"));
 assert.ok(script.includes("positive_catalyst_verified===false"));
 assert.ok(script.includes("market_direction==="));
+
+assert.ok(html.includes('id="google-issuer-news-list"'));
+assert.ok(html.includes('id="google-issuer-source-status"'));
+assert.ok(script.includes("google_news_attention"));
+assert.ok(script.includes("NEWS_SEARCH_ATTENTION_ONLY"));
+assert.ok(script.includes("new URL(url).hostname!==\"news.google.com\""));
