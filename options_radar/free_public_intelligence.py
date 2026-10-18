@@ -21,7 +21,8 @@ import feedparser
 import requests
 
 from options_radar.github_listing_discovery import (
-    resolve_public_issuers, symbols_from_brief,
+    resolve_public_issuers,
+    symbols_from_brief,
 )
 
 GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
