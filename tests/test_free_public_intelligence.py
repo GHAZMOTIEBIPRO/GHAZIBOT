@@ -12,6 +12,7 @@ from options_radar.free_public_intelligence import (
     PRESS_WIRE_RSS,
     alpaca_iex_health,
     build_context,
+    classify_issuer_news_headline,
     fed_monetary_updates,
     gdelt_attention,
     google_issuer_attention,
@@ -340,7 +341,7 @@ def test_google_rss_requires_named_issuer_and_keeps_news_non_official():
         '<item><title>RGC named in another unrelated subject</title>'
         '<link>https://news.google.com/rss/articles/bare123</link>'
         f'<pubDate>{recent}</pubDate></item>'
-        '<item><title>Regencell Bioscience responds to report - Publisher</title>'
+        '<item><title>Regencell Bioscience reports wider annual loss - Publisher</title>'
         '<link>https://news.google.com/rss/articles/regencell123</link>'
         f'<pubDate>{recent}</pubDate></item>'
         '</channel></rss>'
@@ -386,3 +387,43 @@ def test_google_rss_rejects_non_aggregator_links_and_stale_articles():
     items, errors=google_issuer_attention(["RKLB"],session=session,now=NOW)
     assert items==[]
     assert errors=={}
+
+
+
+def test_issuer_headline_precision_excludes_quote_portals_and_pure_opinion():
+    assert classify_issuer_news_headline(
+        "SoundHound AI, Inc. (SOUN) Stock Price, News, Quote & History - Yahoo"
+    ) is None
+    assert classify_issuer_news_headline(
+        "SoundHound AI stock is down 55%: Buy, Sell, or Hold?"
+    ) is None
+    assert classify_issuer_news_headline("Is Rocket Lab Stock a buy today?") is None
+    assert classify_issuer_news_headline(
+        "Rocket Lab's Neutron launch delayed after review"
+    ) == "RISK_OR_ADVERSE_EVENT_MENTION"
+    assert classify_issuer_news_headline(
+        "Regencell Bioscience reports wider annual loss"
+    ) == "RISK_OR_ADVERSE_EVENT_MENTION"
+    assert classify_issuer_news_headline(
+        "Rocket Lab announces NASA launch agreement"
+    ) == "CORPORATE_EVENT_MENTION"
+
+
+def test_google_issuer_feed_limits_per_company_to_avoid_dominant_stock():
+    from email.utils import format_datetime
+    published = format_datetime(NOW-timedelta(minutes=20))
+    rss = '<rss version="2.0"><channel>'
+    for i in range(9):
+        rss += (
+            f'<item><title>Rocket Lab announces mission {i}</title>'
+            f'<link>https://news.google.com/rss/articles/rocket{i}</link>'
+            f'<pubDate>{published}</pubDate></item>'
+        )
+    rss += '</channel></rss>'
+    session = Session({GOOGLE_NEWS_RSS:Response(content=rss.encode())})
+    rows, errors = google_issuer_attention(["RKLB"],session=session,now=NOW)
+    assert errors=={}
+    assert len(rows)==4
+    assert all(row["symbol"]=="RKLB" for row in rows)
+    assert all(row["event_topic"]=="CORPORATE_EVENT_MENTION" for row in rows)
+    assert all(row["positive_catalyst_verified"] is False for row in rows)
