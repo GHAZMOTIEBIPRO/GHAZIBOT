@@ -1,8 +1,11 @@
 {
-  "generated_at": "2026-10-18T12:52:33.766128+00:00",
+  "generated_at": "2026-10-18T15:23:59.745850+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
   "source_count_available": 3,
+  "independent_numerical_gex_sources": 1,
+  "gamma_consensus_verified": false,
+  "quote_timestamp_verified": false,
   "agreement_score": 1.0,
   "metrics": {
     "spot": {
@@ -35,6 +38,8 @@
     {
       "available": true,
       "source": "dhawalc/spx-gamma-levels",
+      "source_observation_date": "2026-10-16",
+      "quote_timestamp_verified": false,
       "spot": 7744.0601,
       "gex": -7410471749.718394,
       "flip": 7728.525483026806,
@@ -45,6 +50,8 @@
     {
       "available": true,
       "source": "Alexduanran/spx-0dte-archive",
+      "source_observation_date": "2026-10-16",
+      "quote_timestamp_verified": false,
       "spot": 7644.76,
       "gex": null,
       "flip": null,
@@ -57,6 +64,7 @@
     {
       "available": true,
       "source": "CBOE delayed public",
+      "quote_timestamp_verified": false,
       "spot": 7659.4399,
       "contracts": 19100,
       "spxw_0dte": true,
@@ -114,7 +122,8 @@
   "reasons_ar": [
     "مصادر البحث لا تملك سلطة منفردة على الإشارة.",
     "CBOE العام مؤخر؛ بعض المستودعات البحثية ليست تغذية لحظية.",
-    "لا يتم اعتماد مصدر جديد إلا بعد عينة تاريخية كافية واختبار walk-forward."
+    "لا يتم اعتماد مصدر جديد إلا بعد عينة تاريخية كافية واختبار walk-forward.",
+    "لا يوجد مصدران مستقلان على الأقل لقيمة GEX الرقمية؛ لا نعرض هذا كتوافق جاما موثق."
   ],
   "promotion_status_ar": "محرك GEX الجديد مدمج فعلياً ويحسب المستويات وGreeks المتقدمة، لكنه لا يملك سلطة على CALL/PUT قبل اكتمال الاختبار التاريخي."
 }
