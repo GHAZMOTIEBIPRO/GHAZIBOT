@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261018-1">
   <link rel="stylesheet" href="./contract-risk-lab.css?v=20261018-1">
   <link rel="stylesheet" href="./index-radar.css?v=20261018-1">
+  <link rel="stylesheet" href="./catalyst-overview.css?v=20261018-2">
   <link rel="stylesheet" href="./decision-room.css?v=20261018-1">
 </head>
 <body>
@@ -42,6 +43,43 @@
       </div>
     </header>
 
+
+    <section id="indices-overview" class="ghazi-market-feature" aria-labelledby="market-index-title">
+      <div class="ghazi-market-heading">
+        <div>
+          <p class="eyebrow">تحليل المؤشرات الأمريكية</p>
+          <h2 id="market-index-title">SPX · Nasdaq 100 · Dow · Russell · VIX</h2>
+          <p>مستويات وتحليل آخر جلسة مكتملة مع RSI وEMA وATR؛ خارج الجلسة تعرض آخر قراءة تاريخية بوضوح، لا تختفي المؤشرات.</p>
+        </div>
+        <button id="indices-overview-open" type="button" class="ghazi-index-refresh">كل المؤشرات والتفاصيل</button>
+      </div>
+      <p id="indices-overview-status" role="status" class="ghazi-index-footnote">جاري جلب تحليل المؤشرات المنشور…</p>
+      <div id="indices-overview-grid" class="ghazi-market-pulse-grid" aria-live="polite">
+        <article class="ghazi-index-card"><strong>SPX</strong><p>جاري التحقق من آخر جلسة…</p></article>
+        <article class="ghazi-index-card"><strong>NDX</strong><p>جاري التحقق من آخر جلسة…</p></article>
+        <article class="ghazi-index-card"><strong>VIX</strong><p>جاري التحقق من آخر جلسة…</p></article>
+      </div>
+    </section>
+    <section id="catalyst-overview" class="ghazi-market-feature" aria-labelledby="catalyst-focus-heading">
+      <div class="ghazi-market-heading">
+        <div>
+          <p class="eyebrow">الأخبار والارتفاعات القوية</p>
+          <h2 id="catalyst-focus-heading">رادار الأسهم ذات الأخبار والمحفزات</h2>
+          <p>نربط السهم وزخمه بالمصدر الأولي للخبر إن وجد، ونفصل الأخبار المثبتة عن الأسهم ذات الزخم بلا محفز رسمي. ليست توقعات أرباح.</p>
+        </div>
+        <button id="catalyst-overview-refresh" type="button" class="ghazi-index-refresh">فحص آخر الأخبار</button>
+      </div>
+      <p id="catalyst-overview-status" role="status" class="ghazi-index-footnote">جاري مراجعة المرشحين ومصادر الأخبار…</p>
+      <h3 class="ghazi-market-subtitle">الأسهم المرصودة للصعود</h3>
+      <div id="catalyst-upside-grid" class="ghazi-market-pulse-grid" aria-live="polite">
+        <p>تظهر الأسهم بعد التحقق من البيانات.</p>
+      </div>
+      <h3 class="ghazi-market-subtitle">أحدث الأخبار الأولية SEC / FDA</h3>
+      <div id="catalyst-official-list" class="ghazi-catalyst-primary-list">
+        <p>لم يتم تحميل أدلة الأخبار بعد.</p>
+      </div>
+      <p id="catalyst-overview-note" class="ghazi-index-footnote">تحديث السجل البحثي لا يعني وجود تداول جارٍ أو خبر يدفع السعر للصعود.</p>
+    </section>
 
     <section class="ghazi-quality-panel" aria-labelledby="ghazi-quality-heading">
       <div class="ghazi-quality-heading">
@@ -478,7 +516,8 @@
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
   <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-market-overview.js"></script>
   <script src="./contract-risk-lab.js?v=20261018-1" defer></script>
-  <script src="./index-radar.js?v=20261018-1" defer></script>
+  <script src="./index-radar.js?v=20261018-2" defer></script>
+  <script src="./catalyst-overview.js?v=20261018-2" defer></script>
   <script src="./decision-room.js?v=20261018-1" defer></script>
   <script src="./ghazi-radar-quality.js?v=20261018-1" defer></script>
   <script src="./bls-macro.js?v=20261018-1" defer></script>

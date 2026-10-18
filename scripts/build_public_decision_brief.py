@@ -104,6 +104,116 @@ def catalyst_summary(raw: Any) -> dict | None:
     }
 
 
+def primary_event(raw: dict) -> bool:
+    """Only primary SEC/FDA URLs identify primary publication evidence.
+
+    ClinicalTrials.gov has official *registry* rows, but a generic update
+    does not prove issuer ownership, positive trial data, or bullish impact.
+    Secondary GDELT or speculative press is not primary confirmation.
+    """
+    from urllib.parse import urlparse
+    source = str(raw.get("source") or "").lower()
+    url = safe_link(raw.get("url") or raw.get("catalyst_url")) or ""
+    hostname = (urlparse(url).hostname or "").lower()
+    if ("sec" in source or "edgar" in source) and hostname in {"www.sec.gov", "sec.gov"}:
+        return True
+    return "fda" in source and (hostname == "fda.gov" or hostname.endswith(".fda.gov"))
+
+
+def catalyst_focus(payload: dict, stocks: list[dict], *, as_of: datetime) -> dict:
+    """Evidence-led candidate display, no inference from score to price gain."""
+    primary: list[dict] = []
+    context_count = 0
+    rejected_registry = 0
+    for raw in payload.get("catalysts", []) or []:
+        row = as_mapping(raw)
+        item = catalyst_summary(row)
+        if not item:
+            continue
+        if not primary_event(row):
+            context_count += 1
+            if str(row.get("source") or "").lower().startswith("clinicaltrials"):
+                rejected_registry += 1
+            continue
+        # Event dates like YYYY-MM-DD carry no time-of-day; do not invent one.
+        from datetime import date
+        try:
+            when = date.fromisoformat(item["published_at"][:10])
+        except (TypeError, ValueError):
+            continue
+        delta = (as_of.date() - when).days
+        if delta < 0 or delta > 14:
+            continue
+        score = finite(row.get("score"))
+        item.update({
+            "evidence_class": "PRIMARY_PUBLICATION_LINK",
+            "issuer_link_verified_independently": False,
+            "direction_confirmed": False,
+            "positive_catalyst_verified": False,
+            "event_score_context_only": score,
+            "form": str(row.get("form") or "")[:30],
+            "age_days_at_source_snapshot": delta,
+        })
+        primary.append(item)
+    primary.sort(key=lambda x: (x["published_at"], x["event_score_context_only"] or 0),
+                 reverse=True)
+    # Freeze result to the original scan timestamp; no current-day inflation.
+    by_stock = {row["symbol"]: row for row in stocks
+                if row["direction_research"] in {"CALL", "UP"}}
+    evidence = {}
+    for item in primary:
+        if item["symbol"] in by_stock:
+            evidence.setdefault(item["symbol"], item)
+    candidates: list[dict] = []
+    for symbol, row in by_stock.items():
+        event = evidence.get(symbol)
+        rvol = row["rvol"]
+        candidates.append({
+            "symbol": symbol, "observed_price": row["observed_price"],
+            "score": row["score"], "rvol": rvol,
+            "rating": row["rating"], "stage": row["stage"],
+            "has_primary_publication": event is not None,
+            "source": event["source"] if event else None,
+            "source_url": event["source_url"] if event else None,
+            "headline": event["headline"] if event else None,
+            "event_date": event["published_at"] if event else None,
+            "source_bar_generated_at": as_of.isoformat(),
+            "research_label": (
+                "PRIMARY_EVENT_PLUS_RELATIVE_VOLUME_WATCH"
+                if event and rvol is not None and rvol >= 1.5
+                else "PRIMARY_EVENT_BUT_VOLUME_UNCONFIRMED" if event
+                else "PRICE_MOMENTUM_WITHOUT_VERIFIED_NEWS"
+            ),
+            "price_rise_guaranteed": False,
+            "is_recommendation": False,
+        })
+    candidates.sort(key=lambda x: (
+        x["has_primary_publication"],
+        x["rvol"] is not None and x["rvol"] >= 1.5,
+        x["rvol"] or 0,
+        x["score"] or 0,
+    ),reverse=True)
+    return {
+        "schema": "ghazi.catalyst_focus.v1",
+        "source_generated_at": as_of.isoformat(),
+        "issuer_primary_events": primary[:25],
+        "upside_watch": candidates[:15],
+        "event_counts": {
+            "primary_evidence_in_scanned_sample": len(primary),
+            "context_only_nonprimary": context_count,
+            "clinical_registry_excluded_from_upside_confirmation": rejected_registry,
+        },
+        "method": (
+            "Cross-reference positive-direction STOCK research candidates with "
+            "SEC/FDA primary publication links and independent RVOL. A filing "
+            "and an RVOL spike are clues, not proof of positive price reaction."
+        ),
+        "confidence_claim": "NO_BACKTESTED_UPSIDE_PROBABILITY",
+        "live_quote_proven": False,
+        "execution_authority": False,
+    }
+
+
 def record_id(row: dict, date: str) -> str:
     core = "|".join([date, row["symbol"], row["direction_research"], row["stage"]])
     return hashlib.sha256(core.encode("utf-8")).hexdigest()[:24]
@@ -119,7 +229,19 @@ def build_brief(payload: dict, ledger: dict | None, *, now: datetime) -> tuple[d
     if age_min > 180:
         raise ValueError("radar snapshot older than 180 minutes; preserve previous output")
     stocks = [x for raw in payload.get("stocks", []) if (x := stock_summary(raw))]
-    cats = [x for raw in payload.get("catalysts", []) if (x := catalyst_summary(raw))]
+    # Show primary SEC/FDA publications above neutral/registry activity.
+    # A ClinicalTrials registry update must never become "bullish" by title.
+    raw_cats = sorted(
+        (as_mapping(x) for x in payload.get("catalysts", [])),
+        key=lambda x: (
+            primary_event(x),
+            str(x.get("event_date") or x.get("published_at") or ""),
+            finite(x.get("score")) or 0,
+        ),
+        reverse=True,
+    )
+    cats = [x for raw in raw_cats if (x := catalyst_summary(raw))]
+    focus = catalyst_focus(payload, stocks, as_of=as_of)
     journal = as_mapping(ledger)
     previous = as_mapping(journal.get("records"))
     # Fail closed instead of silently overwriting corrupt/incompatible audit journals.
@@ -157,6 +279,7 @@ def build_brief(payload: dict, ledger: dict | None, *, now: datetime) -> tuple[d
         "authority": "RESEARCH_ONLY_NO_AUTOMATED_CALL_PUT",
         "live_trade_quotes_verified": False,
         "stocks": stocks[:30], "catalysts": cats[:40],
+        "catalyst_focus": focus,
         "journal": {
             "record_count_retained": len(records),
             "first_observed_ids_in_current_snapshot": seen_now[:40],

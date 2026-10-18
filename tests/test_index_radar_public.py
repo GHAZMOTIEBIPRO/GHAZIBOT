@@ -162,3 +162,22 @@ def test_site_includes_actual_index_engine_and_source_warning() -> None:
     assert "RESEARCH_ONLY_NOT_LICENSED_EXECUTION" in js
     assert "Promise.allSettled" in js
     assert "textContent" in js
+
+
+def test_homepage_indicators_and_news_are_visible_without_opening_tabs() -> None:
+    from pathlib import Path
+    html=Path("public/index.html").read_text(encoding="utf-8")
+    begin=html.index('id="indices-overview"')
+    tabs=html.index('<nav class="tabs"')
+    assert begin < tabs
+    assert html.index('id="catalyst-overview"') < tabs
+    assert 'id="indices-overview-grid"' in html
+    assert 'id="catalyst-upside-grid"' in html
+    assert "catalyst-overview.js" in html and "catalyst-overview.css" in html
+    assert Path("public/data/index_radar.json").exists()
+    import json
+    data=json.loads(Path("public/data/index_radar.json").read_text(encoding="utf-8"))
+    assert data["schema"] == "ghazi.index_research.v1"
+    assert data["coverage"]["daily_validated"] > 0
+    assert data["symbols"]["SPX"]["last_completed_session_date"] is not None
+    assert data["index_options_signal_authority"] is False

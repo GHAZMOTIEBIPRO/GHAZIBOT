@@ -104,6 +104,46 @@
     return {label,detail:"من 4 مؤشرات: "+up+" صاعدة، "+down+" هابطة، "+(4-up-down)+" مختلطة/غير متاحة. VIX: "+
       (BIAS[vix]||"غير متاح")+". هذا مقياس وصفي للاتجاه وليس ضمانًا أو توصية CALL/PUT."};
   }
+  function renderOverview(data) {
+    const wrap=$("indices-overview-grid");
+    if(!wrap)return;
+    wrap.replaceChildren();
+    const shown=["SPX","NDX","DJI","RUT","VIX"];
+    const rows=data.symbols||{};
+    let count=0;
+    for(const symbol of shown) {
+      const row=rows[symbol];
+      if(!row || !row.last_completed_session_date || row.last_completed_close==null)continue;
+      const card=text("article","","ghazi-market-pulse");
+      card.append(text("strong",symbol+" · "+(NAMES[symbol]||symbol)));
+      card.append(text("p",fmt(row.last_completed_close),"ghazi-market-figure"));
+      const metrics=text("dl","");
+      function item(label,value){
+        const holder=text("div","");
+        holder.append(text("dt",label),text("dd",value));
+        metrics.append(holder);
+      }
+      item("اتجاه آخر يوم مكتمل",BIAS[row.daily?.bias]||"غير متاح");
+      item("RSI يومي",fmt(row.daily?.rsi14,1));
+      item("EMA "+(row.daily?.fast_period||20),fmt(row.daily?.ema_fast));
+      item("قمة / قاع",level(row.levels?.last_completed_session));
+      if(["SPX","NDX"].includes(symbol)){
+        item("5 دقائق",BIAS[row.m5?.bias]||"غير متاح");
+        item("15 دقيقة",BIAS[row.m15?.bias]||"غير متاح");
+      }
+      card.append(metrics);
+      card.append(text("small","آخر جلسة مكتملة: "+row.last_completed_session_date+
+        " · قراءة تاريخية قد تتأخر، ليست سعرًا حيًا"));
+      wrap.append(card);
+      count++;
+    }
+    set("indices-overview-status",
+      "آخر تقرير: "+formatTime(data.generated_at)+" (الرياض) · "+
+      count+" مؤشرات بتحليل تاريخي. "+
+      (data.coverage?.intraday_current ?
+        "تتوفر بعض شموع الجلسة الحالية المكتملة." :
+        "السوق مغلق أو لا تتوفر شموع جلسة حالية مؤكدة؛ مستويات آخر جلسة ظاهرة."));
+  }
   function render(data) {
     const age = Math.max(0,(Date.now()-Date.parse(data.generated_at))/60000);
     const coverage=data.coverage||{};
@@ -114,6 +154,7 @@
     const summary=consensus(data.symbols);
     set("index-radar-consensus",summary.label);
     set("index-radar-consensus-description",summary.detail);
+    renderOverview(data);
     const grid=$("index-radar-grid");
     if(!grid)return;
     grid.replaceChildren();
@@ -135,6 +176,7 @@
       render(data);
     } catch(_) {
       set("index-radar-status","لا يوجد تقرير مؤشرات جديد صالح؛ لن نعرض اتجاهًا مستنتجًا من بيانات مجهولة أو قديمة.");
+      set("indices-overview-status","تعذر تحميل تقرير المؤشرات من المصدر والنسخة الاحتياطية. لا تُختلق أسعار.");
       set("index-radar-consensus","WAIT — غير متاح");
       set("index-radar-consensus-description","فشل تحميل البيانات أو انتهت صلاحية التقرير.");
       set("index-radar-source-note","Yahoo مصدر بحثي لا يضمن الإتاحة أو السعر اللحظي.");
@@ -145,6 +187,11 @@
   }
   const button=$("index-radar-refresh");
   if(button)button.addEventListener("click",refresh);
+  const overviewOpen=$("indices-overview-open");
+  if(overviewOpen)overviewOpen.addEventListener("click",()=>{
+    document.querySelector('.tab-button[data-tab="indices"]')?.click();
+    $("tab-indices")?.scrollIntoView({behavior:"smooth",block:"start"});
+  });
   refresh();
   // Only read published reports; refresh is not a licensed exchange data stream.
   setInterval(refresh, 10*60*1000);

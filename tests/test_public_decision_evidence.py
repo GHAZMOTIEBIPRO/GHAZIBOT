@@ -90,3 +90,67 @@ def test_audit_rejects_unverified_authority_and_invalid_coverage():
         build_summary({"mode":"HISTORICAL_5M_OUTCOME_AUDIT",
                        "decision_authority":False,
                        "coverage":{"records":2,"covered_60m":5}},now=NOW)
+
+
+def test_primary_sec_event_prioritized_but_never_called_guaranteed_bullish():
+    from scripts.build_public_decision_brief import catalyst_focus, primary_event
+    payload = fixture()
+    payload["stocks"][0]["relative_volume"] = 2.4
+    payload["catalysts"] = [
+        {"symbol": "TSLA", "source": "ClinicalTrials.gov",
+         "headline": "Unrelated sponsor generic registry update",
+         "form": "REGISTRY_UPDATE",
+         "event_date": "2026-10-18",
+         "url": "https://clinicaltrials.gov/study/NCT12345678",
+         "score": 100},
+        {"symbol": "TSLA", "source": "SEC EDGAR",
+         "headline": "8-K material event; investigate actual impact",
+         "form": "8-K",
+         "event_date": "2026-10-17",
+         "url": "https://www.sec.gov/Archives/example.htm",
+         "score": 12},
+    ]
+    assert primary_event(payload["catalysts"][0]) is False
+    assert primary_event(payload["catalysts"][1]) is True
+    report,_ = build_brief(payload,None,now=NOW)
+    focus = report["catalyst_focus"]
+    assert focus["schema"] == "ghazi.catalyst_focus.v1"
+    assert len(focus["issuer_primary_events"]) == 1
+    assert focus["event_counts"]["clinical_registry_excluded_from_upside_confirmation"] == 1
+    candidate = focus["upside_watch"][0]
+    assert candidate["symbol"] == "TSLA"
+    assert candidate["has_primary_publication"] is True
+    assert candidate["research_label"] == "PRIMARY_EVENT_PLUS_RELATIVE_VOLUME_WATCH"
+    assert candidate["price_rise_guaranteed"] is False
+    assert candidate["is_recommendation"] is False
+    assert focus["issuer_primary_events"][0]["direction_confirmed"] is False
+    assert report["catalysts"][0]["source"] == "SEC EDGAR"
+
+
+def test_clinical_registry_and_unsupported_domains_never_confirm_issuer_news():
+    from scripts.build_public_decision_brief import catalyst_focus,primary_event
+    raw = [
+        {"source":"SEC EDGAR","url":"https://sec.gov.evil.invalid/fake","symbol":"MRNA"},
+        {"source":"SEC EDGAR","url":"https://news.invalid/filing","symbol":"MRNA"},
+        {"source":"ClinicalTrials.gov","url":"https://clinicaltrials.gov/study/NCT98765432","symbol":"MRNA"},
+        {"source":"Unknown","url":"https://www.sec.gov/Archives/test","symbol":"MRNA"},
+    ]
+    assert all(primary_event(x) is False for x in raw)
+    result = catalyst_focus({"catalysts":raw}, [
+        {"symbol":"MRNA","direction_research":"UP","rvol":3.0,
+         "score":87,"rating":"A","stage":"WATCH","observed_price":19.0}
+    ],as_of=NOW)
+    assert result["issuer_primary_events"] == []
+    assert result["upside_watch"][0]["has_primary_publication"] is False
+    assert result["upside_watch"][0]["research_label"] == "PRICE_MOMENTUM_WITHOUT_VERIFIED_NEWS"
+
+
+def test_put_stocks_are_not_promoted_to_upside_on_news():
+    from scripts.build_public_decision_brief import catalyst_focus
+    focus=catalyst_focus({"catalysts":[
+        {"symbol":"SOFI","source":"SEC EDGAR","event_date":"2026-10-17",
+         "url":"https://sec.gov/example","headline":"8-K"},
+    ]},[{"symbol":"SOFI","direction_research":"PUT","rvol":6.2,
+          "observed_price":14.0,"score":99,"rating":"A","stage":"WATCH"}],as_of=NOW)
+    assert focus["issuer_primary_events"]
+    assert focus["upside_watch"] == []
