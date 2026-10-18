@@ -42,7 +42,7 @@ jobs:
         run: pip install -r app/requirements.txt
       - name: Produce bounded research snapshot with completed-bar checks
         run: >-
-          python app/scripts/build_index_context.py
+          PYTHONPATH=app python app/scripts/build_index_context.py
           --output state/runtime/public/data/index_radar.json
           --charts-output state/runtime/public/data/index_charts.json
       - name: Commit only the index research snapshot
