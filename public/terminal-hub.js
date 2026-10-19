@@ -479,7 +479,7 @@
     });
     target.append(svg);
   }
-  function plotCandles(bars,showEMA,levels,scenario=null){
+  function plotCandles(bars,showEMA,levels,scenario=null,sessionVWAP=null){
     clearPlot();
     const target=$("terminal-candle-chart");if(!target)return;
     const lib=typeof LightweightCharts!=="undefined"?LightweightCharts:null;
@@ -519,6 +519,11 @@
             candle.createPriceLine({price,title:label,color,lineWidth:1,
               lineStyle:2,axisLabelVisible:true});
         }
+      }
+      if(Number.isFinite(sessionVWAP)&&sessionVWAP>0&&
+          typeof candle.createPriceLine==="function"){
+        candle.createPriceLine({price:sessionVWAP,title:"VWAP جلسة · بحثي",
+          color:"#D6B46B",lineWidth:2,lineStyle:2,axisLabelVisible:true});
       }
       if(scenario?.activation&&scenario?.invalidation){
         for(const [price,title,color] of [
@@ -654,6 +659,17 @@
       ["قمة / قاع 20 شمعة",fmt(high)+" / "+fmt(low)]]){
       metric?.append(putMetric(label,value));
     }
+    const vwapShadow=stockFrame?.session_vwap;
+    const validVWAP=vwapShadow?.available===true &&
+      vwapShadow.research_only===true &&
+      vwapShadow.source_family==="yahoo" &&
+      vwapShadow.options_execution_eligible===false &&
+      Number.isFinite(vwapShadow.value)&&vwapShadow.value>0 &&
+      vwapShadow.source_last_bar_start===frame?.provider_bar_start_or_date;
+    if(validVWAP){
+      metric?.append(putMetric("VWAP جلسة · بحثي",
+        fmt(vwapShadow.value)+" · "+String(vwapShadow.session_date||"غير محدد")));
+    }
     const priceWatch=state.watchCharts?.symbols?.[symbol]?.price_confluence;
     if(tf==="1d"&&priceWatch?.research_only===true&&
        priceWatch.options_execution_eligible===false&&
@@ -717,7 +733,7 @@
       confluence:state.watchCharts?.symbols?.[symbol]?.price_confluence,
       newsAttention:state.watchCharts?.symbols?.[symbol]?.news_attention
     });
-    plotCandles(rows,state.ema,levels,scenario);
+    plotCandles(rows,state.ema,levels,scenario,validVWAP?vwapShadow.value:null);
     const currentClose=last.close;
     put("terminal-chart-scenario",range!==null && Number.isFinite(range)?
       "سيناريو نطاق الحركة بـ ATR (ليس احتمالًا): إذا استمر الزخم، "+
