@@ -61,6 +61,7 @@
         <button class="terminal-tab" type="button" data-terminal-tab="small" aria-selected="false">الصغيرة والمضاربية</button>
         <button class="terminal-tab" type="button" data-terminal-tab="news" aria-selected="false">الأخبار والمحركات</button>
         <button class="terminal-tab" type="button" data-terminal-tab="chart" aria-selected="false">قراءة الشارت</button>
+        <button class="terminal-tab" type="button" data-terminal-tab="trust" aria-selected="false">موثوقية البيانات</button>
         <button class="terminal-tab terminal-tab-advanced" type="button" data-terminal-tab="advanced" aria-selected="false">الأدوات المتقدمة ↗</button>
       </nav>
       <section class="terminal-panel active" id="terminal-panel-indices" aria-label="المؤشرات الأمريكية">
@@ -114,6 +115,14 @@
 
         <p id="terminal-chart-reading" class="terminal-chart-reading" role="status">عند اختيار الرمز، تُعرض قراءة الشارت ومصدر الشموع وحالة حداثتها.</p>
         <p class="terminal-footnote">المصدر Yahoo عبر محرك GitHub البحثي، بيانات قد تتأخر. الأسعار ليست NBBO أو OPRA، والقراءة ليست أمر تداول.</p>
+      </section>
+      <section class="terminal-panel" id="terminal-panel-trust" aria-label="مركز موثوقية مصادر البيانات" hidden>
+        <header class="terminal-section-head"><div><p class="terminal-overline">DATA TRUST CENTER · SOURCE EVIDENCE</p>
+          <h3>موثوقية المصادر وحداثة البيانات</h3>
+          <p>النجاح في الاتصال لا يثبت صحة محتوى الأسعار. توضح هذه اللوحة نتيجة التحقق من المحتوى وتاريخ آخر رصد، مع فصل المعلومات الرسمية والبحثية عن أسعار التنفيذ.</p></div></header>
+        <p id="terminal-trust-summary" class="terminal-data-warning" role="status">جاري التحقق من جودة البيانات وإمكانية استخدامها…</p>
+        <div id="terminal-trust-grid" class="terminal-trust-grid"><p class="terminal-empty">تحميل سجل المصادر…</p></div>
+        <p class="terminal-footnote">المصادر الرسمية قد تمنع الطلبات الآلية. البيانات المفقودة أو القديمة لا تتحول إلى توصية؛ وYahoo وyfinance مصدر واحد غير مرخص للتنفيذ.</p>
       </section>
       <section class="terminal-panel" id="terminal-panel-advanced" aria-label="الأدوات المتقدمة" hidden>
         <header class="terminal-section-head"><div><p class="terminal-overline">OMEGA ADVANCED WORKSPACE</p>

@@ -7,6 +7,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+if __package__:
+    from .source_payload_validation import validate_source_payload
+else:
+    # GitHub Actions invokes this as "python options_radar/free_data_health.py".
+    from source_payload_validation import validate_source_payload
+
 USER_AGENT = "GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com"
 
 SOURCES: tuple[dict[str, Any], ...] = (
@@ -117,11 +123,14 @@ def _request(source: dict[str, Any], timeout: int = 10) -> dict[str, Any]:
         content_type = str(response.headers.get("Content-Type") or "")
     if not payload:
         raise ValueError("empty response")
+    verified = validate_source_payload(source, payload, content_type)
     return {
-        "ok": 200 <= status < 300,
+        "ok": 200 <= status < 300 and verified["ok"] is True,
+        "transport_reachable": 200 <= status < 300,
         "status": status,
         "bytes_sampled": len(payload),
         "content_type": content_type,
+        **verified,
     }
 
 
@@ -187,6 +196,9 @@ def build_health_payload() -> dict[str, Any]:
             "same_family_does_not_increase_source_quorum": True,
             "official_outage_does_not_promote_shadow_source": True,
             "failed_source_fails_closed": True,
+            "http_success_is_not_data_success": True,
+            "semantic_validation_required": True,
+            "health_is_not_execution_permission": True,
         },
         "overall": overall,
         "official_sources_ok": len(official_ok),
