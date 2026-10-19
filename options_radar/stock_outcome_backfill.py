@@ -89,19 +89,27 @@ def _checkpoint(
     entry: float,
     direction: str,
     maximum_lag_minutes: int,
+    as_of: datetime,
 ) -> dict[str, Any] | None:
-    candidates = bars[bars.index >= pd.Timestamp(target)]
+    # Provider 5m timestamps are BAR START. A close cannot exist until +5m.
+    # Sample the first COMPLETED candle ending at/after the checkpoint;
+    # never choose a future close or mislabel the bar start as observation.
+    bar_closes = bars.index + pd.Timedelta(minutes=5)
+    candidates = bars[(bar_closes >= pd.Timestamp(target)) &
+                      (bar_closes <= pd.Timestamp(as_of))]
     if candidates.empty:
         return None
     stamp = candidates.index[0]
     row = candidates.iloc[0]
-    lag = (stamp.to_pydatetime() - target).total_seconds() / 60.0
+    observed = (stamp + pd.Timedelta(minutes=5)).to_pydatetime().astimezone(timezone.utc)
+    lag = (observed - target).total_seconds() / 60.0
     close = _number(row.get("Close"))
     if close is None or close <= 0:
         return None
     return {
         "target_at": target.isoformat(),
-        "observed_at": stamp.to_pydatetime().astimezone(timezone.utc).isoformat(),
+        "observed_at": observed.isoformat(),
+        "source_bar_start_at": stamp.to_pydatetime().astimezone(timezone.utc).isoformat(),
         "lag_minutes": round(max(0.0, lag), 2),
         "coverage_qualified": 0 <= lag <= maximum_lag_minutes,
         "price": round(close, 6),
@@ -242,7 +250,10 @@ def evaluate_stock_event_from_bars(
             }
         )
         return record
-    frame = frame[frame.index >= pd.Timestamp(created)]
+    # Do not evaluate a provider 5m bar whose close is still in the future.
+    # A reported HIGH/LOW belongs to that full bar, not its opening instant.
+    frame = frame[(frame.index >= pd.Timestamp(created)) &
+                  (frame.index + pd.Timedelta(minutes=5) <= pd.Timestamp(current))]
     if frame.empty:
         record.update(
             {
@@ -261,6 +272,7 @@ def evaluate_stock_event_from_bars(
             entry=entry,
             direction=direction,
             maximum_lag_minutes=CHECKPOINT_MAX_LAG_MINUTES[label],
+            as_of=current,
         )
         if checkpoint is not None:
             checkpoints[label] = checkpoint
@@ -275,7 +287,9 @@ def evaluate_stock_event_from_bars(
         horizon_end = pd.Timestamp(one_day["observed_at"])
     else:
         horizon_end = pd.Timestamp(min(current, horizon_target))
-    horizon = frame[frame.index <= horizon_end]
+    # Cut off by candle END, never use a bar whose high/low occurs after
+    # the evaluation horizon or before its close is observable.
+    horizon = frame[frame.index + pd.Timedelta(minutes=5) <= horizon_end]
 
     terminal_status = "pending"
     terminal_reason = "one_day_horizon_not_complete"
@@ -291,8 +305,12 @@ def evaluate_stock_event_from_bars(
         )
         if not target_touch and not stop_touch:
             continue
-        terminal_at = stamp.to_pydatetime().astimezone(timezone.utc).isoformat()
+        terminal_bar_end = stamp + pd.Timedelta(minutes=5)
+        terminal_at = terminal_bar_end.to_pydatetime().astimezone(timezone.utc).isoformat()
         terminal_bar = {
+            "bar_start_at": stamp.to_pydatetime().astimezone(timezone.utc).isoformat(),
+            "bar_end_at": terminal_at,
+            "touch_time_precision": "UNKNOWN_WITHIN_5M_CANDLE",
             "open": round(float(row["Open"]), 6),
             "high": round(float(row["High"]), 6),
             "low": round(float(row["Low"]), 6),
@@ -340,8 +358,11 @@ def evaluate_stock_event_from_bars(
             "audit_mae_pct": mae,
             "snapshot_discrepancy": discrepancy,
             "measurement_policy": {
-                "checkpoint_price": "first 5m close at/after target time within tolerance",
-                "terminal_touch": "chronological 5m high/low touch",
+                "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+                "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+                "bar_completion_enforced_as_of": True,
+                "measurement_version": 2,
+                "terminal_touch": "chronological completed 5m high/low touch",
                 "same_bar_target_stop": "ambiguous",
                 "pre_signal_bar_excluded": True,
                 "intrabar_order_claimed": False,
