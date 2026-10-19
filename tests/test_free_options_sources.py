@@ -39,7 +39,7 @@ class FakeSession:
                                    json=lambda: {"status": "ok"})
         if self.blocked:
             return SimpleNamespace(status_code=429, content=b"{}",
-                                   json=lambda: {})
+                                   json=dict)
         assert headers["X-API-Key"] == "fp_example"
         assert "cik" in params and "since" in params and "until" in params
         if url.endswith("/events"):
