@@ -293,7 +293,7 @@ def occ_open_interest_snapshot(*, now: datetime, session: Any,
     try:
         response = session.get(
             OCC,
-            params={"reportDate": day.strftime("%m/%d/%Y"),
+            params={"dailyDate": day.strftime("%m/%d/%Y"),
                     "action": "download", "format": "csv"},
             timeout=18, stream=True,
             headers={"Accept": "text/csv,text/plain;q=0.9"},
