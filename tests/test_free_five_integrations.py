@@ -1,14 +1,15 @@
 """No-key, offline, fail-closed tests for five research integrations."""
 from __future__ import annotations
 
-import io
 import json
 import zipfile
 from datetime import date, datetime, timezone
-from pathlib import Path
 from types import SimpleNamespace
 
-from options_radar.data_fabric import optional_independent_eod_research
+from options_radar.data_fabric import (
+    optional_historical_option_eod_audit,
+    optional_independent_eod_research,
+)
 from options_radar.optional_massive_research import (
     fetch_eod,
     permission_state,
@@ -142,3 +143,12 @@ def test_public_consensus_never_exposes_private_prices_or_fake_second_feed():
     assert payload["price_data"] is None
     assert "apiKey" not in json.dumps(payload)
     assert summarize({}, now=NOW)["source_charts_available"] is False
+
+
+def test_historical_options_adapter_respects_entitlement_and_no_trades():
+    result=optional_historical_option_eod_audit(
+        CONTRACT,entry_date=date(2026,10,15),exit_date=date(2026,10,19),
+        key="free-key",licensed=False,session=TrapSession())
+    assert result["reason"]=="NONDISPLAY_LICENSE_NOT_CONFIRMED"
+    assert result["realized_pnl"] is None
+    assert result["execution_eligible"] is False
