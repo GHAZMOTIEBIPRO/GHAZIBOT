@@ -218,11 +218,35 @@ def parse_occ_oi_csv(raw: str, *, watched: set[str]) -> dict:
     """
     if not isinstance(raw, str) or not raw.strip() or raw.lstrip().startswith("<"):
         return {"status": "UNPARSEABLE_CSV", "matched": 0}
-    rows = csv.DictReader(io.StringIO(raw))
-    if not rows.fieldnames:
-        return {"status": "UNKNOWN_LAYOUT", "matched": 0}
-    mapping = {re.sub(r"[^a-z0-9]", "", key.lower()): key
-               for key in rows.fieldnames if isinstance(key, str)}
+    # OCC can prepend a report month/title before the actual CSV header.
+    # Only recognize a header when it explicitly names BOTH underlying and OI.
+    lines = raw.splitlines()
+    start = None
+    mapping: dict[str, str] = {}
+    aliases = {"underlyingsymbol", "underlying", "underlier", "symbol"}
+    interest = {"openinterest", "openint", "oi"}
+    for index, line in enumerate(lines[:30]):
+        try:
+            cells = next(csv.reader([line]))
+        except (csv.Error, StopIteration):
+            continue
+        normalized = {
+            re.sub(r"[^a-z0-9]", "", c.lower()): c
+            for c in cells if isinstance(c, str) and c.strip()
+        }
+        if aliases.intersection(normalized) and interest.intersection(normalized):
+            start = index
+            mapping = normalized
+            break
+    if start is None:
+        # Header names only, never series values, prices or contract rows.
+        first = next(csv.reader([lines[0]])) if lines else []
+        preview = [re.sub(r"[^a-z0-9]", "", c.lower())
+                   for c in first[:15] if isinstance(c, str)]
+        return {"status": "UNKNOWN_LAYOUT", "matched": 0,
+                "safe_schema_column_names": [
+                    c for c in preview if len(c) <= 40]}
+    rows = csv.DictReader(io.StringIO("\n".join(lines[start:])))
     def col(*keys: str) -> str | None:
         return next((mapping[k] for k in keys if k in mapping), None)
     symkey = col("underlyingsymbol", "underlying", "underlier", "symbol")
