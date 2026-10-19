@@ -110,6 +110,37 @@ def mirror_ticker_cik_map(payload: dict) -> dict[str,tuple[int,str]]:
     return result
 
 
+def candidate_local_cik_map(path: Path | None) -> dict[str, tuple[int, str]]:
+    """Local CIKs are *hints*, never authenticated issuer facts.
+
+    The issuer's current SEC submissions JSON must independently include
+    the exact ticker before any filing is published. Do not use this path
+    to bypass a refused SEC host or an active request cooldown.
+    """
+    if path is None:
+        return {}
+    try:
+        if not path.is_file() or path.stat().st_size > 40_000:
+            return {}
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    result: dict[str, tuple[int, str]] = {}
+    for key, val in raw.items():
+        symbol = str(key).strip().upper()
+        if not TICKER.fullmatch(symbol):
+            continue
+        try:
+            cik = int(val)
+        except (TypeError, ValueError):
+            continue
+        if 0 < cik <= 9999999999:
+            result[symbol] = (cik, symbol)
+    return result
+
+
 def _category(form: str) -> str:
     if form in {"S-1","S-3","F-3","424B5","424B2","S-4"}:
         return "OFFERING_OR_DILUTION_REVIEW"
@@ -304,7 +335,8 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
             previous: dict | None = None,
             bulk_archive: Path | None = None,
             bulk_cik_map: Path | None = None,
-            bulk_official_origin_attested: bool = False) -> dict:
+            bulk_official_origin_attested: bool = False,
+            local_cik_path: Path | None = None) -> dict:
     if now.tzinfo is None:
         raise ValueError("Timezone-aware now required")
     now=now.astimezone(timezone.utc)
@@ -340,6 +372,12 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
             mapping={}
             code=getattr(getattr(exc,"response",None),"status_code",None)
             failures["mirror_ticker_map"]=f"HTTP_{code}" if code else type(exc).__name__
+    if not mapping and not cooldown and local_cik_path is not None:
+        local_candidates = candidate_local_cik_map(local_cik_path)
+        mapping = {ticker: local_candidates[ticker]
+                   for ticker in selected if ticker in local_candidates}
+        if mapping:
+            map_origin = "LOCAL_CIK_INDEX_REQUIRES_OFFICIAL_CONFIRMATION"
     if mapping:
         for symbol in selected:
             entry=mapping.get(symbol)
@@ -426,6 +464,7 @@ def main() -> int:
                    default=Path(os.environ["SEC_BULK_SUBMISSIONS_ZIP"])
                    if os.getenv("SEC_BULK_SUBMISSIONS_ZIP") else None)
     p.add_argument("--bulk-cik-map",type=Path,default=Path("data/sec_cik_map.json"))
+    p.add_argument("--local-cik-map",type=Path,default=None)
     args=p.parse_args()
     brief=json.loads(args.brief.read_text(encoding="utf-8"))
     if brief.get("schema")!="ghazi.public_decision.v1":
@@ -440,6 +479,7 @@ def main() -> int:
     result=collect(brief,now=datetime.now(timezone.utc),agent=agent,
                    max_symbols=max(1,min(30,args.max_symbols)),previous=previous,
                    bulk_archive=args.bulk_archive,bulk_cik_map=args.bulk_cik_map,
+                   local_cik_path=args.local_cik_map,
                    bulk_official_origin_attested=(
                        os.getenv("SEC_BULK_OFFICIAL_ORIGIN_ATTESTED") == "true"))
     args.output.parent.mkdir(parents=True,exist_ok=True)
