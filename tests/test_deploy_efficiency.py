@@ -26,3 +26,15 @@ def test_dashboard_reads_live_github_data_with_local_fallback() -> None:
     assert "fetchDataFreshnessRank" in app
     assert "for (const [position, index] of order.entries())" in app
     assert "DATA_META_URLS" in app
+
+
+def test_multi_megabyte_latest_json_loads_only_with_the_detailed_dashboard():
+    app = Path("public/app.js").read_text(encoding="utf-8")
+    hub = Path("public/terminal-hub.js").read_text(encoding="utf-8")
+    # No unconditional page-load fetch or poll of latest.json.
+    assert "\nloadData(false);\nsetInterval(() => loadData(false)" not in app
+    assert "window.ghaziEnsureLegacyData = ensureLegacyData;" in app
+    assert "\nloadFreshnessOnly();" in app
+    assert "window.ghaziEnsureLegacyData?.();" in hub
+    # The light header names the status time, never the report time.
+    assert "آخر تحديث لحالة البيانات" in app

@@ -304,6 +304,39 @@ document.querySelectorAll(".tab-button").forEach((button) => button.addEventList
   button.classList.add("active"); byId(`tab-${button.dataset.tab}`).classList.add("active");
 }));
 byId("stock-search").addEventListener("input", (event) => renderStocks(event.target.value));
-byId("refresh-button").addEventListener("click", () => loadData(true));
-loadData(false);
-setInterval(() => loadData(false), 5 * 60 * 1000);
+byId("refresh-button").addEventListener("click", () => { ensureLegacyData(); loadData(true); });
+
+// latest.json is multi-MB and feeds only the hidden detailed dashboard.
+// Until it is opened, the header freshness comes from the ~3 KB status file.
+// Its generated_at is the status publish time, not the report time, and is
+// labelled as such.
+function renderStatusFreshness(ms) {
+  const dot = byId("freshness-dot");
+  const label = byId("freshness-label");
+  dot.className = "status-dot";
+  byId("page-loaded-at").textContent = `وقت فتح الصفحة: ${formatRiyadhTime(new Date())} — الرياض`;
+  const ageMinutes = (Date.now() - ms) / 60000;
+  if (!Number.isFinite(ageMinutes) || ageMinutes < -5) { dot.classList.add("error"); label.textContent = "تعذر التحقق من حالة البيانات"; byId("last-updated").textContent = "آخر تحديث لحالة البيانات: غير متاح"; return; }
+  if (ageMinutes <= 90) { dot.classList.add("fresh"); label.textContent = "حالة البيانات حديثة"; }
+  else if (ageMinutes <= 360) { dot.classList.add("stale"); label.textContent = "حالة البيانات متأخرة"; }
+  else { dot.classList.add("error"); label.textContent = "حالة البيانات قديمة"; }
+  byId("last-updated").textContent = `آخر تحديث لحالة البيانات: ${formatRiyadhTime(new Date(ms))} — الرياض (ليس وقت تسعير العقد)`;
+}
+async function loadFreshnessOnly() {
+  try {
+    const { times } = await fetchDataFreshnessRank();
+    renderStatusFreshness(Math.max(...times));
+  } catch (_) {
+    byId("freshness-dot").className = "status-dot error";
+    byId("freshness-label").textContent = "تعذر تحميل حالة البيانات";
+  }
+}
+let legacyTimer = null;
+function ensureLegacyData() {
+  if (legacyTimer) return;
+  legacyTimer = setInterval(() => loadData(false), 5 * 60 * 1000);
+  loadData(false);
+}
+window.ghaziEnsureLegacyData = ensureLegacyData;
+loadFreshnessOnly();
+setInterval(() => { if (!legacyTimer) loadFreshnessOnly(); }, 5 * 60 * 1000);
