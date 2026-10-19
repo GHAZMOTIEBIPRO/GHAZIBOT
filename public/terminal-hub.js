@@ -221,6 +221,14 @@
       fmt(oos.coverage,2)+"% (شرط الاختبار: 90%) · جلسات مستقلة: "+
       oos.sessions+" · جلسات اختبار خارج العينة: "+oos.outSessions+
       " · حالات الاختبار: "+oos.outRecords+
+      (oos.additionalCoverageNeeded===null?"":(
+        " · نحتاج "+oos.additionalCoverageNeeded+
+        " حالات بتغطية حقيقية إضافية عند ثبات العينة."))+
+      (oos.reasonCounts?(
+        " · نقص شموع بعد الإشارة: "+oos.reasonCounts.NO_POST_SIGNAL_BARS+
+        "؛ حالات معلقة: "+oos.reasonCounts.PENDING_OR_UNFINISHED+
+        (oos.reasonCountsExhaustive?" · التصنيف يغطي حالات النقص.":
+          " · أسباب النقص غير مكتملة التصنيف.")):"")+
       (oos.sourceTimestampVerified?" · تاريخ المصدر موثق.":
        " · وقت مصدر التقييم غير موثق؛ المصدر بحثي فقط."):
       "لا يوجد تقرير مشروط صالح عن الاختبار خارج العينة؛ لا نستنتج نسبة نجاح.";
