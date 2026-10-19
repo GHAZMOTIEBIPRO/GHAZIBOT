@@ -170,6 +170,57 @@ def _event_from_env() -> dict[str, str]:
     }
 
 
+def event_from_run(run: dict[str, Any]) -> tuple[dict[str, str], int]:
+    """Watchdog event fields from a GitHub Actions run object (relayed run)."""
+    return ({
+        "name": str(run.get("name") or "unknown"),
+        "conclusion": str(run.get("conclusion") or "unknown"),
+        "branch": str(run.get("head_branch") or "unknown"),
+        "event": str(run.get("event") or "unknown"),
+        "id": str(_run_number(run.get("id")) or "unknown"),
+        "url": str(run.get("html_url") or ""),
+    }, _run_number(run.get("workflow_id")))
+
+
+def fetch_run(*, repository: str, run_id: int, token: str) -> dict[str, Any] | None:
+    """One run by id; used when the orchestrator relay dispatches the watchdog
+    (runs started with GITHUB_TOKEN raise no workflow_run event)."""
+    if not repository or run_id <= 0 or not token:
+        return None
+    try:
+        response = requests.get(
+            f"https://api.github.com/repos/{repository}/actions/runs/{run_id}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else None
+    except (requests.RequestException, ValueError, TypeError):
+        return None
+
+
+def _resolve_event() -> tuple[dict[str, str], int, bool]:
+    """(event, workflow_id, relayed). A relayed run is classified like a real
+    workflow_run event, never as a manual connectivity test."""
+    source = _run_number(os.getenv("WATCHDOG_SOURCE_RUN_ID"))
+    if source:
+        run = fetch_run(
+            repository=str(os.getenv("GITHUB_REPOSITORY") or ""),
+            run_id=source,
+            token=str(os.getenv("GH_TOKEN") or ""),
+        )
+        if run is None:
+            raise SystemExit("Relayed run could not be read from the GitHub API")
+        event, workflow_id = event_from_run(run)
+        return event, workflow_id, True
+    return _event_from_env(), _run_number(os.getenv("RUN_WORKFLOW_ID")), False
+
+
 def _output(values: dict[str, str]) -> None:
     path = os.getenv("GITHUB_OUTPUT", "").strip()
     if not path:
@@ -182,7 +233,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Classify/send guarded Omega failure and recovery notices")
     parser.add_argument("--send", action="store_true", help="Send already classified Telegram notice")
     args = parser.parse_args()
-    event = _event_from_env()
+    event, workflow_id, relayed = _resolve_event()
     if args.send:
         kind = os.getenv("WATCHDOG_KIND", "")
         if kind not in {"manual", "failure", "recovery"}:
@@ -194,8 +245,7 @@ def main() -> int:
         print(f"Omega {kind} notification delivered to Telegram API: message_id={receipt.message_id}; attempts={receipt.attempts}")
         return 0
 
-    manual = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
-    workflow_id = _run_number(os.getenv("RUN_WORKFLOW_ID"))
+    manual = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch" and not relayed
     run_id = _run_number(event["id"])
     history = None if manual else fetch_completed_runs(
         repository=str(os.getenv("GITHUB_REPOSITORY") or ""),
