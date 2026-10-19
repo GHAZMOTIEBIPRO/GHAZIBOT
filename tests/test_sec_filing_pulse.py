@@ -12,7 +12,7 @@ from scripts.build_sec_filing_pulse import (
 NOW=datetime(2026,10,18,12,tzinfo=timezone.utc)
 
 
-def report(cik,forms,dates=None,docs=None):
+def report(cik,forms,dates=None,docs=None,items=None):
     n=len(forms)
     return {
         "cik":cik,
@@ -21,6 +21,7 @@ def report(cik,forms,dates=None,docs=None):
             "filingDate":dates or ["2026-10-16"]*n,
             "accessionNumber":[f"0000000001-26-{i+1:06d}" for i in range(n)],
             "primaryDocument":docs or [f"document{i}.htm" for i in range(n)],
+            "items":items if items is not None else [""]*n,
         }},
     }
 
@@ -200,3 +201,45 @@ def test_tampered_sec_cooldown_cannot_disable_official_requests():
                   max_symbols=1,previous=previous)
     assert session.calls and session.calls[0][0]==TICKERS_URL
     assert result["coverage"]["filings_verified"]==1
+
+
+def test_sec_8k_item_202_302_distinguishes_earnings_and_equity_sale_review():
+    source=report(111,["8-K","8-K","10-K","S-3"],
+                  items=["2.02,9.01","1.01, 3.02,9.01","",""])
+    rows=parse_submissions("RGC",111,"Regencell",source,now=NOW)
+    assert len(rows)==4
+    earnings=next(row for row in rows if row["earnings_release_reported"])
+    assert earnings["eight_k_items"]==["2.02","9.01"]
+    assert "EARNINGS_RELEASE_REVIEW" in earnings["event_topics"]
+    assert not earnings["earnings_beat_verified"]
+    assert not earnings["potential_dilution_review"]
+    risk=next(row for row in rows if "3.02" in row["eight_k_items"])
+    assert risk["potential_dilution_review"] is True
+    assert "UNREGISTERED_EQUITY_SALE_REVIEW" in risk["event_topics"]
+    assert risk["new_shares_issued_verified"] is False
+    assert next(row for row in rows if row["form"]=="10-K")["event_topics"]==[
+        "PERIODIC_FINANCIAL_REPORT_REVIEW"]
+    offering=next(row for row in rows if row["form"]=="S-3")
+    assert offering["potential_dilution_review"] is True
+    assert not offering["new_shares_issued_verified"]
+    assert all(row["positive_price_impact_verified"] is False for row in rows)
+
+
+def test_missing_or_misaligned_sec_items_do_not_invent_results_or_issuance():
+    original=report(111,["8-K","8-K"],items=["2.02","3.02"])
+    original["filings"]["recent"]["items"]=["2.02"]
+    rows=parse_submissions("RGC",111,"Regencell",original,now=NOW)
+    assert len(rows)==2
+    assert all(row["eight_k_items"]==[] for row in rows)
+    assert all(row["eight_k_items_available"] is False for row in rows)
+    bad=report(111,["8-K"],items=["2.02 and 3.02 script://evil"])
+    rows=parse_submissions("RGC",111,"Regencell",bad,now=NOW)
+    assert rows[0]["eight_k_items"]==["2.02","3.02"]
+    assert rows[0]["earnings_beat_verified"] is False
+    assert rows[0]["new_shares_issued_verified"] is False
+
+
+def test_8k_item_malformed_future_date_and_wrong_cik_fail_closed():
+    report_data=report(111,["8-K"],dates=["2027-01-01"],items=["2.02"])
+    assert parse_submissions("RGC",111,"Regencell",report_data,now=NOW)==[]
+    assert parse_submissions("RGC",222,"Unrelated",report_data,now=NOW)==[]
