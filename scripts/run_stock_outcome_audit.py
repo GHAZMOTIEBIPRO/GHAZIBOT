@@ -12,6 +12,9 @@ from options_radar.free_autonomy import enforce_free_autonomy_environment
 from options_radar.hybrid_fetcher import DataFetcher
 from options_radar.settings import Settings
 from options_radar.stock_audit_rotation import (
+    FINAL_TERMINAL,
+    YAHOO_5M_RECOVERY_DAYS,
+    apply_symbol_bars_fair,
     fair_symbols_needing_backfill,
     mark_symbol_attempt,
     migrate_and_classify_records,
@@ -59,20 +62,33 @@ def _parse_time(value: Any) -> datetime | None:
 
 
 def _symbol_window(audit: dict[str, Any], symbol: str, now: datetime) -> tuple[datetime, datetime] | None:
+    """Fetch the *recoverable unresolved* cohort, not every historic ticker row.
+
+    A 90-day-old event should remain visible in the denominator, but must
+    NEVER force a 90-day Yahoo 5m query for a different live event with the
+    same ticker. Completed terminal outcomes also cannot expand the window.
+    Yahoo 5m retention is bounded by 58 days (safety margin under 60d).
+    """
     records = audit.get("records") if isinstance(audit.get("records"), dict) else {}
-    times = [
-        _parse_time(row.get("signal_time"))
-        for row in records.values()
-        if isinstance(row, dict)
-        and str(row.get("symbol") or "").upper() == symbol.upper()
-        and row.get("signal_session_valid") is not False
-    ]
-    times = [stamp for stamp in times if stamp is not None]
-    if not times:
+    current = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    cutoff = current - timedelta(days=YAHOO_5M_RECOVERY_DAYS)
+    eligible: list[datetime] = []
+    for row in records.values():
+        if (not isinstance(row, dict)
+                or str(row.get("symbol") or "").upper() != symbol.upper()
+                or row.get("signal_session_valid") is False
+                or str(row.get("audit_status") or "pending") in FINAL_TERMINAL):
+            continue
+        stamp = _parse_time(row.get("signal_time"))
+        if (stamp is None or stamp < cutoff + timedelta(minutes=5)
+                or current < stamp + timedelta(minutes=15)):
+            continue
+        eligible.append(stamp)
+    if not eligible:
         return None
-    start = min(times) - timedelta(minutes=5)
-    latest_needed = max(times) + timedelta(days=4)
-    return start, min(now, latest_needed)
+    start = max(cutoff, min(eligible) - timedelta(minutes=5))
+    end = min(current, max(eligible) + timedelta(days=4))
+    return (start, end) if end > start else None
 
 
 def _apply_independent_session_gate(audit: dict[str, Any]) -> dict[str, Any]:
@@ -160,6 +176,12 @@ def run(
     for symbol in symbols:
         window = _symbol_window(audit, symbol, current)
         if window is None or window[1] <= window[0]:
+            # One diagnostic attempt for expired/undated old records; never
+            # waste a provider call outside its intraday history retention.
+            mark_symbol_attempt(
+                audit, symbol=symbol, now=current,
+                result="no_recoverable_5m_history_window",
+            )
             continue
         attempted += 1
         try:
@@ -170,7 +192,7 @@ def run(
                 interval="5m",
                 providers=["yahoo"],
             )
-            updated_records += auditor.apply_symbol_bars(
+            updated_records += apply_symbol_bars_fair(
                 audit,
                 symbol=symbol,
                 bars=result.data,
