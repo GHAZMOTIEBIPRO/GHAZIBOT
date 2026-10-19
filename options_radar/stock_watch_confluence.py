@@ -60,10 +60,13 @@ def _valid(history: pd.DataFrame | None) -> bool:
         return False
     if not history.index.is_monotonic_increasing or history.index.has_duplicates:
         return False
-    required = {"Open", "High", "Low", "Close", "Volume"}
-    if not required.issubset(history.columns):
+    required = ("Open", "High", "Low", "Close", "Volume")
+    if not set(required).issubset(history.columns):
         return False
-    values = history[list(required)].to_numpy(dtype=float)
+    try:
+        values = history[list(required)].to_numpy(dtype=float)
+    except (TypeError, ValueError):
+        return False
     if not np.isfinite(values).all():
         return False
     return bool(
