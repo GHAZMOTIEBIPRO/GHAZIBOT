@@ -1,24 +1,20 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-10-18T22:57:59.504747+00:00",
+  "generated_at": "2026-10-19T15:20:25.905815+00:00",
   "status": "DEGRADED",
   "source_errors": {
-    "gdelt_attention": "COOLDOWN_ACTIVE",
+    "gdelt_attention": "JSONDecodeError",
     "press_wire_prnewswire": "COOLDOWN_ACTIVE",
-    "press_wire_globenewswire": "COOLDOWN_ACTIVE"
+    "press_wire_globenewswire": "HTTP_403"
   },
   "source_cooldowns": {
     "press_wire_prnewswire": {
       "last_error": "HTTP_404",
       "retry_after": "2026-10-20T15:06:34.092694+00:00"
     },
-    "gdelt_attention": {
-      "last_error": "HTTP_429",
-      "retry_after": "2026-10-19T02:50:42.357016+00:00"
-    },
     "press_wire_globenewswire": {
       "last_error": "HTTP_403",
-      "retry_after": "2026-10-19T14:50:42.357016+00:00"
+      "retry_after": "2026-10-20T15:20:25.905815+00:00"
     }
   },
   "decision_authority": false,
@@ -59,6 +55,42 @@
   ],
   "press_wire_attention": [],
   "google_news_attention": [
+    {
+      "event_topic": "CORPORATE_EVENT_MENTION",
+      "symbol": "TSLA",
+      "headline": "Tesla, Inc. SEC Filing (Oct 19, 2026) - Stock Titan",
+      "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOOWI4UmdCdjZqRi1MekgxMlpJSlM0UjRMSUR3ZU9aX3RGUlBWZlc1d1JUNVBOcWx4dkx4eUwyZ1AwV0dXNERKbkFoQ2FUMWFCb3BqQjkwYjJWUzZ5VnM0S3JVaWE3bkdiRm5HdXVlUE55RGpRa2o5Q2s1bkktQU9XWUVlcTVLU3YyVjhPMWJFbw?oc=5",
+      "published_at": "2026-10-19T11:22:44+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "curated_static_issuer_names",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+    },
+    {
+      "event_topic": "CORPORATE_EVENT_MENTION",
+      "symbol": "MSFT",
+      "headline": "Microsoft exits Nscale U.K. data center deal as IPO pressures mount (MSFT:NASDAQ) - Seeking Alpha",
+      "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQMWJiWGp4UWtueGdqZ25vdW9jaVhscUVQbU52WHk2RnRUQ2UtenJCTzRLTFFSM0NfZTlLQlU5TWVPd2djV3UtN1kzMTlnZmRfanpnUExxdVhyUmVBQm0wTmxGbmFOUkJnTlN3ejFGSTlzTDBLZzNpTWRwOVFzSE5waG44aG9USHFRNDB5ejNsMTBBTklmNFRGbXllUUV4aDdoMXkzMUxn?oc=5",
+      "published_at": "2026-10-18T14:13:02+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "curated_static_issuer_names",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+    },
     {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
       "symbol": "RGC",
@@ -148,6 +180,24 @@
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
       "first_collected_at": "2026-10-18T21:01:50.698147+00:00"
+    },
+    {
+      "event_topic": "CORPORATE_EVENT_MENTION",
+      "symbol": "CVX",
+      "headline": "Chevron or Realty Income: The One Dividend Stock I’d Hold for the Next 20 Years - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOTE1vckRRX1F5MWx3NTgzWVVRSmZkcjRyMlVvX2ltTEdHM0ZZZXZ6VEZBd0IxS01uZHpDZWhFSlkteXBWeS1tcV9jVElPdFFTbXFqQm5GMzVhQWZSeG4teHVNbkUtQ1h0aUJ6UTZkdTBwVG1EdkxBUjE5UU8wUjNqeTJ3bHdRY2d3ejNWTWtJa3F1ZUpIM3JNOUp5cmVfaVQ5?oc=5",
+      "published_at": "2026-10-17T16:32:39+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
     },
     {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
@@ -255,7 +305,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T15:06:34.092694+00:00"
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
     },
     {
       "event_topic": "CORPORATE_EVENT_MENTION",
@@ -474,6 +524,24 @@
       "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
     },
     {
+      "event_topic": "CORPORATE_EVENT_MENTION",
+      "symbol": "CVX",
+      "headline": "Better Dividend Stock: Chevron vs. TotalEnergies - TIKR.com",
+      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBJTkNUcEw0dDZ6UGxaYW1qdXRxOGtsdm9zVjlwWl9zUmNNYWpHTW8wVV9zcHgtR3V6d0V6N1FaNGpUZExldXZwNnV2eEVicnJjSzhYSE5sVDhvRGFLa3Q4ZGhxOHNMNmR5QXY2ZjFBSHpwZ2NJTk9RT1ItLXY?oc=5",
+      "published_at": "2026-10-15T20:37:30+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+    },
+    {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
       "symbol": "RKLB",
       "headline": "Rocket Lab Stock Tumbles On Latest Neutron Launch Delay - Investor's Business Daily",
@@ -490,6 +558,24 @@
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
       "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
+    },
+    {
+      "event_topic": "CORPORATE_EVENT_MENTION",
+      "symbol": "CVX",
+      "headline": "Better Dividend Stock: Chevron vs. BP - TIKR.com",
+      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE9hYWkwLXJXX1BmQjczbV9XVnBmYldSYmhkMXlqV1MxRWZSTGdwanFqUFg1UmxyMnhWVWluU1dmMkxwQ3pxU3FoVlRlWDlsYVpTVmxFaUJKSFJQenkwNEZoZmtUemZWX0I1em1pSE1R?oc=5",
+      "published_at": "2026-10-15T20:04:06+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -579,7 +665,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T15:06:34.092694+00:00"
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
     },
     {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
@@ -600,6 +686,24 @@
       "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
     },
     {
+      "event_topic": "FINANCIAL_REPORT_MENTION",
+      "symbol": "BAC",
+      "headline": "Stock Market Today, Oct. 14: Bank of America Shares Fall 5% on Earnings Miss and Compliance Penalty - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxNMnRzcU5JSXdpMm9pTExvYUU3LUxSQ1BLQm9MM3VqWUx2aURsdFUtMWJCNHQxLXZidTB4a2o2dU1acTlBWTd3Mlh6RFFvZmdNa0ZxQTFlUDlGSDlXWU9EQVljbWMya0ZBS3hDTTE1Zzd2bFZCdG1kUlhaZ3Z2dWNvSjdJd1JpYTRHMjF5b0lKYnVVZm9p?oc=5",
+      "published_at": "2026-10-14T22:02:45+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+    },
+    {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
       "symbol": "RGTI",
       "headline": "Rigetti Computing (RGTI) Loss Concerns Put Its Undervalued Narrative Back In Focus - Yahoo Finance",
@@ -616,6 +720,24 @@
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
       "first_collected_at": "2026-10-18T21:01:50.698147+00:00"
+    },
+    {
+      "event_topic": "FINANCIAL_REPORT_MENTION",
+      "symbol": "BAC",
+      "headline": "Bank of America Stock Plunges After $1.2 Billion Fine and Q3 Earnings Miss - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxOZlhsRXRSU1RIMWs2VjhmY3VyZmlRMTBXc3BNNmRlV3JESjVJc0hPUzNfZ2VvU3c2R2VEQjhLdlFkaE1pQnBVTm5JdlQ5NHVpTUV3RG9tQVBZdUJEZ1ZycC01Y0E0aDM1S0RDdzJEYWtoZXlnZ19CUldGN0ZGbmR3a1ROYUVudlo1MU1YLUdnYUxXbEw0TUpGbg?oc=5",
+      "published_at": "2026-10-14T19:30:18+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
     },
     {
       "event_topic": "CORPORATE_EVENT_MENTION",
@@ -654,6 +776,24 @@
       "first_collected_at": "2026-10-18T21:01:50.698147+00:00"
     },
     {
+      "event_topic": "FINANCIAL_REPORT_MENTION",
+      "symbol": "BAC",
+      "headline": "Bank of America Stock Slumps After Revenue Miss, $1.2B Treasury Fine - Investopedia",
+      "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQRUEzN0dEZEJWZ25lZnhSY1dCQ1I3d2RLVThwYXpPemw0SlpqMWlVbUFOdHROWjIzMWNoWktJTWNMbDM4TGtNeGNLM0ZTU1d6Z0FHTGc4b21pcjUta2dWeUQzZWlqeUdtQW1Yanh4NjZaeEVldUtvVDN4T0o1SV8yb0VkRmlwZUVHQUxWYXV1QUZSSWp2bk5iQ1N1TmJZak1oVDNjU1NjM2N6T19jU2ZOaVR1V2I1RHJMUDJjV0dxZw?oc=5",
+      "published_at": "2026-10-14T14:22:43+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+    },
+    {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
       "symbol": "IONQ",
       "headline": "IonQ Stock Falls Amid Quantum Firm's $2 Billion Equity Offering - Investor's Business Daily",
@@ -670,6 +810,24 @@
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
       "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
+    },
+    {
+      "event_topic": "FINANCIAL_REPORT_MENTION",
+      "symbol": "BAC",
+      "headline": "Bank of America stock sinks as $1.2 billion fine weighs on Q3 earnings - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxQeGhQZ2Y1QmVxYjNaMjZSTzlYcktKdktvMk5WSU8xVUFMRVdWQ1oxQldDbk1EeF83aHBFam8yblVyOXQyaVYyUFZ0QUpmSzdFXzNGcFpzSDZLZWlFbV81a3A5aVl2M0xzTm01S3hrYXFvUE9hcEJLUFlraERaa25Bc3ltcXd4VG1MOU1QSEdOb253WTBJUnhtaFlOTHhRZW9mNFhldzhDRVVwUlczak9OUC1iWUQ3SXFSNjdGUC1rbFNMaVE?oc=5",
+      "published_at": "2026-10-14T13:03:49+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "github_public_listing_mirrors",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -744,29 +902,11 @@
       "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
     },
     {
-      "event_topic": "CORPORATE_EVENT_MENTION",
-      "symbol": "IONQ",
-      "headline": "IonQ to buy cybersecurity firm Elisity in up to $1.3 billion deal - Reuters",
-      "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOVW95YjNzcXhXdHJ5cVJfWldIVm5nUXo0RnhVUGpYcFVwaTJWLXQ4TkZwR2lCWTBwNXl5dk8tdnJJUkg0cG12TlJTeFl1b2RZWDFlZGNlYkxMVktjMExoZkY5RDh3amtORFJja242dkhzVmpQOWx0Qlg0SFFRUnRBTWNGMkNmOWdmWDZRSEtCd1NJTXhybVJEODl4R3l1a3NRYm9tYnFRMU5UdVFTQWxR?oc=5",
-      "published_at": "2026-10-12T21:28:30+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "curated_static_issuer_names",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
-    },
-    {
       "event_topic": "FINANCIAL_REPORT_MENTION",
-      "symbol": "ORCL",
-      "headline": "Top Stock Reports for Oracle, American Express & Progressive - Yahoo Finance",
-      "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQZlVCUDVqMUh6VHU3dGZvdkRSem5zN3BnYzlveVhtUUdTbHdwT3Y4LTc2OU02SUpRbFNsaW1CZEt4Um04NlpWWkRteVcybi1oVFlJZ0FrVHJfVGFzVnpqU2VSMlVtVVJBUUwtS1pQTnpsbHZaNzAzdHdubER3aF9idVNrY0EwRXplV01ySWtCSHpTMGJPNUZJZHlweUpsR28?oc=5",
-      "published_at": "2026-10-12T19:24:00+00:00",
+      "symbol": "CVX",
+      "headline": "Chevron (CVX) Is Cleaning House Before the Earnings Peak Fades - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNZFYtWmZqS210Z2hVWlZsejgyTGthVnhUbzFYRUxQNjV4ZUgtdTRlS0NRSHZpbHV4YW9TeFFneTBvRkUtNGtVcnVFVFQ4bV8zUXlHSzhnckhyWTNCRDhfMW5BbFVNWjBJbTdJQzNOYi0zUWJ3UHNLUEJpbVc4OTVTbDRFUTVKLWtvdXR5U3hsVWhraWZzQVpF?oc=5",
+      "published_at": "2026-10-13T12:18:19+00:00",
       "source": "google_news_rss",
       "source_family": "unofficial_google_news_search_rss",
       "authority": "NEWS_SEARCH_ATTENTION_ONLY",
@@ -777,25 +917,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
-    },
-    {
-      "event_topic": "CORPORATE_EVENT_MENTION",
-      "symbol": "IONQ",
-      "headline": "IonQ to acquire cybersecurity firm Elisity in an all-stock deal for up to $1.3 billion - CNBC",
-      "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPbFFXWWRTLXk1V2ZGM0ppRVVWNzZsS0JNYTlmYmlnbVJMR3d3ZHlQUjdQUXRrVUxXOXpCRHI4Q1J3SkprUFFNY2gwcl9nS3BBU2U0OEllZWJjRXg3emtXbVhudzVOUjUwZl9QRUZHYzlILWNJTmduOU5KMUo0bUMzedIBhgFBVV95cUxPZkpTTEg1WjFEd0pMVnBDVktxc0JxMmdQUWJ2U3RtMTVpLWNQRVZDT1FLMll1R0JmOERnR2VMUUhyRFFqZHc2UzZObWV3ZU96OG9RSWdUUWNhZWtWN21IdjFhNTJLQjlGbzk2bWRDalBqbmYzSXFxVzNQYjJLaFc5ZWxkWXlFdw?oc=5",
-      "published_at": "2026-10-12T18:14:45+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "curated_static_issuer_names",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T16:11:30.510839+00:00"
+      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
     }
   ],
   "alpaca_iex": {
@@ -812,18 +934,18 @@
     "source_family": "github_public_listing_mirrors",
     "source_license": "ODC-PDDL-1.0",
     "source_of_truth": "NASDAQ Trader derived public listing snapshots",
-    "downloaded_at": "2026-10-18T15:06:34.092694+00:00",
-    "status": "CACHED_GITHUB_LISTINGS",
+    "downloaded_at": "2026-10-19T15:20:25.905815+00:00",
+    "status": "AVAILABLE_CONTEXT",
     "issuers": {
+      "MRNA": "Moderna",
+      "DKNG": "DraftKings",
+      "REGN": "Regeneron Pharmaceuticals",
       "OXY": "Occidental Petroleum",
       "CVX": "Chevron",
       "ORCL": "Oracle",
       "BAC": "Bank of America",
-      "MRNA": "Moderna",
       "LLY": "Eli Lilly and Company",
-      "NET": "Cloudflare",
-      "DKNG": "DraftKings",
-      "REGN": "Regeneron Pharmaceuticals"
+      "NET": "Cloudflare"
     },
     "source_checks": [
       {
@@ -843,7 +965,7 @@
     "not_live_listing_or_price": true
   },
   "google_news_retention": {
-    "historical_stories_preserved": 36,
+    "historical_stories_preserved": 39,
     "note": "Older stories keep publication timestamps; not refreshed quotes"
   }
 }
