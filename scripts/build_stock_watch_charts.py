@@ -117,6 +117,45 @@ def load_dynamic_symbols(path: Path | None, *, now: datetime,
     return valid_dynamic_symbols(ranked)
 
 
+def session_vwap_shadow(frame: pd.DataFrame) -> dict:
+    """Session VWAP from completed source OHLCV, not last-trade or OPRA data."""
+    base = {
+        "available": False, "value": None, "session_date": None,
+        "source_last_bar_start": None, "research_only": True,
+        "source_family": "yahoo", "options_execution_eligible": False,
+    }
+    if (not isinstance(frame, pd.DataFrame) or frame.empty
+            or not isinstance(frame.index, pd.DatetimeIndex)
+            or frame.index.tz is None
+            or not all(k in frame.columns for k in ("High", "Low", "Close", "Volume"))):
+        return base
+    local = frame.index.tz_convert(NY)
+    last_date = local[-1].date()
+    day = frame.loc[local.date == last_date]
+    if len(day) < 2:
+        return base
+    vol = pd.to_numeric(day["Volume"], errors="coerce")
+    high = pd.to_numeric(day["High"], errors="coerce")
+    low = pd.to_numeric(day["Low"], errors="coerce")
+    close = pd.to_numeric(day["Close"], errors="coerce")
+    total = float(vol.sum())
+    if (not math.isfinite(total) or total <= 0
+            or not bool((vol >= 0).all())
+            or not bool(((high >= low) & (low > 0) & (close > 0)).all())):
+        return base
+    typical = (high + low + close) / 3.0
+    value = float((typical * vol).sum() / total)
+    if not math.isfinite(value) or value <= 0:
+        return base
+    return {
+        **base, "available": True, "value": round(value, 4),
+        "session_date": last_date.isoformat(),
+        "source_last_bar_start": int(frame.index[-1].timestamp()),
+        "completed_bars": len(day),
+        "formula": "sum(typical_price_x_source_volume)/sum(source_volume)",
+    }
+
+
 def pack_symbol(
     symbol: str, daily_raw: pd.DataFrame | None,
     minute15_raw: pd.DataFrame | None, minute5_raw: pd.DataFrame | None, *,
@@ -168,6 +207,8 @@ def pack_symbol(
             "research_only": True,
             "source_recency_verified": source_recent,
         }
+        if unit != "1d":
+            frame_out[unit]["session_vwap"] = session_vwap_shadow(frame)
     # A successful Yahoo response can return only stale historical candles.
     # Never count such a stock as freshly observed or roll the report clock forward.
     # The separate retained-history path can still display previous bars as historical.
