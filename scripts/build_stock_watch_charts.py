@@ -23,7 +23,6 @@ from scripts.build_index_context import (
     bar_minutes,
     clean_bars,
     completed_daily,
-    four_hour_from_quarters,
     hourly_from_quarters,
     last_finished_five_min,
     last_finished_intraday,
@@ -249,9 +248,9 @@ def pack_symbol(
     needs_5m = symbol in FIVE_MIN or symbol in dynamic_watch
     clean_5 = (last_finished_five_min(clean_bars(minute5_raw, intraday=True), now)
                if needs_5m else pd.DataFrame())
+    # 4H stays index-only: this report was already at its 700 KB cap.
     sessions = {"1d": clean_day, "15m": clean_15,
-                "1h": hourly_from_quarters(clean_15),
-                "4h": four_hour_from_quarters(clean_15)}
+                "1h": hourly_from_quarters(clean_15)}
     if needs_5m:
         sessions["5m"] = clean_5
     frame_out = {}
