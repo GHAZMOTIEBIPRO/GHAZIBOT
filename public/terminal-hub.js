@@ -50,7 +50,7 @@
         "www.globenewswire.com","globenewswire.com"].includes(u.hostname))
       ?u.href:null;}catch{return null;}
   };
-  const state={panel:"indices",symbol:"SPX",tf:"1d",ema:true,quotes:null,
+  const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null};
   const schemaOK={
@@ -113,6 +113,105 @@
     const btn=txt("button",label,"terminal-card-action");
     btn.type="button";btn.dataset.chartSymbol=symbol;return btn;
   };
+  const feedAgeHours=(stampValue)=>{
+    const t=validDate(stampValue);
+    return t!==null&&t<=Date.now()+300000?
+      Math.max(0,(Date.now()-t)/3600000):null;
+  };
+  const pulse=(label,value,meta,kind="neutral")=>{
+    const d=txt("article","","terminal-pulse "+kind);
+    d.append(txt("small",label),txt("strong",value),txt("span",meta));
+    return d;
+  };
+  function renderOverview(){
+    const metrics=$("terminal-overview-pulse"),picks=$("terminal-overview-picks"),
+      events=$("terminal-overview-events");
+    if(!metrics||!picks||!events)return;
+    metrics.replaceChildren();picks.replaceChildren();events.replaceChildren();
+    const charts=state.watchCharts,scan=Array.isArray(state.brief?.stocks)?state.brief.stocks:[],
+      news=Array.isArray(state.news?.google_news_attention)?state.news.google_news_attention:[],
+      runtime=state.runtime,sec=state.sec;
+    const indexCount=Number(state.charts?.coverage?.symbols||0);
+    const watchCount=Number(charts?.coverage?.with_valid_charts||0);
+    const watchRequested=Number(charts?.coverage?.requested||0);
+    const quoteReady=runtime?.option_provider_readiness?.production_quote_ready===true;
+    metrics.append(
+      pulse("المؤشرات المشمولة",state.charts?String(indexCount):"—",
+        "من تقرير البحث · "+stamp(state.charts?.generated_at)),
+      pulse("شارتات الأسهم",charts?watchCount+" / "+watchRequested:"—",
+        "مؤرخة · "+stamp(charts?.generated_at)),
+      pulse("إفصاحات SEC المؤكدة",sec&&sec.status==="OK"?
+        String(sec.coverage?.filings_verified??0):"غير متاح",
+        "حالة المصدر: "+String(sec?.status||"غير متاح"),
+        sec?.status==="OK"?"neutral":"caution"),
+      pulse("الخيارات التنفيذية",quoteReady?"تحقق من العقد":"غير مؤهلة",
+        "البوابة: "+String(runtime?.option_provider_readiness?.status||"غير متاح"),
+        quoteReady?"neutral":"caution")
+    );
+    const age=feedAgeHours(state.brief?.source_generated_at);
+    const stale=age===null||age>24;
+    const ordered=scan.filter(q=>q&&/^[A-Z][A-Z0-9.-]{0,7}$/.test(q.symbol||"")&&
+      Number.isFinite(q.score)).sort((a,b)=>b.score-a.score).slice(0,5);
+    for(const item of ordered){
+      const card=txt("article","","terminal-pick");
+      const info=txt("div","","terminal-pick-main");
+      const top=txt("div","","terminal-pick-title");
+      top.append(txt("strong",item.symbol),
+        chip(stale?"تاريخي":item.direction_research==="CALL"?
+          "صعود بحثي":item.direction_research==="PUT"?"هبوط بحثي":"انتظار",
+          stale?"STALE":item.direction_research==="CALL"?"UP":
+          item.direction_research==="PUT"?"DOWN":null));
+      info.append(top,txt("small","ترتيب بحثي "+fmt(item.score,1)+
+        " · RVOL "+fmt(item.rvol,2)+" · "+String(item.stage||"مراقبة")));
+      card.append(info,chartButton(item.symbol,"الشارت ↗"));
+      picks.append(card);
+    }
+    if(!ordered.length)picks.append(txt("p","لا توجد فرص بحثية مؤهلة في آخر تقرير.","terminal-empty"));
+    let shown=0;
+    for(const story of news){
+      if(shown>=4)break;
+      if(story?.authority!=="NEWS_SEARCH_ATTENTION_ONLY"||
+         story.issuer_release_authenticated!==false||
+         story.positive_catalyst_verified!==false||
+         !safeResearch(story.url)||validDate(story.published_at)===null)continue;
+      const row=txt("article","","terminal-event");
+      row.append(txt("span",String(story.symbol||"—"),"terminal-event-symbol"));
+      const link=txt("a",String(story.headline||"خبر غير مسمى").slice(0,130));
+      link.href=safeResearch(story.url);link.target="_blank";link.rel="noopener noreferrer";
+      row.append(link,txt("small","خبر بحثي غير مؤكد · "+stamp(story.published_at)));
+      events.append(row);shown++;
+    }
+    if(!shown)events.append(txt("p","لم تصل أخبار بحثية مؤهلة للعرض.","terminal-empty"));
+    put("terminal-overview-warning",
+      "مصدر الأسهم Yahoo بحثي؛ عمر تقرير الترشيحات: "+
+      (age===null?"غير معروف":fmt(age,1)+" ساعة")+
+      (stale?" · التحليلات التاريخية غير قابلة للتنفيذ الآن.":" · الترتيب لا يثبت صفقة ناجحة.")+
+      " · أخبار التجميع غير رسمية · لا أسعار خيارات تنفيذية متحققة تلقائيًا.");
+  }
+  function renderOptions(){
+    const target=$("terminal-options-readiness"),grid=$("terminal-options-breakdown");
+    if(!target||!grid)return;grid.replaceChildren();
+    const data=state.runtime?.option_provider_readiness;
+    if(!data){
+      put("terminal-options-readiness","لا يوجد تقرير جاهزية خيارات قابل للتحقق. لا يمكن اقتراح عقد قابل للتنفيذ.");
+      return;
+    }
+    const ready=data.production_quote_ready===true&&data.production_flow_ready===true;
+    put("terminal-options-readiness",ready?
+      "أبلغ المصدر عن بيانات صالحة؛ يجب التأكد من كل عقد على حدة عبر بوابة V11.":
+      "الوضع: "+String(data.status||"غير متاح")+
+      " · عقود تنفيذية غير مؤهلة · اتجاه CALL/PUT بحثي فقط ولا توجد توصية عقد موثقة.");
+    grid.append(
+      pulse("سلاسل خيارات بحثية",String(data.usable_chains??"—"),
+        "توجد بيانات لكنها ليست بالضرورة آنية"),
+      pulse("سلاسل مصادر تنفيذية",String(data.live_primary_chains??"—"),
+        "تتطلب تحققًا من Bid/Ask ووقت عرض السعر",data.live_primary_chains?"neutral":"caution"),
+      pulse("مصادر مستقلة متقاطعة",String(data.cross_source_chains??"—"),
+        "Yahoo وyfinance من عائلة واحدة"),
+      pulse("سلاسل OPRA",String(data.opra_chains??"—"),
+        "لا يتم اختراع OPRA من الأخبار أو OHLC")
+    );
+  }
   function renderIndices(){
     const wrap=$("terminal-index-grid");if(!wrap)return;wrap.replaceChildren();
     const report=state.quotes;
@@ -344,7 +443,7 @@
     });
     target.append(svg);
   }
-  function plotCandles(bars,showEMA,levels){
+  function plotCandles(bars,showEMA,levels,scenario=null){
     clearPlot();
     const target=$("terminal-candle-chart");if(!target)return;
     const lib=typeof LightweightCharts!=="undefined"?LightweightCharts:null;
@@ -383,6 +482,18 @@
           if(typeof price==="number"&&Number.isFinite(price))
             candle.createPriceLine({price,title:label,color,lineWidth:1,
               lineStyle:2,axisLabelVisible:true});
+        }
+      }
+      if(scenario?.activation&&scenario?.invalidation){
+        for(const [price,title,color] of [
+          [scenario.activation,"تفعيل بحثي","#D8B66C"],
+          [scenario.invalidation,"إبطال","#E37E8A"],
+          [scenario.target1,"T1 بحثي","#65CDB2"],
+          [scenario.target2,"T2 بحثي","#72ADDB"]]){
+          if(typeof candle.createPriceLine==="function"&&
+             typeof price==="number"&&Number.isFinite(price)&&price>0){
+            candle.createPriceLine({price,title,color,lineWidth:1,lineStyle:2,axisLabelVisible:true});
+          }
         }
       }
       chart.timeScale().fitContent();
@@ -444,7 +555,10 @@
       }
     }
     const metric=$("terminal-chart-levels");if(metric)metric.replaceChildren();
+    const decisionGrid=$("terminal-decision-levels");if(decisionGrid)decisionGrid.replaceChildren();
     if(rows.length<2){
+      put("terminal-decision-state","غير متاح");
+      put("terminal-decision-explain","لا توجد شموع كافية؛ لا يمكن تحديد اتجاه CALL / PUT أو أهداف.");
       clearPlot();
       put("terminal-chart-spot","—");put("terminal-chart-direction","لا توجد شموع OHLC منشورة");
       put("terminal-chart-date","—");
@@ -478,7 +592,41 @@
       ["قمة / قاع 20 شمعة",fmt(high)+" / "+fmt(low)]]){
       metric?.append(putMetric(label,value));
     }
-    plotCandles(rows,state.ema,levels);
+    const engine=typeof GhaziResearch!=="undefined"?GhaziResearch:null;
+    const hourFrame=INDEX_ORDER.includes(symbol)?
+      state.charts?.symbols?.[symbol]?.intervals?.["1h"]:
+      state.watchCharts?.symbols?.[symbol]?.intervals?.["1h"];
+    const sourceDate=INDEX_ORDER.includes(symbol)?state.charts?.generated_at:
+      stockFrame?state.watchCharts?.generated_at:state.stockCharts?.generated_at;
+    const ageHours=feedAgeHours(sourceDate);
+    const currentConfirmed=frame?.current_session_confirmed===true &&
+      ageHours!==null&&ageHours<=24;
+    const scenario=engine?.analyze(rows,{
+      hourBars:hourFrame?.bars,
+      current_session_confirmed:currentConfirmed
+    })||null;
+    const side=scenario?.status==="HISTORICAL"?
+      "لقطة تاريخية · "+(scenario.historical_side||"WAIT"):
+      scenario?.status==="CONFLICT"?"WAIT · تعارض فريمات":
+      scenario?.side==="CALL"?"CALL بحثي":
+      scenario?.side==="PUT"?"PUT بحثي":"WAIT / لا تداول";
+    put("terminal-decision-state",side);
+    put("terminal-decision-explain",(scenario?.reason_ar||"تعذر إجراء تحليل مستقل.")+
+      " · الاتجاه: "+String(scenario?.technical_bias||"غير متاح")+
+      " · فريم الساعة: "+String(scenario?.hour_bias||"غير متاح")+
+      " · لا تمثل هذه المستويات أوامر شراء أو عقود خيارات تنفيذية.");
+    if(decisionGrid&&scenario){
+      for(const [label,val] of [
+        ["مقاومة 20 شمعة سابقة",scenario.resistance],
+        ["دعم 20 شمعة سابقة",scenario.support],
+        ["التفعيل المشروط",scenario.activation],
+        ["إبطال السيناريو",scenario.invalidation],
+        ["T1 | ATR14",scenario.target1],
+        ["T2 | 2 × ATR14",scenario.target2]]){
+        decisionGrid.append(putMetric(label,fmt(val)));
+      }
+    }
+    plotCandles(rows,state.ema,levels,scenario);
     const currentClose=last.close;
     put("terminal-chart-scenario",range!==null && Number.isFinite(range)?
       "سيناريو نطاق الحركة بـ ATR (ليس احتمالًا): إذا استمر الزخم، "+
@@ -666,7 +814,7 @@
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderIndices();renderStocks("large");renderStocks("small");renderNews();renderTrust();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderNews();renderTrust();renderOptions();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
@@ -676,6 +824,13 @@
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
     button.addEventListener("click",()=>choosePanel(button.dataset.terminalTab)));
+  $("ghazi-terminal")?.addEventListener("click",event=>{
+    const nav=event.target.closest("[data-terminal-go]");
+    if(nav&&["overview","indices","large","small","news","chart","options","trust","advanced"].includes(nav.dataset.terminalGo)){
+      choosePanel(nav.dataset.terminalGo);
+      $("terminal-panel-"+nav.dataset.terminalGo)?.scrollIntoView({block:"start",behavior:"smooth"});
+    }
+  });
   $("ghazi-terminal")?.addEventListener("click",event=>{
     const button=event.target.closest("[data-chart-symbol]");
     if(button)chooseChart(button.dataset.chartSymbol);
