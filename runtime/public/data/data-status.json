@@ -1,26 +1,18 @@
 {
-  "status": "degraded",
-  "generated_at": "2026-10-19T23:44:41.554063+00:00",
-  "dataset_age_minutes": 2.1,
-  "last_successful_refresh": "2026-10-19T23:44:41.554063+00:00",
+  "status": "healthy",
+  "generated_at": "2026-10-19T23:56:30.378181+00:00",
+  "dataset_age_minutes": 253.15,
+  "last_successful_refresh": "2026-10-19T23:56:30.378181+00:00",
   "option_provider": "yahoo/yfinance",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
     "production_quote_ready": false,
     "production_flow_ready": false,
-    "usable_chains": 13,
-    "fallback_only_chains": 13,
-    "delayed_or_indicative_chains": 13,
-    "live_primary_chains": 0,
-    "cross_source_chains": 0,
-    "opra_chains": 0,
-    "sources": [
-      "yahoo"
-    ],
     "reasons": [
+      "Payload age 46.7m exceeds the 45m safety limit.",
       "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-      "13 chain(s) are Yahoo/YFinance-only fallback",
-      "13 chain(s) contain delayed, indicative, or unofficial sources"
+      "55 chain(s) are Yahoo/YFinance-only fallback",
+      "55 chain(s) contain delayed, indicative, or unofficial sources"
     ]
   },
   "source_status": {
@@ -117,9 +109,50 @@
   },
   "run_duration_seconds": null,
   "reasons": [
-    "1 stale option row(s)",
-    "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-    "13 chain(s) are Yahoo/YFinance-only fallback",
-    "13 chain(s) contain delayed, indicative, or unofficial sources"
-  ]
+    "options: Payload age 46.7m exceeds the 45m safety limit.; No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 55 chain(s) are Yahoo/YFinance-only fallback; 55 chain(s) contain delayed, indicative, or unofficial sources"
+  ],
+  "runtime_source": "bot-state/live_dashboard_status",
+  "workflow_health": {
+    "publisher": {
+      "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
+      "source_run_id": "39341241964",
+      "mode": "artifact_to_bot_state_status_only"
+    },
+    "paths": {
+      "fast_discovery": {
+        "status": "HEALTHY",
+        "generated_at": "2026-10-19T23:25:24.636982+00:00",
+        "age_minutes": 31.1,
+        "maximum_age_minutes": 45.0,
+        "candidate_count": 0,
+        "provider_readiness": null,
+        "reasons": []
+      },
+      "stocks": {
+        "status": "HEALTHY",
+        "generated_at": "2026-10-19T23:06:01.192984+00:00",
+        "age_minutes": 50.49,
+        "maximum_age_minutes": 90.0,
+        "candidate_count": 3,
+        "provider_readiness": null,
+        "reasons": [
+          "No candidate currently has an official primary cause; alerts must state cause unknown"
+        ]
+      },
+      "options": {
+        "status": "STALE",
+        "generated_at": "2026-10-19T19:43:21.393889+00:00",
+        "age_minutes": 253.15,
+        "maximum_age_minutes": 45.0,
+        "candidate_count": 0,
+        "provider_readiness": "FALLBACK_ONLY",
+        "reasons": [
+          "Payload age 46.7m exceeds the 45m safety limit.",
+          "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
+          "55 chain(s) are Yahoo/YFinance-only fallback",
+          "55 chain(s) contain delayed, indicative, or unofficial sources"
+        ]
+      }
+    }
+  }
 }
