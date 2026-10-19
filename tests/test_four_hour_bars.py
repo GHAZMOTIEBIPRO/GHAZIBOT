@@ -52,3 +52,14 @@ def test_index_chart_report_exposes_4h_as_derived_research_interval():
     assert len(four["bars"]) == 4
     assert four["derived_from"] == "session_aligned_completed_15m_yahoo_bars"
     assert four["research_only"] is True
+
+
+def test_stock_watch_report_stays_within_its_size_cap_without_4h():
+    from scripts.build_stock_watch_charts import WATCH, pack_symbol
+    index = _quarters("2026-10-16").append(_quarters("2026-10-19"))
+    now = datetime(2026, 10, 19, 20, 30, tzinfo=timezone.utc)
+    daily = pd.DataFrame({"Open": [1.0] * 60, "High": [2.0] * 60, "Low": [0.5] * 60,
+                          "Close": [1.5] * 60, "Volume": [10.0] * 60},
+                         index=pd.date_range("2026-07-20", periods=60, freq="B", tz=NY))
+    item = pack_symbol(min(WATCH), daily, _frame(index), None, now=now)
+    assert item is not None and "4h" not in item["intervals"]
