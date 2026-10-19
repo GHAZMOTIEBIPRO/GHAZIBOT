@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shadow
 from scripts.build_index_chart_snapshot import pack_bars
 from scripts.build_index_context import (
     NY, clean_bars, completed_daily, hourly_from_quarters,
@@ -142,6 +143,9 @@ def pack_symbol(
         }
     if not frame_out:
         return None
+    # Completed DAILY OHLC only. No new Yahoo requests, no changed radar
+    # scores, and no falsely independent data provider claim.
+    volatility_shadow = bollinger_compression_shadow(clean_day)
     return {
         "symbol": symbol, "category": ("VOLATILE_GROWTH_WATCH" if symbol in SMALL_WATCH
                                       else "RADAR_DISCOVERY_WATCH" if symbol in dynamic_watch
@@ -150,6 +154,7 @@ def pack_symbol(
         "intervals": frame_out,
         "source": "Yahoo Finance yfinance (unofficial research, may be delayed)",
         "options_execution_grade": False,
+        "volatility_shadow": volatility_shadow,
     }
 
 

@@ -253,6 +253,16 @@
     card.append(pair("عناوين أخبار مطابقة",String(newsCount)));
     const stockInfo=state.watchCharts?.symbols?.[symbol];
     const stockSeries=stockInfo?.intervals;
+    const volatility=stockInfo?.volatility_shadow;
+    if(volatility?.available===true&&volatility.research_only===true&&
+       volatility.independent_data_confirmation===false&&
+       Number.isFinite(volatility.width_pct)&&
+       typeof volatility.source_last_daily_bar==="string"){
+      card.append(pair("بولنجر · انكماش بحثي",
+        (volatility.compression_watch===true?"انكماش ملحوظ":"نطاق طبيعي")+
+        " · "+fmt(volatility.width_pct,2)+"%"+
+        " · جلسة "+volatility.source_last_daily_bar));
+    }
     card.append(pair("شموع يومية / 15 دقيقة",
       (stockSeries?.["1d"]?.bars?.length||0)+" / "+(stockSeries?.["15m"]?.bars?.length||0)));
     if(stockInfo?.historical_cache_only===true){
@@ -591,6 +601,15 @@
       ["ATR14",fmt(range)],["EMA20",fmt(emaFast)],["EMA50",fmt(emaSlow)],
       ["قمة / قاع 20 شمعة",fmt(high)+" / "+fmt(low)]]){
       metric?.append(putMetric(label,value));
+    }
+    const shadow=state.watchCharts?.symbols?.[symbol]?.volatility_shadow;
+    if(tf==="1d"&&shadow?.available===true&&shadow.research_only===true&&
+       shadow.independent_data_confirmation===false&&
+       Number.isFinite(shadow.width_pct)){
+      metric?.append(putMetric("بولنجر يومي (بحثي)",
+        (shadow.compression_watch===true?"انكماش ملحوظ":"نطاق طبيعي")+
+        " · "+fmt(shadow.width_pct,2)+"%"+
+        " · "+String(shadow.source_last_daily_bar||"تاريخ غير محدد")));
     }
     const engine=typeof GhaziResearch!=="undefined"?GhaziResearch:null;
     const hourFrame=INDEX_ORDER.includes(symbol)?
