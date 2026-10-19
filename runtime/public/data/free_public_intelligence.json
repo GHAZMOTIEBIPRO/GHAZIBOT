@@ -1,17 +1,13 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-10-19T17:46:05.065069+00:00",
+  "generated_at": "2026-10-19T18:07:17.791754+00:00",
   "status": "DEGRADED",
   "source_errors": {
-    "gdelt_attention": "HTTP_429",
+    "gdelt_attention": "COOLDOWN_ACTIVE",
     "press_wire_prnewswire": "COOLDOWN_ACTIVE",
     "press_wire_globenewswire": "COOLDOWN_ACTIVE"
   },
   "source_cooldowns": {
-    "press_wire_globenewswire": {
-      "last_error": "HTTP_403",
-      "retry_after": "2026-10-20T15:20:25.905815+00:00"
-    },
     "press_wire_prnewswire": {
       "last_error": "HTTP_404",
       "retry_after": "2026-10-20T15:06:34.092694+00:00"
@@ -19,6 +15,10 @@
     "gdelt_attention": {
       "last_error": "HTTP_429",
       "retry_after": "2026-10-20T05:46:05.065069+00:00"
+    },
+    "press_wire_globenewswire": {
+      "last_error": "HTTP_403",
+      "retry_after": "2026-10-20T15:20:25.905815+00:00"
     }
   },
   "decision_authority": false,
@@ -147,7 +147,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
+      "first_collected_at": "2026-10-19T18:07:17.791754+00:00"
     },
     {
       "event_topic": "CORPORATE_EVENT_MENTION",
@@ -165,7 +165,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+      "first_collected_at": "2026-10-19T18:07:17.791754+00:00"
     },
     {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
@@ -255,7 +255,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T22:57:59.504747+00:00"
+      "first_collected_at": "2026-10-19T18:07:17.791754+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -471,7 +471,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+      "first_collected_at": "2026-10-19T18:07:17.791754+00:00"
     },
     {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
@@ -507,7 +507,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+      "first_collected_at": "2026-10-19T18:07:17.791754+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -669,7 +669,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T15:06:34.092694+00:00"
+      "first_collected_at": "2026-10-19T18:07:17.791754+00:00"
     },
     {
       "event_topic": "FINANCIAL_REPORT_MENTION",
@@ -723,7 +723,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T15:20:25.905815+00:00"
+      "first_collected_at": "2026-10-19T18:07:17.791754+00:00"
     },
     {
       "event_topic": "CORPORATE_EVENT_MENTION",
@@ -785,7 +785,7 @@
     "not_live_listing_or_price": true
   },
   "google_news_retention": {
-    "historical_stories_preserved": 25,
+    "historical_stories_preserved": 31,
     "note": "Older stories keep publication timestamps; not refreshed quotes"
   }
 }
