@@ -121,6 +121,10 @@ def test_occ_csv_and_one_daily_download_are_context_only():
     assert report["not_trade_flow"] is True
     assert report["open_interest"]["AAPL"] == 1234
     assert sum("theocc.com" in entry[0] for entry in cli.calls) == 1
+    occ_calls = [entry for entry in cli.calls if "theocc.com" in entry[0]]
+    assert occ_calls[0][1] == {
+        "dailyDate": "10/16/2026", "action": "download", "format": "csv",
+    }
 
 
 def test_filingpulse_must_match_date_and_form():
