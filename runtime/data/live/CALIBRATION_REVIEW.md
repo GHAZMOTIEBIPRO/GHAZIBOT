@@ -4,7 +4,7 @@
 - **Status:** **READY FOR INDEPENDENT REVIEW**
 - **Mature signals (1d checkpoint):** **230/100**
 - **Raw priced signals:** **246**
-- **Five-day mature signals:** **209**
+- **Five-day mature signals:** **210**
 - **Decision:** Eligible for independent score recalibration review
 
 > Same-scan observations do not count toward calibration readiness. 
