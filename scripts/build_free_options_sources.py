@@ -228,7 +228,10 @@ def parse_occ_oi_csv(raw: str, *, watched: set[str]) -> dict:
     symkey = col("underlyingsymbol", "underlying", "underlier", "symbol")
     oikey = col("openinterest", "openint", "oi")
     if not symkey or not oikey:
-        return {"status": "UNKNOWN_LAYOUT", "matched": 0}
+        # Only normalized *column names*, no OCC contracts or prices.
+        columns = [key for key in list(mapping)[:15] if len(key) <= 40]
+        return {"status": "UNKNOWN_LAYOUT", "matched": 0,
+                "safe_schema_column_names": columns}
     totals = {}
     count = 0
     for row in rows:
@@ -285,7 +288,9 @@ def occ_open_interest_snapshot(*, now: datetime, session: Any,
             watched=set(SYMBOLS),
         )
         if parsed["status"] != "HISTORICAL_DAILY_AGGREGATE":
-            return {**base, "status": parsed["status"]}
+            return {**base, "status": parsed["status"],
+                    "safe_schema_column_names": parsed.get(
+                        "safe_schema_column_names", [])}
         return {
             **base, "status": parsed["status"],
             "open_interest": parsed["watched_oi"],
