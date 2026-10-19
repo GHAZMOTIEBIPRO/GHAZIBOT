@@ -76,6 +76,25 @@ def _provider_family(provider: str) -> str:
     return name or "unknown"
 
 
+def optional_independent_eod_research(
+    ticker: str, *, end_date, key: str = "", licensed: bool = False, session=None,
+) -> dict[str, Any]:
+    """Internal shadow adapter; NEVER contributes live data or public prices.
+
+    An Individual Basic API key does not authorize non-display analytics.
+    Explicit licensed=True must reflect separate permission from provider.
+    """
+    from .optional_massive_research import fetch_eod, permission_state
+
+    state = permission_state(key=key, permitted=licensed)
+    if not state["enabled"]:
+        return {**state, "bars": []}
+    if session is None:
+        return fetch_eod(ticker, key=key, permitted=licensed, end_date=end_date)
+    return fetch_eod(ticker, key=key, permitted=licensed,
+                     end_date=end_date, session=session)
+
+
 def _source_tier(provider: str, freshness: str = "") -> str:
     text = f"{provider} {freshness}".lower()
     if any(token in text for token in ("sandbox", "delayed", "indicative", "unofficial", "may be delayed", "24h")):
