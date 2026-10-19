@@ -1,26 +1,32 @@
 {
   "schema": "ghazi.public_stock_outcomes.v1",
-  "generated_at": "2026-10-18T22:59:14.330412+00:00",
+  "generated_at": "2026-10-19T00:19:40.706978+00:00",
   "mode": "HISTORICAL_5M_OUTCOME_AUDIT",
   "source": "existing GHAZIBOT free Yahoo stock outcome auditor",
   "coverage": {
-    "records": 675,
-    "records_total": 685,
-    "eligible_records": 675,
-    "covered_60m": 439,
-    "decisive": 497,
+    "records": 689,
+    "records_total": 699,
+    "eligible_records": 689,
+    "covered_60m": 442,
+    "decisive": 503,
     "ambiguous": 0,
     "non_decisive": 55,
-    "pending": 123,
+    "pending": 131,
     "unavailable": 0,
     "invalid_session": 10,
-    "independent_60m_sessions": 25
+    "independent_60m_sessions": 26
   },
   "promotion_gate": {
     "coverage_ready": false,
     "minimum_independent_sessions": 10,
     "minimum_60m_coverage_pct": 90.0,
     "live_promotion_allowed": false
+  },
+  "close_time_integrity": {
+    "verified_version_2_records": 41,
+    "legacy_or_unreverified_records": 648,
+    "rule": "only completed provider 5m candles; observation at bar close",
+    "historical_legacy_not_reclassified_as_verified": true
   },
   "proven_edge": false,
   "verified_win_rate_pct": null,
