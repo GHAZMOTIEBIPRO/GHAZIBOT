@@ -143,7 +143,7 @@ def test_occ_csv_and_one_daily_download_are_context_only():
     assert sum("theocc.com" in entry[0] for entry in cli.calls) == 1
     occ_calls = [entry for entry in cli.calls if "theocc.com" in entry[0]]
     assert occ_calls[0][1] == {
-        "dailyDate": "10/16/2026", "action": "download", "format": "csv",
+        "reportDate": "10/16/2026", "action": "download", "format": "csv",
     }
 
 
