@@ -31,6 +31,35 @@ publish raw licensed quote content publicly.
 provider; even same NY session agreement must be reviewed around splits.
 Live option recommendation logic is not changed.
 
+## Available optional free-account private probe (2026-10-19)
+
+A single manual GitHub Action, `.github/workflows/alpaca-private-probe.yml`, checks historical
+Alpaca IEX stock bars and, optionally, **historical option aggregate bars** older
+than the current UTC calendar day. This is based on Alpaca's documented Basic
+history access; **indicative quotes are not OPRA NBBO**. No keys or source
+prices are exposed to website users, and no bot alert is promoted.
+
+To run: supply your own `ALPACA_API_KEY` and `ALPACA_SECRET_KEY` in
+GitHub Secrets and set repository variable `ALPACA_INTERNAL_DATA_USE_AUTHORIZED=true`
+only if the connected account's terms actually permit this internal research use.
+Otherwise the workflow reports `DATA_USE_PERMISSION_REQUIRED` and makes
+**zero requests**. Historical options are reported as close-to-close *observations*,
+never actual fills or realized returns. The manually dispatched workflow emits
+only availability and verified-bounds metadata in private logs.
+
+For SEC, `build_sec_filing_pulse.py --local-cik-map app/data/sec_cik_map.json`
+lets an existing checked-in CIK map **nominate** issuer IDs only if the
+official SEC ticker index or optional mirror is unavailable. The live SEC
+`submissions/CIK...` response must verify both ticker and CIK before any
+new official filing is published. An HTTP 403 or active cooldown remains
+`UNAVAILABLE`, not an empty/positive issuer filing list. Follow SEC fair-access
+requirements and contact the SEC webmaster for persistent blocks.
+
+The Walk-Forward research report now includes counts of 60-minute
+observations unavailable due to no post-signal bars, pending evaluation,
+or other incomplete observations. These counts **never** modify the 90%
+coverage gate, historical outcomes or claimed accuracy.
+
 References:
 - https://docs.alpaca.markets/us/docs/about-market-data-api
 - https://docs.alpaca.markets/us/docs/market-data-faq
