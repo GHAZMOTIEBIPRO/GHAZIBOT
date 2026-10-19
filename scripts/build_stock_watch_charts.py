@@ -20,8 +20,10 @@ from options_radar.stock_watch_confluence import price_confluence_shadow
 from scripts.build_index_chart_snapshot import pack_bars
 from scripts.build_index_context import (
     NY,
+    bar_minutes,
     clean_bars,
     completed_daily,
+    four_hour_from_quarters,
     hourly_from_quarters,
     last_finished_five_min,
     last_finished_intraday,
@@ -248,7 +250,8 @@ def pack_symbol(
     clean_5 = (last_finished_five_min(clean_bars(minute5_raw, intraday=True), now)
                if needs_5m else pd.DataFrame())
     sessions = {"1d": clean_day, "15m": clean_15,
-                "1h": hourly_from_quarters(clean_15)}
+                "1h": hourly_from_quarters(clean_15),
+                "4h": four_hour_from_quarters(clean_15)}
     if needs_5m:
         sessions["5m"] = clean_5
     frame_out = {}
@@ -262,12 +265,13 @@ def pack_symbol(
         age = ((now - last.to_pydatetime().astimezone(timezone.utc)).total_seconds()/60
                if unit != "1d" else None)
         same = unit != "1d" and last.date() == now_ny.date()
-        complete_age = age - 60 if unit == "1h" and age is not None else age
+        complete_age = (age - bar_minutes(last, unit)
+                        if unit in ("1h", "4h") and age is not None else age)
         if unit == "1d":
             session_age_days = (now_ny.date() - last.date()).days
             source_recent = 0 <= session_age_days <= MAX_SOURCE_BAR_AGE_DAYS
         else:
-            closed_age_minutes = age - {"1h": 60, "15m": 15, "5m": 5}[unit]
+            closed_age_minutes = age - bar_minutes(last, unit)
             source_recent = (-5 <= closed_age_minutes
                              <= MAX_SOURCE_BAR_AGE_DAYS * 24 * 60)
         any_recent_source_bar = any_recent_source_bar or source_recent
@@ -277,11 +281,13 @@ def pack_symbol(
                                            else last.date().isoformat()),
             "current_session_confirmed": bool(
                 same and complete_age is not None and
-                0 <= complete_age <= (20 if unit == "5m" else 45)
+                0 <= complete_age <= (20 if unit == "5m" else 240 if unit == "4h" else 45)
             ),
-            "technical": technical(frame, fast=9 if unit in ("5m", "1h") else 20,
-                                   slow=21 if unit in ("5m", "1h") else 50),
-            "derived_from": ("four_completed_15m_yahoo_bars" if unit == "1h" else None),
+            "technical": technical(frame, fast=9 if unit in ("5m", "1h", "4h") else 20,
+                                   slow=21 if unit in ("5m", "1h", "4h") else 50),
+            "derived_from": ("four_completed_15m_yahoo_bars" if unit == "1h"
+                             else "session_aligned_completed_15m_yahoo_bars" if unit == "4h"
+                             else None),
             "research_only": True,
             "source_recency_verified": source_recent,
         }
