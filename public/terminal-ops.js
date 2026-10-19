@@ -34,6 +34,7 @@
     audit:["تدقيق النتائج",1440],
     structural:["رصد الأسهم الصغيرة",1440],
     explosion:["رادار الانفجار المبكر",45],
+    classical:["الاتجاه الكلاسيكي",45],
     strength:["مؤشر قوة الأدلة",1440],
   };
   const parse=value=>{const t=Date.parse(value||"");return Number.isFinite(t)?t:null;};

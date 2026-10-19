@@ -175,3 +175,28 @@ def test_sender_never_sends_wait(monkeypatch):
     payload = {"path": "classical_direction", "signals": [{"symbol": "AAPL", "decision": "WAIT"}]}
     assert sender.send(payload, {"sent": {}}) == 0
     assert sent == []
+
+
+def test_targets_come_from_levels_beyond_price_or_measured_moves():
+    from options_radar.classical_stock_direction import _targets
+
+    levels = [90.0, 95.0, 104.0, 110.0]
+    call = _targets("CALL", 100.0, 96.0, levels)
+    assert call == {"t1": 104.0, "t2": 110.0, "risk_per_share": 4.0, "t1_reward_to_risk": 1.0}
+    put = _targets("PUT", 100.0, 103.0, levels)
+    assert (put["t1"], put["t2"]) == (95.0, 90.0)
+    # No level beyond price: 1R / 2R measured move.
+    bare = _targets("CALL", 100.0, 96.0, [90.0])
+    assert (bare["t1"], bare["t2"]) == (104.0, 108.0)
+    assert _targets("WAIT", 100.0, 96.0, levels) is None
+    assert _targets("CALL", 100.0, 101.0, levels) is None  # invalidation above price
+    assert _targets("CALL", 100.0, None, levels) is None
+
+
+def test_every_direction_carries_three_scenarios_and_no_indicator_inputs():
+    row = build_direction("AAPL", _frame(), _frame(count=180), _frame(count=180)).as_dict()
+    assert len(row["scenarios_ar"]) == 3
+    if row["decision"] == "WAIT":
+        assert row["targets"] is None
+    else:
+        assert row["targets"]["t1_reward_to_risk"] > 0

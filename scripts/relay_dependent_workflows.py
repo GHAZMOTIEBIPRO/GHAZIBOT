@@ -82,6 +82,9 @@ RELAYS: tuple[Relay, ...] = (
     Relay("stock-watch-charts.yml", None, (
         Target(STRENGTH),
     )),
+    Relay("classical-direction-radar.yml", "classical-direction-radar", (
+        Target("publish-classical-direction.yml"),
+    )),
     Relay("official-sec-pulse.yml", None, (
         Target(STRENGTH),
     )),
