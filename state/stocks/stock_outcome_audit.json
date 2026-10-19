@@ -2056,7 +2056,7 @@
       "research_features": {
         "version": "OPEN_SOURCE_ATTRIBUTION_V1",
         "asof_signal_time": "2026-08-13T13:06:27.623283+00:00",
-        "completed_daily_bars": 455,
+        "completed_daily_bars": 0,
         "decision_authority": false,
         "live_alert_weights_changed": false,
         "sec": {
@@ -2108,41 +2108,17 @@
           "decision_authority": false
         },
         "chart": {
-          "available": true,
-          "direction_alignment": false,
-          "breakout_alignment": false,
-          "bullish_stack": false,
-          "bearish_stack": true,
-          "completed_bar_date": "2026-08-12",
-          "close": 0.522,
-          "ema9": 0.626344,
-          "ema21": 1.144971,
-          "ema50": 1.778586,
-          "prior_high_20": 2.34,
-          "prior_low_20": 0.161
+          "available": false,
+          "direction_alignment": null,
+          "reason": "insufficient_completed_daily_bars"
         },
         "smc": {
-          "available": true,
-          "direction_alignment": false,
-          "fvg_side": "bearish",
-          "last_confirmed_fvg": {
-            "index": 446,
-            "FVG": -1.0,
-            "Top": 1.0099999904632568,
-            "Bottom": 0.44999998807907104,
-            "MitigatedIndex": 452.0
-          },
-          "last_confirmed_swing": {
-            "index": 423,
-            "HighLow": 1.0,
-            "Level": 3.690000057220459
-          },
-          "swing_confirmation_lag_bars": 20,
-          "fvg_confirmation_lag_bars": 1,
-          "live_decision_authority": false
+          "available": false,
+          "direction_alignment": null,
+          "reason": "ValueError: OHLC history is empty"
         },
         "aligned_evidence_count": 0,
-        "available_evidence_count": 2
+        "available_evidence_count": 0
       }
     },
     "aedaa85bd6d111f83783": {
@@ -45516,33 +45492,36 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-13T03:00:06.266052+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-14T20:10:49.618451+00:00",
-          "observed_at": "2026-08-17T13:30:00+00:00",
-          "lag_minutes": 3919.17,
+          "observed_at": "2026-09-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-24T13:30:00+00:00",
+          "lag_minutes": 58644.17,
           "coverage_qualified": false,
-          "price": 4.025,
-          "directional_return_pct": 3.2051,
+          "price": 4.21,
+          "directional_return_pct": 7.9487,
           "price_field": "close"
         },
         "60m": {
           "target_at": "2026-08-14T20:55:49.618451+00:00",
-          "observed_at": "2026-08-17T13:30:00+00:00",
-          "lag_minutes": 3874.17,
+          "observed_at": "2026-09-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-24T13:30:00+00:00",
+          "lag_minutes": 58599.17,
           "coverage_qualified": false,
-          "price": 4.025,
-          "directional_return_pct": 3.2051,
+          "price": 4.21,
+          "directional_return_pct": 7.9487,
           "price_field": "close"
         },
         "1d": {
           "target_at": "2026-08-15T19:55:49.618451+00:00",
-          "observed_at": "2026-08-17T13:30:00+00:00",
-          "lag_minutes": 2494.17,
+          "observed_at": "2026-09-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-24T13:30:00+00:00",
+          "lag_minutes": 57219.17,
           "coverage_qualified": false,
-          "price": 4.025,
-          "directional_return_pct": 3.2051,
+          "price": 4.21,
+          "directional_return_pct": 7.9487,
           "price_field": "close"
         }
       },
@@ -45555,16 +45534,19 @@
       "audit_mae_pct": 0.0,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 8,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 9,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
       "signal_session_date": "2026-08-14",
@@ -45658,10 +45640,7 @@
         },
         "aligned_evidence_count": 1,
         "available_evidence_count": 2
-      },
-      "audit_recovery_state": "provider_5m_retention_exceeded",
-      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window.",
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:JDZG failed across all providers: yahoo: empty response"
+      }
     },
     "bddccef819acceb72349": {
       "signal_id": "bddccef819acceb72349",
@@ -47587,33 +47566,36 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-13T03:00:06.266052+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-14T20:42:29.999856+00:00",
-          "observed_at": "2026-08-17T13:30:00+00:00",
-          "lag_minutes": 3887.5,
+          "observed_at": "2026-08-25T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-25T13:30:00+00:00",
+          "lag_minutes": 15412.5,
           "coverage_qualified": false,
-          "price": 1.7388,
-          "directional_return_pct": -1.2045,
+          "price": 1.33,
+          "directional_return_pct": -24.4318,
           "price_field": "close"
         },
         "60m": {
           "target_at": "2026-08-14T21:27:29.999856+00:00",
-          "observed_at": "2026-08-17T13:30:00+00:00",
-          "lag_minutes": 3842.5,
+          "observed_at": "2026-08-25T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-25T13:30:00+00:00",
+          "lag_minutes": 15367.5,
           "coverage_qualified": false,
-          "price": 1.7388,
-          "directional_return_pct": -1.2045,
+          "price": 1.33,
+          "directional_return_pct": -24.4318,
           "price_field": "close"
         },
         "1d": {
           "target_at": "2026-08-15T20:27:29.999856+00:00",
-          "observed_at": "2026-08-17T13:30:00+00:00",
-          "lag_minutes": 2462.5,
+          "observed_at": "2026-08-25T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-25T13:30:00+00:00",
+          "lag_minutes": 13987.5,
           "coverage_qualified": false,
-          "price": 1.7388,
-          "directional_return_pct": -1.2045,
+          "price": 1.33,
+          "directional_return_pct": -24.4318,
           "price_field": "close"
         }
       },
@@ -47626,16 +47608,19 @@
       "audit_mae_pct": 0.0,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 8,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 9,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-14",
@@ -47729,10 +47714,7 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      },
-      "audit_recovery_state": "provider_5m_retention_exceeded",
-      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window.",
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:STAK failed across all providers: yahoo: empty response"
+      }
     },
     "f68f6586bd3cc883088e": {
       "signal_id": "f68f6586bd3cc883088e",
@@ -75616,12 +75598,14 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
-      "signal_session_date": "2026-08-21"
+      "signal_session_date": "2026-08-21",
+      "audit_recovery_state": "preserved_prior_verified_checkpoint",
+      "audit_recovery_note": "New provider result lacked an earlier verified completed-bar checkpoint; prior immutable observation retained."
     },
     "f08fd303cc8d8e74e68e": {
       "signal_id": "f08fd303cc8d8e74e68e",
@@ -76404,9 +76388,9 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 9,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 10,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
       "signal_session_date": "2026-08-21",
@@ -76501,9 +76485,8 @@
         "aligned_evidence_count": 1,
         "available_evidence_count": 2
       },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:NCI failed across all providers: yahoo: empty response",
-      "audit_recovery_state": "provider_5m_retention_exceeded",
-      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
+      "audit_recovery_state": "preserved_prior_verified_checkpoint",
+      "audit_recovery_note": "New provider result lacked an earlier verified completed-bar checkpoint; prior immutable observation retained."
     },
     "3e3506b02942c1388058": {
       "signal_id": "3e3506b02942c1388058",
@@ -78443,12 +78426,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-18T10:39:52.661121+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-24T09:14:41.965511+00:00",
-          "observed_at": "2026-08-24T13:30:00+00:00",
-          "lag_minutes": 255.3,
+          "observed_at": "2026-08-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-24T13:30:00+00:00",
+          "lag_minutes": 260.3,
           "coverage_qualified": false,
           "price": 2.9325,
           "directional_return_pct": -0.9291,
@@ -78456,8 +78440,9 @@
         },
         "60m": {
           "target_at": "2026-08-24T09:59:41.965511+00:00",
-          "observed_at": "2026-08-24T13:30:00+00:00",
-          "lag_minutes": 210.3,
+          "observed_at": "2026-08-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-24T13:30:00+00:00",
+          "lag_minutes": 215.3,
           "coverage_qualified": false,
           "price": 2.9325,
           "directional_return_pct": -0.9291,
@@ -78465,8 +78450,9 @@
         },
         "1d": {
           "target_at": "2026-08-25T08:59:41.965511+00:00",
-          "observed_at": "2026-08-25T13:30:00+00:00",
-          "lag_minutes": 270.3,
+          "observed_at": "2026-08-25T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-25T13:30:00+00:00",
+          "lag_minutes": 275.3,
           "coverage_qualified": false,
           "price": 2.955,
           "directional_return_pct": -0.1689,
@@ -78482,16 +78468,19 @@
       "audit_mae_pct": -3.0608,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 2,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 3,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-24",
@@ -78585,8 +78574,7 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:FEMY failed across all providers: yahoo: empty response"
+      }
     },
     "5cf85d6a122e2c6b616c": {
       "signal_id": "5cf85d6a122e2c6b616c",
@@ -82624,7 +82612,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-24T17:13:53.327012+00:00",
@@ -82676,8 +82664,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -84526,7 +84514,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-25T09:09:32.956012+00:00",
@@ -84578,8 +84566,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -84622,12 +84610,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-13T03:00:06.266052+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-25T09:09:32.956012+00:00",
-          "observed_at": "2026-08-25T13:30:00+00:00",
-          "lag_minutes": 260.45,
+          "observed_at": "2026-08-25T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-25T13:30:00+00:00",
+          "lag_minutes": 265.45,
           "coverage_qualified": false,
           "price": 1.33,
           "directional_return_pct": 0.0,
@@ -84635,8 +84624,9 @@
         },
         "60m": {
           "target_at": "2026-08-25T09:54:32.956012+00:00",
-          "observed_at": "2026-08-25T13:30:00+00:00",
-          "lag_minutes": 215.45,
+          "observed_at": "2026-08-25T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-25T13:30:00+00:00",
+          "lag_minutes": 220.45,
           "coverage_qualified": false,
           "price": 1.33,
           "directional_return_pct": 0.0,
@@ -84644,8 +84634,9 @@
         },
         "1d": {
           "target_at": "2026-08-26T08:54:32.956012+00:00",
-          "observed_at": "2026-08-26T13:30:00+00:00",
-          "lag_minutes": 275.45,
+          "observed_at": "2026-08-26T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-26T13:30:00+00:00",
+          "lag_minutes": 280.45,
           "coverage_qualified": false,
           "price": 1.28,
           "directional_return_pct": -3.7594,
@@ -84661,16 +84652,19 @@
       "audit_mae_pct": -2.2556,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 8,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 9,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-25",
@@ -84764,8 +84758,7 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:STAK failed across all providers: yahoo: empty response"
+      }
     },
     "5d2afddb165e013b3a61": {
       "signal_id": "5d2afddb165e013b3a61",
@@ -90068,7 +90061,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-25T20:54:32.408672+00:00",
@@ -90120,8 +90113,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -90329,12 +90322,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-16T00:19:29.929691+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-25T20:54:32.408672+00:00",
-          "observed_at": "2026-08-26T13:30:00+00:00",
-          "lag_minutes": 995.46,
+          "observed_at": "2026-08-26T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-26T13:30:00+00:00",
+          "lag_minutes": 1000.46,
           "coverage_qualified": false,
           "price": 1.036,
           "directional_return_pct": -0.3846,
@@ -90342,8 +90336,9 @@
         },
         "60m": {
           "target_at": "2026-08-25T21:39:32.408672+00:00",
-          "observed_at": "2026-08-26T13:30:00+00:00",
-          "lag_minutes": 950.46,
+          "observed_at": "2026-08-26T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-26T13:30:00+00:00",
+          "lag_minutes": 955.46,
           "coverage_qualified": false,
           "price": 1.036,
           "directional_return_pct": -0.3846,
@@ -90351,8 +90346,9 @@
         },
         "1d": {
           "target_at": "2026-08-26T20:39:32.408672+00:00",
-          "observed_at": "2026-08-27T13:30:00+00:00",
-          "lag_minutes": 1010.46,
+          "observed_at": "2026-08-27T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-27T13:30:00+00:00",
+          "lag_minutes": 1015.46,
           "coverage_qualified": false,
           "price": 1.05,
           "directional_return_pct": 0.9615,
@@ -90368,16 +90364,19 @@
       "audit_mae_pct": -2.8846,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 4,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 5,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-25",
@@ -90471,8 +90470,7 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:ADCT failed across all providers: yahoo: empty response"
+      }
     },
     "c1d02f8bafed43a70343": {
       "signal_id": "c1d02f8bafed43a70343",
@@ -90696,12 +90694,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-25T22:07:47.942862+00:00",
-          "observed_at": "2026-08-26T13:30:00+00:00",
-          "lag_minutes": 922.2,
+          "observed_at": "2026-08-26T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-26T13:30:00+00:00",
+          "lag_minutes": 927.2,
           "coverage_qualified": false,
           "price": 3.98,
           "directional_return_pct": -2.9268,
@@ -90709,8 +90708,9 @@
         },
         "60m": {
           "target_at": "2026-08-25T22:52:47.942862+00:00",
-          "observed_at": "2026-08-26T13:30:00+00:00",
-          "lag_minutes": 877.2,
+          "observed_at": "2026-08-26T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-26T13:30:00+00:00",
+          "lag_minutes": 882.2,
           "coverage_qualified": false,
           "price": 3.98,
           "directional_return_pct": -2.9268,
@@ -90718,8 +90718,9 @@
         },
         "1d": {
           "target_at": "2026-08-26T21:52:47.942862+00:00",
-          "observed_at": "2026-08-27T13:30:00+00:00",
-          "lag_minutes": 937.2,
+          "observed_at": "2026-08-27T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-27T13:30:00+00:00",
+          "lag_minutes": 942.2,
           "coverage_qualified": false,
           "price": 3.9867,
           "directional_return_pct": -2.7634,
@@ -90735,16 +90736,19 @@
       "audit_mae_pct": -4.878,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 3,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 4,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-25",
@@ -90838,8 +90842,7 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:ELPW failed across all providers: yahoo: empty response"
+      }
     },
     "82c5f9853b90d0d0941e": {
       "signal_id": "82c5f9853b90d0d0941e",
@@ -91043,12 +91046,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-17T00:22:45.963531+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-26T09:11:34.373657+00:00",
-          "observed_at": "2026-08-26T13:30:00+00:00",
-          "lag_minutes": 258.43,
+          "observed_at": "2026-08-26T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-26T13:30:00+00:00",
+          "lag_minutes": 263.43,
           "coverage_qualified": false,
           "price": 3.98,
           "directional_return_pct": -2.9268,
@@ -91056,8 +91060,9 @@
         },
         "60m": {
           "target_at": "2026-08-26T09:56:34.373657+00:00",
-          "observed_at": "2026-08-26T13:30:00+00:00",
-          "lag_minutes": 213.43,
+          "observed_at": "2026-08-26T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-26T13:30:00+00:00",
+          "lag_minutes": 218.43,
           "coverage_qualified": false,
           "price": 3.98,
           "directional_return_pct": -2.9268,
@@ -91065,8 +91070,9 @@
         },
         "1d": {
           "target_at": "2026-08-27T08:56:34.373657+00:00",
-          "observed_at": "2026-08-27T13:30:00+00:00",
-          "lag_minutes": 273.43,
+          "observed_at": "2026-08-27T13:35:00+00:00",
+          "source_bar_start_at": "2026-08-27T13:30:00+00:00",
+          "lag_minutes": 278.43,
           "coverage_qualified": false,
           "price": 3.9867,
           "directional_return_pct": -2.7634,
@@ -91082,16 +91088,19 @@
       "audit_mae_pct": -4.878,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 3,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 4,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-08-26",
@@ -91185,8 +91194,7 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:ELPW failed across all providers: yahoo: empty response"
+      }
     },
     "a7a900eefd00a15ded0b": {
       "signal_id": "a7a900eefd00a15ded0b",
@@ -95135,7 +95143,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-08-28T20:26:20.548811+00:00",
@@ -95187,8 +95195,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -97555,7 +97563,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-02T13:00:02.066450+00:00",
@@ -97607,8 +97615,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -97651,7 +97659,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-02T13:00:02.066450+00:00",
@@ -97703,8 +97711,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -98786,7 +98794,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-03T13:03:02.554751+00:00",
@@ -98838,8 +98846,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -100593,7 +100601,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T12:56:56.300244+00:00",
@@ -100645,8 +100653,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -100780,7 +100788,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T16:53:06.328664+00:00",
@@ -100832,8 +100840,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -101117,6 +101125,7 @@
       "cause_accession": null,
       "cause_observed_at": null,
       "cause_point_in_time_frozen": false,
+      "time_normalized_rvol_entry": {},
       "microcap_hunter_entry": {},
       "sec_dilution_v2_entry": {},
       "follow_through_target_pct": 8.0,
@@ -101131,12 +101140,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-10T20:24:03.242932+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T21:40:01.147466+00:00",
-          "observed_at": "2026-09-08T13:30:00+00:00",
-          "lag_minutes": 5269.98,
+          "observed_at": "2026-09-08T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-08T13:30:00+00:00",
+          "lag_minutes": 5274.98,
           "coverage_qualified": false,
           "price": 1.4,
           "directional_return_pct": -5.4054,
@@ -101144,8 +101154,9 @@
         },
         "60m": {
           "target_at": "2026-09-04T22:25:01.147466+00:00",
-          "observed_at": "2026-09-08T13:30:00+00:00",
-          "lag_minutes": 5224.98,
+          "observed_at": "2026-09-08T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-08T13:30:00+00:00",
+          "lag_minutes": 5229.98,
           "coverage_qualified": false,
           "price": 1.4,
           "directional_return_pct": -5.4054,
@@ -101153,8 +101164,9 @@
         },
         "1d": {
           "target_at": "2026-09-05T21:25:01.147466+00:00",
-          "observed_at": "2026-09-08T13:30:00+00:00",
-          "lag_minutes": 3844.98,
+          "observed_at": "2026-09-08T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-08T13:30:00+00:00",
+          "lag_minutes": 3849.98,
           "coverage_qualified": false,
           "price": 1.4,
           "directional_return_pct": -5.4054,
@@ -101170,16 +101182,19 @@
       "audit_mae_pct": 0.0,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 9,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 10,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-09-04",
@@ -101273,8 +101288,7 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:KSCP failed across all providers: yahoo: empty response"
+      }
     },
     "c1c553387aca8bb1ec34": {
       "signal_id": "c1c553387aca8bb1ec34",
@@ -101313,7 +101327,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T21:40:01.147466+00:00",
@@ -101365,8 +101379,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -101409,7 +101423,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-04T21:40:01.147466+00:00",
@@ -101461,8 +101475,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -102259,7 +102273,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-21T22:30:39.523466+00:00",
@@ -102311,8 +102325,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -102541,7 +102555,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-21T22:30:39.523466+00:00",
@@ -102593,8 +102607,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -103719,6 +103733,7 @@
       "cause_accession": null,
       "cause_observed_at": null,
       "cause_point_in_time_frozen": false,
+      "time_normalized_rvol_entry": {},
       "microcap_hunter_entry": {},
       "sec_dilution_v2_entry": {},
       "follow_through_target_pct": 8.0,
@@ -103733,12 +103748,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-10T20:24:03.242932+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-22T20:46:23.863938+00:00",
-          "observed_at": "2026-09-23T13:30:00+00:00",
-          "lag_minutes": 1003.6,
+          "observed_at": "2026-09-23T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-23T13:30:00+00:00",
+          "lag_minutes": 1008.6,
           "coverage_qualified": false,
           "price": 14.35,
           "directional_return_pct": 0.2795,
@@ -103746,8 +103762,9 @@
         },
         "60m": {
           "target_at": "2026-09-22T21:31:23.863938+00:00",
-          "observed_at": "2026-09-23T13:30:00+00:00",
-          "lag_minutes": 958.6,
+          "observed_at": "2026-09-23T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-23T13:30:00+00:00",
+          "lag_minutes": 963.6,
           "coverage_qualified": false,
           "price": 14.35,
           "directional_return_pct": 0.2795,
@@ -103755,8 +103772,9 @@
         },
         "1d": {
           "target_at": "2026-09-23T20:31:23.863938+00:00",
-          "observed_at": "2026-09-24T13:30:00+00:00",
-          "lag_minutes": 1018.6,
+          "observed_at": "2026-09-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-24T13:30:00+00:00",
+          "lag_minutes": 1023.6,
           "coverage_qualified": false,
           "price": 14.68,
           "directional_return_pct": 2.5856,
@@ -103772,16 +103790,19 @@
       "audit_mae_pct": -0.1398,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 9,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 10,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-09-22",
@@ -103875,8 +103896,7 @@
         },
         "aligned_evidence_count": 2,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:NCI failed across all providers: yahoo: empty response"
+      }
     },
     "9fb50b406958786473dd": {
       "signal_id": "9fb50b406958786473dd",
@@ -103915,7 +103935,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-22T23:31:13.108200+00:00",
@@ -103967,8 +103987,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -104176,7 +104196,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-22T23:31:13.108200+00:00",
@@ -104228,8 +104248,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -106619,7 +106639,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-23T21:00:48.585909+00:00",
@@ -106671,8 +106691,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -106806,12 +106826,13 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-13T03:00:06.266052+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-23T21:00:48.585909+00:00",
-          "observed_at": "2026-09-24T13:30:00+00:00",
-          "lag_minutes": 989.19,
+          "observed_at": "2026-09-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-24T13:30:00+00:00",
+          "lag_minutes": 994.19,
           "coverage_qualified": false,
           "price": 4.21,
           "directional_return_pct": 1.6908,
@@ -106819,8 +106840,9 @@
         },
         "60m": {
           "target_at": "2026-09-23T21:45:48.585909+00:00",
-          "observed_at": "2026-09-24T13:30:00+00:00",
-          "lag_minutes": 944.19,
+          "observed_at": "2026-09-24T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-24T13:30:00+00:00",
+          "lag_minutes": 949.19,
           "coverage_qualified": false,
           "price": 4.21,
           "directional_return_pct": 1.6908,
@@ -106828,8 +106850,9 @@
         },
         "1d": {
           "target_at": "2026-09-24T20:45:48.585909+00:00",
-          "observed_at": "2026-09-25T13:30:00+00:00",
-          "lag_minutes": 1004.19,
+          "observed_at": "2026-09-25T13:35:00+00:00",
+          "source_bar_start_at": "2026-09-25T13:30:00+00:00",
+          "lag_minutes": 1009.19,
           "coverage_qualified": false,
           "price": 4.2601,
           "directional_return_pct": 2.901,
@@ -106845,16 +106868,19 @@
       "audit_mae_pct": -1.2077,
       "snapshot_discrepancy": false,
       "measurement_policy": {
-        "checkpoint_price": "first 5m close at/after target time within tolerance",
-        "terminal_touch": "chronological 5m high/low touch",
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
         "same_bar_target_stop": "ambiguous",
         "pre_signal_bar_excluded": true,
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 8,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_result": "fetch_error",
+      "audit_attempt_count": 9,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-09-23",
@@ -106948,8 +106974,7 @@
         },
         "aligned_evidence_count": 1,
         "available_evidence_count": 2
-      },
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:JDZG failed across all providers: yahoo: empty response"
+      }
     },
     "8e78ab9239170512d324": {
       "signal_id": "8e78ab9239170512d324",
@@ -108538,7 +108563,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-25T21:24:15.404230+00:00",
@@ -108590,8 +108615,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -108634,7 +108659,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-09-25T21:24:15.404230+00:00",
@@ -108686,8 +108711,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -111173,7 +111198,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T14:53:26.766876+00:00",
@@ -111225,8 +111250,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -111269,7 +111294,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T14:53:26.766876+00:00",
@@ -111321,8 +111346,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -111365,7 +111390,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T14:53:26.766876+00:00",
@@ -111417,8 +111442,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -111638,7 +111663,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-02T22:23:03.266473+00:00",
@@ -111690,8 +111715,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -112227,7 +112252,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-16T12:01:46.110114+00:00",
@@ -112269,8 +112294,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -112347,17 +112372,69 @@
       "snapshot_terminal_outcome": "open",
       "snapshot_terminal_reason": null,
       "snapshot_terminal_at": null,
-      "audit_status": "pending",
-      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_status": "failed",
+      "audit_source": "yahoo | multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
       "audit_interval": "5m",
       "decision_authority": false,
-      "audit_attempt_count": 1,
-      "audit_last_attempt_result": "fetch_error",
+      "audit_reason": "stop_touched_first_in_observed_5m_sequence",
+      "audit_terminal_at": "2026-10-16T16:45:00+00:00",
+      "audit_terminal_bar": {
+        "bar_start_at": "2026-10-16T16:40:00+00:00",
+        "bar_end_at": "2026-10-16T16:45:00+00:00",
+        "touch_time_precision": "UNKNOWN_WITHIN_5M_CANDLE",
+        "open": 1.515,
+        "high": 1.52,
+        "low": 1.5,
+        "close": 1.5131
+      },
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
+      "checkpoints": {
+        "15m": {
+          "target_at": "2026-10-16T12:01:46.110114+00:00",
+          "observed_at": "2026-10-16T13:35:00+00:00",
+          "source_bar_start_at": "2026-10-16T13:30:00+00:00",
+          "lag_minutes": 93.23,
+          "coverage_qualified": false,
+          "price": 1.5399,
+          "directional_return_pct": -2.538,
+          "price_field": "close"
+        },
+        "60m": {
+          "target_at": "2026-10-16T12:46:46.110114+00:00",
+          "observed_at": "2026-10-16T13:35:00+00:00",
+          "source_bar_start_at": "2026-10-16T13:30:00+00:00",
+          "lag_minutes": 48.23,
+          "coverage_qualified": false,
+          "price": 1.5399,
+          "directional_return_pct": -2.538,
+          "price_field": "close"
+        }
+      },
+      "coverage": {
+        "15m": false,
+        "60m": false,
+        "1d": false
+      },
+      "audit_mfe_pct": 2.5316,
+      "audit_mae_pct": -6.3291,
+      "snapshot_discrepancy": false,
+      "measurement_policy": {
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
+        "same_bar_target_stop": "ambiguous",
+        "pre_signal_bar_excluded": true,
+        "intrabar_order_claimed": false,
+        "one_day_max_lag_minutes": 15
+      },
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-10-16",
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:QTEX failed across all providers: yahoo: empty response",
       "research_features": {
         "version": "OPEN_SOURCE_ATTRIBUTION_V1",
         "asof_signal_time": "2026-10-16T11:46:46.110114+00:00",
@@ -112528,7 +112605,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-16T12:01:46.110114+00:00",
@@ -112570,8 +112647,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
@@ -112648,17 +112725,69 @@
       "snapshot_terminal_outcome": "open",
       "snapshot_terminal_reason": null,
       "snapshot_terminal_at": null,
-      "audit_status": "pending",
-      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_status": "failed",
+      "audit_source": "yahoo | multi-source validation (1 sources); base=yahoo; unofficial fallback; may be delayed",
       "audit_interval": "5m",
       "decision_authority": false,
-      "audit_attempt_count": 1,
-      "audit_last_attempt_result": "fetch_error",
+      "audit_reason": "stop_touched_first_in_observed_5m_sequence",
+      "audit_terminal_at": "2026-10-16T18:05:00+00:00",
+      "audit_terminal_bar": {
+        "bar_start_at": "2026-10-16T18:00:00+00:00",
+        "bar_end_at": "2026-10-16T18:05:00+00:00",
+        "touch_time_precision": "UNKNOWN_WITHIN_5M_CANDLE",
+        "open": 1.1795,
+        "high": 1.1795,
+        "low": 1.165,
+        "close": 1.165
+      },
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
+      "checkpoints": {
+        "15m": {
+          "target_at": "2026-10-16T12:01:46.110114+00:00",
+          "observed_at": "2026-10-16T13:35:00+00:00",
+          "source_bar_start_at": "2026-10-16T13:30:00+00:00",
+          "lag_minutes": 93.23,
+          "coverage_qualified": false,
+          "price": 1.24,
+          "directional_return_pct": 0.813,
+          "price_field": "close"
+        },
+        "60m": {
+          "target_at": "2026-10-16T12:46:46.110114+00:00",
+          "observed_at": "2026-10-16T13:35:00+00:00",
+          "source_bar_start_at": "2026-10-16T13:30:00+00:00",
+          "lag_minutes": 48.23,
+          "coverage_qualified": false,
+          "price": 1.24,
+          "directional_return_pct": 0.813,
+          "price_field": "close"
+        }
+      },
+      "coverage": {
+        "15m": false,
+        "60m": false,
+        "1d": false
+      },
+      "audit_mfe_pct": 2.439,
+      "audit_mae_pct": -8.1301,
+      "snapshot_discrepancy": false,
+      "measurement_policy": {
+        "checkpoint_price": "first fully completed 5m close at/after checkpoint within tolerance",
+        "checkpoint_observation_clock": "bar_end_not_provider_bar_start",
+        "bar_completion_enforced_as_of": true,
+        "measurement_version": 2,
+        "terminal_touch": "chronological completed 5m high/low touch",
+        "same_bar_target_stop": "ambiguous",
+        "pre_signal_bar_excluded": true,
+        "intrabar_order_claimed": false,
+        "one_day_max_lag_minutes": 15
+      },
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-10-16",
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:MVIS failed across all providers: yahoo: empty response",
       "research_features": {
         "version": "OPEN_SOURCE_ATTRIBUTION_V1",
         "asof_signal_time": "2026-10-16T11:46:46.110114+00:00",
@@ -113507,7 +113636,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-16T15:51:46.407149+00:00",
@@ -113549,8 +113678,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -113634,7 +113763,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-16T15:51:46.407149+00:00",
@@ -113676,8 +113805,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -113761,7 +113890,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T00:18:47.895181+00:00",
+      "audited_at": "2026-10-19T10:05:46.958201+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-16T15:51:46.407149+00:00",
@@ -113803,8 +113932,8 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
@@ -114193,16 +114322,16 @@
       "audit_source": "yahoo/yfinance historical 5m research fallback",
       "audit_interval": "5m",
       "decision_authority": false,
-      "audit_attempt_count": 1,
+      "audit_attempt_count": 2,
       "audit_last_attempt_result": "fetch_error",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
       "signal_session_date": "2026-10-16",
-      "audit_last_attempt_at": "2026-10-19T00:18:47.895181+00:00",
-      "audit_last_attempt_error": "DataUnavailableError: stock_bars:LAW failed across all providers: yahoo: empty response"
+      "audit_last_attempt_at": "2026-10-19T10:05:46.958201+00:00",
+      "audit_last_attempt_error": "DataUnavailableError"
     }
   },
-  "updated_at": "2026-10-19T00:18:47.895181+00:00",
+  "updated_at": "2026-10-19T10:05:46.958201+00:00",
   "mode": "HISTORICAL_5M_OUTCOME_AUDIT",
   "decision_authority": false,
   "live_alert_weights_changed": false,
@@ -114219,10 +114348,10 @@
     "coverage_15m_pct": 66.76,
     "coverage_60m_pct": 64.15,
     "coverage_1d_pct": 36.14,
-    "decisive": 503,
+    "decisive": 505,
     "ambiguous": 0,
     "non_decisive": 55,
-    "pending": 131,
+    "pending": 129,
     "unavailable": 0,
     "snapshot_discrepancies": 22,
     "never_attempted": 0,
@@ -114256,18 +114385,9 @@
       "2026-10-16"
     ]
   },
-  "attempted_symbols_this_pass": 42,
+  "attempted_symbols_this_pass": 36,
   "errors": {
-    "MVIS": "DataUnavailableError: stock_bars:MVIS failed across all providers: yahoo: empty response",
-    "QTEX": "DataUnavailableError: stock_bars:QTEX failed across all providers: yahoo: empty response",
-    "LAW": "DataUnavailableError: stock_bars:LAW failed across all providers: yahoo: empty response",
-    "JDZG": "DataUnavailableError: stock_bars:JDZG failed across all providers: yahoo: empty response",
-    "NCI": "DataUnavailableError: stock_bars:NCI failed across all providers: yahoo: empty response",
-    "KSCP": "DataUnavailableError: stock_bars:KSCP failed across all providers: yahoo: empty response",
-    "ELPW": "DataUnavailableError: stock_bars:ELPW failed across all providers: yahoo: empty response",
-    "ADCT": "DataUnavailableError: stock_bars:ADCT failed across all providers: yahoo: empty response",
-    "STAK": "DataUnavailableError: stock_bars:STAK failed across all providers: yahoo: empty response",
-    "FEMY": "DataUnavailableError: stock_bars:FEMY failed across all providers: yahoo: empty response"
+    "LAW": "DataUnavailableError"
   },
   "promotion_gate": {
     "minimum_60m_coverage_pct": 90.0,
@@ -114294,7 +114414,7 @@
       "yahoo"
     ]
   },
-  "updated_records_this_pass": 41,
+  "updated_records_this_pass": 39,
   "durable_stock_state": {
     "attempted": true,
     "branch_available": true,
@@ -114319,20 +114439,11 @@
     "retry_cooldown_hours": 2,
     "maximum_symbols_per_pass": 160,
     "selected_symbols_this_pass": [
-      "GPUS",
-      "HELP",
+      "LAW",
       "LOVE",
       "MVIS",
       "PAR",
-      "PLAY",
       "QTEX",
-      "RYOJ",
-      "UNIT",
-      "ASTI",
-      "EDIT",
-      "JACK",
-      "RUN",
-      "LAW",
       "CHWM",
       "CLDI",
       "NCPL",
@@ -114353,6 +114464,9 @@
       "BTCS",
       "STAK",
       "FEMY",
+      "ASTI",
+      "EDIT",
+      "JACK",
       "ATOM",
       "PAYS",
       "GRML",
@@ -114362,7 +114476,10 @@
       "SMJF",
       "HHS"
     ],
-    "selected_symbol_count": 42,
+    "selected_symbol_count": 36,
+    "symbols_with_no_recoverable_intraday_window": 0,
+    "window_only_recoverable_unresolved_signals": true,
+    "preserve_prior_verified_checkpoints": true,
     "never_attempted_records_remaining": 0,
     "terminal_events_do_not_require_1d_to_leave_queue": true
   },
@@ -114463,16 +114580,16 @@
           "mean_60m_return_pct": -0.7424
         },
         "absent": {
-          "n": 278,
-          "success_rate": 0.4317,
-          "positive_60m_rate": 0.4892,
-          "mean_60m_return_pct": 1.6209
+          "n": 277,
+          "success_rate": 0.4296,
+          "positive_60m_rate": 0.4874,
+          "mean_60m_return_pct": 1.6048
         },
         "minimum_sample_each_side": 10,
-        "unknown_or_unavailable": 16,
+        "unknown_or_unavailable": 17,
         "sample_ready": true,
-        "success_rate_lift_pp": -5.43,
-        "mean_60m_return_lift_pct": -2.3633
+        "success_rate_lift_pp": -5.22,
+        "mean_60m_return_lift_pct": -2.3472
       },
       "smc_fvg_alignment": {
         "present": {
@@ -114482,16 +114599,16 @@
           "mean_60m_return_pct": 2.2387
         },
         "absent": {
-          "n": 165,
-          "success_rate": 0.4121,
-          "positive_60m_rate": 0.4424,
-          "mean_60m_return_pct": 0.1831
+          "n": 164,
+          "success_rate": 0.4085,
+          "positive_60m_rate": 0.439,
+          "mean_60m_return_pct": 0.1471
         },
         "minimum_sample_each_side": 10,
-        "unknown_or_unavailable": 15,
+        "unknown_or_unavailable": 16,
         "sample_ready": true,
-        "success_rate_lift_pp": 1.9,
-        "mean_60m_return_lift_pct": 2.0556
+        "success_rate_lift_pp": 2.26,
+        "mean_60m_return_lift_pct": 2.0916
       },
       "two_of_three_alignment": {
         "present": {
