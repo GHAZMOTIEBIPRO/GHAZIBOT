@@ -167,6 +167,20 @@ def apply_symbol_bars_fair(
         if not _needs_more_evidence(row):
             continue
         evaluated = evaluate_stock_event_from_bars(row, bars, now=now, source=source)
+        old_coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+        new_coverage = (evaluated.get("coverage")
+                        if isinstance(evaluated.get("coverage"), dict) else {})
+        # Intraday providers periodically remove old 5m bars. Never erase an
+        # earlier verified checkpoint when a later retry returns fewer bars.
+        # This is NOT positive imputation; it retains previously dated evidence.
+        if any(old_coverage.get(label) is True and new_coverage.get(label) is not True
+               for label in ("15m", "60m", "1d")):
+            row["audit_recovery_state"] = "preserved_prior_verified_checkpoint"
+            row["audit_recovery_note"] = (
+                "New provider result lacked an earlier verified completed-bar "
+                "checkpoint; prior immutable observation retained."
+            )
+            continue
         for key in (
             "snapshot_terminal_outcome",
             "snapshot_terminal_reason",
