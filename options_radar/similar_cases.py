@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime, timedelta, timezone
 from statistics import median
 from typing import Any
 
-
 MIN_SIMILAR_SAMPLE = 10
 DEFAULT_TOP_K = 20
+SAME_SYMBOL_OVERLAP_DAYS = 5
 
 
 def _number(value: Any, default: float = 0.0) -> float:
@@ -114,16 +115,46 @@ def _similarity(current: dict[str, Any], historical: dict[str, Any]) -> tuple[fl
     return max(0.0, min(100.0, score)), reasons
 
 
+def _parse(value: Any) -> datetime | None:
+    try:
+        stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return stamp if stamp.tzinfo else None
+
+
+def _outcome_known_by(signal: dict[str, Any], t1: dict[str, Any], as_of: datetime) -> bool:
+    """A case may only inform a decision at ``as_of`` if it started before
+    and its T1 outcome was already observable then (no look-ahead)."""
+    started = _parse(signal.get("signal_time"))
+    if started is None or started >= as_of:
+        return False
+    resolved = [stamp for stamp in (_parse(t1.get(key)) for key in ("hit_at", "stop_at", "ambiguous_at"))
+                if stamp is not None]
+    if resolved:
+        return min(resolved) <= as_of
+    # Matured without a timestamp (window expired): require the whole
+    # maturity window, in calendar days with a holiday buffer, before as_of.
+    sessions = max(1, int(_number(t1.get("maturity_sessions"), 20)))
+    return started + timedelta(days=math.ceil(sessions * 7 / 5) + 4) <= as_of
+
+
 def find_similar_cases(
     opportunity: dict[str, Any],
     target_state: dict[str, Any] | None,
     *,
     top_k: int = DEFAULT_TOP_K,
     minimum_sample: int = MIN_SIMILAR_SAMPLE,
+    as_of: datetime | None = None,
 ) -> dict[str, Any]:
+    if as_of is not None and as_of.tzinfo is None:
+        raise ValueError("as_of must be timezone-aware")
     state = target_state if isinstance(target_state, dict) else {}
     signals = state.get("signals") if isinstance(state.get("signals"), dict) else {}
     current = _current_features(opportunity)
+    symbol = str(opportunity.get("symbol") or "").upper()
+    excluded_look_ahead = 0
+    excluded_overlap = 0
 
     ranked: list[dict[str, Any]] = []
     for signal in signals.values():
@@ -133,6 +164,15 @@ def find_similar_cases(
         t1 = hist["t1"]
         if not isinstance(t1, dict) or t1.get("matured") is not True:
             continue
+        if as_of is not None:
+            if not _outcome_known_by(signal, t1, as_of):
+                excluded_look_ahead += 1
+                continue
+            started = _parse(signal.get("signal_time"))
+            if (symbol and str(signal.get("symbol") or "").upper() == symbol and started is not None
+                    and as_of - started < timedelta(days=SAME_SYMBOL_OVERLAP_DAYS)):
+                excluded_overlap += 1
+                continue
         similarity, reasons = _similarity(current, hist)
         if similarity < 55.0:
             continue
@@ -180,6 +220,9 @@ def find_similar_cases(
         "descriptive_t1_hit_rate_pct": round(hit_rate * 100.0, 1) if sufficient and hit_rate is not None else None,
         "median_t1_sessions_to_hit": round(float(median(sessions)), 2) if sufficient and sessions else None,
         "is_probability": False,
+        "as_of": as_of.astimezone(timezone.utc).isoformat() if as_of is not None else None,
+        "excluded_outcome_unknown_at_as_of": excluded_look_ahead,
+        "excluded_same_symbol_overlap": excluded_overlap,
         "cases": selected if sufficient else selected[:5],
         "matching_features": current,
         "warning_ar": (

@@ -63,3 +63,41 @@ def test_opposite_direction_cases_are_excluded():
     result = find_similar_cases(_opportunity(), _state(direction="DOWNSIDE"))
     assert result["sample"] == 0
     assert result["status"] == "INSUFFICIENT_SAMPLE"
+
+
+def test_as_of_excludes_cases_whose_outcome_was_not_yet_known():
+    from datetime import datetime, timezone
+
+    import pytest
+
+    state = _state(count=12, hits=12)
+    for i, signal in enumerate(state["signals"].values()):
+        # Hit stamped 1 day after the signal; first 4 signals resolve after as_of.
+        signal["targets"]["T1"]["hit_at"] = f"2026-09-{(i % 20) + 2:02d}T15:00:00+00:00"
+    as_of = datetime(2026, 9, 9, 0, 0, tzinfo=timezone.utc)
+    result = find_similar_cases(_opportunity(), state, as_of=as_of)
+    assert result["as_of"] == "2026-09-09T00:00:00+00:00"
+    times = [case["signal_time"] for case in result["cases"]]
+    assert all(t < "2026-09-08" for t in times)
+    assert result["excluded_outcome_unknown_at_as_of"] == 5  # signals 9/8-9/12
+    with pytest.raises(ValueError):
+        find_similar_cases(_opportunity(), state, as_of=as_of.replace(tzinfo=None))
+
+
+def test_matured_miss_without_timestamp_needs_full_window_and_same_symbol_overlap_is_excluded():
+    from datetime import datetime, timezone
+
+    state = _state(count=12, hits=0)  # all MATURED_MISS, no resolution timestamp
+    state["signals"]["0"]["symbol"] = "NOW"
+    # 20-session window ~ 32 calendar days: September signals are not yet
+    # known on Oct 1, all are known on Nov 1.
+    early = find_similar_cases(_opportunity(), state, as_of=datetime(2026, 10, 1, tzinfo=timezone.utc))
+    assert early["sample"] == 0 and early["excluded_outcome_unknown_at_as_of"] == 12
+    late = find_similar_cases(_opportunity(), state, as_of=datetime(2026, 11, 1, tzinfo=timezone.utc))
+    assert late["excluded_outcome_unknown_at_as_of"] == 0
+    recent = _state(count=1, hits=1)
+    sig = recent["signals"]["0"]
+    sig.update(symbol="NOW", signal_time="2026-10-30T14:30:00+00:00")
+    sig["targets"]["T1"]["hit_at"] = "2026-10-30T16:00:00+00:00"
+    overlap = find_similar_cases(_opportunity(), recent, as_of=datetime(2026, 11, 1, tzinfo=timezone.utc))
+    assert overlap["excluded_same_symbol_overlap"] == 1 and overlap["sample"] == 0
