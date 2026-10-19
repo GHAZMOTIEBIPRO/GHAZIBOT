@@ -7,7 +7,12 @@ import pandas as pd
 import pytest
 
 from scripts.build_stock_watch_charts import (
-    FIVE_MIN, SMALL_WATCH, WATCH, collect, pack_symbol, session_vwap_shadow,
+    FIVE_MIN,
+    SMALL_WATCH,
+    WATCH,
+    collect,
+    pack_symbol,
+    session_vwap_shadow,
 )
 
 NY=ZoneInfo("America/New_York")
@@ -149,3 +154,32 @@ def test_no_daily_vwap_and_frontend_uses_exact_source_bar_identity():
     assert 'session_vwap' in js
     assert 'source_last_bar_start===frame?.provider_bar_start_or_date' in js
     assert 'VWAP جلسة' in js
+
+
+def test_oversized_report_trims_history_then_bars_but_never_fresh_symbols():
+    from scripts.build_stock_watch_charts import fit_size_budget
+
+    def bars(n):
+        return [{"time": i, "open": 1.0, "high": 2.0, "low": 0.5, "close": 1.5} for i in range(n)]
+
+    def item():
+        return {"intervals": {u: {"bars": bars(110)} for u in ("1d", "15m", "1h", "5m")}}
+
+    report = {"symbols": {"FRESH1": item(), "FRESH2": item(), "OLD1": item(), "OLD2": item()},
+              "coverage": {"with_daily": 2}}
+    import json
+    full = len(json.dumps(report, separators=(",", ":")))
+    fitted = fit_size_budget(report, fresh_symbols={"FRESH1", "FRESH2"}, max_bytes=int(full * 0.45))
+    assert set(fitted["symbols"]) >= {"FRESH1", "FRESH2"}
+    assert fitted["size_budget"]["dropped_historical_symbols"] == ["OLD2", "OLD1"]
+    assert fitted["size_budget"]["bars_capped"] is not None
+    assert len(fitted["symbols"]["FRESH1"]["intervals"]["5m"]["bars"]) < 110
+    assert fitted["symbols"]["FRESH1"]["intervals"]["5m"]["bars"][-1]["time"] == 109  # newest kept
+    assert fitted["coverage"]["with_daily"] == 2  # fresh count untouched
+    assert fitted["coverage"]["historical_only_symbols"] == []
+
+    small = {"symbols": {"A": item()}, "coverage": {}}
+    assert fit_size_budget(small, fresh_symbols={"A"}, max_bytes=10**7)["size_budget"]["bars_capped"] is None
+    import pytest
+    with pytest.raises(ValueError):
+        fit_size_budget({"symbols": {"A": item()}, "coverage": {}}, fresh_symbols={"A"}, max_bytes=500)

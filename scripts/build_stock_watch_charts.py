@@ -394,8 +394,53 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
                        "and never become live quotes. No market-cap certainty, "
                        "option flow or trade permission."),
     }
-    raw=json.dumps(report,ensure_ascii=False,allow_nan=False,separators=(",",":"))
-    if len(raw.encode())>MAX_BYTES:
+    return fit_size_budget(report, fresh_symbols=set(fresh))
+
+
+def _size(report: dict) -> int:
+    return len(json.dumps(report, ensure_ascii=False, allow_nan=False,
+                          separators=(",", ":")).encode())
+
+
+# Intraday history caps tried in order when the report exceeds MAX_BYTES.
+TRIM_STEPS = ({"5m": 80, "15m": 80}, {"5m": 60, "15m": 60, "1h": 60},
+              {"5m": 45, "15m": 45, "1h": 45, "1d": 80})
+
+
+def fit_size_budget(report: dict, *, fresh_symbols: set, max_bytes: int = MAX_BYTES) -> dict:
+    """Keep the report under ``max_bytes`` instead of failing the refresh.
+
+    Order: drop retained historical-only symbols (oldest-listed last first),
+    then cap bar history per interval (newest bars kept). Fresh symbols are
+    never dropped and fresh coverage counts never change. Every trim is
+    recorded; if the cap still cannot be met the run fails closed.
+    """
+    budget = {"max_bytes": max_bytes, "dropped_historical_symbols": [], "bars_capped": None}
+    report["size_budget"] = budget
+    if _size(report) <= max_bytes:
+        return report
+    symbols = report["symbols"]
+    for symbol in reversed([s for s in list(symbols) if s not in fresh_symbols]):
+        del symbols[symbol]
+        budget["dropped_historical_symbols"].append(symbol)
+        if _size(report) <= max_bytes:
+            break
+    for caps in TRIM_STEPS:
+        if _size(report) <= max_bytes:
+            break
+        for item in symbols.values():
+            for unit, limit in caps.items():
+                frame = item.get("intervals", {}).get(unit)
+                if isinstance(frame, dict) and isinstance(frame.get("bars"), list):
+                    frame["bars"] = frame["bars"][-limit:]
+        budget["bars_capped"] = caps
+    coverage = report["coverage"]
+    coverage["charts_including_historical"] = len(symbols)
+    coverage["historical_only_symbols"] = sorted(set(symbols) - fresh_symbols)
+    for unit, key in (("1d", "daily"), ("15m", "15m"), ("1h", "1h"), ("5m", "5m")):
+        coverage[f"with_{key}_including_historical"] = sum(
+            unit in x["intervals"] for x in symbols.values())
+    if _size(report) > max_bytes:
         raise ValueError("Stock chart report too large; do not publish invalid payload")
     return report
 
