@@ -32,7 +32,8 @@ def build_summary(audit: dict, *, now: datetime) -> dict:
     counts = {key: safe_int(source_coverage.get(key)) for key in (
         "records", "records_total", "eligible_records", "covered_60m", "decisive",
         "ambiguous", "non_decisive", "pending", "unavailable", "invalid_session",
-        "independent_60m_sessions",
+        "independent_60m_sessions", "coverage_60m_applicable_records",
+        "coverage_60m_not_applicable_after_close",
     )}
     if counts["covered_60m"] > counts["records"]:
         raise ValueError("covered_60m cannot exceed eligible records")
