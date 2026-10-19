@@ -58,8 +58,70 @@ def valid_dynamic_symbols(symbols) -> tuple[str, ...]:
     return tuple(out)
 
 
+
+def load_structural_symbols(path: Path | None, *, now: datetime) -> tuple[str, ...]:
+    """Rotate *research candidates* from a dated, nonexecution Nasdaq catalog.
+
+    Its original source observation timestamp, not the JSON republish time,
+    controls freshness. The market cap and float are not independently verified.
+    No network, market-data permission, score promotion, or additional slots.
+    """
+    if path is None or now.tzinfo is None:
+        return ()
+    try:
+        if path.stat().st_size > 90_000:
+            return ()
+        report = json.loads(path.read_text(encoding="utf-8"))
+        if (report.get("schema") != "ghazi.structural_watch.v1"
+                or report.get("status") != "RESEARCH_SNAPSHOT"
+                or report.get("research_only") is not True
+                or report.get("recommendation") is not False
+                or report.get("option_execution_ready") is not False):
+            return ()
+        observed = datetime.fromisoformat(str(report["source_observed_at"]).replace("Z", "+00:00"))
+        generated = datetime.fromisoformat(str(report["generated_at"]).replace("Z", "+00:00"))
+        if observed.tzinfo is None or generated.tzinfo is None:
+            return ()
+        age = (now - observed).total_seconds()
+        build_age = (now - generated).total_seconds()
+        if not (-300 <= age <= 7 * 86400 and -300 <= build_age <= 7 * 86400
+                and observed <= generated):
+            return ()
+        rows = report.get("candidates")
+        if not isinstance(rows, list) or len(rows) > 60:
+            return ()
+    except (OSError, ValueError, TypeError, AttributeError, KeyError, OverflowError):
+        return ()
+    candidates = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        symbol = row.get("symbol")
+        cap = row.get("market_cap_observed")
+        score = row.get("structural_score_research")
+        if (not isinstance(symbol, str) or not _SYMBOL.fullmatch(symbol)
+                or symbol in WATCH or symbol in _NON_STOCK or symbol in candidates
+                or type(cap) not in (int, float) or not math.isfinite(cap)
+                or not 0 < cap <= 2_000_000_000
+                or type(score) not in (int, float) or not math.isfinite(score)
+                or not 0 <= score <= 100
+                or row.get("execution_eligible") is not False
+                or row.get("official_catalyst_verified") is not False
+                or row.get("chart_available") is not False):
+            continue
+        candidates.append(symbol)
+    if not candidates:
+        return ()
+    # Dated stable six-hour rotation; new runs progressively cover distinct
+    # microcap names without increasing current Yahoo requests or API costs.
+    offset = int(now.timestamp() // (6 * 3600)) % len(candidates)
+    rotated = candidates[offset:] + candidates[:offset]
+    return tuple(rotated)
+
+
 def load_dynamic_symbols(path: Path | None, *, now: datetime,
-                         news_path: Path | None = None) -> tuple[str, ...]:
+                         news_path: Path | None = None,
+                         structural_path: Path | None = None) -> tuple[str, ...]:
     """Rotate new radar discoveries without increasing the fixed Yahoo budget.
 
     Expired, malformed or future-dated decision snapshots NEVER seed a fetch.
@@ -110,11 +172,27 @@ def load_dynamic_symbols(path: Path | None, *, now: datetime,
         tail = tail[shift:] + tail[:shift]
     ranked = tuple(c for c in primary + tail if c not in WATCH)[:MAX_DYNAMIC]
     attention = load_news_attention(news_path, now=now) if news_path else {}
-    if attention:
-        return news_candidates(
-            attention, fixed=WATCH, radar_choices=ranked, maximum=MAX_DYNAMIC
-        )
-    return valid_dynamic_symbols(ranked)
+    structural = load_structural_symbols(structural_path, now=now)
+    if not structural:
+        if attention:
+            return news_candidates(
+                attention, fixed=WATCH, radar_choices=ranked, maximum=MAX_DYNAMIC
+            )
+        return valid_dynamic_symbols(ranked)
+    # Preserve two ranked stock-radar slots and at most one issuer-matched
+    # unofficial-news slot. Reserve a slot for dated structural discoveries;
+    # never translate a low float or low cap into a positive trade signal.
+    ranked_news = (news_candidates(
+        attention, fixed=WATCH, radar_choices=ranked, maximum=3
+    ) if attention else tuple(ranked[:2]))
+    selected = list(dict.fromkeys(ranked_news[:3]))
+    for symbol in structural:
+        if symbol not in selected and len(selected) < MAX_DYNAMIC:
+            selected.append(symbol)
+    for symbol in ranked:
+        if symbol not in selected and len(selected) < MAX_DYNAMIC:
+            selected.append(symbol)
+    return valid_dynamic_symbols(selected)
 
 
 def session_vwap_shadow(frame: pd.DataFrame) -> dict:
@@ -322,11 +400,13 @@ def main() -> int:
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--discovery-source",type=Path,default=None)
     p.add_argument("--news-source",type=Path,default=None)
+    p.add_argument("--structural-source",type=Path,default=None)
     args=p.parse_args()
     now=datetime.now(timezone.utc)
     media=load_news_attention(args.news_source, now=now)
     dynamic=load_dynamic_symbols(
-        args.discovery_source, now=now, news_path=args.news_source
+        args.discovery_source, now=now, news_path=args.news_source,
+        structural_path=args.structural_source
     )
     previous=None
     if args.output.is_file() and args.output.stat().st_size <= 800_000:
