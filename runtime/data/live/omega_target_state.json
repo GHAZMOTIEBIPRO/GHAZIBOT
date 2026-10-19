@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-19T18:49:45.324644+00:00",
+  "updated_at": "2026-10-19T19:13:44.981289+00:00",
   "signals": {
     "59708341a9a99a9a5ebc": {
       "signal_id": "59708341a9a99a9a5ebc",
@@ -31611,16 +31611,95 @@
         ]
       },
       "last_updated": "2026-10-19T18:49:45.324644+00:00"
+    },
+    "54212973f2d9f2ceb950": {
+      "signal_id": "54212973f2d9f2ceb950",
+      "signal_time": "2026-10-19T19:11:05.503855+00:00",
+      "symbol": "CRWV",
+      "direction": "DOWNSIDE",
+      "entry_price": 60.7,
+      "invalidation": 69.87,
+      "opportunity_tier": "C",
+      "explosion_rank": 51.4,
+      "explosion_cause": "MOMENTUM_IGNITION",
+      "primary_horizon": "INTRADAY_1D",
+      "targets": {
+        "T1": {
+          "label": "T1",
+          "price": 51.52,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "وسيط تاريخي 1 جلسة؛ التقدير البنيوي: نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_1",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T2": {
+          "label": "T2",
+          "price": 42.34,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "target_2",
+          "provenance": "SOURCE_DERIVED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        },
+        "T3": {
+          "label": "T3",
+          "price": 33.16,
+          "horizon_bucket": "INTRADAY_1D",
+          "estimated_time_ar": "نفس الجلسة إلى جلسة",
+          "maturity_sessions": 1,
+          "source": "implied_from_existing_target_1",
+          "provenance": "MODELED",
+          "status": "MATURED_MISS",
+          "hit_at": null,
+          "stop_at": null,
+          "ambiguous_at": null,
+          "elapsed_hours_to_hit": null,
+          "sessions_to_hit": null,
+          "sessions_observed": 1,
+          "matured": true
+        }
+      },
+      "measurement_basis": "underlying_ohlc_path",
+      "research_only": true,
+      "data_audit": {
+        "selected_interval": "5m",
+        "source": "yahooquery",
+        "attempts": [
+          {
+            "interval": "5m",
+            "ok": true,
+            "source": "yahooquery"
+          }
+        ]
+      },
+      "last_updated": "2026-10-19T19:13:44.981289+00:00"
     }
   },
   "decision_authority": false,
   "summary": {
-    "signals": 398,
-    "targets": 1194,
-    "matured_targets": 1191,
+    "signals": 399,
+    "targets": 1197,
+    "matured_targets": 1194,
     "hits": 8,
     "failed": 6,
-    "matured_misses": 1177,
+    "matured_misses": 1180,
     "ambiguous": 0,
     "open": 3
   }
