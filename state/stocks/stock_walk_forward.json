@@ -190,6 +190,16 @@
     }
   },
   "open_source_features_change_walk_forward_score": false,
+  "coverage_gap_diagnostics": {
+    "eligible_records": 689,
+    "covered_60m_records": 442,
+    "missing_60m_records": 247,
+    "minimum_required_60m_records": 621,
+    "additional_records_needed_at_fixed_denominator": 179,
+    "coverage_deficit_known": true,
+    "policy": "NO_SYNTHETIC_BACKFILL_OR_PROFIT_CLAIM",
+    "next_action": "Observe actual completed 5-minute source candles after each valid signal; never relabel pending or ambiguous outcomes as successes."
+  },
   "status": "NOT_READY",
   "reasons": [
     "60m coverage 64.15% < 90%",
