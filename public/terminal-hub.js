@@ -12,6 +12,7 @@
     watch:[ROOT+"bot-state/runtime/public/data/stock_watch_charts.json"],
     structural:[ROOT+"bot-state/runtime/public/data/structural_watch.json"],
     sourceAgreement:[ROOT+"bot-state/runtime/public/data/source_agreement.json"],
+    strength:[ROOT+"bot-state/runtime/public/data/site_strength.json"],
     gamma:[ROOT+"bot-state/runtime/public/data/free_gex_validation.json"],
     trust:[ROOT+"bot-state/runtime/public/data/free_data_health.json","./data/free_data_health.json"],
     runtime:[ROOT+"bot-state/runtime/public/data/data-status.json","./data/data-status.json"],
@@ -57,7 +58,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -82,6 +83,25 @@
     watch:d=>d?.schema==="ghazi.stock_charts.v1" &&
       d.quote_execution_eligible===false &&
       d.data_role==="RESEARCH_ONLY_NOT_LICENSED_EXECUTION",
+    strength:d=>d?.schema==="ghazi.evidence_strength.v1" &&
+      d.research_only===true && d.execution_authority===false &&
+      d.score_basis==="RESEARCH_DATA_AND_VALIDATION_READINESS" &&
+      d.score_is_prediction_win_rate===false &&
+      d.score_is_realized_return===false &&
+      d.score_includes_visual_ui_audit===false &&
+      d.score_includes_unverified_live_quotes===false &&
+      Number.isInteger(d.strength_score) &&
+      d.strength_score>=0 && d.strength_score<=100 &&
+      d.weights_sum===100 && Array.isArray(d.components) &&
+      d.components.length===6 &&
+      Math.abs(d.components.reduce((sum,c)=>
+        sum+(Number.isFinite(c.earned)?c.earned:0),0)-
+        d.strength_score)<=0.51 &&
+      d.components.reduce((sum,c)=>
+        sum+(Number.isFinite(c.maximum)?c.maximum:0),0)===100 &&
+      d.components.every(c=>Number.isFinite(c.earned)&&
+        Number.isFinite(c.maximum)&&c.earned>=0&&
+        c.earned<=c.maximum && c.maximum>0),
     sourceAgreement:d=>d?.schema==="ghazi.source_consensus_status.v1" &&
       d.independent_price_comparison==="NOT_VERIFIED" &&
       d.independent_confirmations===0 && d.quote_execution_eligible===false &&
@@ -293,6 +313,44 @@
     if(!panel.children.length)panel.append(txt("p",
       "لا توجد أحداث مؤهلة للنشر؛ غيابها لا يثبت عدم وجود إفصاحات.",
       "terminal-empty"));
+  }
+  function renderStrength(){
+    const score=$("terminal-strength-score"),breakdown=$("terminal-strength-breakdown");
+    if(!score||!breakdown)return;
+    breakdown.replaceChildren();
+    const data=state.strength;
+    if(!data){
+      score.textContent="غير متاح / 100";
+      put("terminal-strength-summary",
+        "لا يوجد تقرير حديث صالح. لا نستنتج درجة من بيانات قديمة أو مفقودة.");
+      return;
+    }
+    score.textContent=String(data.strength_score)+" / 100";
+    put("terminal-strength-summary",
+      "مؤشر جاهزية البيانات والتحقق البحثي · التقرير: "+
+      stamp(data.generated_at)+
+      " · ليس نسبة نجاح تداول ولا تقييمًا لجمال الواجهة.");
+    const labels={
+      charts:"الشارتات والفريمات",
+      independent_prices:"استقلالية الأسعار",
+      issuer_filings:"إفصاحات الشركات",
+      options_market_data:"بيانات الخيارات",
+      walk_forward:"الاختبار خارج العينة",
+      feed_operations:"حداثة تشغيل المصادر"
+    };
+    for(const component of data.components){
+      if(!Object.prototype.hasOwnProperty.call(labels,component.id))continue;
+      const line=txt("div","","terminal-strength-line");
+      const top=txt("div","","terminal-strength-line-top");
+      top.append(txt("strong",labels[component.id]),
+        txt("span",fmt(component.earned,2)+" / "+component.maximum));
+      const track=txt("div","","terminal-strength-meter");
+      const fill=txt("div","","terminal-strength-fill");
+      fill.style.width=String(Math.max(0,Math.min(100,
+        100*component.earned/component.maximum)))+"%";
+      track.append(fill);line.append(top,track);
+      breakdown.append(line);
+    }
   }
   function renderOptions(){
     const target=$("terminal-options-readiness"),grid=$("terminal-options-breakdown");
@@ -1080,15 +1138,15 @@
     $("terminal-panel-chart")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOptions();renderFreeOptions();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }

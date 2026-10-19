@@ -1,0 +1,79 @@
+name: GHAZI Evidence Strength Score
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_site_strength.py"
+      - "tests/test_site_strength.py"
+      - ".github/workflows/site-evidence-strength.yml"
+  workflow_run:
+    workflows:
+      - GHAZI Stock Watch OHLC Charts
+      - GHAZI Free Options and SEC Alternative Sources
+      - GHAZI RADAR Official SEC Issuer Filings
+      - BLACK BOX Omega Stock Walk Forward
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "15 1,7,13,19 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-evidence-strength-publisher
+  cancel-in-progress: false
+
+jobs:
+  evidence-readiness:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Score only actual source reports without model downloads or market requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python app/scripts/build_site_strength.py \
+            --charts state/runtime/public/data/stock_watch_charts.json \
+            --agreement state/runtime/public/data/source_agreement.json \
+            --sec state/runtime/public/data/sec_filing_pulse.json \
+            --free-options state/runtime/public/data/free_options_sources.json \
+            --walk-forward state/state/stocks/stock_walk_forward.json \
+            --output state/runtime/public/data/site_strength.json
+      - name: Publish only source-backed readiness report
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI Evidence Audit"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/site_strength.json
+          if git diff --cached --quiet; then
+            echo "Evidence report unchanged"
+            exit 0
+          fi
+          git commit -m "state: audited research readiness score [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Could not publish source-backed score" >&2
+          exit 1
