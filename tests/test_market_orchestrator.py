@@ -114,3 +114,21 @@ def test_looping_run_chains_its_successor_within_weekday_market_window():
     assert "$(date -u +%u) > 5" in body
     # One running + one pending: chained runs never cancel an active pass.
     assert spec["concurrency"]["cancel-in-progress"] is False
+
+
+def test_pre_market_wakeup_bridges_to_the_08_utc_start_with_a_bounded_wait():
+    spec = yaml.safe_load(_workflow("market-orchestrator.yml"))
+    dispatch = spec["jobs"]["dispatch"]
+    assert dispatch["timeout-minutes"] == 58
+    assert dispatch["outputs"]["bridge_seconds"] == "${{ steps.cadence.outputs.bridge_seconds }}"
+    body = next(s for s in dispatch["steps"] if s.get("id") == "cadence")["run"]
+    # Only looping wakeups, weekdays, before 08:00 and at most 5h50m away.
+    assert "wait_s > 0 && wait_s <= 21000" in body
+    assert "date -u -d 'today 08:00' +%s" in body
+    bridge = spec["jobs"]["bridge"]
+    assert bridge["needs"] == "dispatch"
+    assert bridge["if"] == "needs.dispatch.outputs.bridge_seconds != ''"
+    assert bridge["timeout-minutes"] == 360
+    run = bridge["steps"][0]["run"]
+    assert "(( BRIDGE_SECONDS <= 21000 ))" in run
+    assert "gh workflow run market-orchestrator.yml" in run and "-f chain=true" in run

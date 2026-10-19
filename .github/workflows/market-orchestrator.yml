@@ -40,6 +40,8 @@ jobs:
     # GitHub delivers few of the 5-minute crons (often one per day), so each
     # wakeup keeps the cadence itself for up to ~50 minutes (see loop below).
     timeout-minutes: 58
+    outputs:
+      bridge_seconds: ${{ steps.cadence.outputs.bridge_seconds }}
     env:
       GH_TOKEN: ${{ github.token }}
 
@@ -79,6 +81,7 @@ jobs:
       # workflow_run). Scheduled and News Flash wakeups repeat the pass every
       # 5 minutes for ~50 minutes; push/manual runs do a single pass.
       - name: Dispatch stale market engines and relay dependent stages
+        id: cadence
         shell: bash
         env:
           ORCHESTRATOR_PASSES: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run' || inputs.chain) && '10' || '1' }}
@@ -182,6 +185,16 @@ jobs:
               || echo "::warning title=Self-chain dispatch failed::next wakeup will resume cadence"
           else
             echo "No self-chain (passes=${passes}, hour=${end_hour}, switch=${ORCHESTRATOR_SELF_CHAIN:-true})."
+            # A pre-market wakeup (00:00-08:00 UTC, Mon-Fri) bridges to 08:00
+            # instead of leaving the morning to the next lucky schedule event.
+            now_epoch="$(date -u +%s)"
+            open_epoch="$(date -u -d 'today 08:00' +%s)"
+            wait_s=$(( open_epoch - now_epoch ))
+            if (( passes > 1 )) && [[ "${ORCHESTRATOR_SELF_CHAIN:-true}" != "false" ]] \
+                && (( $(date -u +%u) <= 5 && wait_s > 0 && wait_s <= 21000 )); then
+              echo "Bridging ${wait_s}s to the 08:00 UTC cadence start."
+              echo "bridge_seconds=${wait_s}" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Scheduling policy
@@ -199,3 +212,23 @@ jobs:
           Stock Outcome Auditor receives intraday coverage dispatch here plus its end-of-day fallback.
           Other end-of-day auditors and weekly research labs remain independent.
           EOF
+
+  # Bounded idle wait (<= 5h50m, only after a pre-market wakeup on a weekday)
+  # that starts the self-chained cadence at 08:00 UTC.
+  bridge:
+    needs: dispatch
+    if: needs.dispatch.outputs.bridge_seconds != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRIDGE_SECONDS: ${{ needs.dispatch.outputs.bridge_seconds }}
+    steps:
+      - name: Wait for the 08:00 UTC cadence window, then chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BRIDGE_SECONDS" =~ ^[0-9]+$ ]] && (( BRIDGE_SECONDS <= 21000 ))
+          sleep "$BRIDGE_SECONDS"
+          gh workflow run market-orchestrator.yml --repo "$GITHUB_REPOSITORY" --ref main -f chain=true
+          echo "Cadence chain started at $(date -u +%H:%M)Z."
