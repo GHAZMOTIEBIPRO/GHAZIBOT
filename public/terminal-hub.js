@@ -8,6 +8,7 @@
     brief:[ROOT+"bot-state/runtime/public/data/decision_brief.json","./data/decision_brief.json"],
     news:[ROOT+"bot-state/runtime/public/data/free_public_intelligence.json","./data/free_public_intelligence.json"],
     sec:[ROOT+"bot-state/runtime/public/data/sec_filing_pulse.json"],
+    freeOptions:[ROOT+"bot-state/runtime/public/data/free_options_sources.json"],
     watch:[ROOT+"bot-state/runtime/public/data/stock_watch_charts.json"],
     structural:[ROOT+"bot-state/runtime/public/data/structural_watch.json"],
     sourceAgreement:[ROOT+"bot-state/runtime/public/data/source_agreement.json"],
@@ -56,7 +57,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null};
+    oos:null,sourceAgreement:null,freeOptions:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -69,6 +70,15 @@
       d.policy.google_news_rss_is_unofficial_search_not_official_confirmation===true,
     sec:d=>d?.schema==="ghazi.sec_issuer_pulse.v1" &&
       d.policy?.positive_news_inferred===false,
+    freeOptions:d=>d?.schema==="ghazi.free_options_source_pulse.v1" &&
+      d.research_only===true && d.trading_authority===false &&
+      d.option_execution_eligible===false &&
+      d.policy?.third_party_filings_not_official_sec_confirmation===true &&
+      d.policy?.no_automatic_options_orders===true &&
+      Array.isArray(d.filingpulse?.events) &&
+      d.filingpulse.events.length<=45 &&
+      d.occ_open_interest?.not_live_quote===true &&
+      d.tradier?.source_quotes_published===false,
     watch:d=>d?.schema==="ghazi.stock_charts.v1" &&
       d.quote_execution_eligible===false &&
       d.data_role==="RESEARCH_ONLY_NOT_LICENSED_EXECUTION",
@@ -238,6 +248,51 @@
       (age===null?"غير معروف":fmt(age,1)+" ساعة")+
       (stale?" · التحليلات التاريخية غير قابلة للتنفيذ الآن.":" · الترتيب لا يثبت صفقة ناجحة.")+
       " · أخبار التجميع غير رسمية · لا أسعار خيارات تنفيذية متحققة تلقائيًا.");
+  }
+  function renderFreeOptions(){
+    const source=state.freeOptions;
+    const panel=$("terminal-free-options-events");
+    if(panel)panel.replaceChildren();
+    if(!source){
+      put("terminal-free-options-status",
+        "لم يصل تقرير المصادر المجانية بعد. لا نعتبر غياب التقرير توفرًا للأسعار.");
+      return;
+    }
+    const f=source.filingpulse||{},oi=source.occ_open_interest||{};
+    const health=f.health_reachable===true?"FilingPulse يستجيب":"FilingPulse غير متاح";
+    const filing=f.status==="THIRD_PARTY_RESEARCH_ONLY"?
+      "وصلت إفصاحات عبر طرف ثالث ولم تُراجع مباشرة من SEC":
+      f.status==="NO_API_KEY_HEALTH_ONLY"?
+      "يلزم مفتاح FilingPulse المجاني لجلب الإفصاحات":
+      "الإفصاحات غير متاحة: "+String(f.status||"غير محدد");
+    const occ=oi.status==="HISTORICAL_DAILY_AGGREGATE"?
+      "OCC فائدة مفتوحة تاريخية وليست أسعار تنفيذ":
+      "OCC الفائدة المفتوحة: "+String(oi.status||"غير متاح");
+    put("terminal-free-options-status",
+      health+" · "+filing+" · "+occ+
+      " · Tradier يحتاج حسابًا مخولًا ولا تُعرض أسعار حساب شخصي هنا.");
+    if(!panel)return;
+    const events=Array.isArray(f.events)?f.events.slice(0,6):[];
+    for(const item of events){
+      if(item.third_party_source!=="FILINGPULSE_SEC_DERIVED"||
+         item.official_sec_api_response_verified!==false||
+         item.option_execution_eligible!==false||
+         !/^[A-Z][A-Z0-9.-]{0,8}$/.test(item.symbol||""))continue;
+      const link=safeOfficial(item.source_url);
+      if(!link)continue;
+      const div=txt("article","","terminal-free-options-event");
+      div.append(txt("strong",item.symbol+" · "+String(item.form||"إفصاح")+
+        " · "+String(item.filed_date||"غير محدد")));
+      const a=txt("a","مستند SEC المرتبط ↗");
+      a.href=link;a.target="_blank";a.rel="noopener noreferrer";
+      div.append(a,txt("small","رصد FilingPulse (طرف ثالث) وليس تأكيد SEC مباشر"+
+        (Array.isArray(item.item_codes)&&item.item_codes.length?
+          " · فقرات "+item.item_codes.join("، "):"")));
+      panel.append(div);
+    }
+    if(!panel.children.length)panel.append(txt("p",
+      "لا توجد أحداث مؤهلة للنشر؛ غيابها لا يثبت عدم وجود إفصاحات.",
+      "terminal-empty"));
   }
   function renderOptions(){
     const target=$("terminal-options-readiness"),grid=$("terminal-options-breakdown");
@@ -1025,15 +1080,15 @@
     $("terminal-panel-chart")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement"];
     const read=await Promise.allSettled(types.map(loadFeed));
-    [state.quotes,state.charts,state.brief,state.news,state.sec,
+    [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
       state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOptions();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOptions();renderFreeOptions();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
