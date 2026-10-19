@@ -7,7 +7,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from options_radar.source_payload_validation import validate_source_payload
+if __package__:
+    from .source_payload_validation import validate_source_payload
+else:
+    # GitHub Actions invokes this as "python options_radar/free_data_health.py".
+    from source_payload_validation import validate_source_payload
 
 USER_AGENT = "GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com"
 
