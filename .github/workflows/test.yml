@@ -293,6 +293,11 @@ jobs:
           python -m pytest -q tests/test_site_strength.py
           node tests/terminal_strength.cjs
 
+      - name: Historical 5m fetch-window and immutable OOS audit regression
+        run: |
+          ruff check scripts/run_stock_outcome_audit.py options_radar/stock_audit_rotation.py tests/test_stock_backfill_fetch_windows.py
+          python -m pytest -q tests/test_stock_backfill_fetch_windows.py
+
       - name: Repository Ruff baseline
         continue-on-error: true
         run: ruff check .
