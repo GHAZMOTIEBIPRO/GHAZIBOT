@@ -253,6 +253,12 @@ def _write_public_runtime_metadata(state_root: Path, status: dict[str, Any]) -> 
         ("public/data/data-status.json", data_status),
     ):
         path = state_root / relative
+        if relative.endswith("data-status.json"):
+            # The radar export also writes this file (row/quality counts);
+            # merge so neither writer erases the other's fields.
+            previous = _load_json(path)
+            if isinstance(previous, dict):
+                payload = {**previous, **payload}
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         validate_runtime_file(path)
