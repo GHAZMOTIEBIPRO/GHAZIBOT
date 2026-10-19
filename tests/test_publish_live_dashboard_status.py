@@ -121,3 +121,25 @@ def test_carried_over_paths_are_re_aged_and_marked_stale(tmp_path: Path) -> None
     options = report["paths"]["options"]
     assert options["status"] == "RESEARCH_ONLY" and options["age_minutes"] == 10.0
     assert report["overall_status"] == "CRITICAL"
+
+
+def test_live_status_merges_into_export_data_status_instead_of_erasing_it(tmp_path: Path) -> None:
+    state_root = tmp_path / "runtime"
+    generated = "2026-09-29T14:30:00+00:00"
+    _write(state_root / "public/data/stocks_latest.json",
+           {"generated_at": generated, "health": {"status": "HEALTHY", "reasons": []},
+            "stocks": [{"symbol": "NVDA"}]})
+    # Fields only the radar export writes (the terminal's runtime schema needs them).
+    _write(state_root / "public/data/data-status.json",
+           {"status": "healthy", "generated_at": "2026-09-29T14:00:00+00:00",
+            "row_counts": {"stocks": 5}, "quality_counts": {"ok": 4},
+            "option_provider_readiness": {"production_quote_ready": False}})
+    publish_live_dashboard_status(
+        state_root=state_root, source_workflow="stock-radar.yml", source_run_id="9",
+        current=datetime(2026, 9, 29, 15, 0, tzinfo=timezone.utc))
+    merged = json.loads((state_root / "public/data/data-status.json").read_text(encoding="utf-8"))
+    assert merged["row_counts"] == {"stocks": 5}
+    assert merged["quality_counts"] == {"ok": 4}
+    assert merged["runtime_source"] == "bot-state/live_dashboard_status"
+    assert "workflow_health" in merged
+    assert merged["generated_at"] != "2026-09-29T14:00:00+00:00"
