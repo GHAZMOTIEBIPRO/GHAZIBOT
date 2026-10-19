@@ -41,3 +41,24 @@ def test_high_event_iv_without_verified_prints_gets_crush_penalty():
     }
     result = score_option_explosion(row)
     assert result["penalties"]["iv_crush"] > 0
+
+
+def test_missing_theta_earns_no_efficiency_credit_and_is_reported():
+    base = {"dte": 30, "delta": 0.45, "gamma": 0.03, "volume": 1000,
+            "open_interest": 1500, "vol_to_oi_ratio": 1.2, "spread_pct": 0.08, "iv": 0.4}
+    missing = score_option_explosion(base)
+    measured = score_option_explosion({**base, "theta": -0.02})
+    assert missing["components"]["theta_efficiency"] == 0.0
+    assert missing["unavailable_inputs"] == ["theta"]
+    assert missing["greek_sources"]["theta"] == "UNAVAILABLE"
+    assert measured["components"]["theta_efficiency"] > 0
+    assert measured["unavailable_inputs"] == []
+
+
+def test_modeled_greeks_keep_their_provenance_label():
+    row = {"dte": 30, "delta": 0.45, "gamma": 0.03, "theta": -0.02, "iv": 0.4,
+           "delta_source": "MODELED_BLACK_SCHOLES", "gamma_source": "MODELED_BLACK_SCHOLES",
+           "volume": 1000, "open_interest": 1500, "vol_to_oi_ratio": 1.2, "spread_pct": 0.08}
+    sources = score_option_explosion(row)["greek_sources"]
+    assert sources == {"delta": "MODELED_BLACK_SCHOLES", "gamma": "MODELED_BLACK_SCHOLES",
+                       "theta": "PROVIDER"}

@@ -220,6 +220,10 @@ def score_chain(
     ]
     frame["data_completeness"] = frame[completeness_columns].notna().mean(axis=1)
 
+    # Provenance per greek: free chains (Yahoo) carry no greeks, so a filled
+    # value is a Black-Scholes estimate, never provider data.
+    frame["delta_source"] = np.where(frame["delta"].notna(), "PROVIDER", "UNAVAILABLE")
+    frame["gamma_source"] = np.where(frame["gamma"].notna(), "PROVIDER", "UNAVAILABLE")
     for idx, row in frame[frame["delta"].isna() & frame["iv"].notna()].iterrows():
         spot = technical.close if pd.isna(row["underlying_price"]) else float(row["underlying_price"])
         delta, gamma = approximate_greeks(
@@ -231,8 +235,10 @@ def score_chain(
             option_type=str(row["option_type"]),
         )
         frame.at[idx, "delta"] = delta
+        frame.at[idx, "delta_source"] = "MODELED_BLACK_SCHOLES"
         if pd.isna(frame.at[idx, "gamma"]):
             frame.at[idx, "gamma"] = gamma
+            frame.at[idx, "gamma_source"] = "MODELED_BLACK_SCHOLES"
 
     frame["abs_delta"] = frame["delta"].abs()
     rv = technical.realized_vol20 if technical.realized_vol20 > 0 else np.nan

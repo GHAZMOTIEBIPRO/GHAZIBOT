@@ -12,6 +12,13 @@ def _num(value: Any, default: float = 0.0) -> float:
     return number if math.isfinite(number) else default
 
 
+def _present(value: Any) -> bool:
+    try:
+        return math.isfinite(float(value))
+    except (TypeError, ValueError):
+        return False
+
+
 def _pct100(value: Any) -> float:
     number = _num(value)
     if abs(number) <= 1.0:
@@ -107,8 +114,14 @@ def score_option_explosion(row: dict[str, Any]) -> dict[str, Any]:
     clustering = min(100.0, cluster)
     surface, surface_detail = _surface_score(row)
 
-    theta_drag = theta / max(delta, 0.05)
-    theta_efficiency = max(0.0, min(100.0, 100.0 - theta_drag * 450.0))
+    unavailable = [name for name in ("delta", "gamma", "theta", "iv")
+                   if not _present(row.get(name))]
+    if "theta" in unavailable:
+        # Unmeasured decay earns no credit (a missing theta is not zero decay).
+        theta_efficiency = 0.0
+    else:
+        theta_drag = theta / max(delta, 0.05)
+        theta_efficiency = max(0.0, min(100.0, 100.0 - theta_drag * 450.0))
 
     weights = {
         "PREMIUM_EXPLOSION": {
@@ -216,6 +229,12 @@ def score_option_explosion(row: dict[str, Any]) -> dict[str, Any]:
         "dynamic_max_spread_pct": max_spread,
         "penalties": {"theta": theta_penalty, "iv_crush": iv_crush_penalty},
         "blockers": blockers,
+        "unavailable_inputs": unavailable,
+        "greek_sources": {
+            name: (str(row.get(f"{name}_source") or "PROVIDER")
+                   if _present(row.get(name)) else "UNAVAILABLE")
+            for name in ("delta", "gamma", "theta")
+        },
         "research_only": True,
         "guaranteed_explosion": False,
     }
