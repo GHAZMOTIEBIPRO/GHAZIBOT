@@ -117,8 +117,10 @@ body{background:radial-gradient(ellipse 1100px 420px at 52% -140px,rgba(24,122,1
 @media (max-width:1050px){.terminal-index-grid,.terminal-stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .terminal-chart-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:650px){.page-shell{width:calc(100% - 16px);padding-top:9px}
-  .hero{padding:11px;flex-direction:row;align-items:center;gap:8px}
-  .hero .status-panel{min-width:0;width:auto;padding:8px;flex:1}
+  .hero{padding:11px;flex-direction:column;align-items:stretch;gap:8px}
+  /* Full-width status row on phones: the side-by-side box was squeezed to
+     ~80px and wrapped the report time into an unreadable column. */
+  .hero .status-panel{min-width:0;width:100%;padding:8px 10px;flex:none}
   .hero .status-panel small:nth-last-child(1){display:none}
   .hero h1{font-size:1.25rem}.hero .brand-subtitle{font-size:.7rem}
   .terminal-intro{padding:17px;flex-direction:column;align-items:stretch;gap:12px}
