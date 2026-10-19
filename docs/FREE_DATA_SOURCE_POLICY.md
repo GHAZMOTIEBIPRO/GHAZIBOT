@@ -31,3 +31,14 @@ Each optional source is disabled until its own API key is present in GitHub Secr
 ## Display and licensing rule
 
 A free tier can be limited to personal, internal, or non-display use. Provider data is used only when its configured account and terms permit the project's public dashboard. Operators remain responsible for their provider account terms.
+
+## Five-bridge integration review (2026-10-19)
+
+- `options_radar/optional_massive_research.py`: real Massive EOD REST adapter for **stocks and named OCC option contracts**, but fail-closed by default. An ordinary free individual key **does not authorize** non-display analysis, derived outputs, public charts or redistribution. Do not activate merely by setting a key. A separately documented compliant license and explicit operator approval are required (`licensed=True` / `MASSIVE_NONDISPLAY_LICENSE_CONFIRMED=true`). No project secret or licensed prices are shipped publicly.
+- `options_radar/data_fabric.py::optional_independent_eod_research`: opt-in, internal-only Massive wrapper. No trade recommendation gate uses its output.
+- `options_radar/sec_bulk_fallback.py` and `scripts/build_sec_filing_pulse.py`: bounded, offline official SEC submissions ZIP reader. Supply `--bulk-archive` / `SEC_BULK_SUBMISSIONS_ZIP`, `--bulk-cik-map`, plus operator attestation `SEC_BULK_OFFICIAL_ORIGIN_ATTESTED=true`; this feature does not download a ZIP to bypass SEC 403. SEC official reference: https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip . Operator must establish origin and archive currency; UI marks undated bulk results and does not imply fresh access.
+- `options_radar/options_daily_outcome_shadow.py`: evaluates dated option close changes only when observed entry/exit daily OHLC records exist, not executable NBBO fills or realized profit.
+- `options_radar/stock_walk_forward.py::coverage_gap_diagnostics`: shows true shortfall in completed 60-minute observation coverage without changing the 90% gate.
+- `scripts/build_source_consensus_status.py`: publishes only a **source agreement status** (not Massive prices or derived agreement data). One Yahoo family must be shown as unverified consensus. The public UI does not imply multiple price sources or qualified OPRA.
+
+No package installation, subscription, forced retry, unlicensed API scrape, synthetic quote, or weakening of options execution gates is permitted by this integration.

@@ -10,6 +10,7 @@
     sec:[ROOT+"bot-state/runtime/public/data/sec_filing_pulse.json"],
     watch:[ROOT+"bot-state/runtime/public/data/stock_watch_charts.json"],
     structural:[ROOT+"bot-state/runtime/public/data/structural_watch.json"],
+    sourceAgreement:[ROOT+"bot-state/runtime/public/data/source_agreement.json"],
     gamma:[ROOT+"bot-state/runtime/public/data/free_gex_validation.json"],
     trust:[ROOT+"bot-state/runtime/public/data/free_data_health.json","./data/free_data_health.json"],
     runtime:[ROOT+"bot-state/runtime/public/data/data-status.json","./data/data-status.json"],
@@ -54,7 +55,8 @@
   };
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
-    stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,oos:null};
+    stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
+    oos:null,sourceAgreement:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -70,6 +72,12 @@
     watch:d=>d?.schema==="ghazi.stock_charts.v1" &&
       d.quote_execution_eligible===false &&
       d.data_role==="RESEARCH_ONLY_NOT_LICENSED_EXECUTION",
+    sourceAgreement:d=>d?.schema==="ghazi.source_consensus_status.v1" &&
+      d.independent_price_comparison==="NOT_VERIFIED" &&
+      d.independent_confirmations===0 && d.quote_execution_eligible===false &&
+      d.research_only===true && d.price_data===null &&
+      d.massive_market_data_published===false &&
+      d.concordance_ratio===null,
     structural:d=>d?.schema==="ghazi.structural_watch.v1" &&
       d.research_only===true && d.option_execution_ready===false &&
       d.recommendation===false && Array.isArray(d.candidates) &&
@@ -200,6 +208,13 @@
       events.append(row);shown++;
     }
     if(!shown)events.append(txt("p","لم تصل أخبار بحثية مؤهلة للعرض.","terminal-empty"));
+    const agreement=typeof GhaziSourceAgreement!=="undefined"?
+      GhaziSourceAgreement.evaluate(state.sourceAgreement):null;
+    put("terminal-source-agreement-status",agreement?
+      agreement.explanation+" · عدد مصادر الأسعار المرصودة: "+
+      agreement.families+" · الشارتات البحثية: "+agreement.chartCount+
+      " · الحالة: "+agreement.status:
+      "لا يوجد تقرير حديث صالح عن اتفاق المصادر؛ لا نعتبر Yahoo ومكتباته مصدرين مستقلين.");
     const oos=typeof GhaziOOS!=="undefined"?
       GhaziOOS.evaluate(state.oos):null;
     const oosText=oos?oos.summary+" · تغطية 60 دقيقة: "+
@@ -1002,10 +1017,10 @@
     $("terminal-panel-chart")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit","structural","oos"];
+    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+

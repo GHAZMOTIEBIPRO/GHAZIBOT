@@ -9,13 +9,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import sys
 import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import requests
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from options_radar.sec_bulk_fallback import read_issuer  # noqa: E402
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 FALLBACK_TICKER_MAP = "https://raw.githubusercontent.com/jadchaar/sec-cik-mapper/main/mappings/stocks/ticker_to_cik.json"
@@ -227,12 +235,84 @@ def _active_refusal_cooldown(previous: dict | None, now: datetime) -> str | None
         return None
 
 
+def collect_local_sec_bulk(brief: dict, *, now: datetime, archive: Path,
+                           cik_map_path: Path, max_symbols: int) -> dict:
+    """Use only a manually provisioned SEC ZIP. Its download time is unverified.
+
+    A ZIP is not equivalent to a live SEC feed, and the archive's file
+    modification time never becomes an observed issuer filing timestamp.
+    """
+    from options_radar.sec_bulk_fallback import read_issuer
+
+    selected = symbols_from_brief(brief, max_symbols)
+    try:
+        local = json.loads(cik_map_path.read_text(encoding="utf-8"))
+        if not isinstance(local, dict):
+            local = {}
+    except (OSError, ValueError):
+        local = {}
+    errors = {}
+    rows = []
+    inspected = 0
+    for symbol in selected:
+        value = local.get(symbol)
+        try:
+            cik = int(value) if isinstance(value, (str, int)) else -1
+        except ValueError:
+            cik = -1
+        payload = read_issuer(archive, cik, symbol)
+        if payload is None:
+            errors[symbol] = "OFFLINE_ARCHIVE_NOT_VERIFIED_FOR_ISSUER"
+            continue
+        inspected += 1
+        rows.extend(parse_submissions(symbol, cik, str(payload.get("name") or symbol)[:125],
+                                      payload, now=now))
+    unique = {}
+    for row in sorted(rows, key=lambda x: x["filing_date"], reverse=True):
+        unique.setdefault((row["cik"], row["accession_number"]), row)
+    filings = list(unique.values())[:MAX_FILINGS]
+    for item in filings:
+        item["from_offline_archive"] = True
+        item["source_snapshot_date_verified"] = False
+        item["official_live_response_verified"] = False
+    return {
+        "schema": "ghazi.sec_issuer_pulse.v1",
+        "generated_at": now.astimezone(timezone.utc).isoformat(),
+        "status": "BULK_ARCHIVE_UNDATED" if inspected else "UNAVAILABLE",
+        "source_retry_after": None,
+        "refusal_reason": None,
+        "source": "Operator-provisioned SEC submissions bulk ZIP (historical cache)",
+        "source_observed_at": None,
+        "coverage": {"symbols_requested": len(selected),
+                     "issuers_inspected": inspected,
+                     "filings_verified": len(filings), "errors": errors},
+        "ticker_mapping_source": "LOCAL_CIK_MAP_RECHECKED_IN_ZIP",
+        "filings": filings,
+        "policy": {"free_no_api_key": True,
+                   "primary_document_linked": True,
+                   "positive_news_inferred": False,
+                   "dilution_forms_are_risk_not_bullish": True,
+                   "public_latest_close_redistribution": False,
+                   "no_execution_signals": True,
+                   "offline_archive_not_live": True},
+    }
+
+
 def collect(brief: dict, *, now: datetime, session: Any = requests,
             agent: str, pause: Any=time.sleep, max_symbols:int=MAX_SYMBOLS,
-            previous: dict | None = None) -> dict:
+            previous: dict | None = None,
+            bulk_archive: Path | None = None,
+            bulk_cik_map: Path | None = None,
+            bulk_official_origin_attested: bool = False) -> dict:
     if now.tzinfo is None:
         raise ValueError("Timezone-aware now required")
     now=now.astimezone(timezone.utc)
+    if (bulk_official_origin_attested and bulk_archive is not None
+            and bulk_archive.is_file()):
+        return collect_local_sec_bulk(
+            brief, now=now, archive=bulk_archive,
+            cik_map_path=bulk_cik_map or Path("data/sec_cik_map.json"),
+            max_symbols=max_symbols)
     selected=symbols_from_brief(brief,max_symbols)
     failures={}
     reports=[]
@@ -341,11 +421,14 @@ def main() -> int:
     p.add_argument("--brief",type=Path,required=True)
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--max-symbols",type=int,default=MAX_SYMBOLS)
+    p.add_argument("--bulk-archive",type=Path,
+                   default=Path(os.environ["SEC_BULK_SUBMISSIONS_ZIP"])
+                   if os.getenv("SEC_BULK_SUBMISSIONS_ZIP") else None)
+    p.add_argument("--bulk-cik-map",type=Path,default=Path("data/sec_cik_map.json"))
     args=p.parse_args()
     brief=json.loads(args.brief.read_text(encoding="utf-8"))
     if brief.get("schema")!="ghazi.public_decision.v1":
         raise ValueError("unexpected market research source schema")
-    import os
     agent=os.getenv("SEC_USER_AGENT","GHAZI Market Research ghazi-bot@users.noreply.github.com")
     previous = None
     if args.output.is_file() and args.output.stat().st_size <= 1_000_000:
@@ -354,7 +437,10 @@ def main() -> int:
         except (OSError, ValueError, TypeError):
             previous = None
     result=collect(brief,now=datetime.now(timezone.utc),agent=agent,
-                   max_symbols=max(1,min(30,args.max_symbols)),previous=previous)
+                   max_symbols=max(1,min(30,args.max_symbols)),previous=previous,
+                   bulk_archive=args.bulk_archive,bulk_cik_map=args.bulk_cik_map,
+                   bulk_official_origin_attested=(
+                       os.getenv("SEC_BULK_OFFICIAL_ORIGIN_ATTESTED") == "true"))
     args.output.parent.mkdir(parents=True,exist_ok=True)
     temp=args.output.with_suffix(args.output.suffix+".tmp")
     temp.write_text(json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False)+"\n",encoding="utf-8")

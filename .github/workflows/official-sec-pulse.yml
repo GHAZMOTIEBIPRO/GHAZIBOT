@@ -38,6 +38,9 @@ jobs:
           python-version: "3.12"
       - name: Install small free requests dependency
         run: python -m pip install requests
+      # Opt-in archive is operator-provisioned, never downloaded to evade a 403.
+      # Set SEC_BULK_SUBMISSIONS_ZIP and SEC_BULK_OFFICIAL_ORIGIN_ATTESTED
+      # only after verifying that the ZIP came from the official SEC bulk URL.
       - name: Scan bounded official SEC issuer submissions
         shell: bash
         run: |

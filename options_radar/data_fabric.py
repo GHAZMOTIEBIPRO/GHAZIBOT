@@ -76,6 +76,57 @@ def _provider_family(provider: str) -> str:
     return name or "unknown"
 
 
+def optional_independent_eod_research(
+    ticker: str, *, end_date, key: str = "", licensed: bool = False, session=None,
+) -> dict[str, Any]:
+    """Internal shadow adapter; NEVER contributes live data or public prices.
+
+    An Individual Basic API key does not authorize non-display analytics.
+    Explicit licensed=True must reflect separate permission from provider.
+    """
+    from .optional_massive_research import fetch_eod, permission_state
+
+    state = permission_state(key=key, permitted=licensed)
+    if not state["enabled"]:
+        return {**state, "bars": []}
+    if session is None:
+        return fetch_eod(ticker, key=key, permitted=licensed, end_date=end_date)
+    return fetch_eod(ticker, key=key, permitted=licensed,
+                     end_date=end_date, session=session)
+
+
+def optional_historical_option_eod_audit(
+    contract: str, *, entry_date, exit_date, key: str = "",
+    licensed: bool = False, session=None,
+) -> dict[str, Any]:
+    """Only historical option OHLC close-to-close observations, never fills."""
+    from datetime import date
+
+    from .optional_massive_research import fetch_eod, permission_state
+    from .options_daily_outcome_shadow import describe_option_path
+
+    policy = permission_state(key=key, permitted=licensed)
+    if not policy["enabled"]:
+        return {**policy, "research_only": True, "realized_pnl": None,
+                "execution_eligible": False}
+    if not isinstance(entry_date, date) or not isinstance(exit_date, date):
+        return {**policy, "reason": "INVALID_DATES", "research_only": True,
+                "realized_pnl": None}
+    if (exit_date - entry_date).days < 1 or (exit_date - entry_date).days > 30:
+        return {**policy, "reason": "INVALID_DATES", "research_only": True,
+                "realized_pnl": None}
+    opts = {"key": key, "permitted": licensed, "end_date": exit_date,
+            "lookback_days": (exit_date - entry_date).days}
+    if session is not None:
+        opts["session"] = session
+    feed = fetch_eod(contract, **opts)
+    result = describe_option_path(contract, feed.get("bars"),
+                                  entry_date=entry_date.isoformat(),
+                                  end_date=exit_date.isoformat())
+    return {**result, "source_family": "polygon_massive",
+            "internal_only": True, "data_license_checked": True}
+
+
 def _source_tier(provider: str, freshness: str = "") -> str:
     text = f"{provider} {freshness}".lower()
     if any(token in text for token in ("sandbox", "delayed", "indicative", "unofficial", "may be delayed", "24h")):

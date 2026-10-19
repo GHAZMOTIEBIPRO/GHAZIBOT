@@ -229,6 +229,40 @@ def _gate(audit: dict[str, Any]) -> WalkForwardGate:
     )
 
 
+def coverage_gap_diagnostics(audit: dict[str, Any]) -> dict[str, Any]:
+    """Explain the missing observation *coverage*, never improve a score."""
+    counts = audit.get("coverage") if isinstance(audit.get("coverage"), dict) else {}
+    eligible = int(max(0, _number(counts.get("eligible_records"))))
+    observed = int(max(0, _number(counts.get("covered_60m"))))
+    if eligible == 0:
+        # Legacy or synthetic fixtures lack the publisher's absolute counts;
+        # never fill missing counts by assuming all records passed coverage.
+        return {
+            "eligible_records": None,
+            "covered_60m_records": None,
+            "missing_60m_records": None,
+            "minimum_required_60m_records": None,
+            "additional_records_needed_at_fixed_denominator": None,
+            "coverage_deficit_known": False,
+            "policy": "NO_SYNTHETIC_BACKFILL_OR_PROFIT_CLAIM",
+        }
+    observed = min(observed, eligible)
+    required = math.ceil(eligible * MIN_COVERAGE_60M_PCT / 100)
+    return {
+        "eligible_records": eligible,
+        "covered_60m_records": observed,
+        "missing_60m_records": eligible - observed,
+        "minimum_required_60m_records": required,
+        "additional_records_needed_at_fixed_denominator": max(0, required - observed),
+        "coverage_deficit_known": True,
+        "policy": "NO_SYNTHETIC_BACKFILL_OR_PROFIT_CLAIM",
+        "next_action": (
+            "Observe actual completed 5-minute source candles after each valid "
+            "signal; never relabel pending or ambiguous outcomes as successes."
+        ),
+    }
+
+
 def run_stock_walk_forward(audit: dict[str, Any]) -> dict[str, Any]:
     gate = _gate(audit)
     base_report: dict[str, Any] = {
@@ -268,6 +302,7 @@ def run_stock_walk_forward(audit: dict[str, Any]) -> dict[str, Any]:
             else {}
         ),
         "open_source_features_change_walk_forward_score": False,
+        "coverage_gap_diagnostics": coverage_gap_diagnostics(audit),
     }
 
     if not gate.ready:
