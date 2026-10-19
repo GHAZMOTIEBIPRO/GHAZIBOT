@@ -9,6 +9,8 @@ import yaml
 from scripts.relay_dependent_workflows import (
     LIVE_STATUS,
     RELAYS,
+    STOCK_VAULT,
+    STRENGTH,
     Target,
     plan_dispatches,
 )
@@ -48,7 +50,7 @@ def test_completed_options_run_relays_every_dependent_once():
 def test_already_relayed_or_workflow_run_triggered_dependents_are_skipped():
     runs = {"stock-radar.yml": {"id": 3, "updated_at": _iso(20)}}
     last = {
-        "stock-state-vault.yml": _stamp(19),
+        Target(STOCK_VAULT, (("source_kind", "stock"),)).key: _stamp(19),
         "cross-confirmation.yml": _stamp(19),
         Target(LIVE_STATUS, (("source_workflow", "stock-radar.yml"),)).key: _stamp(30),
     }
@@ -79,9 +81,55 @@ def test_each_target_is_dispatched_at_most_once_per_tick_oldest_source_first():
     assert cross["source"] == "stock-radar.yml"
 
 
-def test_auditor_relays_walk_forward():
+def test_auditor_relays_walk_forward_and_its_vault_persistence():
     plan = _plan({"stock-outcome-auditor.yml": {"id": 9, "updated_at": _iso(5)}})
-    assert [item["workflow"] for item in plan] == ["stock-walk-forward.yml"]
+    assert [(item["workflow"], item["inputs"]) for item in plan] == [
+        (STOCK_VAULT, {"source_kind": "audit"}),
+        ("stock-walk-forward.yml", {}),
+    ]
+
+
+def test_adaptive_review_is_persisted_by_the_stock_vault():
+    plan = _plan({"adaptive-review.yml": {"id": 5, "updated_at": _iso(8)}})
+    assert plan == [{"workflow": STOCK_VAULT, "inputs": {"source_kind": "adaptive"},
+                     "source": "adaptive-review.yml", "source_run_id": 5}]
+    done = {Target(STOCK_VAULT, (("source_kind", "adaptive"),)).key: _stamp(4)}
+    assert _plan({"adaptive-review.yml": {"id": 5, "updated_at": _iso(8)}}, last=done) == []
+
+
+def test_vault_kinds_share_one_dispatch_per_tick_oldest_first():
+    plan = _plan({
+        "stock-radar.yml": {"id": 1, "updated_at": _iso(10)},
+        "adaptive-review.yml": {"id": 2, "updated_at": _iso(30)},
+        "stock-outcome-auditor.yml": {"id": 3, "updated_at": _iso(20)},
+    })
+    vault = [item for item in plan if item["workflow"] == STOCK_VAULT]
+    assert vault == [{"workflow": STOCK_VAULT, "inputs": {"source_kind": "adaptive"},
+                      "source": "adaptive-review.yml", "source_run_id": 2}]
+
+
+def test_strength_score_refreshes_after_charts_or_walk_forward():
+    charts = _plan({"stock-watch-charts.yml": {"id": 6, "updated_at": _iso(5)}},
+                   artifacts={"stock-watch-charts.yml": False})
+    assert [item["workflow"] for item in charts] == [STRENGTH]
+    walk = _plan({"stock-walk-forward.yml": {"id": 7, "updated_at": _iso(5)}})
+    assert [item["workflow"] for item in walk] == [STRENGTH]
+    assert _plan({"stock-walk-forward.yml": {"id": 7, "updated_at": _iso(5)}},
+                 last={STRENGTH: _stamp(2)}) == []
+
+
+def test_vault_titles_name_their_kind_for_relay_dedup():
+    vault = Path(".github/workflows/stock-state-vault.yml").read_text(encoding="utf-8")
+    spec = yaml.safe_load(vault)
+    title = " ".join(spec["run-name"].split())
+    assert title.startswith("Durable Stock Evidence Vault · ${{ inputs.source_kind")
+    assert "'BLACK BOX Omega Adaptive Evidence Review' && 'adaptive'" in title
+    assert "'BLACK BOX Omega Stock Outcome Auditor' && 'audit'" in title
+    for kind, source in (("adaptive", "adaptive-review.yml"),
+                         ("audit", "stock-outcome-auditor.yml"),
+                         ("stock", "stock-radar.yml")):
+        assert f"{kind}) kind={kind}; source_workflow={source}" in vault or (
+            kind == "stock" and f"*) kind=stock; source_workflow={source}" in vault)
 
 
 def test_naive_now_is_rejected():

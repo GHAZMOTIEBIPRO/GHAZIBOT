@@ -1,7 +1,20 @@
 name: BLACK BOX Omega Durable Stock Evidence Vault
+# The kind suffix lets the orchestrator relay tell which source each vault run
+# persisted (relayed dispatches raise no workflow_run event).
+run-name: >-
+  Durable Stock Evidence Vault · ${{ inputs.source_kind
+  || (github.event.workflow_run.name == 'BLACK BOX Omega Adaptive Evidence Review' && 'adaptive')
+  || (github.event.workflow_run.name == 'BLACK BOX Omega Stock Outcome Auditor' && 'audit')
+  || 'stock' }}
 
 on:
   workflow_dispatch:
+    inputs:
+      source_kind:
+        description: "Evidence to persist from the newest successful source run"
+        type: choice
+        options: [stock, adaptive, audit]
+        default: stock
   push:
     branches: [main]
     paths:
@@ -52,6 +65,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
           SOURCE_WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          DISPATCH_KIND: ${{ inputs.source_kind || 'stock' }}
         run: |
           if [[ "$EVENT_NAME" == "workflow_run" ]]; then
             if [[ "$SOURCE_WORKFLOW_NAME" == "BLACK BOX Omega Adaptive Evidence Review" ]]; then
@@ -63,8 +77,13 @@ jobs:
             fi
             echo "run_ids=$SOURCE_RUN_ID" >> "$GITHUB_OUTPUT"
           else
-            echo "kind=stock" >> "$GITHUB_OUTPUT"
-            run_ids="$(gh run list --workflow stock-radar.yml --status success --branch main --limit 20 --json databaseId --jq 'map(.databaseId) | join(" ")' 2>/dev/null || true)"
+            case "$DISPATCH_KIND" in
+              adaptive) kind=adaptive; source_workflow=adaptive-review.yml ;;
+              audit) kind=audit; source_workflow=stock-outcome-auditor.yml ;;
+              *) kind=stock; source_workflow=stock-radar.yml ;;
+            esac
+            echo "kind=$kind" >> "$GITHUB_OUTPUT"
+            run_ids="$(gh run list --workflow "$source_workflow" --status success --branch main --limit 20 --json databaseId --jq 'map(.databaseId) | join(" ")' 2>/dev/null || true)"
             echo "run_ids=$run_ids" >> "$GITHUB_OUTPUT"
           fi
 
