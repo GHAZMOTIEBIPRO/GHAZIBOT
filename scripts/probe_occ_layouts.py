@@ -135,7 +135,35 @@ def main() -> int:
     parser.add_argument("--symbol", default="AAPL")
     parser.add_argument("--live-parse", action="store_true",
                         help="run the production OCC parser; print statuses only")
+    parser.add_argument("--live-volume", action="store_true",
+                        help="run the existing OCC volume clients; print statuses only")
     args = parser.parse_args()
+    if args.live_volume:
+        from options_radar.occ_free_context import OccDailyVolumeClient
+        from options_radar.occ_free_data import OccFreeVolumeClient
+
+        def brief(result: dict) -> dict:
+            return {
+                "success": result.get("success"),
+                "report_date": result.get("report_date"),
+                "error": str(result.get("error") or "")[:160],
+                "parsed_rows": result.get("parsed_rows"),
+                "has_volume": (result.get("total_volume") or 0) > 0,
+                "attempts": [
+                    {"date": a.get("report_date"), "status": a.get("status_code"),
+                     "error": str(a.get("error") or "")[:120]}
+                    for a in result.get("attempts", [])[:4]],
+            }
+
+        symbol = args.symbol.strip().upper()
+        daily = OccDailyVolumeClient(timeout=20).fetch(symbol)
+        free = OccFreeVolumeClient().fetch_symbol(symbol)
+        print(json.dumps({
+            "occ_free_context.OccDailyVolumeClient": brief(daily),
+            "occ_free_data.OccFreeVolumeClient": {
+                key: brief(value) for key, value in free["reports"].items()},
+        }, indent=1))
+        return 0
     if args.live_parse:
         from scripts.build_free_options_sources import occ_open_interest_snapshot
         report = occ_open_interest_snapshot(
