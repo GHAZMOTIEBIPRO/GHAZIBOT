@@ -50,6 +50,8 @@ class ClassicalDirection:
     intraday: TimeframeView
     reasons_ar: tuple[str, ...]
     limitations_ar: tuple[str, ...]
+    targets: dict[str, float] | None = None
+    scenarios_ar: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -338,6 +340,56 @@ def analyze_timeframe(frame: pd.DataFrame, timeframe: str) -> TimeframeView:
     )
 
 
+def _levels(*views: TimeframeView) -> list[float]:
+    out = []
+    for view in views:
+        for value in (view.support, view.resistance, view.last_swing_low, view.last_swing_high):
+            if value is not None and math.isfinite(value) and value > 0:
+                out.append(float(value))
+    return sorted(set(out))
+
+
+def _targets(decision: str, price: float, invalidation: float | None,
+             levels: list[float]) -> dict[str, float] | None:
+    """T1/T2 from completed swing/support/resistance levels beyond price;
+    a 1R / 2R measured move when no level exists. No indicator inputs."""
+    if decision not in {"CALL", "PUT"} or invalidation is None or price <= 0:
+        return None
+    risk = price - invalidation if decision == "CALL" else invalidation - price
+    if not math.isfinite(risk) or risk <= 0:
+        return None
+    if decision == "CALL":
+        ahead = [x for x in levels if x > price * 1.002]
+        t1 = ahead[0] if ahead else price + risk
+        t2 = next((x for x in ahead if x > t1), t1 + risk)
+    else:
+        ahead = [x for x in reversed(levels) if x < price * 0.998]
+        t1 = ahead[0] if ahead else price - risk
+        t2 = next((x for x in ahead if x < t1), t1 - risk)
+        if t2 <= 0:
+            return None
+    return {"t1": round(t1, 4), "t2": round(t2, 4), "risk_per_share": round(risk, 4),
+            "t1_reward_to_risk": round(abs(t1 - price) / risk, 2)}
+
+
+def _scenarios(decision: str, price: float, levels: list[float],
+               confirmation: float | None, invalidation: float | None) -> tuple[str, ...]:
+    above = next((x for x in levels if x > price), None)
+    below = next((x for x in reversed(levels) if x < price), None)
+    fmt = lambda v: f"{v:,.2f}" if v is not None else "غير متاح"
+    if decision == "CALL":
+        return (f"صعودي: تأكيد فوق {fmt(confirmation)} يفتح الطريق للأهداف.",
+                f"إلغاء: الإغلاق تحت {fmt(invalidation)} يلغي سيناريو CALL.",
+                "محايد: البقاء بين التأكيد والإلغاء يعني الانتظار دون مطاردة.")
+    if decision == "PUT":
+        return (f"هبوطي: تأكيد تحت {fmt(confirmation)} يفتح الطريق للأهداف.",
+                f"إلغاء: الإغلاق فوق {fmt(invalidation)} يلغي سيناريو PUT.",
+                "محايد: البقاء بين التأكيد والإلغاء يعني الانتظار دون مطاردة.")
+    return (f"صعودي محتمل: يحتاج اختراقًا مؤكدًا فوق {fmt(above)} مع توافق الأطر.",
+            f"هبوطي محتمل: يحتاج كسرًا مؤكدًا تحت {fmt(below)} مع توافق الأطر.",
+            "الحالة الحالية: انتظار؛ الأطر الزمنية غير متفقة.")
+
+
 def build_direction(
     symbol: str,
     daily_frame: pd.DataFrame,
@@ -395,6 +447,9 @@ def build_direction(
     for view in (daily, hourly, intraday):
         reasons.extend(view.reasons_ar[:3])
 
+    levels = _levels(daily, hourly, intraday)
+    targets = _targets(decision, intraday.close, invalidation, levels)
+    scenarios = _scenarios(decision, intraday.close, levels, confirmation, invalidation)
     return ClassicalDirection(
         symbol=str(symbol).upper(),
         decision=decision,
@@ -414,5 +469,8 @@ def build_direction(
             "CALL/PUT هنا اتجاه للسهم وليس اختيارًا لسترايك أو تاريخ انتهاء محدد.",
             "المنهج كلاسيكي: اتجاه داو، دعم/مقاومة، خط اتجاه، متوسطات بسيطة، حجم، اختراق/إعادة اختبار، نماذج وشموع كلاسيكية.",
             "إذا اختلفت الأطر الزمنية فالنتيجة WAIT ولا يرسل البوت تنبيه اتجاه.",
+            "الأهداف من مستويات الدعم/المقاومة والقمم والقيعان المكتملة فقط، أو حركة 1R/2R عند غيابها؛ ليست احتمال وصول.",
         ),
+        targets=targets,
+        scenarios_ar=scenarios,
     )

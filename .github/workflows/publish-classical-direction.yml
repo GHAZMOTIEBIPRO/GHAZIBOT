@@ -1,0 +1,92 @@
+name: GHAZI Classical Direction Publisher
+run-name: Classical Direction Publisher · ${{ inputs.source_run_id || 'latest' }}
+
+# Dispatched by the orchestrator relay after each successful Classical
+# Direction Radar run. The radar keeps read-only repository permissions;
+# this job is the single writer of runtime/public/data/classical_direction.json.
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Classical Direction Radar run id (default: newest successful)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: ghazi-classical-direction-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check out publisher from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: publisher
+          sparse-checkout: scripts/publish_classical_direction.py
+          sparse-checkout-cone-mode: false
+
+      - name: Check out public runtime state
+        uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download the classical direction payload
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          set -euo pipefail
+          run_id="${SOURCE_RUN_ID:-}"
+          if [[ -z "$run_id" ]]; then
+            run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow classical-direction-radar.yml \
+              --status success --branch main --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          fi
+          [[ "$run_id" =~ ^[0-9]+$ ]] || { echo "No successful classical run to publish."; exit 1; }
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" -n classical-direction-radar -D incoming
+          test -s incoming/classical_direction_latest.json
+          echo "Publishing classical direction from run $run_id"
+
+      - name: Build the research-only digest
+        run: >-
+          python publisher/scripts/publish_classical_direction.py
+          --input incoming/classical_direction_latest.json
+          --output state/runtime/public/data/classical_direction.json
+
+      - name: Commit the digest to bot-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "BLACK BOX Omega Classical Publisher"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/classical_direction.json
+          if git diff --cached --quiet; then
+            echo "Classical direction digest unchanged."
+            exit 0
+          fi
+          git commit -m "state: publish classical direction digest [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Could not persist the classical direction digest." >&2
+          exit 1

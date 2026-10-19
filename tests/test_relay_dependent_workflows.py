@@ -234,3 +234,10 @@ def test_orchestrator_owns_sec_and_free_options_cadence_and_scores_them():
     for source in ("official-sec-pulse.yml", "free-options-sources.yml"):
         plan = _plan({source: {"id": 8, "updated_at": _iso(5)}}, artifacts={source: False})
         assert [item["workflow"] for item in plan] == [STRENGTH]
+
+
+def test_classical_direction_relays_its_single_writer_publisher():
+    plan = _plan({"classical-direction-radar.yml": {"id": 11, "updated_at": _iso(5)}})
+    assert [item["workflow"] for item in plan] == ["publish-classical-direction.yml"]
+    assert _plan({"classical-direction-radar.yml": {"id": 11, "updated_at": _iso(5)}},
+                 artifacts={"classical-direction-radar.yml": False}) == []
