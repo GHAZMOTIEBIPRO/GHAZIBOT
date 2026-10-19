@@ -9,6 +9,7 @@
     news:[ROOT+"bot-state/runtime/public/data/free_public_intelligence.json","./data/free_public_intelligence.json"],
     sec:[ROOT+"bot-state/runtime/public/data/sec_filing_pulse.json"],
     watch:[ROOT+"bot-state/runtime/public/data/stock_watch_charts.json"],
+    structural:[ROOT+"bot-state/runtime/public/data/structural_watch.json"],
     gamma:[ROOT+"bot-state/runtime/public/data/free_gex_validation.json"],
     trust:[ROOT+"bot-state/runtime/public/data/free_data_health.json","./data/free_data_health.json"],
     runtime:[ROOT+"bot-state/runtime/public/data/data-status.json","./data/data-status.json"],
@@ -52,7 +53,7 @@
   };
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
-    stockCharts:null,plot:null,trust:null,runtime:null,audit:null};
+    stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -68,6 +69,11 @@
     watch:d=>d?.schema==="ghazi.stock_charts.v1" &&
       d.quote_execution_eligible===false &&
       d.data_role==="RESEARCH_ONLY_NOT_LICENSED_EXECUTION",
+    structural:d=>d?.schema==="ghazi.structural_watch.v1" &&
+      d.research_only===true && d.option_execution_ready===false &&
+      d.recommendation===false && Array.isArray(d.candidates) &&
+      d.candidates.length<=60 &&
+      ["RESEARCH_SNAPSHOT","STALE_OR_INVALID"].includes(d.status),
     gamma:d=>d?.policy==="shadow_validation_never_signal_authority" &&
       d.decision==="SHADOW_ONLY",
     trust:d=>d?.version==="FREE_DATA_FABRIC_V2" &&
@@ -343,6 +349,46 @@
       (kind==="large"?"قائمة الشركات الكبيرة والمعروفة":"قائمة الشركات المضاربية/مرتفعة الحركة؛ لا يُحسم حجم الرسملة دون مصدر مستقل")+
       " · وقت فحص الأسهم: "+stamp(state.brief?.source_generated_at)+
       " · أسعار الرصد ليست حية · لا تُفسَّر الدرجة كنسبة ربح.");
+  }
+  function renderStructuralWatch(){
+    const target=$("terminal-structural-list");if(!target)return;
+    target.replaceChildren();
+    const report=state.structural;
+    const age=feedAgeHours(report?.source_observed_at);
+    const valid=report?.status==="RESEARCH_SNAPSHOT" && age!==null && age<=7*24;
+    const rows=valid?report.candidates:[];
+    put("terminal-structural-health",valid?
+      "فحص شمل "+fmt(report.universe_rows_screened,0)+" صفًا مدرجًا · "+
+      rows.length+" مرشحًا بحثيًا · وقت الرصد الأصلي: "+stamp(report.source_observed_at)+
+      " · البيانات ليست أسعارًا لحظية ولا تثبت محفزًا رسميًا":
+      "لا يوجد فحص هيكلي حديث موثوق خلال 7 أيام؛ القائمة غير محدثة ولا تصلح للتوصية.");
+    if(!rows.length){
+      target.append(txt("p","لا توجد مرشحات حديثة صالحة؛ لا يتم اختراع بيانات بديلة.","terminal-empty"));
+      return;
+    }
+    for(const row of rows){
+      if(!/^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$/.test(row?.symbol||"")||
+          !Number.isFinite(row.market_cap_observed)||
+          !Number.isFinite(row.structural_score_research))continue;
+      const item=txt("article","","terminal-structural-item");
+      const title=txt("div","","terminal-structural-title");
+      title.append(txt("strong",row.symbol),chip("بحث هيكلي","STALE"));
+      item.append(title,txt("p",String(row.name||row.symbol).slice(0,110)),
+        pair("رسملة وقت الفحص",fmt(row.market_cap_observed/1e6,2)+" مليون $"),
+        pair("أسهم حرة غير موثقة",Number.isFinite(row.float_shares_unverified)?
+          fmt(row.float_shares_unverified/1e6,2)+" مليون":"غير متاح"),
+        pair("درجة وصفية لا تعني ربحًا",fmt(row.structural_score_research,0)+" / 100"));
+      const bars=state.watchCharts?.symbols?.[row.symbol]?.intervals?.["1d"]?.bars;
+      if(Array.isArray(bars)&&bars.length>=2)item.append(chartButton(row.symbol,"فتح الشارت البحثي ↗"));
+      else item.append(txt("small","لا يوجد شارت منشور؛ لا نفترض وجود دخول أو هدف.","terminal-structural-notice"));
+      const risk=Array.isArray(state.sec?.filings)?state.sec.filings.find(f=>
+        f.symbol===row.symbol&&f.event_type==="OFFERING_OR_DILUTION_REVIEW"):null;
+      item.append(txt("small",risk?
+        "تنبيه: إفصاح إصدار أو تخفيف يحتاج مراجعة.":
+        "مخاطر الإصدارات والتخفيف غير محسومة؛ يلزم التحقق من الإفصاحات.",
+        risk?"terminal-structural-risk":"terminal-structural-notice"));
+      target.append(item);
+    }
   }
   function newsCard(item,official){
     const card=txt("article","","terminal-news-item");
@@ -913,15 +959,15 @@
     $("terminal-panel-chart")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit"];
+    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit","structural"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderNews();renderTrust();renderOptions();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOptions();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
