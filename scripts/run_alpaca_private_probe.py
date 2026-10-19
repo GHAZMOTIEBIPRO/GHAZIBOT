@@ -3,9 +3,17 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
-from options_radar.alpaca_delayed_research import (
+# Minimal standalone import avoids the full trading engine and its large
+# dependencies on a manually invoked private market-data probe.
+HELPER = Path(__file__).resolve().parents[1] / "options_radar"
+if str(HELPER) not in sys.path:
+    sys.path.insert(0, str(HELPER))
+
+from alpaca_delayed_research import (  # noqa: E402
     fetch_completed_daily,
     historical_option_response,
     policy_state,
