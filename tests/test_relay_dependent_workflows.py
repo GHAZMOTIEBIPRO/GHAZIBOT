@@ -225,3 +225,12 @@ def test_relayed_walk_forward_reads_newest_audit_artifact_before_bot_state():
     fallback = walk.index("git show origin/bot-state:state/stocks/stock_outcome_audit.json")
     assert artifact < fallback
     assert "actions: read" in walk
+
+
+def test_orchestrator_owns_sec_and_free_options_cadence_and_scores_them():
+    central = Path(".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
+    assert central.count("dispatch_if_stale official-sec-pulse.yml 240") == 1
+    assert central.count("dispatch_if_stale free-options-sources.yml 360") == 1
+    for source in ("official-sec-pulse.yml", "free-options-sources.yml"):
+        plan = _plan({source: {"id": 8, "updated_at": _iso(5)}}, artifacts={source: False})
+        assert [item["workflow"] for item in plan] == [STRENGTH]

@@ -133,6 +133,10 @@ jobs:
             dispatch_if_stale options-radar.yml 18 "Full Omega Radar + Contract Guardian"
             dispatch_if_stale adaptive-review.yml 70 "Adaptive Evidence Review"
             dispatch_if_stale stock-outcome-auditor.yml 70 "Stock Outcome Auditor"
+            # Low-frequency official/free sources whose own crons GitHub drops.
+            # SEC refusals keep their own 6h cooldown inside the pulse.
+            dispatch_if_stale official-sec-pulse.yml 240 "Official SEC Filings"
+            dispatch_if_stale free-options-sources.yml 360 "Free OCC Options Sources"
           fi
 
           # Index research (and, via the relay, its stock charts) every ~2h in
