@@ -19,6 +19,7 @@
     audit:[ROOT+"bot-state/runtime/public/data/stock_audit_public.json"],
     oos:[ROOT+"bot-state/state/stocks/stock_walk_forward.json"],
     live:[ROOT+"bot-state/runtime/public/data/live_dashboard_status.json"],
+    explosion:[ROOT+"bot-state/runtime/public/data/explosion_hunter.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -59,7 +60,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -124,6 +125,8 @@
       String(d?.status||"").toLowerCase()) &&
       d?.option_provider_readiness?.production_quote_ready!==undefined &&
       d?.row_counts && d?.quality_counts,
+    explosion:d=>d?.schema==="ghazi.explosion_hunter_public.v1"&&d.research_only===true&&
+      d.score_is_probability===false&&d.execution_authority===false&&Array.isArray(d.candidates),
     live:d=>d?.decision_authority===false&&d?.contains_secrets===false&&
       d?.paths&&typeof d.paths==="object",
     oos:d=>d?.mode==="EXPANDING_SESSION_WALK_FORWARD" &&
@@ -510,6 +513,44 @@
       (kind==="large"?"قائمة الشركات الكبيرة والمعروفة":"قائمة الشركات المضاربية/مرتفعة الحركة؛ لا يُحسم حجم الرسملة دون مصدر مستقل")+
       " · وقت فحص الأسهم: "+stamp(state.brief?.source_generated_at)+
       " · أسعار الرصد ليست حية · لا تُفسَّر الدرجة كنسبة ربح.");
+  }
+  function renderExplosion(){
+    const target=$("terminal-explosion-list");if(!target)return;
+    target.replaceChildren();
+    const report=state.explosion;
+    const age=feedAgeHours(report?.source_generated_at);
+    const counts=report?.stage_counts||{};
+    if(!report||age===null){
+      put("terminal-explosion-health","لا يوجد فحص منشور بعد؛ يظهر الرادار بعد أول فحص للسوق في الجلسة.");
+      target.append(txt("p","لا توجد بيانات؛ لا يتم اختراع مرشحين.","terminal-empty"));
+      return;
+    }
+    put("terminal-explosion-health","آخر فحص: "+stamp(report.source_generated_at)+
+      " · ضغط "+(counts.PRESSURE_BUILDING??0)+" · اشتعال "+(counts.IGNITION??0)+
+      " · انفجار "+(counts.EXPLOSION??0)+" · ممتد "+(counts.EXTENDED??0)+
+      (age>2?" · الفحص ليس من الجلسة الحالية":""));
+    const tone={PRESSURE_BUILDING:"STALE",IGNITION:"UP",EXPLOSION:"UP",EXTENDED:"DOWN"};
+    const rows=report.candidates.filter(r=>/^[A-Z][A-Z0-9.-]{0,9}$/.test(r?.symbol||""));
+    for(const row of rows.slice(0,20)){
+      const item=txt("article","","terminal-structural-item");
+      const title=txt("div","","terminal-structural-title");
+      title.append(txt("strong",row.symbol),chip(String(row.stage_ar||row.stage),tone[row.stage]||null));
+      item.append(title,
+        pair("ترتيب بحثي",fmt(row.score,1)+" / 100"),
+        pair("حركة اليوم",Number.isFinite(row.day_move_pct)?fmt(row.day_move_pct,2)+"%":"غير متاح"),
+        pair("حجم نسبي RVOL",Number.isFinite(row.rvol)?fmt(row.rvol,2)+"×":"غير متاح"),
+        pair("أسهم حرة",Number.isFinite(row.float_shares)?fmt(row.float_shares/1e6,2)+" مليون":"غير متاح"),
+        pair("سيولة دولارية",Number.isFinite(row.dollar_volume)?fmt(row.dollar_volume/1e6,2)+" مليون $":"غير متاح"));
+      if(row.catalyst_headline){const h=txt("p",String(row.catalyst_headline).slice(0,160));h.dir="auto";item.append(h);}
+      const sec=row.official_catalyst_url?safeOfficial(row.official_catalyst_url):null;
+      if(sec){const a=txt("a","إفصاح SEC الرسمي ↗","terminal-card-action");a.href=sec;a.target="_blank";a.rel="noopener noreferrer";item.append(a);}
+      if(Number.isFinite(row.dilution_risk)&&row.dilution_risk>=50)
+        item.append(txt("small","تحذير: مخاطر تخفيف ملكية مرتفعة","terminal-structural-notice"));
+      if(row.stage==="EXTENDED")
+        item.append(txt("small","الحركة ممتدة؛ الدخول المتأخر عالي المخاطر","terminal-structural-notice"));
+      target.append(item);
+    }
+    if(!rows.length)target.append(txt("p","لا توجد أسهم في مراحل الضغط أو الاشتعال في آخر فحص.","terminal-empty"));
   }
   function renderStructuralWatch(){
     const target=$("terminal-structural-list");if(!target)return;
@@ -1176,7 +1217,7 @@
       freeOptions:state.freeOptions?.generated_at,gamma:state.gamma?.generated_at,
       trust:state.trust?.generated_at,live:state.live?.generated_at,
       audit:state.audit?.generated_at,structural:state.structural?.generated_at,
-      strength:state.strength?.generated_at};
+      strength:state.strength?.generated_at,explosion:state.explosion?.source_generated_at};
     feedsBox.replaceChildren();
     for(const row of api.feedRows(stamps,now)){
       const item=txt("div","","terminal-ops-feed");
@@ -1196,15 +1237,15 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOps();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderNews();renderTrust();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }

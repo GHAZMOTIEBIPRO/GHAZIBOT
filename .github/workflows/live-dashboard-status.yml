@@ -167,6 +167,20 @@ jobs:
           --source-path "${{ steps.source.outputs.source_path }}"
           --source-payload "incoming/${{ steps.source.outputs.required_file }}"
 
+      # Single writer of explosion_hunter.json; the fast radar itself keeps
+      # read-only repository permissions.
+      - name: Publish compact Explosion Hunter digest from the same fast scan
+        if: steps.source.outputs.skip != 'true' && steps.source.outputs.source_path == 'fast_discovery'
+        shell: bash
+        run: |
+          if [[ -s incoming/fast_market_state.json ]]; then
+            python publisher/scripts/publish_explosion_hunter.py \
+              --input incoming/fast_market_state.json \
+              --output state/runtime/public/data/explosion_hunter.json
+          else
+            echo "Fast artifact has no fast_market_state.json; digest not refreshed."
+          fi
+
       - name: Commit public runtime status to bot-state
         if: steps.source.outputs.skip != 'true'
         shell: bash
