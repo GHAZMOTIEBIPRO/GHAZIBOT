@@ -1,7 +1,7 @@
 {
   "service": "GHAZIBOT",
   "status": "degraded",
-  "generated_at": "2026-10-19T18:18:59.075395+00:00",
+  "generated_at": "2026-10-19T18:24:19.614536+00:00",
   "schema_version": 7,
   "health_schema_version": 3,
   "runtime_source": "bot-state/live_dashboard_status",
@@ -14,15 +14,15 @@
   },
   "workflow_health": {
     "publisher": {
-      "source_workflow": "BLACK BOX Omega Stock Radar",
-      "source_run_id": "39300085420",
+      "source_workflow": "BLACK BOX Omega Options Contract Radar",
+      "source_run_id": "39299786553",
       "mode": "artifact_to_bot_state_status_only"
     },
     "paths": {
       "fast_discovery": {
         "status": "HEALTHY",
         "generated_at": "2026-10-19T18:08:42.046822+00:00",
-        "age_minutes": 10.28,
+        "age_minutes": 15.63,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": null,
@@ -31,7 +31,7 @@
       "stocks": {
         "status": "HEALTHY",
         "generated_at": "2026-10-19T18:09:26.162256+00:00",
-        "age_minutes": 9.55,
+        "age_minutes": 14.89,
         "maximum_age_minutes": 90.0,
         "candidate_count": 4,
         "provider_readiness": null,
@@ -41,15 +41,15 @@
       },
       "options": {
         "status": "RESEARCH_ONLY",
-        "generated_at": "2026-10-19T17:49:25.972106+00:00",
-        "age_minutes": 29.55,
+        "generated_at": "2026-10-19T18:10:33.085329+00:00",
+        "age_minutes": 13.78,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": "FALLBACK_ONLY",
         "reasons": [
           "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-          "54 chain(s) are Yahoo/YFinance-only fallback",
-          "54 chain(s) contain delayed, indicative, or unofficial sources"
+          "55 chain(s) are Yahoo/YFinance-only fallback",
+          "55 chain(s) contain delayed, indicative, or unofficial sources"
         ]
       }
     }
