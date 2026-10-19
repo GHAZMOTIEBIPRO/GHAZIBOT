@@ -16,12 +16,14 @@ from pathlib import Path
 import pandas as pd
 
 from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shadow
+from options_radar.stock_watch_confluence import price_confluence_shadow
 from scripts.build_index_chart_snapshot import pack_bars
 from scripts.build_index_context import (
     NY, clean_bars, completed_daily, hourly_from_quarters,
     last_finished_five_min, last_finished_intraday, technical,
 )
 from scripts.stock_chart_retention import retain_valid_history
+from scripts.stock_watch_news_attention import load_news_attention, news_candidates
 
 SMALL_WATCH = ("RGC", "BNAI", "RGTI", "SOUN", "IONQ", "RKLB", "ASTS", "SOFI", "PLTR")
 LARGE_WATCH = ("AAPL", "NVDA", "MSFT", "TSLA", "AMD", "MU", "AVGO")
@@ -48,7 +50,8 @@ def valid_dynamic_symbols(symbols) -> tuple[str, ...]:
     return tuple(out)
 
 
-def load_dynamic_symbols(path: Path | None, *, now: datetime) -> tuple[str, ...]:
+def load_dynamic_symbols(path: Path | None, *, now: datetime,
+                         news_path: Path | None = None) -> tuple[str, ...]:
     """Rotate new radar discoveries without increasing the fixed Yahoo budget.
 
     Expired, malformed or future-dated decision snapshots NEVER seed a fetch.
@@ -90,21 +93,27 @@ def load_dynamic_symbols(path: Path | None, *, now: datetime) -> tuple[str, ...]
     candidates = list(dict.fromkeys(
         symbol for _, symbol in sorted(ranked, key=lambda x: -x[0])
     ))
-    if len(candidates) <= MAX_DYNAMIC:
-        return valid_dynamic_symbols(candidates)
-    # Keep top two actionable research sightings, rotate remaining slots
-    # every six hours so lower-ranked new symbols are not forever uncharted.
+    # Keep top two scored radar discoveries and rotate remaining candidates.
+    # Free news only fills spare slots; it never raises the score of a symbol.
     primary = candidates[:2]
     tail = candidates[2:]
-    shift = int(now.timestamp() // (6 * 3600)) % len(tail)
-    rotating = tail[shift:] + tail[:shift]
-    return valid_dynamic_symbols(primary + rotating[:MAX_DYNAMIC - 2])
+    if tail:
+        shift = int(now.timestamp() // (6 * 3600)) % len(tail)
+        tail = tail[shift:] + tail[:shift]
+    ranked = tuple(c for c in primary + tail if c not in WATCH)[:MAX_DYNAMIC]
+    attention = load_news_attention(news_path, now=now) if news_path else {}
+    if attention:
+        return news_candidates(
+            attention, fixed=WATCH, radar_choices=ranked, maximum=MAX_DYNAMIC
+        )
+    return valid_dynamic_symbols(ranked)
 
 
 def pack_symbol(
     symbol: str, daily_raw: pd.DataFrame | None,
     minute15_raw: pd.DataFrame | None, minute5_raw: pd.DataFrame | None, *,
     now: datetime, dynamic_watch: tuple[str, ...] = (),
+    news_attention: dict | None = None,
 ) -> dict | None:
     if (symbol not in WATCH and symbol not in dynamic_watch) or now.tzinfo is None:
         return None
@@ -146,6 +155,8 @@ def pack_symbol(
     # Completed DAILY OHLC only. No new Yahoo requests, no changed radar
     # scores, and no falsely independent data provider claim.
     volatility_shadow = bollinger_compression_shadow(clean_day)
+    confluence = price_confluence_shadow(clean_day)
+    media = (news_attention or {}).get(symbol)
     return {
         "symbol": symbol, "category": ("VOLATILE_GROWTH_WATCH" if symbol in SMALL_WATCH
                                       else "RADAR_DISCOVERY_WATCH" if symbol in dynamic_watch
@@ -155,11 +166,13 @@ def pack_symbol(
         "source": "Yahoo Finance yfinance (unofficial research, may be delayed)",
         "options_execution_grade": False,
         "volatility_shadow": volatility_shadow,
+        "price_confluence": confluence,
+        "news_attention": media if isinstance(media, dict) else None,
     }
 
 
 def collect(*, now: datetime, provider=None, delay=lambda _: None,
-            dynamic_symbols=(), previous=None) -> dict:
+            dynamic_symbols=(), previous=None, news_attention=None) -> dict:
     if now.tzinfo is None:
         raise ValueError("aware now required")
     if provider is None:
@@ -185,7 +198,8 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
                 received[unit] = None
             delay(.15)  # bounded transport; do not spin retry on Yahoo rate limit.
         item = pack_symbol(symbol, received.get("1d"), received.get("15m"),
-                           received.get("5m"), now=now, dynamic_watch=dynamic)
+                           received.get("5m"), now=now, dynamic_watch=dynamic,
+                           news_attention=news_attention)
         if item is not None:
             data[symbol] = item
     if not data:
@@ -243,16 +257,21 @@ def main() -> int:
     p=argparse.ArgumentParser()
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--discovery-source",type=Path,default=None)
+    p.add_argument("--news-source",type=Path,default=None)
     args=p.parse_args()
     now=datetime.now(timezone.utc)
-    dynamic=load_dynamic_symbols(args.discovery_source,now=now)
+    media=load_news_attention(args.news_source, now=now)
+    dynamic=load_dynamic_symbols(
+        args.discovery_source, now=now, news_path=args.news_source
+    )
     previous=None
     if args.output.is_file() and args.output.stat().st_size <= 800_000:
         try:
             previous=json.loads(args.output.read_text(encoding="utf-8"))
         except (OSError, ValueError, TypeError):
             previous=None
-    report=collect(now=now,delay=time.sleep,dynamic_symbols=dynamic,previous=previous)
+    report=collect(now=now,delay=time.sleep,dynamic_symbols=dynamic,
+                   previous=previous,news_attention=media)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     temp=args.output.with_suffix(args.output.suffix+".tmp")
     temp.write_text(json.dumps(report,ensure_ascii=False,allow_nan=False,separators=(",",":"))+"\n",
