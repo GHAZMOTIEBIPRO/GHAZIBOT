@@ -248,7 +248,34 @@ def coverage_gap_diagnostics(audit: dict[str, Any]) -> dict[str, Any]:
         }
     observed = min(observed, eligible)
     required = math.ceil(eligible * MIN_COVERAGE_60M_PCT / 100)
+    # Count observed reasons as a diagnostic only. These are already audited
+    # records, not fabricated observations or recovered coverage.
+    rows = audit.get("records") if isinstance(audit.get("records"), dict) else {}
+    reasons = {
+        "NO_POST_SIGNAL_BARS": 0,
+        "PENDING_OR_UNFINISHED": 0,
+        "OTHER_MISSING_60M": 0,
+    }
+    inspected_missing = 0
+    for row in rows.values():
+        if (not isinstance(row, dict)
+                or row.get("signal_session_valid") is False):
+            continue
+        record_coverage = (row.get("coverage")
+                           if isinstance(row.get("coverage"), dict) else {})
+        if record_coverage.get("60m") is True:
+            continue
+        inspected_missing += 1
+        if row.get("audit_reason") == "no_post_signal_5m_bars":
+            reasons["NO_POST_SIGNAL_BARS"] += 1
+        elif row.get("audit_status") == "pending":
+            reasons["PENDING_OR_UNFINISHED"] += 1
+        else:
+            reasons["OTHER_MISSING_60M"] += 1
     return {
+        "missing_reason_counts_observed": reasons,
+        "diagnosed_missing_records_sampled": inspected_missing,
+        "missing_reason_count_is_exhaustive": inspected_missing == eligible - observed,
         "eligible_records": eligible,
         "covered_60m_records": observed,
         "missing_60m_records": eligible - observed,
