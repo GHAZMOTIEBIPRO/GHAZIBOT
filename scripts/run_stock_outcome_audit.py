@@ -172,12 +172,14 @@ def run(
     errors: dict[str, str] = {}
     attempted = 0
     updated_records = 0
+    outside_provider_window = 0
 
     for symbol in symbols:
         window = _symbol_window(audit, symbol, current)
         if window is None or window[1] <= window[0]:
             # One diagnostic attempt for expired/undated old records; never
             # waste a provider call outside its intraday history retention.
+            outside_provider_window += 1
             mark_symbol_attempt(
                 audit, symbol=symbol, now=current,
                 result="no_recoverable_5m_history_window",
@@ -239,6 +241,9 @@ def run(
         "maximum_symbols_per_pass": max(1, int(maximum_symbols)),
         "selected_symbols_this_pass": symbols,
         "selected_symbol_count": len(symbols),
+        "symbols_with_no_recoverable_intraday_window": outside_provider_window,
+        "window_only_recoverable_unresolved_signals": True,
+        "preserve_prior_verified_checkpoints": True,
         "never_attempted_records_remaining": int(coverage.get("never_attempted", 0) or 0),
         "terminal_events_do_not_require_1d_to_leave_queue": True,
     }
