@@ -36,6 +36,9 @@ WATCH = SMALL_WATCH + LARGE_WATCH
 FIVE_MIN = frozenset(WATCH)  # Completed 5m Yahoo history on every fixed watch symbol
 MAX_BYTES = 700_000
 MAX_DYNAMIC = 4
+# Calendar-day freshness guard for completed OHLC observations, not quote latency.
+# Accommodates weekends and US market holidays while rejecting weeks-old Yahoo snapshots.
+MAX_SOURCE_BAR_AGE_DAYS = 7
 _SYMBOL = re.compile(r"^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$")
 _NON_STOCK = frozenset(("SPX", "NDX", "DJI", "RUT", "VIX", "SPY", "QQQ", "IWM", "DIA"))
 
@@ -133,6 +136,7 @@ def pack_symbol(
         sessions["5m"] = clean_5
     frame_out = {}
     now_ny = now.astimezone(NY)
+    any_recent_source_bar = False
     for unit, frame in sessions.items():
         bars = pack_bars(frame, interval=unit)
         if not bars:
@@ -142,6 +146,14 @@ def pack_symbol(
                if unit != "1d" else None)
         same = unit != "1d" and last.date() == now_ny.date()
         complete_age = age - 60 if unit == "1h" and age is not None else age
+        if unit == "1d":
+            session_age_days = (now_ny.date() - last.date()).days
+            source_recent = 0 <= session_age_days <= MAX_SOURCE_BAR_AGE_DAYS
+        else:
+            closed_age_minutes = age - {"1h": 60, "15m": 15, "5m": 5}[unit]
+            source_recent = (-5 <= closed_age_minutes
+                             <= MAX_SOURCE_BAR_AGE_DAYS * 24 * 60)
+        any_recent_source_bar = any_recent_source_bar or source_recent
         frame_out[unit] = {
             "bars": bars,
             "provider_bar_start_or_date": (int(last.timestamp()) if unit != "1d"
@@ -154,8 +166,12 @@ def pack_symbol(
                                    slow=21 if unit in ("5m", "1h") else 50),
             "derived_from": ("four_completed_15m_yahoo_bars" if unit == "1h" else None),
             "research_only": True,
+            "source_recency_verified": source_recent,
         }
-    if not frame_out:
+    # A successful Yahoo response can return only stale historical candles.
+    # Never count such a stock as freshly observed or roll the report clock forward.
+    # The separate retained-history path can still display previous bars as historical.
+    if not frame_out or not any_recent_source_bar:
         return None
     # Completed DAILY OHLC only. No new Yahoo requests, no changed radar
     # scores, and no falsely independent data provider claim.
@@ -231,6 +247,8 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
             "historical_only_symbols": sorted(set(data) - set(fresh)),
             "charts_including_historical": len(data),
             "retention_max_days": 7,
+            "source_recency_max_calendar_days": MAX_SOURCE_BAR_AGE_DAYS,
+            "fresh_symbols_meaning": "At least one actual completed source bar within the permitted calendar-day window; not a live quote",
             "discovered_requested": len(dynamic),
             "discovered_symbols": list(dynamic),
             "discovered_with_charts": sum(s in fresh for s in dynamic),
