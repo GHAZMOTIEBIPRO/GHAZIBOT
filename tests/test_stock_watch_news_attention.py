@@ -3,7 +3,8 @@ import json
 from datetime import datetime, timedelta, timezone
 
 from scripts.build_stock_watch_charts import (
-    load_dynamic_symbols, load_structural_symbols,
+    load_dynamic_symbols,
+    load_structural_symbols,
 )
 from scripts.stock_watch_news_attention import load_news_attention, news_candidates
 
