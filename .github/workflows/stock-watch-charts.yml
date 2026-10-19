@@ -11,6 +11,8 @@ on:
     paths:
       - "scripts/build_stock_watch_charts.py"
       - "scripts/build_source_consensus_status.py"
+      - "scripts/run_independent_price_check.py"
+      - "options_radar/independent_price_check.py"
       - "scripts/build_structural_watch_catalog.py"
       - "data/cache/structural_microfloat_candidates.json"
       - "scripts/stock_watch_news_attention.py"
@@ -62,10 +64,29 @@ jobs:
             --discovery-source state/runtime/public/data/decision_brief.json \
             --news-source state/runtime/public/data/free_public_intelligence.json \
             --structural-source state/runtime/public/data/structural_watch.json
+      # Runs only when two vendors are keyed AND owner-attested for internal
+      # non-display use; otherwise it records INSUFFICIENT without any request.
+      - name: Licensed independent daily-close cross-check (statistics only)
+        env:
+          PYTHONPATH: app
+          TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+          TIINGO_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TIINGO_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+          ALPACA_STOCK_FEED: sip
+          TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+          TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          POLYGON_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.POLYGON_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          ALPHA_VANTAGE_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.ALPHA_VANTAGE_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
+        run: python -m scripts.run_independent_price_check --output licensed_price_check.json
       - name: Publish price-source agreement status without redistributing licensed prices
         run: |
           PYTHONPATH=app python -m scripts.build_source_consensus_status \
             --charts state/runtime/public/data/stock_watch_charts.json \
+            --licensed-check licensed_price_check.json \
             --output state/runtime/public/data/source_agreement.json
       - name: Persist isolated stock chart feed
         shell: bash
