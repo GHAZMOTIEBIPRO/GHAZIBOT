@@ -13,7 +13,7 @@ HELPER = Path(__file__).resolve().parents[1] / "options_radar"
 if str(HELPER) not in sys.path:
     sys.path.insert(0, str(HELPER))
 
-from alpaca_delayed_research import (  # noqa: E402
+from alpaca_delayed_research import (
     fetch_completed_daily,
     historical_option_response,
     policy_state,
