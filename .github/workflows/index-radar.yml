@@ -8,9 +8,8 @@ on:
       - "scripts/build_index_context.py"
       - "scripts/build_index_chart_snapshot.py"
       - ".github/workflows/index-radar.yml"
-  # Bounded scans at five weekday windows; no continuous Yahoo scraping.
-  schedule:
-    - cron: "25 14,16,18,20,22 * * 1-5"
+  # Cadence is owned by market-orchestrator.yml (bounded, ~2h in session);
+  # the former cron here was never delivered by GitHub's scheduler.
 
 permissions:
   contents: write

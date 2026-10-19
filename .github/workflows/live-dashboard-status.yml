@@ -1,4 +1,7 @@
 name: BLACK BOX Omega Live Dashboard Status
+# The source workflow file is part of the title so the orchestrator relay can
+# tell which source each status run already published.
+run-name: "Live Dashboard Status · ${{ inputs.source_workflow || github.event.workflow_run.path || 'manual' }}"
 
 on:
   workflow_dispatch:

@@ -95,3 +95,29 @@ def test_publisher_fails_closed_when_stock_payload_is_missing(tmp_path: Path) ->
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["overall_status"] == "CRITICAL"
     assert result["paths"]["stocks"]["status"] == "UNAVAILABLE"
+
+
+def test_carried_over_paths_are_re_aged_and_marked_stale(tmp_path: Path) -> None:
+    from scripts.publish_live_dashboard_status import build_live_dashboard_status
+
+    status_path = tmp_path / "public/data/live_dashboard_status.json"
+    status_path.parent.mkdir(parents=True)
+    status_path.write_text(json.dumps({"paths": {
+        "fast_discovery": {"status": "HEALTHY", "file": "data/live/fast_explosion_scan.json",
+                           "generated_at": "2026-10-02T22:25:13+00:00",
+                           "age_minutes": 0.29, "maximum_age_minutes": 45.0, "reasons": []},
+        "options": {"status": "RESEARCH_ONLY", "file": "public/data/options_latest.json",
+                    "generated_at": "2026-10-19T16:50:00+00:00",
+                    "age_minutes": 1.0, "maximum_age_minutes": 45.0, "reasons": ["x"]},
+    }}), encoding="utf-8")
+    report = build_live_dashboard_status(
+        state_root=tmp_path, source_workflow="manual", source_run_id="0",
+        current=datetime(2026, 10, 19, 17, 0, tzinfo=timezone.utc),
+    )
+    fast = report["paths"]["fast_discovery"]
+    assert fast["status"] == "STALE"
+    assert fast["age_minutes"] > 20000
+    assert "exceeds the 45m safety limit" in fast["reasons"][0]
+    options = report["paths"]["options"]
+    assert options["status"] == "RESEARCH_ONLY" and options["age_minutes"] == 10.0
+    assert report["overall_status"] == "CRITICAL"
