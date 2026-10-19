@@ -111,7 +111,8 @@ def _apply_independent_session_gate(audit: dict[str, Any]) -> dict[str, Any]:
     coverage = audit.get("coverage") if isinstance(audit.get("coverage"), dict) else {}
     records_count = int(coverage.get("records", 0) or 0)
     covered_60m = int(coverage.get("covered_60m", 0) or 0)
-    coverage_pct = 100.0 * covered_60m / max(1, records_count)
+    applicable = int(coverage.get("coverage_60m_applicable_records", records_count) or 0)
+    coverage_pct = 100.0 * covered_60m / max(1, applicable)
     coverage["independent_60m_sessions"] = len(sessions)
     coverage["independent_60m_session_dates"] = sorted(sessions)
     audit["coverage"] = coverage

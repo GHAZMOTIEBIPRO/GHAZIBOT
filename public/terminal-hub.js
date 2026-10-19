@@ -1066,6 +1066,13 @@
     const auditRecent=auditTime!==null&&auditTime<=now+300000&&now-auditTime<=72*3600000;
     const coveragePct=audited>0&&covered<=audited?
       fmt(100*covered/audited,1)+"%":"غير متاح";
+    // Signals whose 60m horizon ends after the regular close cannot be
+    // measured at 60m; show the applicable figure beside the unadjusted one.
+    const notApplicable=Number.isInteger(audit?.coverage?.coverage_60m_not_applicable_after_close)?
+      audit.coverage.coverage_60m_not_applicable_after_close:0;
+    const applicable=audited-notApplicable;
+    const applicablePct=notApplicable>0&&applicable>0&&covered<=applicable?
+      fmt(100*covered/applicable,1)+"%":null;
     const verifiedV2=Number.isInteger(audit?.close_time_integrity?.verified_version_2_records)?
       audit.close_time_integrity.verified_version_2_records:0;
     for(const feed of [
@@ -1084,7 +1091,10 @@
         " · سلاسل تنفيذية متحققة: "+String(status?.live_primary_chains??0)],
       ["اختبار النتائج التاريخية",audit?.generated_at,
         auditRecent?
-          "تغطية 60 دقيقة: "+coveragePct+" ("+covered+"/"+audited+")"+
+          (applicablePct?
+            "تغطية 60 دقيقة: "+applicablePct+" من القابلة للقياس ("+covered+"/"+applicable+")"+
+            " · "+coveragePct+" من الكل · "+notApplicable+" إشارة أفقها بعد الإغلاق (غير قابلة للقياس)":
+            "تغطية 60 دقيقة: "+coveragePct+" ("+covered+"/"+audited+")")+
           " · المعاد فحصها بتوقيت إغلاق الشمعة: "+verifiedV2+
           " · جاهزية الترقية: "+(audit?.promotion_gate?.coverage_ready===true?"شرط التغطية مستوفى فقط":"غير مستوفاة")+
           " · معدل نجاح مثبت: غير متاح"

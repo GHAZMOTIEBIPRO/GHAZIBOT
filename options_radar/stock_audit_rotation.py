@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import exchange_calendars as xcals
 import pandas as pd
 
 from options_radar.market_clock import market_clock_state
@@ -13,6 +14,7 @@ FINAL_TERMINAL = frozenset({"success", "failed", "ambiguous", "non_decisive"})
 INVALID_SESSION_CLASSIFICATION = "invalid_session"
 DEFAULT_RETRY_COOLDOWN_HOURS = 2
 YAHOO_5M_RECOVERY_DAYS = 58
+SIXTY_MINUTE_NOT_APPLICABLE = "NOT_APPLICABLE_HORIZON_AFTER_REGULAR_CLOSE"
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -235,6 +237,33 @@ def mark_symbol_attempt(
             row.pop("audit_last_attempt_error", None)
 
 
+def sixty_minute_horizon_after_close(row: dict[str, Any]) -> bool:
+    """True when an uncovered signal's 60-minute horizon ends after the XNYS
+    regular-session close of its own session day.
+
+    Such a signal can never have a qualified intraday 60m observation, so it
+    is labelled not applicable rather than missing. A covered record, an
+    unparseable time, a non-session day or any calendar failure stays in the
+    denominator (conservative). Outcomes themselves are never changed.
+    """
+    coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+    if coverage.get("60m") is True:
+        return False
+    created = _parse_time(row.get("signal_time"))
+    if created is None:
+        return False
+    try:
+        calendar = xcals.get_calendar("XNYS")
+        day = pd.Timestamp(created).tz_convert("America/New_York").date()
+        if not calendar.is_session(day):
+            return False
+        close = calendar.session_close(day).to_pydatetime()
+    except (ValueError, KeyError, TypeError):
+        # exchange_calendars bounds/session errors subclass ValueError.
+        return False
+    return created + timedelta(minutes=60) > close
+
+
 @dataclass(frozen=True)
 class FairCoverage:
     total_records: int
@@ -250,9 +279,11 @@ class FairCoverage:
     unavailable: int
     discrepancies: int
     never_attempted: int
+    not_applicable_60m: int = 0
 
     def as_dict(self) -> dict[str, Any]:
         denominator = max(1, self.eligible_records)
+        applicable = max(0, self.eligible_records - self.not_applicable_60m)
         return {
             "records": self.eligible_records,
             "records_total": self.total_records,
@@ -262,7 +293,13 @@ class FairCoverage:
             "covered_60m": self.covered_60m,
             "covered_1d": self.covered_1d,
             "coverage_15m_pct": round(100.0 * self.covered_15m / denominator, 2),
-            "coverage_60m_pct": round(100.0 * self.covered_60m / denominator, 2),
+            # Gate figure: signals whose 60m horizon ends after the regular
+            # close are not applicable to a 60m intraday measurement.
+            "coverage_60m_pct": round(100.0 * self.covered_60m / max(1, applicable), 2),
+            "coverage_60m_applicable_records": applicable,
+            "coverage_60m_not_applicable_after_close": self.not_applicable_60m,
+            # The unadjusted figure is always published alongside it.
+            "coverage_60m_all_eligible_pct": round(100.0 * self.covered_60m / denominator, 2),
             "coverage_1d_pct": round(100.0 * self.covered_1d / denominator, 2),
             "decisive": self.decisive,
             "ambiguous": self.ambiguous,
@@ -282,6 +319,14 @@ def recalculate_fair_coverage(audit: dict[str, Any]) -> dict[str, Any]:
     def covered(label: str) -> int:
         return sum(bool((row.get("coverage") or {}).get(label)) for row in eligible)
 
+    not_applicable = 0
+    for row in eligible:
+        if sixty_minute_horizon_after_close(row):
+            row["coverage_60m_applicability"] = SIXTY_MINUTE_NOT_APPLICABLE
+            not_applicable += 1
+        else:
+            row.pop("coverage_60m_applicability", None)
+
     coverage = FairCoverage(
         total_records=len(rows),
         eligible_records=len(eligible),
@@ -296,6 +341,7 @@ def recalculate_fair_coverage(audit: dict[str, Any]) -> dict[str, Any]:
         unavailable=sum(row.get("audit_status") == "unavailable" for row in eligible),
         discrepancies=sum(row.get("snapshot_discrepancy") is True for row in eligible),
         never_attempted=sum(_int(row.get("audit_attempt_count")) <= 0 for row in eligible),
+        not_applicable_60m=not_applicable,
     )
     audit["coverage"] = coverage.as_dict()
     audit["invalid_session_policy"] = {
@@ -304,5 +350,14 @@ def recalculate_fair_coverage(audit: dict[str, Any]) -> dict[str, Any]:
         "excluded_from_performance_denominator": True,
         "stored_audit_status": "unavailable",
         "deleted": False,
+    }
+    audit["sixty_minute_applicability_policy"] = {
+        "classification": SIXTY_MINUTE_NOT_APPLICABLE,
+        "rule": "uncovered signal whose signal_time + 60m is after the XNYS regular close of its session",
+        "excluded_from_60m_coverage_denominator": True,
+        "outcome_or_status_changed": False,
+        "deleted": False,
+        "unadjusted_figure_published_as": "coverage_60m_all_eligible_pct",
+        "approved_by_owner": "2026-10-19",
     }
     return audit

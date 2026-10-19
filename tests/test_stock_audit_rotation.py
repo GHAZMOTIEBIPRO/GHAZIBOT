@@ -206,3 +206,49 @@ def test_workflow_uses_larger_fair_batch_but_remains_free_and_silent():
     assert 'providers=["yahoo"]' in runner
     assert "recoverable_recent_first_then_cooled_down_retries" in runner
     assert "terminal_events_do_not_require_1d_to_leave_queue" in runner
+
+
+def test_sixty_minute_horizon_after_close_is_labelled_not_applicable_not_covered():
+    # 2026-08-13 is a regular XNYS session; close 16:00 ET = 20:00 UTC.
+    mid = datetime(2026, 8, 13, 15, 0, tzinfo=timezone.utc)        # 11:00 ET
+    last_hour = datetime(2026, 8, 13, 19, 41, tzinfo=timezone.utc)  # 15:41 ET
+    at_edge = datetime(2026, 8, 13, 19, 0, tzinfo=timezone.utc)     # 15:00 ET, ends at close
+    after_hours = datetime(2026, 8, 13, 21, 30, tzinfo=timezone.utc)
+    covered_late = datetime(2026, 8, 13, 19, 50, tzinfo=timezone.utc)
+    audit = {"records": {
+        "mid": _row("mid", "AAA", mid),
+        "late": _row("late", "BBB", last_hour, status="success"),
+        "edge": _row("edge", "CCC", at_edge),
+        "after": _row("after", "DDD", after_hours, status="failed"),
+        "covered": _row("covered", "EEE", covered_late, covered_60m=True),
+    }}
+    for row in audit["records"].values():
+        row["signal_session_valid"] = True
+    recalculate_fair_coverage(audit)
+    rows, coverage = audit["records"], audit["coverage"]
+    assert rows["late"]["coverage_60m_applicability"] == "NOT_APPLICABLE_HORIZON_AFTER_REGULAR_CLOSE"
+    assert rows["after"]["coverage_60m_applicability"] == "NOT_APPLICABLE_HORIZON_AFTER_REGULAR_CLOSE"
+    # Outcomes are untouched and records are never deleted.
+    assert rows["late"]["audit_status"] == "success" and rows["after"]["audit_status"] == "failed"
+    for key in ("mid", "edge", "covered"):
+        assert "coverage_60m_applicability" not in rows[key]
+    assert coverage["eligible_records"] == 5
+    assert coverage["coverage_60m_not_applicable_after_close"] == 2
+    assert coverage["coverage_60m_applicable_records"] == 3
+    assert coverage["covered_60m"] == 1
+    assert coverage["coverage_60m_pct"] == 33.33
+    assert coverage["coverage_60m_all_eligible_pct"] == 20.0
+    policy = audit["sixty_minute_applicability_policy"]
+    assert policy["outcome_or_status_changed"] is False and policy["deleted"] is False
+
+
+def test_unparseable_or_non_session_signal_stays_in_60m_denominator():
+    saturday = datetime(2026, 8, 15, 19, 50, tzinfo=timezone.utc)
+    broken = _row("broken", "AAA", saturday)
+    broken["signal_time"] = "not-a-time"
+    audit = {"records": {"sat": _row("sat", "BBB", saturday), "broken": broken}}
+    for row in audit["records"].values():
+        row["signal_session_valid"] = True
+    recalculate_fair_coverage(audit)
+    assert audit["coverage"]["coverage_60m_not_applicable_after_close"] == 0
+    assert audit["coverage"]["coverage_60m_applicable_records"] == 2
