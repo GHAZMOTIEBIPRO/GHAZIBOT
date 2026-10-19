@@ -331,12 +331,12 @@
       wrap.append(stockCard(symbol,lookup.get(symbol),related.length,kind));
     }
     if(kind==="small")put("terminal-stock-chart-health",
-      state.watchCharts?"شارتات جُمعت في آخر دورة: "+
+      state.watchCharts?"شارتات بها شموع مصدر خلال ٧ أيام (وليست أسعارًا لحظية): "+
         (state.watchCharts.coverage?.with_valid_charts||0)+" من "+
         (state.watchCharts.coverage?.requested||0)+" سهمًا مطلوبًا · "+
         "رموز بها شموع محفوظة: "+
         (state.watchCharts.coverage?.retained_symbols_count||0)+
-        " (ليست أسعارًا محدثة) · التقرير: "+
+        " (تاريخية فقط) · التقرير: "+
         stamp(state.watchCharts.generated_at):
         "لم تصل بيانات شارتات جديدة؛ لا نخترع شموعًا أو بيانات لحظية.");
     put(kind==="large"?"terminal-large-note":"terminal-small-note",
