@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="./index-radar.css?v=20261018-1">
   <link rel="stylesheet" href="./catalyst-overview.css?v=20261018-2">
   <link rel="stylesheet" href="./decision-room.css?v=20261018-1">
-  <link rel="stylesheet" href="./terminal-hub.css?v=20261019-1">
+  <link rel="stylesheet" href="./terminal-hub.css?v=20261020-1">
 </head>
 <body>
   <div class="page-shell">
@@ -90,6 +90,7 @@
         </section>
         <div class="terminal-pulse-grid" id="terminal-overview-pulse" aria-live="polite">
           <p class="terminal-empty">تحميل ملخص المصادر وتغطية السوق…</p></div>
+        <button id="terminal-ops-overview" class="terminal-ops-line" data-terminal-go="trust" type="button">صحة المحركات: جاري التحميل…</button>
         <div class="terminal-overview-columns">
           <section aria-labelledby="terminal-opportunities-title" class="terminal-desk">
             <header class="terminal-desk-header"><div><p class="terminal-overline">RESEARCH WATCH</p>
@@ -221,6 +222,13 @@
           <h3>موثوقية المصادر وحداثة البيانات</h3>
           <p>النجاح في الاتصال لا يثبت صحة محتوى الأسعار. توضح هذه اللوحة نتيجة التحقق من المحتوى وتاريخ آخر رصد، مع فصل المعلومات الرسمية والبحثية عن أسعار التنفيذ.</p></div></header>
         <p id="terminal-trust-summary" class="terminal-data-warning" role="status">جاري التحقق من جودة البيانات وإمكانية استخدامها…</p>
+        <section class="terminal-ops" aria-labelledby="terminal-ops-title">
+          <h4 id="terminal-ops-title">صحة المحركات</h4>
+          <div id="terminal-ops-engines" class="terminal-trust-grid"><p class="terminal-empty">تحميل حالة المحركات…</p></div>
+          <h4>حداثة كل مصدر بيانات</h4>
+          <p id="terminal-ops-session" class="terminal-footnote"></p>
+          <div id="terminal-ops-feeds" class="terminal-ops-feeds"></div>
+        </section>
         <div id="terminal-trust-grid" class="terminal-trust-grid"><p class="terminal-empty">تحميل سجل المصادر…</p></div>
         <p class="terminal-footnote">المصادر الرسمية قد تمنع الطلبات الآلية. البيانات المفقودة أو القديمة لا تتحول إلى توصية؛ وYahoo وyfinance مصدر واحد غير مرخص للتنفيذ.</p>
       </section>
@@ -736,8 +744,9 @@
   <script src="./market-chart.js?v=20261010-open-source" defer></script>
   <script src="./terminal-research.js?v=20261019-1"></script>
   <script src="./terminal-evidence.js?v=20261019-1" defer></script>
+  <script src="./terminal-ops.js?v=20261020-1" defer></script>
   <script src="./terminal-oos.js?v=20261019-1" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./terminal-hub.js?v=20261020-1" defer></script>
+  <script src="./terminal-hub.js?v=20261020-2" defer></script>
 </body>
 </html>

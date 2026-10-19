@@ -18,6 +18,7 @@
     runtime:[ROOT+"bot-state/runtime/public/data/data-status.json","./data/data-status.json"],
     audit:[ROOT+"bot-state/runtime/public/data/stock_audit_public.json"],
     oos:[ROOT+"bot-state/state/stocks/stock_walk_forward.json"],
+    live:[ROOT+"bot-state/runtime/public/data/live_dashboard_status.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -58,7 +59,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -123,6 +124,8 @@
       String(d?.status||"").toLowerCase()) &&
       d?.option_provider_readiness?.production_quote_ready!==undefined &&
       d?.row_counts && d?.quality_counts,
+    live:d=>d?.decision_authority===false&&d?.contains_secrets===false&&
+      d?.paths&&typeof d.paths==="object",
     oos:d=>d?.mode==="EXPANDING_SESSION_WALK_FORWARD" &&
       d.decision_authority===false &&
       d.live_promotion_allowed===false &&
@@ -1147,16 +1150,61 @@
     choosePanel("chart");
     $("terminal-panel-chart")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
+  function renderOps(){
+    const api=typeof window!=="undefined"?window.GhaziOps:null;
+    const enginesBox=$("terminal-ops-engines"),feedsBox=$("terminal-ops-feeds");
+    if(!api||!enginesBox||!feedsBox)return;
+    const now=Date.now();
+    const engines=api.engineRows(state.live,now);
+    const tone={ok:"up",warn:"warn",bad:"down"};
+    enginesBox.replaceChildren();
+    for(const row of engines){
+      const card=txt("article","","terminal-trust-card");
+      const head=txt("div","","terminal-trust-head");
+      head.append(txt("strong",row.name),txt("span",row.label,"terminal-chip "+tone[row.kind]));
+      card.append(head,
+        txt("small","آخر نشر: "+stamp(row.generated_at)+
+          (row.age===null?"":" · قبل "+row.age+" دقيقة")+
+          (row.max===null?"":" · الحد "+row.max+" دقيقة")),
+        txt("small","المرشحون في آخر نشر: "+(row.candidates===null?"غير متاح":row.candidates)));
+      enginesBox.append(card);
+    }
+    if(!engines.length)enginesBox.append(txt("p","حالة المحركات غير متاحة حاليًا.","terminal-empty"));
+    const stamps={index:state.quotes?.generated_at,charts:state.charts?.generated_at,
+      watch:state.watchCharts?.generated_at,brief:state.brief?.generated_at,
+      news:state.news?.generated_at,sec:state.sec?.generated_at,
+      freeOptions:state.freeOptions?.generated_at,gamma:state.gamma?.generated_at,
+      trust:state.trust?.generated_at,live:state.live?.generated_at,
+      audit:state.audit?.generated_at,structural:state.structural?.generated_at,
+      strength:state.strength?.generated_at};
+    feedsBox.replaceChildren();
+    for(const row of api.feedRows(stamps,now)){
+      const item=txt("div","","terminal-ops-feed");
+      item.append(txt("span",row.name),txt("span",row.label,"terminal-chip "+tone[row.kind]),
+        txt("small",(row.age===null?"لم يُحمَّل":"قبل "+row.age+" د")+" · الحد "+row.max+" د"));
+      feedsBox.append(item);
+    }
+    const open=api.regularSession(now);
+    put("terminal-ops-session",open?
+      "الجلسة الأمريكية مفتوحة: التأخر عن الحد يعني أن التحديث لم يصل في وقته.":
+      "السوق الأمريكي مغلق الآن؛ تقادم البيانات خارج الجلسة متوقع ولا يعني عطلًا.");
+    const sum=api.summary(engines);
+    const late=engines.filter(row=>row.kind!=="ok").map(row=>row.name+": "+row.label);
+    put("terminal-ops-overview","صحة المحركات: "+sum.ok+"/"+sum.total+" سليمة"+
+      (late.length?" · "+late.join(" · "):"")+(open?"":" · السوق مغلق"));
+    const line=$("terminal-ops-overview");
+    if(line)line.dataset.kind=sum.kind;
+  }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderNews();renderTrust();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
