@@ -1,0 +1,45 @@
+name: GHAZI OCC Public Layout Probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: "Underlying symbol for OCC series/volume layout probe"
+        type: string
+        default: AAPL
+        required: true
+  push:
+    branches:
+      - "ccr-**"
+      - "fix/**"
+    paths:
+      - "scripts/probe_occ_layouts.py"
+      - "scripts/build_free_options_sources.py"
+      - ".github/workflows/occ-layout-probe.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghazi-occ-layout-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      PROBE_SYMBOL: ${{ inputs.symbol || 'AAPL' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install minimal client
+        run: python -m pip install "requests>=2.32,<3"
+      - name: Print digit-masked OCC response structure only
+        run: python scripts/probe_occ_layouts.py --symbol "$PROBE_SYMBOL"
+      - name: Run production OCC parser live; print statuses and counts only
+        env:
+          PYTHONPATH: .
+        run: python scripts/probe_occ_layouts.py --live-parse

@@ -2,8 +2,10 @@
 
 - FilingPulse health is public/no-key. Private free-key event queries are
   scoped to a small, fixed issuer set (CIK not ticker-name inference).
-- OCC's official daily open-interest CSV is tried at most once per run,
-  with bounded bytes and fail-closed schema. OCC is never a live quote.
+- OCC's market-wide Daily Open Interest report dates the latest OI
+  publication; OCC Series Search gives per-series OI for a few symbols
+  (undated, labelled as a retrieval snapshot). Bounded bytes, fail-closed
+  schema, adjusted series excluded. OCC is never a live quote.
 - Tradier is already integrated elsewhere, requires the account token and
   personal-use permissions. This script never uses its trading endpoints.
 
@@ -14,10 +16,10 @@ from __future__ import annotations
 
 import argparse
 import csv
-import io
 import json
 import os
 import re
+import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -26,6 +28,7 @@ import requests
 
 FILINGPULSE = "https://api.filingpulse.io"
 OCC = "https://marketdata.theocc.com/daily-open-interest"
+OCC_SERIES = "https://marketdata.theocc.com/series-search"
 SYMBOLS = ("AAPL", "NVDA", "TSLA", "SOFI")
 ACC = re.compile(r"^\d{10}-\d{2}-\d{6}$")
 SAFE_CIK = re.compile(r"^\d{1,10}$")
@@ -211,120 +214,197 @@ def filingpulse_snapshot(*, key: str, ciks: dict[str, int], now: datetime,
     return body
 
 
-def parse_occ_oi_csv(raw: str, *, watched: set[str]) -> dict:
-    """Strictly names underlying and dated contract; no inferred OI or flows.
+def _occ_count(value: Any) -> int | None:
+    text = str(value or "").strip().replace(",", "")
+    return int(text) if re.fullmatch(r"\d{1,12}", text) else None
 
-    Large/unrecognized OCC layouts return UNAVAILABLE, not guessed columns.
+
+def _schema_names(lines: list[str]) -> list[str]:
+    """Normalized header *names* only, never series values or counts."""
+    names: list[str] = []
+    for line in lines[:6]:
+        for cell in re.split(r"[,\t]", line)[:15]:
+            key = re.sub(r"[^a-z]", "", cell.lower())
+            if key and len(key) <= 40 and key not in names:
+                names.append(key)
+    return names[:20]
+
+
+def parse_occ_market_oi(raw: str) -> dict:
+    """OCC Daily Open Interest: a *market-wide* monthly report.
+
+    Verified layout (runner probe, Oct 2026): a title line, a two-row
+    category header (Equity / Index/Other / Debt / Futures / OCC Total,
+    then Calls / Puts / Total) and one dated row per business day. It has
+    no per-symbol rows, so it can only date OCC's latest OI publication.
     """
     if not isinstance(raw, str) or not raw.strip() or raw.lstrip().startswith("<"):
-        return {"status": "UNPARSEABLE_CSV", "matched": 0}
-    # OCC can prepend a report month/title before the actual CSV header.
-    # Only recognize a header when it explicitly names BOTH underlying and OI.
-    lines = raw.splitlines()
-    start = None
-    mapping: dict[str, str] = {}
-    aliases = {"underlyingsymbol", "underlying", "underlier", "symbol"}
-    interest = {"openinterest", "openint", "oi"}
-    for index, line in enumerate(lines[:30]):
+        return {"status": "UNPARSEABLE_CSV"}
+    lines = [line for line in raw.lstrip("\ufeff").splitlines() if line.strip()]
+    rows = list(csv.reader(lines[:80]))
+    top = next((i for i, row in enumerate(rows[:10])
+                if row and row[0].strip().lower() == "date"
+                and any(c.strip().lower() == "equity" for c in row)
+                and any(c.strip().lower() == "occ total" for c in row)), None)
+    if top is None or top + 1 >= len(rows):
+        return {"status": "UNKNOWN_LAYOUT",
+                "safe_schema_column_names": _schema_names(lines)}
+    sub = [c.strip().lower() for c in rows[top + 1]]
+    if sub[1:4] != ["calls", "puts", "total"]:
+        return {"status": "UNKNOWN_LAYOUT",
+                "safe_schema_column_names": _schema_names(lines)}
+    occ_total = next(i for i, c in enumerate(rows[top]) if c.strip().lower() == "occ total")
+    latest = None
+    for row in rows[top + 2:]:
         try:
-            cells = next(csv.reader([line]))
-        except (csv.Error, StopIteration):
-            continue
-        normalized = {
-            re.sub(r"[^a-z0-9]", "", c.lower()): c
-            for c in cells if isinstance(c, str) and c.strip()
-        }
-        if aliases.intersection(normalized) and interest.intersection(normalized):
-            start = index
-            mapping = normalized
-            break
-    if start is None:
-        # Header names only, never series values, prices or contract rows.
-        first = next(csv.reader([lines[0]])) if lines else []
-        preview = [re.sub(r"[^a-z0-9]", "", c.lower())
-                   for c in first[:15] if isinstance(c, str)]
-        return {"status": "UNKNOWN_LAYOUT", "matched": 0,
-                "safe_schema_column_names": [
-                    c for c in preview if len(c) <= 40]}
-    rows = csv.DictReader(io.StringIO("\n".join(lines[start:])))
-    def col(*keys: str) -> str | None:
-        return next((mapping[k] for k in keys if k in mapping), None)
-    symkey = col("underlyingsymbol", "underlying", "underlier", "symbol")
-    oikey = col("openinterest", "openint", "oi")
-    if not symkey or not oikey:
-        # Only normalized *column names*, no OCC contracts or prices.
-        columns = [key for key in list(mapping)[:15] if len(key) <= 40]
-        return {"status": "UNKNOWN_LAYOUT", "matched": 0,
-                "safe_schema_column_names": columns}
-    totals = {}
-    count = 0
-    for row in rows:
-        if count > 500_000:
-            return {"status": "TOO_MANY_ROWS", "matched": 0}
-        count += 1
-        sym = str(row.get(symkey) or "").strip().upper()
-        if sym not in watched:
-            continue
-        rawoi = str(row.get(oikey) or "").strip().replace(",", "")
-        if not re.fullmatch(r"\d{1,11}", rawoi):
-            return {"status": "INVALID_OI", "matched": 0}
-        totals[sym] = totals.get(sym, 0) + int(rawoi)
+            day = datetime.strptime(row[0].strip(), "%m/%d/%Y").replace(
+                tzinfo=timezone.utc).date()
+        except (ValueError, IndexError):
+            return {"status": "INVALID_ROW"}
+        values = [_occ_count(row[i]) if i < len(row) else None
+                  for i in (1, 2, 3, occ_total)]
+        if any(v is None for v in values) or values[0] + values[1] != values[2]:
+            return {"status": "INVALID_ROW"}
+        if latest is None or day > latest[0]:
+            latest = (day, values)
+    if latest is None:
+        return {"status": "NO_DATED_ROWS"}
+    day, (calls, puts, total, overall) = latest
     return {
-        "status": "HISTORICAL_DAILY_AGGREGATE" if totals else "NO_WATCHED_SYMBOLS",
-        "matched": len(totals),
-        "watched_oi": totals,
-        "not_live_quote": True, "not_trade_flow": True,
-        "contract_specific_executable": False,
+        "status": "MARKET_WIDE_DAILY_TOTALS",
+        "report_date": day.isoformat(),
+        "equity_call_oi": calls, "equity_put_oi": puts,
+        "equity_total_oi": total, "occ_total_oi": overall,
     }
 
 
+def parse_occ_series_oi(raw: str, *, symbol: str) -> dict:
+    """OCC Series Search: per-series call/put open interest for one underlying.
+
+    Verified layout: title lines, a header row ``ProductSymbol year Month
+    Day Integer Dec C/P Call Put Position Limit`` and tab-separated rows
+    with an empty cell after the product symbol. The response carries no
+    as-of date. Adjusted/non-standard products (e.g. ``2AAPL``) are
+    counted as excluded, never merged into the standard symbol's totals.
+    """
+    if not isinstance(raw, str) or not raw.strip() or raw.lstrip().startswith("<"):
+        return {"status": "UNPARSEABLE_TEXT"}
+    lines = raw.lstrip("\ufeff").splitlines()
+    header = next((i for i, line in enumerate(lines[:20])
+                   if [c.strip().lower() for c in line.split("\t")][:9] ==
+                   ["productsymbol", "year", "month", "day", "integer", "dec",
+                    "c/p", "call", "put"]), None)
+    if header is None:
+        return {"status": "UNKNOWN_LAYOUT",
+                "safe_schema_column_names": _schema_names(lines[3:])}
+    calls = puts = standard = excluded = 0
+    for count, line in enumerate(lines[header + 1:]):
+        if count > 50_000:
+            return {"status": "TOO_MANY_ROWS"}
+        if not line.strip():
+            continue
+        cells = [c.strip() for c in line.split("\t")]
+        if len(cells) < 10 or cells[1] != "":
+            return {"status": "INVALID_ROW"}
+        product, year, month, day, strike, dec, side, call_oi, put_oi = (
+            cells[0], *cells[2:10])
+        valid = (re.fullmatch(r"\d?[A-Z]{1,6}\d?", product)
+                 and re.fullmatch(r"20\d\d", year)
+                 and re.fullmatch(r"\d{1,2}", month) and 1 <= int(month) <= 12
+                 and re.fullmatch(r"\d{1,2}", day) and 1 <= int(day) <= 31
+                 and re.fullmatch(r"\d{1,6}", strike) and re.fullmatch(r"\d{1,3}", dec)
+                 and side in ("C", "P", "C P"))
+        call_n, put_n = _occ_count(call_oi), _occ_count(put_oi)
+        if not valid or call_n is None or put_n is None:
+            return {"status": "INVALID_ROW"}
+        if product != symbol:
+            excluded += 1
+            continue
+        standard += 1
+        calls += call_n if "C" in side else 0
+        puts += put_n if "P" in side else 0
+    if not standard:
+        return {"status": "NO_STANDARD_SERIES", "nonstandard_series_excluded": excluded}
+    return {
+        "status": "SERIES_OPEN_INTEREST",
+        "call_oi": calls, "put_oi": puts, "total_oi": calls + puts,
+        "put_call_oi_ratio": round(puts / calls, 4) if calls else None,
+        "standard_series": standard, "nonstandard_series_excluded": excluded,
+    }
+
+
+def _occ_text(session: Any, url: str, params: dict) -> tuple[str | None, str]:
+    try:
+        response = session.get(
+            url, params=params, timeout=18, stream=True,
+            headers={"Accept": "text/csv,text/plain;q=0.9"},
+        )
+        if response.status_code != 200:
+            return None, f"HTTP_{response.status_code}"
+        chunks, size = [], 0
+        for chunk in response.iter_content(chunk_size=65536):
+            size += len(chunk)
+            if size > MAX_OCC_BYTES:
+                return None, "BULK_TOO_LARGE"
+            chunks.append(chunk)
+        return b"".join(chunks).decode("utf-8-sig"), "OK"
+    except (requests.RequestException, ValueError, UnicodeError):
+        return None, "REQUEST_OR_FORMAT_ERROR"
+
+
 def occ_open_interest_snapshot(*, now: datetime, session: Any,
-                               enabled: bool) -> dict:
+                               enabled: bool, pause: float = 1.5) -> dict:
     base = {"source": "OCC_DAILY_OPEN_INTEREST",
             "status": "DISABLED", "context_only": True,
             "not_live_quote": True, "not_trade_flow": True,
             "open_interest": None, "report_date": None}
     if not enabled:
         return base
-    # The OCC example URL uses reportDate; its HTML parameter summary
-    # inconsistently says dailyDate. A live runner returned 406 for
-    # dailyDate, while reportDate reached an actual report response.
-    # Once per job, previous calendar weekday only. No loops on 403.
+    # The market-wide report is the only OCC response that states an OI
+    # date; it is requested once with the previous calendar weekday.
     day = now.date() - timedelta(days=1)
     while day.weekday() > 4:
         day -= timedelta(days=1)
-    try:
-        response = session.get(
-            OCC,
-            params={"reportDate": day.strftime("%m/%d/%Y"),
-                    "action": "download", "format": "csv"},
-            timeout=18, stream=True,
-            headers={"Accept": "text/csv,text/plain;q=0.9"},
-        )
-        if response.status_code != 200:
-            return {**base, "status": f"HTTP_{response.status_code}"}
-        chunks, size = [], 0
-        for chunk in response.iter_content(chunk_size=65536):
-            size += len(chunk)
-            if size > MAX_OCC_BYTES:
-                return {**base, "status": "BULK_TOO_LARGE"}
-            chunks.append(chunk)
-        content = b"".join(chunks)
-        parsed = parse_occ_oi_csv(
-            content.decode("utf-8-sig"),
-            watched=set(SYMBOLS),
-        )
-        if parsed["status"] != "HISTORICAL_DAILY_AGGREGATE":
-            return {**base, "status": parsed["status"],
-                    "safe_schema_column_names": parsed.get(
-                        "safe_schema_column_names", [])}
-        return {
-            **base, "status": parsed["status"],
-            "open_interest": parsed["watched_oi"],
-            "report_date": day.isoformat(),
-        }
-    except (requests.RequestException, ValueError, UnicodeError):
-        return {**base, "status": "REQUEST_OR_FORMAT_ERROR"}
+    text, fetch = _occ_text(session, OCC, {
+        "reportDate": day.strftime("%m/%d/%Y"),
+        "action": "download", "format": "csv"})
+    market = parse_occ_market_oi(text) if text is not None else {"status": fetch}
+    if market["status"] != "MARKET_WIDE_DAILY_TOTALS":
+        return {**base, "status": market["status"],
+                "safe_schema_column_names": market.get("safe_schema_column_names", [])}
+    age = (now.date() - date.fromisoformat(market["report_date"])).days
+    if not 0 <= age <= 7:
+        return {**base, "status": "STALE_MARKET_REPORT",
+                "market_wide": market}
+    per_symbol: dict[str, dict] = {}
+    for index, symbol in enumerate(SYMBOLS):
+        if index and pause:
+            time.sleep(pause)
+        text, fetch = _occ_text(session, OCC_SERIES,
+                                {"symbolType": "U", "symbol": symbol})
+        parsed = (parse_occ_series_oi(text, symbol=symbol)
+                  if text is not None else {"status": fetch})
+        per_symbol[symbol] = parsed
+        if fetch.startswith("HTTP_4"):
+            break
+    totals = {sym: item["total_oi"] for sym, item in per_symbol.items()
+              if item["status"] == "SERIES_OPEN_INTEREST"}
+    return {
+        **base,
+        "source": "OCC_PUBLIC_MARKET_DATA",
+        "status": "HISTORICAL_DAILY_AGGREGATE" if totals else "MARKET_WIDE_ONLY",
+        # report_date dates OCC's market-wide publication. Series search
+        # responses carry no as-of date; their totals are a snapshot taken
+        # at per_symbol_retrieved_at and are never relabelled as dated.
+        "report_date": market["report_date"],
+        "report_date_scope": "OCC_MARKET_WIDE_DAILY_REPORT",
+        "market_wide": market,
+        "open_interest": totals or None,
+        "per_symbol": per_symbol,
+        "per_symbol_as_of_verified": False,
+        "per_symbol_retrieved_at": now.astimezone(timezone.utc).isoformat(),
+        "adjusted_series_excluded": True,
+    }
 
 
 def collect(*, now: datetime, key: str = "", ciks: dict | None = None,
