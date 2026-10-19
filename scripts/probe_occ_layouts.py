@@ -87,7 +87,9 @@ def describe(text: str) -> dict[str, Any]:
 
 
 def probe(session: Any, path: str, params: dict | None) -> dict[str, Any]:
-    out: dict[str, Any] = {"path": path, "param_names": sorted(params or {})}
+    out: dict[str, Any] = {"path": path, "param_names": sorted(params or {}),
+                           "report_type": (params or {}).get("reportType"),
+                           "date_format": "slash" if "/" in str((params or {}).get("reportDate", "")) else "compact"}
     try:
         response = session.get(
             BASE + path, params=params, timeout=20, stream=True,
@@ -130,12 +132,63 @@ def plan(symbol: str, today: date) -> list[tuple[str, dict | None]]:
     ]
 
 
+def volume_plan(symbol: str, today: date) -> list[tuple[str, dict | None]]:
+    """Weekly/monthly volume-query variants; the clients' W/M calls fail."""
+    friday = today - timedelta(days=(today.weekday() - 4) % 7 or 7)
+    month_end = today.replace(day=1) - timedelta(days=1)
+    while month_end.weekday() > 4:
+        month_end -= timedelta(days=1)
+    base = {"format": "csv", "volumeQueryType": "O", "symbolType": "U",
+            "symbol": symbol, "accountType": "ALL", "productKind": "ALL",
+            "porc": "BOTH"}
+    out: list[tuple[str, dict | None]] = []
+    for kind, day in (("W", friday), ("M", month_end)):
+        compact = day.strftime("%Y%m%d")
+        out.append(("/volume-query", {**base, "reportType": kind,
+                                      "reportDate": compact, "contractDt": compact}))
+        out.append(("/volume-query", {**base, "reportType": kind,
+                                      "reportDate": compact}))
+        out.append(("/volume-query", {**base, "reportType": kind,
+                                      "reportDate": day.strftime("%m/%d/%Y")}))
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="AAPL")
     parser.add_argument("--live-parse", action="store_true",
                         help="run the production OCC parser; print statuses only")
+    parser.add_argument("--volume-variants", action="store_true",
+                        help="probe weekly/monthly volume-query parameter variants")
+    parser.add_argument("--live-volume", action="store_true",
+                        help="run the existing OCC volume clients; print statuses only")
     args = parser.parse_args()
+    if args.live_volume:
+        from options_radar.occ_free_context import OccDailyVolumeClient
+        from options_radar.occ_free_data import OccFreeVolumeClient
+
+        def brief(result: dict) -> dict:
+            return {
+                "success": result.get("success"),
+                "report_date": result.get("report_date"),
+                "error": str(result.get("error") or "")[:160],
+                "parsed_rows": result.get("parsed_rows"),
+                "has_volume": (result.get("total_volume") or 0) > 0,
+                "attempts": [
+                    {"date": a.get("report_date"), "status": a.get("status_code"),
+                     "error": str(a.get("error") or "")[:120]}
+                    for a in result.get("attempts", [])[:4]],
+            }
+
+        symbol = args.symbol.strip().upper()
+        daily = OccDailyVolumeClient(timeout=20).fetch(symbol)
+        free = OccFreeVolumeClient().fetch_symbol(symbol)
+        print(json.dumps({
+            "occ_free_context.OccDailyVolumeClient": brief(daily),
+            "occ_free_data.OccFreeVolumeClient": {
+                key: brief(value) for key, value in free["reports"].items()},
+        }, indent=1))
+        return 0
     if args.live_parse:
         from scripts.build_free_options_sources import occ_open_interest_snapshot
         report = occ_open_interest_snapshot(
@@ -158,7 +211,8 @@ def main() -> int:
         raise SystemExit("symbol must be 1-6 letters")
     session = requests.Session()
     results = []
-    for index, (path, params) in enumerate(plan(symbol, datetime.now(timezone.utc).date())):
+    chosen = volume_plan if args.volume_variants else plan
+    for index, (path, params) in enumerate(chosen(symbol, datetime.now(timezone.utc).date())):
         if index:
             time.sleep(1.5)
         results.append(probe(session, path, params))
