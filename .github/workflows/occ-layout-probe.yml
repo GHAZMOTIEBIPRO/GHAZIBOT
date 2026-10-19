@@ -49,3 +49,5 @@ jobs:
         env:
           PYTHONPATH: .
         run: python scripts/probe_occ_layouts.py --live-volume --symbol "$PROBE_SYMBOL"
+      - name: Probe weekly/monthly volume-query variants (masked)
+        run: python scripts/probe_occ_layouts.py --volume-variants --symbol "$PROBE_SYMBOL"
