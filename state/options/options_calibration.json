@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-02T18:25:05.802640+00:00",
+  "generated_at": "2026-10-19T17:26:22.756621+00:00",
   "active": false,
   "sample_size": 0,
   "shadow_sample_size": 0,
+  "research_sample_size": 0,
   "minimum_sample": 100,
   "training_checkpoint": "60m",
   "training_quote_method": "ask_to_bid",
@@ -21,12 +22,28 @@
     "mean_return_pct": 0.0,
     "median_return_pct": 0.0
   },
+  "global_research": {
+    "n": 0,
+    "hit_rate": 0.0,
+    "mean_return_pct": 0.0,
+    "median_return_pct": 0.0
+  },
   "features": {
     "abs_delta": {},
     "dte": {},
     "gamma_alignment": {},
     "vol_oi": {},
     "spread": {}
+  },
+  "research_features": {
+    "chart_side_alignment": {},
+    "classical_structure_alignment": {},
+    "sec_catalyst": {}
+  },
+  "research_feature_policy": {
+    "live_score_adjustment": false,
+    "decision_authority": false,
+    "purpose": "Measure CALL/PUT 60m outcome separation from chart alignment and frozen SEC catalyst context. Research samples may use consistent mid/last marks but can never activate live score learning."
   },
   "policy": "Bayesian-shrunk bounded score adjustment; never bypasses hard execution/risk blockers."
 }
