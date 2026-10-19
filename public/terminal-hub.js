@@ -12,6 +12,7 @@
     gamma:[ROOT+"bot-state/runtime/public/data/free_gex_validation.json"],
     trust:[ROOT+"bot-state/runtime/public/data/free_data_health.json","./data/free_data_health.json"],
     runtime:[ROOT+"bot-state/runtime/public/data/data-status.json","./data/data-status.json"],
+    audit:[ROOT+"bot-state/runtime/public/data/stock_audit_public.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -51,7 +52,7 @@
   };
   const state={panel:"indices",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
-    stockCharts:null,plot:null,trust:null,runtime:null};
+    stockCharts:null,plot:null,trust:null,runtime:null,audit:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -77,6 +78,13 @@
       String(d?.status||"").toLowerCase()) &&
       d?.option_provider_readiness?.production_quote_ready!==undefined &&
       d?.row_counts && d?.quality_counts,
+    audit:d=>d?.schema==="ghazi.public_stock_outcomes.v1" &&
+      d?.mode==="HISTORICAL_5M_OUTCOME_AUDIT" &&
+      d?.decision_authority===false &&
+      d?.promotion_gate?.live_promotion_allowed===false &&
+      d?.verified_win_rate_pct===null &&
+      Number.isInteger(d?.coverage?.records) &&
+      Number.isInteger(d?.coverage?.covered_60m),
   };
   async function request(url,type){
     const response=await fetch(url+"?v="+Date.now(),{cache:"no-store"});
@@ -550,7 +558,7 @@
   function renderTrust(){
     const wrap=$("terminal-trust-grid");if(!wrap)return;
     wrap.replaceChildren();
-    const report=state.trust,runtime=state.runtime;
+    const report=state.trust,runtime=state.runtime,audit=state.audit;
     const trustTime=validDate(report?.generated_at);
     const now=Date.now();
     const trustAge=trustTime===null?null:Math.max(0,Math.round((now-trustTime)/60000));
@@ -570,6 +578,16 @@
     if(!reportCurrent){
       wrap.append(txt("p","لا يوجد تقرير حديث اجتاز التحقق من محتوى المصادر. لا نعتبر الروابط الناجحة دليلًا على صحة الأسعار.","terminal-empty"));
     }
+    const audited=Number.isInteger(audit?.coverage?.records)?
+      audit.coverage.records:0;
+    const covered=Number.isInteger(audit?.coverage?.covered_60m)?
+      audit.coverage.covered_60m:0;
+    const auditTime=validDate(audit?.generated_at);
+    const auditRecent=auditTime!==null&&auditTime<=now+300000&&now-auditTime<=72*3600000;
+    const coveragePct=audited>0&&covered<=audited?
+      fmt(100*covered/audited,1)+"%":"غير متاح";
+    const verifiedV2=Number.isInteger(audit?.close_time_integrity?.verified_version_2_records)?
+      audit.close_time_integrity.verified_version_2_records:0;
     for(const feed of [
       ["شارتات الأسهم",state.watchCharts?.generated_at,
         String(state.watchCharts?.coverage?.with_valid_charts??"—")+" سهم · Yahoo بحثي"],
@@ -584,6 +602,13 @@
       ["حالة الخيارات",runtime?.generated_at,
         String(status?.status||"غير متاح")+
         " · سلاسل تنفيذية متحققة: "+String(status?.live_primary_chains??0)],
+      ["اختبار النتائج التاريخية",audit?.generated_at,
+        auditRecent?
+          "تغطية 60 دقيقة: "+coveragePct+" ("+covered+"/"+audited+")"+
+          " · المعاد فحصها بتوقيت إغلاق الشمعة: "+verifiedV2+
+          " · جاهزية الترقية: "+(audit?.promotion_gate?.coverage_ready===true?"شرط التغطية مستوفى فقط":"غير مستوفاة")+
+          " · معدل نجاح مثبت: غير متاح"
+          :"لا يوجد تقرير تاريخي حديث موثوق؛ لا يمكن استنتاج نجاح التوصيات"],
     ]){
       const card=txt("article","","terminal-trust-card");
       card.append(txt("strong",feed[0]));
@@ -633,10 +658,10 @@
     $("terminal-panel-chart")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime"];
+    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,
-      state.watchCharts,state.gamma,state.trust,state.runtime]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
