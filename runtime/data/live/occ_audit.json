@@ -8,10 +8,10 @@
   "not_options_flow": true,
   "request_funnel": "published_contracts_only",
   "requested_symbols": 8,
-  "requested_reports": 16,
-  "successful_symbols": 0,
-  "successful_reports": 0,
-  "elapsed_seconds": 0.7661,
+  "requested_reports": 18,
+  "successful_symbols": 2,
+  "successful_reports": 2,
+  "elapsed_seconds": 1.5105,
   "audit": {
     "AAPL": {
       "symbol": "AAPL",
@@ -20,11 +20,45 @@
       "free_no_key": true,
       "context_only": true,
       "requested_reports": [
+        "daily",
         "weekly",
         "monthly"
       ],
-      "successful_reports": 0,
+      "successful_reports": 1,
       "reports": {
+        "daily": {
+          "success": true,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "daily",
+          "report_type": "D",
+          "report_date": "20261016",
+          "report_date_policy": "recent_business_day",
+          "fetched_at": "2026-10-19T00:09:44.002700+00:00",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [
+            {
+              "report_date": "20261019",
+              "status_code": 200,
+              "elapsed_ms": 216,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
+              "report_date": "20261016",
+              "status_code": 200,
+              "elapsed_ms": 96
+            }
+          ],
+          "call_volume": 1511938,
+          "put_volume": 1244698,
+          "total_volume": 2756636,
+          "put_call_ratio": 0.8232,
+          "rows": 132,
+          "parsed_rows": 132
+        },
         "weekly": {
           "success": false,
           "source": "OCC Volume Query",
@@ -39,13 +73,13 @@
             {
               "report_date": "20261016",
               "status_code": 200,
-              "elapsed_ms": 299,
+              "elapsed_ms": 63,
               "error": "OCC response is empty or HTML instead of CSV"
             },
             {
               "report_date": "20261009",
               "status_code": 200,
-              "elapsed_ms": 62,
+              "elapsed_ms": 58,
               "error": "OCC response is empty or HTML instead of CSV"
             }
           ],
@@ -66,7 +100,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 61,
+              "elapsed_ms": 52,
               "error": "OCC response is empty or HTML instead of CSV"
             },
             {
@@ -76,6 +110,82 @@
               "error": "OCC response is empty or HTML instead of CSV"
             }
           ],
+          "circuit_open": true,
+          "error": "OCC monthly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
+        }
+      }
+    },
+    "AVGO": {
+      "symbol": "AVGO",
+      "source": "OCC",
+      "official": true,
+      "free_no_key": true,
+      "context_only": true,
+      "requested_reports": [
+        "daily",
+        "weekly",
+        "monthly"
+      ],
+      "successful_reports": 1,
+      "reports": {
+        "daily": {
+          "success": true,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "daily",
+          "report_type": "D",
+          "report_date": "20261016",
+          "report_date_policy": "recent_business_day",
+          "fetched_at": "2026-10-19T00:09:45.187053+00:00",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [
+            {
+              "report_date": "20261019",
+              "status_code": 200,
+              "elapsed_ms": 53,
+              "error": "ValueError: OCC CSV contains no data rows"
+            },
+            {
+              "report_date": "20261016",
+              "status_code": 200,
+              "elapsed_ms": 80
+            }
+          ],
+          "call_volume": 173610,
+          "put_volume": 144164,
+          "total_volume": 317774,
+          "put_call_ratio": 0.8304,
+          "rows": 119,
+          "parsed_rows": 119
+        },
+        "weekly": {
+          "success": false,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "weekly",
+          "report_type": "W",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [],
+          "circuit_open": true,
+          "error": "OCC weekly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
+        },
+        "monthly": {
+          "success": false,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "monthly",
+          "report_type": "M",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [],
           "circuit_open": true,
           "error": "OCC monthly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
         }
@@ -167,48 +277,6 @@
     },
     "ORCL": {
       "symbol": "ORCL",
-      "source": "OCC",
-      "official": true,
-      "free_no_key": true,
-      "context_only": true,
-      "requested_reports": [
-        "weekly",
-        "monthly"
-      ],
-      "successful_reports": 0,
-      "reports": {
-        "weekly": {
-          "success": false,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "weekly",
-          "report_type": "W",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [],
-          "circuit_open": true,
-          "error": "OCC weekly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
-        },
-        "monthly": {
-          "success": false,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "monthly",
-          "report_type": "M",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [],
-          "circuit_open": true,
-          "error": "OCC monthly returned empty/HTML responses on two period-appropriate dates; circuit opened for the run."
-        }
-      }
-    },
-    "AVGO": {
-      "symbol": "AVGO",
       "source": "OCC",
       "official": true,
       "free_no_key": true,
