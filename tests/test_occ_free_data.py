@@ -6,7 +6,11 @@ from typing import Any
 import requests
 
 from options_radar.occ_expiry_overlay import apply_occ_to_expiry_radar
-from options_radar.occ_free_data import OccFreeVolumeClient, fetch_occ_contexts, parse_occ_volume_csv
+from options_radar.occ_free_data import (
+    OccFreeVolumeClient,
+    fetch_occ_contexts,
+    parse_occ_volume_csv,
+)
 
 
 def test_parse_occ_aggregate_columns() -> None:
@@ -225,3 +229,78 @@ def test_occ_html_failures_open_report_family_circuit_for_remaining_symbols() ->
     assert second["attempts"] == []
     assert len(session.calls) == 2
 
+
+
+# Synthetic quantities in the layout a runner probe observed from OCC's
+# daily volume-query (Oct 2026): trailing comma, adjusted products first.
+LIVE_LAYOUT = (
+    "quantity,underlying,symbol,actype,porc,exchange,actdate\n"
+    "500,AAPL,2AAPL,C,C,CBOE,10/16/2026,\n"
+    "700,AAPL,2AAPL,M,P,CBOE,10/16/2026,\n"
+    "1200,AAPL,AAPL,C,C,CBOE,10/16/2026,\n"
+    "300,AAPL,AAPL,F,C,AMEX,10/16/2026,\n"
+    "900,AAPL,AAPL,M,P,MCRY,10/16/2026,\n"
+)
+
+
+def test_live_volume_layout_excludes_adjusted_products_and_reads_actdate() -> None:
+    parsed = parse_occ_volume_csv(LIVE_LAYOUT, symbol="AAPL")
+    assert parsed["call_volume"] == 1500
+    assert parsed["put_volume"] == 900
+    assert parsed["nonstandard_rows_excluded"] == 2
+    assert parsed["activity_date"] == "20261016"
+    # Without a symbol the legacy aggregate behaviour is unchanged.
+    assert parse_occ_volume_csv(LIVE_LAYOUT)["call_volume"] == 2000
+
+
+def test_live_volume_layout_fails_closed_on_mixed_dates_or_only_adjusted() -> None:
+    mixed = LIVE_LAYOUT + "10,AAPL,AAPL,C,P,ISE,10/15/2026,\n"
+    for text in (
+        mixed,
+        (
+            "quantity,underlying,symbol,actype,porc,exchange,actdate\n"
+            "500,AAPL,2AAPL,C,C,CBOE,10/16/2026,\n"
+        ),
+        LIVE_LAYOUT.replace("10/16/2026", "2026-10-16"),
+    ):
+        try:
+            parse_occ_volume_csv(text, symbol="AAPL")
+        except ValueError:
+            continue
+        raise AssertionError("expected fail-closed ValueError")
+
+
+def test_client_reports_occ_actdate_not_requested_date() -> None:
+    session = _Session([_Response(200, LIVE_LAYOUT)])
+    client = OccFreeVolumeClient(session=session, min_interval_seconds=0)
+    report = client.fetch_report("AAPL", "daily", reference_date=date(2026, 10, 19))
+    assert report["success"] is True
+    assert session.calls[0]["params"]["reportDate"] == "20261019"
+    assert report["requested_report_date"] == "20261019"
+    assert report["report_date"] == "20261016"
+    assert report["report_date_source"] == "OCC_ACTDATE"
+    assert report["nonstandard_rows_excluded"] == 2
+
+
+def test_weekly_report_omits_contract_date_and_is_dated_by_occ_range() -> None:
+    weekly = LIVE_LAYOUT + "40,AAPL,AAPL,C,P,ISE,10/12/2026,\n"
+    session = _Session([_Response(200, weekly)])
+    client = OccFreeVolumeClient(session=session, min_interval_seconds=0)
+    report = client.fetch_report("AAPL", "weekly", reference_date=date(2026, 10, 19))
+    params = session.calls[0]["params"]
+    assert params["reportType"] == "W" and "contractDt" not in params
+    assert report["success"] is True
+    assert report["report_date"] == "20261016"
+    assert report["activity_date_first"] == "20261012"
+    assert report["activity_days"] == 2
+    assert report["put_volume"] == 940
+
+
+def test_daily_request_keeps_contract_date_and_rejects_future_activity() -> None:
+    future = LIVE_LAYOUT.replace("10/16/2026", "10/20/2026")
+    session = _Session([_Response(200, future) for _ in range(10)])
+    client = OccFreeVolumeClient(session=session, min_interval_seconds=0)
+    report = client.fetch_report("AAPL", "daily", reference_date=date(2026, 10, 19))
+    assert session.calls[0]["params"]["contractDt"] == "20261019"
+    assert report["success"] is False
+    assert all("after the requested" in a["error"] for a in report["attempts"])

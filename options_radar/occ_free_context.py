@@ -9,6 +9,8 @@ from typing import Any
 
 import requests
 
+from .occ_free_data import occ_activity_fields, screen_occ_volume_rows
+
 OCC_VOLUME_QUERY_URL = "https://marketdata.theocc.com/volume-query"
 
 
@@ -32,7 +34,7 @@ def _value(row: dict[str, Any], aliases: set[str]) -> Any:
     return None
 
 
-def parse_occ_volume_csv(text: str) -> dict[str, Any]:
+def parse_occ_volume_csv(text: str, *, symbol: str | None = None) -> dict[str, Any]:
     clean = str(text or "").lstrip("\ufeff").strip()
     if not clean or clean.startswith("<"):
         raise ValueError("OCC response is empty or HTML")
@@ -46,6 +48,8 @@ def parse_occ_volume_csv(text: str) -> dict[str, Any]:
     rows = [dict(row) for row in reader if row and any(str(value or "").strip() for value in row.values())]
     if not rows:
         raise ValueError("OCC CSV has no data rows")
+    rows, excluded, activity_dates = screen_occ_volume_rows(rows, symbol)
+    activity = occ_activity_fields(activity_dates, single_day=True)
 
     call_aliases = {"call", "calls", "callvolume", "callvol", "callcontractvolume", "cvolume"}
     put_aliases = {"put", "puts", "putvolume", "putvol", "putcontractvolume", "pvolume"}
@@ -76,11 +80,13 @@ def parse_occ_volume_csv(text: str) -> dict[str, Any]:
         raise ValueError(f"Unsupported OCC CSV layout: {reader.fieldnames}")
     total = calls + puts
     return {
-        "call_volume": int(round(calls)),
-        "put_volume": int(round(puts)),
-        "total_volume": int(round(total)),
+        "call_volume": round(calls),
+        "put_volume": round(puts),
+        "total_volume": round(total),
         "put_call_ratio": round(puts / calls, 4) if calls > 0 else None,
         "parsed_rows": parsed,
+        **activity,
+        "nonstandard_rows_excluded": excluded,
     }
 
 
@@ -131,13 +137,19 @@ class OccDailyVolumeClient:
                 if response.status_code in {204, 404}:
                     continue
                 response.raise_for_status()
-                parsed = parse_occ_volume_csv(response.text)
+                parsed = parse_occ_volume_csv(response.text, symbol=symbol)
+                if parsed["activity_date"] and parsed["activity_date"] > compact:
+                    raise ValueError("OCC activity date is after the requested report date")
                 return {
                     "success": True,
                     "official": True,
                     "free_no_key": True,
                     "source": "OCC Volume Query",
-                    "report_date": compact,
+                    "report_date": parsed["activity_date"] or compact,
+                    "report_date_source": (
+                        "OCC_ACTDATE" if parsed["activity_date"] else "REQUEST_PARAMETER"
+                    ),
+                    "requested_report_date": compact,
                     "fetched_at": datetime.now(timezone.utc).isoformat(),
                     "context_only": True,
                     "not_live_quote": True,

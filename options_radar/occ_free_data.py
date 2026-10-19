@@ -116,7 +116,62 @@ def _contains_value(row: dict[str, Any], required: tuple[str, ...]) -> Any:
     return None
 
 
-def parse_occ_volume_csv(text: str) -> dict[str, Any]:
+def screen_occ_volume_rows(
+    rows: list[dict[str, Any]], symbol: str | None
+) -> tuple[list[dict[str, Any]], int, list[str]]:
+    """Keep standard-product rows and read OCC's own activity date.
+
+    The live volume-query layout (runner probe, Oct 2026) is
+    ``quantity, underlying, symbol, actype, porc, exchange, actdate``; the
+    ``symbol`` column is the option product, so adjusted products such as
+    ``2AAPL`` share the underlying but are not the standard contract and
+    are excluded. ``actdate`` is the date OCC states for the volume, which
+    is reported instead of the date the client happened to request.
+    """
+
+    def column(row: dict[str, Any], name: str) -> Any:
+        return next((v for k, v in row.items() if _normalise_key(k) == name), None)
+
+    sample = rows[0] if rows else {}
+    has_product = column(sample, "underlying") is not None and column(sample, "symbol") is not None
+    kept: list[dict[str, Any]] = []
+    excluded = 0
+    for row in rows:
+        product = str(column(row, "symbol") or "").strip().upper()
+        if symbol and has_product and product != symbol.upper():
+            excluded += 1
+            continue
+        kept.append(row)
+    dates = set()
+    for row in kept:
+        raw = column(row, "actdate")
+        if raw is None:
+            continue
+        try:
+            stamp = datetime.strptime(str(raw).strip(), "%m/%d/%Y").replace(tzinfo=timezone.utc)
+        except ValueError as exc:
+            raise ValueError("OCC actdate is not MM/DD/YYYY") from exc
+        dates.add(stamp.strftime("%Y%m%d"))
+    if rows and not kept:
+        raise ValueError("OCC rows contain only adjusted/non-standard products")
+    return kept, excluded, sorted(dates)
+
+
+def occ_activity_fields(dates: list[str], *, single_day: bool) -> dict[str, Any]:
+    """Daily reports must state exactly one OCC activity date; weekly and
+    monthly reports state a range, and the last date dates the report."""
+    if single_day and len(dates) > 1:
+        raise ValueError("OCC daily rows carry more than one activity date")
+    return {
+        "activity_date": dates[-1] if dates else None,
+        "activity_date_first": dates[0] if dates else None,
+        "activity_days": len(dates),
+    }
+
+
+def parse_occ_volume_csv(
+    text: str, *, symbol: str | None = None, single_day: bool = True
+) -> dict[str, Any]:
     """Parse OCC volume-query CSV across known aggregate and side-row layouts.
 
     OCC has changed report layouts over time. The parser therefore supports both
@@ -140,6 +195,8 @@ def parse_occ_volume_csv(text: str) -> dict[str, Any]:
     rows = [dict(row) for row in reader if row and any(str(value or "").strip() for value in row.values())]
     if not rows:
         raise ValueError("OCC CSV contains no data rows")
+    rows, excluded, activity_dates = screen_occ_volume_rows(rows, symbol)
+    activity = occ_activity_fields(activity_dates, single_day=single_day)
 
     call_aliases = {
         "call", "calls", "callvolume", "callvol", "callquantity",
@@ -192,12 +249,14 @@ def parse_occ_volume_csv(text: str) -> dict[str, Any]:
 
     total = call_volume + put_volume
     return {
-        "call_volume": int(round(call_volume)),
-        "put_volume": int(round(put_volume)),
-        "total_volume": int(round(total)),
+        "call_volume": round(call_volume),
+        "put_volume": round(put_volume),
+        "total_volume": round(total),
         "put_call_ratio": round(put_volume / call_volume, 4) if call_volume > 0 else None,
         "rows": len(rows),
         "parsed_rows": parsed_rows,
+        **activity,
+        "nonstandard_rows_excluded": excluded,
     }
 
 
@@ -283,8 +342,11 @@ class OccFreeVolumeClient:
                 "accountType": "ALL",
                 "productKind": "ALL",
                 "porc": "BOTH",
-                "contractDt": compact,
             }
+            if report_key == "daily":
+                # Live probe (Oct 2026): with contractDt the weekly and monthly
+                # reports come back empty; without it they return the CSV.
+                params["contractDt"] = compact
             self._wait()
             started = time.monotonic()
             try:
@@ -360,7 +422,11 @@ class OccFreeVolumeClient:
                         }
                     continue
 
-                parsed = parse_occ_volume_csv(clean_text)
+                parsed = parse_occ_volume_csv(
+                    clean_text, symbol=symbol, single_day=report_key == "daily"
+                )
+                if parsed["activity_date"] and parsed["activity_date"] > compact:
+                    raise ValueError("OCC activity date is after the requested report date")
                 return {
                     "success": True,
                     "source": "OCC Volume Query",
@@ -368,7 +434,13 @@ class OccFreeVolumeClient:
                     "free_no_key": True,
                     "report_key": report_key,
                     "report_type": report_type,
-                    "report_date": compact,
+                    # OCC's own actdate when the layout carries one; never
+                    # present the requested parameter as the data's date.
+                    "report_date": parsed["activity_date"] or compact,
+                    "report_date_source": (
+                        "OCC_ACTDATE" if parsed["activity_date"] else "REQUEST_PARAMETER"
+                    ),
+                    "requested_report_date": compact,
                     "report_date_policy": (
                         "recent_business_day"
                         if report_key == "daily"
