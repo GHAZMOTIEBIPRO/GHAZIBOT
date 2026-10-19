@@ -161,7 +161,10 @@ def historical_option_response(
     api_key: str = "", secret: str = "", internal_use_allowed: bool = False,
     now: datetime | None = None, session: Any = requests,
 ) -> dict[str, Any]:
-    from .options_daily_outcome_shadow import describe_option_path
+    if __package__:
+        from .options_daily_outcome_shadow import describe_option_path
+    else:
+        from options_daily_outcome_shadow import describe_option_path
 
     result = fetch_completed_daily(
         contract, start=entry_date, end=end_date, kind="option",
