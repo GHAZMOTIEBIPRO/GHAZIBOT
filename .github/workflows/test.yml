@@ -274,6 +274,14 @@ jobs:
             tests/test_stock_watch_confluence_replay.py \
             tests/test_stock_watch_news_attention.py
 
+      - name: Strict free-account and SEC fallback Python gate
+        run: |
+          ruff check \
+            options_radar/alpaca_delayed_research.py \
+            scripts/run_alpaca_private_probe.py \
+            tests/test_alpaca_delayed_research.py
+          python -m scripts.run_alpaca_private_probe
+
       - name: Repository Ruff baseline
         continue-on-error: true
         run: ruff check .

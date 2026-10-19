@@ -43,3 +43,18 @@ assert.ok(html.indexOf("terminal-oos.js")<html.indexOf("terminal-hub.js"));
 assert.ok(js.includes("GhaziOOS.evaluate"));
 assert.ok(js.includes("sourceTimestampVerified"));
 console.log("OOS readiness disclosure: PASS");
+
+const reasons=evaluate({...pending,coverage_gap_diagnostics:{
+  coverage_deficit_known:true,
+  missing_60m_records:247,
+  additional_records_needed_at_fixed_denominator:179,
+  missing_reason_counts_observed:{
+    NO_POST_SIGNAL_BARS:55,
+    PENDING_OR_UNFINISHED:130,
+    OTHER_MISSING_60M:62
+  },
+  missing_reason_count_is_exhaustive:true
+}});
+assert.equal(reasons.additionalCoverageNeeded,179);
+assert.equal(reasons.reasonCounts.NO_POST_SIGNAL_BARS,55);
+assert.equal(reasons.ready,false);

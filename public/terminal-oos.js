@@ -28,7 +28,21 @@
     const summary=ready?
       "اكتملت شروط الحد الأدنى للبحث خارج العينة؛ النتائج لا تثبت ربح تداول فعليًا.":
       "لم تكتمل شروط الاعتماد البحثي خارج العينة؛ لا توجد نسبة نجاح تنفيذية مثبتة.";
+    const audit=value.coverage_gap_diagnostics;
+    const missing=(audit?.coverage_deficit_known===true&&
+      Number.isInteger(audit?.missing_60m_records)&&
+      Number.isInteger(audit?.additional_records_needed_at_fixed_denominator)&&
+      audit.missing_60m_records>=0&&
+      audit.additional_records_needed_at_fixed_denominator>=0)?
+      audit.additional_records_needed_at_fixed_denominator:null;
+    const counts=audit?.missing_reason_counts_observed;
+    const reasons=(counts&&
+      ["NO_POST_SIGNAL_BARS","PENDING_OR_UNFINISHED","OTHER_MISSING_60M"].every(
+        k=>Number.isInteger(counts[k])&&counts[k]>=0))?
+      counts:null;
     return {ready,coverage,sessions,outSessions,outRecords,summary,
+      additionalCoverageNeeded:missing,reasonCounts:reasons,
+      reasonCountsExhaustive:audit?.missing_reason_count_is_exhaustive===true,
       claimedWinRate:null,livePromotionAllowed:false,
       sourceTimestampVerified:false};
   }
