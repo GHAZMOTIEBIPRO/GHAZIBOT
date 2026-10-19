@@ -2,14 +2,14 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-10-05T00:16:42.974709+00:00",
+  "generated_at": "2026-10-19T17:46:12.017105+00:00",
   "overall_status": "CRITICAL",
   "paths": {
     "fast_discovery": {
       "status": "HEALTHY",
       "file": "data/live/fast_explosion_scan.json",
-      "generated_at": "2026-10-02T22:25:13.089454+00:00",
-      "age_minutes": 0.29,
+      "generated_at": "2026-10-19T17:23:07.256900+00:00",
+      "age_minutes": 23.08,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": null,
@@ -19,7 +19,7 @@
       "status": "STALE",
       "file": "public/data/stocks_latest.json",
       "generated_at": "2026-10-02T23:28:45.422228+00:00",
-      "age_minutes": 2927.96,
+      "age_minutes": 24137.44,
       "maximum_age_minutes": 90.0,
       "candidate_count": 4,
       "provider_readiness": null,
@@ -29,14 +29,15 @@
       ]
     },
     "options": {
-      "status": "RESEARCH_ONLY",
+      "status": "STALE",
       "file": "public/data/options_latest.json",
       "generated_at": "2026-10-02T18:25:04.557095+00:00",
-      "age_minutes": 0.75,
+      "age_minutes": 24441.12,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": "FALLBACK_ONLY",
       "reasons": [
+        "Payload age 24441.1m exceeds the 45m safety limit.",
         "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
         "50 chain(s) are Yahoo/YFinance-only fallback",
         "50 chain(s) contain delayed, indicative, or unofficial sources"
@@ -45,11 +46,11 @@
   },
   "reasons": [
     "stocks: Payload age 2928.0m exceeds the 90m safety limit.; No candidate currently has an official primary cause; alerts must state cause unknown",
-    "options: Only delayed, indicative, unofficial, or unverified-entitlement option data is active; 50 chain(s) are Yahoo/YFinance-only fallback; 50 chain(s) contain delayed, indicative, or unofficial sources"
+    "options: Payload age 24441.1m exceeds the 45m safety limit.; Only delayed, indicative, unofficial, or unverified-entitlement option data is active; 50 chain(s) are Yahoo/YFinance-only fallback; 50 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "publisher": {
-    "source_workflow": "BLACK BOX Omega Stock Radar",
-    "source_run_id": "37077725454",
+    "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
+    "source_run_id": "39293325169",
     "mode": "artifact_to_bot_state_status_only"
   }
 }
