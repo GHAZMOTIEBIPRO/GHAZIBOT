@@ -265,6 +265,15 @@ jobs:
           scripts/send_free_macro_reminders.py
           tests/test_free_public_intelligence.py
 
+      - name: Causal stock confluence and free news provenance Ruff gate
+        run: |
+          ruff check \
+            options_radar/stock_watch_confluence.py \
+            scripts/stock_watch_news_attention.py \
+            scripts/build_stock_watch_charts.py \
+            tests/test_stock_watch_confluence_replay.py \
+            tests/test_stock_watch_news_attention.py
+
       - name: Repository Ruff baseline
         continue-on-error: true
         run: ruff check .

@@ -263,6 +263,32 @@
         " · "+fmt(volatility.width_pct,2)+"%"+
         " · جلسة "+volatility.source_last_daily_bar));
     }
+    const confluence=stockInfo?.price_confluence;
+    if(confluence?.research_only===true&&
+       confluence.options_execution_eligible===false&&
+       confluence.source_family==="yahoo"&&
+       typeof confluence.source_last_daily_bar==="string"){
+      const tags={
+        BREAKOUT_AFTER_COMPRESSION:"اختراق بعد انكماش + حجم يومي",
+        VOLUME_BREAKOUT_WATCH:"اختراق حجمي دون انكماش مؤكد",
+        COMPRESSION_WATCH:"انكماش · ترقب حركة",
+        NO_PATTERN:"لا نمط فني مكتمل"
+      };
+      card.append(pair("تلاقي إشارات السعر والحجم",
+        String(tags[confluence.stage]||"غير متاح")+
+        " · جلسة "+confluence.source_last_daily_bar));
+      if(Number.isFinite(confluence.rvol_daily))
+        card.append(pair("RVOL يومي من الشموع",fmt(confluence.rvol_daily,2)));
+      const replay=confluence.historical_replay;
+      if(replay?.lookahead_safe===true&&Number.isInteger(replay.matured_events))
+        card.append(pair("تجارب تاريخية مكتملة (5 جلسات)",
+          String(replay.matured_events)+" · لا تمثل نسبة نجاح"));
+    }
+    const media=stockInfo?.news_attention;
+    if(media?.authority==="NEWS_SEARCH_ATTENTION_ONLY"&&
+       media.official_catalyst_verified===false)
+      card.append(pair("رصد اسم الشركة في الأخبار",
+        "غير رسمي · "+stamp(media.latest_published_at)));
     card.append(pair("شموع يومية / 15 دقيقة",
       (stockSeries?.["1d"]?.bars?.length||0)+" / "+(stockSeries?.["15m"]?.bars?.length||0)));
     if(stockInfo?.historical_cache_only===true){
@@ -601,6 +627,21 @@
       ["ATR14",fmt(range)],["EMA20",fmt(emaFast)],["EMA50",fmt(emaSlow)],
       ["قمة / قاع 20 شمعة",fmt(high)+" / "+fmt(low)]]){
       metric?.append(putMetric(label,value));
+    }
+    const priceWatch=state.watchCharts?.symbols?.[symbol]?.price_confluence;
+    if(tf==="1d"&&priceWatch?.research_only===true&&
+       priceWatch.options_execution_eligible===false&&
+       typeof priceWatch.source_last_daily_bar==="string"){
+      metric?.append(putMetric("تلاقي الشموع والحجم (بحثي)",
+        String(({BREAKOUT_AFTER_COMPRESSION:"اختراق بعد انكماش وحجم",
+          VOLUME_BREAKOUT_WATCH:"اختراق حجمي",
+          COMPRESSION_WATCH:"انكماش مرصود",
+          NO_PATTERN:"لا نمط مكتمل"})[priceWatch.stage]||"غير متاح")+
+        " · "+priceWatch.source_last_daily_bar));
+      const replay=priceWatch.historical_replay;
+      if(replay?.lookahead_safe===true&&Number.isInteger(replay.matured_events))
+        metric?.append(putMetric("تجارب تاريخية مكتملة",
+          String(replay.matured_events)+" (ليست نسبة نجاح)"));
     }
     const shadow=state.watchCharts?.symbols?.[symbol]?.volatility_shadow;
     if(tf==="1d"&&shadow?.available===true&&shadow.research_only===true&&
