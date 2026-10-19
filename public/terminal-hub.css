@@ -235,3 +235,46 @@ body{background:radial-gradient(ellipse 1100px 420px at 52% -140px,rgba(24,122,1
   .terminal-overview-warning{font-size:.72rem}
 }
 @media(prefers-reduced-motion:reduce){.terminal-quiet-action{transition:none}}
+
+/* Omega evidence desk: calm professional hierarchy, not a synthetic trading signal. */
+.terminal-timeframe-strip{display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  margin:0 0 17px;padding:9px;border:1px solid rgba(144,187,209,.16);
+  background:#0d1b2c;border-radius:12px}
+.terminal-timeframe-strip button{min-height:42px;border:1px solid rgba(146,188,212,.22);
+  background:#172b3e;color:#c4d8e7;border-radius:9px;padding:8px 15px;
+  font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+.terminal-timeframe-strip button.active,.terminal-timeframe-strip button[aria-pressed="true"]{
+  background:#14514f;color:#e5fff7;border-color:#4dcdb2}
+.terminal-timeframe-strip button:disabled{opacity:.4;cursor:not-allowed}
+.terminal-timeframe-strip span{font-size:.7rem;color:#9cb2c5;margin-inline-start:auto}
+.terminal-evidence{margin:18px 0 14px;border:1px solid rgba(108,195,204,.24);
+  border-radius:16px;padding:20px;background:linear-gradient(125deg,#11263a,#0c1b2b)}
+.terminal-evidence-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.terminal-evidence-head h4{font-size:1.08rem;color:#f0f7ff;margin:0}
+.terminal-evidence-status{padding:8px 12px;background:#22374a;color:#e7d09e;
+  border:1px solid rgba(220,184,120,.23);border-radius:8px;font-size:.77rem}
+.terminal-evidence-summary{font-size:.84rem;line-height:1.9;color:#d4e4ef;margin:12px 0 16px}
+.terminal-evidence-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.terminal-evidence-item{background:#152c3f;border:1px solid rgba(145,183,206,.17);
+  padding:14px;min-width:0;border-radius:11px;border-top:3px solid #8297a9}
+.terminal-evidence-item.ok{border-top-color:#43c2a7}
+.terminal-evidence-item.blocked{border-top-color:#e38a95}
+.terminal-evidence-item.neutral{border-top-color:#e3b768}
+.terminal-evidence-item strong{font-size:.78rem;color:#edf6fb;display:block;margin-bottom:8px}
+.terminal-evidence-item p{font-size:.73rem;line-height:1.75;color:#adc3d4;margin:0;overflow-wrap:anywhere}
+.terminal-evidence-footnote{font-size:.75rem;line-height:1.85;color:#9db2c5;margin:14px 0 0}
+.terminal-chart-metrics>div{min-width:0;overflow-wrap:anywhere}
+.terminal-price-heading strong{font-variant-numeric:tabular-nums}
+.terminal-tab:focus-visible,.terminal-timeframe-strip button:focus-visible{
+  outline:2px solid #7cf5d9;outline-offset:3px}
+@media(max-width:1150px){.terminal-evidence-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){
+  .terminal-evidence{padding:14px}
+  .terminal-evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .terminal-timeframe-strip{gap:6px}
+  .terminal-timeframe-strip button{padding:8px 12px;flex:1 1 auto}
+  .terminal-timeframe-strip span{flex-basis:100%;margin:0}
+  .terminal-evidence-head h4{font-size:.95rem}
+}
+@media(max-width:355px){.terminal-evidence-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.terminal-timeframe-strip button{transition:none}}
