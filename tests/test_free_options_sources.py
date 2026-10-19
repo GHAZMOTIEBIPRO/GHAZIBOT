@@ -10,11 +10,42 @@ from scripts.build_free_options_sources import (
     collect,
     filingpulse_snapshot,
     occ_open_interest_snapshot,
-    parse_occ_oi_csv,
+    parse_occ_market_oi,
+    parse_occ_series_oi,
 )
 
 NOW = datetime(2026, 10, 19, 9, tzinfo=timezone.utc)
 CIK = 320193
+
+# Synthetic numbers in the exact layouts a GitHub runner probe observed
+# (digit-masked) from marketdata.theocc.com in October 2026.
+MARKET_OI = (
+    "Daily Open Interest - October 2026\n"
+    "Date,Equity,,,Index/Other,,,Debt,,,Futures,OCC Total\n"
+    ",Calls,Puts,Total,Calls,Puts,Total,Calls,Puts,Total,Total,\n"
+    '10/15/2026,"200,000,000","150,000,000","350,000,000","20,000,000",'
+    '"25,000,000","45,000,000",0,0,0,"500,000","395,500,000",\n'
+    '10/16/2026,"201,000,000","151,000,000","352,000,000","20,000,000",'
+    '"25,000,000","45,000,000",0,0,0,"500,000","397,500,000",\n'
+)
+
+
+def series(symbol: str, rows: list[str]) -> str:
+    return (
+        f"Series Search Results for {symbol}\n"
+        "Products for this underlying symbol are traded on:\n"
+        "AMEX ARCA BATS BOX C2 CBOE\n"
+        "\t\tSeries/contract\t\tStrike\t\t\tOpen Interest\t\t\t\n"
+        "ProductSymbol\tyear\tMonth\tDay\tInteger\tDec\tC/P\tCall\tPut\tPosition Limit\t\n"
+        + "".join(row + "\n" for row in rows)
+    )
+
+
+AAPL_SERIES = series("AAPL", [
+    "AAPL\t\t2026\t10\t23\t250\t000\tC P\t1200\t800\t25000000",
+    "AAPL\t\t2026\t11\t20\t260\t000\tC P\t300\t700\t25000000",
+    "2AAPL\t\t2026\t11\t20\t130\t000\tC\t999\t0\t25000000",
+])
 
 
 class FakeSession:
@@ -29,7 +60,14 @@ class FakeSession:
             stream=False):
         self.calls.append((url, params, headers))
         if "marketdata.theocc.com" in url:
-            payload = b"Underlying Symbol,Open Interest\nAAPL,1234\nNVDA,400\n"
+            if url.endswith("/daily-open-interest"):
+                payload = MARKET_OI.encode()
+            elif params["symbol"] == "AAPL":
+                payload = AAPL_SERIES.encode()
+            else:
+                payload = series(params["symbol"], [
+                    f"{params['symbol']}\t\t2026\t11\t20\t10\t500\tC P\t40\t60\t25000000",
+                ]).encode()
             return SimpleNamespace(
                 status_code=200, iter_content=lambda chunk_size: iter([payload]),
             )
@@ -106,45 +144,82 @@ def test_filingpulse_cik_mismatch_or_quota_does_not_make_up_filing():
     assert limited["events"] == []
 
 
-def test_occ_csv_and_one_daily_download_are_context_only():
-    good = parse_occ_oi_csv("Underlying Symbol,Open Interest\nAAPL,100\nTSLA,200\n",
-                            watched={"AAPL", "TSLA"})
-    assert good["status"] == "HISTORICAL_DAILY_AGGREGATE"
-    assert good["watched_oi"] == {"AAPL": 100, "TSLA": 200}
-    # The actual OCC download may prepend an aggregate/report-period title.
-    with_title = parse_occ_oi_csv(
-        "Daily Open Interest October 2026\n"
-        "For clearing-member reference only\n"
-        "Underlying Symbol,Open Interest\n"
-        "AAPL,100\nNVDA,250\n",
-        watched={"AAPL", "NVDA"},
-    )
-    assert with_title["status"] == "HISTORICAL_DAILY_AGGREGATE"
-    assert with_title["watched_oi"] == {"AAPL": 100, "NVDA": 250}
-    # A report heading alone must NEVER be treated as a positive OI sample.
-    assert parse_occ_oi_csv(
-        "Daily Open Interest October 2026\nAAPL,100\n",
-        watched={"AAPL"},
-    )["status"] == "UNKNOWN_LAYOUT"
-    assert parse_occ_oi_csv("<html>Error</html>", watched={"AAPL"})["matched"] == 0
-    bad_schema = parse_occ_oi_csv(
-        "stock,price\nAAPL,12\n", watched={"AAPL"}
-    )
-    assert bad_schema["status"] == "UNKNOWN_LAYOUT"
-    assert bad_schema["safe_schema_column_names"] == ["stock", "price"]
-    assert "AAPL" not in str(bad_schema)
-    assert "12" not in str(bad_schema)
+def test_occ_market_report_is_market_wide_and_dates_publication_only():
+    market = parse_occ_market_oi(MARKET_OI)
+    assert market == {
+        "status": "MARKET_WIDE_DAILY_TOTALS", "report_date": "2026-10-16",
+        "equity_call_oi": 201_000_000, "equity_put_oi": 151_000_000,
+        "equity_total_oi": 352_000_000, "occ_total_oi": 397_500_000,
+    }
+    # The title alone (the production layout before) is never a sample.
+    assert parse_occ_market_oi("Daily Open Interest - October 2026\n")[
+        "status"] == "UNKNOWN_LAYOUT"
+    assert parse_occ_market_oi("<html>Error</html>")["status"] == "UNPARSEABLE_CSV"
+    # Calls + puts must equal the reported equity total; no repair.
+    broken = MARKET_OI.replace('"352,000,000"', '"352,000,001"')
+    assert parse_occ_market_oi(broken)["status"] == "INVALID_ROW"
+    unknown = parse_occ_market_oi("stock,price\nAAPL,12\n")
+    assert unknown["status"] == "UNKNOWN_LAYOUT"
+    assert "AAPL" not in str(unknown) and "12" not in str(unknown)
+
+
+def test_occ_series_sums_standard_contracts_and_excludes_adjusted():
+    parsed = parse_occ_series_oi(AAPL_SERIES, symbol="AAPL")
+    assert parsed == {
+        "status": "SERIES_OPEN_INTEREST", "call_oi": 1500, "put_oi": 1500,
+        "total_oi": 3000, "put_call_oi_ratio": 1.0,
+        "standard_series": 2, "nonstandard_series_excluded": 1,
+    }
+    only_adjusted = series("AAPL", [
+        "2AAPL\t\t2026\t11\t20\t130\t000\tC\t999\t0\t25000000"])
+    assert parse_occ_series_oi(only_adjusted, symbol="AAPL") == {
+        "status": "NO_STANDARD_SERIES", "nonstandard_series_excluded": 1}
+    bad = series("AAPL", ["AAPL\t\t2026\t13\t20\t250\t000\tC P\t1\t2\t9"])
+    assert parse_occ_series_oi(bad, symbol="AAPL")["status"] == "INVALID_ROW"
+    negative = series("AAPL", ["AAPL\t\t2026\t11\t20\t250\t000\tC P\t-1\t2\t9"])
+    assert parse_occ_series_oi(negative, symbol="AAPL")["status"] == "INVALID_ROW"
+    assert parse_occ_series_oi("Series Search Results for AAPL\n",
+                               symbol="AAPL")["status"] == "UNKNOWN_LAYOUT"
+
+
+def test_occ_snapshot_dates_only_from_market_report_and_stays_context():
     cli = FakeSession()
-    report = occ_open_interest_snapshot(now=NOW, session=cli, enabled=True)
+    report = occ_open_interest_snapshot(now=NOW, session=cli, enabled=True, pause=0)
     assert report["status"] == "HISTORICAL_DAILY_AGGREGATE"
     assert report["not_live_quote"] is True
     assert report["not_trade_flow"] is True
-    assert report["open_interest"]["AAPL"] == 1234
-    assert sum("theocc.com" in entry[0] for entry in cli.calls) == 1
+    assert report["report_date"] == "2026-10-16"
+    assert report["report_date_scope"] == "OCC_MARKET_WIDE_DAILY_REPORT"
+    assert report["per_symbol_as_of_verified"] is False
+    assert report["per_symbol_retrieved_at"] == NOW.isoformat()
+    assert report["open_interest"] == {"AAPL": 3000, "NVDA": 100,
+                                       "TSLA": 100, "SOFI": 100}
+    assert report["per_symbol"]["AAPL"]["nonstandard_series_excluded"] == 1
     occ_calls = [entry for entry in cli.calls if "theocc.com" in entry[0]]
     assert occ_calls[0][1] == {
         "reportDate": "10/16/2026", "action": "download", "format": "csv",
     }
+    assert [c[1] for c in occ_calls[1:]] == [
+        {"symbolType": "U", "symbol": s} for s in ("AAPL", "NVDA", "TSLA", "SOFI")]
+
+
+def test_occ_stale_or_missing_market_report_fails_closed():
+    later = NOW.replace(month=11, day=2)
+    stale = occ_open_interest_snapshot(now=later, session=FakeSession(),
+                                       enabled=True, pause=0)
+    assert stale["status"] == "STALE_MARKET_REPORT"
+    assert stale["open_interest"] is None and stale["report_date"] is None
+
+    class Denied(FakeSession):
+        def get(self, url, **kwargs):
+            self.calls.append((url, kwargs.get("params"), None))
+            return SimpleNamespace(status_code=406, iter_content=lambda chunk_size: iter([]))
+
+    denied = Denied()
+    report = occ_open_interest_snapshot(now=NOW, session=denied, enabled=True, pause=0)
+    assert report["status"] == "HTTP_406"
+    assert report["open_interest"] is None
+    assert len(denied.calls) == 1
 
 
 def test_filingpulse_must_match_date_and_form():

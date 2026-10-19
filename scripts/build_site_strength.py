@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -151,14 +151,18 @@ def score(
                 and oi.get("status") == "HISTORICAL_DAILY_AGGREGATE"
                 and oi.get("not_live_quote") is True
                 and oi.get("not_trade_flow") is True
+                # The date is OCC's market-wide report date; per-symbol
+                # series OI is undated and must say so explicitly.
+                and oi.get("report_date_scope") == "OCC_MARKET_WIDE_DAILY_REPORT"
+                and oi.get("per_symbol_as_of_verified") is False
                 and isinstance(values, dict) and 0 < len(values) <= 50
                 and all(isinstance(symbol, str)
                         and _int(count, cap=10**12) is not None
                         for symbol, count in values.items()))
     if valid_oi:
         try:
-            day = datetime.strptime(str(oi.get("report_date")), "%Y-%m-%d")
-            diff = (now.astimezone(timezone.utc).date() - day.date()).days
+            day = date.fromisoformat(str(oi.get("report_date")))
+            diff = (now.astimezone(timezone.utc).date() - day).days
             valid_oi = 0 <= diff <= 7
         except ValueError:
             valid_oi = False
@@ -167,7 +171,7 @@ def score(
     # 10 points are reserved for validated licensed OPRA execution quotes,
     # which the free provenance report explicitly refuses to certify.
     detail["options_market_data"] = (
-        "Historical OCC OI context; not executable NBBO"
+        "Dated OCC market-wide OI + undated per-symbol series OI; not executable NBBO"
         if valid_oi else "Neither valid OCC OI nor licensed executable option quotes"
     )
 

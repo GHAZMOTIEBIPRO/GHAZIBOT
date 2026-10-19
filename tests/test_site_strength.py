@@ -154,9 +154,18 @@ def test_occ_historical_never_grants_opra_execution_points():
         "status": "HISTORICAL_DAILY_AGGREGATE",
         "not_live_quote": True, "not_trade_flow": True,
         "report_date": "2026-10-16",
+        "report_date_scope": "OCC_MARKET_WIDE_DAILY_REPORT",
+        "per_symbol_as_of_verified": False,
         "open_interest": {"AAPL": 2000, "TSLA": 600},
     }
     assert group(run(free_options=f))["options_market_data"] == 5
+    # Per-symbol OI may never be presented as dated by the series search.
+    f["occ_open_interest"]["per_symbol_as_of_verified"] = True
+    assert group(run(free_options=f))["options_market_data"] == 0
+    f["occ_open_interest"]["per_symbol_as_of_verified"] = False
+    del f["occ_open_interest"]["report_date_scope"]
+    assert group(run(free_options=f))["options_market_data"] == 0
+    f["occ_open_interest"]["report_date_scope"] = "OCC_MARKET_WIDE_DAILY_REPORT"
     f["occ_open_interest"]["report_date"] = "2026-09-01"
     assert group(run(free_options=f))["options_market_data"] == 0
 

@@ -133,7 +133,26 @@ def plan(symbol: str, today: date) -> list[tuple[str, dict | None]]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="AAPL")
+    parser.add_argument("--live-parse", action="store_true",
+                        help="run the production OCC parser; print statuses only")
     args = parser.parse_args()
+    if args.live_parse:
+        from scripts.build_free_options_sources import occ_open_interest_snapshot
+        report = occ_open_interest_snapshot(
+            now=datetime.now(timezone.utc), session=requests, enabled=True)
+        per = report.get("per_symbol") or {}
+        print(json.dumps({
+            "status": report["status"], "report_date": report["report_date"],
+            "market_wide_status": (report.get("market_wide") or {}).get("status"),
+            "per_symbol": {
+                sym: {"status": item.get("status"),
+                      "standard_series": item.get("standard_series"),
+                      "nonstandard_series_excluded": item.get("nonstandard_series_excluded"),
+                      "has_positive_total": (item.get("total_oi") or 0) > 0}
+                for sym, item in per.items()},
+            "safe_schema_column_names": report.get("safe_schema_column_names"),
+        }, indent=1))
+        return 0
     symbol = args.symbol.strip().upper()
     if not SAFE_SYMBOL.match(symbol):
         raise SystemExit("symbol must be 1-6 letters")
