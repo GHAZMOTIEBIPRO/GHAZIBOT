@@ -72,6 +72,18 @@ RELAYS: tuple[Relay, ...] = (
 )
 
 
+WATCHDOG = "telegram-failure-watchdog.yml"
+# Core engines whose failures (and recoveries) must reach Telegram even when
+# the orchestrator, not a human push, started them.
+WATCHED_SOURCES: tuple[str, ...] = (
+    "fast-explosion-radar.yml",
+    "stock-radar.yml",
+    "options-contract-radar.yml",
+    "classical-direction-radar.yml",
+)
+FAILURES = frozenset({"failure", "timed_out", "action_required", "startup_failure"})
+
+
 def _parse(value: Any) -> datetime | None:
     try:
         stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
@@ -125,6 +137,49 @@ def plan_dispatches(
         {k: v for k, v in item.items() if k != "_finished"}
         for item in sorted(planned.values(), key=lambda x: x["workflow"])
     ]
+
+
+def plan_watchdog(
+    *,
+    now: datetime,
+    completed: dict[str, list[dict[str, Any]]],
+    watchdog_titles: list[str],
+) -> dict[str, Any] | None:
+    """At most one watchdog dispatch per tick: the oldest unreported failure
+    or failure->success recovery among the watched engines.
+
+    ``completed[source]`` lists that engine's newest completed main runs
+    (``id``, ``conclusion``, ``updated_at``), newest first. A run whose id
+    already appears in a watchdog run title was reported (relay or a genuine
+    workflow_run) and is skipped. Consecutive-failure dedup and stale-event
+    filtering stay inside the watchdog's own classifier.
+    """
+    if now.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    best: tuple[datetime, dict[str, Any]] | None = None
+    for source in WATCHED_SOURCES:
+        rows = completed.get(source) or []
+        if not rows:
+            continue
+        latest = rows[0]
+        finished = _parse(latest.get("updated_at"))
+        run_id = str(latest.get("id") or "")
+        if finished is None or not run_id.isdigit():
+            continue
+        age = (now - finished).total_seconds() / 60.0
+        if age < GRACE_MINUTES or age > MAX_SOURCE_AGE_MINUTES:
+            continue
+        conclusion = str(latest.get("conclusion") or "")
+        previous = str(rows[1].get("conclusion") or "") if len(rows) > 1 else ""
+        if not (conclusion in FAILURES or (conclusion == "success" and previous in FAILURES)):
+            continue
+        if any(run_id in str(title) for title in watchdog_titles):
+            continue
+        item = {"workflow": WATCHDOG, "inputs": {"source_run_id": run_id},
+                "source": source, "source_run_id": int(run_id), "kind": conclusion}
+        if best is None or finished < best[0]:
+            best = (finished, item)
+    return best[1] if best else None
 
 
 def _gh(args: list[str]) -> str:
@@ -186,6 +241,24 @@ def main() -> int:
             print(f"relay: skip {relay.source}: {type(exc).__name__}")
     plan = plan_dispatches(now=now, source_runs=source_runs,
                            artifacts=artifacts, target_last_created=last)
+    try:
+        completed = {}
+        for source in WATCHED_SOURCES:
+            out = _gh(["run", "list", "--repo", args.repo, "--workflow", source,
+                       "--status", "completed", "--branch", "main", "--limit", "2",
+                       "--json", "databaseId,conclusion,updatedAt"])
+            completed[source] = [
+                {"id": row.get("databaseId"), "conclusion": row.get("conclusion"),
+                 "updated_at": row.get("updatedAt")}
+                for row in json.loads(out or "[]")]
+        titles = [str(row.get("displayTitle") or "") for row in json.loads(_gh([
+            "run", "list", "--repo", args.repo, "--workflow", WATCHDOG,
+            "--limit", "40", "--json", "displayTitle"]) or "[]")]
+        alert = plan_watchdog(now=now, completed=completed, watchdog_titles=titles)
+        if alert:
+            plan.append(alert)
+    except (subprocess.SubprocessError, ValueError, OSError) as exc:
+        print(f"relay: watchdog check skipped: {type(exc).__name__}")
     if not plan:
         print("relay: every dependent stage is current")
     for item in plan:

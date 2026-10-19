@@ -127,3 +127,45 @@ def test_index_radar_cadence_is_owned_by_the_orchestrator():
     index = Path(".github/workflows/index-radar.yml").read_text(encoding="utf-8")
     assert central.count("dispatch_if_stale index-radar.yml") == 1
     assert "schedule:" not in index and "workflow_dispatch:" in index
+
+
+def _runs(*pairs):
+    return [{"id": rid, "conclusion": c, "updated_at": _iso(age)} for rid, c, age in pairs]
+
+
+def test_watchdog_relays_one_unreported_failure_per_tick_oldest_first():
+    from scripts.relay_dependent_workflows import WATCHDOG, plan_watchdog
+
+    item = plan_watchdog(now=NOW, watchdog_titles=[], completed={
+        "stock-radar.yml": _runs((11, "failure", 10)),
+        "options-contract-radar.yml": _runs((22, "timed_out", 30)),
+    })
+    assert item["workflow"] == WATCHDOG
+    assert item["inputs"] == {"source_run_id": "22"}
+    # Already reported (relay title or a genuine workflow_run title).
+    again = plan_watchdog(now=NOW, watchdog_titles=["Telegram Failure Watchdog · 22"],
+                          completed={"options-contract-radar.yml": _runs((22, "failure", 30))})
+    assert again is None
+
+
+def test_watchdog_relays_recovery_but_not_plain_success_or_stale_or_cancelled():
+    from scripts.relay_dependent_workflows import plan_watchdog
+
+    def plan(rows):
+        return plan_watchdog(now=NOW, watchdog_titles=[], completed={"fast-explosion-radar.yml": rows})
+
+    assert plan(_runs((5, "success", 10), (4, "failure", 30)))["inputs"] == {"source_run_id": "5"}
+    assert plan(_runs((5, "success", 10), (4, "success", 30))) is None
+    assert plan(_runs((5, "cancelled", 10))) is None
+    assert plan(_runs((5, "failure", 1))) is None      # grace period
+    assert plan(_runs((5, "failure", 400))) is None    # too old
+    assert plan([]) is None
+
+
+def test_watchdog_accepts_relayed_run_id_and_titles_it():
+    spec = yaml.safe_load(Path(".github/workflows/telegram-failure-watchdog.yml").read_text(encoding="utf-8"))
+    on = spec.get(True) or spec.get("on")
+    assert "source_run_id" in on["workflow_dispatch"]["inputs"]
+    assert "inputs.source_run_id || github.event.workflow_run.id" in spec["run-name"]
+    env = spec["jobs"]["notify-failure"]["env"]
+    assert env["WATCHDOG_SOURCE_RUN_ID"] == "${{ inputs.source_run_id || '' }}"

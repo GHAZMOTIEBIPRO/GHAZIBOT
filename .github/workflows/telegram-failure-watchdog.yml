@@ -1,7 +1,16 @@
 name: BLACK BOX Omega Telegram Failure Watchdog
+# The relayed run id is in the title so the orchestrator relay never
+# dispatches the watchdog twice for the same source run.
+run-name: "Telegram Failure Watchdog · ${{ inputs.source_run_id || github.event.workflow_run.id || 'manual' }}"
 
 on:
   workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Run id relayed by the orchestrator (empty = manual connectivity test)"
+        type: string
+        default: ""
+        required: false
   workflow_run:
     workflows:
       - BLACK BOX Omega Options Contract Radar
@@ -50,6 +59,7 @@ jobs:
       RUN_EVENT: ${{ github.event.workflow_run.event || 'manual' }}
       RUN_BRANCH: ${{ github.event.workflow_run.head_branch || 'manual' }}
       RUN_URL: ${{ github.event.workflow_run.html_url || format('https://github.com/{0}/actions', github.repository) }}
+      WATCHDOG_SOURCE_RUN_ID: ${{ inputs.source_run_id || '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -95,6 +105,7 @@ jobs:
       - name: Send verified failure or recovery alert
         if: steps.classify.outputs.notify == 'true' && env.TELEGRAM_READY == 'true'
         env:
+          GH_TOKEN: ${{ github.token }}
           WATCHDOG_KIND: ${{ steps.classify.outputs.kind }}
           WATCHDOG_PREVIOUS_FAILED: ${{ steps.classify.outputs.previous_failed }}
         run: python -m scripts.telegram_watchdog_status --send

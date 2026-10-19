@@ -123,3 +123,37 @@ def test_history_api_failure_does_not_create_false_recovery(monkeypatch):
 
     monkeypatch.setattr("scripts.telegram_watchdog_status.requests.get", bad_get)
     assert fetch_completed_runs(repository="o/r", workflow_id=WORKFLOW_ID, token="token") is None
+
+
+def test_relayed_run_is_classified_from_the_api_not_as_manual(monkeypatch, tmp_path):
+    import scripts.telegram_watchdog_status as status
+
+    run = {"id": 900, "workflow_id": 7, "name": "BLACK BOX Omega Stock Radar",
+           "conclusion": "failure", "head_branch": "main", "event": "workflow_dispatch",
+           "html_url": "https://github.com/o/r/actions/runs/900", "status": "completed"}
+    monkeypatch.setenv("WATCHDOG_SOURCE_RUN_ID", "900")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "o/r")
+    monkeypatch.setenv("GH_TOKEN", "t")
+    out = tmp_path / "out"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(out))
+    monkeypatch.setattr(status, "fetch_run", lambda **_: run)
+    monkeypatch.setattr(status, "fetch_completed_runs", lambda **_: [
+        run, {**run, "id": 899, "conclusion": "success"}])
+    monkeypatch.setattr("sys.argv", ["watchdog"])
+    assert status.main() == 0
+    assert "kind=failure" in out.read_text(encoding="utf-8")
+    event, workflow_id = status.event_from_run(run)
+    assert workflow_id == 7 and event["id"] == "900" and event["conclusion"] == "failure"
+
+
+def test_unreadable_relayed_run_fails_loudly(monkeypatch):
+    import pytest
+
+    import scripts.telegram_watchdog_status as status
+
+    monkeypatch.setenv("WATCHDOG_SOURCE_RUN_ID", "900")
+    monkeypatch.setattr(status, "fetch_run", lambda **_: None)
+    monkeypatch.setattr("sys.argv", ["watchdog"])
+    with pytest.raises(SystemExit):
+        status.main()
