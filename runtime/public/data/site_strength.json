@@ -1,0 +1,71 @@
+{
+  "schema": "ghazi.evidence_strength.v1",
+  "generated_at": "2026-10-19T09:51:15.731590+00:00",
+  "strength_score": 41,
+  "score_basis": "RESEARCH_DATA_AND_VALIDATION_READINESS",
+  "score_is_prediction_win_rate": false,
+  "score_is_realized_return": false,
+  "score_includes_unverified_live_quotes": false,
+  "score_includes_visual_ui_audit": false,
+  "execution_authority": false,
+  "research_only": true,
+  "weights_sum": 100,
+  "components": [
+    {
+      "id": "charts",
+      "earned": 25.0,
+      "maximum": 25,
+      "reason": "20 requested research charts; validated timeframe coverage"
+    },
+    {
+      "id": "independent_prices",
+      "earned": 0.0,
+      "maximum": 20,
+      "reason": "Independent price confirmation not verified"
+    },
+    {
+      "id": "issuer_filings",
+      "earned": 0.0,
+      "maximum": 15,
+      "reason": "No recently verified issuer filing access"
+    },
+    {
+      "id": "options_market_data",
+      "earned": 0.0,
+      "maximum": 15,
+      "reason": "Neither valid OCC OI nor licensed executable option quotes"
+    },
+    {
+      "id": "walk_forward",
+      "earned": 6.28,
+      "maximum": 15,
+      "reason": "Research sample coverage, NOT prediction accuracy or out-of-sample edge"
+    },
+    {
+      "id": "feed_operations",
+      "earned": 10,
+      "maximum": 10,
+      "reason": "Publication freshness only; CI pass, browser UX and uptime not independently scored"
+    }
+  ],
+  "data_freshness": {
+    "chart_report_recent": true,
+    "independent_source_status_recent": true,
+    "official_filings_report_recent": true,
+    "alternative_filing_options_report_recent": true,
+    "walk_forward_report_timestamp_verified": false
+  },
+  "critical_gaps": [
+    "independent_prices",
+    "issuer_filings",
+    "options_market_data",
+    "walk_forward"
+  ],
+  "notes": [
+    "Score is source-backed research-system readiness, NOT predictive accuracy.",
+    "UI aesthetics, end-to-end browser interaction and Vercel uptime are untested.",
+    "A historical OOS report without generation timestamp cannot verify recency.",
+    "Missing or stale data lowers points; empty reports cannot be promoted.",
+    "License-restricted model downloads, Kaggle datasets or LEAN paid CLI are not automatic."
+  ]
+}
