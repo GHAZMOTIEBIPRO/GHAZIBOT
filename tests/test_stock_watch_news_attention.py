@@ -1,6 +1,6 @@
 """Google RSS matched-name research watch never equals an issuer filing."""
-from datetime import datetime, timedelta, timezone
 import json
+from datetime import datetime, timedelta, timezone
 
 from scripts.build_stock_watch_charts import load_dynamic_symbols
 from scripts.stock_watch_news_attention import load_news_attention, news_candidates
