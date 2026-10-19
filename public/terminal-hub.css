@@ -278,3 +278,19 @@ body{background:radial-gradient(ellipse 1100px 420px at 52% -140px,rgba(24,122,1
 }
 @media(max-width:355px){.terminal-evidence-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.terminal-timeframe-strip button{transition:none}}
+
+/* Structural watch is historical discovery, deliberately separate from signals. */
+.terminal-structural{margin-top:25px;padding-top:22px;border-top:1px solid rgba(144,186,209,.22)}
+.terminal-structural h4{font-size:1.18rem;color:#eef6fb;margin:0 0 9px}
+.terminal-structural-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+  margin-top:14px;max-height:740px;overflow:auto}
+.terminal-structural-item{background:#14253a;border:1px solid rgba(142,187,207,.19);
+  border-radius:13px;padding:14px;min-width:0}
+.terminal-structural-title{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.terminal-structural-title strong{direction:ltr;unicode-bidi:isolate;font-size:1.1rem}
+.terminal-structural-item p{font-size:.74rem;color:#aac0d4;line-height:1.7;margin:9px 0}
+.terminal-structural-notice,.terminal-structural-risk{font-size:.72rem;line-height:1.8;
+  display:block;margin-top:10px;color:#b0c0ce}
+.terminal-structural-risk{color:#ee9eae}
+@media(max-width:1050px){.terminal-structural-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.terminal-structural-list{grid-template-columns:1fr;max-height:620px}}
