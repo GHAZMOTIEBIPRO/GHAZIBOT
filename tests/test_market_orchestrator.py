@@ -93,3 +93,24 @@ def test_any_wakeup_keeps_bounded_five_minute_cadence_with_relay():
     # A failed pass warns instead of ending the cadence loop.
     assert "dispatch_pass || echo" in body
     assert 10 * 5 < job["timeout-minutes"]
+
+
+def test_looping_run_chains_its_successor_within_weekday_market_window():
+    spec = yaml.safe_load(_workflow("market-orchestrator.yml"))
+    on = spec.get(True) or spec.get("on")
+    assert on["workflow_dispatch"]["inputs"]["chain"]["type"] == "boolean"
+    job = spec["jobs"]["dispatch"]
+    step = next(s for s in job["steps"]
+                if s.get("name", "").startswith("Dispatch stale market engines"))
+    assert "inputs.chain" in step["env"]["ORCHESTRATOR_PASSES"]
+    assert "vars.ORCHESTRATOR_SELF_CHAIN" in step["env"]["ORCHESTRATOR_SELF_CHAIN"]
+    body = step["run"]
+    assert "gh workflow run market-orchestrator.yml" in body and "-f chain=true" in body
+    # Only looping runs chain, only on weekdays 08-22 UTC, with a kill switch.
+    assert "(( passes > 1 ))" in body
+    assert "$(date -u +%u) <= 5 && end_hour >= 8 && end_hour <= 22" in body
+    assert '"${ORCHESTRATOR_SELF_CHAIN:-true}" != "false"' in body
+    # Weekends get a single pass per wakeup.
+    assert "$(date -u +%u) > 5" in body
+    # One running + one pending: chained runs never cancel an active pass.
+    assert spec["concurrency"]["cancel-in-progress"] is False

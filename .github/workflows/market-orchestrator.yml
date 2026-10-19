@@ -2,6 +2,11 @@ name: BLACK BOX Omega Market Orchestrator
 
 on:
   workflow_dispatch:
+    inputs:
+      chain:
+        description: "Self-chained cadence run (set by the orchestrator itself)"
+        type: boolean
+        default: false
   # GitHub schedule events are best-effort and can be skipped. An *already*
   # independent successful News Flash run can wake the same cadence owner.
   # Child workflows remain workflow_dispatch-only: no duplicate schedulers.
@@ -76,7 +81,9 @@ jobs:
       - name: Dispatch stale market engines and relay dependent stages
         shell: bash
         env:
-          ORCHESTRATOR_PASSES: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run') && '10' || '1' }}
+          ORCHESTRATOR_PASSES: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run' || inputs.chain) && '10' || '1' }}
+          # Kill switch: set repository variable ORCHESTRATOR_SELF_CHAIN=false.
+          ORCHESTRATOR_SELF_CHAIN: ${{ vars.ORCHESTRATOR_SELF_CHAIN || 'true' }}
         run: |
           set -euo pipefail
 
@@ -136,6 +143,10 @@ jobs:
           }
 
           passes="${ORCHESTRATOR_PASSES:-1}"
+          # Weekends: one pass per wakeup only (markets closed).
+          if (( $(date -u +%u) > 5 )); then
+            passes=1
+          fi
           for (( pass = 1; pass <= passes; pass++ )); do
             now_epoch="$(date -u +%s)"
             utc_hour="$(date -u +%H)"
@@ -155,11 +166,26 @@ jobs:
             fi
           done
 
+          # GitHub delivers few scheduled events (the News Flash wakeup too),
+          # so a looping run hands the cadence to its successor itself.
+          # workflow_dispatch is the one GITHUB_TOKEN event GitHub does run;
+          # the concurrency group keeps at most one running + one pending.
+          end_hour="$(date -u +%H)"; end_hour=$((10#$end_hour))
+          if (( passes > 1 )) && [[ "${ORCHESTRATOR_SELF_CHAIN:-true}" != "false" ]] \
+              && (( $(date -u +%u) <= 5 && end_hour >= 8 && end_hour <= 22 )); then
+            echo "Chaining the next cadence run."
+            gh workflow run market-orchestrator.yml --repo "$GITHUB_REPOSITORY" --ref main -f chain=true \
+              || echo "::warning title=Self-chain dispatch failed::next wakeup will resume cadence"
+          else
+            echo "No self-chain (passes=${passes}, hour=${end_hour}, switch=${ORCHESTRATOR_SELF_CHAIN:-true})."
+          fi
+
       - name: Scheduling policy
         run: |
           cat <<'EOF'
           Core market cadence is owned here, including wakeups from successful News Flash runs.
-          Any wakeup (schedule or News Flash) keeps the 5-minute pass cadence for ~50 minutes.
+          Any wakeup (schedule or News Flash) keeps the 5-minute pass cadence for ~50 minutes,
+          then dispatches its own successor on weekdays 08-22 UTC (switch: vars.ORCHESTRATOR_SELF_CHAIN).
           Dependent stages: workflow_run for human-pushed runs, plus the relay
           inside each pass for orchestrator-dispatched runs (no workflow_run event):
           Fast Explosion -> Stock Radar
