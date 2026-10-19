@@ -1,0 +1,60 @@
+name: GHAZI Private IEX and Delayed Options Source Probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      stock:
+        description: "US equity for internal IEX availability verification"
+        type: string
+        default: AAPL
+        required: true
+      option_contract:
+        description: "Optional OCC contract, e.g. AAPL261120C00150000"
+        type: string
+        default: ""
+        required: false
+      entry_date:
+        description: "Optional historical start YYYY-MM-DD"
+        type: string
+        default: ""
+        required: false
+      exit_date:
+        description: "Optional historical end YYYY-MM-DD (before current UTC day)"
+        type: string
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  permission-gated-private-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      # Owner must review terms and explicitly set the repository variable.
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      FREE_AUTONOMY_MODE: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+      PYTHONPATH: .
+      PROBE_STOCK: ${{ inputs.stock }}
+      PROBE_OPTION: ${{ inputs.option_contract }}
+      PROBE_ENTRY: ${{ inputs.entry_date }}
+      PROBE_EXIT: ${{ inputs.exit_date }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install minimal research client
+        run: python -m pip install "requests>=2.32,<3"
+      - name: Verify optional historical account data without outputting protected prices
+        shell: bash
+        run: >-
+          python -m scripts.run_alpaca_private_probe
+          --stock "$PROBE_STOCK"
+          --option-contract "$PROBE_OPTION"
+          --entry-date "$PROBE_ENTRY"
+          --exit-date "$PROBE_EXIT"
