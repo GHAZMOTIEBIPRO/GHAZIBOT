@@ -206,7 +206,8 @@
       fmt(oos.coverage,2)+"% (شرط الاختبار: 90%) · جلسات مستقلة: "+
       oos.sessions+" · جلسات اختبار خارج العينة: "+oos.outSessions+
       " · حالات الاختبار: "+oos.outRecords+
-      " · وقت مصدر التقييم غير موثق؛ المصدر بحثي فقط.":
+      (oos.sourceTimestampVerified?" · تاريخ المصدر موثق.":
+       " · وقت مصدر التقييم غير موثق؛ المصدر بحثي فقط."):
       "لا يوجد تقرير مشروط صالح عن الاختبار خارج العينة؛ لا نستنتج نسبة نجاح.";
     put("terminal-oos-status",oosText);
     put("terminal-overview-warning",
