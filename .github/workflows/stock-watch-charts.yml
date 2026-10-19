@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build_stock_watch_charts.py"
+      - "scripts/build_source_consensus_status.py"
       - "scripts/build_structural_watch_catalog.py"
       - "data/cache/structural_microfloat_candidates.json"
       - "scripts/stock_watch_news_attention.py"
@@ -61,6 +62,11 @@ jobs:
             --discovery-source state/runtime/public/data/decision_brief.json \
             --news-source state/runtime/public/data/free_public_intelligence.json \
             --structural-source state/runtime/public/data/structural_watch.json
+      - name: Publish price-source agreement status without redistributing licensed prices
+        run: |
+          PYTHONPATH=app python -m scripts.build_source_consensus_status \
+            --charts state/runtime/public/data/stock_watch_charts.json \
+            --output state/runtime/public/data/source_agreement.json
       - name: Persist isolated stock chart feed
         shell: bash
         run: |
@@ -68,7 +74,7 @@ jobs:
           cd state
           git config user.name "GHAZI RADAR Stock Watch"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/stock_watch_charts.json runtime/public/data/structural_watch.json
+          git add runtime/public/data/stock_watch_charts.json runtime/public/data/structural_watch.json runtime/public/data/source_agreement.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "state: completed research stock candles [skip ci]"
           for attempt in 1 2 3; do
