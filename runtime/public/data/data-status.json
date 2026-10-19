@@ -1,9 +1,9 @@
 {
   "status": "degraded",
-  "generated_at": "2026-10-19T15:22:15.325264+00:00",
-  "dataset_age_minutes": 2.5,
-  "last_successful_refresh": "2026-10-19T15:22:15.325264+00:00",
-  "option_provider": "phase5_hybrid",
+  "generated_at": "2026-10-19T17:27:14.012093+00:00",
+  "dataset_age_minutes": 2.4,
+  "last_successful_refresh": "2026-10-19T17:27:14.012093+00:00",
+  "option_provider": "yahoo/yfinance",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
     "production_quote_ready": false,
@@ -30,7 +30,7 @@
     "production_option_quotes": false,
     "production_option_flow": false,
     "sec_fulltext": {
-      "checked_at": "2026-10-19T15:20:40.443101+00:00",
+      "checked_at": "2026-10-19T17:25:49.932285+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
@@ -76,24 +76,25 @@
       "NO_VERIFIED_OPTION_TRADE_FLOW"
     ],
     "top_option_rejection_reasons": {
-      "spread_above_15pct": 140,
-      "delta_outside_030_060": 102,
-      "invalid_bid_ask": 82,
-      "option_volume_below_200": 26
+      "delta_outside_030_060": 220,
+      "spread_above_15pct": 79,
+      "invalid_bid_ask": 23,
+      "vol_to_oi_below_1_5": 15,
+      "option_volume_below_200": 13
     },
     "public_licensing_notice": "Personal-use brokerage API access does not grant public market-data redistribution rights. Do not expose tokens or unlicensed raw quotes."
   },
   "row_counts": {
     "stocks": 15,
-    "options": 0,
+    "options": 1,
     "catalysts": 49,
     "expiry_contracts": 0
   },
   "quality_counts": {
-    "stale_options": 0,
+    "stale_options": 1,
     "missing_expiry_family": 0,
     "duplicate_events_collapsed": 31,
-    "errors": 1,
+    "errors": 2,
     "critical_errors": 0,
     "fallback_only_option_chains": 14,
     "live_primary_option_chains": 0
@@ -110,11 +111,12 @@
     "access_blocked": 16,
     "request_failures": 16,
     "processed_accessions": 0,
-    "updated_at": "2026-10-19T15:20:50.504835+00:00",
+    "updated_at": "2026-10-19T17:26:01.439851+00:00",
     "outcome": "ACCESS_BLOCKED"
   },
   "run_duration_seconds": null,
   "reasons": [
+    "1 stale option row(s)",
     "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
     "14 chain(s) are Yahoo/YFinance-only fallback",
     "14 chain(s) contain delayed, indicative, or unofficial sources"
