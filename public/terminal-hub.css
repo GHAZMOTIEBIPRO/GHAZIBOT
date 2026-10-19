@@ -294,3 +294,10 @@ body{background:radial-gradient(ellipse 1100px 420px at 52% -140px,rgba(24,122,1
 .terminal-structural-risk{color:#ee9eae}
 @media(max-width:1050px){.terminal-structural-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.terminal-structural-list{grid-template-columns:1fr;max-height:620px}}
+
+/* SEC filings: source-specific explanatory research labels, not bullish badges. */
+.terminal-news-topic{display:block;width:fit-content;max-width:100%;
+  margin:6px 0;padding:5px 10px;color:#c8ddeb;background:#162f40;
+  border:1px solid rgba(129,173,203,.2);border-radius:7px;
+  font-size:.72rem;line-height:1.75;overflow-wrap:anywhere}
+.terminal-news-item:has(.terminal-news-topic) h5{margin-bottom:10px}

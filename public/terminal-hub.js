@@ -382,7 +382,9 @@
       if(Array.isArray(bars)&&bars.length>=2)item.append(chartButton(row.symbol,"فتح الشارت البحثي ↗"));
       else item.append(txt("small","لا يوجد شارت منشور؛ لا نفترض وجود دخول أو هدف.","terminal-structural-notice"));
       const risk=Array.isArray(state.sec?.filings)?state.sec.filings.find(f=>
-        f.symbol===row.symbol&&f.event_type==="OFFERING_OR_DILUTION_REVIEW"):null;
+        f.symbol===row.symbol&&f.original_filing_confirmed===true&&
+        (f.event_type==="OFFERING_OR_DILUTION_REVIEW"||
+         f.potential_dilution_review===true)):null;
       item.append(txt("small",risk?
         "تنبيه: إفصاح إصدار أو تخفيف يحتاج مراجعة.":
         "مخاطر الإصدارات والتخفيف غير محسومة؛ يلزم التحقق من الإفصاحات.",
@@ -393,6 +395,7 @@
   function newsCard(item,official){
     const card=txt("article","","terminal-news-item");
     const risky=item.event_type==="OFFERING_OR_DILUTION_REVIEW"||
+      item.potential_dilution_review===true||
       item.event_topic==="RISK_OR_ADVERSE_EVENT_MENTION";
     card.append(chip(risky?"تحذير / مراجعة":official?"إفصاح أصلي":"خبر تجميعي",risky?"DOWN":null));
     card.append(txt("h5",official?
@@ -401,6 +404,24 @@
     card.append(txt("p",official?
       "التاريخ: "+String(item.filing_date||"—")+" · "+String(item.event_type||"مراجعة"):
       "نُشر: "+stamp(item.published_at)+" · اتجاه الخبر غير مؤكد"));
+    if(official){
+      const topics={
+        EARNINGS_RELEASE_REVIEW:"إعلان نتائج أعمال · لا نعرف إن تجاوز التوقعات",
+        PERIODIC_FINANCIAL_REPORT_REVIEW:"تقرير مالي دوري · تحتاج الأرقام للمقارنة",
+        UNREGISTERED_EQUITY_SALE_REVIEW:"مراجعة بيع أوراق مالية غير مسجلة · تحقق من الشروط",
+        OFFERING_OR_REGISTRATION_TERMS_REVIEW:"مستند طرح أو تسجيل · لا يثبت إصدار أسهم جديد",
+        MATERIAL_AGREEMENT_REVIEW:"اتفاق جوهري · الاتجاه السعري غير معلوم",
+        DEBT_OBLIGATION_REVIEW:"التزامات مالية أو ديون · مراجعة المخاطر",
+        MANAGEMENT_CHANGE_REVIEW:"تغييرات إدارية · مراجعة الحدث"
+      };
+      const evidence=Array.isArray(item.event_topics)?item.event_topics:[];
+      for(const tag of evidence.slice(0,3)){
+        if(Object.prototype.hasOwnProperty.call(topics,tag))
+          card.append(txt("small",topics[tag],"terminal-news-topic"));
+      }
+      if(Array.isArray(item.eight_k_items)&&item.eight_k_items.length)
+        card.append(txt("small","فقرات 8-K: "+item.eight_k_items.join("، "),"terminal-news-topic"));
+    }
     const url=official?safeOfficial(item.source_url):safeResearch(item.url);
     if(url){
       const a=txt("a",official?"عرض الإفصاح الأصلي ↗":"فتح الخبر للمراجعة ↗");
