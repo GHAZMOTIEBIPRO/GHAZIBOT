@@ -10,6 +10,8 @@ on:
     branches: [main]
     paths:
       - "scripts/build_stock_watch_charts.py"
+      - "scripts/stock_watch_news_attention.py"
+      - "options_radar/stock_watch_confluence.py"
       - "options_radar/pandas_ta_bollinger_shadow.py"
       - ".github/workflows/stock-watch-charts.yml"
 
@@ -49,7 +51,8 @@ jobs:
         run: |
           PYTHONPATH=app python -m scripts.build_stock_watch_charts \
             --output state/runtime/public/data/stock_watch_charts.json \
-            --discovery-source state/runtime/public/data/decision_brief.json
+            --discovery-source state/runtime/public/data/decision_brief.json \
+            --news-source state/runtime/public/data/free_public_intelligence.json
       - name: Persist isolated stock chart feed
         shell: bash
         run: |
