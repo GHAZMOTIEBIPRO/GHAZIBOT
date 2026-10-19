@@ -1,14 +1,17 @@
 {
   "version": "FREE_DATA_FABRIC_V2",
-  "generated_at": "2026-10-18T22:57:57.360042+00:00",
+  "generated_at": "2026-10-19T00:06:06.819010+00:00",
   "policy": {
     "health_only_never_signal_authority": true,
     "same_family_does_not_increase_source_quorum": true,
     "official_outage_does_not_promote_shadow_source": true,
-    "failed_source_fails_closed": true
+    "failed_source_fails_closed": true,
+    "http_success_is_not_data_success": true,
+    "semantic_validation_required": true,
+    "health_is_not_execution_permission": true
   },
-  "overall": "partial",
-  "official_sources_ok": 1,
+  "overall": "degraded",
+  "official_sources_ok": 0,
   "official_sources_total": 5,
   "shadow_sources_ok": 2,
   "shadow_sources_total": 2,
@@ -30,7 +33,7 @@
     },
     "finra": {
       "sources": 1,
-      "ok_sources": 1,
+      "ok_sources": 0,
       "official": true
     },
     "github_gamma_research": {
@@ -90,10 +93,12 @@
       "role": "daily_short_sale_volume_context",
       "signal_authority": false,
       "independent_family_key": "finra",
-      "ok": true,
+      "ok": false,
+      "transport_reachable": true,
       "status": 200,
-      "bytes_sampled": 156,
-      "content_type": "text/plain"
+      "bytes_sampled": 157,
+      "content_type": "text/plain",
+      "content_status": "FINRA_NON_JSON_RESPONSE"
     },
     {
       "name": "dhawalc/spx-gamma-levels",
@@ -103,9 +108,13 @@
       "signal_authority": false,
       "independent_family_key": "github_gamma_research",
       "ok": true,
+      "transport_reachable": true,
       "status": 200,
       "bytes_sampled": 353,
-      "content_type": "text/plain; charset=utf-8"
+      "content_type": "text/plain; charset=utf-8",
+      "content_status": "DATED_GAMMA_RESEARCH_ONLY",
+      "source_observation_date": "2026-10-16",
+      "observation_age_days": 3
     },
     {
       "name": "Alexduanran/spx-0dte-archive",
@@ -115,9 +124,13 @@
       "signal_authority": false,
       "independent_family_key": "github_gamma_research",
       "ok": true,
+      "transport_reachable": true,
       "status": 200,
       "bytes_sampled": 77468,
-      "content_type": "text/plain; charset=utf-8"
+      "content_type": "text/plain; charset=utf-8",
+      "content_status": "DATED_GAMMA_RESEARCH_ONLY",
+      "source_observation_date": "2026-10-16",
+      "observation_age_days": 3
     }
   ]
 }
