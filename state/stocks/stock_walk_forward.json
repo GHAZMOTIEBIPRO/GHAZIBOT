@@ -23,7 +23,7 @@
     "candidate_policy": "shadow replica of current cohort-relative stock adjustment; entry evidence state remains research-only"
   },
   "gate": {
-    "coverage_60m_pct": 64.15,
+    "coverage_60m_pct": 85.16,
     "independent_60m_sessions": 26,
     "upstream_coverage_ready": false,
     "ready": false
@@ -193,24 +193,24 @@
   "coverage_gap_diagnostics": {
     "missing_reason_counts_observed": {
       "NO_POST_SIGNAL_BARS": 0,
-      "PENDING_OR_UNFINISHED": 83,
-      "OTHER_MISSING_60M": 164
+      "PENDING_OR_UNFINISHED": 17,
+      "OTHER_MISSING_60M": 60
     },
-    "diagnosed_missing_records_sampled": 247,
+    "diagnosed_missing_records_sampled": 77,
     "missing_reason_count_is_exhaustive": true,
-    "eligible_records": 689,
-    "not_applicable_after_close_records": 0,
+    "eligible_records": 519,
+    "not_applicable_after_close_records": 170,
     "covered_60m_records": 442,
-    "missing_60m_records": 247,
-    "minimum_required_60m_records": 621,
-    "additional_records_needed_at_fixed_denominator": 179,
+    "missing_60m_records": 77,
+    "minimum_required_60m_records": 468,
+    "additional_records_needed_at_fixed_denominator": 26,
     "coverage_deficit_known": true,
     "policy": "NO_SYNTHETIC_BACKFILL_OR_PROFIT_CLAIM",
     "next_action": "Observe actual completed 5-minute source candles after each valid signal; never relabel pending or ambiguous outcomes as successes."
   },
   "status": "NOT_READY",
   "reasons": [
-    "60m coverage 64.15% < 90%",
+    "60m coverage 85.16% < 90%",
     "upstream outcome-audit promotion gate is closed"
   ],
   "folds": [],
