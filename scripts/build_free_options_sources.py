@@ -286,6 +286,9 @@ def occ_open_interest_snapshot(*, now: datetime, session: Any,
             "open_interest": None, "report_date": None}
     if not enabled:
         return base
+    # The OCC example URL uses reportDate; its HTML parameter summary
+    # inconsistently says dailyDate. A live runner returned 406 for
+    # dailyDate, while reportDate reached an actual report response.
     # Once per job, previous calendar weekday only. No loops on 403.
     day = now.date() - timedelta(days=1)
     while day.weekday() > 4:
@@ -293,7 +296,7 @@ def occ_open_interest_snapshot(*, now: datetime, session: Any,
     try:
         response = session.get(
             OCC,
-            params={"dailyDate": day.strftime("%m/%d/%Y"),
+            params={"reportDate": day.strftime("%m/%d/%Y"),
                     "action": "download", "format": "csv"},
             timeout=18, stream=True,
             headers={"Accept": "text/csv,text/plain;q=0.9"},
