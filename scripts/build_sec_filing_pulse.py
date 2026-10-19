@@ -20,10 +20,13 @@ from typing import Any
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+# Keep this lightweight SEC workflow independent of options_radar/__init__,
+# which imports pandas, TA libraries and optional trade engines.
+BULK_MODULE_DIR = ROOT / "options_radar"
+if str(BULK_MODULE_DIR) not in sys.path:
+    sys.path.insert(0, str(BULK_MODULE_DIR))
 
-from options_radar.sec_bulk_fallback import read_issuer  # noqa: E402
+from sec_bulk_fallback import read_issuer  # noqa: E402
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 FALLBACK_TICKER_MAP = "https://raw.githubusercontent.com/jadchaar/sec-cik-mapper/main/mappings/stocks/ticker_to_cik.json"
@@ -242,8 +245,6 @@ def collect_local_sec_bulk(brief: dict, *, now: datetime, archive: Path,
     A ZIP is not equivalent to a live SEC feed, and the archive's file
     modification time never becomes an observed issuer filing timestamp.
     """
-    from options_radar.sec_bulk_fallback import read_issuer
-
     selected = symbols_from_brief(brief, max_symbols)
     try:
         local = json.loads(cik_map_path.read_text(encoding="utf-8"))
