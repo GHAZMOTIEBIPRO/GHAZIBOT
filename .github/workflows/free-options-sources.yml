@@ -1,0 +1,64 @@
+name: GHAZI Free Options and SEC Alternative Sources
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_free_options_sources.py"
+      - ".github/workflows/free-options-sources.yml"
+  schedule:
+    - cron: "35 21 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-free-options-sources
+  cancel-in-progress: false
+
+jobs:
+  update-source-context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      FILINGPULSE_API_KEY: ${{ secrets.FILINGPULSE_API_KEY }}
+      OCC_DAILY_OI_ENABLED: "true"
+      PAID_MARKET_DATA_ALLOWED: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install minimal free research client
+        run: python -m pip install "requests>=2.32,<3"
+      - name: Check FilingPulse health and optional free-key filing metadata plus OCC daily OI
+        run: >-
+          python app/scripts/build_free_options_sources.py
+          --cik-map app/data/sec_cik_map.json
+          --output state/runtime/public/data/free_options_sources.json
+      - name: Publish provenance-labelled public research status
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI Options Data Provenance"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/free_options_sources.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "state: free options provenance health [skip ci]"
+          for retry in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$retry"
+          done
+          echo "Failed to publish options free-source report" >&2
+          exit 1
