@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-19T19:36:28.024787+00:00",
+  "generated_at": "2026-10-19T20:00:44.296322+00:00",
   "policy": {
     "social_is_supporting_only": true,
     "social_cannot_promote_recommendation_alone": true,
@@ -22,7 +22,7 @@
       "success": true,
       "records": 15,
       "error": null,
-      "checked_at": "2026-10-19T19:36:21.735346+00:00",
+      "checked_at": "2026-10-19T20:00:37.697660+00:00",
       "date_window_start": "2026-09-28",
       "date_window_end": "2026-10-19"
     },
@@ -32,7 +32,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-19T19:36:28.024654+00:00"
+      "checked_at": "2026-10-19T20:00:44.296216+00:00"
     },
     {
       "provider": "x_recent_search",
@@ -40,7 +40,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-19T19:36:28.024671+00:00"
+      "checked_at": "2026-10-19T20:00:44.296234+00:00"
     },
     {
       "provider": "reddit_oauth_search",
@@ -48,7 +48,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-19T19:36:28.024678+00:00"
+      "checked_at": "2026-10-19T20:00:44.296239+00:00"
     },
     {
       "provider": "benzinga_option_activity",
@@ -56,7 +56,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-19T19:36:28.024683+00:00"
+      "checked_at": "2026-10-19T20:00:44.296243+00:00"
     },
     {
       "provider": "alpaca_stock_snapshots",
@@ -64,7 +64,7 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-19T19:36:28.024687+00:00"
+      "checked_at": "2026-10-19T20:00:44.296246+00:00"
     },
     {
       "provider": "alpaca_option_snapshots",
@@ -72,10 +72,45 @@
       "success": false,
       "records": 0,
       "error": null,
-      "checked_at": "2026-10-19T19:36:28.024689+00:00"
+      "checked_at": "2026-10-19T20:00:44.296248+00:00"
     }
   ],
   "stocks": {
+    "CRWV": {
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
+      "market_sources": [],
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-10-16",
+        "short_volume": 22337490.05,
+        "short_exempt_volume": 1858857.25,
+        "total_volume": 45993647.32,
+        "short_volume_ratio": 0.4857,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF",
+          "NYTRF"
+        ],
+        "market_codes": [
+          "B",
+          "N",
+          "Q"
+        ],
+        "rows_aggregated": 3,
+        "context_only": true,
+        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
+      },
+      "news": null,
+      "x": null,
+      "reddit": null,
+      "alpaca": null,
+      "social_score": 0.0
+    },
     "LLY": {
       "sources": [
         "FINRA Reg SHO"
@@ -181,7 +216,7 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "CRWV": {
+    "ORCL": {
       "sources": [
         "FINRA Reg SHO"
       ],
@@ -192,10 +227,10 @@
       "finra": {
         "source": "FINRA Reg SHO Daily Short Sale Volume",
         "trade_date": "2026-10-16",
-        "short_volume": 22337490.05,
-        "short_exempt_volume": 1858857.25,
-        "total_volume": 45993647.32,
-        "short_volume_ratio": 0.4857,
+        "short_volume": 4466978.76,
+        "short_exempt_volume": 31809.0,
+        "total_volume": 12874662.45,
+        "short_volume_ratio": 0.347,
         "reporting_facilities": [
           "NCTRF",
           "NQTRF",
@@ -286,41 +321,6 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "ORCL": {
-      "sources": [
-        "FINRA Reg SHO"
-      ],
-      "official_sources": [
-        "FINRA Reg SHO"
-      ],
-      "market_sources": [],
-      "finra": {
-        "source": "FINRA Reg SHO Daily Short Sale Volume",
-        "trade_date": "2026-10-16",
-        "short_volume": 4466978.76,
-        "short_exempt_volume": 31809.0,
-        "total_volume": 12874662.45,
-        "short_volume_ratio": 0.347,
-        "reporting_facilities": [
-          "NCTRF",
-          "NQTRF",
-          "NYTRF"
-        ],
-        "market_codes": [
-          "B",
-          "N",
-          "Q"
-        ],
-        "rows_aggregated": 3,
-        "context_only": true,
-        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
-      },
-      "news": null,
-      "x": null,
-      "reddit": null,
-      "alpaca": null,
-      "social_score": 0.0
-    },
     "CRM": {
       "sources": [
         "FINRA Reg SHO"
@@ -371,6 +371,41 @@
         "short_exempt_volume": 21262.0,
         "total_volume": 9287293.14,
         "short_volume_ratio": 0.368,
+        "reporting_facilities": [
+          "NCTRF",
+          "NQTRF",
+          "NYTRF"
+        ],
+        "market_codes": [
+          "B",
+          "N",
+          "Q"
+        ],
+        "rows_aggregated": 3,
+        "context_only": true,
+        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
+      },
+      "news": null,
+      "x": null,
+      "reddit": null,
+      "alpaca": null,
+      "social_score": 0.0
+    },
+    "RIVN": {
+      "sources": [
+        "FINRA Reg SHO"
+      ],
+      "official_sources": [
+        "FINRA Reg SHO"
+      ],
+      "market_sources": [],
+      "finra": {
+        "source": "FINRA Reg SHO Daily Short Sale Volume",
+        "trade_date": "2026-10-16",
+        "short_volume": 6241924.02,
+        "short_exempt_volume": 100.0,
+        "total_volume": 12998348.82,
+        "short_volume_ratio": 0.4802,
         "reporting_facilities": [
           "NCTRF",
           "NQTRF",
@@ -531,7 +566,7 @@
       "alpaca": null,
       "social_score": 0.0
     },
-    "ARM": {
+    "AAPL": {
       "sources": [
         "FINRA Reg SHO"
       ],
@@ -542,45 +577,10 @@
       "finra": {
         "source": "FINRA Reg SHO Daily Short Sale Volume",
         "trade_date": "2026-10-16",
-        "short_volume": 854951.57,
-        "short_exempt_volume": 6723.0,
-        "total_volume": 1794530.9,
-        "short_volume_ratio": 0.4764,
-        "reporting_facilities": [
-          "NCTRF",
-          "NQTRF",
-          "NYTRF"
-        ],
-        "market_codes": [
-          "B",
-          "N",
-          "Q"
-        ],
-        "rows_aggregated": 3,
-        "context_only": true,
-        "interpretation_note": "Daily short-sale volume is market context, not short interest and not a directional signal by itself."
-      },
-      "news": null,
-      "x": null,
-      "reddit": null,
-      "alpaca": null,
-      "social_score": 0.0
-    },
-    "RIVN": {
-      "sources": [
-        "FINRA Reg SHO"
-      ],
-      "official_sources": [
-        "FINRA Reg SHO"
-      ],
-      "market_sources": [],
-      "finra": {
-        "source": "FINRA Reg SHO Daily Short Sale Volume",
-        "trade_date": "2026-10-16",
-        "short_volume": 6241924.02,
-        "short_exempt_volume": 100.0,
-        "total_volume": 12998348.82,
-        "short_volume_ratio": 0.4802,
+        "short_volume": 10797560.12,
+        "short_exempt_volume": 152982.0,
+        "total_volume": 20042726.83,
+        "short_volume_ratio": 0.5387,
         "reporting_facilities": [
           "NCTRF",
           "NQTRF",
@@ -603,7 +603,7 @@
     }
   },
   "contracts": {
-    "RIVN261127P00012000": {
+    "AAPL261127C00360000": {
       "sources": [],
       "market_flow_sources": [],
       "benzinga": null,

@@ -11,88 +11,8 @@
   "requested_reports": 15,
   "successful_symbols": 8,
   "successful_reports": 15,
-  "elapsed_seconds": 3.9251,
+  "elapsed_seconds": 4.3976,
   "audit": {
-    "MRNA": {
-      "symbol": "MRNA",
-      "source": "OCC",
-      "official": true,
-      "free_no_key": true,
-      "context_only": true,
-      "requested_reports": [
-        "weekly",
-        "monthly"
-      ],
-      "successful_reports": 2,
-      "reports": {
-        "weekly": {
-          "success": true,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "weekly",
-          "report_type": "W",
-          "report_date": "20261016",
-          "report_date_source": "OCC_ACTDATE",
-          "requested_report_date": "20261016",
-          "report_date_policy": "completed_week_friday",
-          "fetched_at": "2026-10-19T19:36:54.078172+00:00",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [
-            {
-              "report_date": "20261016",
-              "status_code": 200,
-              "elapsed_ms": 324
-            }
-          ],
-          "call_volume": 751118,
-          "put_volume": 631096,
-          "total_volume": 1382214,
-          "put_call_ratio": 0.8402,
-          "rows": 534,
-          "parsed_rows": 534,
-          "activity_date": "20261016",
-          "activity_date_first": "20261012",
-          "activity_days": 5,
-          "nonstandard_rows_excluded": 10
-        },
-        "monthly": {
-          "success": true,
-          "source": "OCC Volume Query",
-          "official": true,
-          "free_no_key": true,
-          "report_key": "monthly",
-          "report_type": "M",
-          "report_date": "20260930",
-          "report_date_source": "OCC_ACTDATE",
-          "requested_report_date": "20260930",
-          "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:54.394793+00:00",
-          "context_only": true,
-          "not_live_quote": true,
-          "not_options_flow": true,
-          "attempts": [
-            {
-              "report_date": "20260930",
-              "status_code": 200,
-              "elapsed_ms": 154
-            }
-          ],
-          "call_volume": 3203778,
-          "put_volume": 1752644,
-          "total_volume": 4956422,
-          "put_call_ratio": 0.5471,
-          "rows": 2145,
-          "parsed_rows": 2145,
-          "activity_date": "20260930",
-          "activity_date_first": "20260901",
-          "activity_days": 21,
-          "nonstandard_rows_excluded": 53
-        }
-      }
-    },
     "CRM": {
       "symbol": "CRM",
       "source": "OCC",
@@ -116,7 +36,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20261016",
           "report_date_policy": "completed_week_friday",
-          "fetched_at": "2026-10-19T19:36:54.575181+00:00",
+          "fetched_at": "2026-10-19T20:01:00.559146+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -124,7 +44,7 @@
             {
               "report_date": "20261016",
               "status_code": 200,
-              "elapsed_ms": 142
+              "elapsed_ms": 453
             }
           ],
           "call_volume": 334606,
@@ -149,7 +69,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20260930",
           "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:54.893170+00:00",
+          "fetched_at": "2026-10-19T20:01:00.970162+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -157,7 +77,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 136
+              "elapsed_ms": 290
             }
           ],
           "call_volume": 1886946,
@@ -170,6 +90,86 @@
           "activity_date_first": "20260901",
           "activity_days": 21,
           "nonstandard_rows_excluded": 48
+        }
+      }
+    },
+    "MRNA": {
+      "symbol": "MRNA",
+      "source": "OCC",
+      "official": true,
+      "free_no_key": true,
+      "context_only": true,
+      "requested_reports": [
+        "weekly",
+        "monthly"
+      ],
+      "successful_reports": 2,
+      "reports": {
+        "weekly": {
+          "success": true,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "weekly",
+          "report_type": "W",
+          "report_date": "20261016",
+          "report_date_source": "OCC_ACTDATE",
+          "requested_report_date": "20261016",
+          "report_date_policy": "completed_week_friday",
+          "fetched_at": "2026-10-19T20:01:01.196306+00:00",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [
+            {
+              "report_date": "20261016",
+              "status_code": 200,
+              "elapsed_ms": 195
+            }
+          ],
+          "call_volume": 751118,
+          "put_volume": 631096,
+          "total_volume": 1382214,
+          "put_call_ratio": 0.8402,
+          "rows": 534,
+          "parsed_rows": 534,
+          "activity_date": "20261016",
+          "activity_date_first": "20261012",
+          "activity_days": 5,
+          "nonstandard_rows_excluded": 10
+        },
+        "monthly": {
+          "success": true,
+          "source": "OCC Volume Query",
+          "official": true,
+          "free_no_key": true,
+          "report_key": "monthly",
+          "report_type": "M",
+          "report_date": "20260930",
+          "report_date_source": "OCC_ACTDATE",
+          "requested_report_date": "20260930",
+          "report_date_policy": "completed_month_business_end",
+          "fetched_at": "2026-10-19T20:01:01.563039+00:00",
+          "context_only": true,
+          "not_live_quote": true,
+          "not_options_flow": true,
+          "attempts": [
+            {
+              "report_date": "20260930",
+              "status_code": 200,
+              "elapsed_ms": 246
+            }
+          ],
+          "call_volume": 3203778,
+          "put_volume": 1752644,
+          "total_volume": 4956422,
+          "put_call_ratio": 0.5471,
+          "rows": 2145,
+          "parsed_rows": 2145,
+          "activity_date": "20260930",
+          "activity_date_first": "20260901",
+          "activity_days": 21,
+          "nonstandard_rows_excluded": 53
         }
       }
     },
@@ -196,7 +196,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20261016",
           "report_date_policy": "completed_week_friday",
-          "fetched_at": "2026-10-19T19:36:55.039758+00:00",
+          "fetched_at": "2026-10-19T20:01:01.755627+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -204,7 +204,7 @@
             {
               "report_date": "20261016",
               "status_code": 200,
-              "elapsed_ms": 103
+              "elapsed_ms": 161
             }
           ],
           "call_volume": 225256,
@@ -229,7 +229,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20260930",
           "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:55.369412+00:00",
+          "fetched_at": "2026-10-19T20:01:02.062426+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -237,7 +237,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 118
+              "elapsed_ms": 179
             }
           ],
           "call_volume": 694582,
@@ -276,7 +276,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20261016",
           "report_date_policy": "completed_week_friday",
-          "fetched_at": "2026-10-19T19:36:55.527825+00:00",
+          "fetched_at": "2026-10-19T20:01:02.232152+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -284,7 +284,7 @@
             {
               "report_date": "20261016",
               "status_code": 200,
-              "elapsed_ms": 113
+              "elapsed_ms": 136
             }
           ],
           "call_volume": 4661660,
@@ -309,7 +309,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20260930",
           "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:55.870467+00:00",
+          "fetched_at": "2026-10-19T20:01:02.753503+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -317,7 +317,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 136
+              "elapsed_ms": 368
             }
           ],
           "call_volume": 7203926,
@@ -356,7 +356,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20261016",
           "report_date_policy": "completed_week_friday",
-          "fetched_at": "2026-10-19T19:36:56.022623+00:00",
+          "fetched_at": "2026-10-19T20:01:02.905400+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -364,7 +364,7 @@
             {
               "report_date": "20261016",
               "status_code": 200,
-              "elapsed_ms": 108
+              "elapsed_ms": 119
             }
           ],
           "call_volume": 2483732,
@@ -389,7 +389,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20260930",
           "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:56.372455+00:00",
+          "fetched_at": "2026-10-19T20:01:03.255355+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -397,7 +397,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 126
+              "elapsed_ms": 171
             }
           ],
           "call_volume": 12502568,
@@ -436,7 +436,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20261016",
           "report_date_policy": "completed_week_friday",
-          "fetched_at": "2026-10-19T19:36:56.546579+00:00",
+          "fetched_at": "2026-10-19T20:01:03.421572+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -444,7 +444,7 @@
             {
               "report_date": "20261016",
               "status_code": 200,
-              "elapsed_ms": 136
+              "elapsed_ms": 138
             }
           ],
           "call_volume": 3824410,
@@ -469,7 +469,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20260930",
           "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:56.868134+00:00",
+          "fetched_at": "2026-10-19T20:01:03.750152+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -477,7 +477,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 147
+              "elapsed_ms": 184
             }
           ],
           "call_volume": 9177672,
@@ -516,7 +516,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20261016",
           "report_date_policy": "completed_week_friday",
-          "fetched_at": "2026-10-19T19:36:57.032333+00:00",
+          "fetched_at": "2026-10-19T20:01:03.941375+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -524,7 +524,7 @@
             {
               "report_date": "20261016",
               "status_code": 200,
-              "elapsed_ms": 130
+              "elapsed_ms": 166
             }
           ],
           "call_volume": 83416,
@@ -549,7 +549,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20260930",
           "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:57.324239+00:00",
+          "fetched_at": "2026-10-19T20:01:04.197049+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -557,7 +557,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 116
+              "elapsed_ms": 143
             }
           ],
           "call_volume": 267502,
@@ -595,7 +595,7 @@
           "report_date_source": "OCC_ACTDATE",
           "requested_report_date": "20260930",
           "report_date_policy": "completed_month_business_end",
-          "fetched_at": "2026-10-19T19:36:57.628393+00:00",
+          "fetched_at": "2026-10-19T20:01:04.468230+00:00",
           "context_only": true,
           "not_live_quote": true,
           "not_options_flow": true,
@@ -603,7 +603,7 @@
             {
               "report_date": "20260930",
               "status_code": 200,
-              "elapsed_ms": 150
+              "elapsed_ms": 156
             }
           ],
           "call_volume": 223512,
