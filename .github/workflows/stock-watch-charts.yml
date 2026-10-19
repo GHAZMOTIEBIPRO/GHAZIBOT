@@ -10,6 +10,8 @@ on:
     branches: [main]
     paths:
       - "scripts/build_stock_watch_charts.py"
+      - "scripts/build_structural_watch_catalog.py"
+      - "data/cache/structural_microfloat_candidates.json"
       - "scripts/stock_watch_news_attention.py"
       - "options_radar/stock_watch_confluence.py"
       - "options_radar/pandas_ta_bollinger_shadow.py"
@@ -53,6 +55,11 @@ jobs:
             --output state/runtime/public/data/stock_watch_charts.json \
             --discovery-source state/runtime/public/data/decision_brief.json \
             --news-source state/runtime/public/data/free_public_intelligence.json
+      - name: Publish dated research-only full market structural catalog
+        run: |
+          PYTHONPATH=app python -m scripts.build_structural_watch_catalog \
+            --source app/data/cache/structural_microfloat_candidates.json \
+            --output state/runtime/public/data/structural_watch.json
       - name: Persist isolated stock chart feed
         shell: bash
         run: |
@@ -60,7 +67,7 @@ jobs:
           cd state
           git config user.name "GHAZI RADAR Stock Watch"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/stock_watch_charts.json
+          git add runtime/public/data/stock_watch_charts.json runtime/public/data/structural_watch.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "state: completed research stock candles [skip ci]"
           for attempt in 1 2 3; do
