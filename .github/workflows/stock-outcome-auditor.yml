@@ -17,6 +17,8 @@ on:
       - "scripts/publish_stock_audit_summary.py"
       - "scripts/run_quantstats_stock_shadow.py"
   schedule:
+    # Mid-session evidence capture reduces reliance on one after-hours job.
+    - cron: "45 18 * * 1-5"
     - cron: "12 22 * * 1-5"
 
 concurrency:
