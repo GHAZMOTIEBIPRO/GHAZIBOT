@@ -207,8 +207,10 @@ def run(
                 now=current,
                 result="fetch_and_evaluate_success",
             )
-        except Exception as exc:
-            message = f"{type(exc).__name__}: {exc}"[:500]
+        except Exception as exc:  # noqa: BLE001 - one bad free quote must not cancel other symbols
+            # Never echo upstream exception text: third-party URLs can carry
+            # private query parameters or request tokens.
+            message = type(exc).__name__
             errors[symbol] = message
             mark_symbol_attempt(
                 audit,
