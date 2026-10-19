@@ -48,7 +48,8 @@ jobs:
           python app/scripts/build_sec_filing_pulse.py \
             --brief state/runtime/public/data/decision_brief.json \
             --output state/runtime/public/data/sec_filing_pulse.json \
-            --max-symbols 24
+            --max-symbols 24 \
+            --local-cik-map app/data/sec_cik_map.json
       - name: Publish independent research-only SEC report to bot-state
         shell: bash
         run: |
