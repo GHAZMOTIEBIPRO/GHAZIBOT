@@ -132,6 +132,13 @@
           <label>الفريم <select id="terminal-chart-timeframe" aria-label="الفريم"><option value="1d">يومي</option><option value="1h">ساعة</option><option value="15m">15 دقيقة</option><option value="5m">5 دقائق</option></select></label>
           <label class="terminal-check"><input id="terminal-show-ema" type="checkbox" checked> عرض EMA20/50</label>
         </div>
+        <div class="terminal-timeframe-strip" role="group" aria-label="التنقل السريع بين فريمات الشارت">
+          <button type="button" data-terminal-tf="1d" aria-pressed="true">يومي</button>
+          <button type="button" data-terminal-tf="1h" aria-pressed="false">ساعة</button>
+          <button type="button" data-terminal-tf="15m" aria-pressed="false">15 دقيقة</button>
+          <button type="button" data-terminal-tf="5m" aria-pressed="false">5 دقائق</button>
+          <span>فريمات 3 ودقيقة غير مفعلة دون بيانات شموع فعلية</span>
+        </div>
         <div class="terminal-price-heading"><div><strong id="terminal-chart-spot">—</strong>
           <span id="terminal-chart-direction">بانتظار بيانات الشارت</span></div>
           <span id="terminal-chart-date">—</span></div>
@@ -143,6 +150,16 @@
             <span id="terminal-decision-state" class="terminal-chip warn">بانتظار بيانات الشارت</span></div>
           <p id="terminal-decision-explain" class="terminal-desk-caption">القراءة مبنية على شموع OHLC المكتملة؛ لا تُعتمد أسعار عقود دون بيانات موثقة.</p>
           <div id="terminal-decision-levels" class="terminal-chart-metrics"></div>
+        </section>
+        <section class="terminal-evidence" aria-labelledby="terminal-evidence-title">
+          <div class="terminal-evidence-head">
+            <div><p class="terminal-overline">EVIDENCE · SOURCE-AWARE</p>
+              <h4 id="terminal-evidence-title">مراجعة الأدلة قبل قراءة CALL / PUT</h4></div>
+            <span id="terminal-evidence-status" class="terminal-evidence-status">بانتظار الشارت</span>
+          </div>
+          <p id="terminal-evidence-summary" class="terminal-evidence-summary">التحقق من حداثة الشموع وفريم الساعة والحجم والأخبار.</p>
+          <div id="terminal-evidence-grid" class="terminal-evidence-grid" aria-live="polite"></div>
+          <p class="terminal-evidence-footnote">هذه مؤشرات وصفية للبحث فقط. غياب حجم التداول أو الخبر الرسمي لا يُملأ بالتخمين، ولا تعني مراقبة CALL أو PUT وجود عقد قابل للتنفيذ.</p>
         </section>
         <div id="terminal-chart-scenario" class="terminal-chart-reading" role="status">حساب السيناريو الفني بعد تحميل شموع مكتملة.</div>
         <section id="terminal-gamma-panel" class="terminal-gamma-panel" aria-label="قراءة Gamma بحثية">
@@ -682,6 +699,7 @@
   <script src="./omega.js?v=20260807-omega" defer></script>
   <script src="./market-chart.js?v=20261010-open-source" defer></script>
   <script src="./terminal-research.js?v=20261019-1"></script>
-    <script src="./terminal-hub.js?v=20261019-1" defer></script>
+  <script src="./terminal-evidence.js?v=20261019-1" defer></script>
+  <script src="./terminal-hub.js?v=20261019-2" defer></script>
 </body>
 </html>

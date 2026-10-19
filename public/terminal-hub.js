@@ -572,6 +572,24 @@
     const d=txt("div",""),p=txt("small",label),v=txt("strong",value);
     d.append(p,v);return d;
   };
+  function renderEvidence(input){
+    const wrap=$("terminal-evidence-grid");
+    if(wrap)wrap.replaceChildren();
+    if(typeof GhaziEvidence==="undefined"){
+      put("terminal-evidence-status","غير متاح");
+      put("terminal-evidence-summary","لم تُحمّل أداة التحقق البحثية.");
+      return;
+    }
+    const result=GhaziEvidence.evaluate(input);
+    put("terminal-evidence-status",result.label);
+    put("terminal-evidence-summary",result.summary);
+    if(!wrap)return;
+    for(const check of result.checks){
+      const card=txt("article","","terminal-evidence-item "+check.state);
+      card.append(txt("strong",check.label),txt("p",check.detail));
+      wrap.append(card);
+    }
+  }
   async function renderChart(){
     refreshSymbols();
     const symbol=state.symbol,tf=state.tf;
@@ -583,16 +601,24 @@
     const rows=uniqueValidBars(frame?.bars||(usingStock?stock.bars:[]));
     const levels=INDEX_ORDER.includes(symbol)?state.quotes?.symbols?.[symbol]?.levels?.last_completed_session:null;
     const select=$("terminal-chart-timeframe");
+    const hasFrame=value=>Boolean(state.charts?.symbols?.[symbol]?.intervals?.[value] ||
+      state.watchCharts?.symbols?.[symbol]?.intervals?.[value] ||
+      (value==="1d"&&state.stockCharts?.charts?.[symbol]));
     if(select){
-      for(const option of select.options){
-        option.disabled=!INDEX_ORDER.includes(symbol) &&
-          !state.watchCharts?.symbols?.[symbol]?.intervals?.[option.value] &&
-          option.value!=="1d";
-      }
+      for(const option of select.options)option.disabled=!hasFrame(option.value);
     }
+    document.querySelectorAll("[data-terminal-tf]").forEach(button=>{
+      const available=hasFrame(button.dataset.terminalTf);
+      button.disabled=!available;
+      const pressed=state.tf===button.dataset.terminalTf;
+      button.classList.toggle("active",pressed);
+      button.setAttribute("aria-pressed",String(pressed));
+      button.title=available?"عرض شموع مكتملة":"لا توجد شموع فعلية متاحة لهذا الفريم";
+    });
     const metric=$("terminal-chart-levels");if(metric)metric.replaceChildren();
     const decisionGrid=$("terminal-decision-levels");if(decisionGrid)decisionGrid.replaceChildren();
     if(rows.length<2){
+      renderEvidence({bars:rows,frame,generatedAt:null,timeframe:tf});
       put("terminal-decision-state","غير متاح");
       put("terminal-decision-explain","لا توجد شموع كافية؛ لا يمكن تحديد اتجاه CALL / PUT أو أهداف.");
       clearPlot();
@@ -686,6 +712,11 @@
         decisionGrid.append(putMetric(label,fmt(val)));
       }
     }
+    renderEvidence({
+      bars:rows,scenario,frame,timeframe:tf,generatedAt:sourceDate,
+      confluence:state.watchCharts?.symbols?.[symbol]?.price_confluence,
+      newsAttention:state.watchCharts?.symbols?.[symbol]?.news_attention
+    });
     plotCandles(rows,state.ema,levels,scenario);
     const currentClose=last.close;
     put("terminal-chart-scenario",range!==null && Number.isFinite(range)?
@@ -901,6 +932,13 @@
   });
   $("terminal-chart-timeframe")?.addEventListener("change",event=>{
     state.tf=event.target.value;renderChart();
+  });
+  $("ghazi-terminal")?.addEventListener("click",event=>{
+    const btn=event.target.closest("[data-terminal-tf]");
+    if(!btn||btn.disabled)return;
+    state.tf=btn.dataset.terminalTf;
+    const select=$("terminal-chart-timeframe");if(select)select.value=state.tf;
+    renderChart();
   });
   $("terminal-show-ema")?.addEventListener("change",event=>{
     state.ema=event.target.checked;renderChart();
