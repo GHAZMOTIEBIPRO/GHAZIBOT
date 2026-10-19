@@ -62,15 +62,27 @@ def describe(text: str) -> dict[str, Any]:
             "form_actions": actions[:10],
         }
     lines = [line for line in body.splitlines() if line.strip()]
+
+    def shape(selected: list[str]) -> list[dict[str, Any]]:
+        out = []
+        for line in selected:
+            cells = _split(line)
+            if len(cells) == 1:
+                # Single-cell title/footer lines carry report labels and
+                # dates, not per-contract values; show them in full.
+                out.append({"cells": 1, "title_line": line.strip()[:160]})
+            else:
+                out.append({"cells": len(cells),
+                            "masked": [_mask(c) for c in cells[:16]]})
+        return out
+
     return {
         "kind": "TEXT",
         "non_empty_lines": len(lines),
         "tab_lines": sum(1 for line in lines[:200] if "\t" in line),
         "comma_lines": sum(1 for line in lines[:200] if "," in line),
-        "masked_shape": [
-            {"cells": len(cells), "masked": [_mask(c) for c in cells[:16]]}
-            for cells in (_split(line) for line in lines[:SHAPE_LINES])
-        ],
+        "masked_shape": shape(lines[:SHAPE_LINES]),
+        "tail_shape": shape(lines[-4:]) if len(lines) > SHAPE_LINES else [],
     }
 
 
@@ -84,7 +96,9 @@ def probe(session: Any, path: str, params: dict | None) -> dict[str, Any]:
         )
         out["status"] = response.status_code
         out["content_type"] = response.headers.get("Content-Type", "")[:60]
-        out["content_disposition"] = bool(response.headers.get("Content-Disposition"))
+        for name in ("Content-Disposition", "Last-Modified", "Date"):
+            out[name.lower().replace("-", "_")] = (
+                response.headers.get(name) or "")[:120]
         chunks, size = [], 0
         for chunk in response.iter_content(chunk_size=65536):
             size += len(chunk)
