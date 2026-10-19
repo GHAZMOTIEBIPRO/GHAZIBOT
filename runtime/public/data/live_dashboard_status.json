@@ -2,14 +2,14 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-10-19T18:07:23.325128+00:00",
-  "overall_status": "HEALTHY",
+  "generated_at": "2026-10-19T18:08:00.917525+00:00",
+  "overall_status": "DEGRADED",
   "paths": {
     "fast_discovery": {
       "status": "HEALTHY",
       "file": "data/live/fast_explosion_scan.json",
       "generated_at": "2026-10-19T17:47:40.977769+00:00",
-      "age_minutes": 19.71,
+      "age_minutes": 20.33,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": null,
@@ -19,7 +19,7 @@
       "status": "HEALTHY",
       "file": "public/data/stocks_latest.json",
       "generated_at": "2026-10-19T17:48:16.792942+00:00",
-      "age_minutes": 19.11,
+      "age_minutes": 19.74,
       "maximum_age_minutes": 90.0,
       "candidate_count": 4,
       "provider_readiness": null,
@@ -28,27 +28,26 @@
       ]
     },
     "options": {
-      "status": "STALE",
+      "status": "RESEARCH_ONLY",
       "file": "public/data/options_latest.json",
-      "generated_at": "2026-10-02T18:25:04.557095+00:00",
-      "age_minutes": 24462.31,
+      "generated_at": "2026-10-19T17:49:25.972106+00:00",
+      "age_minutes": 18.58,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": "FALLBACK_ONLY",
       "reasons": [
-        "Payload age 24441.1m exceeds the 45m safety limit.",
-        "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-        "50 chain(s) are Yahoo/YFinance-only fallback",
-        "50 chain(s) contain delayed, indicative, or unofficial sources"
+        "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
+        "54 chain(s) are Yahoo/YFinance-only fallback",
+        "54 chain(s) contain delayed, indicative, or unofficial sources"
       ]
     }
   },
   "reasons": [
-    "options: Payload age 24441.1m exceeds the 45m safety limit.; Only delayed, indicative, unofficial, or unverified-entitlement option data is active; 50 chain(s) are Yahoo/YFinance-only fallback; 50 chain(s) contain delayed, indicative, or unofficial sources"
+    "options: No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 54 chain(s) are Yahoo/YFinance-only fallback; 54 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "publisher": {
-    "source_workflow": "BLACK BOX Omega Stock Radar",
-    "source_run_id": "39297176769",
+    "source_workflow": "BLACK BOX Omega Options Contract Radar",
+    "source_run_id": "39296833600",
     "mode": "artifact_to_bot_state_status_only"
   }
 }
