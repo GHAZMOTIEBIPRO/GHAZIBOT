@@ -14,6 +14,7 @@
     trust:[ROOT+"bot-state/runtime/public/data/free_data_health.json","./data/free_data_health.json"],
     runtime:[ROOT+"bot-state/runtime/public/data/data-status.json","./data/data-status.json"],
     audit:[ROOT+"bot-state/runtime/public/data/stock_audit_public.json"],
+    oos:[ROOT+"bot-state/state/stocks/stock_walk_forward.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -53,7 +54,7 @@
   };
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
-    stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null};
+    stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,oos:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -84,6 +85,11 @@
       String(d?.status||"").toLowerCase()) &&
       d?.option_provider_readiness?.production_quote_ready!==undefined &&
       d?.row_counts && d?.quality_counts,
+    oos:d=>d?.mode==="EXPANDING_SESSION_WALK_FORWARD" &&
+      d.decision_authority===false &&
+      d.live_promotion_allowed===false &&
+      d.data_policy?.random_split_allowed===false &&
+      d.data_policy?.future_session_training_allowed===false,
     audit:d=>d?.schema==="ghazi.public_stock_outcomes.v1" &&
       d?.mode==="HISTORICAL_5M_OUTCOME_AUDIT" &&
       d?.decision_authority===false &&
@@ -96,6 +102,12 @@
     const response=await fetch(url+"?v="+Date.now(),{cache:"no-store"});
     if(!response.ok)throw Error("HTTP "+response.status);
     const data=await response.json();
+    // The existing durable walk-forward report deliberately has no source
+    // timestamp. Validate policy and numbers, but never imply data freshness.
+    if(type==="oos"){
+      if(!schemaOK.oos(data))throw Error("walk-forward policy invalid");
+      return data;
+    }
     const t=validDate(data?.generated_at);
     if(t===null||t>Date.now()+5*60000||!schemaOK[type](data))
       throw Error("schema/timestamp invalid");
@@ -188,6 +200,16 @@
       events.append(row);shown++;
     }
     if(!shown)events.append(txt("p","لم تصل أخبار بحثية مؤهلة للعرض.","terminal-empty"));
+    const oos=typeof GhaziOOS!=="undefined"?
+      GhaziOOS.evaluate(state.oos):null;
+    const oosText=oos?oos.summary+" · تغطية 60 دقيقة: "+
+      fmt(oos.coverage,2)+"% (شرط الاختبار: 90%) · جلسات مستقلة: "+
+      oos.sessions+" · جلسات اختبار خارج العينة: "+oos.outSessions+
+      " · حالات الاختبار: "+oos.outRecords+
+      (oos.sourceTimestampVerified?" · تاريخ المصدر موثق.":
+       " · وقت مصدر التقييم غير موثق؛ المصدر بحثي فقط."):
+      "لا يوجد تقرير مشروط صالح عن الاختبار خارج العينة؛ لا نستنتج نسبة نجاح.";
+    put("terminal-oos-status",oosText);
     put("terminal-overview-warning",
       "مصدر الأسهم Yahoo بحثي؛ عمر تقرير الترشيحات: "+
       (age===null?"غير معروف":fmt(age,1)+" ساعة")+
@@ -980,10 +1002,10 @@
     $("terminal-panel-chart")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit","structural"];
+    const types=["index","charts","brief","news","sec","watch","gamma","trust","runtime","audit","structural","oos"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
