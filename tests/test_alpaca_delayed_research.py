@@ -114,8 +114,9 @@ def test_dated_options_bars_are_not_realtime_opra_or_pnl():
 
 
 def test_no_access_current_day_or_bad_symbols_or_partial_pages():
-    kwargs = dict(api_key="id", secret="private", internal_use_allowed=True,
-                  now=NOW, session=NeverGet())
+    kwargs = {"api_key": "id", "secret": "private",
+              "internal_use_allowed": True, "now": NOW,
+              "session": NeverGet()}
     for symbol in ("../../AAPL", "SPY?feed=sip"):
         assert fetch_completed_daily(
             symbol, start=date(2026, 10, 15),
