@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import yaml
 
 CORE_CHILDREN = (
     "fast-explosion-radar.yml",
@@ -73,3 +74,22 @@ def test_orchestrator_deployment_has_safe_bootstrap_and_diagnostics():
     assert "age=${age}m" in central
     assert r"age=\\${age}m" not in central
     assert "gh workflow run" in central
+
+
+def test_any_wakeup_keeps_bounded_five_minute_cadence_with_relay():
+    central = _workflow("market-orchestrator.yml")
+    spec = yaml.safe_load(central)
+    job = spec["jobs"]["dispatch"]
+    # GitHub delivers few crons; a wakeup loops ~50 min inside the timeout.
+    assert job["timeout-minutes"] <= 60
+    step = next(s for s in job["steps"]
+                if s.get("name", "").startswith("Dispatch stale market engines"))
+    passes = step["env"]["ORCHESTRATOR_PASSES"]
+    assert "'10'" in passes and "'1'" in passes
+    body = step["run"]
+    assert "sleep 300" in body
+    assert "python3 scripts/relay_dependent_workflows.py" in body
+    assert "utc_hour < 8 || utc_hour > 23" in body
+    # A failed pass warns instead of ending the cadence loop.
+    assert "dispatch_pass || echo" in body
+    assert 10 * 5 < job["timeout-minutes"]

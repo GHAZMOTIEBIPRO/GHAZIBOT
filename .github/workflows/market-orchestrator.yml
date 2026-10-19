@@ -32,7 +32,9 @@ jobs:
     # Never dispatch children from failed/cancelled upstream news-flash runs.
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # GitHub delivers few of the 5-minute crons (often one per day), so each
+    # wakeup keeps the cadence itself for up to ~50 minutes (see loop below).
+    timeout-minutes: 58
     env:
       GH_TOKEN: ${{ github.token }}
 
@@ -61,14 +63,22 @@ jobs:
             echo "::warning title=Omega scheduler overdue::Central schedule is overdue by ${age} minutes; recovering through News Flash workflow_run."
           fi
 
-      - name: Dispatch stale market engines
+      - name: Check out dependent-stage relay
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/relay_dependent_workflows.py
+          sparse-checkout-cone-mode: false
+
+      # Each pass: dispatch stale engines, then relay completed source runs to
+      # their dependents (runs started with GITHUB_TOKEN never raise
+      # workflow_run). Scheduled and News Flash wakeups repeat the pass every
+      # 5 minutes for ~50 minutes; push/manual runs do a single pass.
+      - name: Dispatch stale market engines and relay dependent stages
         shell: bash
+        env:
+          ORCHESTRATOR_PASSES: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run') && '10' || '1' }}
         run: |
           set -euo pipefail
-
-          now_epoch="$(date -u +%s)"
-          utc_hour="$(date -u +%H)"
-          utc_hour=$((10#$utc_hour))
 
           age_minutes() {
             workflow="$1"
@@ -101,6 +111,7 @@ jobs:
             fi
           }
 
+          dispatch_pass() {
           if (( utc_hour >= 8 && utc_hour <= 23 )); then
             dispatch_if_stale fast-explosion-radar.yml 8 "Fast Explosion"
           fi
@@ -122,26 +133,35 @@ jobs:
           if (( utc_hour >= 14 && utc_hour <= 21 )); then
             dispatch_if_stale index-radar.yml 110 "Index Research"
           fi
+          }
 
-      - name: Check out dependent-stage relay
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: scripts/relay_dependent_workflows.py
-          sparse-checkout-cone-mode: false
-
-      # Runs started with GITHUB_TOKEN never raise workflow_run, so dependent
-      # stages are relayed here once per completed source run.
-      - name: Relay completed source runs to dependent stages
-        shell: bash
-        run: python3 scripts/relay_dependent_workflows.py --repo "$GITHUB_REPOSITORY"
+          passes="${ORCHESTRATOR_PASSES:-1}"
+          for (( pass = 1; pass <= passes; pass++ )); do
+            now_epoch="$(date -u +%s)"
+            utc_hour="$(date -u +%H)"
+            utc_hour=$((10#$utc_hour))
+            if (( pass > 1 && (utc_hour < 8 || utc_hour > 23) )); then
+              echo "Outside the 08-23 UTC market window; stop looping."
+              break
+            fi
+            echo "::group::Orchestrator pass ${pass}/${passes} at $(date -u +%H:%M)Z"
+            # One failed pass (API hiccup) must not end the cadence loop.
+            dispatch_pass || echo "::warning title=Dispatch pass failed::pass ${pass}"
+            python3 scripts/relay_dependent_workflows.py --repo "$GITHUB_REPOSITORY" \
+              || echo "::warning title=Relay pass failed::pass ${pass}"
+            echo "::endgroup::"
+            if (( pass < passes )); then
+              sleep 300
+            fi
+          done
 
       - name: Scheduling policy
         run: |
           cat <<'EOF'
           Core market cadence is owned here, including wakeups from successful News Flash runs.
-          A fallback wakeup does not guarantee five-minute execution when GitHub omits all schedules.
+          Any wakeup (schedule or News Flash) keeps the 5-minute pass cadence for ~50 minutes.
           Dependent stages: workflow_run for human-pushed runs, plus the relay
-          step above for orchestrator-dispatched runs (no workflow_run event):
+          inside each pass for orchestrator-dispatched runs (no workflow_run event):
           Fast Explosion -> Stock Radar
           Options Contract -> Options Research Enrichment
           Stock/Options -> Cross Confirmation / state / dashboard
