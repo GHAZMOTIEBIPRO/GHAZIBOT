@@ -1,62 +1,123 @@
 {
   "status": "degraded",
-  "generated_at": "2026-10-19T18:13:24.821544+00:00",
-  "last_successful_refresh": "2026-10-19T18:13:24.821544+00:00",
-  "runtime_source": "bot-state/live_dashboard_status",
-  "dataset_age_minutes": 25.13,
+  "generated_at": "2026-10-19T18:13:13.473051+00:00",
+  "dataset_age_minutes": 2.5,
+  "last_successful_refresh": "2026-10-19T18:13:13.473051+00:00",
+  "option_provider": "yahoo/yfinance",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
     "production_quote_ready": false,
     "production_flow_ready": false,
+    "usable_chains": 15,
+    "fallback_only_chains": 15,
+    "delayed_or_indicative_chains": 15,
+    "live_primary_chains": 0,
+    "cross_source_chains": 0,
+    "opra_chains": 0,
+    "sources": [
+      "yahoo"
+    ],
     "reasons": [
       "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-      "54 chain(s) are Yahoo/YFinance-only fallback",
-      "54 chain(s) contain delayed, indicative, or unofficial sources"
+      "15 chain(s) are Yahoo/YFinance-only fallback",
+      "15 chain(s) contain delayed, indicative, or unofficial sources"
     ]
   },
-  "workflow_health": {
-    "publisher": {
-      "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
-      "source_run_id": "39299770569",
-      "mode": "artifact_to_bot_state_status_only"
-    },
-    "paths": {
-      "fast_discovery": {
-        "status": "HEALTHY",
-        "generated_at": "2026-10-19T18:08:42.046822+00:00",
-        "age_minutes": 4.71,
-        "maximum_age_minutes": 45.0,
-        "candidate_count": 0,
-        "provider_readiness": null,
-        "reasons": []
-      },
-      "stocks": {
-        "status": "HEALTHY",
-        "generated_at": "2026-10-19T17:48:16.792942+00:00",
-        "age_minutes": 25.13,
-        "maximum_age_minutes": 90.0,
-        "candidate_count": 4,
-        "provider_readiness": null,
-        "reasons": [
-          "No candidate currently has an official primary cause; alerts must state cause unknown"
-        ]
-      },
-      "options": {
-        "status": "RESEARCH_ONLY",
-        "generated_at": "2026-10-19T17:49:25.972106+00:00",
-        "age_minutes": 23.98,
-        "maximum_age_minutes": 45.0,
-        "candidate_count": 0,
-        "provider_readiness": "FALLBACK_ONLY",
-        "reasons": [
-          "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-          "54 chain(s) are Yahoo/YFinance-only fallback",
-          "54 chain(s) contain delayed, indicative, or unofficial sources"
-        ]
-      }
+  "source_status": {
+    "active_stock_sources": 2,
+    "active_option_sources": 1,
+    "option_provider_readiness": "FALLBACK_ONLY",
+    "production_option_quotes": false,
+    "production_option_flow": false,
+    "sec_fulltext": {
+      "checked_at": "2026-10-19T18:11:24.452617+00:00",
+      "available": false,
+      "source": "SEC EDGAR Full-Text Search",
+      "endpoint": "https://efts.sec.gov/LATEST/search-index",
+      "start_date": "2026-10-05",
+      "end_date": "2026-10-19",
+      "event_count": 0,
+      "message": "SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
+      "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
+      "fallbacks_active": [
+        "SEC latest-form Atom feeds",
+        "SEC submissions and Company Facts",
+        "last valid SEC EFTS event cache"
+      ],
+      "http_status": 403,
+      "error_type": "HTTPError",
+      "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 200, in request_efts_json\n    raise requests.HTTPError(\nrequests.exceptions.HTTPError: SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n",
+      "circuit_state": "open"
     }
   },
+  "coverage_diagnostics": {
+    "reporting_scope": "REPORTED_SOURCES_NOT_EXCHANGE_ENTITLEMENTS",
+    "stock_price_source_families_reported": [
+      "yahoo"
+    ],
+    "stock_non_price_context_sources_reported": [
+      "finra_reg_sho"
+    ],
+    "stock_primary_non_yahoo_families_reported": [],
+    "option_chain_source_families": [
+      "yahoo"
+    ],
+    "option_chain_unclassified_sources": [],
+    "option_live_primary_chains_reported": 0,
+    "option_cross_source_chains_reported": 0,
+    "option_fallback_only_chains_reported": 15,
+    "options_execution_quote_ready": false,
+    "options_trade_flow_ready": false,
+    "blocking_codes": [
+      "YAHOO_RESEARCH_ONLY",
+      "NO_INDEPENDENT_CROSS_SOURCE_CHAIN",
+      "NO_EXECUTION_GRADE_OPTION_QUOTE",
+      "NO_VERIFIED_OPTION_TRADE_FLOW"
+    ],
+    "top_option_rejection_reasons": {
+      "delta_outside_030_060": 139,
+      "spread_above_15pct": 135,
+      "invalid_bid_ask": 42,
+      "option_volume_below_200": 33,
+      "vol_to_oi_below_1_5": 1
+    },
+    "public_licensing_notice": "Personal-use brokerage API access does not grant public market-data redistribution rights. Do not expose tokens or unlicensed raw quotes."
+  },
+  "row_counts": {
+    "stocks": 15,
+    "options": 2,
+    "catalysts": 49,
+    "expiry_contracts": 0
+  },
+  "quality_counts": {
+    "stale_options": 2,
+    "missing_expiry_family": 0,
+    "duplicate_events_collapsed": 31,
+    "errors": 1,
+    "critical_errors": 0,
+    "fallback_only_option_chains": 15,
+    "live_primary_option_chains": 0
+  },
+  "sec_incremental": {
+    "feeds_requested": 0,
+    "feed_entries_seen": 0,
+    "eligible_entries": 0,
+    "cache_hits": 0,
+    "index_fetches": 0,
+    "document_fetches": 0,
+    "prefilter_skips": 0,
+    "events_emitted": 0,
+    "access_blocked": 16,
+    "request_failures": 16,
+    "processed_accessions": 0,
+    "updated_at": "2026-10-19T18:11:35.044608+00:00",
+    "outcome": "ACCESS_BLOCKED"
+  },
+  "run_duration_seconds": null,
   "reasons": [
-    "options: No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 54 chain(s) are Yahoo/YFinance-only fallback; 54 chain(s) contain delayed, indicative, or unofficial sources"
+    "2 stale option row(s)",
+    "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
+    "15 chain(s) are Yahoo/YFinance-only fallback",
+    "15 chain(s) contain delayed, indicative, or unofficial sources"
   ]
 }
