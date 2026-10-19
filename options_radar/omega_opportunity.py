@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Any, Iterable
 
 from .explosion_cause import (
@@ -261,6 +262,7 @@ def build_omega_opportunities(
     option_map = _best_option_by_symbol(options)
     catalyst_map = catalyst_intelligence.get("by_symbol", {}) if isinstance(catalyst_intelligence, dict) else {}
     target_maps = build_target_maps(stocks)
+    as_of = datetime.now(timezone.utc)
 
     rows: list[dict[str, Any]] = []
     day: list[dict[str, Any]] = []
@@ -376,7 +378,7 @@ def build_omega_opportunities(
             "available_dimensions": available,
             "probability_of_profit": None,
         }
-        row["similar_cases"] = find_similar_cases(row, target_state)
+        row["similar_cases"] = find_similar_cases(row, target_state, as_of=as_of)
         rows.append(row)
         if day_decision != "NO TRADE":
             day.append(row)
