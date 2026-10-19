@@ -1,5 +1,5 @@
 """Offline tests for truly completed free stock-watch OHLC."""
-from datetime import datetime
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
@@ -98,3 +98,19 @@ def test_automatic_refresh_owns_one_dedicated_state_path():
     assert "ghazi.stock_charts.v1" in js
     assert "free_gex_validation.json" in js
     assert "terminal-chart-scenario" in js
+
+
+def test_stale_yahoo_success_cannot_masquerade_as_fresh_stock_coverage():
+    # Even a clean HTTP response with valid OHLC is unusable as a new scan
+    # if the latest candle is weeks old. Market holidays/weekends remain okay.
+    stale_now=NOW+timedelta(days=18)
+    assert pack_symbol("RGC",candles("1d"),candles("15m"),
+                       candles("5m"),now=stale_now) is None
+    with pytest.raises(ValueError,match="No independently valid watched stock candles"):
+        collect(now=stale_now,provider=SimpleNamespace(Ticker=Ticker),
+                delay=lambda _:None)
+    recent=pack_symbol("RGC",candles("1d"),candles("15m"),
+                       candles("5m"),now=NOW+timedelta(days=3))
+    assert recent is not None
+    assert recent["intervals"]["1d"]["source_recency_verified"] is True
+    assert recent["options_execution_grade"] is False
