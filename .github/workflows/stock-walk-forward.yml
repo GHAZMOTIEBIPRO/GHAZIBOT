@@ -54,12 +54,22 @@ jobs:
           restored=false
 
           if [[ "$EVENT_NAME" == "workflow_run" && -n "${SOURCE_RUN_ID:-}" ]]; then
-            if gh run download "$SOURCE_RUN_ID" -n stock-outcome-audit-state -D .incoming >/dev/null 2>&1 \
+            run_ids="$SOURCE_RUN_ID"
+          else
+            # Relayed/manual runs read the newest audit artifact directly: the
+            # bot-state copy is only refreshed later by the stock vault.
+            run_ids="$(gh run list --workflow stock-outcome-auditor.yml --status success --branch main --limit 5 --json databaseId --jq 'map(.databaseId) | join(" ")' 2>/dev/null || true)"
+          fi
+          for run_id in $run_ids; do
+            rm -rf .incoming && mkdir -p .incoming
+            if gh run download "$run_id" -n stock-outcome-audit-state -D .incoming >/dev/null 2>&1 \
               && [[ -s .incoming/stock_outcome_audit.json ]]; then
               cp -f .incoming/stock_outcome_audit.json data/live/stock_outcome_audit.json
               restored=true
+              echo "Audit restored from stock-outcome-auditor run $run_id"
+              break
             fi
-          fi
+          done
 
           if [[ "$restored" != true ]]; then
             git fetch origin bot-state >/dev/null 2>&1 || true

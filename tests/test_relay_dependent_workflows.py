@@ -217,3 +217,11 @@ def test_watchdog_accepts_relayed_run_id_and_titles_it():
     assert "inputs.source_run_id || github.event.workflow_run.id" in spec["run-name"]
     env = spec["jobs"]["notify-failure"]["env"]
     assert env["WATCHDOG_SOURCE_RUN_ID"] == "${{ inputs.source_run_id || '' }}"
+
+
+def test_relayed_walk_forward_reads_newest_audit_artifact_before_bot_state():
+    walk = Path(".github/workflows/stock-walk-forward.yml").read_text(encoding="utf-8")
+    artifact = walk.index("gh run list --workflow stock-outcome-auditor.yml --status success")
+    fallback = walk.index("git show origin/bot-state:state/stocks/stock_outcome_audit.json")
+    assert artifact < fallback
+    assert "actions: read" in walk
