@@ -109,6 +109,35 @@ def _category(form: str) -> str:
     return "OWNERSHIP_CHANGE_REVIEW"
 
 
+def filing_topics(form: str, raw_items: Any) -> tuple[list[str], list[str]]:
+    """Describe official form and 8-K item labels, never infer price impact.
+
+    SEC item codes identify disclosure sections. Item 2.02 is *not* an
+    earnings surprise or a verified beat, and offering documents do not
+    prove any sale or increase in outstanding shares.
+    """
+    codes: list[str] = []
+    if form in {"8-K", "8-K/A"} and isinstance(raw_items, str):
+        # SEC submissions 'items' field may contain comma-delimited labels.
+        codes = list(dict.fromkeys(re.findall(r"(?<![\\d.])\\d{1,2}\\.\\d{2}(?![\\d.])", raw_items)))[:16]
+    topics: list[str] = []
+    if form in {"10-Q", "10-K"}:
+        topics.append("PERIODIC_FINANCIAL_REPORT_REVIEW")
+    if form in {"S-1", "S-3", "F-3", "424B5", "424B2", "S-4"}:
+        topics.append("OFFERING_OR_REGISTRATION_TERMS_REVIEW")
+    if "2.02" in codes:
+        topics.append("EARNINGS_RELEASE_REVIEW")
+    if "3.02" in codes:
+        topics.append("UNREGISTERED_EQUITY_SALE_REVIEW")
+    if "1.01" in codes:
+        topics.append("MATERIAL_AGREEMENT_REVIEW")
+    if "2.03" in codes:
+        topics.append("DEBT_OBLIGATION_REVIEW")
+    if "5.02" in codes:
+        topics.append("MANAGEMENT_CHANGE_REVIEW")
+    return codes, topics
+
+
 def parse_submissions(symbol: str, cik: int, issuer: str, payload: dict, *,
                       now: datetime, lookback_days: int=14) -> list[dict]:
     # Detect wrong CIK responses rather than associating documents with
@@ -126,11 +155,17 @@ def parse_submissions(symbol: str, cik: int, issuer: str, payload: dict, *,
     dates=recent.get("filingDate",[])
     accessions=recent.get("accessionNumber",[])
     docs=recent.get("primaryDocument",[])
+    raw_items=recent.get("items")
     if not all(isinstance(x,list) for x in (forms,dates,accessions,docs)):
         return []
+    # Older submissions snapshots can omit items. Never shift index alignment.
+    has_items=isinstance(raw_items,list) and len(raw_items)==len(forms)
+    values=raw_items if has_items else [""]*len(forms)
     cutoff=now.date()-timedelta(days=max(1,lookback_days))
     rows=[]
-    for form,day,acc,doc in zip(forms[:200],dates[:200],accessions[:200],docs[:200]):
+    for form,day,acc,doc,items in zip(
+        forms[:200],dates[:200],accessions[:200],docs[:200],values[:200]
+    ):
         if form not in FORMS or not isinstance(day,str):
             continue
         try:filed=date.fromisoformat(day)
@@ -143,12 +178,22 @@ def parse_submissions(symbol: str, cik: int, issuer: str, payload: dict, *,
             continue
         url=(f"https://www.sec.gov/Archives/edgar/data/{cik}/"
              f"{acc.replace('-','')}/{doc}")
+        item_codes, topics=filing_topics(form,items)
         rows.append({
             "symbol":symbol,"issuer":issuer,"cik":cik,
             "form":form,"filing_date":filed.isoformat(),
             "accession_number":acc,"source_url":url,
             "source":"SEC EDGAR issuer submissions",
             "event_type":_category(form),
+            "eight_k_items":item_codes,
+            "eight_k_items_available":bool(has_items and form in {"8-K","8-K/A"}),
+            "event_topics":topics,
+            "potential_dilution_review":(
+                "OFFERING_OR_REGISTRATION_TERMS_REVIEW" in topics
+                or "UNREGISTERED_EQUITY_SALE_REVIEW" in topics),
+            "earnings_release_reported": "EARNINGS_RELEASE_REVIEW" in topics,
+            "earnings_beat_verified":False,
+            "new_shares_issued_verified":False,
             "original_filing_confirmed":True,
             "issuer_cik_mapping_used":True,
             "positive_price_impact_verified":False,
