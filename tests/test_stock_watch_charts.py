@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from scripts.build_stock_watch_charts import (
-    FIVE_MIN, SMALL_WATCH, WATCH, collect, pack_symbol,
+    FIVE_MIN, SMALL_WATCH, WATCH, collect, pack_symbol, session_vwap_shadow,
 )
 
 NY=ZoneInfo("America/New_York")
@@ -114,3 +114,38 @@ def test_stale_yahoo_success_cannot_masquerade_as_fresh_stock_coverage():
     assert recent is not None
     assert recent["intervals"]["1d"]["source_recency_verified"] is True
     assert recent["options_execution_grade"] is False
+
+
+def test_vwap_uses_only_completed_intraday_ohlcv_from_source():
+    day=candles("15m")
+    data=pack_symbol("RGC",candles("1d"),day,candles("5m"),now=NOW)
+    result=data["intervals"]["15m"]["session_vwap"]
+    assert result["available"] is True
+    assert result["research_only"] is True
+    assert result["options_execution_eligible"] is False
+    assert result["source_family"] == "yahoo"
+    assert result["value"] > 0
+    assert result["source_last_bar_start"] == data["intervals"]["15m"]["provider_bar_start_or_date"]
+    assert result["session_date"] == "2026-10-16"
+    assert result["completed_bars"] >= 2
+
+
+def test_vwap_missing_or_zero_source_volume_is_unavailable_not_zero_price():
+    day=candles("15m")
+    day["Volume"]=0
+    result=session_vwap_shadow(day)
+    assert result["available"] is False
+    assert result["value"] is None
+    assert result["options_execution_eligible"] is False
+    assert session_vwap_shadow(None)["available"] is False
+    assert session_vwap_shadow(pd.DataFrame())["value"] is None
+
+
+def test_no_daily_vwap_and_frontend_uses_exact_source_bar_identity():
+    data=pack_symbol("RGC",candles("1d"),candles("15m"),candles("5m"),now=NOW)
+    assert "session_vwap" not in data["intervals"]["1d"]
+    from pathlib import Path
+    js=Path("public/terminal-hub.js").read_text(encoding="utf-8")
+    assert 'session_vwap' in js
+    assert 'source_last_bar_start===frame?.provider_bar_start_or_date' in js
+    assert 'VWAP جلسة' in js
