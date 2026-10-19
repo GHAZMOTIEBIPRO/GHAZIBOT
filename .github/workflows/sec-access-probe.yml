@@ -32,3 +32,25 @@ jobs:
       - run: python -m pip install "requests>=2.32,<3"
       - name: SEC status codes and refusal titles only
         run: python scripts/probe_sec_access.py
+      # Presence booleans only (true/false); no secret value is ever read here.
+      - name: Which optional data-source credentials are configured
+        env:
+          HAS_SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT != '' }}
+          HAS_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN != '' }}
+          HAS_TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID != '' }}
+          HAS_ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY != '' }}
+          HAS_ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY != '' }}
+          HAS_TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY != '' }}
+          HAS_FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY != '' }}
+          HAS_TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY != '' }}
+          HAS_POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY != '' }}
+          HAS_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY != '' }}
+          HAS_TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN != '' }}
+          HAS_MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN != '' }}
+          HAS_FILINGPULSE_API_KEY: ${{ secrets.FILINGPULSE_API_KEY != '' }}
+          HAS_FRED_API_KEY: ${{ secrets.FRED_API_KEY != '' }}
+          HAS_OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY != '' }}
+          HAS_BENZINGA_TOKEN: ${{ secrets.BENZINGA_TOKEN != '' }}
+          HAS_INTRINIO_API_KEY: ${{ secrets.INTRINIO_API_KEY != '' }}
+          ALPACA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+        run: env | grep -E '^(HAS_|ALPACA_USE_AUTHORIZED=)' | sort
