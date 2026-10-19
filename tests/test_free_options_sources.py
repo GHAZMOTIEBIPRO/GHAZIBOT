@@ -111,6 +111,21 @@ def test_occ_csv_and_one_daily_download_are_context_only():
                             watched={"AAPL", "TSLA"})
     assert good["status"] == "HISTORICAL_DAILY_AGGREGATE"
     assert good["watched_oi"] == {"AAPL": 100, "TSLA": 200}
+    # The actual OCC download may prepend an aggregate/report-period title.
+    with_title = parse_occ_oi_csv(
+        "Daily Open Interest October 2026\n"
+        "For clearing-member reference only\n"
+        "Underlying Symbol,Open Interest\n"
+        "AAPL,100\nNVDA,250\n",
+        watched={"AAPL", "NVDA"},
+    )
+    assert with_title["status"] == "HISTORICAL_DAILY_AGGREGATE"
+    assert with_title["watched_oi"] == {"AAPL": 100, "NVDA": 250}
+    # A report heading alone must NEVER be treated as a positive OI sample.
+    assert parse_occ_oi_csv(
+        "Daily Open Interest October 2026\nAAPL,100\n",
+        watched={"AAPL"},
+    )["status"] == "UNKNOWN_LAYOUT"
     assert parse_occ_oi_csv("<html>Error</html>", watched={"AAPL"})["matched"] == 0
     bad_schema = parse_occ_oi_csv(
         "stock,price\nAAPL,12\n", watched={"AAPL"}
