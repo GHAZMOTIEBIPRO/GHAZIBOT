@@ -38,3 +38,13 @@ def test_multi_megabyte_latest_json_loads_only_with_the_detailed_dashboard():
     assert "window.ghaziEnsureLegacyData?.();" in hub
     # The light header names the status time, never the report time.
     assert "آخر تحديث لحالة البيانات" in app
+
+
+def test_terminal_text_has_a_12px_floor_and_arabic_font_is_actually_loaded():
+    import re
+
+    css = Path("public/terminal-hub.css").read_text(encoding="utf-8")
+    sizes = [float("0" + v) for v in re.findall(r"font-size:(\.[0-9]+)rem", css)]
+    assert sizes and min(sizes) >= 0.75
+    html = Path("public/index.html").read_text(encoding="utf-8")
+    assert "family=Noto+Sans+Arabic" in html and "display=swap" in html
