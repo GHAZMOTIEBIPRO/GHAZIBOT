@@ -109,9 +109,10 @@ def _issuer_records(response: Any, *, symbol: str, cik: int,
         if kind == "event" and isinstance(items, list):
             for item in items[:20]:
                 code = item.get("code") if isinstance(item, dict) else None
-                if isinstance(code, str) and re.fullmatch(r"\d{1,2}\.\d{2}", code):
-                    if code not in codes:
-                        codes.append(code)
+                if (isinstance(code, str) and
+                        re.fullmatch(r"\d{1,2}\.\d{2}", code) and
+                        code not in codes):
+                    codes.append(code)
         form = row.get("form_type")
         form = form if isinstance(form, str) and len(form) <= 12 else "UNKNOWN"
         if kind == "event" and form not in {"8-K", "8-K/A"}:
