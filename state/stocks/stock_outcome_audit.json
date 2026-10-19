@@ -45699,7 +45699,9 @@
         },
         "aligned_evidence_count": 1,
         "available_evidence_count": 2
-      }
+      },
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "bddccef819acceb72349": {
       "signal_id": "bddccef819acceb72349",
@@ -47786,7 +47788,9 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      }
+      },
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "f68f6586bd3cc883088e": {
       "signal_id": "f68f6586bd3cc883088e",
@@ -75719,8 +75723,8 @@
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
       "signal_session_date": "2026-08-21",
-      "audit_recovery_state": "preserved_prior_verified_checkpoint",
-      "audit_recovery_note": "New provider result lacked an earlier verified completed-bar checkpoint; prior immutable observation retained."
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "f08fd303cc8d8e74e68e": {
       "signal_id": "f08fd303cc8d8e74e68e",
@@ -76600,8 +76604,8 @@
         "aligned_evidence_count": 1,
         "available_evidence_count": 2
       },
-      "audit_recovery_state": "preserved_prior_verified_checkpoint",
-      "audit_recovery_note": "New provider result lacked an earlier verified completed-bar checkpoint; prior immutable observation retained."
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "3e3506b02942c1388058": {
       "signal_id": "3e3506b02942c1388058",
@@ -114908,7 +114912,7 @@
       "audit_reason": "one_day_horizon_not_complete",
       "audit_terminal_at": null,
       "audit_terminal_bar": null,
-      "audited_at": "2026-10-19T18:41:10.093749+00:00",
+      "audited_at": "2026-10-19T21:09:43.372685+00:00",
       "checkpoints": {
         "15m": {
           "target_at": "2026-10-19T11:15:49.105917+00:00",
@@ -114950,12 +114954,12 @@
         "intrabar_order_claimed": false,
         "one_day_max_lag_minutes": 15
       },
-      "audit_attempt_count": 1,
+      "audit_attempt_count": 2,
+      "audit_last_attempt_at": "2026-10-19T21:09:43.372685+00:00",
       "audit_last_attempt_result": "fetch_and_evaluate_success",
       "signal_session_valid": true,
       "signal_session_reason": "extended_activity_window",
-      "signal_session_date": "2026-10-19",
-      "audit_last_attempt_at": "2026-10-19T18:41:10.093749+00:00"
+      "signal_session_date": "2026-10-19"
     },
     "8c1a79bfeb463b5f9ba2": {
       "signal_id": "8c1a79bfeb463b5f9ba2",
@@ -115410,7 +115414,7 @@
       }
     }
   },
-  "updated_at": "2026-10-19T19:56:27.710098+00:00",
+  "updated_at": "2026-10-19T21:09:43.372685+00:00",
   "mode": "HISTORICAL_5M_OUTCOME_AUDIT",
   "decision_authority": false,
   "live_alert_weights_changed": false,
@@ -115467,7 +115471,7 @@
       "2026-10-16"
     ]
   },
-  "attempted_symbols_this_pass": 34,
+  "attempted_symbols_this_pass": 1,
   "errors": {},
   "promotion_gate": {
     "minimum_60m_coverage_pct": 90.0,
@@ -115494,7 +115498,7 @@
       "yahoo"
     ]
   },
-  "updated_records_this_pass": 38,
+  "updated_records_this_pass": 1,
   "durable_stock_state": {
     "attempted": true,
     "branch_available": true,
@@ -115519,42 +115523,9 @@
     "retry_cooldown_hours": 2,
     "maximum_symbols_per_pass": 160,
     "selected_symbols_this_pass": [
-      "LAW",
-      "LOVE",
-      "PAR",
-      "CHWM",
-      "CLDI",
-      "NCPL",
-      "MOVE",
-      "JDZG",
-      "BAND",
-      "VLN",
-      "NCI",
-      "BNGO",
-      "MED",
-      "ACTU",
-      "ANPA",
-      "KSCP",
-      "NA",
-      "ELPW",
-      "FATE",
-      "ADCT",
-      "BTCS",
-      "STAK",
-      "FEMY",
-      "ASTI",
-      "EDIT",
-      "JACK",
-      "ATOM",
-      "PAYS",
-      "GRML",
-      "XTIA",
-      "SPWH",
-      "PMVP",
-      "SMJF",
-      "HHS"
+      "REI"
     ],
-    "selected_symbol_count": 34,
+    "selected_symbol_count": 1,
     "symbols_with_no_recoverable_intraday_window": 0,
     "window_only_recoverable_unresolved_signals": true,
     "preserve_prior_verified_checkpoints": true,
