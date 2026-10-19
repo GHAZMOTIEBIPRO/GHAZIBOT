@@ -26,6 +26,8 @@ from typing import Any
 GRACE_MINUTES = 3.0
 MAX_SOURCE_AGE_MINUTES = 180.0
 LIVE_STATUS = "live-dashboard-status.yml"
+STOCK_VAULT = "stock-state-vault.yml"
+STRENGTH = "site-evidence-strength.yml"
 
 
 @dataclass(frozen=True)
@@ -35,7 +37,7 @@ class Target:
 
     @property
     def key(self) -> str:
-        """Live status runs are titled with their source; others are not."""
+        """Runs of targets with inputs are titled '... · <value>' (run-name)."""
         return self.workflow + "".join(f"|{v}" for _, v in self.inputs)
 
 
@@ -52,7 +54,7 @@ RELAYS: tuple[Relay, ...] = (
         Target(LIVE_STATUS, (("source_workflow", "fast-explosion-radar.yml"),)),
     )),
     Relay("stock-radar.yml", "independent-stock-radar", (
-        Target("stock-state-vault.yml"),
+        Target(STOCK_VAULT, (("source_kind", "stock"),)),
         Target("cross-confirmation.yml"),
         Target(LIVE_STATUS, (("source_workflow", "stock-radar.yml"),)),
     )),
@@ -64,10 +66,21 @@ RELAYS: tuple[Relay, ...] = (
     )),
     Relay("stock-outcome-auditor.yml", "stock-outcome-audit-state", (
         Target("stock-walk-forward.yml"),
+        Target(STOCK_VAULT, (("source_kind", "audit"),)),
+    )),
+    Relay("adaptive-review.yml", "adaptive-learning-state", (
+        Target(STOCK_VAULT, (("source_kind", "adaptive"),)),
+    )),
+    Relay("stock-walk-forward.yml", "stock-walk-forward-state", (
+        Target(STRENGTH),
     )),
     # Index research publishes straight to bot-state (no artifact).
     Relay("index-radar.yml", None, (
         Target("stock-watch-charts.yml"),
+    )),
+    # Charts publish straight to bot-state as well.
+    Relay("stock-watch-charts.yml", None, (
+        Target(STRENGTH),
     )),
 )
 
@@ -209,8 +222,8 @@ def _last_created(repo: str, target: Target) -> datetime | None:
                "--branch", "main", "--limit", "20",
                "--json", "createdAt,displayTitle"])
     for row in json.loads(out or "[]"):
-        # Live status titles carry their source workflow (see run-name).
-        if target.inputs and not all(v in str(row.get("displayTitle") or "")
+        # Titles of targets with inputs end in '· <value>' (see run-name).
+        if target.inputs and not all(f"· {v}" in str(row.get("displayTitle") or "")
                                      for _, v in target.inputs):
             continue
         return _parse(row.get("createdAt"))
