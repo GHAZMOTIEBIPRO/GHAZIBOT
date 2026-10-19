@@ -49,17 +49,18 @@ jobs:
         run: |
           python -m pip install -r app/requirements.txt
           python -m pip install pandas-ta-classic==0.8.32
-      - name: Collect real daily and intraday candles
-        run: |
-          PYTHONPATH=app python -m scripts.build_stock_watch_charts \
-            --output state/runtime/public/data/stock_watch_charts.json \
-            --discovery-source state/runtime/public/data/decision_brief.json \
-            --news-source state/runtime/public/data/free_public_intelligence.json
       - name: Publish dated research-only full market structural catalog
         run: |
           PYTHONPATH=app python -m scripts.build_structural_watch_catalog \
             --source app/data/cache/structural_microfloat_candidates.json \
             --output state/runtime/public/data/structural_watch.json
+      - name: Collect real daily and intraday candles
+        run: |
+          PYTHONPATH=app python -m scripts.build_stock_watch_charts \
+            --output state/runtime/public/data/stock_watch_charts.json \
+            --discovery-source state/runtime/public/data/decision_brief.json \
+            --news-source state/runtime/public/data/free_public_intelligence.json \
+            --structural-source state/runtime/public/data/structural_watch.json
       - name: Persist isolated stock chart feed
         shell: bash
         run: |

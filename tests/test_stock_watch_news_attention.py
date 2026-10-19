@@ -2,7 +2,10 @@
 import json
 from datetime import datetime, timedelta, timezone
 
-from scripts.build_stock_watch_charts import load_dynamic_symbols
+from scripts.build_stock_watch_charts import (
+    load_dynamic_symbols,
+    load_structural_symbols,
+)
 from scripts.stock_watch_news_attention import load_news_attention, news_candidates
 
 NOW = datetime(2026, 10, 19, 0, 35, tzinfo=timezone.utc)
@@ -94,3 +97,58 @@ def test_wrong_schema_and_malformed_feeds_do_not_bypass_symbol_validation(tmp_pa
     assert load_news_attention(p,now=NOW)=={}
     p.write_text("<html>403 blocked</html>")
     assert load_news_attention(p,now=NOW)=={}
+
+
+def make_structural(tmp_path, symbols, *, generated=NOW, observed=NOW):
+    path=tmp_path/"structural.json"
+    path.write_text(json.dumps({
+        "schema":"ghazi.structural_watch.v1",
+        "generated_at":generated.isoformat(),
+        "source_observed_at":observed.isoformat(),
+        "status":"RESEARCH_SNAPSHOT",
+        "research_only":True,"recommendation":False,
+        "option_execution_ready":False,
+        "candidates":[{
+            "symbol":s,"market_cap_observed":1_000_000,
+            "structural_score_research":93,
+            "execution_eligible":False,"official_catalyst_verified":False,
+            "chart_available":False,
+        } for s in symbols],
+    }),encoding="utf-8")
+    return path
+
+
+def test_structural_catalog_rotates_free_four_slots_without_replacing_primary_radar(tmp_path):
+    feed=make_feed(tmp_path,[story("NXST")])
+    brief=make_brief(tmp_path)
+    catalog=make_structural(tmp_path,["SMCA","SMCB","SMCC","SMCD","SMCE"])
+    result=load_dynamic_symbols(brief,now=NOW,news_path=feed,structural_path=catalog)
+    assert len(result)==4
+    assert result[:2]==("NEWA","NEWB")
+    assert result[2]=="NXST"
+    assert result[3] in {"SMCA","SMCB","SMCC","SMCD","SMCE"}
+    future=load_dynamic_symbols(brief,now=NOW+timedelta(hours=6),
+                                news_path=None,structural_path=catalog)
+    assert future[:2]==("NEWA","NEWB")
+    assert len(future)==4
+    assert future[2] in {"SMCA","SMCB","SMCC","SMCD","SMCE"}
+    assert future[3] in {"SMCA","SMCB","SMCC","SMCD","SMCE"}
+
+
+def test_structural_catalog_stale_future_and_forgery_fail_closed(tmp_path):
+    brief=make_brief(tmp_path)
+    baseline=load_dynamic_symbols(brief,now=NOW)
+    # Shared file path is regenerated per invalid snapshot.
+    for generated,observed in [(NOW,NOW-timedelta(days=8)),
+                               (NOW+timedelta(hours=3),NOW),
+                               (NOW,NOW+timedelta(hours=1))]:
+        catalog=make_structural(tmp_path,["SMCA"],generated=generated,observed=observed)
+        assert load_structural_symbols(catalog,now=NOW)==()
+        assert load_dynamic_symbols(brief,now=NOW,structural_path=catalog)==baseline
+    catalog=make_structural(tmp_path,["SPY","SMCA","RGC","SMCB"])
+    result=load_structural_symbols(catalog,now=NOW)
+    assert set(result)=={"SMCA","SMCB"}
+    tampered=json.loads(catalog.read_text())
+    tampered["candidates"][1]["execution_eligible"]=True
+    catalog.write_text(json.dumps(tampered))
+    assert "SMCA" not in load_structural_symbols(catalog,now=NOW)
