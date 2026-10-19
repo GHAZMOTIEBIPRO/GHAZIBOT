@@ -1200,7 +1200,8 @@
     $("terminal-toggle-legacy").setAttribute("aria-expanded",String(!old.hidden));
     $("terminal-toggle-legacy").textContent=old.hidden?
       "عرض لوحة الأدوات التفصيلية ↓":"إخفاء لوحة الأدوات التفصيلية ↑";
-    if(!old.hidden){old.scrollIntoView({block:"start",behavior:"smooth"});
+    if(!old.hidden){window.ghaziEnsureLegacyData?.();
+      old.scrollIntoView({block:"start",behavior:"smooth"});
       // The legacy chart may have initialized while hidden.
       if(typeof radarData!=="undefined"&&typeof renderMarketChart==="function"&&radarData)
         renderMarketChart(radarData);
