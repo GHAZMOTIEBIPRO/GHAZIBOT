@@ -37,6 +37,18 @@ def build_summary(audit: dict, *, now: datetime) -> dict:
     if counts["covered_60m"] > counts["records"]:
         raise ValueError("covered_60m cannot exceed eligible records")
     gate = audit.get("promotion_gate") if isinstance(audit.get("promotion_gate"), dict) else {}
+    records = audit.get("records") if isinstance(audit.get("records"), dict) else {}
+    # Existing archived wins are NOT retroactively proven by updating code.
+    # Only signals re-evaluated under complete-bar close-time semantics qualify.
+    integrity_count = sum(
+        row.get("measurement_policy", {}).get("measurement_version") == 2
+        and row.get("measurement_policy", {}).get("bar_completion_enforced_as_of") is True
+        for row in records.values()
+        if isinstance(row, dict)
+        and isinstance(row.get("measurement_policy"), dict)
+        and row.get("signal_session_valid") is not False
+    )
+    integrity_count = min(integrity_count, counts["records"])
     return {
         "schema": "ghazi.public_stock_outcomes.v1",
         "generated_at": now.astimezone(timezone.utc).isoformat(),
@@ -48,6 +60,12 @@ def build_summary(audit: dict, *, now: datetime) -> dict:
             "minimum_independent_sessions": safe_int(gate.get("minimum_independent_sessions")),
             "minimum_60m_coverage_pct": gate.get("minimum_60m_coverage_pct"),
             "live_promotion_allowed": False,
+        },
+        "close_time_integrity": {
+            "verified_version_2_records": integrity_count,
+            "legacy_or_unreverified_records": counts["records"] - integrity_count,
+            "rule": "only completed provider 5m candles; observation at bar close",
+            "historical_legacy_not_reclassified_as_verified": True,
         },
         "proven_edge": False,
         "verified_win_rate_pct": None,
