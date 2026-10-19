@@ -145,6 +145,33 @@ def _path_status_from_payload(
     }
 
 
+def _aged_prior_status(prior: dict[str, Any], current: datetime) -> dict[str, Any]:
+    """Re-age a path carried over from the previous status file.
+
+    Only the source path of this run is rebuilt from a payload; every other
+    path is copied. Its age and status must still be recomputed against the
+    current clock, or a days-old path keeps reporting HEALTHY.
+    """
+    aged = dict(prior)
+    generated = _parse_timestamp(aged.get("generated_at"))
+    try:
+        maximum_age = float(aged.get("maximum_age_minutes"))
+    except (TypeError, ValueError):
+        return aged
+    if generated is None:
+        return aged
+    age_minutes = max(0.0, (current - generated).total_seconds() / 60.0)
+    aged["age_minutes"] = round(age_minutes, 2)
+    if age_minutes > maximum_age and aged.get("status") != "STALE":
+        aged["status"] = "STALE"
+        reasons = [str(item) for item in aged.get("reasons") or [] if str(item).strip()]
+        reasons.insert(
+            0, f"Payload age {age_minutes:.1f}m exceeds the {maximum_age:.0f}m safety limit."
+        )
+        aged["reasons"] = list(dict.fromkeys(reasons))[:8]
+    return aged
+
+
 def _path_status(name: str, root: Path, current: datetime) -> dict[str, Any]:
     payload = _load_json(root / str(PATH_SPECS[name]["file"]))
     if payload is None:
@@ -245,7 +272,11 @@ def build_live_dashboard_status(
     paths: dict[str, dict[str, Any]] = {}
     for name in PATH_SPECS:
         prior = previous_paths.get(name)
-        paths[name] = prior if isinstance(prior, dict) else _path_status(name, state_root, current)
+        paths[name] = (
+            _aged_prior_status(prior, current)
+            if isinstance(prior, dict)
+            else _path_status(name, state_root, current)
+        )
 
     if (source_path is None) != (source_payload is None):
         raise ValueError("source_path and source_payload must be provided together")
