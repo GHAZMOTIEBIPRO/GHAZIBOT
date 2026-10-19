@@ -112,8 +112,13 @@ def test_occ_csv_and_one_daily_download_are_context_only():
     assert good["status"] == "HISTORICAL_DAILY_AGGREGATE"
     assert good["watched_oi"] == {"AAPL": 100, "TSLA": 200}
     assert parse_occ_oi_csv("<html>Error</html>", watched={"AAPL"})["matched"] == 0
-    assert parse_occ_oi_csv("stock,price\nAAPL,12\n", watched={"AAPL"})[
-        "status"] == "UNKNOWN_LAYOUT"
+    bad_schema = parse_occ_oi_csv(
+        "stock,price\nAAPL,12\n", watched={"AAPL"}
+    )
+    assert bad_schema["status"] == "UNKNOWN_LAYOUT"
+    assert bad_schema["safe_schema_column_names"] == ["stock", "price"]
+    assert "AAPL" not in str(bad_schema)
+    assert "12" not in str(bad_schema)
     cli = FakeSession()
     report = occ_open_interest_snapshot(now=NOW, session=cli, enabled=True)
     assert report["status"] == "HISTORICAL_DAILY_AGGREGATE"
