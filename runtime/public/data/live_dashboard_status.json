@@ -2,14 +2,14 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-10-19T18:41:00.814509+00:00",
+  "generated_at": "2026-10-19T18:46:25.260975+00:00",
   "overall_status": "DEGRADED",
   "paths": {
     "fast_discovery": {
       "status": "HEALTHY",
       "file": "data/live/fast_explosion_scan.json",
       "generated_at": "2026-10-19T18:31:31.907892+00:00",
-      "age_minutes": 9.48,
+      "age_minutes": 14.89,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": null,
@@ -19,7 +19,7 @@
       "status": "HEALTHY",
       "file": "public/data/stocks_latest.json",
       "generated_at": "2026-10-19T18:32:20.696578+00:00",
-      "age_minutes": 8.67,
+      "age_minutes": 14.08,
       "maximum_age_minutes": 90.0,
       "candidate_count": 4,
       "provider_readiness": null,
@@ -30,24 +30,24 @@
     "options": {
       "status": "RESEARCH_ONLY",
       "file": "public/data/options_latest.json",
-      "generated_at": "2026-10-19T18:10:33.085329+00:00",
-      "age_minutes": 30.46,
+      "generated_at": "2026-10-19T18:33:10.953617+00:00",
+      "age_minutes": 13.24,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": "FALLBACK_ONLY",
       "reasons": [
         "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-        "55 chain(s) are Yahoo/YFinance-only fallback",
-        "55 chain(s) contain delayed, indicative, or unofficial sources"
+        "54 chain(s) are Yahoo/YFinance-only fallback",
+        "54 chain(s) contain delayed, indicative, or unofficial sources"
       ]
     }
   },
   "reasons": [
-    "options: No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 55 chain(s) are Yahoo/YFinance-only fallback; 55 chain(s) contain delayed, indicative, or unofficial sources"
+    "options: No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 54 chain(s) are Yahoo/YFinance-only fallback; 54 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "publisher": {
-    "source_workflow": "BLACK BOX Omega Stock Radar",
-    "source_run_id": "39303232216",
+    "source_workflow": "BLACK BOX Omega Options Contract Radar",
+    "source_run_id": "39302887599",
     "mode": "artifact_to_bot_state_status_only"
   }
 }
