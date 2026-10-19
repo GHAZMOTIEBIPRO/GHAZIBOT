@@ -182,6 +182,41 @@ def hourly_from_quarters(frame: pd.DataFrame) -> pd.DataFrame:
     return hourly.loc[counts == 4].dropna(subset=["Close"])
 
 
+# Session-aligned 4H blocks on completed regular-session 15m bars:
+# 09:30-13:30 (16 bars) and 13:30-16:00 (10 bars). A block is published
+# only when every bar exists, so a 4H candle never repaints.
+FOUR_HOUR_BLOCKS = ((570, 16), (810, 10))
+
+
+def four_hour_from_quarters(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame
+    minutes = frame.index.hour * 60 + frame.index.minute
+    inside = (minutes >= 570) & (minutes < 960)
+    session = frame.loc[inside]
+    if session.empty:
+        return session
+    starts = [570 if m < 810 else 810 for m in minutes[inside]]
+    keys = pd.DatetimeIndex([
+        ts.normalize() + pd.Timedelta(minutes=start)
+        for ts, start in zip(session.index, starts, strict=True)
+    ])
+    grouped = session.groupby(keys)
+    blocks = grouped.agg({"Open": "first", "High": "max", "Low": "min",
+                          "Close": "last", "Volume": "sum"})
+    counts = grouped["Close"].count()
+    expected = {start: size for start, size in FOUR_HOUR_BLOCKS}
+    need = [expected[k.hour * 60 + k.minute] for k in counts.index]
+    return blocks.loc[counts.to_numpy() == need].dropna(subset=["Close"])
+
+
+def bar_minutes(start: pd.Timestamp, unit: str) -> int:
+    """Duration of a completed bar that starts at ``start``."""
+    if unit == "4h":
+        return 240 if start.hour * 60 + start.minute == 570 else 150
+    return {"1h": 60, "15m": 15, "5m": 5}[unit]
+
+
 def analyze(symbol: str, daily_raw: pd.DataFrame | None,
             intraday_raw: pd.DataFrame | None, *, now: datetime,
             five_min_raw: pd.DataFrame | None = None) -> dict:

@@ -13,12 +13,12 @@ from pathlib import Path
 import pandas as pd
 
 from scripts.build_index_context import (
-    FIVE_MIN_SYMBOLS, NY, SYMBOLS, clean_bars, completed_daily,
-    hourly_from_quarters, last_finished_five_min, last_finished_intraday,
-    safe, technical,
+    FIVE_MIN_SYMBOLS, NY, SYMBOLS, bar_minutes, clean_bars, completed_daily,
+    four_hour_from_quarters, hourly_from_quarters, last_finished_five_min,
+    last_finished_intraday, safe, technical,
 )
 
-MAX_BARS = {"1d": 110, "1h": 90, "15m": 100, "5m": 110}
+MAX_BARS = {"1d": 110, "4h": 40, "1h": 90, "15m": 100, "5m": 110}
 
 
 def pack_bars(frame: pd.DataFrame, *, interval: str) -> list[dict]:
@@ -58,6 +58,7 @@ def chart_report(
         # Construct 60m only from four consecutive, already completed
         # 15m source candles. No extra Yahoo request or unfinished bar.
         frames["1h"] = hourly_from_quarters(frames["15m"])
+        frames["4h"] = four_hour_from_quarters(frames["15m"])
         if symbol in FIVE_MIN_SYMBOLS:
             frames["5m"] = last_finished_five_min(
                 clean_bars(five_min.get(symbol), intraday=True), now
@@ -69,14 +70,14 @@ def chart_report(
                 continue
             last = frame.index[-1]
             # Technical summary aligns to the chart's *last completed* bar.
-            signals = technical(frame, fast=9 if unit in ("5m", "1h") else 20,
-                                slow=21 if unit in ("5m", "1h") else 50)
+            signals = technical(frame, fast=9 if unit in ("5m", "1h", "4h") else 20,
+                                slow=21 if unit in ("5m", "1h", "4h") else 50)
             local_now = now.astimezone(NY)
             age = (now - last.to_pydatetime().astimezone(timezone.utc)).total_seconds()/60
-            complete_age = age - 60 if unit == "1h" else age
+            complete_age = age - bar_minutes(last, unit) if unit in ("1h", "4h") else age
             current_session = (
                 unit != "1d" and last.date() == local_now.date()
-                and 0 <= complete_age <= (20 if unit == "5m" else 45)
+                and 0 <= complete_age <= (20 if unit == "5m" else 240 if unit == "4h" else 45)
             )
             intervals[unit] = {
                 "bars": bars,
@@ -85,8 +86,9 @@ def chart_report(
                 "provider_bar_start_age_minutes_at_build": round(age, 1) if unit != "1d" else None,
                 "current_session_confirmed": bool(current_session),
                 "technical": signals,
-                "derived_from": ("four_completed_15m_yahoo_bars"
-                                 if unit == "1h" else None),
+                "derived_from": ("four_completed_15m_yahoo_bars" if unit == "1h"
+                                 else "session_aligned_completed_15m_yahoo_bars" if unit == "4h"
+                                 else None),
                 "research_only": True,
             }
         if intervals:

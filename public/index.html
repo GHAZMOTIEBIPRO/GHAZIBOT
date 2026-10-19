@@ -171,11 +171,12 @@
           <h3>الشارت والقراءة الفنية</h3><p>شموع سعريّة أصلية، EMA20/EMA50، RSI14 وATR14، ومستويات آخر جلسة. لا تتم تعبئة أي شمعة غير مكتملة.</p></div></header>
         <div class="terminal-chart-toolbar">
           <label>الرمز <select id="terminal-chart-symbol" aria-label="اختيار الرمز"><option value="SPX">SPX — S&P 500</option></select></label>
-          <label>الفريم <select id="terminal-chart-timeframe" aria-label="الفريم"><option value="1d">يومي</option><option value="1h">ساعة</option><option value="15m">15 دقيقة</option><option value="5m">5 دقائق</option></select></label>
+          <label>الفريم <select id="terminal-chart-timeframe" aria-label="الفريم"><option value="1d">يومي</option><option value="4h">4 ساعات</option><option value="1h">ساعة</option><option value="15m">15 دقيقة</option><option value="5m">5 دقائق</option></select></label>
           <label class="terminal-check"><input id="terminal-show-ema" type="checkbox" checked> عرض EMA20/50</label>
         </div>
         <div class="terminal-timeframe-strip" role="group" aria-label="التنقل السريع بين فريمات الشارت">
           <button type="button" data-terminal-tf="1d" aria-pressed="true">يومي</button>
+          <button type="button" data-terminal-tf="4h" aria-pressed="false">4 ساعات</button>
           <button type="button" data-terminal-tf="1h" aria-pressed="false">ساعة</button>
           <button type="button" data-terminal-tf="15m" aria-pressed="false">15 دقيقة</button>
           <button type="button" data-terminal-tf="5m" aria-pressed="false">5 دقائق</button>
@@ -754,6 +755,6 @@
   <script src="./terminal-ops.js?v=20261020-2" defer></script>
   <script src="./terminal-oos.js?v=20261019-1" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./terminal-hub.js?v=20261020-3" defer></script>
+  <script src="./terminal-hub.js?v=20261020-4" defer></script>
 </body>
 </html>
