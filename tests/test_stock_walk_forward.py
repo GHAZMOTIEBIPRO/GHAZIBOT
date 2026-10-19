@@ -3,7 +3,10 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import date, timedelta
 
-from options_radar.stock_walk_forward import run_stock_walk_forward
+from options_radar.stock_walk_forward import (
+    coverage_gap_diagnostics,
+    run_stock_walk_forward,
+)
 
 
 def _audit(*, sessions: int = 12, rows_per_session: int = 12) -> dict:
@@ -120,3 +123,30 @@ def test_walk_forward_keeps_unqualified_or_invalid_rows_out_of_binary_metrics() 
 
     expected = 12 * 12
     assert report["metrics"]["eligible_decisive_records"] == expected
+
+def test_missing_60m_reasons_are_observations_not_imputed_hits() -> None:
+    report = {
+        "coverage": {"eligible_records": 4, "covered_60m": 1},
+        "records": {
+            "a": {"signal_session_valid": True, "coverage": {"60m": True},
+                  "audit_status": "success"},
+            "b": {"signal_session_valid": True, "coverage": {"60m": False},
+                  "audit_reason": "no_post_signal_5m_bars", "audit_status": "pending"},
+            "c": {"signal_session_valid": True, "coverage": {"60m": False},
+                  "audit_status": "pending"},
+            "d": {"signal_session_valid": True, "coverage": {"60m": False},
+                  "audit_status": "unavailable"},
+        },
+    }
+    diagnostic = coverage_gap_diagnostics(report)
+    assert diagnostic["missing_60m_records"] == 3
+    assert diagnostic["additional_records_needed_at_fixed_denominator"] == 3
+    assert diagnostic["missing_reason_counts_observed"] == {
+        "NO_POST_SIGNAL_BARS": 1,
+        "PENDING_OR_UNFINISHED": 1,
+        "OTHER_MISSING_60M": 1,
+    }
+    assert diagnostic["missing_reason_count_is_exhaustive"] is True
+    assert diagnostic["policy"] == "NO_SYNTHETIC_BACKFILL_OR_PROFIT_CLAIM"
+    assert report["coverage"]["covered_60m"] == 1
+
