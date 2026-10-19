@@ -19,8 +19,13 @@ from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shado
 from options_radar.stock_watch_confluence import price_confluence_shadow
 from scripts.build_index_chart_snapshot import pack_bars
 from scripts.build_index_context import (
-    NY, clean_bars, completed_daily, hourly_from_quarters,
-    last_finished_five_min, last_finished_intraday, technical,
+    NY,
+    clean_bars,
+    completed_daily,
+    hourly_from_quarters,
+    last_finished_five_min,
+    last_finished_intraday,
+    technical,
 )
 from scripts.stock_chart_retention import retain_valid_history
 from scripts.stock_watch_news_attention import load_news_attention, news_candidates
@@ -193,7 +198,7 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
                 if not isinstance(frame, pd.DataFrame) or frame.empty:
                     errors[f"{symbol}_{unit}"] = "NO_OHLC_DATA"
                 received[unit] = frame if isinstance(frame, pd.DataFrame) else None
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - Yahoo client may throw arbitrary failures
                 errors[f"{symbol}_{unit}"] = type(exc).__name__
                 received[unit] = None
             delay(.15)  # bounded transport; do not spin retry on Yahoo rate limit.
