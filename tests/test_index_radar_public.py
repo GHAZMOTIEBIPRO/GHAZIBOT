@@ -181,3 +181,15 @@ def test_homepage_indicators_and_news_are_visible_without_opening_tabs() -> None
     assert data["coverage"]["daily_validated"] > 0
     assert data["symbols"]["SPX"]["last_completed_session_date"] is not None
     assert data["index_options_signal_authority"] is False
+
+
+def test_direction_rules_attach_only_to_core_four_and_wait_without_intraday() -> None:
+    now = datetime(2026, 10, 18, tzinfo=timezone.utc)
+    report = make_report({"SPX": daily_bars()}, {}, now=now)
+    for symbol in ("SPX", "NDX", "SPY", "QQQ"):
+        direction = report["symbols"][symbol]["direction"]
+        assert direction["decision"] == "WAIT"
+        assert direction["reason_code"] == "DATA_STALE"
+        assert direction["execution_authority"] is False
+    assert "direction" not in report["symbols"]["DJI"]
+    assert report["index_options_signal_authority"] is False

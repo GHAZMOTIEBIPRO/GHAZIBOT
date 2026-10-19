@@ -15,6 +15,8 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
+from options_radar.index_direction import DIRECTION_SYMBOLS, build_index_direction
+
 NY = ZoneInfo("America/New_York")
 SYMBOLS = {
     "SPX": ("^GSPC", "S&P 500 Index", "index"),
@@ -263,6 +265,8 @@ def make_report(daily: dict[str, pd.DataFrame],
     for symbol in SYMBOLS:
         rows[symbol] = analyze(symbol, daily.get(symbol), intraday.get(symbol), now=now,
                                five_min_raw=five_min.get(symbol))
+        if symbol in DIRECTION_SYMBOLS:
+            rows[symbol]["direction"] = build_index_direction(rows[symbol])
     valid = sum(bool(x["last_completed_session_date"]) for x in rows.values())
     if not valid:
         raise ValueError("No validated index history; preserve previous report")
