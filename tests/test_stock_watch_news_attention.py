@@ -137,11 +137,7 @@ def test_structural_catalog_rotates_free_four_slots_without_replacing_primary_ra
 def test_structural_catalog_stale_future_and_forgery_fail_closed(tmp_path):
     brief=make_brief(tmp_path)
     baseline=load_dynamic_symbols(brief,now=NOW)
-    cases=[
-        make_structural(tmp_path,["SMCA"],observed=NOW-timedelta(days=8)),
-        make_structural(tmp_path,["SMCA"],generated=NOW+timedelta(hours=3)),
-    ]
-    # make_structural reuses the file path, so validate each snapshot immediately
+    # Shared file path is regenerated per invalid snapshot.
     for generated,observed in [(NOW,NOW-timedelta(days=8)),
                                (NOW+timedelta(hours=3),NOW),
                                (NOW,NOW+timedelta(hours=1))]:
