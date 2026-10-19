@@ -119,7 +119,7 @@ def filing_topics(form: str, raw_items: Any) -> tuple[list[str], list[str]]:
     codes: list[str] = []
     if form in {"8-K", "8-K/A"} and isinstance(raw_items, str):
         # SEC submissions 'items' field may contain comma-delimited labels.
-        codes = list(dict.fromkeys(re.findall(r"(?<![\\d.])\\d{1,2}\\.\\d{2}(?![\\d.])", raw_items)))[:16]
+        codes = list(dict.fromkeys(re.findall(r"(?<![\d.])\d{1,2}\.\d{2}(?![\d.])", raw_items)))[:16]
     topics: list[str] = []
     if form in {"10-Q", "10-K"}:
         topics.append("PERIODIC_FINANCIAL_REPORT_REVIEW")
