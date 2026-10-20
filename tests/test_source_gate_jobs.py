@@ -23,11 +23,15 @@ def closed_gates(monkeypatch):
     for keys in gate.ACCOUNT_KEYS.values():
         for key in keys:
             monkeypatch.delenv(f"HAS_{key}", raising=False)
+    monkeypatch.delenv("DATA_TERMS_CONFIRMED", raising=False)
 
 
 def test_gate_requires_every_input(monkeypatch):
     assert gate.evaluate(["price"]) == (False, ["price"])
     monkeypatch.setenv("HAS_TRADIER_TOKEN", "true")
+    # Tradier's terms page was not readable (UNKNOWN): a key alone is not enough.
+    assert gate.evaluate(["options", "price"]) == (False, ["options", "price"])
+    monkeypatch.setenv("DATA_TERMS_CONFIRMED", "tradier")
     assert gate.evaluate(["options", "price"]) == (True, [])
     assert gate.evaluate(["discovery", "price"]) == (False, ["discovery"])
     monkeypatch.setenv("NASDAQ_WEB_AUTOMATION_APPROVED", "true")
@@ -53,7 +57,8 @@ def test_price_workflows_skip_through_the_gate_job(name, job):
     assert jobs[job]["needs"] == ["source-gate"]
     assert "needs.source-gate.outputs.usable == 'true'" in str(jobs[job]["if"])
     step_env = jobs["source-gate"]["steps"][-1]["env"]
-    assert all(value.endswith("!= '' }}") for value in step_env.values())
+    assert all(value.endswith("!= '' }}") for value in step_env.values() if "secrets." in value)
+    assert step_env["DATA_TERMS_CONFIRMED"].startswith("${{ vars.")
 
 
 def test_watchdog_reports_a_gated_skip_as_paused_not_recovered():

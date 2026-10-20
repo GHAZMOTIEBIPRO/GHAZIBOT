@@ -124,6 +124,47 @@ automated access, storage and redistribution. Verbatim extracts:
   open U.S. government data, reachable without keys; used as legal
   replacements for macro and positioning context.
 
+## Rights matrix (official terms, run 39478127523, 2026-10-20 18:50Z)
+
+`data/source_rights.json` records, for 28 providers, seven rights
+(automated access, internal analysis, persistent storage, public raw
+display, public derived display, GitHub Actions automation, commercial use
+on a free tier), each VERIFIED, RESTRICTED or UNKNOWN with the official URL
+and a verbatim quote. Pages that answered 403/404/timeout leave every right
+UNKNOWN, and **UNKNOWN is never treated as permission**. The Data Hub
+publishes the matrix and the terminal shows it.
+
+How it is enforced:
+
+- `scripts/price_source_gate.py`: a provider key counts only if the
+  matrix does not restrict automated access or internal analysis; rights
+  left UNKNOWN count only after the owner lists the provider in the
+  `DATA_TERMS_CONFIRMED` repository variable, confirming their plan covers
+  this use. MarketData.app (personal, non-professional only; research needs
+  a commercial agreement) can never be enabled this way.
+- `options_radar/public_guard.py`: no price provider is verified for public
+  display, so price-driven sections of public files stay empty.
+
+Summary of what the official text decides:
+
+| Provider | Automated | Internal | Storage | Public raw | Public derived |
+|---|---|---|---|---|---|
+| Yahoo, Nasdaq.com | restricted | restricted | restricted | restricted | restricted |
+| Cboe delayed page | restricted | unknown | unknown | unknown | unknown |
+| Finnhub | unknown | unknown | unknown | restricted | restricted |
+| Twelve Data | verified (internal) | verified | restricted beyond docs | restricted (add-on) | unknown |
+| Tiingo (free) | unknown | verified (transient) | restricted | restricted | restricted |
+| FMP | verified (personal) | restricted | restricted | restricted | restricted |
+| EODHD | unknown | verified (private) | restricted | restricted | restricted |
+| MarketData.app | restricted | restricted | restricted | restricted | restricted |
+| Alpaca | unknown (agreement PDF 403) | unknown | unknown | restricted | unknown |
+| Massive/Polygon, Alpha Vantage, Tradier, Nasdaq Data Link, IEX, nasdaqtrader | mostly unknown | | | | |
+| TradingView | display widgets only | restricted | restricted | verified (widget/snapshot with attribution) | restricted |
+| openFDA (CC0), U.S. Treasury Fiscal Data | verified | verified | verified | verified | verified |
+| BEA, Census APIs | verified | verified | unknown | verified (notice required) | verified |
+| CFTC | portal API terms not captured | verified (U.S. government publication) | verified | verified | verified |
+| SEC EDGAR, BLS, FRED, FINRA, OCC, Federal Reserve | unknown (403/404/timeout from the runner) | | | | |
+
 ## Terms by use type (2026-10-20)
 
 | Provider | Internal automated | Non-display | Public raw | Public derived | Real-time display |

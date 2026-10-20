@@ -44,6 +44,7 @@ jobs:
       - name: Check for a permitted market-data source
         id: gate
         env:
+          DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED || '' }}
           HAS_TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY != '' }}
           HAS_FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY != '' }}
           HAS_TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN != '' }}
