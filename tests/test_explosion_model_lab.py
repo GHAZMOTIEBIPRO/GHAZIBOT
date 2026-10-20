@@ -74,6 +74,26 @@ def test_spa_does_not_reward_a_model_for_staying_out_of_a_losing_baseline():
     assert out["no_signal_days"].startswith("model takes the baseline value")
 
 
+def test_each_model_is_judged_against_its_own_side_baseline():
+    from options_radar.explosion_model_lab import MODEL_SIDE, MODELS
+
+    assert set(MODEL_SIDE) == set(MODELS)
+    f = features(bars_from(flat(70)), None)
+    for name, fn in MODELS.items():
+        assert fn(f)[1] == MODEL_SIDE[name]
+    dates = pd.bdate_range("2025-01-01", periods=80)
+    rows = []
+    for d in dates:  # names that fall: long baseline loses, short baseline gains
+        rows += [{"symbol": "A", "date": d, "model": "BASELINE_ALL_DAYS", "net": -2.0, "status": "STOP"},
+                 {"symbol": "A", "date": d, "model": "BASELINE_SHORT_ALL_DAYS", "net": 1.0, "status": "TIMEOUT"},
+                 {"symbol": "A", "date": d, "model": "FAILED_BREAKOUT_REVERSAL", "net": 0.5, "status": "TIMEOUT"}]
+    out = evaluate(pd.DataFrame(rows))
+    short = out["models"]["FAILED_BREAKOUT_REVERSAL"]
+    assert short["baseline"] == "BASELINE_SHORT_ALL_DAYS"
+    # Better than the long baseline, but worse than shorting everything: no edge.
+    assert short["beats_baseline_both_halves_and_positive_late"] is False
+
+
 def test_summary_breakeven_and_evaluate_reports_not_testable_models():
     g = pd.DataFrame({"symbol": ["A"] * 4, "status": ["TARGET", "STOP", "STOP", "TIMEOUT"],
                       "net": [7.4, -5.6, -5.6, 0.4]})

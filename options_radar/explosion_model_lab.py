@@ -68,6 +68,8 @@ MODELS: dict[str, Callable[[pd.DataFrame], tuple[pd.Series, str]]] = {
     "FAILED_BREAKOUT_REVERSAL": lambda f: ((f["high"] > f["prior_high20"]) & (f["close"] < f["prior_high20"])
                                           & (f["close"] < f["open"]), "short"),
 }
+MODEL_SIDE = {"BREAKOUT_VOLUME": "long", "RELATIVE_STRENGTH": "long", "LIQUIDITY_EXPANSION": "long",
+              "GAP_CONTINUATION": "long", "FAILED_BREAKOUT_REVERSAL": "short"}
 NOT_TESTABLE = {
     "CATALYST_FLOAT": "no point-in-time catalyst history (SEC access blocked; news archive not reconstructable)",
     "PREMARKET_MOMENTUM": "no historical premarket bars from an allowed source; a daily gap is not premarket momentum",
@@ -123,10 +125,11 @@ def collect(universe: dict[str, pd.DataFrame], bench_close: pd.Series | None) ->
             if not eligible[i]:
                 continue
             date = bars.index[i]
-            base = _outcome(*arrays, i, "long")
-            if base:
-                rows.append({"symbol": symbol, "date": date, "model": "BASELINE_ALL_DAYS",
-                             "net": base[0], "status": base[1]})
+            for base_name, base_side in (("BASELINE_ALL_DAYS", "long"), ("BASELINE_SHORT_ALL_DAYS", "short")):
+                base = _outcome(*arrays, i, base_side)
+                if base:
+                    rows.append({"symbol": symbol, "date": date, "model": base_name,
+                                 "net": base[0], "status": base[1]})
             for name, (mask, side) in masks.items():
                 if mask[i]:
                     res = _outcome(*arrays, i, side)
@@ -160,7 +163,11 @@ def summarize(group: pd.DataFrame) -> dict[str, Any]:
     }
 
 
-def spa_vs_baseline(frame: pd.DataFrame, models: list[str], reps: int = 1000, seed: int = 7) -> dict[str, Any]:
+BASELINE_FOR_SIDE = {"long": "BASELINE_ALL_DAYS", "short": "BASELINE_SHORT_ALL_DAYS"}
+
+
+def spa_vs_baseline(frame: pd.DataFrame, models: list[str], reps: int = 1000, seed: int = 7,
+                    baseline: str = "BASELINE_ALL_DAYS") -> dict[str, Any]:
     """Hansen SPA (arch) on daily mean net returns: does any model beat
     entering every eligible stock that day?
 
@@ -172,7 +179,9 @@ def spa_vs_baseline(frame: pd.DataFrame, models: list[str], reps: int = 1000, se
         from arch.bootstrap import SPA
     except ImportError:
         return {"status": "ARCH_UNAVAILABLE"}
-    base = frame[frame["model"] == "BASELINE_ALL_DAYS"].groupby("date")["net"].mean()
+    base = frame[frame["model"] == baseline].groupby("date")["net"].mean()
+    if not models:
+        return {"status": "NO_MODELS"}
     if len(base) < 60:
         return {"status": "INSUFFICIENT_DAYS", "days": len(base)}
     losses = {}
@@ -185,7 +194,8 @@ def spa_vs_baseline(frame: pd.DataFrame, models: list[str], reps: int = 1000, se
     return {"status": "OK", "days": len(base), "reps": reps,
             "pvalue_consistent": round(float(p["consistent"]), 4),
             "pvalue_lower": round(float(p["lower"]), 4), "pvalue_upper": round(float(p["upper"]), 4),
-            "null": "no model beats the all-days baseline", "library": "arch (NCSA) Hansen SPA",
+            "baseline": baseline, "models": list(models),
+            "null": "no model beats the same-side all-days baseline", "library": "arch (NCSA) Hansen SPA",
             "no_signal_days": "model takes the baseline value (zero excess)",
             "relative_only": "beating a losing baseline is not profitability; see mean_net_pct"}
 
@@ -196,18 +206,30 @@ def evaluate(frame: pd.DataFrame) -> dict[str, Any]:
     dates = sorted(frame["date"].unique())
     cut = dates[len(dates) // 2]
     out: dict[str, Any] = {"models": {}, "split_date": str(pd.Timestamp(cut).date())}
-    base_early = summarize(frame[(frame["model"] == "BASELINE_ALL_DAYS") & (frame["date"] < cut)])
-    base_late = summarize(frame[(frame["model"] == "BASELINE_ALL_DAYS") & (frame["date"] >= cut)])
-    for name in ["BASELINE_ALL_DAYS", *MODELS]:
+    halves = {}
+    for side, base_name in BASELINE_FOR_SIDE.items():
+        g = frame[frame["model"] == base_name]
+        halves[side] = (summarize(g[g["date"] < cut]), summarize(g[g["date"] >= cut]))
+        out["models"][base_name] = {"side": side, "all": summarize(g), "early": halves[side][0],
+                                    "late": halves[side][1]}
+    sides = MODEL_SIDE
+    for name in MODELS:
+        side = sides[name]
+        base_early, base_late = halves[side]
         g = frame[frame["model"] == name]
         early, late = summarize(g[g["date"] < cut]), summarize(g[g["date"] >= cut])
-        beats = (name != "BASELINE_ALL_DAYS" and early["signals"] >= 30 and late["signals"] >= 30
+        beats = (early["signals"] >= 30 and late["signals"] >= 30
+                 and base_early["mean_net_pct"] is not None and base_late["mean_net_pct"] is not None
                  and early["mean_net_pct"] > base_early["mean_net_pct"]
                  and late["mean_net_pct"] > base_late["mean_net_pct"]
                  and late["mean_net_pct"] > 0)
-        out["models"][name] = {"all": summarize(g), "early": early, "late": late,
+        out["models"][name] = {"side": side, "baseline": BASELINE_FOR_SIDE[side],
+                               "all": summarize(g), "early": early, "late": late,
                                "beats_baseline_both_halves_and_positive_late": bool(beats)}
     for name, reason in NOT_TESTABLE.items():
         out["models"][name] = {"status": "NOT_TESTABLE", "reason": reason}
-    out["spa"] = spa_vs_baseline(frame, list(MODELS))
+    out["spa"] = spa_vs_baseline(frame, [n for n in MODELS if sides[n] == "long"],
+                                 baseline="BASELINE_ALL_DAYS")
+    out["spa_short"] = spa_vs_baseline(frame, [n for n in MODELS if sides[n] == "short"],
+                                       baseline="BASELINE_SHORT_ALL_DAYS")
     return out

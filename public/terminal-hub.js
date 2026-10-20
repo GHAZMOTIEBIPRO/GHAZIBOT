@@ -641,7 +641,7 @@
         (below?" · أقل من نقطة التعادل":"");
     });
   }
-  const MODEL_AR={BASELINE_ALL_DAYS:"خط الأساس (كل الأيام)",BREAKOUT_VOLUME:"اختراق + فوليوم",
+  const MODEL_AR={BASELINE_ALL_DAYS:"خط الأساس شراء (كل الأيام)",BASELINE_SHORT_ALL_DAYS:"خط الأساس بيع (كل الأيام)",BREAKOUT_VOLUME:"اختراق + فوليوم",
     RELATIVE_STRENGTH:"قوة نسبية",LIQUIDITY_EXPANSION:"توسع السيولة",GAP_CONTINUATION:"استمرار الفجوة",
     FAILED_BREAKOUT_REVERSAL:"انعكاس اختراق فاشل (بيع)",CATALYST_FLOAT:"محفز + فلوت",PREMARKET_MOMENTUM:"زخم ما قبل الافتتاح"};
   function modelLabLines(lab){
@@ -655,7 +655,7 @@
         " · صافي بعد التكلفة "+net(m.all?.mean_net_pct)+
         " · النصف الأول "+net(m.early?.mean_net_pct)+" / الثاني "+net(m.late?.mean_net_pct)+
         " · عينة "+(m.all?.signals??0)+
-        (key==="BASELINE_ALL_DAYS"?"":m.beats_baseline_both_halves_and_positive_late?" · يتفوق على خط الأساس":" · لا تفوق مثبت");
+        (key.startsWith("BASELINE_")?"":m.beats_baseline_both_halves_and_positive_late?" · يتفوق على خط أساس نفس الاتجاه":" · لا تفوق مثبت");
     });
   }
   function renderModelLab(box){
@@ -664,11 +664,13 @@
     item.append(txt("strong","مختبر النماذج: قواعد مسجلة مسبقًا مقارنة بخط الأساس (بيانات تاريخية يومية)"));
     if(!lab){item.append(txt("small","لم يُنشر تقرير المختبر بعد.","terminal-structural-notice"));box.append(item);return;}
     for(const line of modelLabLines(lab))item.append(txt("small",line,"terminal-structural-notice"));
-    const spa=lab.spa;
-    item.append(txt("small",spa?.status==="OK"?
-      "اختبار SPA (Hansen، مكتبة arch): p = "+fmt(spa.pvalue_consistent,3)+
-        (spa.pvalue_consistent<0.05?" — يوجد نموذج يتفوق على خط الأساس إحصائيًا":" — لا دليل إحصائي على تفوق أي نموذج"):
-      "اختبار SPA غير متاح: "+String(spa?.status||"—")));
+    for(const [label,spa] of [["نماذج الشراء مقابل خط أساس الشراء",lab.spa],["نماذج البيع مقابل خط أساس البيع",lab.spa_short]]){
+      if(!spa)continue;
+      item.append(txt("small",spa.status==="OK"?
+        "اختبار SPA ("+label+"، مكتبة arch): p = "+fmt(spa.pvalue_consistent,3)+
+          (spa.pvalue_consistent<0.05?" — تفوق نسبي على خط الأساس، وليس ربحية بالضرورة":" — لا دليل إحصائي على تفوق أي نموذج"):
+        "اختبار SPA ("+label+") غير متاح: "+String(spa.status||"—")));
+    }
     item.append(txt("small","الكون: "+String(lab.universe?.with_bars??"—")+" سهمًا مختارًا من سجل الرادار (تحيز اختيار مُعلن) · "+
       "الدخول عند افتتاح اليوم التالي · الشمعة التي تلمس الهدف والوقف معًا تُحسب خسارة · التقرير: "+stamp(lab.generated_at)));
     box.append(item);
