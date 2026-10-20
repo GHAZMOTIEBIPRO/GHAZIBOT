@@ -48,22 +48,24 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--aliases", default=str(ROOT / "data" / "company_aliases.json"))
+    parser.add_argument("--sponsors", default=str(ROOT / "data" / "fda_sponsor_aliases.json"))
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
     end = now.date()
     start = end - timedelta(days=WINDOW_DAYS)
     span = f"[{start:%Y%m%d}+TO+{end:%Y%m%d}]"
-    index = fda.build_name_index(json.loads(Path(args.aliases).read_text(encoding="utf-8")))
+    sponsors = json.loads(Path(args.sponsors).read_text(encoding="utf-8")).get("aliases", {})
+    index = fda.build_name_index(json.loads(Path(args.aliases).read_text(encoding="utf-8")), sponsors)
     errors: dict[str, str] = {}
     approvals: list[dict] = []
     recalls: list[dict] = []
     try:
-        rows = _get("/drug/drugsfda.json", {"search": f"submissions.submission_status_date:{span}", "limit": "100"})
+        rows = _get("/drug/drugsfda.json", {"search": f"submissions.submission_status_date:{span}", "limit": "1000"})
         approvals = fda.approval_events(rows, index, start, end)
     except RuntimeError as exc:
         errors["approvals"] = str(exc)[:300]
     try:
-        rows = _get("/drug/enforcement.json", {"search": f"report_date:{span}", "limit": "100"})
+        rows = _get("/drug/enforcement.json", {"search": f"report_date:{span}", "limit": "1000"})
         recalls = fda.recall_events(rows, index)
     except RuntimeError as exc:
         errors["recalls"] = str(exc)[:300]
