@@ -119,8 +119,16 @@
       dir.status==="WAIT"?"WAIT":dir.status==="NO_TRADE"?"NO_TRADE":side;
     const VERDICT_AR={CALL:"CALL بحثي",PUT:"PUT بحثي",WAIT:"انتظار",NO_TRADE:"لا تداول",
       WAIT_STALE:"انتظار · بيانات قديمة",NO_ANALYSIS:"لا يوجد تحليل اتجاه لهذا الرمز"};
+    const track=feeds.tracking?.symbols?.[symbol];
+    const tracking=track?{
+      totals:"سجل الرادار لهذا السهم: "+track.totals.signals+" إشارة · بلغت الهدف أولًا "+track.totals.target_first+
+        " · ضربت الوقف أولًا "+track.totals.stop_first+" · مفتوحة "+track.totals.pending+" (ليست نسبة نجاح مستقبلية)",
+      recent:(track.recent||[]).map(r=>String(r.signal_time||"").slice(0,16).replace("T"," ")+" UTC · "+
+        String(r.stage||"—")+" · دخول "+fx(r.entry_price)+" · هدف +"+fx(r.target_pct)+"% / وقف −"+fx(r.stop_pct)+
+        "% · "+String(r.status_ar||r.status))
+    }:null;
     return {
-      symbol,verdict,verdictAr:VERDICT_AR[verdict]||"انتظار",
+      symbol,verdict,verdictAr:VERDICT_AR[verdict]||"انتظار",tracking,
       why:dir?dir.reasons:[],support,contra,context,
       levels:dir?{entry:dir.entry,t1:dir.t1,t2:dir.t2,invalidation:dir.invalidation,rr:dir.rr}:null,
       freshness:freshness.map(([label,age,ok])=>({label,ageHours:age,fresh:ok})),

@@ -57,6 +57,13 @@ const withOptions=build("COST",{...feeds,options:{generated_at:fresh,symbols:{CO
 assert.ok(withOptions.context.some(x=>x.includes("±0.9%")));
 assert.ok(withOptions.contra.some(x=>x.includes("T1 أبعد من الحركة المتوقعة")));
 
+// Follow-up of earlier radar signals for the symbol.
+const tracked=build("COST",{...feeds,tracking:{symbols:{COST:{totals:{signals:3,decisive:2,target_first:1,stop_first:1,pending:1},
+  recent:[{signal_time:"2026-10-19T14:05:00+00:00",stage:"EXPLOSION",entry_price:990,target_pct:6,stop_pct:6,status_ar:"بلغ الهدف قبل الوقف"}]}}}},now);
+assert.match(tracked.tracking.totals,/بلغت الهدف أولًا 1 · ضربت الوقف أولًا 1/);
+assert.match(tracked.tracking.recent[0],/2026-10-19 14:05 UTC · EXPLOSION · دخول 990/);
+assert.equal(build("COST",feeds,now).tracking,null);
+
 // Missing secondary feeds do not break the card.
 const bare=build("COST",{classical},now);
 assert.equal(bare.verdict,"CALL");
