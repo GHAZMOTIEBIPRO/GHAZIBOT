@@ -38,3 +38,26 @@ def test_build_catalogs_every_registered_file(tmp_path):
     assert rows["stock_watch_charts.json"]["license_class"] == "TERMS_RESTRICTED"
     assert set(report["source_gates"]) == {"cboe_delayed", "yahoo", "nasdaq_web", "community_gex"}
     assert report["policy"]["network_requests"] is False
+
+
+def test_every_dataset_gets_one_directive_state(tmp_path):
+    stamp = {"generated_at": "2026-10-20T14:30:00+00:00"}
+    for name, extra in {"liquidity_map.json": {}, "public_macro.json": {}, "fda_events.json": {},
+                        "stock_audit_public.json": {}, "site_smoke.json": {},
+                        "decision_brief.json": {"execution_grade": True},
+                        "site_strength.json": {"generated_at": "2026-10-10T00:00:00+00:00"},
+                        "free_public_intelligence.json": {"status": "SOURCE_UNAVAILABLE"}}.items():
+        (tmp_path / name).write_text(json.dumps({**stamp, **extra}))
+    report = build(tmp_path, TUE_OPEN)
+    states = {r["file"]: r["data_state"] for r in report["datasets"]}
+    assert states["liquidity_map.json"] == "LICENSE_BLOCKED"  # Yahoo-derived: rights beat freshness
+    assert states["public_macro.json"] == "DELAYED" and states["fda_events.json"] == "DELAYED"
+    assert states["stock_audit_public.json"] == "HISTORICAL"
+    assert states["site_smoke.json"] == "RESEARCH_ONLY"
+    assert states["decision_brief.json"] == "VALIDATION_FAILED"
+    assert states["site_strength.json"] == "STALE"
+    assert states["free_public_intelligence.json"] == "SOURCE_UNAVAILABLE"
+    assert states["options_analytics.json"] == "DATA_UNAVAILABLE"
+    assert "LIVE" not in states.values()
+    assert sum(report["summary"]["data_states"].values()) == len(REGISTRY)
+    assert all(r["data_state_ar"] == report["data_states"][r["data_state"]] for r in report["datasets"])

@@ -1476,12 +1476,17 @@
     MIXED_HEADLINES_AND_OFFICIAL:"إصدارات رسمية + عناوين بحث"};
   const HUB_RIGHTS={BLOCKED_PENDING_PERMISSION:"متوقف حتى الإذن",RESTRICTED:"مقيد",
     NOT_AUTHORISED_FALLBACK:"غير مصرح (احتياطي)",OK_FOR_STATED_USE:"مسموح للاستخدام المذكور",UNKNOWN:"غير معروف"};
+  // States from the directive taxonomy; only data that is usable for its stated purpose is green.
+  const HUB_STATE_TONE={LIVE:"UP",DELAYED:"UP",HISTORICAL:"UP",RESEARCH_ONLY:"UP",MODEL_ESTIMATED:"STALE",
+    STALE:"STALE",DATA_UNAVAILABLE:null};
   function hubLines(hub){
     if(!Array.isArray(hub?.datasets))return [];
     return hub.datasets.map(d=>({
       title:String(d.title_ar||d.file),
-      tone:d.freshness==="FRESH"&&d.validation==="PASS"?"UP":d.freshness==="MISSING"?null:"DOWN",
-      status:(HUB_FRESH[d.freshness]||d.freshness)+(d.validation==="FAIL"?" · فشل التحقق":""),
+      tone:d.data_state?(HUB_STATE_TONE[d.data_state]??"DOWN"):
+        d.freshness==="FRESH"&&d.validation==="PASS"?"UP":d.freshness==="MISSING"?null:"DOWN",
+      status:d.data_state_ar?String(d.data_state_ar)+" ("+String(d.data_state)+")":
+        (HUB_FRESH[d.freshness]||d.freshness)+(d.validation==="FAIL"?" · فشل التحقق":""),
       rights:HUB_RIGHTS[d.rights_status]||"غير معروف",
       detail:"المصدر: "+String(d.source||"—")+" · "+(HUB_LICENSE[d.license_class]||d.license_class)+
         " · حق الاستخدام: "+(HUB_RIGHTS[d.rights_status]||"غير معروف")+
@@ -1610,6 +1615,8 @@
     put("terminal-data-hub-status","مجموعات البيانات: "+(hub.summary?.total??"—")+
       " · حديثة "+(f.FRESH||0)+" · قديمة "+(f.STALE||0)+" · غير منشورة "+(f.MISSING||0)+
       " · فشل تحقق "+(hub.summary?.validation_failures??0)+
+      (hub.summary?.data_states?" · الحالات: "+Object.entries(hub.summary.data_states)
+        .map(([k,v])=>String(hub.data_states?.[k]||k)+" "+v).join("، "):"")+
       " · مصادر احتياطية: "+((hub.summary?.fallback_sources||[]).join("، ")||"لا يوجد")+
       " · الكتالوج: "+stamp(hub.generated_at)+" · الأوقات من الملفات نفسها وليست أوقات أسعار."+
       " · الحداثة لا تعني صحة البيانات ولا حق نشرها؛ حق الاستخدام معروض لكل مصدر على حدة.");
