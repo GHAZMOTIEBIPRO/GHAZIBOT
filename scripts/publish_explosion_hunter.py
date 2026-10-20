@@ -48,6 +48,20 @@ def _round(value: Any, digits: int) -> float | None:
     return round(number, digits) if number is not None else None
 
 
+LOW_SAME_TIME_RVOL = 0.7
+
+
+def _same_time_rvol(source: dict[str, Any]) -> tuple[float | None, int]:
+    """Same-clock cumulative volume vs prior sessions, only when the scanner
+    measured it. The plain `rvol` field is session-so-far volume divided by a
+    full-day average and is low by construction early in the session."""
+    profile = source.get("time_normalized_rvol")
+    if not isinstance(profile, dict) or profile.get("available") is not True:
+        return None, 0
+    sessions = int(_num(profile.get("sample_sessions")) or 0)
+    return _round(profile.get("ratio"), 2), sessions
+
+
 def build_digest(state: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
@@ -64,13 +78,19 @@ def build_digest(state: dict[str, Any], *, now: datetime) -> dict[str, Any]:
         if stage == "WATCH":
             continue
         microcap = source.get("microcap_hunter") if isinstance(source.get("microcap_hunter"), dict) else {}
+        same_time, same_time_sessions = _same_time_rvol(source)
         rows.append({
             "symbol": str(symbol).upper()[:10],
             "stage": stage,
             "stage_ar": STAGE_AR[stage],
             "score": _round(source.get("score"), 1),
             "day_move_pct": _round(source.get("day_move_pct"), 2),
-            "rvol": _round(source.get("rvol"), 2),
+            "volume_vs_avg_day": _round(source.get("rvol"), 2),
+            "rvol_same_time": same_time,
+            "rvol_same_time_sessions": same_time_sessions,
+            "volume_flag": ("PRESSURE_WITHOUT_SAME_TIME_VOLUME"
+                            if stage == "PRESSURE_BUILDING" and same_time is not None
+                            and same_time < LOW_SAME_TIME_RVOL else None),
             "float_shares": _round(source.get("float_shares"), 0),
             "dollar_volume": _round(source.get("dollar_volume"), 0),
             "market_cap": _round(source.get("market_cap"), 0),
