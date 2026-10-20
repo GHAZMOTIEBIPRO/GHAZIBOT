@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T04:41:13.563626+00:00",
+  "generated_at": "2026-10-20T04:51:31.094542+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
   "source_count_available": 4,
@@ -129,6 +129,12 @@
         ],
         "execution_grade": false
       },
+      "greek_check": {
+        "compared": 715,
+        "median_abs_rel_diff": 0.2014,
+        "p90_abs_rel_diff": 1.5503,
+        "basis": "near-spot contracts with provider gamma > 0; both values are models"
+      },
       "top_abs_gamma": [
         {
           "strike": 7700.0,
@@ -178,7 +184,7 @@
         "has_spxw": true,
         "coverage_ok": true
       },
-      "generated_at": "2026-10-20T04:41:13.542947+00:00"
+      "generated_at": "2026-10-20T04:51:31.074654+00:00"
     },
     "upstream_methodology": [
       "itsfabtrading/Gex-Multi",
@@ -236,7 +242,7 @@
       "minimum_sessions_for_verdict": 20,
       "method": "last snapshot before each session vs that session's realized high/low; baseline is a band of equal width centred on the snapshot spot"
     },
-    "history_entries": 2
+    "history_entries": 3
   },
   "research_indicators_ar": [
     "GEX",
