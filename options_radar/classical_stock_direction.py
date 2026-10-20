@@ -52,6 +52,8 @@ class ClassicalDirection:
     limitations_ar: tuple[str, ...]
     targets: dict[str, float] | None = None
     scenarios_ar: tuple[str, ...] = ()
+    # ACTIONABLE | NO_TRADE (T1 reward/risk < 1 or no valid plan) | WAIT
+    trade_status: str = "WAIT"
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -349,27 +351,39 @@ def _levels(*views: TimeframeView) -> list[float]:
     return sorted(set(out))
 
 
+MIN_T1_REWARD_TO_RISK = 1.0
+
+
+def _entry(decision: str, price: float, confirmation: float | None) -> float:
+    """Conditional entry: the confirmation level, or price once beyond it."""
+    if confirmation is None or not math.isfinite(confirmation) or confirmation <= 0:
+        return price
+    return max(price, confirmation) if decision == "CALL" else min(price, confirmation)
+
+
 def _targets(decision: str, price: float, invalidation: float | None,
-             levels: list[float]) -> dict[str, float] | None:
-    """T1/T2 from completed swing/support/resistance levels beyond price;
-    a 1R / 2R measured move when no level exists. No indicator inputs."""
+             levels: list[float], confirmation: float | None = None) -> dict[str, float] | None:
+    """T1/T2 from completed swing/support/resistance levels beyond the
+    conditional entry; a 1R / 2R measured move when no level exists."""
     if decision not in {"CALL", "PUT"} or invalidation is None or price <= 0:
         return None
-    risk = price - invalidation if decision == "CALL" else invalidation - price
+    entry = _entry(decision, price, confirmation)
+    risk = entry - invalidation if decision == "CALL" else invalidation - entry
     if not math.isfinite(risk) or risk <= 0:
         return None
     if decision == "CALL":
-        ahead = [x for x in levels if x > price * 1.002]
-        t1 = ahead[0] if ahead else price + risk
+        ahead = [x for x in levels if x > entry * 1.002]
+        t1 = ahead[0] if ahead else entry + risk
         t2 = next((x for x in ahead if x > t1), t1 + risk)
     else:
-        ahead = [x for x in reversed(levels) if x < price * 0.998]
-        t1 = ahead[0] if ahead else price - risk
+        ahead = [x for x in reversed(levels) if x < entry * 0.998]
+        t1 = ahead[0] if ahead else entry - risk
         t2 = next((x for x in ahead if x < t1), t1 - risk)
         if t2 <= 0:
             return None
-    return {"t1": round(t1, 4), "t2": round(t2, 4), "risk_per_share": round(risk, 4),
-            "t1_reward_to_risk": round(abs(t1 - price) / risk, 2)}
+    return {"entry": round(entry, 4), "t1": round(t1, 4), "t2": round(t2, 4),
+            "risk_per_share": round(risk, 4),
+            "t1_reward_to_risk": round(abs(t1 - entry) / risk, 2)}
 
 
 def _scenarios(decision: str, price: float, levels: list[float],
@@ -447,9 +461,24 @@ def build_direction(
     for view in (daily, hourly, intraday):
         reasons.extend(view.reasons_ar[:3])
 
+    # A direction whose own invalidation is already breached is not a signal.
+    price = intraday.close
+    if invalidation is not None and (
+            (decision == "CALL" and price <= invalidation)
+            or (decision == "PUT" and price >= invalidation)):
+        reasons.insert(0, f"الإشارة ملغاة: السعر تجاوز مستوى الإلغاء {invalidation:,.2f} قبل التأكيد")
+        decision, confirmation, invalidation = "WAIT", None, None
+
     levels = _levels(daily, hourly, intraday)
-    targets = _targets(decision, intraday.close, invalidation, levels)
-    scenarios = _scenarios(decision, intraday.close, levels, confirmation, invalidation)
+    targets = _targets(decision, price, invalidation, levels, confirmation)
+    if decision == "WAIT":
+        trade_status = "WAIT"
+    elif targets is None or targets["t1_reward_to_risk"] < MIN_T1_REWARD_TO_RISK:
+        trade_status = "NO_TRADE"
+        reasons.insert(0, "لا تداول: العائد إلى المخاطرة حتى الهدف الأول أقل من 1")
+    else:
+        trade_status = "ACTIONABLE"
+    scenarios = _scenarios(decision, price, levels, confirmation, invalidation)
     return ClassicalDirection(
         symbol=str(symbol).upper(),
         decision=decision,
@@ -473,4 +502,5 @@ def build_direction(
         ),
         targets=targets,
         scenarios_ar=scenarios,
+        trade_status=trade_status,
     )
