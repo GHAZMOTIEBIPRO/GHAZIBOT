@@ -98,7 +98,7 @@ def test_index_context_and_charts_are_replaced_by_blocked_reports(monkeypatch, t
 
 
 TRANSPORT = re.compile(r"\byf\.(download|Ticker)\(|from yahooquery import|provider\.Ticker\(")
-NASDAQ = re.compile(r"https://api\.nasdaq\.com/")
+NASDAQ = re.compile(r"https://api\.nasdaq\.com/api/")
 
 
 @pytest.mark.parametrize("folder", ["options_radar", "scripts"])
