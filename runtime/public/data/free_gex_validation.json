@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-10-20T10:27:06.110005+00:00",
+  "generated_at": "2026-10-20T10:51:56.920501+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
-  "source_count_available": 4,
+  "source_count_available": 2,
   "independent_numerical_gex_sources": 1,
   "gamma_consensus_verified": false,
   "quote_timestamp_verified": false,
   "agreement_score": 1.0,
   "metrics": {
     "spot": {
-      "count": 3,
-      "median": 7690.73,
+      "count": 2,
+      "median": 7683.3799500000005,
       "relative_disagreement": 0.0062
     },
     "gex": {
@@ -62,177 +62,30 @@
       "spxw_0dte": true
     },
     {
-      "available": true,
-      "source": "CBOE delayed public",
-      "quote_timestamp_verified": false,
-      "spot": 7690.73,
-      "contracts": 20688,
-      "spxw_0dte": true,
-      "note_ar": "CBOE العام مؤخر؛ ليس مصدراً لتنفيذ لحظي."
-    },
-    {
-      "available": true,
-      "source": "ghazi_gex_multi_reimplementation",
-      "spot": 7690.73,
-      "gex": -29.41845648996532,
-      "flip": 7726.644697270732,
-      "call_wall": 7735.0,
-      "put_wall": 7650.0,
-      "regime": "negative"
+      "available": false,
+      "status": "SOURCE_TERMS_BLOCKED",
+      "source": "Cboe delayed quotes (cdn.cboe.com)",
+      "reason": "Cboe's delayed-quote terms prohibit automated extraction; automated reads stay off until a licence or written permission is recorded",
+      "reason_ar": "شروط Cboe تمنع الاستخراج الآلي لجداول الأسعار المؤجلة؛ الجلب الآلي متوقف حتى الحصول على ترخيص أو إذن مكتوب",
+      "enable_with": "repository variable CBOE_DELAYED_AUTOMATION_APPROVED=true (only after permission)"
     }
   ],
   "integrated_engines": {
     "ghazi_gex_multi": {
-      "available": true,
+      "available": false,
       "engine": "ghazi_gex_multi_reimplementation",
-      "methodology_sources": [
-        "itsfabtrading/Gex-Multi",
-        "MitchelTurner/GEX"
-      ],
-      "policy": "shadow_validation_never_signal_authority",
-      "spot": 7690.73,
-      "net_gex": -29.41845648996532,
-      "gamma_flip": 7726.644697270732,
-      "call_wall": 7735.0,
-      "put_wall": 7650.0,
-      "magnet": 7700.0,
-      "gamma_regime": "negative",
-      "front_expiry": "2026-10-20",
-      "expirations_used": 4,
-      "zdte_call_wall": 7735.0,
-      "zdte_put_wall": 7660.0,
-      "zdte_share_abs_gex": 0.23550910136679518,
-      "greek_exposure_near_spot": {
-        "dex": -19426583.6165225,
-        "vanna": 31986187.2759083,
-        "charm": -1137122808.3837996,
-        "vomma": 3169479027.6915097,
-        "zomma": 352847.45295367803
-      },
-      "gci": 0.05053901613874138,
-      "put_call_oi_ratio": 2.4107667970861413,
-      "provenance": {
-        "source": "Cboe delayed public JSON",
-        "provider_snapshot_time": "2026-10-20 10:26:12",
-        "underlying_last_trade_time": "2026-10-19T16:14:59",
-        "spot": "DELAYED",
-        "open_interest": "HISTORICAL",
-        "implied_volatility": "DELAYED",
-        "gamma_and_greeks": "MODEL_ESTIMATED",
-        "levels": "MODEL_ESTIMATED",
-        "dealer_positioning": "UNAVAILABLE",
-        "order_flow": "UNAVAILABLE",
-        "assumptions": [
-          "Black-Scholes gamma from delayed IV, rate 0, calendar time to settlement (SPXW 16:00 ET, SPX AM 09:30 ET), 30-minute floor.",
-          "Sign convention: calls +, puts - (assumes dealers long calls / short puts); real counterparties are not visible in aggregate open interest.",
-          "Open interest is the exchange's prior-session figure, not intraday flow."
-        ],
-        "execution_grade": false
-      },
-      "greek_check": {
-        "compared": 734,
-        "median_abs_rel_diff": 0.0202,
-        "p90_abs_rel_diff": 0.1786,
-        "median_ratio_model_to_provider": 1.0001,
-        "basis": "near-spot contracts with provider gamma > 0; both values are models",
-        "legacy_business_day_clock": {
-          "median_abs_rel_diff": 0.0777,
-          "p90_abs_rel_diff": 2.6697
-        }
-      },
-      "top_abs_gamma": [
-        {
-          "strike": 7650.0,
-          "net_gex": -2.7149526818566154
-        },
-        {
-          "strike": 7600.0,
-          "net_gex": -2.181224208000128
-        },
-        {
-          "strike": 7700.0,
-          "net_gex": -2.155650526877384
-        },
-        {
-          "strike": 7625.0,
-          "net_gex": -1.8835572365879802
-        },
-        {
-          "strike": 7660.0,
-          "net_gex": -1.765331569220487
-        },
-        {
-          "strike": 7690.0,
-          "net_gex": -1.5657837171902498
-        },
-        {
-          "strike": 7675.0,
-          "net_gex": -1.563185452471677
-        },
-        {
-          "strike": 7665.0,
-          "net_gex": -1.5475774418251835
-        },
-        {
-          "strike": 7670.0,
-          "net_gex": -1.5448545528288369
-        },
-        {
-          "strike": 7655.0,
-          "net_gex": -1.5088865300118708
-        }
-      ],
-      "data_quality": {
-        "contracts": 1785,
-        "strikes": 292,
-        "expirations": 4,
-        "has_spxw": true,
-        "coverage_ok": true
-      },
-      "generated_at": "2026-10-20T10:27:06.089160+00:00"
+      "status": "SOURCE_TERMS_BLOCKED",
+      "source": "Cboe delayed quotes (cdn.cboe.com)",
+      "reason": "Cboe's delayed-quote terms prohibit automated extraction; automated reads stay off until a licence or written permission is recorded",
+      "reason_ar": "شروط Cboe تمنع الاستخراج الآلي لجداول الأسعار المؤجلة؛ الجلب الآلي متوقف حتى الحصول على ترخيص أو إذن مكتوب",
+      "enable_with": "repository variable CBOE_DELAYED_AUTOMATION_APPROVED=true (only after permission)"
     },
     "upstream_methodology": [
       "itsfabtrading/Gex-Multi",
       "MitchelTurner/GEX"
     ],
     "integration_mode": "original_reimplementation_shadow_only",
-    "interpretation": {
-      "spot": 7690.73,
-      "regime": "negative",
-      "distance_pct": {
-        "gamma_flip": 0.47,
-        "call_wall": 0.58,
-        "put_wall": -0.53
-      },
-      "hedging_pressure_bn_per_1pct": 29.42,
-      "hedging_direction_model": "AMPLIFYING",
-      "relevant_expirations": {
-        "front": "2026-10-20",
-        "count": 4,
-        "front_share_abs_gex": 0.23550910136679518
-      },
-      "measured_inputs": [
-        "spot (Cboe delayed)",
-        "implied volatility (Cboe delayed)",
-        "open interest (prior session)"
-      ],
-      "model_outputs": [
-        "net GEX",
-        "gamma flip",
-        "call/put walls",
-        "hedging pressure",
-        "regime"
-      ],
-      "reading_ar": [
-        "السعر تحت نقطة الانقلاب التقديرية (7,727): نظام جاما سالب في النموذج، وقد يضخم التحوط الحركة في الاتجاهين؛ تقلب أعلى محتمل.",
-        "Call Wall 7,735 (+0.58%): مستوى مقاومة نموذجي محتمل، ليس سقفًا مضمونًا.",
-        "Put Wall 7,650 (-0.53%): مستوى دعم نموذجي محتمل، ليس قاعًا مضمونًا.",
-        "ضغط التحوط التقديري: نحو 29.4 مليار $ لكل حركة 1% (مع اتجاه الحركة) بافتراض أن المتعاملين مشترون للكول وبائعون للبوت.",
-        "الجاما موزعة على سترايكات كثيرة (GCI 5.1%).",
-        "حصة أقرب انتهاء (2026-10-20) من الجاما: 24%؛ أثرها يتلاشى بعد انتهائها."
-      ],
-      "is_measured_dealer_position": false
-    },
+    "interpretation": null,
     "level_validation": {
       "sessions_tested": 0,
       "walls_contained_range_rate": null,
@@ -247,7 +100,7 @@
       "minimum_sessions_for_verdict": 20,
       "method": "last snapshot before each session vs that session's realized high/low; baseline is a band of equal width centred on the snapshot spot"
     },
-    "history_entries": 6
+    "history_entries": 7
   },
   "research_indicators_ar": [
     "GEX",
