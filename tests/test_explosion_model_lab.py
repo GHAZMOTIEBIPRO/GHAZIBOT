@@ -57,6 +57,23 @@ def test_features_are_causal_and_breakout_model_fires_once():
     assert (frame["model"] == "BASELINE_ALL_DAYS").sum() > 10
 
 
+def test_spa_does_not_reward_a_model_for_staying_out_of_a_losing_baseline():
+    pytest.importorskip("arch")
+    from options_radar.explosion_model_lab import spa_vs_baseline
+
+    rng = np.random.default_rng(5)
+    dates = pd.bdate_range("2024-01-01", periods=300)
+    base = rng.normal(-1.0, 1.5, len(dates))  # baseline loses every day on average
+    rows = [{"date": d, "model": "BASELINE_ALL_DAYS", "net": b} for d, b in zip(dates, base)]
+    # The model trades on 10% of days and earns the baseline plus zero-mean noise: no edge.
+    rows += [{"date": d, "model": "GAP_CONTINUATION", "net": b + rng.normal(0.0, 1.0)}
+             for i, (d, b) in enumerate(zip(dates, base)) if i % 10 == 0]
+    out = spa_vs_baseline(pd.DataFrame(rows), ["GAP_CONTINUATION"], reps=300)
+    assert out["status"] == "OK"
+    assert out["pvalue_consistent"] > 0.10  # scoring idle days as 0 would give ~0.0
+    assert out["no_signal_days"].startswith("model takes the baseline value")
+
+
 def test_summary_breakeven_and_evaluate_reports_not_testable_models():
     g = pd.DataFrame({"symbol": ["A"] * 4, "status": ["TARGET", "STOP", "STOP", "TIMEOUT"],
                       "net": [7.4, -5.6, -5.6, 0.4]})
