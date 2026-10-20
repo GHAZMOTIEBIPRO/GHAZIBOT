@@ -17,6 +17,7 @@ import pandas as pd
 
 from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shadow
 from options_radar.stock_watch_confluence import price_confluence_shadow
+from options_radar.volume_liquidity import liquidity_context, read_ar
 from scripts.build_index_chart_snapshot import pack_bars
 from scripts.build_index_context import (
     NY,
@@ -317,7 +318,8 @@ def pack_symbol(
 
 
 def collect(*, now: datetime, provider=None, delay=lambda _: None,
-            dynamic_symbols=(), previous=None, news_attention=None) -> dict:
+            dynamic_symbols=(), previous=None, news_attention=None,
+            liquidity_out: dict | None = None) -> dict:
     if now.tzinfo is None:
         raise ValueError("aware now required")
     if provider is None:
@@ -347,6 +349,8 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
                            news_attention=news_attention)
         if item is not None:
             data[symbol] = item
+            if liquidity_out is not None:
+                liquidity_out[symbol] = liquidity_for(received, now=now)
     if not data:
         raise ValueError("No independently valid watched stock candles; preserve old report")
     # Cached bars are explicitly historical; never count them as fresh
@@ -445,12 +449,42 @@ def fit_size_budget(report: dict, *, fresh_symbols: set, max_bytes: int = MAX_BY
     return report
 
 
+def liquidity_for(received: dict, *, now: datetime) -> dict:
+    """Volume/liquidity context from the same completed bars the chart uses."""
+    daily = completed_daily(clean_bars(received.get("1d"), intraday=False), now)
+    quarter = last_finished_intraday(clean_bars(received.get("15m"), intraday=True), now)
+    context = liquidity_context(daily, quarter)
+    context["reading_ar"] = read_ar(context)
+    return context
+
+
+def liquidity_report(symbols: dict, *, now: datetime) -> dict:
+    return {
+        "schema": "ghazi.liquidity_map.v1",
+        "generated_at": now.astimezone(timezone.utc).isoformat(),
+        "source": "Yahoo Finance yfinance completed 15m/1d bars (unofficial, may be delayed)",
+        "order_book_available": False,
+        "trade_prints_available": False,
+        "quote_spread_available": False,
+        "inference_only": True,
+        "definitions": {
+            "rvol": "same-time cumulative 15m volume / median of >=3 prior sessions",
+            "profile": "POC/VAH/VAL estimate, each bar's volume spread uniformly over its range, 24 bins, 70% value area",
+            "sweep_proxy": "one completed bar pierced the prior-day high/low and closed back inside",
+            "breakout": "close beyond prior-day high/low; confirmed if that bar's volume >= 1.5x median 15m bar volume of prior sessions",
+        },
+        "symbols": symbols,
+        "execution_authority": False,
+    }
+
+
 def main() -> int:
     p=argparse.ArgumentParser()
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--discovery-source",type=Path,default=None)
     p.add_argument("--news-source",type=Path,default=None)
     p.add_argument("--structural-source",type=Path,default=None)
+    p.add_argument("--liquidity-output",type=Path,default=None)
     args=p.parse_args()
     now=datetime.now(timezone.utc)
     media=load_news_attention(args.news_source, now=now)
@@ -464,8 +498,14 @@ def main() -> int:
             previous=json.loads(args.output.read_text(encoding="utf-8"))
         except (OSError, ValueError, TypeError):
             previous=None
+    liquidity: dict = {}
     report=collect(now=now,delay=time.sleep,dynamic_symbols=dynamic,
-                   previous=previous,news_attention=media)
+                   previous=previous,news_attention=media,liquidity_out=liquidity)
+    if args.liquidity_output:
+        args.liquidity_output.parent.mkdir(parents=True,exist_ok=True)
+        args.liquidity_output.write_text(
+            json.dumps(liquidity_report(liquidity, now=now),ensure_ascii=False,allow_nan=False,
+                       separators=(",",":"))+"\n", encoding="utf-8")
     args.output.parent.mkdir(parents=True,exist_ok=True)
     temp=args.output.with_suffix(args.output.suffix+".tmp")
     temp.write_text(json.dumps(report,ensure_ascii=False,allow_nan=False,separators=(",",":"))+"\n",
