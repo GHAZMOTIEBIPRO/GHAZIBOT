@@ -1,19 +1,19 @@
 {
  "schema": "ghazi.explosion_stage_evaluation.v1",
- "generated_at": "2026-10-20T04:35:22.769823+00:00",
- "source_audit_updated_at": "2026-10-20T04:32:18.561727+00:00",
+ "generated_at": "2026-10-20T10:45:32.797168+00:00",
+ "source_audit_updated_at": "2026-10-20T10:44:25.967030+00:00",
  "population": {
-  "eligible_stage_signals": 693,
+  "eligible_stage_signals": 694,
   "decisive": 508,
-  "sessions": 29,
+  "sessions": 30,
   "pooled_direction_baseline": 0.3937
  },
  "stages": {
   "PRESSURE_BUILDING": {
-   "signals": 415,
+   "signals": 416,
    "decisive": 306,
    "successes": 110,
-   "pending": 58,
+   "pending": 59,
    "non_decisive": 51,
    "precision_direction": 0.3595,
    "precision_ci95": [
@@ -29,16 +29,16 @@
    "big_move_measured": 415,
    "verdict_sample_sufficient": true,
    "time_split": {
-    "early_sessions_before": "2026-09-21",
+    "early_sessions_before": "2026-09-22",
     "early": {
-     "decisive": 258,
-     "precision_direction": 0.3798,
-     "expectancy_net_pct": -0.995
+     "decisive": 261,
+     "precision_direction": 0.3755,
+     "expectancy_net_pct": -1.055
     },
     "late": {
-     "decisive": 48,
-     "precision_direction": 0.25,
-     "expectancy_net_pct": -2.629
+     "decisive": 45,
+     "precision_direction": 0.2667,
+     "expectancy_net_pct": -2.391
     }
    }
   },
@@ -62,7 +62,7 @@
    "big_move_measured": 29,
    "verdict_sample_sufficient": false,
    "time_split": {
-    "early_sessions_before": "2026-09-21",
+    "early_sessions_before": "2026-09-22",
     "early": {
      "decisive": 20,
      "precision_direction": 0.3,
@@ -95,7 +95,7 @@
    "big_move_measured": 249,
    "verdict_sample_sufficient": true,
    "time_split": {
-    "early_sessions_before": "2026-09-21",
+    "early_sessions_before": "2026-09-22",
     "early": {
      "decisive": 182,
      "precision_direction": 0.4615,
@@ -110,7 +110,7 @@
   }
  },
  "feature_capture": {
-  "records_with_entry_features_v1": 0,
+  "records_with_entry_features_v1": 1,
   "records_with_time_normalized_rvol": 5,
   "gating_hypotheses_testable": false,
   "reason": "stage rule changes are evaluated only after enough decisive records carry signal-time features, on later sessions than those used to propose them"
