@@ -25,6 +25,7 @@
     stageEval:[ROOT+"bot-state/runtime/public/data/explosion_stage_evaluation.json"],
     optionsAnalytics:[ROOT+"bot-state/runtime/public/data/options_analytics.json"],
     dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
+    macro:[ROOT+"bot-state/runtime/public/data/public_macro.json"],
     modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
     tracking:[ROOT+"bot-state/runtime/public/data/signal_tracking.json"],
   };
@@ -67,7 +68,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,modelLab:null,tracking:null,pendingSymbol:null};
+    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,modelLab:null,tracking:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -142,6 +143,8 @@
     modelLab:d=>d?.schema==="ghazi.explosion_model_lab.v1"&&d.research_only===true&&
       d.live_rules_changed===false&&d.models&&typeof d.models==="object",
     dataHub:d=>d?.schema==="ghazi.data_hub.v1"&&d.decision_authority===false&&Array.isArray(d.datasets),
+    macro:d=>d?.schema==="ghazi.public_macro.v1"&&d.decision_authority===false&&d.execution_authority===false&&
+      d.cftc_index_futures&&typeof d.cftc_index_futures==="object"&&d.treasury_curve&&typeof d.treasury_curve==="object",
     optionsAnalytics:d=>d?.schema==="ghazi.options_analytics.v1"&&d.research_only===true&&
       d.execution_grade===false&&d.raw_quotes_published===false&&d.symbols&&typeof d.symbols==="object",
     stageEval:d=>d?.schema==="ghazi.explosion_stage_evaluation.v1"&&d.research_only===true&&
@@ -464,7 +467,11 @@
   function renderIndices(){
     const wrap=$("terminal-index-grid");if(!wrap)return;wrap.replaceChildren();
     const report=state.quotes;
-    if(!report || !report.symbols){wrap.append(txt("p","تعذر تحميل تحليل المؤشرات. المصدر غير متاح حاليًا.","terminal-empty"));return;}
+    if(!report || !report.symbols){
+      wrap.append(txt("p",state.blocked.index?"تحليل المؤشرات متوقف: "+state.blocked.index:
+        "تعذر تحميل تحليل المؤشرات. المصدر غير متاح حاليًا.","terminal-empty"));
+      return;
+    }
     let count=0;
     for(const symbol of INDEX_ORDER){
       const row=report.symbols[symbol];
@@ -1472,6 +1479,59 @@
         " · الإيقاع المتوقع: "+fmt(d.cadence_min,0)+" د · "+String(d.limitations||"")
     }));
   }
+  const COT_GROUPS={leveraged_funds:"الصناديق ذات الرافعة",asset_manager:"مديرو الأصول",dealer:"المتعاملون (Dealers)"};
+  const signedInt=v=>Number.isFinite(v)?(v>0?"+":"")+Math.round(v).toLocaleString("en-US"):"—";
+  // CFTC weekly positioning and the Treasury curve: context lines only.
+  function macroLines(report){
+    const out={cot:[],curve:null};
+    for(const [key,row] of Object.entries(report?.cftc_index_futures||{})){
+      if(!row||row.available!==true){
+        out.cot.push({key,title:key,status:"غير متاح",tone:null,detail:String(row?.reason||"لا توجد بيانات")});
+        continue;
+      }
+      const parts=[],flags=[];
+      for(const [group,label] of Object.entries(COT_GROUPS)){
+        const c=row.categories?.[group];if(!c||c.available===false)continue;
+        parts.push(label+": صافي "+signedInt(c.net)+" (أسبوعيًا "+signedInt(c.weekly_change)+")"+
+          (Number.isFinite(c.cot_index_3y)?" · مؤشر 3 سنوات "+fmt(c.cot_index_3y,0)+"/100":""));
+        if(c.extreme)flags.push(label+(c.extreme==="HIGH"?" عند أعلى نطاقه":" عند أدنى نطاقه"));
+      }
+      out.cot.push({key,title:String(row.label_ar||key),
+        status:"مراكز "+String(row.positions_as_of||"—"),
+        tone:flags.length?"STALE":null,
+        detail:parts.join(" · ")+(flags.length?" · تطرف: "+flags.join("، ")+" (سياق وليس توقيت انعكاس)":"")});
+    }
+    const t=report?.treasury_curve;
+    if(t?.available===true){
+      const y=t.yields_pct||{},sp=t.spreads_bp||{},ch=t.change_bp||{};
+      out.curve={date:String(t.curve_date||"—"),
+        tone:t.inverted?.["10Y_2Y"]||t.inverted?.["10Y_3M"]?"DOWN":"UP",
+        detail:"3M "+fmt(y["3M"],2)+"% · 2Y "+fmt(y["2Y"],2)+"% · 10Y "+fmt(y["10Y"],2)+"% · 30Y "+fmt(y["30Y"],2)+"%"+
+          " · فرق 10Y-2Y "+fmt(sp["10Y_2Y"],0)+" نقطة أساس · 10Y-3M "+fmt(sp["10Y_3M"],0)+
+          (t.inverted?.["10Y_2Y"]?" (منحنى مقلوب)":"")+
+          " · تغير 10Y خلال 5 جلسات "+signedInt(ch["10Y"]?.["5_sessions"])+" ن.أ"};
+    }
+    return out;
+  }
+  function renderMacro(){
+    const box=$("terminal-macro");if(!box)return;
+    box.replaceChildren();
+    const report=state.macro;
+    if(!report){put("terminal-macro-status","لم تُنشر بيانات CFTC والخزانة بعد.");return;}
+    put("terminal-macro-status","المصدر: CFTC (Traders in Financial Futures) ومنحنى عائدات الخزانة الأمريكية · بيانات حكومية عامة · التحديث: "+stamp(report.generated_at)+
+      " · مراكز CFTC كما في يوم الثلاثاء وتُنشر الجمعة؛ سياق وليست إشارة اتجاه أو توقيت.");
+    const lines=macroLines(report);
+    if(lines.curve){
+      const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
+      head.append(txt("strong","منحنى عائدات الخزانة"),chip("بتاريخ "+lines.curve.date,lines.curve.tone));
+      item.append(head,txt("small",lines.curve.detail,"terminal-structural-notice"));box.append(item);
+    }
+    for(const line of lines.cot){
+      const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
+      head.append(txt("strong",line.title),chip(line.status,line.tone));
+      item.append(head,txt("small",line.detail,"terminal-structural-notice"));box.append(item);
+    }
+  }
   function renderDataHub(){
     const box=$("terminal-data-hub");if(!box)return;
     box.replaceChildren();
@@ -1663,20 +1723,20 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","modelLab","tracking"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","modelLab","tracking"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.modelLab,state.tracking]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.modelLab,state.tracking]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderOps();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
