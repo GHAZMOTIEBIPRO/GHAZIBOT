@@ -25,6 +25,7 @@
     stageEval:[ROOT+"bot-state/runtime/public/data/explosion_stage_evaluation.json"],
     optionsAnalytics:[ROOT+"bot-state/runtime/public/data/options_analytics.json"],
     dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
+    modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -65,7 +66,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,pendingSymbol:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,modelLab:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -135,6 +136,8 @@
       Array.isArray(d.companies),
     explosion:d=>d?.schema==="ghazi.explosion_hunter_public.v1"&&d.research_only===true&&
       d.score_is_probability===false&&d.execution_authority===false&&Array.isArray(d.candidates),
+    modelLab:d=>d?.schema==="ghazi.explosion_model_lab.v1"&&d.research_only===true&&
+      d.live_rules_changed===false&&d.models&&typeof d.models==="object",
     dataHub:d=>d?.schema==="ghazi.data_hub.v1"&&d.decision_authority===false&&Array.isArray(d.datasets),
     optionsAnalytics:d=>d?.schema==="ghazi.options_analytics.v1"&&d.research_only===true&&
       d.execution_grade===false&&d.raw_quotes_published===false&&d.symbols&&typeof d.symbols==="object",
@@ -632,11 +635,43 @@
         (below?" · أقل من نقطة التعادل":"");
     });
   }
+  const MODEL_AR={BASELINE_ALL_DAYS:"خط الأساس (كل الأيام)",BREAKOUT_VOLUME:"اختراق + فوليوم",
+    RELATIVE_STRENGTH:"قوة نسبية",LIQUIDITY_EXPANSION:"توسع السيولة",GAP_CONTINUATION:"استمرار الفجوة",
+    FAILED_BREAKOUT_REVERSAL:"انعكاس اختراق فاشل (بيع)",CATALYST_FLOAT:"محفز + فلوت",PREMARKET_MOMENTUM:"زخم ما قبل الافتتاح"};
+  function modelLabLines(lab){
+    if(!lab?.models)return [];
+    const pct=x=>Number.isFinite(x)?fmt(100*x,1)+"%":"—";
+    const net=x=>Number.isFinite(x)?fmt(x,2)+"%":"—";
+    return Object.entries(lab.models).map(([key,m])=>{
+      const name=MODEL_AR[key]||key;
+      if(m.status==="NOT_TESTABLE")return name+": غير قابل للاختبار — "+String(m.reason||"");
+      return name+": إصابة الهدف "+pct(m.all?.target_hit_rate)+" (تعادل "+pct(m.all?.breakeven_hit_rate)+")"+
+        " · صافي بعد التكلفة "+net(m.all?.mean_net_pct)+
+        " · النصف الأول "+net(m.early?.mean_net_pct)+" / الثاني "+net(m.late?.mean_net_pct)+
+        " · عينة "+(m.all?.signals??0)+
+        (key==="BASELINE_ALL_DAYS"?"":m.beats_baseline_both_halves_and_positive_late?" · يتفوق على خط الأساس":" · لا تفوق مثبت");
+    });
+  }
+  function renderModelLab(box){
+    const lab=state.modelLab;
+    const item=txt("article","","terminal-structural-item");
+    item.append(txt("strong","مختبر النماذج: قواعد مسجلة مسبقًا مقارنة بخط الأساس (بيانات تاريخية يومية)"));
+    if(!lab){item.append(txt("small","لم يُنشر تقرير المختبر بعد.","terminal-structural-notice"));box.append(item);return;}
+    for(const line of modelLabLines(lab))item.append(txt("small",line,"terminal-structural-notice"));
+    const spa=lab.spa;
+    item.append(txt("small",spa?.status==="OK"?
+      "اختبار SPA (Hansen، مكتبة arch): p = "+fmt(spa.pvalue_consistent,3)+
+        (spa.pvalue_consistent<0.05?" — يوجد نموذج يتفوق على خط الأساس إحصائيًا":" — لا دليل إحصائي على تفوق أي نموذج"):
+      "اختبار SPA غير متاح: "+String(spa?.status||"—")));
+    item.append(txt("small","الكون: "+String(lab.universe?.with_bars??"—")+" سهمًا مختارًا من سجل الرادار (تحيز اختيار مُعلن) · "+
+      "الدخول عند افتتاح اليوم التالي · الشمعة التي تلمس الهدف والوقف معًا تُحسب خسارة · التقرير: "+stamp(lab.generated_at)));
+    box.append(item);
+  }
   function renderExplosionQuality(){
     const box=$("terminal-explosion-quality");if(!box)return;
     box.replaceChildren();
     const report=state.stageEval;
-    if(!report){box.append(txt("p","لا يوجد تقييم منشور لجودة المراحل بعد.","terminal-empty"));return;}
+    if(!report){box.append(txt("p","لا يوجد تقييم منشور لجودة المراحل بعد.","terminal-empty"));renderModelLab(box);return;}
     const item=txt("article","","terminal-structural-item");
     item.append(txt("strong","جودة المراحل المقاسة على نتائج مكتملة (ليست احتمالات)"));
     for(const line of stageQualityLines(report))item.append(txt("small",line,"terminal-structural-notice"));
@@ -646,6 +681,7 @@
       " · الحركة الكبيرة لا تعني صحة اتجاه الإشارة · التكاليف افتراضية حسب سعر السهم · التحديث: "+
       stamp(report.generated_at)));
     box.append(item);
+    renderModelLab(box);
   }
   // Missing values always sort last; the published order is kept for ties.
   function sortCandidates(rows,key){
@@ -1564,10 +1600,10 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","modelLab"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.modelLab]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
@@ -1577,7 +1613,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

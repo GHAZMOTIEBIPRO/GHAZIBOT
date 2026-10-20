@@ -9,6 +9,8 @@ on:
       - "options_radar/research_attribution.py"
       - "scripts/replay_explosion_calibration.py"
       - "scripts/replay_explosion_lab.py"
+      - "options_radar/explosion_model_lab.py"
+      - "scripts/run_explosion_model_lab.py"
       - "requirements-research.txt"
       - ".github/workflows/explosion-replay-lab.yml"
   schedule:
@@ -84,3 +86,48 @@ jobs:
           git commit -m "data: refresh explosion replay calibration [skip ci]"
           git pull --rebase origin main
           git push origin HEAD:main
+
+  model-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install research dependencies
+        run: pip install -r requirements-research.txt
+      - name: Pre-registered explosion models vs baseline (aggregates only)
+        run: >-
+          python -m scripts.run_explosion_model_lab
+          --audit state/state/stocks/stock_outcome_audit.json
+          --structural state/runtime/public/data/structural_watch.json
+          --output state/runtime/public/data/explosion_model_lab.json
+      - name: Persist model-lab report to bot-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "BLACK BOX Omega Model Lab"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/explosion_model_lab.json
+          if git diff --cached --quiet; then
+            echo "Model lab unchanged."
+            exit 0
+          fi
+          git commit -m "state: explosion model lab [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          exit 1
