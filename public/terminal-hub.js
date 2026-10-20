@@ -647,6 +647,19 @@
       stamp(report.generated_at)));
     box.append(item);
   }
+  // Missing values always sort last; the published order is kept for ties.
+  function sortCandidates(rows,key){
+    const list=[...(rows||[])];
+    if(key==="stage"||!key)return list;
+    const ascending=key==="float_shares";
+    return list.map((row,i)=>({row,i})).sort((a,b)=>{
+      const x=a.row?.[key],y=b.row?.[key];
+      const okX=Number.isFinite(x),okY=Number.isFinite(y);
+      if(okX!==okY)return okX?-1:1;
+      if(!okX||x===y)return a.i-b.i;
+      return ascending?x-y:y-x;
+    }).map(x=>x.row);
+  }
   function renderExplosion(){
     renderExplosionQuality();
     const target=$("terminal-explosion-list");if(!target)return;
@@ -664,7 +677,8 @@
       " · انفجار "+(counts.EXPLOSION??0)+" · ممتد "+(counts.EXTENDED??0)+
       (age>2?" · الفحص ليس من الجلسة الحالية":""));
     const tone={PRESSURE_BUILDING:"STALE",IGNITION:"UP",EXPLOSION:"UP",EXTENDED:"DOWN"};
-    const rows=report.candidates.filter(r=>/^[A-Z][A-Z0-9.-]{0,9}$/.test(r?.symbol||""));
+    const rows=sortCandidates(report.candidates.filter(r=>/^[A-Z][A-Z0-9.-]{0,9}$/.test(r?.symbol||"")),
+      $("terminal-explosion-sort")?.value||"stage");
     for(const row of rows.slice(0,20)){
       const item=txt("article","","terminal-structural-item");
       const title=txt("div","","terminal-structural-title");
@@ -1563,7 +1577,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
@@ -1584,6 +1598,7 @@
     state.symbol=event.target.value;state.tf="1d";
     $("terminal-chart-timeframe").value="1d";renderChart();
   });
+  $("terminal-explosion-sort")?.addEventListener("change",()=>renderExplosion());
   $("terminal-chart-timeframe")?.addEventListener("change",event=>{
     state.tf=event.target.value;renderChart();
   });
