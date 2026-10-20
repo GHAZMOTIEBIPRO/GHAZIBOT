@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="./terminal-hub.css?v=20261020-2">
+  <link rel="stylesheet" href="./terminal-hub.css?v=20261020-3">
 </head>
 <body>
   <div class="page-shell">
@@ -198,6 +198,15 @@
           <span id="terminal-chart-date">—</span></div>
         <div id="terminal-candle-chart" class="terminal-candle-chart" role="img" aria-label="مخطط الشموع اليابانية من بيانات أسعار السوق المنشورة"></div>
         <div id="terminal-chart-levels" class="terminal-chart-metrics"></div>
+        <section id="terminal-decision-card" class="terminal-evidence terminal-decision-card" aria-labelledby="terminal-decision-card-title">
+          <div class="terminal-evidence-head">
+            <div><p class="terminal-overline">DECISION · من المحركات المنشورة</p>
+              <h4 id="terminal-decision-card-title">الخلاصة: لماذا، ما الذي يدعم وما الذي يعارض</h4></div>
+            <span id="terminal-decision-card-verdict" class="terminal-evidence-status">—</span>
+          </div>
+          <div id="terminal-decision-card-body" aria-live="polite"></div>
+          <p class="terminal-evidence-footnote">بحث وليس توصية تنفيذ؛ لا نسبة نجاح ولا أوامر. غياب مصدر ثانوي لا يعطل الخلاصة ويظهر في الحداثة.</p>
+        </section>
         <section class="terminal-decision-desk" aria-label="سيناريو التداول الفني المشروط">
           <div class="terminal-decision-head"><div><p class="terminal-overline">CHART-FIRST · NOT EXECUTION</p>
             <h4>سيناريو CALL / PUT / WAIT</h4></div>
@@ -770,7 +779,8 @@
   <script src="./terminal-evidence.js?v=20261019-1" defer></script>
   <script src="./terminal-ops.js?v=20261020-3" defer></script>
   <script src="./terminal-oos.js?v=20261020-1" defer></script>
+  <script src="./terminal-decision.js?v=20261020-1" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./terminal-hub.js?v=20261020-13" defer></script>
+  <script src="./terminal-hub.js?v=20261020-14" defer></script>
 </body>
 </html>

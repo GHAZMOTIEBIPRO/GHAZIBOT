@@ -63,7 +63,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -932,14 +932,21 @@
     const discoveries=(state.brief?.stocks||[]).map(x=>x?.symbol)
       .filter(s=>typeof s==="string"&&
         /^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$/.test(s)).slice(0,40);
+    // Classical-direction companies are alert targets (?chart= links), so
+    // they must be selectable even without published chart bars.
+    const classical=(state.classical?.companies||[]).map(x=>x?.symbol)
+      .filter(s=>typeof s==="string"&&/^[A-Z][A-Z0-9.-]{0,9}$/.test(s));
     const known=[...new Set([...INDEX_ORDER,...LARGE,...VOLATILE,
-      ...discoveries,...watched,...fallback])];
+      ...discoveries,...watched,...fallback,...classical])];
+    // A ?chart= symbol waits for the first full feed load before it can be
+    // judged unknown; otherwise the early fallback would overwrite it.
+    const pending=state.pendingSymbol&&known.includes(state.pendingSymbol)?state.pendingSymbol:null;
     select.replaceChildren();
     for(const symbol of known){
       const option=txt("option",symbol+" · "+(I_NAMES[symbol]||"سهم"));
       option.value=symbol;select.append(option);
     }
-    state.symbol=known.includes(current)?current:"SPX";select.value=state.symbol;
+    state.symbol=pending||(known.includes(current)?current:"SPX");select.value=state.symbol;
   }
   const putMetric=(label,value)=>{
     const d=txt("div",""),p=txt("small",label),v=txt("strong",value);
@@ -966,6 +973,9 @@
   async function renderChart(){
     refreshSymbols();
     const symbol=state.symbol,tf=state.tf;
+    // The summary uses published engine feeds, not candles, so it renders
+    // even when this symbol has no chart bars.
+    renderDecisionCard(symbol);
     const indexFrame=state.charts?.symbols?.[symbol]?.intervals?.[tf];
     const stockFrame=state.watchCharts?.symbols?.[symbol]?.intervals?.[tf];
     const frame=indexFrame||stockFrame;
@@ -1173,6 +1183,38 @@
         " · إنشاء الملف: "+stamp(map.generated_at)+
         (stale?" · الملف أقدم من 36 ساعة ولا يمثل الجلسة الحالية.":"")
     };
+  }
+  function renderDecisionCard(symbol){
+    const body=$("terminal-decision-card-body");if(!body)return;
+    body.replaceChildren();
+    const api=typeof GhaziDecision!=="undefined"?GhaziDecision:null;
+    if(!api){put("terminal-decision-card-verdict","غير متاح");return;}
+    let card;
+    try{
+      card=api.build(symbol,{index:state.quotes,classical:state.classical,liquidity:state.liquidity,
+        news:state.news,explosion:state.explosion,gamma:state.gamma});
+    }catch{put("terminal-decision-card-verdict","تعذر بناء الخلاصة");return;}
+    put("terminal-decision-card-verdict",card.verdictAr+" · "+card.evidenceBalance);
+    const group=(title,items,empty)=>{
+      const box=txt("div","","terminal-decision-group");
+      box.append(txt("strong",title));
+      const list=txt("ul","");
+      for(const item of items.length?items:[empty])list.append(txt("li",item));
+      box.append(list);body.append(box);
+    };
+    group("لماذا توجد قراءة؟",card.why,"لا توجد أسباب منشورة لهذا الرمز.");
+    group("أدلة داعمة",card.support,"لا توجد أدلة داعمة متاحة.");
+    group("أدلة معارضة",card.contra,"لا توجد أدلة معارضة ظاهرة في المصادر المتاحة.");
+    if(card.context.length)group("سياق (لا يحدد الاتجاه)",card.context,"");
+    const L=card.levels;
+    group("الدخول المشروط والأهداف والإلغاء",L?[
+      "دخول مشروط: "+fmt(L.entry),"T1: "+fmt(L.t1)+" · T2: "+fmt(L.t2),
+      "إلغاء: "+fmt(L.invalidation),
+      "عائد/مخاطرة حتى T1: "+(Number.isFinite(L.rr)?fmt(L.rr,2)+" (نظري)":"غير متاح")]:[],
+      "لا توجد مستويات منشورة.");
+    group("حداثة البيانات",card.freshness.map(f=>f.label+": "+
+      (f.ageHours===null?"وقت غير معروف":"قبل "+fmt(f.ageHours,1)+" ساعة")+(f.fresh?"":" · قديمة")),
+      "لا توجد مصادر بتوقيت معروف.");
   }
   function renderLiquidity(symbol){
     const grid=$("terminal-liquidity-metrics");if(grid)grid.replaceChildren();
@@ -1459,6 +1501,7 @@
     if(button)chooseChart(button.dataset.chartSymbol);
   });
   $("terminal-chart-symbol")?.addEventListener("change",event=>{
+    state.pendingSymbol=null;
     state.symbol=event.target.value;state.tf="1d";
     $("terminal-chart-timeframe").value="1d";renderChart();
   });
@@ -1489,7 +1532,7 @@
     }
   });
   const linked=symbolFromLink(window.location.search);
-  if(linked)chooseChart(linked);
-  refresh();
+  if(linked){state.pendingSymbol=linked;chooseChart(linked);}
+  refresh().finally(()=>{state.pendingSymbol=null;});
   setInterval(refresh,5*60*1000);
 })();
