@@ -95,12 +95,41 @@ def test_greek_check_compares_model_gamma_with_provider_gamma():
             {"strike": 7650.0, "iv": 0.18, "expiry": "2026-10-20", "provider_gamma": None},
             {"strike": 7550.0, "iv": 0.18, "expiry": "2026-10-20",
              "provider_gamma": gamma_bs(7600.0, 7550.0, 0.18, t) / 2}]
-    out = gamma_check(rows, 7600.0, day)
+    out = gamma_check(rows, 7600.0, lambda r: t)
     assert out["compared"] == 2  # missing provider gamma is skipped, not zero
     assert out["median_abs_rel_diff"] == 0.5  # (0 + 1.0) / 2
-    assert gamma_check([], 7600.0, day)["median_abs_rel_diff"] is None
+    assert gamma_check([], 7600.0, lambda r: t)["median_abs_rel_diff"] is None
     built = build(payload=cboe_payload(), session_date=day)
     assert built["greek_check"]["compared"] > 0
+    assert "legacy_business_day_clock" in built["greek_check"]
+
+
+def test_ab_check_scores_both_clocks_on_the_same_contracts():
+    from options_radar.ghazi_gex_multi import gamma_bs, gamma_check
+
+    rows = [{"strike": 7600.0, "iv": 0.18, "expiry": "2026-10-20",
+             "provider_gamma": gamma_bs(7600.0, 7600.0, 0.18, 0.002)}]
+    out = gamma_check(rows, 7600.0, lambda r: 0.002, lambda r: 0.004)
+    assert out["median_abs_rel_diff"] == 0.0
+    assert out["legacy_business_day_clock"]["median_abs_rel_diff"] > 0.2
+
+
+def test_settlement_clock_uses_pm_for_spxw_and_am_for_spx():
+    from datetime import datetime, timezone
+
+    from options_radar.ghazi_gex_multi import settlement_utc, years_to_settlement
+
+    assert settlement_utc("2026-10-20", "SPXW") == datetime(2026, 10, 20, 20, 0, tzinfo=timezone.utc)
+    assert settlement_utc("2026-11-20", "SPX") == datetime(2026, 11, 20, 14, 30, tzinfo=timezone.utc)
+    pre_open = datetime(2026, 10, 20, 4, 0, tzinfo=timezone.utc)
+    assert years_to_settlement("2026-10-20", "SPXW", pre_open) == pytest.approx(16 * 3600 / (365 * 86400))
+    # Ten minutes before the bell: floored at 30 minutes, never zero or negative.
+    late = datetime(2026, 10, 20, 19, 50, tzinfo=timezone.utc)
+    assert years_to_settlement("2026-10-20", "SPXW", late) == pytest.approx(1800 / (365 * 86400))
+    after = datetime(2026, 10, 20, 20, 1, tzinfo=timezone.utc)
+    assert years_to_settlement("2026-10-20", "SPXW", after) is None
+    # An AM-settled monthly has already settled by the afternoon of expiry day.
+    assert years_to_settlement("2026-11-20", "SPX", datetime(2026, 11, 20, 18, 0, tzinfo=timezone.utc)) is None
 
 
 def test_empty_chain_still_fails_closed():

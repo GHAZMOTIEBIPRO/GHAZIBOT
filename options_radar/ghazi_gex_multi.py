@@ -12,8 +12,9 @@ The output is research/validation data only until walk-forward promotion.
 from __future__ import annotations
 
 import json, math, re, urllib.request
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, time as dt_time
 from typing import Any
+from zoneinfo import ZoneInfo
 
 CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json"
 UA = "GHAZI-Black-Box/1.0"
@@ -149,6 +150,7 @@ def contract_rows(payload):
             # percent points; decimal IV above 100% is real for far wings.
             rows.append({"symbol": sym, "strike": strike, "iv": iv / 100 if iv > 5 else iv,
                          "oi": oi, "expiry": str(exp)[:10], "type": typ,
+                         "root": occ["root"] if occ else _root(sym),
                          "provider_gamma": f(x.get("gamma"))})
     if spot is None or not rows:
         raise ValueError("No usable SPX option chain")
@@ -171,7 +173,7 @@ def provenance(payload):
         "dealer_positioning": "UNAVAILABLE",
         "order_flow": "UNAVAILABLE",
         "assumptions": [
-            "Black-Scholes gamma from delayed IV, rate 0, business-day time floor of one day.",
+            "Black-Scholes gamma from delayed IV, rate 0, calendar time to settlement (SPXW 16:00 ET, SPX AM 09:30 ET), 30-minute floor.",
             ("Sign convention: calls +, puts - (assumes dealers long calls / short puts); "
              "real counterparties are not visible in aggregate open interest."),
             "Open interest is the exchange's prior-session figure, not intraday flow.",
@@ -180,34 +182,81 @@ def provenance(payload):
     }
 
 
-def gamma_check(rows, spot, session_date):
+NY = ZoneInfo("America/New_York")
+SECONDS_PER_YEAR = 365.0 * 86400.0
+MIN_SECONDS_TO_SETTLEMENT = 1800.0  # 30 minutes: avoids the expiry-day singularity
+
+
+def settlement_utc(expiry, root):
+    """SPXW (PM-settled) settles at 16:00 ET; standard SPX monthlies are
+    AM-settled from the opening print, so their clock stops at 09:30 ET."""
+    try:
+        day = date.fromisoformat(str(expiry)[:10])
+    except ValueError:
+        return None
+    clock = dt_time(9, 30) if str(root).upper() == "SPX" else dt_time(16, 0)
+    return datetime.combine(day, clock, tzinfo=NY).astimezone(timezone.utc)
+
+
+def years_to_settlement(expiry, root, as_of):
+    """Calendar time from `as_of` to settlement, in years (calendar/365)."""
+    settle = settlement_utc(expiry, root)
+    if settle is None:
+        return None
+    seconds = (settle - as_of).total_seconds()
+    if seconds <= 0:
+        return None
+    return max(seconds, MIN_SECONDS_TO_SETTLEMENT) / SECONDS_PER_YEAR
+
+
+def _root(symbol):
+    occ = parse_occ(symbol)
+    return occ["root"] if occ else ("SPXW" if str(symbol).upper().startswith("SPXW") else "SPX")
+
+
+def _summary(diffs):
+    diffs = sorted(diffs)
+    if not diffs:
+        return None, None
+    mid = len(diffs) // 2
+    median = diffs[mid] if len(diffs) % 2 else (diffs[mid - 1] + diffs[mid]) / 2
+    return round(median, 4), round(diffs[min(len(diffs) - 1, int(0.9 * len(diffs)))], 4)
+
+
+def gamma_check(rows, spot, time_of, legacy_time_of=None):
     """Model gamma vs the gamma Cboe publishes for the same contract.
 
     Both are model values (Cboe's own pricing model, its rates, dividends and
     clock); the comparison measures how far the engine's simplified model
-    (rate 0, business-day floor) drifts, not which one is "true".
+    drifts, not which one is "true". When `legacy_time_of` is given the old
+    business-day clock is scored on the same contracts, as an A/B check.
     """
-    diffs = []
+    diffs, legacy = [], []
     for r in rows:
         provider = r.get("provider_gamma")
-        t = years_to_expiry(r["expiry"], session_date)
+        t = time_of(r)
         if not provider or provider <= 0 or t is None:
             continue
         model = gamma_bs(spot, r["strike"], r["iv"], t)
-        if model > 0:
-            diffs.append(abs(model - provider) / provider)
-    diffs.sort()
-    if not diffs:
-        return {"compared": 0, "median_abs_rel_diff": None,
-                "basis": "near-spot contracts with provider gamma > 0"}
-    mid = len(diffs) // 2
-    median = diffs[mid] if len(diffs) % 2 else (diffs[mid - 1] + diffs[mid]) / 2
-    return {
+        if model <= 0:
+            continue
+        diffs.append(abs(model - provider) / provider)
+        old_t = legacy_time_of(r) if legacy_time_of else None
+        if old_t is not None:
+            old = gamma_bs(spot, r["strike"], r["iv"], old_t)
+            if old > 0:
+                legacy.append(abs(old - provider) / provider)
+    median, p90 = _summary(diffs)
+    out = {
         "compared": len(diffs),
-        "median_abs_rel_diff": round(median, 4),
-        "p90_abs_rel_diff": round(diffs[min(len(diffs) - 1, int(0.9 * len(diffs)))], 4),
+        "median_abs_rel_diff": median,
+        "p90_abs_rel_diff": p90,
         "basis": "near-spot contracts with provider gamma > 0; both values are models",
     }
+    if legacy_time_of is not None:
+        old_median, old_p90 = _summary(legacy)
+        out["legacy_business_day_clock"] = {"median_abs_rel_diff": old_median, "p90_abs_rel_diff": old_p90}
+    return out
 
 
 def interpolate_flip(profile):
@@ -222,12 +271,22 @@ def interpolate_flip(profile):
     return None
 
 
-def build(payload=None, session_date=None):
+def build(payload=None, session_date=None, as_of=None):
     payload = payload or get()
     spot, rows = contract_rows(payload)
-    session_date = session_date or datetime.now(timezone.utc).date()
+    if as_of is None:
+        # Explicit session dates (replays/tests) are evaluated pre-open.
+        as_of = (datetime.combine(session_date, dt_time(12, 0), tzinfo=timezone.utc)
+                 if session_date else datetime.now(timezone.utc))
+    session_date = session_date or as_of.date()
 
-    expiries = sorted({r["expiry"] for r in rows if years_to_expiry(r["expiry"], session_date) is not None})
+    def t_of(r):
+        return years_to_settlement(r["expiry"], r.get("root") or _root(r["symbol"]), as_of)
+
+    def legacy_t_of(r):
+        return years_to_expiry(r["expiry"], session_date)
+
+    expiries = sorted({r["expiry"] for r in rows if t_of(r) is not None})
     expiries = expiries[:WINDOW_EXPIRATIONS]
     rows = [r for r in rows if r["expiry"] in expiries]
     if not rows:
@@ -236,7 +295,7 @@ def build(payload=None, session_date=None):
     by_strike = {}
     total_abs = 0.0
     for r in rows:
-        t = years_to_expiry(r["expiry"], session_date)
+        t = t_of(r)
         g = gamma_bs(spot, r["strike"], r["iv"], t) * r["oi"] * 100 * spot * spot * 0.01 / 1e9
         signed = g if r["type"] == "call" else -g
         d = by_strike.setdefault(r["strike"], {"call": 0.0, "put": 0.0, "net": 0.0, "oi_call": 0.0, "oi_put": 0.0})
@@ -251,7 +310,7 @@ def build(payload=None, session_date=None):
     for level in [spot * STRIKE_LOW + (spot * (STRIKE_HIGH-STRIKE_LOW))*i/(PROFILE_POINTS-1) for i in range(PROFILE_POINTS)]:
         gsum = 0.0
         for r in rows:
-            t = years_to_expiry(r["expiry"], session_date)
+            t = t_of(r)
             g = gamma_bs(level, r["strike"], r["iv"], t) * r["oi"] * 100 * level * level * 0.01 / 1e9
             gsum += g if r["type"] == "call" else -g
         profile.append({"strike": level, "gex": gsum})
@@ -268,7 +327,7 @@ def build(payload=None, session_date=None):
     front_map = {}
     for r in rows:
         if r["expiry"] != front: continue
-        t = years_to_expiry(r["expiry"], session_date)
+        t = t_of(r)
         g = gamma_bs(spot, r["strike"], r["iv"], t) * r["oi"] * 100 * spot * spot * 0.01 / 1e9
         d = front_map.setdefault(r["strike"], 0.0)
         front_map[r["strike"]] = d + (g if r["type"] == "call" else -g)
@@ -283,7 +342,7 @@ def build(payload=None, session_date=None):
     greek_totals = {k: 0.0 for k in ("dex","vanna","charm","vomma","zomma")}
     near_rows = [r for r in rows if abs(r["strike"]-spot)/spot <= 0.03]
     for r in near_rows:
-        t = years_to_expiry(r["expiry"], session_date)
+        t = t_of(r)
         gk = greeks_bs(spot, r["strike"], r["iv"], t)
         sign = 1.0 if r["type"] == "call" else -1.0
         scale = r["oi"] * 100
@@ -312,7 +371,7 @@ def build(payload=None, session_date=None):
         "gci": concentration,
         "put_call_oi_ratio": pc_oi,
         "provenance": provenance(payload),
-        "greek_check": gamma_check(near_rows, spot, session_date),
+        "greek_check": gamma_check(near_rows, spot, t_of, legacy_t_of),
         "top_abs_gamma": sorted(
             [{"strike": k, "net_gex": by_strike[k]["net"]} for k in eligible],
             key=lambda x: abs(x["net_gex"]), reverse=True)[:10],
