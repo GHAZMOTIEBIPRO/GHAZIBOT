@@ -2,30 +2,31 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-10-20T14:21:36.862732+00:00",
+  "generated_at": "2026-10-20T14:33:22.329261+00:00",
   "overall_status": "CRITICAL",
   "paths": {
     "fast_discovery": {
       "status": "STALE",
       "file": "data/live/fast_explosion_scan.json",
       "generated_at": "2026-10-20T11:23:16.332352+00:00",
-      "age_minutes": 178.34,
+      "age_minutes": 190.1,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": null,
       "reasons": [
-        "Payload age 178.3m exceeds the 45m safety limit."
+        "Payload age 190.1m exceeds the 45m safety limit."
       ]
     },
     "stocks": {
-      "status": "DEGRADED",
+      "status": "STALE",
       "file": "public/data/stocks_latest.json",
       "generated_at": "2026-10-20T12:52:36.813826+00:00",
-      "age_minutes": 89.0,
+      "age_minutes": 100.76,
       "maximum_age_minutes": 90.0,
       "candidate_count": 2,
       "provider_readiness": null,
       "reasons": [
+        "Payload age 100.8m exceeds the 90m safety limit.",
         "1 stock-path data/source errors recorded",
         "No candidate currently has an official primary cause; alerts must state cause unknown"
       ]
@@ -34,7 +35,7 @@
       "status": "STALE",
       "file": "public/data/options_latest.json",
       "generated_at": "2026-10-19T19:43:21.393889+00:00",
-      "age_minutes": 1118.26,
+      "age_minutes": 1130.02,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": "FALLBACK_ONLY",
@@ -47,13 +48,13 @@
     }
   },
   "reasons": [
-    "fast_discovery: Payload age 178.3m exceeds the 45m safety limit.",
-    "stocks: 1 stock-path data/source errors recorded; No candidate currently has an official primary cause; alerts must state cause unknown",
+    "fast_discovery: Payload age 190.1m exceeds the 45m safety limit.",
+    "stocks: Payload age 100.8m exceeds the 90m safety limit.; 1 stock-path data/source errors recorded; No candidate currently has an official primary cause; alerts must state cause unknown",
     "options: Payload age 46.7m exceeds the 45m safety limit.; No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 55 chain(s) are Yahoo/YFinance-only fallback; 55 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "publisher": {
     "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
-    "source_run_id": "39437438190",
+    "source_run_id": "39439201424",
     "mode": "artifact_to_bot_state_status_only"
   }
 }
