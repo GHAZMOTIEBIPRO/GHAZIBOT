@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-20T10:50:43.247107+00:00",
+  "updated_at": "2026-10-20T11:01:00.082887+00:00",
   "signals": {
     "905a6da049f090af2d3f": {
       "signal_id": "905a6da049f090af2d3f",
@@ -70,8 +70,8 @@
       },
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 3,
-      "last_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "observations": 4,
+      "last_observed_at": "2026-10-20T11:01:00.082887+00:00",
       "last_price": 0.1426,
       "last_directional_return_pct": -1.7229,
       "mfe_pct": 0.0,
@@ -2194,8 +2194,8 @@
       },
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 1,
-      "last_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "observations": 2,
+      "last_observed_at": "2026-10-20T11:01:00.082887+00:00",
       "last_price": 0.1426,
       "last_directional_return_pct": 0.0,
       "mfe_pct": 0.0,
@@ -2212,8 +2212,17 @@
           "stage": "PRESSURE_BUILDING",
           "score": 72.88,
           "score_band": "72-79"
+        },
+        {
+          "observed_at": "2026-10-20T11:01:00.082887+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 68.7,
+          "score_band": "below-72"
         }
-      ]
+      ],
+      "latest_stage": "PRESSURE_BUILDING",
+      "latest_score": 68.7,
+      "latest_score_band": "below-72"
     },
     "a380d049e0cf81b37aa8": {
       "signal_id": "a380d049e0cf81b37aa8",
@@ -4500,7 +4509,7 @@
   "event_dedup": {
     "mode": "same_symbol_direction_within_4h",
     "reentry_gap_minutes": 240,
-    "duplicates_collapsed_this_pass": 0,
+    "duplicates_collapsed_this_pass": 1,
     "samples_after_dedup": 38
   }
 }
