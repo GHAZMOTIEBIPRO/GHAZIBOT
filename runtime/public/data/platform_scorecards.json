@@ -1,26 +1,26 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-20T19:00:19.638472+00:00",
+ "generated_at": "2026-10-20T19:05:06.836334+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 87.3,
+   "value": 87.4,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 46,
+     "success": 47,
      "cancelled": 22
     },
     "stock-radar.yml": {
-     "success": 55,
+     "success": 56,
      "failure": 30
     },
     "options-contract-radar.yml": {
-     "success": 16,
+     "success": 17,
      "failure": 14
     },
     "fast-explosion-radar.yml": {
-     "success": 83
+     "success": 82
     },
     "classical-direction-radar.yml": {
      "success": 33
@@ -37,7 +37,7 @@
      "success": 2
     },
     "site-evidence-strength.yml": {
-     "success": 40,
+     "success": 41,
      "skipped": 10,
      "cancelled": 2
     },
@@ -54,7 +54,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 30.0,
+   "value": 20.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -62,7 +62,7 @@
     "liquidity_volume": "LICENSE_BLOCKED",
     "options_analytics": "LICENSE_BLOCKED",
     "spx_gamma": "LICENSE_BLOCKED",
-    "explosion_discovery": "AVAILABLE",
+    "explosion_discovery": "LICENSE_BLOCKED",
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
@@ -73,7 +73,7 @@
   },
   "DATA_TRUST": {
    "status": "MEASURED",
-   "value": 57.9,
+   "value": 60.0,
    "unit": "percent of published datasets",
    "evidence": {
     "index_radar.json": "PASS/BLOCKED_PENDING_PERMISSION",
@@ -82,7 +82,7 @@
     "liquidity_map.json": "PASS/BLOCKED_PENDING_PERMISSION",
     "classical_direction.json": "PASS/BLOCKED_PENDING_PERMISSION",
     "decision_brief.json": "PASS/OK_FOR_STATED_USE",
-    "explosion_hunter.json": "PASS/RESTRICTED",
+    "explosion_hunter.json": "PASS/BLOCKED_PENDING_PERMISSION",
     "explosion_stage_evaluation.json": "PASS/OK_FOR_STATED_USE",
     "free_gex_validation.json": "PASS/BLOCKED_PENDING_PERMISSION",
     "options_analytics.json": "PASS/BLOCKED_PENDING_PERMISSION",
@@ -94,6 +94,7 @@
     "stock_audit_public.json": "PASS/OK_FOR_STATED_USE",
     "site_strength.json": "PASS/OK_FOR_STATED_USE",
     "platform_scorecards.json": "PASS/OK_FOR_STATED_USE",
+    "site_smoke.json": "PASS/OK_FOR_STATED_USE",
     "live_dashboard_status.json": "PASS/OK_FOR_STATED_USE"
    },
    "method": "validation PASS and rights OK_FOR_STATED_USE (blocked, restricted and unknown rights do not count)",
@@ -104,9 +105,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 39479257695,
+    "run_id": 39479642154,
     "conclusion": "success",
-    "at": "2026-10-20T18:57:21Z"
+    "at": "2026-10-20T19:00:02Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -133,19 +134,74 @@
    "note_ar": "لا توجد أفضلية مثبتة حتى الآن؛ لا تُعرض إشارات كتوصيات تنفيذية."
   },
   "WEBSITE_FUNCTIONALITY": {
-   "status": "UNMEASURED",
-   "value": null,
-   "unit": "percent",
-   "evidence": {},
-   "method": "no recorded browser check",
-   "note_ar": "لا يوجد فحص متصفح مسجل في الإنتاج بعد."
+   "status": "MEASURED",
+   "value": 100.0,
+   "unit": "percent of pages",
+   "evidence": {
+    "ghazibot.vercel.app:home": {
+     "http_status": 200,
+     "errors": [],
+     "overflow": false,
+     "blocked_reason_shown": true,
+     "dollar_prices_shown": 0,
+     "index_panel": "تحليل المؤشرات متوقف: شروط Yahoo تمنع جمع البيانات بأي وسيلة آلية لأي غرض دون إذن مسبق صريح، وملف robots.txt لخوادم Yahoo Finance يمنع كل المسارات؛ الجلب الآلي ",
+     "spx_status": ""
+    },
+    "ghazibot.vercel.app:chart_nvda": {
+     "http_status": 200,
+     "errors": [],
+     "overflow": false,
+     "blocked_reason_shown": true,
+     "dollar_prices_shown": 0,
+     "index_panel": "تحليل المؤشرات متوقف: شروط Yahoo تمنع جمع البيانات بأي وسيلة آلية لأي غرض دون إذن مسبق صريح، وملف robots.txt لخوادم Yahoo Finance يمنع كل المسارات؛ الجلب الآلي ",
+     "spx_status": ""
+    },
+    "ghazibot.vercel.app:spx": {
+     "http_status": 200,
+     "errors": [],
+     "overflow": false,
+     "blocked_reason_shown": true,
+     "dollar_prices_shown": 0,
+     "index_panel": "",
+     "spx_status": "LICENSE_BLOCKED • 2026-10-20T18:58:12.714495+00:00"
+    },
+    "ghazir.vercel.app:home": {
+     "http_status": 200,
+     "errors": [],
+     "overflow": false,
+     "blocked_reason_shown": true,
+     "dollar_prices_shown": 0,
+     "index_panel": "تحليل المؤشرات متوقف: شروط Yahoo تمنع جمع البيانات بأي وسيلة آلية لأي غرض دون إذن مسبق صريح، وملف robots.txt لخوادم Yahoo Finance يمنع كل المسارات؛ الجلب الآلي ",
+     "spx_status": ""
+    },
+    "ghazir.vercel.app:chart_nvda": {
+     "http_status": 200,
+     "errors": [],
+     "overflow": false,
+     "blocked_reason_shown": true,
+     "dollar_prices_shown": 0,
+     "index_panel": "تحليل المؤشرات متوقف: شروط Yahoo تمنع جمع البيانات بأي وسيلة آلية لأي غرض دون إذن مسبق صريح، وملف robots.txt لخوادم Yahoo Finance يمنع كل المسارات؛ الجلب الآلي ",
+     "spx_status": ""
+    },
+    "ghazir.vercel.app:spx": {
+     "http_status": 200,
+     "errors": [],
+     "overflow": false,
+     "blocked_reason_shown": true,
+     "dollar_prices_shown": 0,
+     "index_panel": "",
+     "spx_status": "LICENSE_BLOCKED • 2026-10-20T18:58:12.714495+00:00"
+    }
+   },
+   "method": "headless browser: no page errors and no horizontal overflow at 390 px",
+   "note_ar": "يقيس سلامة العرض لا صحة البيانات المعروضة."
   },
   "TELEGRAM_DELIVERY": {
    "status": "API_VERIFIED",
    "value": null,
    "unit": "status",
    "evidence": {
-    "checked_at": "2026-10-20T18:58:22.525052+00:00",
+    "checked_at": "2026-10-20T19:01:17.862529+00:00",
     "status": "CONNECTION_VERIFIED_NOT_SENT",
     "sent": 0,
     "edited": 0,
