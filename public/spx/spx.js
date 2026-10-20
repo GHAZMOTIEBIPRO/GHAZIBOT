@@ -22,7 +22,15 @@ function renderAdvanced(v){
   $('gciLive').textContent=e.gci!=null?fmt(e.gci*100,1)+'%':'—';
   $('pcOi').textContent=e.put_call_oi_ratio!=null?fmt(e.put_call_oi_ratio,2):'—';
   $('zdteShare').textContent=e.zdte_share_abs_gex!=null?fmt(e.zdte_share_abs_gex*100,1)+'%':'—';
-  $('advancedGreekNote').textContent=e.available?'المحرك يعمل؛ النتائج Shadow ولا تمنح الإشارة سلطة.':'المحرك غير متاح حالياً.';
+  $('advancedGreekNote').textContent=e.available?'المحرك يعمل؛ النتائج Shadow ولا تمنح الإشارة سلطة.'+provenanceText(e.provenance):'المحرك غير متاح حالياً.';
+}
+function provenanceText(p){
+  if(!p)return '';
+  const cls={MODEL_ESTIMATED:'تقدير نموذجي',DELAYED:'مؤخر',HISTORICAL:'تاريخي (جلسة سابقة)',UNAVAILABLE:'غير متاح',MARKET_OBSERVED:'مرصود من السوق'};
+  const w=k=>cls[p[k]]||'غير معروف';
+  return ' • السعر و IV: '+w('spot')+' • OI: '+w('open_interest')+' • Greeks والمستويات: '+w('levels')+
+    ' • تمركز صانع السوق: '+w('dealer_positioning')+' • لقطة المزود: '+(p.provider_snapshot_time||'غير متاح')+
+    ' • الإشارة الموجبة للكول والسالبة للبوت افتراض نموذجي.';
 }
 function renderValidation(v){const score=num(v?.agreement_score);$('gexValidation').textContent=(v?.decision||'SHADOW_ONLY')+' • توافق '+(score!=null?fmt(score*100,0)+'%':'—');$('gexValidation').className='status '+(score!=null&&score>=.6?'ok':'warn');$('gexValidationReason').textContent=(v?.reasons_ar||[]).join(' • ')||'طبقة تحقق بحثية فقط؛ لا تمنح أي مصدر سلطة منفردة.';
 const m=v?.metrics||{};$('gexDisagreement').textContent=['gex','flip','call_wall','put_wall'].map(k=>k+': '+(m[k]?.relative_disagreement!=null?fmt(m[k].relative_disagreement*100,1)+'%':'—')).join(' • ');}
