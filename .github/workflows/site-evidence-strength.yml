@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build_site_strength.py"
+      - "scripts/build_data_hub.py"
       - "tests/test_site_strength.py"
       - ".github/workflows/site-evidence-strength.yml"
   workflow_run:
@@ -55,6 +56,11 @@ jobs:
             --free-options state/runtime/public/data/free_options_sources.json \
             --walk-forward state/state/stocks/stock_walk_forward.json \
             --output state/runtime/public/data/site_strength.json
+      - name: GHAZI Market Data Hub catalog (reads published files only)
+        run: >-
+          python app/scripts/build_data_hub.py
+          --data-dir state/runtime/public/data
+          --output state/runtime/public/data/data_hub.json
       - name: Publish only source-backed readiness report
         shell: bash
         run: |
@@ -62,7 +68,7 @@ jobs:
           cd state
           git config user.name "GHAZI Evidence Audit"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/site_strength.json
+          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json
           if git diff --cached --quiet; then
             echo "Evidence report unchanged"
             exit 0

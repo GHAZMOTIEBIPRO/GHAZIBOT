@@ -24,6 +24,7 @@
     liquidity:[ROOT+"bot-state/runtime/public/data/liquidity_map.json"],
     stageEval:[ROOT+"bot-state/runtime/public/data/explosion_stage_evaluation.json"],
     optionsAnalytics:[ROOT+"bot-state/runtime/public/data/options_analytics.json"],
+    dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -64,7 +65,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,pendingSymbol:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -134,6 +135,7 @@
       Array.isArray(d.companies),
     explosion:d=>d?.schema==="ghazi.explosion_hunter_public.v1"&&d.research_only===true&&
       d.score_is_probability===false&&d.execution_authority===false&&Array.isArray(d.candidates),
+    dataHub:d=>d?.schema==="ghazi.data_hub.v1"&&d.decision_authority===false&&Array.isArray(d.datasets),
     optionsAnalytics:d=>d?.schema==="ghazi.options_analytics.v1"&&d.research_only===true&&
       d.execution_grade===false&&d.raw_quotes_published===false&&d.symbols&&typeof d.symbols==="object",
     stageEval:d=>d?.schema==="ghazi.explosion_stage_evaluation.v1"&&d.research_only===true&&
@@ -1341,6 +1343,39 @@
         "لا تثبت الأرقام تمركز صانع السوق أو اتجاه الغد. التقرير: "+stamp(data?.generated_at)+"."
     };
   }
+  const HUB_FRESH={FRESH:"حديث",STALE:"قديم",MISSING:"غير منشور",UNTIMED:"بلا وقت موثق",FUTURE_TIMESTAMP:"وقت مستقبلي مرفوض"};
+  const HUB_LICENSE={DERIVED_PUBLIC:"قيم مشتقة",FALLBACK_LABELLED:"مصدر احتياطي غير مرخص للأتمتة",
+    OFFICIAL_PUBLIC:"مصدر رسمي/مسموح",INTERNAL_METRIC:"قياس داخلي"};
+  function hubLines(hub){
+    if(!Array.isArray(hub?.datasets))return [];
+    return hub.datasets.map(d=>({
+      title:String(d.title_ar||d.file),
+      tone:d.freshness==="FRESH"&&d.validation==="PASS"?"UP":d.freshness==="MISSING"?null:"DOWN",
+      status:(HUB_FRESH[d.freshness]||d.freshness)+(d.validation==="FAIL"?" · فشل التحقق":""),
+      detail:"المصدر: "+String(d.source||"—")+" · "+(HUB_LICENSE[d.license_class]||d.license_class)+
+        " · العمر: "+(Number.isFinite(d.age_minutes)?fmt(d.age_minutes/60,1)+" ساعة":"—")+
+        " · الإيقاع المتوقع: "+fmt(d.cadence_min,0)+" د · "+String(d.limitations||"")
+    }));
+  }
+  function renderDataHub(){
+    const box=$("terminal-data-hub");if(!box)return;
+    box.replaceChildren();
+    const hub=state.dataHub;
+    if(!hub){put("terminal-data-hub-status","لا يوجد كتالوج بيانات منشور بعد.");return;}
+    const f=hub.summary?.freshness||{};
+    put("terminal-data-hub-status","مجموعات البيانات: "+(hub.summary?.total??"—")+
+      " · حديثة "+(f.FRESH||0)+" · قديمة "+(f.STALE||0)+" · غير منشورة "+(f.MISSING||0)+
+      " · فشل تحقق "+(hub.summary?.validation_failures??0)+
+      " · مصادر احتياطية: "+((hub.summary?.fallback_sources||[]).join("، ")||"لا يوجد")+
+      " · الكتالوج: "+stamp(hub.generated_at)+" · الأوقات من الملفات نفسها وليست أوقات أسعار.");
+    for(const line of hubLines(hub)){
+      const item=txt("article","","terminal-structural-item");
+      const head=txt("div","","terminal-structural-title");
+      head.append(txt("strong",line.title),chip(line.status,line.tone));
+      item.append(head,txt("small",line.detail,"terminal-structural-notice"));
+      box.append(item);
+    }
+  }
   function renderTrust(){
     const wrap=$("terminal-trust-grid");if(!wrap)return;
     wrap.replaceChildren();
@@ -1512,20 +1547,20 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderOps();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
