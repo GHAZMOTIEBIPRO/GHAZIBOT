@@ -28,7 +28,8 @@ def test_approvals_keep_only_ap_in_window_and_rank_originals():
              "products": [{"brand_name": "NEWDRUG"}],
              "submissions": [
                  {"submission_type": "ORIG", "submission_number": "1", "submission_status": "AP",
-                  "submission_status_date": "20261015", "review_priority": "PRIORITY"},
+                  "submission_status_date": "20261015", "review_priority": "PRIORITY",
+                  "submission_class_code_description": "Type 1 - New Molecular Entity"},
                  {"submission_type": "SUPPL", "submission_number": "2", "submission_status": "AP",
                   "submission_status_date": "20261001", "submission_class_code_description": "Efficacy"},
                  {"submission_type": "SUPPL", "submission_number": "3", "submission_status": "TA",

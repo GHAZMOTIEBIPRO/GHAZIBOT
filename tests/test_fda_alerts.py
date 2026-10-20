@@ -85,17 +85,22 @@ def test_message_is_escaped_labelled_and_drops_unsafe_links():
     assert "Class I" in recall and "Salmonella" in recall
 
 
-def test_original_anda_is_not_high_but_nda_and_bla_are():
-    def app(number):
+def test_only_new_molecules_are_high_and_generics_are_low():
+    def app(number, klass="UNKNOWN"):
         return {"application_number": number, "sponsor_name": "X Co",
                 "submissions": [{"submission_type": "ORIG", "submission_number": "1", "submission_status": "AP",
-                                 "submission_status_date": "20261015"}]}
-    events = fda.approval_events([app("ANDA212345"), app("NDA212346"), app("BLA761234")], {},
-                                 date(2026, 9, 21), date(2026, 10, 20))
-    by_kind = {e["application_kind"]: e["importance"] for e in events}
-    assert by_kind == {"ANDA": "LOW", "NDA": "HIGH", "BLA": "HIGH"}
+                                 "submission_status_date": "20261015",
+                                 "submission_class_code_description": klass}]}
+    rows = [app("ANDA212345"), app("NDA212346", "Type 1 - New Molecular Entity"),
+            app("BLA761234", "Type 1 - New Molecular Entity"), app("NDA212347", "Type 2 - New Active Ingredient"),
+            app("NDA212348", "Type 5 - New Formulation or New Manufacturer"), app("NDA212349")]
+    events = fda.approval_events(rows, {}, date(2026, 9, 21), date(2026, 10, 20))
+    by_number = {e["application_number"]: e["importance"] for e in events}
+    assert by_number == {"ANDA212345": "LOW", "NDA212346": "HIGH", "BLA761234": "HIGH", "NDA212347": "HIGH",
+                         "NDA212348": "MEDIUM", "NDA212349": "MEDIUM"}
     report = fda.build(events, [], generated_at="x", start=date(2026, 9, 21), end=date(2026, 10, 20))
-    assert report["counts"]["new_drug_or_biologic_approvals"] == 2
+    assert report["counts"]["new_drug_or_biologic_approvals"] == 5
+    assert report["counts"]["new_molecule_approvals"] == 3
 
 
 def test_reviewed_sponsor_aliases_match_fda_spellings_without_collisions():

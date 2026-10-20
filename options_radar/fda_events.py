@@ -14,8 +14,10 @@ What the events are and are not:
   project's own company list, by normalised legal name, or through the
   reviewed sponsor spellings in data/fda_sponsor_aliases.json; an event
   without a confident match keeps ticker = null rather than a guess.
-- Importance ranks the regulatory event: an original NDA/BLA approval (a new
-  drug or biologic) is HIGH, an original ANDA (a generic copy) is LOW.
+- Importance ranks the regulatory event: an original NDA/BLA approval of a
+  new molecular entity or new active ingredient (FDA Type 1/2) is HIGH,
+  another original NDA/BLA (new formulation, new manufacturer, ...) is
+  MEDIUM, and an original ANDA (a generic copy) is LOW.
 """
 from __future__ import annotations
 
@@ -64,9 +66,14 @@ def match_ticker(name: Any, index: dict[str, tuple[str, str]]) -> tuple[str | No
     return None, "unmatched"
 
 
-def _approval_importance(original: bool, kind: str | None, efficacy: bool) -> tuple[str, str]:
+def _approval_importance(original: bool, kind: str | None, efficacy: bool, klass: str = "") -> tuple[str, str]:
+    # FDA chemical type: Type 1 = new molecular entity, Type 2 = new active
+    # ingredient. Other types (new formulation, new manufacturer, previously
+    # marketed without an NDA, e.g. medical gases) are not a new medicine.
     if original and kind in {"NDA", "BLA"}:
-        return "HIGH", f"original {kind} approved (new drug or biologic application)"
+        if re.match(r"type [12]\b", klass.strip().lower()):
+            return "HIGH", f"original {kind} approved: {klass[:60]}"
+        return "MEDIUM", f"original {kind} approved: {klass[:60] or 'type not stated'} (not a new molecule)"
     if original and kind == "ANDA":
         return "LOW", "original ANDA approved (generic copy)"
     if original:
@@ -106,7 +113,7 @@ def approval_events(results: list[dict[str, Any]], index: dict[str, str], start:
             efficacy = "efficacy" in klass.lower()
             key = f"{number}-{kind}-{sub.get('submission_number')}"
             digits = re.sub(r"\D", "", number)
-            importance, reason = _approval_importance(original, application_kind, efficacy)
+            importance, reason = _approval_importance(original, application_kind, efficacy, klass)
             events[key] = {
                 "event_id": key,
                 "event_type": "APPROVAL_ORIGINAL" if original else "APPROVAL_SUPPLEMENT",
@@ -167,6 +174,8 @@ def build(approvals: list[dict], recalls: list[dict], *, generated_at: str, star
             "original_approvals": sum(e["event_type"] == "APPROVAL_ORIGINAL" for e in approvals),
             "new_drug_or_biologic_approvals": sum(e["event_type"] == "APPROVAL_ORIGINAL" and
                                                   e.get("application_kind") in {"NDA", "BLA"} for e in approvals),
+            "new_molecule_approvals": sum(e["event_type"] == "APPROVAL_ORIGINAL" and e["importance"] == "HIGH"
+                                          for e in approvals),
             "recalls": len(recalls),
             "class_i_recalls": sum(e.get("classification") == "Class I" for e in recalls),
             "matched_to_ticker": len(matched),
@@ -177,7 +186,7 @@ def build(approvals: list[dict], recalls: list[dict], *, generated_at: str, star
         "notes_ar": [
             "الموافقات والسحوبات وقائع تنظيمية رسمية مؤرخة؛ لا تعني اتجاهًا للسعر ولا يُستنتج منها رد فعل السوق.",
             "ربط الشركة بالرمز يتم فقط بمطابقة الاسم القانوني مع قائمة الشركات أو بأسماء رعاة FDA المراجَعة؛ عند عدم اليقين يبقى الرمز فارغًا.",
-            "الموافقة الأصلية على NDA/BLA (دواء أو منتج بيولوجي جديد) أهمية عالية؛ الموافقة على دواء جنيس (ANDA) أهمية منخفضة.",
+            "الأهمية العالية للموافقة الأصلية على جزيء جديد أو مادة فعالة جديدة (FDA Type 1/2)؛ تركيبة أو مصنّع جديد أهمية متوسطة؛ الدواء الجنيس (ANDA) أهمية منخفضة.",
             "تاريخ الحدث هو تاريخ القرار أو التقرير لدى FDA، وقد يُنشر في openFDA بعده بأيام.",
         ],
         "research_only": True,

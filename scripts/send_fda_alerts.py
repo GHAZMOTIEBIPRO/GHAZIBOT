@@ -1,7 +1,8 @@
 """Telegram alerts for important official FDA events (openFDA, CC0).
 
 Sends one message per HIGH-importance event in runtime/public/data/fda_events.json:
-an original NDA/BLA approval (a new drug or biologic) or a Class I recall.
+an original NDA/BLA approval of a new molecular entity or new active
+ingredient (FDA Type 1/2), or a Class I recall.
 
 - Dedupe: every event id that was sent or seeded is kept in the state file,
   and the fda-events workflow is that file's only writer.
