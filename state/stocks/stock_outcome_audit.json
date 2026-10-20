@@ -45773,7 +45773,9 @@
         },
         "aligned_evidence_count": 1,
         "available_evidence_count": 2
-      }
+      },
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "bddccef819acceb72349": {
       "signal_id": "bddccef819acceb72349",
@@ -47861,7 +47863,9 @@
         },
         "aligned_evidence_count": 0,
         "available_evidence_count": 2
-      }
+      },
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "f68f6586bd3cc883088e": {
       "signal_id": "f68f6586bd3cc883088e",
@@ -75817,8 +75821,8 @@
       "signal_session_valid": true,
       "signal_session_reason": "regular_session",
       "signal_session_date": "2026-08-21",
-      "audit_recovery_state": "preserved_prior_verified_checkpoint",
-      "audit_recovery_note": "New provider result lacked an earlier verified completed-bar checkpoint; prior immutable observation retained."
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "f08fd303cc8d8e74e68e": {
       "signal_id": "f08fd303cc8d8e74e68e",
@@ -76698,8 +76702,8 @@
         "aligned_evidence_count": 1,
         "available_evidence_count": 2
       },
-      "audit_recovery_state": "preserved_prior_verified_checkpoint",
-      "audit_recovery_note": "New provider result lacked an earlier verified completed-bar checkpoint; prior immutable observation retained."
+      "audit_recovery_state": "provider_5m_retention_exceeded",
+      "audit_recovery_note": "Kept in coverage denominator; repeated Yahoo 5m retries are suppressed after one attempt because strict intraday evidence is outside the configured recovery window."
     },
     "3e3506b02942c1388058": {
       "signal_id": "3e3506b02942c1388058",
@@ -115800,38 +115804,2611 @@
         "aligned_evidence_count": 2,
         "available_evidence_count": 2
       }
+    },
+    "85df7e64c8fce9dc03d1": {
+      "signal_id": "85df7e64c8fce9dc03d1",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "VAI",
+      "direction": "up",
+      "entry_price": 2.67,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 65.87,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 38.4,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 657718.0,
+          "turnover_pct": 4.518073094467046,
+          "acceleration_score": 100.0,
+          "participation_score": 85.63
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 94.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 14.592,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 2.67,
+          "dollar_volume": 1756107.06,
+          "avg_dollar_volume": null,
+          "market_cap": 38868496.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 86.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "71c476b1f7cf6992471d": {
+      "signal_id": "71c476b1f7cf6992471d",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "GPUS",
+      "direction": "up",
+      "entry_price": 0.1426,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 72.88,
+      "entry_score_band": "72-79",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 43.5,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 13403342.0,
+          "turnover_pct": 3.8538314454837694,
+          "acceleration_score": 58.0,
+          "participation_score": 78.95
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 94.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 5.007,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 0.1426,
+          "dollar_volume": 1911316.5692,
+          "avg_dollar_volume": null,
+          "market_cap": 49595230.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "a380d049e0cf81b37aa8": {
+      "signal_id": "a380d049e0cf81b37aa8",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "BDTX",
+      "direction": "up",
+      "entry_price": 1.81,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.18,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 41.1,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 825594.0,
+          "turnover_pct": 1.436971553057688,
+          "acceleration_score": 88.47,
+          "participation_score": 73.44
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 5.233,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 1.81,
+          "dollar_volume": 1494325.1400000001,
+          "avg_dollar_volume": null,
+          "market_cap": 103991282.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "479438426f4bd87f85b8": {
+      "signal_id": "479438426f4bd87f85b8",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "MASK",
+      "direction": "up",
+      "entry_price": 0.9299,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 64.16,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "PRIORITY",
+        "score": 86.9,
+        "flags": [],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": true,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 76896220.0,
+          "turnover_pct": 2124.742116671872,
+          "acceleration_score": 100.0,
+          "participation_score": 100.0
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 100.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 15.774,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 0.9299,
+          "dollar_volume": 71505794.978,
+          "avg_dollar_volume": null,
+          "market_cap": 3365387.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 86.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "711928a1e506f143bc21": {
+      "signal_id": "711928a1e506f143bc21",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "MVIS",
+      "direction": "up",
+      "entry_price": 1.2,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 65.72,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 41.7,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 976724.0,
+          "turnover_pct": 3.2395460567862404,
+          "acceleration_score": 72.82,
+          "participation_score": 72.63
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 94.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 6.195,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 1.2,
+          "dollar_volume": 1172068.8,
+          "avg_dollar_volume": null,
+          "market_cap": 36180032.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "9a16455ffbcefcd343b7": {
+      "signal_id": "9a16455ffbcefcd343b7",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "HOST",
+      "direction": "up",
+      "entry_price": 1.92,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 68.1,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 39.8,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 337317.0,
+          "turnover_pct": 1.181777721130345,
+          "acceleration_score": 76.8,
+          "participation_score": 65.21
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 1.053,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 1.92,
+          "dollar_volume": 647648.64,
+          "avg_dollar_volume": null,
+          "market_cap": 54802915.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 87.63,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "8539cea554920c71d0fc": {
+      "signal_id": "8539cea554920c71d0fc",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "OKUR",
+      "direction": "up",
+      "entry_price": 2.25,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.58,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 40.7,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 501476.0,
+          "turnover_pct": 1.2383252048375986,
+          "acceleration_score": 75.31,
+          "participation_score": 68.96
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 7.143,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 2.25,
+          "dollar_volume": 1128321.0,
+          "avg_dollar_volume": null,
+          "market_cap": 91116695.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "e9b8b3ebd8d70c449f6d": {
+      "signal_id": "e9b8b3ebd8d70c449f6d",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "UNCY",
+      "direction": "up",
+      "entry_price": 3.51,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.83,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 42.5,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 1126569.0,
+          "turnover_pct": 4.044367642368437,
+          "acceleration_score": 60.86,
+          "participation_score": 72.33
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 4.464,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 3.51,
+          "dollar_volume": 3954257.19,
+          "avg_dollar_volume": null,
+          "market_cap": 97771952.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "fd885257ca19d7e26ef3": {
+      "signal_id": "fd885257ca19d7e26ef3",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "SAIQ",
+      "direction": "up",
+      "entry_price": 3.41,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 68.15,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 43.4,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 2363370.0,
+          "turnover_pct": 7.926470201615772,
+          "acceleration_score": 100.0,
+          "participation_score": 89.89
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 7.911,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 3.41,
+          "dollar_volume": 8059091.7,
+          "avg_dollar_volume": null,
+          "market_cap": 101673147.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "c80b15ef2f47b317c5d1": {
+      "signal_id": "c80b15ef2f47b317c5d1",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "SKYA",
+      "direction": "up",
+      "entry_price": 2.79,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 67.8,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 45.2,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 2603574.0,
+          "turnover_pct": 6.0201714161038655,
+          "acceleration_score": 100.0,
+          "participation_score": 89.89
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 5.283,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 2.79,
+          "dollar_volume": 7263971.46,
+          "avg_dollar_volume": null,
+          "market_cap": 120660542.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "21a20f0e43f5b8899b81": {
+      "signal_id": "21a20f0e43f5b8899b81",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "EQ",
+      "direction": "up",
+      "entry_price": 1.24,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 67.8,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 56.5,
+        "flags": [
+          "FLOAT_UNVERIFIED"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": true,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 3192376.0,
+          "turnover_pct": 5.034651555944163,
+          "acceleration_score": 100.0,
+          "participation_score": 89.89
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 4.202,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 1.24,
+          "dollar_volume": 3958546.2399999998,
+          "avg_dollar_volume": null,
+          "market_cap": 78626022.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "c84ee219847640aabade": {
+      "signal_id": "c84ee219847640aabade",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "VYGR",
+      "direction": "up",
+      "entry_price": 2.05,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 65.8,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 46.9,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 1263358.0,
+          "turnover_pct": 2.050308465320205,
+          "acceleration_score": 100.0,
+          "participation_score": 81.87
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 7.895,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 2.05,
+          "dollar_volume": 2589883.9,
+          "avg_dollar_volume": null,
+          "market_cap": 126316793.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "5fd4257afc08b1397742": {
+      "signal_id": "5fd4257afc08b1397742",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "UAMY",
+      "direction": "up",
+      "entry_price": 3.1,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.33,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 39.2,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 8890129.0,
+          "turnover_pct": 5.939844723129426,
+          "acceleration_score": 52.6,
+          "participation_score": 78.04
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 68.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 8.772,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 3.1,
+          "dollar_volume": 27559399.900000002,
+          "avg_dollar_volume": null,
+          "market_cap": 463975090.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "24ca64c77057850898d6": {
+      "signal_id": "24ca64c77057850898d6",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "CTNM",
+      "direction": "up",
+      "entry_price": 7.44,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 64.24,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 50.4,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 1796487.0,
+          "turnover_pct": 4.775207190771036,
+          "acceleration_score": 100.0,
+          "participation_score": 89.89
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 68.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 5.085,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 7.44,
+          "dollar_volume": 13365863.280000001,
+          "avg_dollar_volume": null,
+          "market_cap": 279901222.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "cf0794351cf7e56b8826": {
+      "signal_id": "cf0794351cf7e56b8826",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "TENX",
+      "direction": "up",
+      "entry_price": 1.52,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 66.02,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 42.7,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 2584382.0,
+          "turnover_pct": 6.905696142739004,
+          "acceleration_score": 93.65,
+          "participation_score": 87.73
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 11.765,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 1.52,
+          "dollar_volume": 3928260.64,
+          "avg_dollar_volume": null,
+          "market_cap": 56884354.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "0391bc54d05630a70929": {
+      "signal_id": "0391bc54d05630a70929",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "ZNTL",
+      "direction": "up",
+      "entry_price": 2.3,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.4,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 47.4,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 2736624.0,
+          "turnover_pct": 2.890741946183634,
+          "acceleration_score": 100.0,
+          "participation_score": 86.13
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 68.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 7.981,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 2.3,
+          "dollar_volume": 6294235.199999999,
+          "avg_dollar_volume": null,
+          "market_cap": 217737706.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "90c98f19d6524e6339ac": {
+      "signal_id": "90c98f19d6524e6339ac",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "NTWK",
+      "direction": "up",
+      "entry_price": 6.66,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 63.21,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 42.7,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 229995.0,
+          "turnover_pct": 1.9242308402118418,
+          "acceleration_score": 100.0,
+          "participation_score": 73.1
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 7.246,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 6.66,
+          "dollar_volume": 1531766.7,
+          "avg_dollar_volume": null,
+          "market_cap": 79604103.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "c6276e5149a3fda824c2": {
+      "signal_id": "c6276e5149a3fda824c2",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "SAFX",
+      "direction": "up",
+      "entry_price": 0.1565,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.35,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "06:49",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 62.0,
+        "flags": [
+          "FLOAT_UNVERIFIED"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": true,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 185633574.0,
+          "turnover_pct": 44.69900363516834,
+          "acceleration_score": 100.0,
+          "participation_score": 100.0
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 11.547,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 0.1565,
+          "dollar_volume": 29051654.331,
+          "avg_dollar_volume": null,
+          "market_cap": 64993964.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "8192fdfbd40c7c9ab75d": {
+      "signal_id": "8192fdfbd40c7c9ab75d",
+      "signal_time": "2026-10-20T10:50:43.247107+00:00",
+      "symbol": "BYRN",
+      "direction": "up",
+      "entry_price": 5.17,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.16,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T10:50:43.247107+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "",
+        "source_role": "",
+        "selected_source": "",
+        "fabric_transport_source_count": 0,
+        "fabric_independent_source_count": 0,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": null,
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "research_only": false,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 41.4,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T10:50:43.247107+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 1188884.0,
+          "turnover_pct": 5.079668864575761,
+          "acceleration_score": 37.6,
+          "participation_score": 64.42
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 84.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 6.818,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 5.17,
+          "dollar_volume": 6146530.28,
+          "avg_dollar_volume": null,
+          "market_cap": 121002578.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 1,
+      "audit_last_attempt_result": "fetch_error",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "audit_last_attempt_at": "2026-10-20T11:30:12.442112+00:00",
+      "audit_last_attempt_error": "DataUnavailableError",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    },
+    "f6bb2750a0b14b85a29d": {
+      "signal_id": "f6bb2750a0b14b85a29d",
+      "signal_time": "2026-10-20T11:24:01.216660+00:00",
+      "symbol": "HTZ",
+      "direction": "up",
+      "entry_price": 1.84,
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 68.07,
+      "entry_score_band": "below-72",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T11:24:01.216660+00:00",
+      "cause_point_in_time_frozen": true,
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "07:23",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T11:24:01.216660+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 39.6,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T11:24:01.216660+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 13755500.0,
+          "turnover_pct": 3.859011431193017,
+          "acceleration_score": 23.76,
+          "participation_score": 67.31
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 52.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 6.358,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 1.84,
+          "dollar_volume": 25310120.0,
+          "avg_dollar_volume": null,
+          "market_cap": 655870563.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "snapshot_terminal_outcome": "open",
+      "snapshot_terminal_reason": null,
+      "snapshot_terminal_at": null,
+      "audit_status": "pending",
+      "audit_source": "yahoo/yfinance historical 5m research fallback",
+      "audit_interval": "5m",
+      "decision_authority": false,
+      "audit_attempt_count": 0,
+      "audit_last_attempt_result": "never_attempted",
+      "signal_session_valid": true,
+      "signal_session_reason": "extended_activity_window",
+      "signal_session_date": "2026-10-20",
+      "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
     }
   },
-  "updated_at": "2026-10-20T10:44:25.967030+00:00",
+  "updated_at": "2026-10-20T11:30:12.442112+00:00",
   "mode": "HISTORICAL_5M_OUTCOME_AUDIT",
   "decision_authority": false,
   "live_alert_weights_changed": false,
   "provider_policy": "free research fallback only; no paid provider required",
   "source_policy": "Yahoo/YFinance historical 5m is unofficial research data, never live alert authority",
   "coverage": {
-    "records": 694,
-    "records_total": 704,
-    "eligible_records": 694,
+    "records": 714,
+    "records_total": 724,
+    "eligible_records": 714,
     "invalid_session": 10,
     "covered_15m": 460,
     "covered_60m": 442,
     "covered_1d": 249,
-    "coverage_15m_pct": 66.28,
+    "coverage_15m_pct": 64.43,
     "coverage_60m_pct": 98.44,
     "coverage_60m_applicable_records": 449,
     "coverage_60m_not_applicable_after_close": 170,
-    "coverage_60m_not_applicable_before_open": 75,
-    "coverage_60m_not_applicable_total": 245,
-    "coverage_60m_pct_before_pre_open_rule": 84.35,
-    "coverage_60m_all_eligible_pct": 63.69,
-    "coverage_1d_pct": 35.88,
+    "coverage_60m_not_applicable_before_open": 95,
+    "coverage_60m_not_applicable_total": 265,
+    "coverage_60m_pct_before_pre_open_rule": 81.25,
+    "coverage_60m_all_eligible_pct": 61.9,
+    "coverage_1d_pct": 34.87,
     "decisive": 508,
     "ambiguous": 0,
     "non_decisive": 55,
-    "pending": 131,
+    "pending": 151,
     "unavailable": 0,
     "snapshot_discrepancies": 22,
-    "never_attempted": 0,
+    "never_attempted": 1,
     "independent_60m_sessions": 26,
     "independent_60m_session_dates": [
       "2026-08-13",
@@ -115862,9 +118439,27 @@
       "2026-10-16"
     ]
   },
-  "attempted_symbols_this_pass": 36,
+  "attempted_symbols_this_pass": 19,
   "errors": {
-    "JBDI": "DataUnavailableError"
+    "BDTX": "DataUnavailableError",
+    "BYRN": "DataUnavailableError",
+    "CTNM": "DataUnavailableError",
+    "EQ": "DataUnavailableError",
+    "GPUS": "DataUnavailableError",
+    "HOST": "DataUnavailableError",
+    "MASK": "DataUnavailableError",
+    "MVIS": "DataUnavailableError",
+    "NTWK": "DataUnavailableError",
+    "OKUR": "DataUnavailableError",
+    "SAFX": "DataUnavailableError",
+    "SAIQ": "DataUnavailableError",
+    "SKYA": "DataUnavailableError",
+    "TENX": "DataUnavailableError",
+    "UAMY": "DataUnavailableError",
+    "UNCY": "DataUnavailableError",
+    "VAI": "DataUnavailableError",
+    "VYGR": "DataUnavailableError",
+    "ZNTL": "DataUnavailableError"
   },
   "promotion_gate": {
     "minimum_60m_coverage_pct": 90.0,
@@ -115891,7 +118486,7 @@
       "yahoo"
     ]
   },
-  "updated_records_this_pass": 39,
+  "updated_records_this_pass": 0,
   "durable_stock_state": {
     "attempted": true,
     "branch_available": true,
@@ -115916,48 +118511,31 @@
     "retry_cooldown_hours": 2,
     "maximum_symbols_per_pass": 160,
     "selected_symbols_this_pass": [
-      "JBDI",
-      "REI",
-      "LAW",
-      "LOVE",
-      "PAR",
-      "CHWM",
-      "CLDI",
-      "NCPL",
-      "MOVE",
-      "JDZG",
-      "BAND",
-      "VLN",
-      "NCI",
-      "BNGO",
-      "MED",
-      "ACTU",
-      "ANPA",
-      "KSCP",
-      "NA",
-      "ELPW",
-      "FATE",
-      "ADCT",
-      "BTCS",
-      "STAK",
-      "FEMY",
-      "ASTI",
-      "EDIT",
-      "JACK",
-      "ATOM",
-      "PAYS",
-      "GRML",
-      "XTIA",
-      "SPWH",
-      "PMVP",
-      "SMJF",
-      "HHS"
+      "BDTX",
+      "BYRN",
+      "CTNM",
+      "EQ",
+      "GPUS",
+      "HOST",
+      "MASK",
+      "MVIS",
+      "NTWK",
+      "OKUR",
+      "SAFX",
+      "SAIQ",
+      "SKYA",
+      "TENX",
+      "UAMY",
+      "UNCY",
+      "VAI",
+      "VYGR",
+      "ZNTL"
     ],
-    "selected_symbol_count": 36,
+    "selected_symbol_count": 19,
     "symbols_with_no_recoverable_intraday_window": 0,
     "window_only_recoverable_unresolved_signals": true,
     "preserve_prior_verified_checkpoints": true,
-    "never_attempted_records_remaining": 0,
+    "never_attempted_records_remaining": 1,
     "terminal_events_do_not_require_1d_to_leave_queue": true
   },
   "open_source_feature_attribution": {
