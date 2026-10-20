@@ -1,0 +1,170 @@
+{
+ "schema": "ghazi.platform_scorecards.v1",
+ "generated_at": "2026-10-20T18:57:37.001460+00:00",
+ "scorecards": {
+  "SYSTEM_RELIABILITY": {
+   "status": "MEASURED",
+   "value": 87.3,
+   "unit": "percent of completed runs (24 h)",
+   "evidence": {
+    "options-radar.yml": {
+     "success": 45,
+     "cancelled": 22
+    },
+    "stock-radar.yml": {
+     "success": 55,
+     "failure": 30
+    },
+    "options-contract-radar.yml": {
+     "success": 16,
+     "failure": 14
+    },
+    "fast-explosion-radar.yml": {
+     "success": 83
+    },
+    "classical-direction-radar.yml": {
+     "success": 33
+    },
+    "index-radar.yml": {
+     "success": 9
+    },
+    "stock-watch-charts.yml": {
+     "success": 8,
+     "cancelled": 1,
+     "failure": 7
+    },
+    "public-macro.yml": {
+     "success": 2
+    },
+    "site-evidence-strength.yml": {
+     "success": 39,
+     "skipped": 10,
+     "cancelled": 2
+    },
+    "free-gex-validation.yml": {
+     "success": 38
+    },
+    "market-orchestrator.yml": {
+     "cancelled": 9,
+     "success": 22
+    }
+   },
+   "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
+   "note_ar": "نجاح التشغيل لا يعني توفر البيانات؛ المسارات المتوقفة بسبب الترخيص تنجح لكنها لا تنتج إشارات."
+  },
+  "DATA_COVERAGE": {
+   "status": "MEASURED",
+   "value": 40.0,
+   "unit": "percent of capabilities",
+   "evidence": {
+    "index_prices": "LICENSE_BLOCKED",
+    "stock_charts": "LICENSE_BLOCKED",
+    "liquidity_volume": "LICENSE_BLOCKED",
+    "options_analytics": "LICENSE_BLOCKED",
+    "spx_gamma": "LICENSE_BLOCKED",
+    "explosion_discovery": "AVAILABLE",
+    "classical_direction": "AVAILABLE",
+    "news_and_events": "AVAILABLE",
+    "issuer_filings": "SOURCE_UNAVAILABLE",
+    "macro_positioning": "AVAILABLE"
+   },
+   "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
+   "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
+  },
+  "DATA_TRUST": {
+   "status": "MEASURED",
+   "value": 55.6,
+   "unit": "percent of published datasets",
+   "evidence": {
+    "index_radar.json": "PASS/BLOCKED_PENDING_PERMISSION",
+    "index_charts.json": "PASS/BLOCKED_PENDING_PERMISSION",
+    "stock_watch_charts.json": "PASS/BLOCKED_PENDING_PERMISSION",
+    "liquidity_map.json": "PASS/BLOCKED_PENDING_PERMISSION",
+    "classical_direction.json": "PASS/RESTRICTED",
+    "decision_brief.json": "PASS/OK_FOR_STATED_USE",
+    "explosion_hunter.json": "PASS/RESTRICTED",
+    "explosion_stage_evaluation.json": "PASS/OK_FOR_STATED_USE",
+    "free_gex_validation.json": "PASS/BLOCKED_PENDING_PERMISSION",
+    "options_analytics.json": "PASS/BLOCKED_PENDING_PERMISSION",
+    "free_options_sources.json": "PASS/OK_FOR_STATED_USE",
+    "free_public_intelligence.json": "PASS/OK_FOR_STATED_USE",
+    "public_macro.json": "PASS/OK_FOR_STATED_USE",
+    "sec_filing_pulse.json": "PASS/OK_FOR_STATED_USE",
+    "source_agreement.json": "PASS/OK_FOR_STATED_USE",
+    "stock_audit_public.json": "PASS/OK_FOR_STATED_USE",
+    "site_strength.json": "PASS/OK_FOR_STATED_USE",
+    "live_dashboard_status.json": "PASS/OK_FOR_STATED_USE"
+   },
+   "method": "validation PASS and rights OK_FOR_STATED_USE (blocked, restricted and unknown rights do not count)",
+   "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
+  },
+  "ANALYTICAL_VALIDITY": {
+   "status": "FAILING",
+   "value": null,
+   "unit": "status",
+   "evidence": {
+    "run_id": 39479257695,
+    "conclusion": null,
+    "at": "2026-10-20T18:57:21Z"
+   },
+   "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
+   "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
+  },
+  "SIGNAL_PERFORMANCE": {
+   "status": "NO_PROVEN_EDGE",
+   "value": null,
+   "unit": "status",
+   "evidence": {
+    "walk_forward": {
+     "status": "FAILED_RESEARCH_GATE",
+     "research_passed": false
+    },
+    "spa": {
+     "pvalue_consistent": 0.498,
+     "baseline": "BASELINE_ALL_DAYS"
+    },
+    "spa_short": {
+     "pvalue_consistent": 0.766,
+     "baseline": "BASELINE_SHORT_ALL_DAYS"
+    }
+   },
+   "method": "walk-forward research gate AND Hansen SPA p < 0.05 versus the same-side baseline",
+   "note_ar": "لا توجد أفضلية مثبتة حتى الآن؛ لا تُعرض إشارات كتوصيات تنفيذية."
+  },
+  "WEBSITE_FUNCTIONALITY": {
+   "status": "UNMEASURED",
+   "value": null,
+   "unit": "percent",
+   "evidence": {},
+   "method": "no recorded browser check",
+   "note_ar": "لا يوجد فحص متصفح مسجل في الإنتاج بعد."
+  },
+  "TELEGRAM_DELIVERY": {
+   "status": "API_VERIFIED",
+   "value": null,
+   "unit": "status",
+   "evidence": {
+    "checked_at": "2026-10-20T18:50:42.683021+00:00",
+    "status": "UNCHANGED_NO_NEW_SEND",
+    "sent": 0,
+    "edited": 0,
+    "unchanged": 87,
+    "bot_api_responded": true,
+    "destination_api_verified": true
+   },
+   "method": "Bot API identity and destination chat verified by the Contract Guardian delivery audit",
+   "note_ar": "قبول Telegram للرسالة لا يثبت أن المستخدم قرأها."
+  }
+ },
+ "original_evidence_score": {
+  "value": 19,
+  "weights_changed": false,
+  "note": "kept as published by site_strength.json with its original weights"
+ },
+ "combined_score": null,
+ "combined_score_note_ar": "لا يوجد رقم مجمّع؛ كل مقياس يُقرأ وحده بدليله.",
+ "decision_grade": false,
+ "decision_grade_reason_ar": "لا يوجد مصدر أسعار مسموح ولا أفضلية مثبتة؛ المنصة للبحث والمتابعة فقط.",
+ "research_only": true,
+ "decision_authority": false
+}
