@@ -610,7 +610,8 @@
     const report=state.classical;
     const age=feedAgeHours(report?.source_generated_at);
     if(!report||age===null){
-      put("terminal-classical-health","لا يوجد تحليل منشور بعد؛ يظهر بعد أول تحليل في الجلسة.");
+      put("terminal-classical-health",state.blocked.classical?"الاتجاه الكلاسيكي متوقف: "+state.blocked.classical:
+        "لا يوجد تحليل منشور بعد؛ يظهر بعد أول تحليل في الجلسة.");
       target.append(txt("p","لا توجد بيانات؛ لا يتم اختراع اتجاه.","terminal-empty"));
       return;
     }
@@ -733,8 +734,10 @@
     const report=state.explosion;
     const age=feedAgeHours(report?.source_generated_at);
     const counts=report?.stage_counts||{};
-    if(!report||age===null){
-      put("terminal-explosion-health","لا يوجد فحص منشور بعد؛ يظهر الرادار بعد أول فحص للسوق في الجلسة.");
+    if(!report||age===null||report.status==="STALE"){
+      put("terminal-explosion-health",state.blocked.explosion?"رادار الانفجار متوقف: "+state.blocked.explosion:
+        report?.status==="STALE"?String(report.reason_ar||"آخر مسح قديم؛ سُحبت المرشحات."):
+        "لا يوجد فحص منشور بعد؛ يظهر الرادار بعد أول فحص للسوق في الجلسة.");
       target.append(txt("p","لا توجد بيانات؛ لا يتم اختراع مرشحين.","terminal-empty"));
       return;
     }

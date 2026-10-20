@@ -35,7 +35,10 @@ jobs:
         with:
           ref: main
           path: publisher
-          sparse-checkout: scripts/publish_classical_direction.py
+          sparse-checkout: |
+            scripts/publish_classical_direction.py
+            scripts/price_source_gate.py
+            options_radar/source_permissions.py
           sparse-checkout-cone-mode: false
 
       - name: Check out public runtime state
@@ -49,7 +52,27 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Check for a permitted market-data source
+        id: gate
+        env:
+          HAS_TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY != '' }}
+          HAS_FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY != '' }}
+          HAS_TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN != '' }}
+          HAS_ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY != '' }}
+          HAS_TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY != '' }}
+          HAS_POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY != '' }}
+          HAS_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY != '' }}
+        run: python publisher/scripts/price_source_gate.py --require price
+
+      - name: Withdraw the public digest while no permitted source exists
+        if: steps.gate.outputs.usable != 'true'
+        run: >-
+          python publisher/scripts/publish_classical_direction.py
+          --source-blocked "${{ steps.gate.outputs.reason }}"
+          --output state/runtime/public/data/classical_direction.json
+
       - name: Download the classical direction payload
+        if: steps.gate.outputs.usable == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -67,6 +90,7 @@ jobs:
           echo "Publishing classical direction from run $run_id"
 
       - name: Build the research-only digest
+        if: steps.gate.outputs.usable == 'true'
         run: >-
           python publisher/scripts/publish_classical_direction.py
           --input incoming/classical_direction_latest.json
