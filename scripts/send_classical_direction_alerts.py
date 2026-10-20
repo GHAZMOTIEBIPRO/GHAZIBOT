@@ -6,18 +6,15 @@ import html
 import json
 import math
 import os
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
 
 import exchange_calendars as xcals
 import pandas as pd
 
+from options_radar.site_links import chart_link_html
 from options_radar.telegram_transport import send_html_message
-
-SITE_URL = "https://ghazibot.vercel.app"
 
 
 def _load(path: str | Path, default: Any) -> Any:
@@ -132,8 +129,9 @@ def _message(row: dict[str, Any]) -> str:
             "اختيار السترايك وتاريخ الانتهاء غير داخل هذا التنبيه لأن بيانات العقود غير معتمدة حاليًا.",
         ]
     )
-    if re.fullmatch(r"[A-Z][A-Z0-9.-]{0,9}", symbol):
-        lines.extend(["", f'🔗 <a href="{SITE_URL}/?chart={quote(symbol)}">الشارت والأدلة على الموقع</a>'])
+    link = chart_link_html(symbol)
+    if link:
+        lines.extend(["", link])
     return "\n".join(lines)
 
 

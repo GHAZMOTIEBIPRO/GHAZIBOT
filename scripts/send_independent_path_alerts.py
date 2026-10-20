@@ -7,10 +7,11 @@ import json
 import math
 import os
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
+from options_radar.site_links import chart_link_html
 from options_radar.telegram_transport import send_html_message
 
 
@@ -155,6 +156,9 @@ def _stock_message(row: dict[str, Any]) -> str:
             "<i>درجة الرادار ترتيب وليست نسبة نجاح؛ مسار الأسهم مستقل عن الأوبشن.</i>",
         ]
     )
+    link = chart_link_html(symbol)
+    if link:
+        lines.append(link)
     return "\n".join(lines)
 
 
@@ -193,6 +197,9 @@ def _option_message(row: dict[str, Any]) -> str:
             "<i>مسار الأوبشن مستقل عن رادار الأسهم.</i>",
         ]
     )
+    link = chart_link_html(symbol, "شارت السهم الأساسي على الموقع")
+    if link:
+        lines.append(link)
     return "\n".join(lines)
 
 
