@@ -62,7 +62,9 @@ def greeks_bs(spot, strike, iv, years, rate=0.0):
     vanna = vega/spot * (1.0 - d1/(iv*srt))
     charm = -pdf*(2*rate*years-d2*iv*srt)/(2*years*iv*srt)
     vomma = vega*d1*d2/iv
-    zomma = gamma*((d1*d2-1)/(iv*iv*years))
+    # dGamma/dSigma = Gamma * (d1*d2 - 1) / sigma. The earlier form divided by
+    # sigma^2 * T, overstating zomma by 1/(sigma*T) (x3000+ for short-dated SPX).
+    zomma = gamma*((d1*d2-1)/iv)
     return {"delta": delta, "vega": vega, "gamma": gamma, "vanna": vanna,
             "charm": charm, "vomma": vomma, "zomma": zomma}
 
