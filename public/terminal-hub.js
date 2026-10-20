@@ -21,6 +21,7 @@
     live:[ROOT+"bot-state/runtime/public/data/live_dashboard_status.json"],
     explosion:[ROOT+"bot-state/runtime/public/data/explosion_hunter.json"],
     classical:[ROOT+"bot-state/runtime/public/data/classical_direction.json"],
+    liquidity:[ROOT+"bot-state/runtime/public/data/liquidity_map.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -61,7 +62,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -131,6 +132,8 @@
       Array.isArray(d.companies),
     explosion:d=>d?.schema==="ghazi.explosion_hunter_public.v1"&&d.research_only===true&&
       d.score_is_probability===false&&d.execution_authority===false&&Array.isArray(d.candidates),
+    liquidity:d=>d?.schema==="ghazi.liquidity_map.v1"&&d.order_book_available===false&&
+      d.symbols&&typeof d.symbols==="object",
     live:d=>d?.decision_authority===false&&d?.contains_secrets===false&&
       d?.paths&&typeof d.paths==="object",
     oos:d=>d?.mode==="EXPANDING_SESSION_WALK_FORWARD" &&
@@ -1059,6 +1062,7 @@
       "؛ السيناريو لا يراعي الأخبار أو الفجوات المستقبلية، ولا يمثل توقع Gamma.":
       "لا يمكن حساب نطاق ATR موثوق لهذا الشارت؛ تحتاج 15 شمعة على الأقل.");
     renderGamma(symbol);
+    renderLiquidity(symbol);
     const current=frame?.current_session_confirmed===true;
     const retainedBar=frame?.historical_cache_only===true;
     const freshnessText=retainedBar?
@@ -1079,6 +1083,54 @@
       (stockFrame?"مراقبة الأسهم Yahoo — إنشاء التقرير: "+stamp(state.watchCharts?.generated_at):
        usingStock?"الرادار Yahoo — تاريخ التقرير: "+stamp(state.stockCharts?.generated_at):
        "Yahoo / yfinance — إنشاء التقرير: "+stamp(state.charts?.generated_at))+".");
+  }
+  const LIQ_WORDS={
+    volume:{HIGH:"مرتفع",NORMAL:"طبيعي",LOW:"منخفض"},
+    position:{ABOVE:"فوق",BELOW:"تحت",AT:"عند",INSIDE:"داخل"},
+    breakout:{BREAKOUT_VOLUME_CONFIRMED:"اختراق قمة الأمس بحجم مرتفع",
+      BREAKOUT_VOLUME_UNCONFIRMED:"اختراق قمة الأمس بحجم غير كافٍ",
+      BREAKDOWN_VOLUME_CONFIRMED:"كسر قاع الأمس بحجم مرتفع",
+      BREAKDOWN_VOLUME_UNCONFIRMED:"كسر قاع الأمس بحجم غير كافٍ",
+      FAILED_BREAKOUT:"اختراق فاشل لقمة الأمس",FAILED_BREAKDOWN:"كسر فاشل لقاع الأمس"},
+    sweep:{ABOVE_PRIOR_HIGH_REJECTED:"تجاوز قمة الأمس ثم ارتداد",
+      BELOW_PRIOR_LOW_REJECTED:"تجاوز قاع الأمس ثم ارتداد"}
+  };
+  function liquidityView(map,symbol,now=Date.now()){
+    const row=map?.symbols?.[symbol];
+    if(!row)return {status:"غير متاح لهذا الرمز",metrics:[],note:"لا يغطي ملف السيولة هذا الرمز حاليًا."};
+    if(row.status!=="OK")return {status:"شموع غير كافية",metrics:[],note:"لا توجد شموع 15 دقيقة مكتملة كافية."};
+    const t=validDate(map.generated_at);
+    const ageH=t===null?null:(now-t)/3600000;
+    const stale=ageH===null||ageH>36;
+    const vol=row.volume;
+    const prof=row.profile_session;
+    const metrics=[
+      ["الحجم النسبي (نفس الوقت)",vol?(LIQ_WORDS.volume[vol.state]||"—")+" · RVOL "+fmt(vol.rvol,2):"عينة غير كافية"],
+      ["VWAP الجلسة (تقريبي)",Number.isFinite(row.session_vwap)?
+        fmt(row.session_vwap)+" · السعر "+(LIQ_WORDS.position[row.vwap_position]||"—"):"غير متاح"],
+      ["POC / VAH / VAL (تقدير)",prof?fmt(prof.poc)+" / "+fmt(prof.vah)+" / "+fmt(prof.val):"غير متاح"],
+      ["نطاق الافتتاح 30د",row.opening_range?
+        fmt(row.opening_range.low)+"–"+fmt(row.opening_range.high)+" · "+
+        (LIQ_WORDS.position[row.opening_range.status]||"—"):"غير مكتمل"],
+      ["قمة/قاع الأمس",row.prior_day?fmt(row.prior_day.high)+" / "+fmt(row.prior_day.low):"غير متاح"],
+      ["الاختراق",LIQ_WORDS.breakout[row.breakout]||"لا اختراق لنطاق الأمس"],
+      ["سحب سيولة (استنتاج سعري)",LIQ_WORDS.sweep[row.sweep_proxy]||"لا يوجد"],
+      ["فجوة الافتتاح",Number.isFinite(row.gap_pct)?fmt(row.gap_pct,2)+"%":"غير متاح"]];
+    const reading=Array.isArray(row.reading_ar)?row.reading_ar.join(" "):"";
+    return {
+      status:(stale?"قديمة · ":"")+"جلسة "+String(row.session_date||"غير محددة"),
+      metrics,
+      note:reading+" آخر شمعة مكتملة: "+String(row.last_bar_start||"غير محدد")+
+        " · إنشاء الملف: "+stamp(map.generated_at)+
+        (stale?" · الملف أقدم من 36 ساعة ولا يمثل الجلسة الحالية.":"")
+    };
+  }
+  function renderLiquidity(symbol){
+    const grid=$("terminal-liquidity-metrics");if(grid)grid.replaceChildren();
+    const view=liquidityView(state.liquidity,symbol);
+    put("terminal-liquidity-status",view.status);
+    for(const [label,value] of view.metrics)grid?.append(putMetric(label,value));
+    put("terminal-liquidity-note",view.note);
   }
   function renderGamma(symbol){
     const grid=$("terminal-gamma-metrics");if(grid)grid.replaceChildren();
@@ -1289,10 +1341,10 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
@@ -1302,7 +1354,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
