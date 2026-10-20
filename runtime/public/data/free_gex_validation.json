@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T04:00:10.478745+00:00",
+  "generated_at": "2026-10-20T04:41:13.563626+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
   "source_count_available": 4,
@@ -178,13 +178,65 @@
         "has_spxw": true,
         "coverage_ok": true
       },
-      "generated_at": "2026-10-20T04:00:10.463865+00:00"
+      "generated_at": "2026-10-20T04:41:13.542947+00:00"
     },
     "upstream_methodology": [
       "itsfabtrading/Gex-Multi",
       "MitchelTurner/GEX"
     ],
-    "integration_mode": "original_reimplementation_shadow_only"
+    "integration_mode": "original_reimplementation_shadow_only",
+    "interpretation": {
+      "spot": 7690.73,
+      "regime": "negative",
+      "distance_pct": {
+        "gamma_flip": 0.91,
+        "call_wall": 1.42,
+        "put_wall": 0.12
+      },
+      "hedging_pressure_bn_per_1pct": 28.91,
+      "hedging_direction_model": "AMPLIFYING",
+      "relevant_expirations": {
+        "front": "2026-10-20",
+        "count": 4,
+        "front_share_abs_gex": 0.172206932547044
+      },
+      "measured_inputs": [
+        "spot (Cboe delayed)",
+        "implied volatility (Cboe delayed)",
+        "open interest (prior session)"
+      ],
+      "model_outputs": [
+        "net GEX",
+        "gamma flip",
+        "call/put walls",
+        "hedging pressure",
+        "regime"
+      ],
+      "reading_ar": [
+        "السعر تحت نقطة الانقلاب التقديرية (7,761): نظام جاما سالب في النموذج، وقد يضخم التحوط الحركة في الاتجاهين؛ تقلب أعلى محتمل.",
+        "Call Wall 7,800 (+1.42%): مستوى مقاومة نموذجي محتمل، ليس سقفًا مضمونًا.",
+        "السعر ليس بين الجدارين؛ قراءة الجدران كنطاق غير صالحة الآن.",
+        "ضغط التحوط التقديري: نحو 28.9 مليار $ لكل حركة 1% (مع اتجاه الحركة) بافتراض أن المتعاملين مشترون للكول وبائعون للبوت.",
+        "الجاما موزعة على سترايكات كثيرة (GCI 5.6%).",
+        "حصة أقرب انتهاء (2026-10-20) من الجاما: 17%؛ أثرها يتلاشى بعد انتهائها."
+      ],
+      "is_measured_dealer_position": false
+    },
+    "level_validation": {
+      "sessions_tested": 0,
+      "walls_contained_range_rate": null,
+      "same_width_centred_band_rate": null,
+      "mean_range_pct_positive_regime": null,
+      "mean_range_pct_negative_regime": null,
+      "regime_sessions": {
+        "positive": 0,
+        "negative": 0
+      },
+      "verdict": "INSUFFICIENT_SAMPLE",
+      "minimum_sessions_for_verdict": 20,
+      "method": "last snapshot before each session vs that session's realized high/low; baseline is a band of equal width centred on the snapshot spot"
+    },
+    "history_entries": 2
   },
   "research_indicators_ar": [
     "GEX",
