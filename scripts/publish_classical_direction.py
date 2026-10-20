@@ -39,6 +39,8 @@ def _row(source: dict[str, Any]) -> dict[str, Any] | None:
         "symbol": symbol[:10],
         "decision": decision,
         "priority": str(source.get("priority") or "WAIT"),
+        "trade_status": (str(source.get("trade_status")) if source.get("trade_status") in
+                         {"ACTIONABLE", "NO_TRADE", "WAIT"} else ("WAIT" if decision == "WAIT" else "UNRATED")),
         "agreement_pct": source.get("agreement_pct") if isinstance(source.get("agreement_pct"), int) else None,
         "horizon": str(source.get("horizon") or "")[:40],
         "reference_close": _num(source.get("price")),

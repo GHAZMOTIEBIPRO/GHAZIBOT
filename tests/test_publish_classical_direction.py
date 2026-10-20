@@ -48,3 +48,14 @@ def test_option_data_in_direction_or_wrong_path_is_refused():
         build_digest({**_payload(), "path": "options"}, now=NOW)
     with pytest.raises(ValueError):
         build_digest(_payload(), now=NOW.replace(tzinfo=None))
+
+
+def test_trade_status_passes_through_and_unknown_values_are_not_trusted():
+    payload = _payload()
+    payload["signals"][0]["trade_status"] = "NO_TRADE"
+    rows = {r["symbol"]: r for r in build_digest(payload, now=NOW)["companies"]}
+    assert rows["NVDA"]["trade_status"] == "NO_TRADE"
+    assert rows["AAPL"]["trade_status"] == "WAIT"
+    payload["signals"][0]["trade_status"] = "YOLO"
+    rows = {r["symbol"]: r for r in build_digest(payload, now=NOW)["companies"]}
+    assert rows["NVDA"]["trade_status"] == "UNRATED"

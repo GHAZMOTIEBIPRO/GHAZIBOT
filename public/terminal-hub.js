@@ -538,8 +538,9 @@
     for(const row of rows.slice(0,24)){
       const item=txt("article","","terminal-structural-item");
       const title=txt("div","","terminal-structural-title");
-      const label=row.decision==="CALL"?"CALL · صعود":row.decision==="PUT"?"PUT · هبوط":"انتظار";
-      title.append(txt("strong",row.symbol),chip(label,row.decision==="CALL"?"UP":row.decision==="PUT"?"DOWN":null));
+      const noTrade=row.trade_status==="NO_TRADE";
+      const label=noTrade?(row.decision+" · لا تداول"):row.decision==="CALL"?"CALL · صعود":row.decision==="PUT"?"PUT · هبوط":"انتظار";
+      title.append(txt("strong",row.symbol),chip(label,noTrade?"STALE":row.decision==="CALL"?"UP":row.decision==="PUT"?"DOWN":null));
       const tf=row.timeframes||{};
       item.append(title,
         pair("توافق الأطر",Number.isInteger(row.agreement_pct)?row.agreement_pct+"%":"غير متاح"),
@@ -547,7 +548,12 @@
         pair("آخر إغلاق مرجعي",fmt(row.reference_close,2)));
       if(row.decision!=="WAIT"){
         item.append(pair("التأكيد",fmt(row.confirmation_level,2)),pair("الإلغاء",fmt(row.invalidation_level,2)));
-        if(row.targets)item.append(pair("الهدف 1 · الهدف 2",fmt(row.targets.t1,2)+" · "+fmt(row.targets.t2,2)));
+        if(row.targets){
+          if(Number.isFinite(row.targets.entry))item.append(pair("دخول مشروط",fmt(row.targets.entry,2)));
+          item.append(pair("الهدف 1 · الهدف 2",fmt(row.targets.t1,2)+" · "+fmt(row.targets.t2,2)));
+          if(Number.isFinite(row.targets.t1_reward_to_risk))item.append(pair("العائد/المخاطرة النظري",fmt(row.targets.t1_reward_to_risk,2)));
+        }
+        if(noTrade)item.append(txt("small","لا تداول: العائد إلى المخاطرة حتى الهدف الأول أقل من 1.","terminal-structural-notice"));
       }
       for(const line of (row.scenarios_ar||[]).slice(0,3))item.append(txt("small",line,"terminal-structural-notice"));
       item.append(chartButton(row.symbol,"الشارت ↗"));

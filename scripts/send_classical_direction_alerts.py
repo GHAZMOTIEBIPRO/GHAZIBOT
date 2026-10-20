@@ -175,7 +175,9 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
     if payload.get("path") != "classical_direction":
         raise RuntimeError("Expected classical_direction payload")
     maximum = max(1, min(5, int(os.getenv("CLASSICAL_ALERT_MAX", "3"))))
-    candidates = [row for row in payload.get("signals", []) if isinstance(row, dict) and row.get("decision") in {"CALL", "PUT"}]
+    candidates = [row for row in payload.get("signals", []) if isinstance(row, dict) and row.get("decision") in {"CALL", "PUT"}
+                  # NO_TRADE: direction stands but T1 reward/risk < 1; never alerted.
+                  and row.get("trade_status") in (None, "ACTIONABLE")]
     signals = [row for row in candidates if _consistent_signal(row) and _fresh_session_bar(row)]
     state["blocked_invalid_or_stale"] = len(candidates) - len(signals)
     signals.sort(

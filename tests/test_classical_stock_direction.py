@@ -162,6 +162,7 @@ def test_sender_deduplicates_same_direction(monkeypatch):
     monkeypatch.setattr(sender, "_fresh_session_bar", lambda row: True)
     row = build_direction("AAPL", _frame(), _frame(count=180), _frame(count=180)).as_dict()
     row["rank_score"] = 80
+    row["trade_status"] = "ACTIONABLE"  # dedup is under test, not plan quality
     payload = {"path": "classical_direction", "signals": [row]}
     state = {"sent": {}}
     assert sender.send(payload, state) == 1
@@ -182,7 +183,8 @@ def test_targets_come_from_levels_beyond_price_or_measured_moves():
 
     levels = [90.0, 95.0, 104.0, 110.0]
     call = _targets("CALL", 100.0, 96.0, levels)
-    assert call == {"t1": 104.0, "t2": 110.0, "risk_per_share": 4.0, "t1_reward_to_risk": 1.0}
+    assert call == {"entry": 100.0, "t1": 104.0, "t2": 110.0, "risk_per_share": 4.0,
+                    "t1_reward_to_risk": 1.0}
     put = _targets("PUT", 100.0, 103.0, levels)
     assert (put["t1"], put["t2"]) == (95.0, 90.0)
     # No level beyond price: 1R / 2R measured move.
@@ -200,3 +202,43 @@ def test_every_direction_carries_three_scenarios_and_no_indicator_inputs():
         assert row["targets"] is None
     else:
         assert row["targets"]["t1_reward_to_risk"] > 0
+
+
+def test_targets_start_at_the_conditional_entry_not_the_last_close():
+    from options_radar.classical_stock_direction import _targets
+    # Confirmation 104 is above price 100: T1 must lie beyond the entry,
+    # never equal the confirmation level itself (seen live: GS, LIN).
+    plan = _targets("CALL", 100.0, 96.0, [104.0, 110.0, 118.0], confirmation=104.0)
+    assert plan["entry"] == 104.0 and plan["t1"] == 110.0 and plan["t2"] == 118.0
+    assert plan["risk_per_share"] == 8.0 and plan["t1_reward_to_risk"] == 0.75
+    put = _targets("PUT", 100.0, 103.0, [80.0, 90.0, 97.0], confirmation=97.0)
+    assert (put["entry"], put["t1"], put["t2"]) == (97.0, 90.0, 80.0)
+
+
+def test_low_reward_plan_is_no_trade_and_never_alerted(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(sender, "_send", sent.append)
+    monkeypatch.setattr(sender, "_fresh_session_bar", lambda row: True)
+    row = build_direction("AAPL", _frame(), _frame(count=180), _frame(count=180)).as_dict()
+    assert row["decision"] == "CALL" and row["targets"]["t1_reward_to_risk"] < 1
+    assert row["trade_status"] == "NO_TRADE"
+    assert sender.send({"path": "classical_direction", "signals": [row]}, {"sent": {}}) == 0
+    assert sent == []
+
+
+def test_direction_already_past_its_invalidation_becomes_wait(monkeypatch):
+    import options_radar.classical_stock_direction as mod
+    real = mod.analyze_timeframe
+
+    def shifted(frame, timeframe):
+        view = real(frame, timeframe)
+        if timeframe == "15m":  # swing low above the close: already invalidated (seen live: RTX)
+            from dataclasses import replace
+            return replace(view, last_swing_low=view.close * 1.01)
+        return view
+
+    monkeypatch.setattr(mod, "analyze_timeframe", shifted)
+    row = build_direction("AAPL", _frame(), _frame(count=180), _frame(count=180)).as_dict()
+    assert row["decision"] == "WAIT" and row["trade_status"] == "WAIT"
+    assert row["targets"] is None and row["invalidation_level"] is None
+    assert row["reasons_ar"][0].startswith("الإشارة ملغاة")
