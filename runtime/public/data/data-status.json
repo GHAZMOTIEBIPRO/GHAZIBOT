@@ -1,20 +1,10 @@
 {
-  "status": "critical",
-  "generated_at": "2026-10-20T14:45:44.993272+00:00",
-  "dataset_age_minutes": 1142.39,
-  "last_successful_refresh": "2026-10-20T14:45:44.993272+00:00",
+  "status": "degraded",
+  "generated_at": "2026-10-20T14:50:37.007063+00:00",
+  "dataset_age_minutes": 0.3,
+  "last_successful_refresh": null,
   "option_provider": "unknown",
-  "option_provider_readiness": {
-    "status": "FALLBACK_ONLY",
-    "production_quote_ready": false,
-    "production_flow_ready": false,
-    "reasons": [
-      "Payload age 46.7m exceeds the 45m safety limit.",
-      "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-      "55 chain(s) are Yahoo/YFinance-only fallback",
-      "55 chain(s) contain delayed, indicative, or unofficial sources"
-    ]
-  },
+  "option_provider_readiness": null,
   "source_status": {
     "active_stock_sources": 1,
     "active_option_sources": 1,
@@ -22,7 +12,7 @@
     "production_option_quotes": null,
     "production_option_flow": null,
     "sec_fulltext": {
-      "checked_at": "2026-10-20T14:27:22.927225+00:00",
+      "checked_at": "2026-10-20T14:50:26.632458+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
@@ -93,61 +83,11 @@
     "access_blocked": 16,
     "request_failures": 16,
     "processed_accessions": 0,
-    "updated_at": "2026-10-20T14:27:30.301095+00:00",
+    "updated_at": "2026-10-20T14:50:35.581172+00:00",
     "outcome": "ACCESS_BLOCKED"
   },
   "run_duration_seconds": null,
   "reasons": [
-    "fast_discovery: Payload age 202.5m exceeds the 45m safety limit.",
-    "stocks: Payload age 100.8m exceeds the 90m safety limit.; 1 stock-path data/source errors recorded; No candidate currently has an official primary cause; alerts must state cause unknown",
-    "options: Payload age 46.7m exceeds the 45m safety limit.; No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 55 chain(s) are Yahoo/YFinance-only fallback; 55 chain(s) contain delayed, indicative, or unofficial sources"
-  ],
-  "runtime_source": "bot-state/live_dashboard_status",
-  "workflow_health": {
-    "publisher": {
-      "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
-      "source_run_id": "39441021683",
-      "mode": "artifact_to_bot_state_status_only"
-    },
-    "paths": {
-      "fast_discovery": {
-        "status": "STALE",
-        "generated_at": "2026-10-20T11:23:16.332352+00:00",
-        "age_minutes": 202.48,
-        "maximum_age_minutes": 45.0,
-        "candidate_count": 0,
-        "provider_readiness": null,
-        "reasons": [
-          "Payload age 202.5m exceeds the 45m safety limit."
-        ]
-      },
-      "stocks": {
-        "status": "STALE",
-        "generated_at": "2026-10-20T12:52:36.813826+00:00",
-        "age_minutes": 113.14,
-        "maximum_age_minutes": 90.0,
-        "candidate_count": 2,
-        "provider_readiness": null,
-        "reasons": [
-          "Payload age 100.8m exceeds the 90m safety limit.",
-          "1 stock-path data/source errors recorded",
-          "No candidate currently has an official primary cause; alerts must state cause unknown"
-        ]
-      },
-      "options": {
-        "status": "STALE",
-        "generated_at": "2026-10-19T19:43:21.393889+00:00",
-        "age_minutes": 1142.39,
-        "maximum_age_minutes": 45.0,
-        "candidate_count": 0,
-        "provider_readiness": "FALLBACK_ONLY",
-        "reasons": [
-          "Payload age 46.7m exceeds the 45m safety limit.",
-          "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-          "55 chain(s) are Yahoo/YFinance-only fallback",
-          "55 chain(s) contain delayed, indicative, or unofficial sources"
-        ]
-      }
-    }
-  }
+    "2 critical pipeline error(s)"
+  ]
 }
