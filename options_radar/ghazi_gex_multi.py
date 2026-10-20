@@ -148,7 +148,8 @@ def contract_rows(payload):
             # Cboe reports IV as a decimal (0.15). Values above 5 can only be
             # percent points; decimal IV above 100% is real for far wings.
             rows.append({"symbol": sym, "strike": strike, "iv": iv / 100 if iv > 5 else iv,
-                         "oi": oi, "expiry": str(exp)[:10], "type": typ})
+                         "oi": oi, "expiry": str(exp)[:10], "type": typ,
+                         "provider_gamma": f(x.get("gamma"))})
     if spot is None or not rows:
         raise ValueError("No usable SPX option chain")
     return spot, rows
@@ -176,6 +177,36 @@ def provenance(payload):
             "Open interest is the exchange's prior-session figure, not intraday flow.",
         ],
         "execution_grade": False,
+    }
+
+
+def gamma_check(rows, spot, session_date):
+    """Model gamma vs the gamma Cboe publishes for the same contract.
+
+    Both are model values (Cboe's own pricing model, its rates, dividends and
+    clock); the comparison measures how far the engine's simplified model
+    (rate 0, business-day floor) drifts, not which one is "true".
+    """
+    diffs = []
+    for r in rows:
+        provider = r.get("provider_gamma")
+        t = years_to_expiry(r["expiry"], session_date)
+        if not provider or provider <= 0 or t is None:
+            continue
+        model = gamma_bs(spot, r["strike"], r["iv"], t)
+        if model > 0:
+            diffs.append(abs(model - provider) / provider)
+    diffs.sort()
+    if not diffs:
+        return {"compared": 0, "median_abs_rel_diff": None,
+                "basis": "near-spot contracts with provider gamma > 0"}
+    mid = len(diffs) // 2
+    median = diffs[mid] if len(diffs) % 2 else (diffs[mid - 1] + diffs[mid]) / 2
+    return {
+        "compared": len(diffs),
+        "median_abs_rel_diff": round(median, 4),
+        "p90_abs_rel_diff": round(diffs[min(len(diffs) - 1, int(0.9 * len(diffs)))], 4),
+        "basis": "near-spot contracts with provider gamma > 0; both values are models",
     }
 
 
@@ -281,6 +312,7 @@ def build(payload=None, session_date=None):
         "gci": concentration,
         "put_call_oi_ratio": pc_oi,
         "provenance": provenance(payload),
+        "greek_check": gamma_check(near_rows, spot, session_date),
         "top_abs_gamma": sorted(
             [{"strike": k, "net_gex": by_strike[k]["net"]} for k in eligible],
             key=lambda x: abs(x["net_gex"]), reverse=True)[:10],

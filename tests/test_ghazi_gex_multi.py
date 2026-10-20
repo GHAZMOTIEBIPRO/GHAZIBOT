@@ -85,6 +85,24 @@ def test_build_emits_levels_greeks_and_provenance_labels():
     assert out["front_expiry"] == "2026-10-20"
 
 
+def test_greek_check_compares_model_gamma_with_provider_gamma():
+    from options_radar.ghazi_gex_multi import gamma_bs, gamma_check, years_to_expiry
+
+    day = date(2026, 10, 20)
+    t = years_to_expiry("2026-10-20", day)
+    exact = gamma_bs(7600.0, 7600.0, 0.18, t)
+    rows = [{"strike": 7600.0, "iv": 0.18, "expiry": "2026-10-20", "provider_gamma": exact},
+            {"strike": 7650.0, "iv": 0.18, "expiry": "2026-10-20", "provider_gamma": None},
+            {"strike": 7550.0, "iv": 0.18, "expiry": "2026-10-20",
+             "provider_gamma": gamma_bs(7600.0, 7550.0, 0.18, t) / 2}]
+    out = gamma_check(rows, 7600.0, day)
+    assert out["compared"] == 2  # missing provider gamma is skipped, not zero
+    assert out["median_abs_rel_diff"] == 0.5  # (0 + 1.0) / 2
+    assert gamma_check([], 7600.0, day)["median_abs_rel_diff"] is None
+    built = build(payload=cboe_payload(), session_date=day)
+    assert built["greek_check"]["compared"] > 0
+
+
 def test_empty_chain_still_fails_closed():
     with pytest.raises(ValueError):
         contract_rows({"data": {"current_price": 7600, "options": []}})
