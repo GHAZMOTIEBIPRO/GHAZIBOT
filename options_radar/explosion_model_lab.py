@@ -162,8 +162,12 @@ def summarize(group: pd.DataFrame) -> dict[str, Any]:
 
 def spa_vs_baseline(frame: pd.DataFrame, models: list[str], reps: int = 1000, seed: int = 7) -> dict[str, Any]:
     """Hansen SPA (arch) on daily mean net returns: does any model beat
-    entering every eligible stock that day? Days without a model signal
-    score 0 for that model (no position)."""
+    entering every eligible stock that day?
+
+    On days without a model signal the model takes the baseline's value,
+    so those days contribute zero excess. Scoring them as 0 (flat) would
+    let a rarely-trading model "beat" a negative baseline just by staying
+    out, which measures the baseline's losses, not the model's edge."""
     try:
         from arch.bootstrap import SPA
     except ImportError:
@@ -173,15 +177,17 @@ def spa_vs_baseline(frame: pd.DataFrame, models: list[str], reps: int = 1000, se
         return {"status": "INSUFFICIENT_DAYS", "days": len(base)}
     losses = {}
     for name in models:
-        daily = frame[frame["model"] == name].groupby("date")["net"].mean().reindex(base.index).fillna(0.0)
-        losses[name] = -daily.values
+        daily = frame[frame["model"] == name].groupby("date")["net"].mean().reindex(base.index)
+        losses[name] = -daily.fillna(base).values
     spa = SPA(-base.values, pd.DataFrame(losses, index=base.index), reps=reps, block_size=10, seed=seed)
     spa.compute()
     p = spa.pvalues
     return {"status": "OK", "days": len(base), "reps": reps,
             "pvalue_consistent": round(float(p["consistent"]), 4),
             "pvalue_lower": round(float(p["lower"]), 4), "pvalue_upper": round(float(p["upper"]), 4),
-            "null": "no model beats the all-days baseline", "library": "arch (NCSA) Hansen SPA"}
+            "null": "no model beats the all-days baseline", "library": "arch (NCSA) Hansen SPA",
+            "no_signal_days": "model takes the baseline value (zero excess)",
+            "relative_only": "beating a losing baseline is not profitability; see mean_net_pct"}
 
 
 def evaluate(frame: pd.DataFrame) -> dict[str, Any]:
