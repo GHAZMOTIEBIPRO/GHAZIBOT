@@ -1,56 +1,57 @@
 {
   "service": "GHAZIBOT",
-  "status": "healthy",
-  "generated_at": "2026-10-19T18:07:23.325128+00:00",
+  "status": "critical",
+  "generated_at": "2026-10-20T00:38:07.096784+00:00",
   "schema_version": 7,
   "health_schema_version": 3,
   "runtime_source": "bot-state/live_dashboard_status",
   "checks": {
     "dataset_fresh": false,
-    "critical_pipeline_ok": true,
-    "critical_pipeline_error_count": 0,
+    "critical_pipeline_ok": false,
+    "critical_pipeline_error_count": 1,
     "option_quotes_production_ready": false,
     "option_flow_production_ready": false
   },
   "workflow_health": {
     "publisher": {
-      "source_workflow": "BLACK BOX Omega Stock Radar",
-      "source_run_id": "39297176769",
+      "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
+      "source_run_id": "39344558994",
       "mode": "artifact_to_bot_state_status_only"
     },
     "paths": {
       "fast_discovery": {
         "status": "HEALTHY",
-        "generated_at": "2026-10-19T17:47:40.977769+00:00",
-        "age_minutes": 19.71,
+        "generated_at": "2026-10-19T23:58:18.628830+00:00",
+        "age_minutes": 39.81,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": null,
         "reasons": []
       },
       "stocks": {
-        "status": "HEALTHY",
-        "generated_at": "2026-10-19T17:48:16.792942+00:00",
-        "age_minutes": 19.11,
+        "status": "STALE",
+        "generated_at": "2026-10-19T23:06:01.192984+00:00",
+        "age_minutes": 92.1,
         "maximum_age_minutes": 90.0,
-        "candidate_count": 4,
+        "candidate_count": 3,
         "provider_readiness": null,
         "reasons": [
+          "Payload age 92.1m exceeds the 90m safety limit.",
           "No candidate currently has an official primary cause; alerts must state cause unknown"
         ]
       },
       "options": {
         "status": "STALE",
-        "generated_at": "2026-10-02T18:25:04.557095+00:00",
-        "age_minutes": 24462.31,
+        "generated_at": "2026-10-19T19:43:21.393889+00:00",
+        "age_minutes": 294.76,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": "FALLBACK_ONLY",
         "reasons": [
-          "Payload age 24441.1m exceeds the 45m safety limit.",
-          "Only delayed, indicative, unofficial, or unverified-entitlement option data is active",
-          "50 chain(s) are Yahoo/YFinance-only fallback",
-          "50 chain(s) contain delayed, indicative, or unofficial sources"
+          "Payload age 46.7m exceeds the 45m safety limit.",
+          "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
+          "55 chain(s) are Yahoo/YFinance-only fallback",
+          "55 chain(s) contain delayed, indicative, or unofficial sources"
         ]
       }
     }
