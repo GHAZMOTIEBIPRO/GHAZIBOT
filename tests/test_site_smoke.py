@@ -32,3 +32,16 @@ def test_smoke_report_feeds_the_website_scorecard():
                        "a:spx": {"errors": ["TypeError"], "overflow": False}}}
     metric = cards.website(smoke)
     assert metric["status"] == "MEASURED" and metric["value"] == 50.0
+
+
+def test_validity_ignores_runs_still_in_progress():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cards2", ROOT / "scripts/build_platform_scorecards.py")
+    cards = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cards)
+    runs = [{"id": 2, "status": "in_progress", "conclusion": None, "created_at": "2026-10-20T19:00:00Z"},
+            {"id": 1, "status": "completed", "conclusion": "success", "created_at": "2026-10-20T18:00:00Z"}]
+    metric = cards.validity(runs)
+    assert metric["status"] == "PASSING" and metric["evidence"]["run_id"] == 1
+    assert cards.validity([runs[0]])["status"] == "UNMEASURED"
