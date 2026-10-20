@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-20T11:13:04.643735+00:00",
+  "updated_at": "2026-10-20T11:24:01.216660+00:00",
   "signals": {
     "905a6da049f090af2d3f": {
       "signal_id": "905a6da049f090af2d3f",
@@ -70,8 +70,8 @@
       },
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 5,
-      "last_observed_at": "2026-10-20T11:13:04.643735+00:00",
+      "observations": 6,
+      "last_observed_at": "2026-10-20T11:24:01.216660+00:00",
       "last_price": 0.1426,
       "last_directional_return_pct": -1.7229,
       "mfe_pct": 0.0,
@@ -2194,8 +2194,8 @@
       },
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 3,
-      "last_observed_at": "2026-10-20T11:13:04.643735+00:00",
+      "observations": 4,
+      "last_observed_at": "2026-10-20T11:24:01.216660+00:00",
       "last_price": 0.1426,
       "last_directional_return_pct": 0.0,
       "mfe_pct": 0.0,
@@ -4502,20 +4502,154 @@
           "score_band": "below-72"
         }
       ]
+    },
+    "f6bb2750a0b14b85a29d": {
+      "signal_id": "f6bb2750a0b14b85a29d",
+      "signal_time": "2026-10-20T11:24:01.216660+00:00",
+      "symbol": "HTZ",
+      "direction": "up",
+      "entry_price": 1.84,
+      "score": 68.07,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T11:24:01.216660+00:00",
+      "cause_point_in_time_frozen": true,
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 39.6,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "07:23",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T11:24:01.216660+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T11:24:01.216660+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 13755500.0,
+          "turnover_pct": 3.859011431193017,
+          "acceleration_score": 23.76,
+          "participation_score": 67.31
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 52.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 6.358,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 1.84,
+          "dollar_volume": 25310120.0,
+          "avg_dollar_volume": null,
+          "market_cap": 655870563.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 100.0,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-10-20T11:24:01.216660+00:00",
+      "last_price": 1.84,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 68.07,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-10-20T11:24:01.216660+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 68.07,
+          "score_band": "below-72"
+        }
+      ]
     }
   },
   "measurement_note": "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; therefore it is used for calibration, not executable-fill claims.",
   "summary": {
-    "tracked": 38,
+    "tracked": 39,
     "matured_60m": 18,
     "successes": 0,
     "failures": 0,
-    "open": 38
+    "open": 39
   },
   "event_dedup": {
     "mode": "same_symbol_direction_within_4h",
     "reentry_gap_minutes": 240,
     "duplicates_collapsed_this_pass": 1,
-    "samples_after_dedup": 38
+    "samples_after_dedup": 39
   }
 }
