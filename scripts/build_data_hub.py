@@ -125,6 +125,48 @@ REGISTRY: list[dict[str, Any]] = [
      "limitations": "تشغيل وليس جودة إشارة"},
 ]
 
+# One public state per dataset, from the recovery directive's taxonomy.
+# LIVE is listed for completeness: nothing here carries a licensed live
+# quote, so no dataset can reach it. Order of the rules is fail-closed:
+# absence, failed validation, licence and timing beat what the data is.
+DATA_STATES = {
+    "LIVE": "حي من مصدر مرخص",
+    "DELAYED": "رسمي منشور بتأخر معروف",
+    "HISTORICAL": "نتائج تاريخية مكتملة",
+    "STALE": "قديم أو بلا وقت موثق",
+    "LICENSE_BLOCKED": "محجوب حتى الترخيص",
+    "SOURCE_UNAVAILABLE": "المصدر لم يستجب",
+    "MODEL_ESTIMATED": "تقدير نموذجي",
+    "RESEARCH_ONLY": "بحثي/تشغيلي فقط",
+    "VALIDATION_FAILED": "فشل التحقق",
+    "DATA_UNAVAILABLE": "غير منشور",
+}
+_MODEL_KINDS = {"OPTIONS_MODEL", "OPTIONS_DERIVED", "DERIVED_ANALYTICS"}
+_DELAYED_KINDS = {"MACRO_CONTEXT", "REGULATORY_EVENTS", "FILINGS", "NEWS", "OPTIONS_CONTEXT"}
+_HISTORICAL_FILES = {"explosion_stage_evaluation.json", "stock_audit_public.json"}
+
+
+def data_state(row: dict[str, Any], payload: Any) -> str:
+    if not row.get("present"):
+        return "DATA_UNAVAILABLE"
+    if row.get("validation") == "FAIL":
+        return "VALIDATION_FAILED"
+    if row.get("rights_status") in {"BLOCKED_PENDING_PERMISSION", "RESTRICTED", "NOT_AUTHORISED_FALLBACK"}:
+        return "LICENSE_BLOCKED"
+    status = str(payload.get("status") or "").upper() if isinstance(payload, dict) else ""
+    if status in {"SOURCE_UNAVAILABLE", "UNAVAILABLE", "BLOCKED_BY_SOURCE"}:
+        return "SOURCE_UNAVAILABLE"
+    if row.get("freshness") != "FRESH":
+        return "STALE"
+    if row["kind"] in _MODEL_KINDS:
+        return "MODEL_ESTIMATED"
+    if row["file"] in _HISTORICAL_FILES:
+        return "HISTORICAL"
+    if row["license_class"] == "OFFICIAL_PUBLIC" or row["kind"] in _DELAYED_KINDS:
+        return "DELAYED"
+    return "RESEARCH_ONLY"
+
+
 # Fields that, when present, must hold these values for the file to pass.
 GUARDS = {"decision_authority": False, "execution_authority": False, "execution_grade": False,
           "quote_execution_eligible": False, "score_is_probability": False}
@@ -195,6 +237,8 @@ def build(data_dir: Path, now: datetime) -> dict[str, Any]:
         row = assess(entry, payload, now)
         if isinstance(payload, dict) and payload.get("_unreadable"):
             row.update(validation="FAIL", validation_problems=["unreadable_json"], freshness="UNTIMED")
+        row["data_state"] = data_state(row, payload)
+        row["data_state_ar"] = DATA_STATES[row["data_state"]]
         rows.append(row)
     counts: dict[str, int] = {}
     for row in rows:
@@ -205,7 +249,10 @@ def build(data_dir: Path, now: datetime) -> dict[str, Any]:
         "datasets": rows,
         "source_gates": _source_gates(),
         "source_rights": _source_rights(),
+        "data_states": DATA_STATES,
         "summary": {"total": len(rows), "freshness": counts,
+                    "data_states": {k: sum(r["data_state"] == k for r in rows)
+                                    for k in DATA_STATES if any(r["data_state"] == k for r in rows)},
                     "rights": {k: sum(r.get("rights_status") == k for r in rows)
                                for k in sorted({r.get("rights_status") for r in rows})},
                     "validation_failures": sum(r["validation"] == "FAIL" for r in rows),

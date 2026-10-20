@@ -19,4 +19,11 @@ assert.match(lines[1].detail,/مصدر احتياطي غير مرخص للأتم
 assert.equal(lines[2].status,"غير منشور");
 assert.equal(lines[2].tone,null);
 assert.deepEqual(hubLines(null),[]);
+// The directive state wins over the freshness label when the hub provides it.
+const [blocked,delayed]=hubLines({datasets:[
+  {file:"liquidity_map.json",freshness:"FRESH",validation:"PASS",data_state:"LICENSE_BLOCKED",data_state_ar:"محجوب حتى الترخيص"},
+  {file:"fda_events.json",freshness:"FRESH",validation:"PASS",data_state:"DELAYED",data_state_ar:"رسمي منشور بتأخر معروف"}]});
+assert.equal(blocked.status,"محجوب حتى الترخيص (LICENSE_BLOCKED)");
+assert.equal(blocked.tone,"DOWN");
+assert.equal(delayed.tone,"UP");
 console.log("terminal data hub ok");
