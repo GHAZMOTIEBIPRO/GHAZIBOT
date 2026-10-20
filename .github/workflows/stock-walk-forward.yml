@@ -10,6 +10,8 @@ on:
       - "scripts/run_stock_walk_forward.py"
       - "options_radar/explosion_stage_evaluation.py"
       - "scripts/run_explosion_stage_evaluation.py"
+      - "options_radar/signal_tracking.py"
+      - "scripts/run_signal_tracking.py"
   workflow_run:
     workflows:
       - "BLACK BOX Omega Stock Outcome Auditor"
@@ -98,6 +100,12 @@ jobs:
           --audit data/live/stock_outcome_audit.json
           --output data/live/explosion_stage_evaluation.json
 
+      - name: Per-symbol signal follow-up (audited outcomes)
+        run: >-
+          python -m scripts.run_signal_tracking
+          --audit data/live/stock_outcome_audit.json
+          --output data/live/signal_tracking.json
+
       - name: Validate fail-closed walk-forward contract
         run: |
           python - <<'PY'
@@ -145,6 +153,10 @@ jobs:
           if [ -s data/live/explosion_stage_evaluation.json ]; then
             cp -f data/live/explosion_stage_evaluation.json .bot-state/runtime/public/data/explosion_stage_evaluation.json
             git -C .bot-state add runtime/public/data/explosion_stage_evaluation.json
+          fi
+          if [ -s data/live/signal_tracking.json ]; then
+            cp -f data/live/signal_tracking.json .bot-state/runtime/public/data/signal_tracking.json
+            git -C .bot-state add runtime/public/data/signal_tracking.json
           fi
 
           python - <<'PY'

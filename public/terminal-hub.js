@@ -26,6 +26,7 @@
     optionsAnalytics:[ROOT+"bot-state/runtime/public/data/options_analytics.json"],
     dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
     modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
+    tracking:[ROOT+"bot-state/runtime/public/data/signal_tracking.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -66,7 +67,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,modelLab:null,pendingSymbol:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,modelLab:null,tracking:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -136,6 +137,8 @@
       Array.isArray(d.companies),
     explosion:d=>d?.schema==="ghazi.explosion_hunter_public.v1"&&d.research_only===true&&
       d.score_is_probability===false&&d.execution_authority===false&&Array.isArray(d.candidates),
+    tracking:d=>d?.schema==="ghazi.signal_tracking.v1"&&d.decision_authority===false&&
+      d.is_win_probability===false&&d.symbols&&typeof d.symbols==="object",
     modelLab:d=>d?.schema==="ghazi.explosion_model_lab.v1"&&d.research_only===true&&
       d.live_rules_changed===false&&d.models&&typeof d.models==="object",
     dataHub:d=>d?.schema==="ghazi.data_hub.v1"&&d.decision_authority===false&&Array.isArray(d.datasets),
@@ -1288,7 +1291,7 @@
     let card;
     try{
       card=api.build(symbol,{index:state.quotes,classical:state.classical,liquidity:state.liquidity,
-        news:state.news,explosion:state.explosion,gamma:state.gamma,options:state.optionsAnalytics});
+        news:state.news,explosion:state.explosion,gamma:state.gamma,options:state.optionsAnalytics,tracking:state.tracking});
     }catch{put("terminal-decision-card-verdict","تعذر بناء الخلاصة");return;}
     put("terminal-decision-card-verdict",card.verdictAr+" · "+card.evidenceBalance);
     const group=(title,items,empty)=>{
@@ -1308,6 +1311,8 @@
       "إلغاء: "+fmt(L.invalidation),
       "عائد/مخاطرة حتى T1: "+(Number.isFinite(L.rr)?fmt(L.rr,2)+" (نظري)":"غير متاح")]:[],
       "لا توجد مستويات منشورة.");
+    if(card.tracking)group("المتابعة: إشارات الرادار السابقة ونتائجها",
+      [card.tracking.totals,...card.tracking.recent],"");
     group("حداثة البيانات",card.freshness.map(f=>f.label+": "+
       (f.ageHours===null?"وقت غير معروف":"قبل "+fmt(f.ageHours,1)+" ساعة")+(f.fresh?"":" · قديمة")),
       "لا توجد مصادر بتوقيت معروف.");
@@ -1600,10 +1605,10 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","modelLab"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","modelLab","tracking"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.modelLab]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.modelLab,state.tracking]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
