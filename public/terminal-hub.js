@@ -1203,33 +1203,60 @@
       put("terminal-gamma-note","لا يوجد تقرير Gamma حديث صادق في المصدر. لا نستخدم الصفر أو تخمين Dealer GEX.");
       return;
     }
-    const metrics=data.metrics||{};
+    const view=gammaView(data,symbol);
+    put("terminal-gamma-status",view.status);
+    for(const [label,value] of view.metrics)grid?.append(putMetric(label,value));
+    put("terminal-gamma-note",view.note);
+  }
+  // Measured inputs vs model outputs are labelled separately; the engine's
+  // levels are a Black-Scholes model on delayed Cboe data, never dealer books.
+  function gammaView(data,symbol){
+    const metrics=data?.metrics||{};
     const val=(key)=>metrics[key]?.count>0 &&
       Number.isFinite(metrics[key]?.median)?metrics[key].median:null;
-    const gex=val("gex"),flip=val("flip"),cw=val("call_wall"),pw=val("put_wall");
-    const gexSources=Number.isInteger(data.independent_numerical_gex_sources)?
+    const gexSources=Number.isInteger(data?.independent_numerical_gex_sources)?
       data.independent_numerical_gex_sources:(metrics.gex?.count||0);
-    put("terminal-gamma-status",gexSources<2?
-      "SHADOW — جاما من مصدر رقمي واحد أو بلا بيانات":
-      "SHADOW — توافق تجريبي غير معتمد");
-    for(const [label,value,suffix] of [
-      ["GEX بحثي (وحدة المصدر)",gex,""],
-      ["Gamma Flip",flip,""],
-      ["Call Wall",cw,""],
-      ["Put Wall",pw,""]]){
-      grid?.append(putMetric(label,value===null?"غير متاح":fmt(value,1)+suffix));
+    const engine=data?.integrated_engines?.ghazi_gex_multi;
+    const reading=data?.integrated_engines?.interpretation;
+    const check=data?.integrated_engines?.level_validation;
+    const modelled=engine?.available===true&&engine.provenance?.levels==="MODEL_ESTIMATED";
+    const n=(x,p=0)=>Number.isFinite(x)?fmt(x,p):"غير متاح";
+    const dist=x=>Number.isFinite(x)?" ("+(x>0?"+":"")+fmt(x,2)+"%)":"";
+    const out=[];
+    if(modelled){
+      out.push(["SPX (مُقاس · Cboe مؤخر)",n(engine.spot,2)]);
+      out.push(["Gamma Flip (نموذج)",n(engine.gamma_flip)+dist(reading?.distance_pct?.gamma_flip)]);
+      out.push(["Call Wall (نموذج)",n(engine.call_wall)+dist(reading?.distance_pct?.call_wall)]);
+      out.push(["Put Wall (نموذج)",n(engine.put_wall)+dist(reading?.distance_pct?.put_wall)]);
+      out.push(["نظام الجاما (نموذج)",engine.gamma_regime==="positive"?"موجب · يهدئ الحركة":
+        engine.gamma_regime==="negative"?"سالب · قد يضخم الحركة":"غير محدد"]);
+      out.push(["ضغط التحوط لكل 1% (نموذج)",Number.isFinite(reading?.hedging_pressure_bn_per_1pct)?
+        fmt(reading.hedging_pressure_bn_per_1pct,1)+" مليار $":"غير متاح"]);
+      out.push(["تركيز الجاما GCI",Number.isFinite(engine.gci)?fmt(100*engine.gci,1)+"%":"غير متاح"]);
+      out.push(["الانتهاءات المستخدمة",String(engine.expirations_used??"—")+" · الأقرب "+String(engine.front_expiry||"—")]);
+    }else{
+      for(const [label,key] of [["GEX بحثي (وحدة المصدر)","gex"],["Gamma Flip","flip"],
+        ["Call Wall","call_wall"],["Put Wall","put_wall"]])
+        out.push([label,val(key)===null?"غير متاح":fmt(val(key),1)]);
     }
-    const engine=data.integrated_engines?.ghazi_gex_multi;
-    const actual=engine?.available===true;
-    const modelled=actual&&engine.provenance?.levels==="MODEL_ESTIMATED";
-    const note="مصادر GEX رقمية: "+gexSources+
-      " · محرك السلسلة المتكاملة: "+(actual?"يملك مدخلاً بحثياً":"لا توجد سلسلة عقود صالحة")+
-      (modelled?" (Cboe مؤخر · OI من الجلسة السابقة · المستويات تقدير نموذجي · تمركز صانع السوق غير متاح)":"")+
-      " · "+(symbol==="SPY"?"هذه مستويات SPX وليست قيم خيارات SPY. ":"")+
-      (gexSources<2?"لا يوجد نصاب مستقل لتأكيد قيمة GEX. ":"")+
-      "الأرقام لا تثبت تمركز صانع السوق أو اتجاه الغد. "+
-      "التقرير: "+stamp(data.generated_at)+".";
-    put("terminal-gamma-note",note);
+    const tested=Number.isInteger(check?.sessions_tested)?check.sessions_tested:0;
+    const validation=!check?"اختبار فائدة المستويات: غير متاح.":
+      check.verdict==="INSUFFICIENT_SAMPLE"?
+        "اختبار فائدة المستويات: "+tested+" جلسة من "+check.minimum_sessions_for_verdict+" مطلوبة؛ لا حكم بعد.":
+        "اختبار فائدة المستويات على "+tested+" جلسة: احتواء الجدارين للنطاق "+
+        fmt(100*check.walls_contained_range_rate,1)+"% مقابل نطاق بنفس العرض حول السعر "+
+        fmt(100*check.same_width_centred_band_rate,1)+"% · "+
+        (check.verdict==="WALLS_BEAT_BASELINE"?"الجداران أفضل من الخط الأساسي":"لا أفضلية على الخط الأساسي")+".";
+    const lines=Array.isArray(reading?.reading_ar)?reading.reading_ar.slice(0,6).join(" "):"";
+    return {
+      status:modelled?"نموذج تقديري · SHADOW":gexSources<2?
+        "SHADOW — جاما من مصدر رقمي واحد أو بلا بيانات":"SHADOW — توافق تجريبي غير معتمد",
+      metrics:out,
+      note:(modelled?lines+" ":"لا توجد سلسلة عقود صالحة للمحرك. ")+validation+
+        " · مُقاس: السعر وIV (مؤخر) وOI (جلسة سابقة) · نموذج: GEX والانقلاب والجدران والتحوط."+
+        " · "+(symbol==="SPY"?"هذه مستويات SPX وليست قيم خيارات SPY. ":"")+
+        "لا تثبت الأرقام تمركز صانع السوق أو اتجاه الغد. التقرير: "+stamp(data?.generated_at)+"."
+    };
   }
   function renderTrust(){
     const wrap=$("terminal-trust-grid");if(!wrap)return;
@@ -1415,7 +1442,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
