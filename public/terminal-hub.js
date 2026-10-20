@@ -1080,6 +1080,7 @@
     // The summary uses published engine feeds, not candles, so it renders
     // even when this symbol has no chart bars.
     renderDecisionCard(symbol);
+    renderTradingView(symbol);
     const indexFrame=state.charts?.symbols?.[symbol]?.intervals?.[tf];
     const stockFrame=state.watchCharts?.symbols?.[symbol]?.intervals?.[tf];
     const frame=indexFrame||stockFrame;
@@ -1287,6 +1288,33 @@
         " · إنشاء الملف: "+stamp(map.generated_at)+
         (stale?" · الملف أقدم من 36 ساعة ولا يمثل الجلسة الحالية.":"")
     };
+  }
+  // TradingView's embedded chart is the display route its terms allow (branding
+  // kept, data shown inside the widget only). Loaded only when opened.
+  const TV_SYMBOLS={SPX:"SP:SPX",NDX:"NASDAQ:NDX",DJI:"DJ:DJI",RUT:"TVC:RUT",VIX:"TVC:VIX",
+    SPY:"AMEX:SPY",QQQ:"NASDAQ:QQQ",IWM:"AMEX:IWM",DIA:"AMEX:DIA"};
+  function tradingViewConfig(symbol){
+    if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(String(symbol||"")))return null;
+    return {autosize:true,symbol:TV_SYMBOLS[symbol]||symbol,interval:"D",timezone:"America/New_York",
+      theme:"dark",style:"1",locale:"ar_AE",allow_symbol_change:false,hide_side_toolbar:true,
+      support_host:"https://www.tradingview.com"};
+  }
+  function renderTradingView(symbol){
+    const box=$("terminal-tv-chart"),slot=$("terminal-tv-chart-slot");
+    if(!box||!slot||!box.open)return;
+    const config=tradingViewConfig(symbol);
+    if(!config||slot.dataset.symbol===symbol)return;
+    slot.dataset.symbol=symbol;
+    slot.replaceChildren();
+    const holder=document.createElement("div");
+    holder.className="tradingview-widget-container";holder.style.height="100%";
+    const inner=document.createElement("div");
+    inner.className="tradingview-widget-container__widget";inner.style.height="100%";
+    const script=document.createElement("script");
+    script.type="text/javascript";script.async=true;
+    script.src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.textContent=JSON.stringify(config);
+    holder.append(inner,script);slot.append(holder);
   }
   function renderDecisionCard(symbol){
     const body=$("terminal-decision-card-body");if(!body)return;
@@ -1630,7 +1658,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
@@ -1652,6 +1680,7 @@
     $("terminal-chart-timeframe").value="1d";renderChart();
   });
   $("terminal-explosion-sort")?.addEventListener("change",()=>renderExplosion());
+  $("terminal-tv-chart")?.addEventListener("toggle",()=>renderTradingView(state.symbol));
   $("terminal-chart-timeframe")?.addEventListener("change",event=>{
     state.tf=event.target.value;renderChart();
   });
