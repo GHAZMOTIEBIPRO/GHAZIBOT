@@ -242,6 +242,44 @@ def test_sixty_minute_horizon_after_close_is_labelled_not_applicable_not_covered
     assert policy["outcome_or_status_changed"] is False and policy["deleted"] is False
 
 
+def test_pre_open_horizon_is_labelled_by_timestamp_only_and_outcomes_kept():
+    # 2026-08-13 XNYS open 09:30 ET = 13:30 UTC.
+    early = datetime(2026, 8, 13, 11, 45, tzinfo=timezone.utc)      # 07:45 ET, ends 08:45
+    edge = datetime(2026, 8, 13, 12, 30, tzinfo=timezone.utc)       # 08:30 ET, ends at open
+    straddle = datetime(2026, 8, 13, 13, 0, tzinfo=timezone.utc)    # 09:00 ET, ends 10:00
+    covered_early = datetime(2026, 8, 13, 11, 50, tzinfo=timezone.utc)
+    saturday = datetime(2026, 8, 15, 11, 45, tzinfo=timezone.utc)
+    audit = {"records": {
+        "early_win": _row("early_win", "AAA", early, status="success"),
+        "early_loss": _row("early_loss", "BBB", early, status="failed"),
+        "edge": _row("edge", "CCC", edge, status="failed"),
+        "straddle": _row("straddle", "DDD", straddle),
+        "covered": _row("covered", "EEE", covered_early, covered_60m=True),
+        "sat": _row("sat", "FFF", saturday),
+    }}
+    for row in audit["records"].values():
+        row["signal_session_valid"] = True
+    recalculate_fair_coverage(audit)
+    rows, coverage = audit["records"], audit["coverage"]
+    tag = "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"
+    # Winners and losers alike: the rule never looks at the outcome.
+    for key in ("early_win", "early_loss", "edge"):
+        assert rows[key]["coverage_60m_applicability"] == tag
+    assert rows["early_win"]["audit_status"] == "success"
+    assert rows["early_loss"]["audit_status"] == "failed"
+    for key in ("straddle", "covered", "sat"):
+        assert "coverage_60m_applicability" not in rows[key]
+    assert coverage["coverage_60m_not_applicable_before_open"] == 3
+    assert coverage["coverage_60m_not_applicable_after_close"] == 0
+    assert coverage["coverage_60m_not_applicable_total"] == 3
+    assert coverage["coverage_60m_applicable_records"] == 3
+    assert coverage["coverage_60m_pct"] == 33.33
+    assert coverage["coverage_60m_pct_before_pre_open_rule"] == 16.67
+    assert coverage["coverage_60m_all_eligible_pct"] == 16.67
+    rule = audit["sixty_minute_applicability_policy"]["pre_open_rule"]
+    assert rule["decided_by_timestamp_only"] is True and rule["deleted"] is False
+
+
 def test_unparseable_or_non_session_signal_stays_in_60m_denominator():
     saturday = datetime(2026, 8, 15, 19, 50, tzinfo=timezone.utc)
     broken = _row("broken", "AAA", saturday)

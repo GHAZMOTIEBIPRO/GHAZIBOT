@@ -264,6 +264,12 @@
       fmt(oos.coverage,2)+"% (شرط الاختبار: 90%) · جلسات مستقلة: "+
       oos.sessions+" · جلسات اختبار خارج العينة: "+oos.outSessions+
       " · حالات الاختبار: "+oos.outRecords+
+      (oos.findings?(
+        " · AUC ترتيب الدرجة: "+fmt(oos.findings.auc,2)+" (0.50 = عشوائي)"+
+        " · نسبة الحالات الموجبة خارج العينة: "+fmt(100*oos.findings.basePositiveRate,1)+"%"+
+        " مقابل الربع الأعلى: "+fmt(100*oos.findings.topQuartilePositiveRate,1)+"%"+
+        (oos.findings.topQuartileMeanReturn===null?"":
+          " · متوسط عائد 60 دقيقة للربع الأعلى: "+fmt(oos.findings.topQuartileMeanReturn,2)+"%")):"")+
       (oos.additionalCoverageNeeded===null?"":(
         " · نحتاج "+oos.additionalCoverageNeeded+
         " حالات بتغطية حقيقية إضافية عند ثبات العينة."))+
@@ -1223,8 +1229,11 @@
       fmt(100*covered/audited,1)+"%":"غير متاح";
     // Signals whose 60m horizon ends after the regular close cannot be
     // measured at 60m; show the applicable figure beside the unadjusted one.
-    const notApplicable=Number.isInteger(audit?.coverage?.coverage_60m_not_applicable_after_close)?
+    const afterClose=Number.isInteger(audit?.coverage?.coverage_60m_not_applicable_after_close)?
       audit.coverage.coverage_60m_not_applicable_after_close:0;
+    const preOpen=Number.isInteger(audit?.coverage?.coverage_60m_not_applicable_before_open)?
+      audit.coverage.coverage_60m_not_applicable_before_open:0;
+    const notApplicable=afterClose+preOpen;
     const applicable=audited-notApplicable;
     const applicablePct=notApplicable>0&&applicable>0&&covered<=applicable?
       fmt(100*covered/applicable,1)+"%":null;
@@ -1248,7 +1257,8 @@
         auditRecent?
           (applicablePct?
             "تغطية 60 دقيقة: "+applicablePct+" من القابلة للقياس ("+covered+"/"+applicable+")"+
-            " · "+coveragePct+" من الكل · "+notApplicable+" إشارة أفقها بعد الإغلاق (غير قابلة للقياس)":
+            " · "+coveragePct+" من الكل · غير قابلة للقياس بشموع الجلسة: "+afterClose+" أفقها بعد الإغلاق"+
+            (preOpen?" و"+preOpen+" أفقها قبل الافتتاح":""):
             "تغطية 60 دقيقة: "+coveragePct+" ("+covered+"/"+audited+")")+
           " · المعاد فحصها بتوقيت إغلاق الشمعة: "+verifiedV2+
           " · جاهزية الترقية: "+(audit?.promotion_gate?.coverage_ready===true?"شرط التغطية مستوفى فقط":"غير مستوفاة")+

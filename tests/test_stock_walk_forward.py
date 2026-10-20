@@ -150,3 +150,26 @@ def test_missing_60m_reasons_are_observations_not_imputed_hits() -> None:
     assert diagnostic["policy"] == "NO_SYNTHETIC_BACKFILL_OR_PROFIT_CLAIM"
     assert report["coverage"]["covered_60m"] == 1
 
+
+def test_pre_open_and_after_close_are_both_outside_the_diagnostic_denominator() -> None:
+    report = {
+        "coverage": {"eligible_records": 4, "covered_60m": 1,
+                     "coverage_60m_not_applicable_after_close": 1,
+                     "coverage_60m_not_applicable_before_open": 1},
+        "records": {
+            "a": {"signal_session_valid": True, "coverage": {"60m": True}},
+            "b": {"signal_session_valid": True, "coverage": {"60m": False},
+                  "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_AFTER_REGULAR_CLOSE"},
+            "c": {"signal_session_valid": True, "coverage": {"60m": False},
+                  "coverage_60m_applicability": "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"},
+            "d": {"signal_session_valid": True, "coverage": {"60m": False},
+                  "audit_status": "pending"},
+        },
+    }
+    diagnostic = coverage_gap_diagnostics(report)
+    assert diagnostic["eligible_records"] == 2
+    assert diagnostic["not_applicable_after_close_records"] == 1
+    assert diagnostic["not_applicable_before_open_records"] == 1
+    assert diagnostic["missing_60m_records"] == 1
+    assert diagnostic["missing_reason_count_is_exhaustive"] is True
+

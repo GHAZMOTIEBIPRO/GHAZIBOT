@@ -58,3 +58,17 @@ const reasons=evaluate({...pending,coverage_gap_diagnostics:{
 assert.equal(reasons.additionalCoverageNeeded,179);
 assert.equal(reasons.reasonCounts.NO_POST_SIGNAL_BARS,55);
 assert.equal(reasons.ready,false);
+// Gate ran the OOS test and it failed: show the measured figures, never "ready".
+const failed=evaluate({...pending,status:"FAILED_RESEARCH_GATE",research_passed:false,
+  gate:{coverage_60m_pct:98.44,independent_60m_sessions:26,ready:true},
+  metrics:{oos_sessions:18,oos_records:123,baseline_auc:0.6038,
+    overall_oos:{n:123,positive_rate:0.3252},
+    adjusted_top_quartile:{n:39,positive_rate:0.3333,mean_60m_return_pct:-0.5169},
+    session_robustness_rate:0.7222}});
+assert.equal(failed.ready,false);
+assert.equal(failed.tested,true);
+assert.match(failed.summary,/ولم تثبت أفضلية/);
+assert.equal(failed.findings.auc,0.6038);
+assert.equal(failed.findings.topQuartileMeanReturn,-0.5169);
+assert.equal(failed.claimedWinRate,null);
+assert.equal(one.findings,null);
