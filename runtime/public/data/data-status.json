@@ -1,8 +1,8 @@
 {
-  "status": "critical",
-  "generated_at": "2026-10-20T08:06:24.771542+00:00",
-  "dataset_age_minutes": 743.06,
-  "last_successful_refresh": "2026-10-20T08:06:24.771542+00:00",
+  "status": "healthy",
+  "generated_at": "2026-10-20T08:11:49.556044+00:00",
+  "dataset_age_minutes": 748.47,
+  "last_successful_refresh": "2026-10-20T08:11:49.556044+00:00",
   "option_provider": "phase5_hybrid",
   "option_provider_readiness": {
     "status": "FALLBACK_ONLY",
@@ -106,42 +106,40 @@
   },
   "run_duration_seconds": null,
   "reasons": [
-    "stocks: Payload age 92.1m exceeds the 90m safety limit.; No candidate currently has an official primary cause; alerts must state cause unknown",
     "options: Payload age 46.7m exceeds the 45m safety limit.; No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 55 chain(s) are Yahoo/YFinance-only fallback; 55 chain(s) contain delayed, indicative, or unofficial sources"
   ],
   "runtime_source": "bot-state/live_dashboard_status",
   "workflow_health": {
     "publisher": {
-      "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
-      "source_run_id": "39390300214",
+      "source_workflow": "BLACK BOX Omega Stock Radar",
+      "source_run_id": "39390489715",
       "mode": "artifact_to_bot_state_status_only"
     },
     "paths": {
       "fast_discovery": {
         "status": "HEALTHY",
         "generated_at": "2026-10-20T08:01:48.491320+00:00",
-        "age_minutes": 4.6,
+        "age_minutes": 10.02,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": null,
         "reasons": []
       },
       "stocks": {
-        "status": "STALE",
-        "generated_at": "2026-10-19T23:06:01.192984+00:00",
-        "age_minutes": 540.39,
+        "status": "HEALTHY",
+        "generated_at": "2026-10-20T08:02:25.219566+00:00",
+        "age_minutes": 9.41,
         "maximum_age_minutes": 90.0,
-        "candidate_count": 3,
+        "candidate_count": 1,
         "provider_readiness": null,
         "reasons": [
-          "Payload age 92.1m exceeds the 90m safety limit.",
           "No candidate currently has an official primary cause; alerts must state cause unknown"
         ]
       },
       "options": {
         "status": "STALE",
         "generated_at": "2026-10-19T19:43:21.393889+00:00",
-        "age_minutes": 743.06,
+        "age_minutes": 748.47,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": "FALLBACK_ONLY",
