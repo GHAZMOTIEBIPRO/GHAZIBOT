@@ -27,6 +27,10 @@ concurrency:
   group: ghazi-evidence-strength-publisher
   cancel-in-progress: false
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   evidence-readiness:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'

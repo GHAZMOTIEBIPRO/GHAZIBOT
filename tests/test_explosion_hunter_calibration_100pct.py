@@ -7,7 +7,8 @@ import pandas as pd
 from scripts import replay_explosion_calibration as calibration
 
 
-def test_calibration_passes_target_to_replay():
+def test_calibration_passes_target_to_replay(monkeypatch):
+    monkeypatch.setenv("YAHOO_AUTOMATED_ACCESS_APPROVED", "true")  # logic test with a mocked transport
     index = pd.date_range("2025-01-01", periods=40, freq="B")
     closes = np.full(40, 10.0)
     closes[32:] = 21.0

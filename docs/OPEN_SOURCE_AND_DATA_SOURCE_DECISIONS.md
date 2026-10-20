@@ -59,10 +59,10 @@ module uses FRED series.
 
 | Source | Current use | Status |
 |---|---|---|
-| Yahoo (yfinance / yahooquery / chart API) | Candles for charts and research | robots.txt disallows the chart/options endpoints, and Yahoo's terms forbid automated collection without prior permission. Still running as a labelled fallback: **owner decision pending** (switching it off removes the site's charts until a licensed feed exists). |
-| api.nasdaq.com screener / movers | Full-market discovery | robots.txt disallows it and nasdaq.com terms allow personal non-commercial use only. Same status: **owner decision pending**. |
+| Yahoo (yfinance / yahooquery / chart API) | Candles, chains, news, statements, profiles | **Gated off (2026-10-20)** after reading the full Terms of Service (see below). Every call site calls `source_permissions.require("yahoo")`; public chart files are replaced by `SOURCE_TERMS_BLOCKED` reports and the site opens the TradingView widget instead. Re-enable with `YAHOO_AUTOMATED_ACCESS_APPROVED=true` only after Yahoo's written permission. |
+| api.nasdaq.com screener / movers | Full-market discovery | **Gated off (2026-10-20)** after reading the full nasdaq.com terms. Re-enable with `NASDAQ_WEB_AUTOMATION_APPROVED=true` only after Nasdaq's written permission. |
 | Cboe CDN delayed options JSON | Model GEX inputs, option analytics | **Gated off (2026-10-20).** robots.txt does not forbid it, but Cboe's delayed-quote pages prohibit auto-extraction of delayed quote table data, and Cboe's data policies treat single-security, price-like derived data as fee liable. Re-enable with `CBOE_DELAYED_AUTOMATION_APPROVED=true` only after a Cboe DataShop licence or written permission. |
-| nasdaqtrader SymDir, OCC | Symbol lists, open interest | Allowed. |
+| nasdaqtrader SymDir and halt RSS, OCC | Symbol lists, halts, open interest | Still running. nasdaqtrader.com is a separate site; its terms were not readable by the probe (page rendered without terms text) and must be confirmed. |
 | TradingView widgets | Public price display (ticker tape, market overview) | Embedded with TradingView branding; data is not redistributed by this project. |
 
 ### Why Yahoo was not simply swapped for Alpaca or Tiingo
@@ -82,12 +82,48 @@ sources would replace one terms problem with another. A compliant design is:
 Both steps need the owner: account keys plus a written confirmation of the
 provider's terms for this use. Until then nothing is switched silently.
 
-## Terms by use type (research of official pages, 2026-10-20)
+## Full official documents read (GitHub runner, run 39413336941, 2026-10-20 11:12Z)
 
-Provider pages were not reachable from the build sandbox, so most quotes
-come from search extracts of the providers' own pages and must be
-confirmed on the live pages. Only the IEX policy PDF, the yfinance README
-and the Lightweight Charts NOTICE were read in full.
+`scripts/probe_terms.py` fetched each provider's own page from a GitHub
+runner (the build sandbox cannot reach them) and printed the clauses on
+automated access, storage and redistribution. Verbatim extracts:
+
+- **Yahoo Terms of Service** (legal.yahoo.com/us/en/yahoo/terms/otos): you
+  must not "access or collect data, or attempt to access or collect data,
+  from our Services using any automated means, devices, programs,
+  algorithms or methodologies, including but not limited to robots,
+  spiders, scrapers, data mining tools, or data gathering or extraction
+  tools, for any purpose without our express, prior permission"; and
+  "Unless otherwise expressly stated, you may not access or reuse the
+  Services, or any portion thereof, for any commercial purpose".
+  `query1.finance.yahoo.com/robots.txt` and `query2.../robots.txt`:
+  `User-agent: * / Disallow: /`. **Verdict: current use not permitted;
+  stopped.**
+- **Nasdaq.com terms** (nasdaq.com/legal): licence "solely for your
+  personal, non-commercial use"; you agree to "Not access or use the
+  Service, or any process, whether automated or manual, to capture data or
+  content from the Service". `api.nasdaq.com/robots.txt`: `Disallow: /`.
+  **Verdict: not permitted; stopped.**
+- **Cboe delayed quotes page**: "IT IS STRICTLY PROHIBITED TO DOWNLOAD
+  DELAYED QUOTE TABLE DATA FROM THIS WEB SITE BY USING AUTO-EXTRACTION
+  PROGRAMS/QUERIES AND/OR SOFTWARE ... DOWNLOADING THIS DATA IN ANY OTHER
+  WAY THAN BY MANUAL TICKER SYMBOL ENTRY IS STRICTLY PROHIBITED."
+  **Verdict: stays gated off.**
+- **Alpaca support**: "Unfortunately, you cannot redistribute Alpaca API
+  data." Internal use by the account holder only; not configured
+  (no keys).
+- **Tiingo Terms of Use** §1.6: on non-enterprise plans "you may not
+  write, save, archive, back up, or otherwise retain Tiingo Data in any
+  persistent or durable storage", and "A Starter Plan or Trial Plan does
+  not permit persistent storage of Derived Products". Public tables,
+  charts or dashboards that display Tiingo data are listed as prohibited
+  derived products. **Verdict: the free plan cannot feed this project's
+  stored, published pipeline.**
+- **CFTC Public Reporting (Socrata API)** and **U.S. Treasury yield curve**:
+  open U.S. government data, reachable without keys; used as legal
+  replacements for macro and positioning context.
+
+## Terms by use type (2026-10-20)
 
 | Provider | Internal automated | Non-display | Public raw | Public derived | Real-time display |
 |---|---|---|---|---|---|
@@ -100,8 +136,10 @@ and the Lightweight Charts NOTICE were read in full.
 | Tiingo free | personal/internal; no persistent storage on free plans | internal | prohibited | unclear | redistribution licence |
 | TradingView widgets | n/a (no data access) | n/a | n/a | n/a | allowed inside the widget with branding kept |
 
-Consequences applied: Cboe automated reads gated off by default. Pending
-owner decisions: Yahoo and Nasdaq automated use; whether to request
-licences (Cboe DataShop, OPRA vendor agreement, IEX/Tiingo/Alpaca
-consent for derived publication); replacing self-hosted candles with a
-TradingView chart widget for public display.
+Consequences applied: Cboe, Yahoo and Nasdaq-website automated reads are
+gated off by default (`options_radar/source_permissions.py`, test
+`tests/test_yahoo_nasdaq_gates.py` fails if a new Yahoo/Nasdaq caller skips
+its gate). Public price display moved to the TradingView widget. Owner-only
+decisions: requesting permission or licences (Yahoo, Nasdaq, Cboe DataShop,
+OPRA vendor, Alpaca/IEX consent for derived publication); adding an Alpaca
+account for internal-only analysis; confirming nasdaqtrader.com terms.

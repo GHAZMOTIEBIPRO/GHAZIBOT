@@ -13,6 +13,7 @@ import requests
 
 from .sec_efts import sec_fulltext_symbols
 from .settings import Settings
+from .source_permissions import allowed
 
 LOGGER = logging.getLogger(__name__)
 SEC_BASE = "https://www.sec.gov"
@@ -328,6 +329,8 @@ def _walk_symbols(payload: object) -> list[str]:
 def nasdaq_mover_symbols(limit: int = 160) -> list[str]:
     """Best-effort discovery from Nasdaq's public market-movers response."""
 
+    if not allowed("nasdaq_web"):
+        return []
     headers = {
         "User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/5.0)",
         "Accept": "application/json,text/plain,*/*",

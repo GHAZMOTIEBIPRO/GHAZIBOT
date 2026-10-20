@@ -16,6 +16,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+from .source_permissions import allowed
 from .advanced_signals import enrich_sec_event
 from .catalysts import (
     SEC_BASE,
@@ -283,6 +284,8 @@ class ResilientCatalystScanner(CatalystScanner):
         max_per_symbol: int = 4,
     ) -> list[CatalystEvent]:
         events: list[CatalystEvent] = []
+        if not allowed("yahoo"):
+            return events
         for symbol in symbols:
             try:
                 items = yf.Ticker(symbol).news or []

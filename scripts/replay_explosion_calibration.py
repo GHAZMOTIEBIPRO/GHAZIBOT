@@ -19,6 +19,7 @@ from options_radar.research_attribution import (
     add_causal_replay_features,
     evaluate_replay_feature_ablation,
 )
+from options_radar.source_permissions import allowed, require
 from scripts.replay_explosion_lab import build_replay_frame, evaluate_replay
 
 OUTPUT_PATH = Path("data/replay/explosion_replay_report.json")
@@ -32,6 +33,7 @@ def _utc_now() -> str:
 
 
 def _download_frame(symbol: str, period: str, target_return_pct: float = 25.0):
+    require("yahoo")
     history = yf.download(symbol, period=period, interval="1d", auto_adjust=False, progress=False, threads=False)
     frame = build_replay_frame(history, target_return_pct=target_return_pct)
     return add_causal_replay_features(frame)
@@ -237,6 +239,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if not allowed("yahoo"):
+        # Keep the last aggregate-only report rather than overwrite it with errors.
+        print("Skipped: SOURCE_TERMS_BLOCKED (Yahoo automated access not permitted)")
+        return 0
     return run(
         archetypes=_csv(args.archetypes),
         controls=_csv(args.controls),

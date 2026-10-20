@@ -54,4 +54,4 @@ def test_data_hub_reports_rights_separately_from_freshness():
     assert row["freshness"] == "FRESH"
     assert row["rights_status"] == "BLOCKED_PENDING_PERMISSION"
     yahoo = next(e for e in REGISTRY if e["file"] == "stock_watch_charts.json")
-    assert assess(yahoo, {"generated_at": "2026-10-20T14:50:00+00:00"}, now)["rights_status"] == "NOT_AUTHORISED_FALLBACK"
+    assert assess(yahoo, {"generated_at": "2026-10-20T14:50:00+00:00"}, now)["rights_status"] == "RESTRICTED"

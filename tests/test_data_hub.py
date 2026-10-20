@@ -34,5 +34,7 @@ def test_build_catalogs_every_registered_file(tmp_path):
     assert rows["liquidity_map.json"]["freshness"] == "FRESH"
     assert rows["index_radar.json"]["validation"] == "FAIL"
     assert rows["options_analytics.json"]["freshness"] == "MISSING"
-    assert "Yahoo (yfinance)" in report["summary"]["fallback_sources"]
+    assert report["summary"]["fallback_sources"] == []
+    assert rows["stock_watch_charts.json"]["license_class"] == "TERMS_RESTRICTED"
+    assert set(report["source_gates"]) == {"cboe_delayed", "yahoo", "nasdaq_web"}
     assert report["policy"]["network_requests"] is False

@@ -16,6 +16,7 @@ import pandas as pd
 import yfinance as yf
 
 from options_radar.halt_news_engine import NewsEvent, collect_fast_news
+from options_radar.source_permissions import allowed
 from scripts.telegram_transport import edit_html_message, send_html_message
 
 RIYADH = ZoneInfo("Asia/Riyadh")
@@ -256,7 +257,7 @@ def extract_symbol_frame(download: pd.DataFrame, symbol: str) -> pd.DataFrame:
 
 def download_price_frames(symbols: list[str]) -> dict[str, pd.DataFrame]:
     unique = list(dict.fromkeys(str(symbol).upper().strip() for symbol in symbols if str(symbol).strip()))[:12]
-    if not unique:
+    if not unique or not allowed("yahoo"):
         return {}
     try:
         downloaded = yf.download(

@@ -12,6 +12,7 @@ from options_radar.research_attribution import (
     build_stock_research_features,
     evaluate_stock_research_attribution,
 )
+from options_radar.source_permissions import allowed, require
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -33,6 +34,7 @@ def _write(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _download_daily(symbol: str, period: str):
+    require("yahoo")
     return yf.download(
         symbol,
         period=period,
@@ -118,6 +120,10 @@ def main() -> None:
     parser.add_argument("--period", default="2y")
     parser.add_argument("--max-workers", type=int, default=6)
     args = parser.parse_args()
+    if not allowed("yahoo"):
+        # Keep the existing audit features rather than record a failure per symbol.
+        print("Skipped: SOURCE_TERMS_BLOCKED (Yahoo automated access not permitted)")
+        return
     audit = enrich(
         args.audit,
         period=args.period,

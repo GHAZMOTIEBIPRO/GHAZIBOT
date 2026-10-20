@@ -17,6 +17,7 @@ from pathlib import Path
 import pandas as pd
 
 from options_radar.explosion_model_lab import HOLD, STOP_PCT, TARGET_PCT, collect, evaluate
+from options_radar.source_permissions import SourceTermsBlocked, require
 
 CONTROLS = ("AAPL", "MSFT", "KO", "JNJ", "XOM", "NVDA", "AMD", "TSLA")
 SCHEMA = "ghazi.explosion_model_lab.v1"
@@ -41,6 +42,7 @@ def universe_symbols(audit_path: Path, structural_path: Path, limit: int = 300) 
 
 
 def download(symbols: list[str], period: str = "2y") -> dict[str, pd.DataFrame]:
+    require("yahoo")
     import yfinance as yf
 
     out: dict[str, pd.DataFrame] = {}
@@ -71,7 +73,12 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     symbols = universe_symbols(Path(args.audit), Path(args.structural))
-    bars = download(symbols + ["SPY"])
+    try:
+        bars = download(symbols + ["SPY"])
+    except SourceTermsBlocked as exc:
+        # Keep the last aggregate-only report; it holds no raw prices.
+        print(f"Model lab skipped: {exc}")
+        return 0
     bench = bars.pop("SPY", None)
     frame = collect(bars, bench["Close"] if bench is not None else None)
     result = evaluate(frame)

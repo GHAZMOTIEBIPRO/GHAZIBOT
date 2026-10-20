@@ -32,6 +32,10 @@ permissions:
   contents: read
   actions: write
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   dispatch:
     # Never dispatch children from failed/cancelled upstream news-flash runs.

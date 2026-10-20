@@ -11,6 +11,7 @@ import requests
 import yfinance as yf
 
 from .settings import Settings
+from .source_permissions import allowed, require
 
 LOGGER = logging.getLogger(__name__)
 OHLCV = ["Open", "High", "Low", "Close", "Volume"]
@@ -63,6 +64,7 @@ def _period_start(period: str) -> datetime:
 
 def _yahooquery(symbol: str, *, period: str, interval: str, start: datetime | None = None,
                 end: datetime | None = None) -> BarResult:
+    require("yahoo")
     from yahooquery import Ticker
 
     end = end or datetime.now(timezone.utc)
@@ -96,6 +98,7 @@ def _yahooquery(symbol: str, *, period: str, interval: str, start: datetime | No
 
 def _yahoo(symbol: str, *, period: str, interval: str, start: datetime | None = None,
            end: datetime | None = None) -> BarResult:
+    require("yahoo")
     kwargs: dict[str, Any] = {
         "interval": interval,
         "auto_adjust": False,
@@ -417,8 +420,8 @@ def get_intraday_history(settings: Settings, symbol: str, start: datetime,
 
 def configured_bar_sources(settings: Settings) -> list[dict[str, Any]]:
     return [
-        {"name": "yahooquery", "configured": True, "role": "unofficial Yahoo alternate transport; same source family"},
-        {"name": "yahoo", "configured": True, "role": "unofficial fallback"},
+        {"name": "yahooquery", "configured": allowed("yahoo"), "role": "unofficial Yahoo alternate transport; same source family"},
+        {"name": "yahoo", "configured": allowed("yahoo"), "role": "unofficial fallback"},
         {"name": "tiingo", "configured": bool(settings.tiingo_api_key), "role": "official account API"},
         {"name": "finnhub", "configured": bool(settings.finnhub_api_key), "role": "official account API"},
         {"name": "tradier", "configured": bool(settings.tradier_token), "role": "official account API"},

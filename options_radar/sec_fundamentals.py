@@ -11,6 +11,7 @@ import requests
 import yfinance as yf
 
 from .settings import Settings
+from .source_permissions import require
 
 LOGGER = logging.getLogger(__name__)
 SEC_TICKERS = "https://www.sec.gov/files/company_tickers.json"
@@ -215,6 +216,7 @@ def _statement_metric(frame: pd.DataFrame, labels: tuple[str, ...]) -> tuple[flo
 def yahoo_fundamentals(symbol: str, sec_error: str = "") -> dict[str, Any]:
     """Use free Yahoo statements as a clearly labelled, unofficial fallback."""
 
+    require("yahoo")
     ticker = yf.Ticker(symbol)
     income = ticker.quarterly_income_stmt
     balance = ticker.quarterly_balance_sheet

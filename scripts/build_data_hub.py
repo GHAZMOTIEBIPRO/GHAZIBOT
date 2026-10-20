@@ -10,12 +10,22 @@ network requests and changes no dataset.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 SCHEMA = "ghazi.data_hub.v1"
+
+
+def _source_gates() -> dict[str, Any]:
+    # Loaded by path: the package __init__ needs pandas, this job has none.
+    path = Path(__file__).resolve().parents[1] / "options_radar" / "source_permissions.py"
+    spec = importlib.util.spec_from_file_location("ghazi_source_permissions", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.gate_status()
 
 # license_class:
 #   DERIVED_PUBLIC     - only derived research values are published
@@ -28,25 +38,25 @@ SCHEMA = "ghazi.data_hub.v1"
 #   MIXED_HEADLINES_AND_OFFICIAL - official releases plus search headlines
 REGISTRY: list[dict[str, Any]] = [
     {"file": "index_radar.json", "title_ar": "رادار المؤشرات", "kind": "INDEX_DIRECTION",
-     "source": "Yahoo (yfinance)", "license_class": "FALLBACK_LABELLED", "cadence_min": 30,
+     "source": "Yahoo (yfinance)", "license_class": "TERMS_RESTRICTED", "cadence_min": 30,
      "limitations": "شموع غير رسمية وقد تتأخر؛ ليست أسعار تنفيذ"},
     {"file": "index_charts.json", "title_ar": "شارتات المؤشرات", "kind": "OHLC_BARS",
-     "source": "Yahoo (yfinance)", "license_class": "FALLBACK_LABELLED", "cadence_min": 30,
+     "source": "Yahoo (yfinance)", "license_class": "TERMS_RESTRICTED", "cadence_min": 30,
      "limitations": "شموع غير رسمية وقد تتأخر"},
     {"file": "stock_watch_charts.json", "title_ar": "شارتات الأسهم", "kind": "OHLC_BARS",
-     "source": "Yahoo (yfinance)", "license_class": "FALLBACK_LABELLED", "cadence_min": 60,
+     "source": "Yahoo (yfinance)", "license_class": "TERMS_RESTRICTED", "cadence_min": 60,
      "limitations": "شموع غير رسمية وقد تتأخر"},
     {"file": "liquidity_map.json", "title_ar": "الحجم والسيولة", "kind": "DERIVED_ANALYTICS",
-     "source": "مشتق من شموع 15 دقيقة", "license_class": "DERIVED_PUBLIC", "cadence_min": 60,
+     "source": "مشتق من شموع Yahoo 15 دقيقة", "license_class": "TERMS_RESTRICTED", "cadence_min": 60,
      "limitations": "استنتاج من الشموع؛ لا دفتر أوامر"},
     {"file": "classical_direction.json", "title_ar": "الاتجاه الكلاسيكي للأسهم", "kind": "DIRECTION",
-     "source": "مشتق من شموع الأسهم", "license_class": "DERIVED_PUBLIC", "cadence_min": 60,
+     "source": "مشتق من شموع Yahoo للأسهم", "license_class": "TERMS_RESTRICTED", "cadence_min": 60,
      "limitations": "اتجاه بحثي؛ ليس احتمال نجاح"},
     {"file": "decision_brief.json", "title_ar": "ملخص الترشيحات", "kind": "DIRECTION",
      "source": "رادار الأسهم", "license_class": "DERIVED_PUBLIC", "cadence_min": 60,
      "limitations": "ترتيب بحثي"},
     {"file": "explosion_hunter.json", "title_ar": "رادار الانفجار", "kind": "SCREENER",
-     "source": "Nasdaq screener + Yahoo", "license_class": "FALLBACK_LABELLED", "cadence_min": 45,
+     "source": "Nasdaq screener + Yahoo", "license_class": "TERMS_RESTRICTED", "cadence_min": 45,
      "limitations": "مصدر الاكتشاف غير مصرح للأتمتة؛ أداء المراحل تاريخيًا دون التعادل"},
     {"file": "explosion_stage_evaluation.json", "title_ar": "تقييم مراحل الانفجار", "kind": "EVALUATION",
      "source": "سجل النتائج المكتملة", "license_class": "INTERNAL_METRIC", "cadence_min": 1440,
@@ -158,6 +168,7 @@ def build(data_dir: Path, now: datetime) -> dict[str, Any]:
         "schema": SCHEMA,
         "generated_at": now.isoformat(),
         "datasets": rows,
+        "source_gates": _source_gates(),
         "summary": {"total": len(rows), "freshness": counts,
                     "rights": {k: sum(r.get("rights_status") == k for r in rows)
                                for k in sorted({r.get("rights_status") for r in rows})},
