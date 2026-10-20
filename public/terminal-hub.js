@@ -22,6 +22,7 @@
     explosion:[ROOT+"bot-state/runtime/public/data/explosion_hunter.json"],
     classical:[ROOT+"bot-state/runtime/public/data/classical_direction.json"],
     liquidity:[ROOT+"bot-state/runtime/public/data/liquidity_map.json"],
+    stageEval:[ROOT+"bot-state/runtime/public/data/explosion_stage_evaluation.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -62,7 +63,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -132,6 +133,8 @@
       Array.isArray(d.companies),
     explosion:d=>d?.schema==="ghazi.explosion_hunter_public.v1"&&d.research_only===true&&
       d.score_is_probability===false&&d.execution_authority===false&&Array.isArray(d.candidates),
+    stageEval:d=>d?.schema==="ghazi.explosion_stage_evaluation.v1"&&d.research_only===true&&
+      d.decision_authority===false&&d.score_is_probability===false&&d.stages&&typeof d.stages==="object",
     liquidity:d=>d?.schema==="ghazi.liquidity_map.v1"&&d.order_book_available===false&&
       d.symbols&&typeof d.symbols==="object",
     live:d=>d?.decision_authority===false&&d?.contains_secrets===false&&
@@ -570,7 +573,39 @@
     }
     if(!rows.length)target.append(txt("p","لا توجد شركات في آخر تحليل.","terminal-empty"));
   }
+  const STAGE_LABELS={PRESSURE_BUILDING:"ضغط يتكوّن",IGNITION:"بداية اشتعال",EXPLOSION:"انفجار"};
+  function stageQualityLines(report){
+    if(!report?.stages)return [];
+    const pct=x=>Number.isFinite(x)?fmt(100*x,1)+"%":"—";
+    return Object.entries(STAGE_LABELS).map(([key,label])=>{
+      const s=report.stages[key];
+      if(!s||!Number.isInteger(s.decisive)||s.decisive===0)return label+": لا توجد نتائج مكتملة بعد";
+      const below=Number.isFinite(s.precision_direction)&&Number.isFinite(s.breakeven_hit_rate)&&
+        s.precision_direction<s.breakeven_hit_rate;
+      return label+": إصابة الاتجاه "+pct(s.precision_direction)+" مقابل تعادل "+pct(s.breakeven_hit_rate)+
+        " · متوسط صافٍ بعد التكلفة "+(Number.isFinite(s.expectancy_net_pct)?fmt(s.expectancy_net_pct,2)+"%":"—")+
+        " · حركة كبيرة بأي اتجاه "+pct(s.big_move_any_direction_rate)+
+        " · عينة "+s.decisive+(s.verdict_sample_sufficient?"":" (غير كافية)")+
+        (below?" · أقل من نقطة التعادل":"");
+    });
+  }
+  function renderExplosionQuality(){
+    const box=$("terminal-explosion-quality");if(!box)return;
+    box.replaceChildren();
+    const report=state.stageEval;
+    if(!report){box.append(txt("p","لا يوجد تقييم منشور لجودة المراحل بعد.","terminal-empty"));return;}
+    const item=txt("article","","terminal-structural-item");
+    item.append(txt("strong","جودة المراحل المقاسة على نتائج مكتملة (ليست احتمالات)"));
+    for(const line of stageQualityLines(report))item.append(txt("small",line,"terminal-structural-notice"));
+    item.append(txt("small","خط الأساس (كل الإشارات): "+
+      (Number.isFinite(report.population?.pooled_direction_baseline)?
+        fmt(100*report.population.pooled_direction_baseline,1)+"%":"—")+
+      " · الحركة الكبيرة لا تعني صحة اتجاه الإشارة · التكاليف افتراضية حسب سعر السهم · التحديث: "+
+      stamp(report.generated_at)));
+    box.append(item);
+  }
   function renderExplosion(){
+    renderExplosionQuality();
     const target=$("terminal-explosion-list");if(!target)return;
     target.replaceChildren();
     const report=state.explosion;
@@ -1367,10 +1402,10 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
@@ -1380,7 +1415,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
