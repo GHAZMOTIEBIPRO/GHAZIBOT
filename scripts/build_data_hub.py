@@ -23,6 +23,9 @@ SCHEMA = "ghazi.data_hub.v1"
 #                        kept as a labelled research fallback until replaced
 #   OFFICIAL_PUBLIC    - official public-sector or exchange-allowed source
 #   INTERNAL_METRIC    - project's own audit/evaluation output
+#   TERMS_RESTRICTED   - provider terms restrict automated use / publication;
+#                        gated off until the owner records permission
+#   MIXED_HEADLINES_AND_OFFICIAL - official releases plus search headlines
 REGISTRY: list[dict[str, Any]] = [
     {"file": "index_radar.json", "title_ar": "رادار المؤشرات", "kind": "INDEX_DIRECTION",
      "source": "Yahoo (yfinance)", "license_class": "FALLBACK_LABELLED", "cadence_min": 30,
@@ -49,16 +52,16 @@ REGISTRY: list[dict[str, Any]] = [
      "source": "سجل النتائج المكتملة", "license_class": "INTERNAL_METRIC", "cadence_min": 1440,
      "limitations": "تكاليف التداول افتراضية"},
     {"file": "free_gex_validation.json", "title_ar": "جاما SPX", "kind": "OPTIONS_MODEL",
-     "source": "Cboe delayed", "license_class": "DERIVED_PUBLIC", "cadence_min": 30,
+     "source": "Cboe delayed", "license_class": "TERMS_RESTRICTED", "cadence_min": 30,
      "limitations": "مستويات نموذجية وليست مراكز صناع السوق"},
     {"file": "options_analytics.json", "title_ar": "تحليلات العقود", "kind": "OPTIONS_DERIVED",
-     "source": "Cboe delayed", "license_class": "DERIVED_PUBLIC", "cadence_min": 30,
+     "source": "Cboe delayed", "license_class": "TERMS_RESTRICTED", "cadence_min": 30,
      "limitations": "مؤجل وغير تنفيذي؛ قيم مشتقة فقط"},
     {"file": "free_options_sources.json", "title_ar": "مصادر الخيارات المجانية", "kind": "OPTIONS_CONTEXT",
      "source": "OCC + FilingPulse", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 360,
      "limitations": "OI غير لحظي"},
     {"file": "free_public_intelligence.json", "title_ar": "الأخبار والاقتصاد", "kind": "NEWS",
-     "source": "Google News RSS + Fed + BLS", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 60,
+     "source": "Google News RSS + Fed + BLS", "license_class": "MIXED_HEADLINES_AND_OFFICIAL", "cadence_min": 60,
      "limitations": "العناوين لا تثبت اتجاه الأثر"},
     {"file": "sec_filing_pulse.json", "title_ar": "إفصاحات SEC", "kind": "FILINGS",
      "source": "SEC EDGAR", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 240,
@@ -103,6 +106,7 @@ def assess(entry: dict[str, Any], payload: Any, now: datetime) -> dict[str, Any]
     out = {k: entry[k] for k in ("file", "title_ar", "kind", "source", "license_class", "cadence_min", "limitations")}
     if payload is None:
         return {**out, "present": False, "freshness": "MISSING", "validation": "MISSING",
+                "rights_status": "UNKNOWN",
                 "generated_at": None, "age_minutes": None}
     stamp_raw = payload.get("generated_at") or payload.get("updated_at") if isinstance(payload, dict) else None
     stamp = _parse(stamp_raw)
@@ -122,6 +126,13 @@ def assess(entry: dict[str, Any], payload: Any, now: datetime) -> dict[str, Any]
                 problems.append(f"{key}!={expected}")
     else:
         problems.append("not_an_object")
+    blocked = isinstance(payload, dict) and (
+        payload.get("status") == "SOURCE_TERMS_BLOCKED"
+        or (payload.get("integrated_engines", {}).get("ghazi_gex_multi", {}) or {}).get("status")
+        == "SOURCE_TERMS_BLOCKED")
+    out["rights_status"] = ("BLOCKED_PENDING_PERMISSION" if blocked else
+                            {"TERMS_RESTRICTED": "RESTRICTED", "FALLBACK_LABELLED": "NOT_AUTHORISED_FALLBACK"}
+                            .get(entry["license_class"], "OK_FOR_STATED_USE"))
     return {**out, "present": True, "generated_at": stamp.isoformat() if stamp else None,
             "age_minutes": age, "freshness": freshness,
             "validation": "PASS" if not problems else "FAIL", "validation_problems": problems,
@@ -148,11 +159,14 @@ def build(data_dir: Path, now: datetime) -> dict[str, Any]:
         "generated_at": now.isoformat(),
         "datasets": rows,
         "summary": {"total": len(rows), "freshness": counts,
+                    "rights": {k: sum(r.get("rights_status") == k for r in rows)
+                               for k in sorted({r.get("rights_status") for r in rows})},
                     "validation_failures": sum(r["validation"] == "FAIL" for r in rows),
                     "fallback_sources": sorted({r["source"] for r in rows
                                                 if r["license_class"] == "FALLBACK_LABELLED"})},
         "policy": {"timestamps_are_dataset_own": True, "network_requests": False,
-                   "freshness_is_not_quote_time": True},
+                   "freshness_is_not_quote_time": True,
+                   "freshness_is_not_correctness_or_licence": True},
         "research_only": True,
         "decision_authority": False,
     }

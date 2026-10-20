@@ -95,7 +95,7 @@ function phase60RenderSourceNetwork() {
   byId("configured-stock-sources").textContent = number(summary.configured_stock_sources, 0);
   byId("configured-option-sources").textContent = number(summary.configured_option_sources, 0);
   const policy = network.policy || {};
-  byId("source-policy").innerHTML = `<strong>سياسة جودة التوصية:</strong> لا تظهر توصية بحثية قوية قبل تأكيد ${number(policy.strong_recommendation_min_independent_sources || 2, 0)} مصدرين مستقلين. لا يتم كشط مواقع البورصات؛ تغطية Cboe وNasdaq وNYSE وMIAX تتم عبر مزود OPRA مرخص. مصدر واحد = مراقبة فقط.`;
+  byId("source-policy").innerHTML = `<strong>سياسة جودة التوصية:</strong> لا تظهر توصية بحثية قوية قبل تأكيد ${number(policy.strong_recommendation_min_independent_sources || 2, 0)} مصدرين مستقلين. لا يوجد حاليًا مزود OPRA مرخص؛ بيانات العقود المؤجلة بحثية فقط، والجلب الآلي من Cboe متوقف حتى الحصول على إذن. مصدر واحد = مراقبة فقط.`;
   const stockSources = network.stocks || [];
   const optionSources = network.options || [];
   byId("stock-sources-grid").innerHTML = stockSources.length ? stockSources.map(phase60SourceCard).join("") : '<div class="empty-state">لم تُنشر حالة مصادر الأسهم بعد.</div>';

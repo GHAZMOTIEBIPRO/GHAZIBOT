@@ -30,4 +30,9 @@ assert.match(tested.note,/لا أفضلية على الخط الأساسي/);
 const none=gammaView({generated_at:"2026-10-20T04:00:10Z",metrics:{}},"SPY");
 assert.equal(Object.fromEntries(none.metrics)["Gamma Flip"],"غير متاح");
 assert.match(none.note,/مستويات SPX وليست قيم خيارات SPY/);
+// Engine stopped by the source-terms gate: the reason is shown, no model values.
+const blocked=gammaView({generated_at:"2026-10-20T04:00:10Z",metrics:{},integrated_engines:{
+  ghazi_gex_multi:{available:false,status:"SOURCE_TERMS_BLOCKED",reason_ar:"شروط Cboe تمنع الاستخراج الآلي"}}},"SPX");
+assert.match(blocked.note,/محرك جاما متوقف: شروط Cboe تمنع الاستخراج الآلي/);
+assert.equal(Object.fromEntries(blocked.metrics)["Gamma Flip"],"غير متاح");
 console.log("terminal gamma view ok");

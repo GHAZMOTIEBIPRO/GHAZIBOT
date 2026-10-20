@@ -12,6 +12,7 @@ from typing import Any
 
 from .gamma_interpretation import history_entry, interpret, validate_levels
 from .ghazi_gex_multi import build as build_ghazi_gex
+from .source_permissions import CBOE_BLOCK, cboe_delayed_automation_allowed
 
 CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json"
 SOURCES = {
@@ -171,9 +172,14 @@ def build() -> dict[str, Any]:
     rows = [
         safe_fetch("dhawalc/spx-gamma-levels", lambda: fetch_json_source("dhawalc/spx-gamma-levels", SOURCES["dhawalc/spx-gamma-levels"])),
         safe_fetch("Alexduanran/spx-0dte-archive", lambda: fetch_archive(SOURCES["Alexduanran/spx-0dte-archive"])),
-        safe_fetch("CBOE delayed public", lambda: fetch_cboe(CBOE_URL)),
     ]
-    ghazi_engine = safe_fetch("ghazi_gex_multi_reimplementation", lambda: build_ghazi_gex())
+    if cboe_delayed_automation_allowed():
+        rows.append(safe_fetch("CBOE delayed public", lambda: fetch_cboe(CBOE_URL)))
+        ghazi_engine = safe_fetch("ghazi_gex_multi_reimplementation", lambda: build_ghazi_gex())
+    else:
+        # Terms gate: no automated request to Cboe; outputs say why.
+        rows.append({"available": False, **CBOE_BLOCK})
+        ghazi_engine = {"available": False, "engine": "ghazi_gex_multi_reimplementation", **CBOE_BLOCK}
     metrics = {k: compare_metric(rows, k) for k in ("spot", "gex", "flip", "call_wall", "put_wall")}
     usable = sum(bool(r.get("available")) for r in rows)
     engine_available = bool(ghazi_engine.get("available"))
@@ -258,6 +264,10 @@ def build() -> dict[str, Any]:
         "metrics": metrics,
         "engine_levels": history_entry(ghazi_engine, payload["generated_at"]),
     })
+    if not cboe_delayed_automation_allowed():
+        for entry in history:
+            if isinstance(entry, dict):
+                entry["engine_levels"] = None
     payload["integrated_engines"]["interpretation"] = interpret(ghazi_engine)
     payload["integrated_engines"]["level_validation"] = validate_levels(
         history[-500:], _spx_daily_bars(), next_session_of)
