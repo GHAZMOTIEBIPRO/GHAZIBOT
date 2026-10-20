@@ -12,6 +12,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from options_radar.site_links import chart_link_html
+from options_radar.stock_outcomes import STAGE_THRESHOLDS
 from options_radar.telegram_transport import send_html_message
 
 
@@ -85,7 +86,7 @@ def _priority_ar(score: float) -> str:
     return "منخفضة"
 
 
-def _stock_message(row: dict[str, Any]) -> str:
+def _stock_message(row: dict[str, Any], observed_at: Any = None) -> str:
     symbol = str(row.get("symbol") or "").upper()
     score = _number(row.get("score"))
     price = _number(row.get("price"))
@@ -140,6 +141,29 @@ def _stock_message(row: dict[str, Any]) -> str:
     if halts:
         event = halts[0]
         lines.append(f"⏸ {_safe(event.get('reason'), 80)} | {_safe(event.get('note_ar'), 180)}")
+
+    lines.append("🧭 <b>الاتجاه:</b> مراقبة صعود بحثية (مسار الأسهم لا يصدر بيعًا على المكشوف)")
+    same_time = row.get("time_normalized_rvol") if isinstance(row.get("time_normalized_rvol"), dict) else {}
+    same_ratio = _number(same_time.get("ratio"), float("nan")) if same_time.get("available") is True else float("nan")
+    full_day = _number(row.get("relative_volume", row.get("rvol")), float("nan"))
+    lines.append(
+        "📊 <b>الحجم:</b> RVOL بنفس الوقت "
+        + (f"<b>{same_ratio:.1f}×</b>" if math.isfinite(same_ratio) else "غير متاح")
+        + " | حجم اليوم ÷ متوسط يوم كامل "
+        + (f"<b>{full_day:.1f}×</b>" if math.isfinite(full_day) else "غير متاح")
+    )
+    thresholds = STAGE_THRESHOLDS.get(stage)
+    if thresholds and price > 0:
+        target_pct, stop_pct = thresholds
+        lines.append(
+            f"📏 <b>حدود القياس:</b> هدف <b>${price * (1 + target_pct / 100):,.2f}</b> (+{target_pct:g}%)"
+            f" | إبطال <b>${price * (1 - stop_pct / 100):,.2f}</b> (−{stop_pct:g}%)"
+            " — حدود بحثية لقياس النتيجة، وليست أمر تداول"
+        )
+    lines.append("📉 أداء مراحل الرادار تاريخيًا دون نقطة التعادل؛ التنبيه للمراقبة وليس توصية شراء.")
+    stamp = str(observed_at or "").strip()
+    if stamp:
+        lines.append(f"🕒 وقت المسح: {_safe(stamp[:19].replace('T', ' '), 30)} UTC (وقت ملاحظة، وليس وقت عرض سعر)")
 
     if "غير مثبت" in cause_status or "NO_PRIMARY" in str(cause.get("status") or ""):
         risk = "السبب الرسمي غير مثبت؛ استمرار السعر والحجم مطلوب قبل ترقية الثقة."
@@ -323,7 +347,7 @@ def send_stocks(payload: dict[str, Any], state: dict[str, Any]) -> int:
         if _stored_fingerprint(sent_map.get(symbol)) == fp:
             suppressed_duplicate += 1
             continue
-        text = _stock_message(row)
+        text = _stock_message(row, payload.get("generated_at"))
         result = _send(text)
         sent_map[symbol] = _record(
             fp,
@@ -422,6 +446,25 @@ def send_options(payload: dict[str, Any], state: dict[str, Any]) -> int:
     return sent
 
 
+STOCK_PAYLOAD_MAX_AGE = timedelta(minutes=40)
+
+
+def _stock_payload_fresh(payload: dict[str, Any], *, now: datetime | None = None) -> bool:
+    """A stock alert needs a scan observed within the last 40 minutes.
+
+    The radar sends right after building, so this only blocks reruns or
+    fallbacks that would deliver an old scan as if it were current.
+    """
+    current = now or datetime.now(timezone.utc)
+    try:
+        generated = datetime.fromisoformat(str(payload.get("generated_at") or "").replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return False
+    if generated.tzinfo is None:
+        return False
+    return timedelta(minutes=-3) <= current - generated <= STOCK_PAYLOAD_MAX_AGE
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Send independent stock/options BLACK BOX alerts")
     parser.add_argument("--path", choices=("stocks", "options"), required=True)
@@ -438,6 +481,14 @@ def main() -> None:
         raise RuntimeError(f"Expected {expected} payload, got {payload.get('path')!r}")
 
     sent = 0
+    if args.path == "stocks" and not _stock_payload_fresh(payload):
+        state["last_suppressed_stale_scan"] = {
+            "generated_at": payload.get("generated_at"),
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
+        _save(args.state, state)
+        print("Independent Telegram sender: stale or untimed stock scan; no stock alerts sent.")
+        return
     try:
         sent = send_stocks(payload, state) if args.path == "stocks" else send_options(payload, state)
     finally:
