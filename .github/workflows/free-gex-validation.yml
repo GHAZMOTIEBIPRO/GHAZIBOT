@@ -7,6 +7,7 @@ on:
     paths:
       - "options_radar/free_gex_validation.py"
       - "options_radar/ghazi_gex_multi.py"
+      - "options_radar/gamma_interpretation.py"
       - "public/spx/index.html"
       - "public/spx/spx.js"
       - "research/spx_intelligence_catalog_ar.json"
@@ -43,6 +44,13 @@ jobs:
 
       - name: Compile integrated GEX modules
         run: python -m py_compile options_radar/ghazi_gex_multi.py options_radar/free_gex_validation.py
+
+      - name: Restore durable level history
+        run: |
+          mkdir -p public/data
+          if [ -s state/runtime/public/data/free_gex_validation_history.json ]; then
+            cp state/runtime/public/data/free_gex_validation_history.json public/data/free_gex_validation_history.json
+          fi
 
       - name: Run integrated GEX validation
         run: python -m options_radar.free_gex_validation

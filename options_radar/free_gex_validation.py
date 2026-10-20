@@ -10,6 +10,7 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+from .gamma_interpretation import history_entry, interpret, validate_levels
 from .ghazi_gex_multi import build as build_ghazi_gex
 
 CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json"
@@ -21,6 +22,33 @@ SOURCES = {
 }
 HISTORY = Path("public/data/free_gex_validation_history.json")
 OUT = Path("public/data/free_gex_validation.json")
+# Durable SPX daily bars (index-radar is their single writer) for the
+# forward test of model levels; the workflow checks bot-state out at state/.
+INDEX_CHARTS = Path("state/runtime/public/data/index_charts.json")
+
+
+def next_session_of(stamp: datetime) -> str | None:
+    """First XNYS session whose regular open is after `stamp`."""
+    try:
+        import exchange_calendars as xcals
+        import pandas as pd
+        calendar = xcals.get_calendar("XNYS")
+        moment = pd.Timestamp(stamp).tz_convert("UTC")
+        session = calendar.date_to_session(moment.tz_convert("America/New_York").date(), direction="next")
+        if calendar.session_open(session) <= moment:
+            session = calendar.next_session(session)
+        return session.date().isoformat()
+    except (ImportError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _spx_daily_bars(path: Path = INDEX_CHARTS) -> list[dict[str, Any]]:
+    try:
+        charts = json.loads(path.read_text(encoding="utf-8"))
+        bars = charts["symbols"]["SPX"]["intervals"]["1d"]["bars"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+    return bars if isinstance(bars, list) else []
 
 
 def get(url: str, timeout: int = 15) -> bytes:
@@ -228,7 +256,12 @@ def build() -> dict[str, Any]:
         "available": usable,
         "agreement_score": payload["agreement_score"],
         "metrics": metrics,
+        "engine_levels": history_entry(ghazi_engine, payload["generated_at"]),
     })
+    payload["integrated_engines"]["interpretation"] = interpret(ghazi_engine)
+    payload["integrated_engines"]["level_validation"] = validate_levels(
+        history[-500:], _spx_daily_bars(), next_session_of)
+    payload["integrated_engines"]["history_entries"] = len(history[-500:])
     HISTORY.parent.mkdir(parents=True, exist_ok=True)
     HISTORY.write_text(json.dumps(history[-500:], ensure_ascii=False, indent=2), encoding="utf-8")
     OUT.parent.mkdir(parents=True, exist_ok=True)
