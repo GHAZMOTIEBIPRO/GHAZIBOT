@@ -1,9 +1,9 @@
 {
  "schema": "ghazi.explosion_model_lab.v1",
- "generated_at": "2026-10-20T10:46:50.701666+00:00",
+ "generated_at": "2026-10-20T10:55:37.328952+00:00",
  "universe": {
   "requested": 308,
-  "with_bars": 295,
+  "with_bars": 294,
   "selection": "radar-recorded symbols + structural catalog + large-cap controls",
   "selection_bias": "symbols were chosen because the radar flagged them; results do not represent the whole market"
  },
@@ -20,34 +20,34 @@
  "models": {
   "BASELINE_ALL_DAYS": {
    "all": {
-    "signals": 67473,
-    "symbols": 290,
-    "target_hit_rate": 0.2755,
-    "target_hit_rate_ci_low": 0.2721,
+    "signals": 67337,
+    "symbols": 289,
+    "target_hit_rate": 0.2756,
+    "target_hit_rate_ci_low": 0.2722,
     "breakeven_hit_rate": 0.3846,
-    "mean_net_pct": -1.192,
+    "mean_net_pct": -1.19,
     "median_net_pct": -5.2,
-    "ambiguous_counted_as_loss": 2977
+    "ambiguous_counted_as_loss": 2963
    },
    "early": {
-    "signals": 31876,
-    "symbols": 269,
-    "target_hit_rate": 0.277,
-    "target_hit_rate_ci_low": 0.2721,
+    "signals": 31799,
+    "symbols": 268,
+    "target_hit_rate": 0.2768,
+    "target_hit_rate_ci_low": 0.2719,
     "breakeven_hit_rate": 0.3846,
-    "mean_net_pct": -1.04,
+    "mean_net_pct": -1.043,
     "median_net_pct": -5.2,
-    "ambiguous_counted_as_loss": 1239
+    "ambiguous_counted_as_loss": 1233
    },
    "late": {
-    "signals": 35597,
-    "symbols": 281,
-    "target_hit_rate": 0.2742,
-    "target_hit_rate_ci_low": 0.2695,
+    "signals": 35538,
+    "symbols": 280,
+    "target_hit_rate": 0.2745,
+    "target_hit_rate_ci_low": 0.2699,
     "breakeven_hit_rate": 0.3846,
-    "mean_net_pct": -1.328,
+    "mean_net_pct": -1.322,
     "median_net_pct": -5.2,
-    "ambiguous_counted_as_loss": 1738
+    "ambiguous_counted_as_loss": 1730
    },
    "beats_baseline_both_halves_and_positive_late": false
   },
@@ -86,14 +86,14 @@
   },
   "RELATIVE_STRENGTH": {
    "all": {
-    "signals": 10167,
-    "symbols": 275,
-    "target_hit_rate": 0.2897,
-    "target_hit_rate_ci_low": 0.2809,
+    "signals": 10156,
+    "symbols": 274,
+    "target_hit_rate": 0.29,
+    "target_hit_rate_ci_low": 0.2812,
     "breakeven_hit_rate": 0.3846,
-    "mean_net_pct": -1.418,
+    "mean_net_pct": -1.413,
     "median_net_pct": -5.2,
-    "ambiguous_counted_as_loss": 842
+    "ambiguous_counted_as_loss": 840
    },
    "early": {
     "signals": 4802,
@@ -106,14 +106,14 @@
     "ambiguous_counted_as_loss": 372
    },
    "late": {
-    "signals": 5365,
-    "symbols": 240,
-    "target_hit_rate": 0.28,
-    "target_hit_rate_ci_low": 0.2681,
+    "signals": 5354,
+    "symbols": 239,
+    "target_hit_rate": 0.2805,
+    "target_hit_rate_ci_low": 0.2687,
     "breakeven_hit_rate": 0.3846,
-    "mean_net_pct": -1.578,
+    "mean_net_pct": -1.569,
     "median_net_pct": -5.2,
-    "ambiguous_counted_as_loss": 470
+    "ambiguous_counted_as_loss": 468
    },
    "beats_baseline_both_halves_and_positive_late": false
   },
@@ -152,14 +152,14 @@
   },
   "GAP_CONTINUATION": {
    "all": {
-    "signals": 1005,
-    "symbols": 240,
-    "target_hit_rate": 0.2209,
-    "target_hit_rate_ci_low": 0.1963,
+    "signals": 1001,
+    "symbols": 239,
+    "target_hit_rate": 0.2218,
+    "target_hit_rate_ci_low": 0.1971,
     "breakeven_hit_rate": 0.3846,
-    "mean_net_pct": -2.594,
+    "mean_net_pct": -2.58,
     "median_net_pct": -5.2,
-    "ambiguous_counted_as_loss": 192
+    "ambiguous_counted_as_loss": 191
    },
    "early": {
     "signals": 444,
@@ -172,14 +172,14 @@
     "ambiguous_counted_as_loss": 84
    },
    "late": {
-    "signals": 561,
-    "symbols": 198,
-    "target_hit_rate": 0.2121,
-    "target_hit_rate_ci_low": 0.1803,
+    "signals": 557,
+    "symbols": 197,
+    "target_hit_rate": 0.2136,
+    "target_hit_rate_ci_low": 0.1816,
     "breakeven_hit_rate": 0.3846,
-    "mean_net_pct": -2.808,
+    "mean_net_pct": -2.784,
     "median_net_pct": -5.2,
-    "ambiguous_counted_as_loss": 108
+    "ambiguous_counted_as_loss": 107
    },
    "beats_baseline_both_halves_and_positive_late": false
   },
@@ -230,11 +230,13 @@
   "status": "OK",
   "days": 434,
   "reps": 1000,
-  "pvalue_consistent": 0.001,
-  "pvalue_lower": 0.001,
-  "pvalue_upper": 0.001,
+  "pvalue_consistent": 0.006,
+  "pvalue_lower": 0.006,
+  "pvalue_upper": 0.006,
   "null": "no model beats the all-days baseline",
-  "library": "arch (NCSA) Hansen SPA"
+  "library": "arch (NCSA) Hansen SPA",
+  "no_signal_days": "model takes the baseline value (zero excess)",
+  "relative_only": "beating a losing baseline is not profitability; see mean_net_pct"
  },
  "source": "daily bars from the research feed (Yahoo, labelled fallback); aggregates only",
  "research_only": true,
