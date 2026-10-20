@@ -979,8 +979,11 @@
     // they must be selectable even without published chart bars.
     const classical=(state.classical?.companies||[]).map(x=>x?.symbol)
       .filter(s=>typeof s==="string"&&/^[A-Z][A-Z0-9.-]{0,9}$/.test(s));
+    // Explosion candidates receive alert links too.
+    const boom=(state.explosion?.candidates||[]).map(x=>x?.symbol)
+      .filter(s=>typeof s==="string"&&/^[A-Z][A-Z0-9.-]{0,9}$/.test(s));
     const known=[...new Set([...INDEX_ORDER,...LARGE,...VOLATILE,
-      ...discoveries,...watched,...fallback,...classical])];
+      ...discoveries,...watched,...fallback,...classical,...boom])];
     // A ?chart= symbol waits for the first full feed load before it can be
     // judged unknown; otherwise the early fallback would overwrite it.
     const pending=state.pendingSymbol&&known.includes(state.pendingSymbol)?state.pendingSymbol:null;
