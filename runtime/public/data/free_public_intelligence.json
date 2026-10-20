@@ -1,17 +1,13 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-10-20T11:29:57.723206+00:00",
+  "generated_at": "2026-10-20T12:06:13.160784+00:00",
   "status": "DEGRADED",
   "source_errors": {
-    "gdelt_attention": "HTTP_429",
+    "gdelt_attention": "COOLDOWN_ACTIVE",
     "press_wire_prnewswire": "COOLDOWN_ACTIVE",
     "press_wire_globenewswire": "COOLDOWN_ACTIVE"
   },
   "source_cooldowns": {
-    "press_wire_prnewswire": {
-      "last_error": "HTTP_404",
-      "retry_after": "2026-10-20T15:06:34.092694+00:00"
-    },
     "press_wire_globenewswire": {
       "last_error": "HTTP_403",
       "retry_after": "2026-10-20T15:20:25.905815+00:00"
@@ -19,6 +15,10 @@
     "gdelt_attention": {
       "last_error": "HTTP_429",
       "retry_after": "2026-10-20T23:29:57.723206+00:00"
+    },
+    "press_wire_prnewswire": {
+      "last_error": "HTTP_404",
+      "retry_after": "2026-10-20T15:06:34.092694+00:00"
     }
   },
   "decision_authority": false,
@@ -113,6 +113,28 @@
     },
     {
       "event_topic": "CORPORATE_EVENT_MENTION",
+      "symbol": "ASTS",
+      "headline": "AST SpaceMobile Shares Rise 3.5% as European Telecom Operators Explore Satellite Spectrum Partnership - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxObldJY2Rkak1wMkMyNUMycjB1UDBWSkRJdHU0c2dGN2NnTloyUWZpc3ZHQ2lmTGZTNjhDdzNsRkZvTWQ5Tjc5YUFqN3R1QXp5bXNxcHlsUGNOVmJOUTVnYnVOYjZtUFE0d3Z4ZmdNdEVvODZPZk05YkgtSlQtVDFJYnhBUFJaanlobi1SV2Rmdl9xU2VK?oc=5",
+      "published_at": "2026-10-19T12:50:34+00:00",
+      "source": "google_news_rss",
+      "source_family": "unofficial_google_news_search_rss",
+      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
+      "issuer_name_in_headline": true,
+      "issuer_name_source": "curated_static_issuer_names",
+      "issuer_release_authenticated": false,
+      "official_sec_filing": false,
+      "positive_catalyst_verified": false,
+      "market_direction": "UNKNOWN",
+      "price_or_option_quote": false,
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
+      "impact_level": "LOW",
+      "impact_rules": [
+        "R3_ISSUER_EVENT_LOW"
+      ]
+    },
+    {
+      "event_topic": "CORPORATE_EVENT_MENTION",
       "symbol": "TSLA",
       "headline": "Tesla, Inc. SEC Filing (Oct 19, 2026) - Stock Titan",
       "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOOWI4UmdCdjZqRi1MekgxMlpJSlM0UjRMSUR3ZU9aX3RGUlBWZlc1d1JUNVBOcWx4dkx4eUwyZ1AwV0dXNERKbkFoQ2FUMWFCb3BqQjkwYjJWUzZ5VnM0S3JVaWE3bkdiRm5HdXVlUE55RGpRa2o5Q2s1bkktQU9XWUVlcTVLU3YyVjhPMWJFbw?oc=5",
@@ -171,7 +193,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_ISSUER_EVENT_LOW"
@@ -222,28 +244,6 @@
       ]
     },
     {
-      "event_topic": "CORPORATE_EVENT_MENTION",
-      "symbol": "CVX",
-      "headline": "Chevron or Realty Income: The One Dividend Stock I’d Hold for the Next 20 Years - Yahoo Finance",
-      "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOTE1vckRRX1F5MWx3NTgzWVVRSmZkcjRyMlVvX2ltTEdHM0ZZZXZ6VEZBd0IxS01uZHpDZWhFSlkteXBWeS1tcV9jVElPdFFTbXFqQm5GMzVhQWZSeG4teHVNbkUtQ1h0aUJ6UTZkdTBwVG1EdkxBUjE5UU8wUjNqeTJ3bHdRY2d3ejNWTWtJa3F1ZUpIM3JNOUp5cmVfaVQ5?oc=5",
-      "published_at": "2026-10-17T16:32:39+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T18:51:56.989034+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_ISSUER_EVENT_LOW"
-      ]
-    },
-    {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
       "symbol": "IONQ",
       "headline": "IONQ Stock Falls Hard As Ballooning Losses Outweigh Record Sales, Raised Outlook — But Retail Bulls See Long-Term Value - Stocktwits",
@@ -288,28 +288,6 @@
       ]
     },
     {
-      "event_topic": "CORPORATE_EVENT_MENTION",
-      "symbol": "MRNA",
-      "headline": "Phase 3 Cancer Vaccine Success Could Change The Case For Moderna Stock - Yahoo Finance",
-      "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNd3JoYTcwRV9BTktUb0JER3Z0UG1USUVmblVPUTRaRERyMU9pb0gtczctRWlaNUxMdFhNV0xTX2Z4Z200UWFjNFdoY0F0UmxMSWN2R3dTS2xfZlNmSTVfamVQclhOeElUa2dvVl9jVzhWaVJPN0xLOVM4anV2Q2s1RWlPY3pMeEdrdEJaWVFyaldndHBsOHNNejd3MA?oc=5",
-      "published_at": "2026-10-17T04:21:00+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_ISSUER_EVENT_LOW"
-      ]
-    },
-    {
       "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
       "symbol": "RKLB",
       "headline": "Rocket Lab Stock: Neutron Delayed, Strong Buy Intact (NASDAQ:RKLB) - Seeking Alpha",
@@ -325,7 +303,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_OPINION_OR_ANALYSIS_LOW"
@@ -347,7 +325,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_ISSUER_EVENT_LOW"
@@ -414,7 +392,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_ISSUER_EVENT_MEDIUM",
@@ -461,7 +439,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_ISSUER_EVENT_LOW"
@@ -513,29 +491,6 @@
       ]
     },
     {
-      "event_topic": "FINANCIAL_REPORT_MENTION",
-      "symbol": "LLY",
-      "headline": "Eli Lilly and Company (LLY) Earnings Date and Reports 2026 $LLY - MarketBeat",
-      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTFBwLWFPc3dQZ05yd3lEYWx2VnBzeVRGR0drYXpCUkluUHZpejhtX2pCZ19GUHhISDZ3NXRVZ096SDZLdUJvSGN6M3RyNW1SYmtWZk1rdGZCVlNVSmZJWFpmSGp3?oc=5",
-      "published_at": "2026-10-16T07:00:00+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-18T15:06:34.092694+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_ISSUER_EVENT_MEDIUM",
-        "R4_OLDER_THAN_72H"
-      ]
-    },
-    {
       "event_topic": "CORPORATE_EVENT_MENTION",
       "symbol": "BNAI",
       "headline": "Brand Engagement Network (NASDAQ:BNAI): What Does the Cataneo Acquisition Change? - Kalkine",
@@ -551,7 +506,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_OPINION_OR_ANALYSIS_LOW"
@@ -573,7 +528,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_OPINION_OR_ANALYSIS_LOW"
@@ -624,72 +579,6 @@
       ]
     },
     {
-      "event_topic": "RISK_OR_ADVERSE_EVENT_MENTION",
-      "symbol": "OXY",
-      "headline": "Occidental Petroleum Corp. stock outperforms competitors despite losses on the day - MarketWatch",
-      "url": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxPeXVHNC1FMC1QUWtCeEtpazRHbnctclNtcFNWbmVzZjhrc0ktZTBnUm4weE5LLW5KcFRoV1p3czRSd08tdllxMmZtUklHalJWRHBDcTc4ZXZCVGRSMlZQNTN6cm5pY2YycUwtc2F0QVhfQTZBcmtRU1JXZ0JMYkI4ZTIxUVFadENYNlhrS005ZlZYaHNOV0FmTFM0U2VkM1lDWTQ0eEM4bGQ3UDhzWUdBX0k5YkFrZHRMbnREUG0xelFmSjN2aE1Wd2JzbmVpeVl4c1RTVFhhY0w?oc=5",
-      "published_at": "2026-10-15T20:45:00+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T11:29:57.723206+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_ISSUER_EVENT_LOW"
-      ]
-    },
-    {
-      "event_topic": "CORPORATE_EVENT_MENTION",
-      "symbol": "CVX",
-      "headline": "Better Dividend Stock: Chevron vs. TotalEnergies - TIKR.com",
-      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBJTkNUcEw0dDZ6UGxaYW1qdXRxOGtsdm9zVjlwWl9zUmNNYWpHTW8wVV9zcHgtR3V6d0V6N1FaNGpUZExldXZwNnV2eEVicnJjSzhYSE5sVDhvRGFLa3Q4ZGhxOHNMNmR5QXY2ZjFBSHpwZ2NJTk9RT1ItLXY?oc=5",
-      "published_at": "2026-10-15T20:41:01+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_ISSUER_EVENT_LOW"
-      ]
-    },
-    {
-      "event_topic": "CORPORATE_EVENT_MENTION",
-      "symbol": "CVX",
-      "headline": "Better Dividend Stock: Chevron vs. BP - TIKR.com",
-      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE9hYWkwLXJXX1BmQjczbV9XVnBmYldSYmhkMXlqV1MxRWZSTGdwanFqUFg1UmxyMnhWVWluU1dmMkxwQ3pxU3FoVlRlWDlsYVpTVmxFaUJKSFJQenkwNEZoZmtUemZWX0I1em1pSE1R?oc=5",
-      "published_at": "2026-10-15T20:04:06+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_ISSUER_EVENT_LOW"
-      ]
-    },
-    {
       "event_topic": "FINANCIAL_REPORT_MENTION",
       "symbol": "NVDA",
       "headline": "Micron vs. NVIDIA: Which AI Stock Is the Better Buy After Earnings? - Yahoo Finance",
@@ -727,7 +616,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_ISSUER_EVENT_LOW"
@@ -793,7 +682,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_OPINION_OR_ANALYSIS_LOW"
@@ -804,7 +693,7 @@
       "symbol": "IONQ",
       "headline": "IonQ Stock Tumbles on $2 Billion Equity Offering. Why Other Quantum Names Are Falling Just as Hard. - Barron's",
       "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxOTG1WZG1RbWU3cFNNcXBUTnEzLUZZZGpvTDlldUlpQkJCLUFqckxYVWc4cXNPTUllY29QYWZCWEtpbWZMR0xwcWJCSjZNZk02SmtYaHhEd3l0c3g3bGIxd1FpelVpM2JrVUdsbnFubHJYUXBqTWNiWTFqYkl1LXJNU280RVZpQTBtNUE?oc=5",
-      "published_at": "2026-10-15T11:30:00+00:00",
+      "published_at": "2026-10-14T20:27:00+00:00",
       "source": "google_news_rss",
       "source_family": "unofficial_google_news_search_rss",
       "authority": "NEWS_SEARCH_ATTENTION_ONLY",
@@ -815,7 +704,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-20T04:11:55.057510+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_ISSUER_EVENT_LOW"
@@ -837,7 +726,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_OPINION_OR_ANALYSIS_LOW"
@@ -859,7 +748,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_ISSUER_EVENT_LOW"
@@ -881,29 +770,7 @@
       "positive_catalyst_verified": false,
       "market_direction": "UNKNOWN",
       "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_OPINION_OR_ANALYSIS_LOW"
-      ]
-    },
-    {
-      "event_topic": "FINANCIAL_REPORT_MENTION",
-      "symbol": "LLY",
-      "headline": "Eli Lilly and Company Earnings Preview: What to Expect - Yahoo Finance",
-      "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNQ2hzelZ6WTBQVm42OTBaeEJER1NHelVoOG1xd3JvQkF6SEVqdUdmQVdsZ3hpdkFhNkJ4MXNWYndlc1JMb3NCYlJQaUd0eGNOa3VYYVBydEJLRXBMSFI4UDYwenVfWE9KYmNXUHRUY1IxQzdpZFByWXJqUFI2eVhnTjRwamN0TjZBdTFlVzBfZW8xRERwWjdKQ2xwVQ?oc=5",
-      "published_at": "2026-10-14T11:58:33+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
+      "first_collected_at": "2026-10-20T12:06:13.160784+00:00",
       "impact_level": "LOW",
       "impact_rules": [
         "R3_OPINION_OR_ANALYSIS_LOW"
@@ -930,29 +797,6 @@
       "impact_rules": [
         "R3_OPINION_OR_ANALYSIS_LOW"
       ]
-    },
-    {
-      "event_topic": "FINANCIAL_REPORT_MENTION",
-      "symbol": "CVX",
-      "headline": "Chevron (CVX) Is Cleaning House Before the Earnings Peak Fades - Yahoo Finance",
-      "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNZFYtWmZqS210Z2hVWlZsejgyTGthVnhUbzFYRUxQNjV4ZUgtdTRlS0NRSHZpbHV4YW9TeFFneTBvRkUtNGtVcnVFVFQ4bV8zUXlHSzhnckhyWTNCRDhfMW5BbFVNWjBJbTdJQzNOYi0zUWJ3UHNLUEJpbVc4OTVTbDRFUTVKLWtvdXR5U3hsVWhraWZzQVpF?oc=5",
-      "published_at": "2026-10-13T12:18:19+00:00",
-      "source": "google_news_rss",
-      "source_family": "unofficial_google_news_search_rss",
-      "authority": "NEWS_SEARCH_ATTENTION_ONLY",
-      "issuer_name_in_headline": true,
-      "issuer_name_source": "github_public_listing_mirrors",
-      "issuer_release_authenticated": false,
-      "official_sec_filing": false,
-      "positive_catalyst_verified": false,
-      "market_direction": "UNKNOWN",
-      "price_or_option_quote": false,
-      "first_collected_at": "2026-10-19T21:55:20.850222+00:00",
-      "impact_level": "LOW",
-      "impact_rules": [
-        "R3_ISSUER_EVENT_MEDIUM",
-        "R4_OLDER_THAN_72H"
-      ]
     }
   ],
   "alpaca_iex": {
@@ -967,36 +811,12 @@
   },
   "issuer_directory": {
     "source_family": "github_public_listing_mirrors",
-    "source_license": "ODC-PDDL-1.0",
-    "source_of_truth": "NASDAQ Trader derived public listing snapshots",
-    "downloaded_at": "2026-10-19T15:20:25.905815+00:00",
-    "status": "CACHED_GITHUB_LISTINGS",
-    "issuers": {
-      "MRNA": "Moderna",
-      "LLY": "Eli Lilly and Company",
-      "CVX": "Chevron",
-      "ORCL": "Oracle",
-      "OXY": "Occidental Petroleum"
-    },
-    "source_checks": [
-      {
-        "exchange": "nasdaq",
-        "url": "https://raw.githubusercontent.com/datasets/nasdaq-listings/main/data/nasdaq-listed.csv",
-        "status": "PARSED"
-      },
-      {
-        "exchange": "nyse",
-        "url": "https://raw.githubusercontent.com/datasets/nyse-other-listings/main/data/nyse-listed.csv",
-        "status": "PARSED"
-      }
-    ],
-    "errors": {},
-    "research_only": true,
-    "not_sec_authenticated": true,
-    "not_live_listing_or_price": true
+    "status": "NO_NEW_ISSUERS",
+    "issuers": {},
+    "research_only": true
   },
   "google_news_retention": {
-    "historical_stories_preserved": 35,
+    "historical_stories_preserved": 19,
     "note": "Older stories keep publication timestamps; not refreshed quotes"
   },
   "impact_policy": {
