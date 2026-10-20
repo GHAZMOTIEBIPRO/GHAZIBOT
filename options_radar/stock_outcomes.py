@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .signal_features import entry_features
+
 CHECKPOINTS_MINUTES = {"15m": 15, "60m": 60, "1d": 24 * 60}
 STAGE_THRESHOLDS = {
     "PRESSURE_BUILDING": (8.0, 5.0),
@@ -415,6 +417,7 @@ class StockOutcomeTracker:
                     "research_only": dilution.get("research_only") is True,
                     "decision_authority": dilution.get("decision_authority") is True,
                 },
+                "entry_features_v1": entry_features(row, now),
                 "follow_through_target_pct": target,
                 "failure_threshold_pct": stop,
                 "observations": 1,

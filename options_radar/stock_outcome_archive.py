@@ -89,6 +89,11 @@ def _archive_record(state: dict[str, Any]) -> dict[str, Any]:
             if isinstance(state.get("sec_dilution_v2_entry"), dict)
             else {}
         ),
+        "entry_features_v1": (
+            dict(state.get("entry_features_v1"))
+            if isinstance(state.get("entry_features_v1"), dict)
+            else {}
+        ),
         "follow_through_target_pct": state.get("follow_through_target_pct"),
         "failure_threshold_pct": state.get("failure_threshold_pct"),
         "terminal_outcome": state.get("terminal_outcome"),

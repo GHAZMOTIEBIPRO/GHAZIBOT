@@ -8,6 +8,8 @@ on:
       - ".github/workflows/stock-walk-forward.yml"
       - "options_radar/stock_walk_forward.py"
       - "scripts/run_stock_walk_forward.py"
+      - "options_radar/explosion_stage_evaluation.py"
+      - "scripts/run_explosion_stage_evaluation.py"
   workflow_run:
     workflows:
       - "BLACK BOX Omega Stock Outcome Auditor"
@@ -90,6 +92,12 @@ jobs:
           --audit data/live/stock_outcome_audit.json
           --output data/live/stock_walk_forward.json
 
+      - name: Measure Explosion Hunter stage quality (research only)
+        run: >-
+          python -m scripts.run_explosion_stage_evaluation
+          --audit data/live/stock_outcome_audit.json
+          --output data/live/explosion_stage_evaluation.json
+
       - name: Validate fail-closed walk-forward contract
         run: |
           python - <<'PY'
@@ -132,8 +140,12 @@ jobs:
           set -euo pipefail
           git fetch origin bot-state:refs/heads/bot-state-walk-forward
           git worktree add .bot-state bot-state-walk-forward
-          mkdir -p .bot-state/state/stocks
+          mkdir -p .bot-state/state/stocks .bot-state/runtime/public/data
           cp -f data/live/stock_walk_forward.json .bot-state/state/stocks/stock_walk_forward.json
+          if [ -s data/live/explosion_stage_evaluation.json ]; then
+            cp -f data/live/explosion_stage_evaluation.json .bot-state/runtime/public/data/explosion_stage_evaluation.json
+            git -C .bot-state add runtime/public/data/explosion_stage_evaluation.json
+          fi
 
           python - <<'PY'
           import json
