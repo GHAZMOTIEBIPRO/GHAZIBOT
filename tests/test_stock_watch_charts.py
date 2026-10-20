@@ -82,6 +82,22 @@ def test_provider_failures_are_explicit_and_no_live_authority():
     assert FIVE_MIN == frozenset(WATCH)
 
 
+def test_collect_fills_the_liquidity_map_from_the_same_completed_bars():
+    from scripts.build_stock_watch_charts import liquidity_report
+    liquidity={}
+    out=collect(now=NOW,provider=SimpleNamespace(Ticker=Ticker),delay=lambda _:None,
+                liquidity_out=liquidity)
+    assert set(liquidity)==set(out["symbols"])  # BNAI (no data) has no row either
+    rgc=liquidity["RGC"]
+    # One 15m session only: no prior sessions, so RVOL is withheld, not invented.
+    assert rgc["status"]=="OK" and rgc["volume"] is None
+    assert rgc["profile_session"]["method"]=="OHLCV_UNIFORM_RANGE_ESTIMATE"
+    assert any("دفتر الأوامر" in line for line in rgc["reading_ar"])
+    report=liquidity_report(liquidity,now=NOW)
+    assert report["schema"]=="ghazi.liquidity_map.v1" and report["order_book_available"] is False
+    assert report["inference_only"] is True and report["execution_authority"] is False
+
+
 def test_absent_candles_never_become_zero_or_live_prices():
     assert pack_symbol("RGC",None,None,None,now=NOW) is None
     assert pack_symbol("RGC",candles("1d"),None,None,now=NOW)["intervals"].keys()=={"1d"}
