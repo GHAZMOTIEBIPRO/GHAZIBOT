@@ -22,7 +22,9 @@ just because it is popular.
 technical analysis, options, news/filings, quant research and screeners.
 Licenses were read from each LICENSE file; last activity from a shallow
 clone of the default branch. 53 repositories passed screening (32 pass,
-21 conditional); 37 failed.
+21 conditional); 37 failed. After the source gates and the rights matrix,
+the 53 are re-sorted by what they can do on authorized data in
+`OSS_REEVALUATION_2026-10-20.md`.
 
 Integrated so far, each because it fixed or measured something real:
 
