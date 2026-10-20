@@ -1539,6 +1539,24 @@
       item.append(head,txt("small",line.detail,"terminal-structural-notice"));box.append(item);
     }
   }
+  const RIGHT_LABELS={automated_access:"وصول آلي",persistent_storage:"تخزين",public_display_raw:"عرض عام خام",
+    public_display_derived:"عرض مشتقات"};
+  const RIGHT_STATUS={VERIFIED:"مسموح",RESTRICTED:"مقيد",UNKNOWN:"غير معروف"};
+  // Official-terms rights per provider; UNKNOWN is shown as not permitted.
+  function rightsLines(hub){
+    const block=hub?.source_rights;
+    if(!block||block.available!==true||!block.providers)return [];
+    return Object.entries(block.providers).map(([key,p])=>{
+      const r=p?.rights||{};
+      const allowed=Object.keys(RIGHT_LABELS).filter(k=>r[k]==="VERIFIED");
+      return {key,title:String(p?.name||key).slice(0,80),
+        tone:r.public_display_raw==="VERIFIED"||r.public_display_derived==="VERIFIED"?"UP":
+          r.automated_access==="RESTRICTED"?"DOWN":null,
+        status:allowed.length?"مسموح: "+allowed.map(k=>RIGHT_LABELS[k]).join("، "):"لا حق مؤكد لاستخدامنا",
+        detail:Object.entries(RIGHT_LABELS).map(([k,l])=>l+": "+(RIGHT_STATUS[r[k]]||"غير معروف")).join(" · ")+
+          (p?.summary_ar?" · "+String(p.summary_ar).slice(0,220):"")};
+    });
+  }
   function renderDataHub(){
     const box=$("terminal-data-hub");if(!box)return;
     box.replaceChildren();
@@ -1551,6 +1569,17 @@
       " · مصادر احتياطية: "+((hub.summary?.fallback_sources||[]).join("، ")||"لا يوجد")+
       " · الكتالوج: "+stamp(hub.generated_at)+" · الأوقات من الملفات نفسها وليست أوقات أسعار."+
       " · الحداثة لا تعني صحة البيانات ولا حق نشرها؛ حق الاستخدام معروض لكل مصدر على حدة.");
+    const rights=rightsLines(hub);
+    if(rights.length){
+      const head=txt("p","حقوق الاستخدام حسب الشروط الرسمية (فحص "+String(hub.source_rights.checked_at||"—")+
+        "، تشغيل "+String(hub.source_rights.evidence_run||"—")+"): «غير معروف» لا يُعامل كإذن.","terminal-footnote");
+      box.append(head);
+      for(const line of rights){
+        const item=txt("article","","terminal-structural-item"),title=txt("div","","terminal-structural-title");
+        title.append(txt("strong",line.title),chip(line.status,line.tone));
+        item.append(title,txt("small",line.detail,"terminal-structural-notice"));box.append(item);
+      }
+    }
     for(const line of hubLines(hub)){
       const item=txt("article","","terminal-structural-item");
       const head=txt("div","","terminal-structural-title");
@@ -1743,7 +1772,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

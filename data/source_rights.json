@@ -1,0 +1,1137 @@
+{
+ "schema": "ghazi.source_rights.v1",
+ "status_values": [
+  "VERIFIED",
+  "RESTRICTED",
+  "UNKNOWN"
+ ],
+ "checked_at": "2026-10-20",
+ "evidence_run": "39478127523",
+ "providers": {
+  "yahoo": {
+   "name": "Yahoo Finance (incl. yfinance/yahooquery transports, query1/query2 endpoints)",
+   "category": "price",
+   "official_url": "https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "RESTRICTED",
+     "evidence": "using any automated means, devices, programs, algorithms or methodologies, including but not limited to robots, spiders, scrapers, data mining tools, or data gathering or extraction tools, for any purpose without our express, prior permission."
+    },
+    "internal_analysis": {
+     "status": "RESTRICTED",
+     "evidence": "Unless you have explicit written permission, you must not reproduce, modify, rent, lease, sell, trade, distribute, transmit, broadcast, publicly perform, create derivative works based on, or exploit for any commercial purposes"
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "Unless you have explicit written permission, you must not reproduce, modify, rent, lease, sell, trade, distribute, transmit, broadcast, publicly perform, create derivative works based on, or exploit for any commercial purposes"
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "Unless you have explicit written permission, you must not reproduce, modify, rent, lease, sell, trade, distribute, transmit, broadcast, publicly perform, create derivative works based on, or exploit for any commercial purposes"
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "Unless you have explicit written permission, you must not reproduce, modify, rent, lease, sell, trade, distribute, transmit, broadcast, publicly perform, create derivative works based on, or exploit for any commercial purposes"
+    },
+    "github_actions_automation": {
+     "status": "RESTRICTED",
+     "evidence": "Disallow: /"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "Unless otherwise expressly stated, you may not access or reuse the Services, or any portion thereof, for any commercial purpose."
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "No official licensed public market-data API or free tier shown; any automated use needs Yahoo's express prior (written) permission. query1.finance.yahoo.com/robots.txt = 'User-agent: * / Disallow: /' (query2 Disallow: / per run 39413336941). YAHOO_AUTOMATED_ACCESS_APPROVED=false in the run env.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "ممنوع الجمع الآلي من ياهو لأي غرض دون إذن مسبق صريح، وممنوع النسخ أو التخزين أو إعادة النشر أو إنشاء أعمال مشتقة دون إذن كتابي."
+  },
+  "nasdaq_web": {
+   "name": "Nasdaq.com website and api.nasdaq.com",
+   "category": "price",
+   "official_url": "https://www.nasdaq.com/legal",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "RESTRICTED",
+     "evidence": "Not access or use the Service, or any process, whether automated or manual, to capture data or content from the Service"
+    },
+    "internal_analysis": {
+     "status": "RESTRICTED",
+     "evidence": "Except as expressly authorized by Nasdaq, you agree not to sell, copy, distribute, or create derivative works based on the Services, in whole or in part."
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "You may not copy, reproduce, transmit, display, perform, distribute, rent, sublicense, alter, store for subsequent use, create any derivative works from"
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "you shall not market, sell or distribute the Services or otherwise provide the Services to any third parties including, but not limited to, placing or distributing any Nasdaq’s content on a third party platform"
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "Except as expressly authorized by Nasdaq, you agree not to sell, copy, distribute, or create derivative works based on the Services, in whole or in part."
+    },
+    "github_actions_automation": {
+     "status": "RESTRICTED",
+     "evidence": "Not access or use the Service, or any process, whether automated or manual, to capture data or content from the Service"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "license to use the Services solely for your personal, non-commercial use"
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "Website licence is personal and non-commercial only; any other use needs Nasdaq's prior written consent or a written agreement. api.nasdaq.com/robots.txt = 'User-agent: * / Disallow: /'. NASDAQ_WEB_AUTOMATION_APPROVED=false in the run env.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "ترخيص Nasdaq.com شخصي غير تجاري فقط؛ ممنوع الالتقاط الآلي أو اليدوي للبيانات وممنوع تخزينها أو إعادة نشرها أو اشتقاق أعمال منها دون موافقة كتابية."
+  },
+  "cboe_delayed": {
+   "name": "Cboe delayed quotes (web quote table)",
+   "category": "options",
+   "official_url": "https://www.cboe.com/delayed_quotes/spx/quote_table",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "RESTRICTED",
+     "evidence": "IT IS STRICTLY PROHIBITED TO DOWNLOAD DELAYED QUOTE TABLE DATA FROM THIS WEB SITE BY USING AUTO-EXTRACTION PROGRAMS/QUERIES AND/OR SOFTWARE."
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "RESTRICTED",
+     "evidence": "IT IS STRICTLY PROHIBITED TO DOWNLOAD DELAYED QUOTE TABLE DATA FROM THIS WEB SITE BY USING AUTO-EXTRACTION PROGRAMS/QUERIES AND/OR SOFTWARE."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "No API or free programmatic tier on this page; data is 'PROPERTY OF CBOE LIVEVOL OR ITS DATA PROVIDERS' and may only be obtained by manual ticker entry. Storage/display/commercial terms not present in log.",
+   "rate_limit_note": "CBOE WILL BLOCK IP ADDRESSES OF ALL PARTIES WHO ATTEMPT TO DO SO.",
+   "summary_ar": "ممنوع منعًا باتًا تنزيل جدول الأسعار المؤجلة من Cboe ببرامج استخراج آلية؛ الإدخال اليدوي فقط، وباقي الحقوق غير محسومة في السجل."
+  },
+  "alpaca": {
+   "name": "Alpaca Market Data API",
+   "category": "price",
+   "official_url": "https://alpaca.markets/support/redistribute-alpaca-api",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "Unfortunately, you cannot redistribute Alpaca API data."
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Market Data Agreement PDF (https://files.alpaca.markets/disclosures/library/MarketDataAgreement.pdf) returned 403, so storage/derived/commercial terms are unverified. alpaca.markets/terms matched only trading-risk text. Repo secrets HAS_ALPACA_API_KEY=false, ALPACA_USE_AUTHORIZED=false.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "لا يجوز إعادة توزيع بيانات Alpaca API (أي لا عرض علني للأسعار الخام)، وباقي الحقوق غير معروفة لأن اتفاقية بيانات السوق أعادت 403."
+  },
+  "tiingo": {
+   "name": "Tiingo",
+   "category": "price",
+   "official_url": "https://app.tiingo.com/tos/",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "On a Starter Plan or Trial Plan, you may calculate Derived Products"
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "you may not write, save, archive, back up, or otherwise retain Tiingo Data in any persistent or durable storage."
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "tables, files, feeds, APIs, databases, dashboards, charts, downloads, or query tools that display, deliver, or permit extraction of Tiingo Data or a substantially equivalent substitute;"
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "A Starter Plan or Trial Plan does not permit persistent storage of Derived Products, during the plan or after it ends."
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "you shall not license, sell, rent, lease, transfer, assign, reproduce, distribute, host or otherwise commercially exploit Company Properties"
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Free Starter plan exists only to evaluate the service: data may be processed transiently in memory only, no persistent storage of data or Derived Products. Paid Plan allows persistence while active and distribution of Derived Products that are non-substitutive and non-reconstructable; rebased/indexed price series need written approval (Start-up/Enterprise/Institutional). Licence scope is personal or internal business purposes.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "الخطة المجانية تسمح بالحساب العابر في الذاكرة فقط؛ ممنوع التخزين الدائم للبيانات أو المشتقات وممنوع عرض البيانات الخام، ونشر المشتقات يتطلب خطة مدفوعة وشروطًا صارمة."
+  },
+  "finnhub": {
+   "name": "Finnhub",
+   "category": "price",
+   "official_url": "https://finnhub.io/terms-of-service",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "You hereby agree to not redistribute or share access to data or derived results from the data obtained"
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "You hereby agree to not redistribute or share access to data or derived results from the data obtained"
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "personal use unless explicitly stated otherwise. Personal plan can’t be used by any business even"
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "All listed plans are personal use unless stated otherwise; redistribution of data or derived results requires written approval from Finnhub. No refunds.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "خطط Finnhub شخصية افتراضيًا؛ ممنوع إعادة توزيع البيانات أو النتائج المشتقة منها لأي طرف ثالث دون موافقة كتابية."
+  },
+  "twelve_data": {
+   "name": "Twelve Data",
+   "category": "price",
+   "official_url": "https://twelvedata.com/terms",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "license to access and use the Platform solely for Internal Use during the subscription term"
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "(a) Access, receive, process, and store Data solely for Internal Use (or as otherwise permitted by your Subscription Tier or add-ons)"
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "(g) Store or cache Data beyond permitted timeframes specified in the Documentation"
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "(e) Redistribute or provide external display of Data only if and as expressly authorized by a Redistribution Rights Add-On or separate written agreement with Twelve Data"
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "license to access and use the Platform solely for Internal Use during the subscription term"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "(l) Use Free Tier data for commercial purposes"
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Free tier exists but no commercial use. Storage allowed only for Internal Use within Documentation timeframes (a public GitHub branch is external provision = Redistribution). External display needs a Redistribution Rights Add-On or written agreement. Creating non-reverse-engineerable Derived Data is allowed, but public display of derived output is not explicitly addressed and '(f) Create derivative financial products without explicit written permission' is prohibited.",
+   "rate_limit_note": "Rate limits per Subscription Tier; '(h) Use automated tools to exceed API Rate Limits or create excessive load' is prohibited.",
+   "summary_ar": "يُسمح بالوصول الآلي والتحليل الداخلي فقط؛ العرض الخارجي يتطلب إضافة حقوق إعادة التوزيع، والاستخدام التجاري للطبقة المجانية ممنوع."
+  },
+  "massive_polygon": {
+   "name": "Massive (formerly Polygon.io)",
+   "category": "options",
+   "official_url": "https://massive.com/legal/terms",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "polygon.io/terms redirects to massive.com/legal/terms. Log only shows that separate terms apply to 'Individual Use' (personal, non-business) vs 'Business Use' products; the operative licence clauses were not captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "الشروط مقسومة إلى استخدام فردي وتجاري لكن السجل لا يُظهر نصوصًا تحسم أي حق، فكل الحقوق غير معروفة."
+  },
+  "alpha_vantage": {
+   "name": "Alpha Vantage",
+   "category": "price",
+   "official_url": "https://www.alphavantage.co/terms_of_service/",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "or control, for personal, non-commercial use, unless you and Alpha"
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Grant is for personal, non-commercial use unless a separate agreement exists; commercial use requires contacting Alpha Vantage. PDF text in log is fragmented, so access/storage/display scope is not decidable.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "الترخيص شخصي غير تجاري ما لم يوجد اتفاق منفصل، وباقي الحقوق غير محسومة لأن نص الشروط في السجل مجزأ."
+  },
+  "fmp": {
+   "name": "Financial Modeling Prep (FMP)",
+   "category": "fundamentals",
+   "official_url": "https://site.financialmodelingprep.com/terms-of-service",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "FMP hereby grants to Customer a limited, revocable, non-exclusive, non-transferable, non-sublicensable right and license to access the Data and FMP APIs specified in the Order Form or in Customer’s account"
+    },
+    "internal_analysis": {
+     "status": "RESTRICTED",
+     "evidence": "integrate the Data or Services into any tools or applications accessible by any third parties"
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "ensure that Data is accessible only by Customer, Customer’s authorized agents, and/or FMP"
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "Without a specific agreement with FMP, customers are prohibited from showcasing FMP Services or Data on platforms including but not limited to websites, blogs"
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "resell, sublicense, distribute or otherwise provide access to The Services, or data or information contained in or derived from The Services, to any third party"
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "FMP hereby grants to Customer a limited, revocable, non-exclusive, non-transferable, non-sublicensable right and license to access the Data and FMP APIs specified in the Order Form or in Customer’s account"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "strictly for their own personal, non-business and non-commercial purposes"
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Self-serve licence is individual, personal, non-commercial; 'market research' counts as commercial analysis. Any website display needs a specific agreement with FMP. Data must be deleted on termination.",
+   "rate_limit_note": "Bound by an API Call Rate Limit and a Data Usage Limit, detailed on the pricing page/dashboard and changeable without notice.",
+   "summary_ar": "يُسمح بالوصول إلى واجهة FMP للاستخدام الشخصي فقط؛ ممنوع عرض البيانات أو مشتقاتها على موقع عام أو دمجها في أداة يصل إليها الغير دون اتفاق خاص."
+  },
+  "eodhd": {
+   "name": "EOD Historical Data (EODHD)",
+   "category": "price",
+   "official_url": "https://eodhd.com/financial-apis/terms-conditions",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "Non-Professional Users are permitted to store, manipulate, and analyze the data for private, non-commercial purposes."
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "Selling, reselling, retransmitting, redistributing, displaying, or granting access to the Information or Services, whether in its original or repackaged form."
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "Selling, reselling, retransmitting, redistributing, displaying, or granting access to the Information or Services, whether in its original or repackaged form."
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "Selling, reselling, retransmitting, redistributing, displaying, or granting access to the Information or Services, whether in its original or repackaged form."
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "Non-Professional Users are permitted to store, manipulate, and analyze the data for private, non-commercial purposes."
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Non-Professional (personal) users may store/analyze privately for non-commercial purposes only; storage in a public GitHub branch grants access and is prohibited. Commercial use requires contacting EODHD. Terms state prices 'are indicative and not appropriate for trading purposes' (research/context-grade only).",
+   "rate_limit_note": "Page has a section 'API Limits: Daily Calls, Rate Limits and Costs'; numbers not captured in log.",
+   "summary_ar": "يُسمح للمستخدم الشخصي بالتحليل والتخزين الخاص غير التجاري فقط؛ ممنوع عرض البيانات أو إتاحتها بأي شكل خام أو معاد تغليفه."
+  },
+  "marketdata_app": {
+   "name": "MarketData.app",
+   "category": "options",
+   "official_url": "https://www.marketdata.app/terms/",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "RESTRICTED",
+     "evidence": "license to access and use our data on an unlimited number of computers and mobile devices that you own or control for your own personal non-professional use."
+    },
+    "internal_analysis": {
+     "status": "RESTRICTED",
+     "evidence": "You intend to use the data for purposes that extend beyond personal usage, including but not limited to investment analysis, research, testing, monitoring"
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "You may not sell, resell, retransmit, or redistribute or make our data or any third-party data available to anyone."
+    },
+    "public_display_raw": {
+     "status": "RESTRICTED",
+     "evidence": "You may not sell, resell, retransmit, or redistribute or make our data or any third-party data available to anyone."
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "alter, modify or adapt the Data or Software, including but not limited to translating, reverse engineering, decompiling, disassembling, or creating derivative works"
+    },
+    "github_actions_automation": {
+     "status": "RESTRICTED",
+     "evidence": "license to access and use our data on an unlimited number of computers and mobile devices that you own or control for your own personal non-professional use."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "Any company, organization, or corporate entity wishing to create an account must enter into a separate commercial agreement with us."
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Licence is personal non-professional only; research/monitoring beyond personal usage or any third-party access requires a separate commercial agreement. No programmatic redistribution (feed, API or export file). Data must be deleted when the subscription ends.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "ترخيص MarketData.app شخصي غير مهني فقط؛ ممنوع إتاحة البيانات لأي أحد أو إنشاء أعمال مشتقة، والاستخدام البحثي العام يحتاج اتفاقًا تجاريًا."
+  },
+  "tradier": {
+   "name": "Tradier",
+   "category": "options",
+   "official_url": "https://tradier.com/terms-of-service",
+   "fetch_status": "404",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Terms URL returned 404; no licensing text captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "صفحة الشروط أعادت 404 فلا يمكن تأكيد أي حق."
+  },
+  "nasdaq_data_link": {
+   "name": "Nasdaq Data Link",
+   "category": "fundamentals",
+   "official_url": "https://data.nasdaq.com/terms",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "HTTP 200 but only 7202 bytes and no licensing clauses matched (likely a JS shell); terms not captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "الصفحة لم تُظهر أي نص ترخيص، فكل الحقوق غير معروفة."
+  },
+  "iex": {
+   "name": "IEX Exchange market data",
+   "category": "exchange",
+   "official_url": "https://www.iexexchange.io/market-data",
+   "fetch_status": "404",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": "unknown",
+   "cost_note": "Redirected to https://www.iex.io/market-data and returned 404; policy not captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "صفحة سياسة بيانات IEX أعادت 404 فكل الحقوق غير معروفة."
+  },
+  "nasdaqtrader": {
+   "name": "NasdaqTrader symbol directory",
+   "category": "exchange",
+   "official_url": "https://www.nasdaqtrader.com/Trader.aspx?id=TermsOfUse",
+   "fetch_status": "404",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "TermsOfUse page is a soft 404 (HTTP 200 but final_url=...Trader.aspx?id=http404). SymbolDirDefs page (https://www.nasdaqtrader.com/Trader.aspx?id=SymbolDirDefs) returned 200 with no licensing clauses matched.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "صفحة شروط NasdaqTrader غير موجودة فعليًا وصفحة دليل الرموز بلا نص ترخيص، فكل الحقوق غير معروفة."
+  },
+  "tradingview_widgets": {
+   "name": "TradingView widgets / charts",
+   "category": "display",
+   "official_url": "https://www.tradingview.com/policies/",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "RESTRICTED",
+     "evidence": "This license is strictly limited to personal or internal business purposes and explicitly prohibits any form of non-display usage."
+    },
+    "internal_analysis": {
+     "status": "RESTRICTED",
+     "evidence": "Such prohibited uses include, but are not limited to, any form of automated trading, automated order generation, price referencing, order verification, algorithmic decision-making"
+    },
+    "persistent_storage": {
+     "status": "RESTRICTED",
+     "evidence": "any machine-driven processes excluding direct, human-readable display"
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "TradingView grants all users of tradingview.com, and all other available versions of the site, the ability to use snapshots of TradingView charts in analysis, press releases, books, articles, blog posts and other publications."
+    },
+    "public_display_derived": {
+     "status": "RESTRICTED",
+     "evidence": "for any form of automated trading, algorithmic decision-making, or any other non-display purposes."
+    },
+    "github_actions_automation": {
+     "status": "RESTRICTED",
+     "evidence": "This license is strictly limited to personal or internal business purposes and explicitly prohibits any form of non-display usage."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "RESTRICTED",
+     "evidence": "Except as otherwise expressly permitted by separate agreement, we do not permit commercial usage of any of our services or APIs."
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "Display-only: charts/snapshots and embedded widgets may be shown only with TradingView attribution kept visible ('This extends to any tools (such as widgets) obtained on the TradingView website and utilized on the outside resources'). Widget-docs page (https://www.tradingview.com/widget-docs/) matched only its title. Any machine use of TradingView data is prohibited; commercial use needs a separate agreement.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "يجوز عرض رسوم/ودجت TradingView على الموقع مع إبقاء الإسناد ظاهرًا فقط؛ ممنوع أي استخدام آلي أو تخزين أو اشتقاق إشارات من بياناتها."
+  },
+  "sec_edgar": {
+   "name": "SEC EDGAR",
+   "category": "government",
+   "official_url": "https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data",
+   "fetch_status": "403",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "Both policy pages (accessing-edgar-data, /privacy) returned 403. SEC access probe: www.sec.gov 403 'Automated access to our sites must comply with SEC.gov's Privacy and Security Policy.'; data.sec.gov 403 'Your Request Originates from an Undeclared Automated Tool'. SEC_USER_AGENT secret not set (default agent used).",
+   "rate_limit_note": "www.sec.gov returned 'Request Rate Threshold Exceeded'; numeric limit not in log.",
+   "summary_ar": "صفحات سياسة SEC أعادت 403 والطلبات الآلية رُفضت بسبب وكيل مستخدم غير مُعلن، فالحقوق غير مؤكدة من السجل."
+  },
+  "fred": {
+   "name": "FRED (St. Louis Fed)",
+   "category": "government",
+   "official_url": "https://fred.stlouisfed.org/docs/api/terms_of_use.html",
+   "fetch_status": "timeout",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "API terms and /legal/ both FETCH_ERROR ReadTimeout. Note: FRED redistributes third-party series whose rights vary per series; not verified here.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "انتهت مهلة جلب شروط FRED فكل الحقوق غير معروفة."
+  },
+  "bls": {
+   "name": "U.S. Bureau of Labor Statistics API",
+   "category": "government",
+   "official_url": "https://www.bls.gov/developers/termsOfService.htm",
+   "fetch_status": "403",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": "unknown",
+   "cost_note": "Terms page returned 403; nothing captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "صفحة شروط BLS أعادت 403 فكل الحقوق غير معروفة."
+  },
+  "bea": {
+   "name": "U.S. Bureau of Economic Analysis API",
+   "category": "government",
+   "official_url": "https://apps.bea.gov/api/_pdf/bea_api_tos.pdf",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "You may use the BEA API to develop a service or service to search, display, analyze, retrieve, view and otherwise"
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "You may use the BEA API to develop a service or service to search, display, analyze, retrieve, view and otherwise"
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "You may use the BEA API to develop a service or service to search, display, analyze, retrieve, view and otherwise"
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "You may use the BEA API to develop a service or service to search, display, analyze, retrieve, view and otherwise"
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "You may use the BEA API to develop a service or service to search, display, analyze, retrieve, view and otherwise"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": true,
+   "cost_note": "Services using the API 'should display the following notice prominently' (notice text not captured). Storage and commercial use not addressed in captured text.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "يُسمح باستخدام واجهة BEA لبناء خدمة تبحث وتعرض وتحلل البيانات مع عرض الإشعار المطلوب، بينما التخزين والاستخدام التجاري غير محسومين."
+  },
+  "census": {
+   "name": "U.S. Census Bureau API",
+   "category": "government",
+   "official_url": "https://www.census.gov/data/developers/about/terms-of-service.html",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data."
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data."
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data."
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data."
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": "unknown",
+   "cost_note": "Must display: \"This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.\" Storage and commercial use not explicitly addressed in captured text.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "يُسمح باستخدام واجهة التعداد للبحث والعرض والتحليل مع إشعار عدم التأييد، والتخزين والاستخدام التجاري غير محسومين نصًا."
+  },
+  "openfda": {
+   "name": "openFDA",
+   "category": "government",
+   "official_url": "https://open.fda.gov/terms/",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "offers some of its public data in machine-readable format through openFDA"
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission."
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "evidence": "You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission."
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission."
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission."
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "offers some of its public data in machine-readable format through openFDA"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "evidence": "You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission."
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "CC0 public domain unless marked otherwise; works marked 'This data is not in the public domain' and GMDN Content are excluded and need their own licence.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "بيانات openFDA ملك عام (CC0) يجوز نسخها وتعديلها وتوزيعها حتى تجاريًا، باستثناء المحتوى المعلَّم بأنه غير عام مثل GMDN."
+  },
+  "finra": {
+   "name": "FINRA API",
+   "category": "government",
+   "official_url": "https://developer.finra.org/terms-of-service",
+   "fetch_status": "404",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": "unknown",
+   "cost_note": "Terms URL returned 404; nothing captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "صفحة شروط FINRA أعادت 404 فكل الحقوق غير معروفة."
+  },
+  "treasury_fiscaldata": {
+   "name": "U.S. Treasury Fiscal Data (and Treasury yield data)",
+   "category": "government",
+   "official_url": "https://fiscaldata.treasury.gov/api-documentation/",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "Our APIs accept the GET method, one of the most common HTTP methods."
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "The data is offered free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes."
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "evidence": "The data is offered free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes."
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "The data is offered free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes."
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "The data is offered free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes."
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "Our APIs accept the GET method, one of the most common HTTP methods."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "evidence": "The data is offered free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes."
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "Free, no restriction. Treasury yield-curve data (home.treasury.gov) is a U.S. government publication per run 39413336941; its own page was not in this log.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "بيانات الخزانة الأمريكية مجانية بلا قيود ويجوز نسخها وتعديلها وإعادة توزيعها لأغراض تجارية وغير تجارية."
+  },
+  "cftc": {
+   "name": "CFTC Public Reporting (COT)",
+   "category": "government",
+   "official_url": "https://publicreporting.cftc.gov/stories/s/r4w3-av2u",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "An official website of the United States Government",
+     "basis": "U.S. government publication (verified from full documents in run 39413336941); log text only confirms .gov origin"
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "evidence": "An official website of the United States Government",
+     "basis": "U.S. government publication (verified from full documents in run 39413336941); log text only confirms .gov origin"
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "An official website of the United States Government",
+     "basis": "U.S. government publication (verified from full documents in run 39413336941); log text only confirms .gov origin"
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "An official website of the United States Government",
+     "basis": "U.S. government publication (verified from full documents in run 39413336941); log text only confirms .gov origin"
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "evidence": "An official website of the United States Government",
+     "basis": "U.S. government publication (verified from full documents in run 39413336941); log text only confirms .gov origin"
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "No licence clauses captured in this log; content-use rights rest on the earlier-verified fact that CFTC data are U.S. government publications. Programmatic/API access terms of the publicreporting portal are not shown, so automation stays UNKNOWN.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "بيانات CFTC منشورات حكومية أمريكية يجوز تحليلها وتخزينها وعرضها، لكن شروط الوصول الآلي للبوابة غير ظاهرة في السجل."
+  },
+  "federal_reserve": {
+   "name": "Federal Reserve Board data",
+   "category": "government",
+   "official_url": "https://www.federalreserve.gov/data.htm",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "Page returned 200 but only navigation/dataset titles matched; no licence or usage text captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "صفحة بيانات الاحتياطي الفيدرالي لم تتضمن نص ترخيص في السجل، فكل الحقوق غير معروفة."
+  },
+  "occ": {
+   "name": "OCC (Options Clearing Corp) market data reports",
+   "category": "options",
+   "official_url": "https://www.theocc.com/market-data/market-data-reports",
+   "fetch_status": "403",
+   "rights": {
+    "automated_access": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN",
+     "evidence": null
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN",
+     "evidence": null
+    }
+   },
+   "api_key_required": "unknown",
+   "cost_note": "Page returned 403; nothing captured.",
+   "rate_limit_note": "Not stated in log.",
+   "summary_ar": "صفحة بيانات OCC أعادت 403 فكل الحقوق غير معروفة."
+  }
+ }
+}

@@ -19,6 +19,29 @@ from typing import Any
 SCHEMA = "ghazi.data_hub.v1"
 
 
+RIGHTS_KEYS = ("automated_access", "internal_analysis", "persistent_storage", "public_display_raw",
+               "public_display_derived", "github_actions_automation", "commercial_use_on_free_tier")
+
+
+def _source_rights() -> dict[str, Any]:
+    """Compact public view of data/source_rights.json (official-terms evidence)."""
+    path = Path(__file__).resolve().parents[1] / "data" / "source_rights.json"
+    try:
+        matrix = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"available": False}
+    providers = {}
+    for key, entry in (matrix.get("providers") or {}).items():
+        rights = entry.get("rights") or {}
+        providers[key] = {
+            "name": entry.get("name"), "category": entry.get("category"),
+            "official_url": entry.get("official_url"), "summary_ar": entry.get("summary_ar"),
+            "rights": {r: (rights.get(r) or {}).get("status", "UNKNOWN") for r in RIGHTS_KEYS},
+        }
+    return {"available": True, "checked_at": matrix.get("checked_at"), "evidence_run": matrix.get("evidence_run"),
+            "unknown_is_not_permission": True, "providers": providers}
+
+
 def _source_gates() -> dict[str, Any]:
     # Loaded by path: the package __init__ needs pandas, this job has none.
     path = Path(__file__).resolve().parents[1] / "options_radar" / "source_permissions.py"
@@ -178,6 +201,7 @@ def build(data_dir: Path, now: datetime) -> dict[str, Any]:
         "generated_at": now.isoformat(),
         "datasets": rows,
         "source_gates": _source_gates(),
+        "source_rights": _source_rights(),
         "summary": {"total": len(rows), "freshness": counts,
                     "rights": {k: sum(r.get("rights_status") == k for r in rows)
                                for k in sorted({r.get("rights_status") for r in rows})},
