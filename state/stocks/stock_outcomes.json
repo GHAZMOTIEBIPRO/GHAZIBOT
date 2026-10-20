@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-19T23:59:10.582331+00:00",
+  "updated_at": "2026-10-20T08:02:30.327828+00:00",
   "signals": {
     "905a6da049f090af2d3f": {
       "signal_id": "905a6da049f090af2d3f",
@@ -1760,8 +1760,8 @@
       },
       "follow_through_target_pct": 8.0,
       "failure_threshold_pct": 5.0,
-      "observations": 34,
-      "last_observed_at": "2026-10-19T23:59:10.582331+00:00",
+      "observations": 35,
+      "last_observed_at": "2026-10-20T08:02:30.327828+00:00",
       "last_price": 2.59,
       "last_directional_return_pct": 0.0,
       "mfe_pct": 0.0,
@@ -1791,20 +1791,154 @@
           "score_band": "below-72"
         }
       ]
+    },
+    "434fdac83f4c5de35983": {
+      "signal_id": "434fdac83f4c5de35983",
+      "signal_time": "2026-10-20T08:02:30.327828+00:00",
+      "symbol": "JBDI",
+      "direction": "up",
+      "entry_price": 2.59,
+      "score": 62.3,
+      "score_band": "below-72",
+      "stage": "PRESSURE_BUILDING",
+      "market_regime": "mixed",
+      "cause_category": "unknown",
+      "cause_tier": "unknown",
+      "official_cause": false,
+      "entry_evidence_state": "NO_PRIMARY_CAUSE_PROVEN",
+      "entry_cause_status": "NO_PRIMARY_CAUSE_PROVEN",
+      "cause_source": "",
+      "cause_url": "",
+      "cause_headline": "",
+      "cause_published_at": null,
+      "cause_accession": "",
+      "cause_observed_at": "2026-10-20T08:02:30.327828+00:00",
+      "cause_point_in_time_frozen": true,
+      "microcap_hunter_entry": {
+        "stage": "RESEARCH",
+        "score": 48.0,
+        "flags": [
+          "FLOAT_UNVERIFIED",
+          "RVOL_BELOW_2"
+        ],
+        "research_only": true
+      },
+      "time_normalized_rvol_entry": {
+        "available": false,
+        "ratio": null,
+        "pace_percentile": null,
+        "sample_sessions": 0,
+        "cutoff_clock_et": "04:01",
+        "source_role": "intraday_bar_volume_profile",
+        "selected_source": "yahooquery",
+        "fabric_transport_source_count": 2,
+        "fabric_independent_source_count": 1,
+        "fabric_consensus_pass": false,
+        "provider_quote_timestamp": "2026-10-19T20:00:00+00:00",
+        "profile_quality": "UNKNOWN",
+        "current_bar_lag_minutes": null,
+        "current_slot_coverage_pct": null,
+        "frozen_at": "2026-10-20T08:02:30.327828+00:00",
+        "research_only": true,
+        "live_score_adjustment": false
+      },
+      "sec_dilution_v2_entry": {
+        "available": false,
+        "risk_score": null,
+        "risk_label": "",
+        "confidence": null,
+        "observed_at": null,
+        "share_growth_pct": null,
+        "largest_announced_financing_to_market_cap": null,
+        "largest_explicit_issuable_to_float": null,
+        "same_day_date_only_events_excluded": 0,
+        "future_timestamp_events_excluded": 0,
+        "share_growth_risk_suppressed_by_split": false,
+        "remaining_capacity_verified": false,
+        "research_only": false,
+        "decision_authority": false
+      },
+      "entry_features_v1": {
+        "version": "ENTRY_FEATURES_V1",
+        "frozen_at": "2026-10-20T08:02:30.327828+00:00",
+        "session_phase": "PRE_MARKET",
+        "volume": {
+          "relative_volume_full_day_basis": null,
+          "volume": 7184963.0,
+          "turnover_pct": 75.51567397126881,
+          "acceleration_score": 0.0,
+          "participation_score": 63.16
+        },
+        "float": {
+          "float_shares": null,
+          "shares_outstanding": null,
+          "supply_score": 94.0
+        },
+        "catalyst": {
+          "category": null,
+          "official": false,
+          "score": null,
+          "age_minutes": null
+        },
+        "relative_strength": {
+          "move_pct": 10.684,
+          "sector_vs_market": null,
+          "sector_score": null,
+          "rsi": null
+        },
+        "premarket": {
+          "gap_pct": null,
+          "premarket_move_pct": null
+        },
+        "liquidity": {
+          "price": 2.59,
+          "dollar_volume": 18609054.169999998,
+          "avg_dollar_volume": null,
+          "market_cap": 24642638.0
+        },
+        "dilution": {
+          "risk": null
+        },
+        "market_regime": "mixed",
+        "earlyness": 89.12,
+        "decision_authority": false
+      },
+      "follow_through_target_pct": 8.0,
+      "failure_threshold_pct": 5.0,
+      "observations": 1,
+      "last_observed_at": "2026-10-20T08:02:30.327828+00:00",
+      "last_price": 2.59,
+      "last_directional_return_pct": 0.0,
+      "mfe_pct": 0.0,
+      "mae_pct": 0.0,
+      "checkpoints": {},
+      "terminal_outcome": "open",
+      "measurement_basis": "repeated_radar_snapshots",
+      "entry_stage": "PRESSURE_BUILDING",
+      "entry_score": 62.3,
+      "entry_score_band": "below-72",
+      "stage_history": [
+        {
+          "observed_at": "2026-10-20T08:02:30.327828+00:00",
+          "stage": "PRESSURE_BUILDING",
+          "score": 62.3,
+          "score_band": "below-72"
+        }
+      ]
     }
   },
   "measurement_note": "Snapshot-based follow-through evidence. It cannot reconstruct intrabar order; therefore it is used for calibration, not executable-fill claims.",
   "summary": {
-    "tracked": 18,
+    "tracked": 19,
     "matured_60m": 17,
     "successes": 0,
     "failures": 0,
-    "open": 18
+    "open": 19
   },
   "event_dedup": {
     "mode": "same_symbol_direction_within_4h",
     "reentry_gap_minutes": 240,
     "duplicates_collapsed_this_pass": 0,
-    "samples_after_dedup": 18
+    "samples_after_dedup": 19
   }
 }
