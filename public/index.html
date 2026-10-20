@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="./terminal-hub.css?v=20261020-3">
+  <link rel="stylesheet" href="./terminal-hub.css?v=20261020-4">
 </head>
 <body>
   <div class="page-shell">
@@ -155,6 +155,15 @@
             <p>مراحل الضغط والاشتعال من فحص السوق الكامل: حجم نسبي، دوران سيولة، أسهم حرة ومحفز. الدرجة ترتيب بحثي وليست احتمال ربح.</p></div></header>
           <p id="terminal-explosion-health" class="terminal-footnote" aria-live="polite">قراءة آخر فحص…</p>
           <div id="terminal-explosion-quality" class="terminal-structural-list" aria-label="جودة المراحل المقاسة تاريخيًا"></div>
+          <label class="terminal-sort">ترتيب القائمة:
+            <select id="terminal-explosion-sort" aria-label="ترتيب رادار الانفجار">
+              <option value="stage">المرحلة ثم الدرجة</option>
+              <option value="score">الدرجة البحثية</option>
+              <option value="day_move_pct">حركة اليوم</option>
+              <option value="rvol_same_time">RVOL بنفس الوقت</option>
+              <option value="dollar_volume">السيولة الدولارية</option>
+              <option value="float_shares">الأسهم الحرة (الأقل أولًا)</option>
+            </select></label>
           <div id="terminal-explosion-list" class="terminal-structural-list"><p class="terminal-empty">جاري التحميل…</p></div>
         </section>
         <div id="terminal-small-grid" class="terminal-stock-grid"><p class="terminal-empty">جاري تحميل الأسهم…</p></div>
@@ -791,6 +800,6 @@
   <script src="./terminal-oos.js?v=20261020-1" defer></script>
   <script src="./terminal-decision.js?v=20261020-2" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./terminal-hub.js?v=20261020-17" defer></script>
+  <script src="./terminal-hub.js?v=20261020-18" defer></script>
 </body>
 </html>
