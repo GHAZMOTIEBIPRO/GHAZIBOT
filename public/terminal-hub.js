@@ -1555,7 +1555,7 @@
     if(!report){put("terminal-fda-status","لم تُنشر أحداث FDA بعد.");return;}
     const c=report.counts||{};
     put("terminal-fda-status","المصدر: openFDA (ملك عام CC0) · آخر "+String(report.window?.start||"—")+" ← "+String(report.window?.end||"—")+
-      " · موافقات "+(c.approvals??0)+" (أصلية "+(c.original_approvals??0)+"، منها دواء أو منتج بيولوجي جديد "+(c.new_drug_or_biologic_approvals??"—")+") · سحوبات "+(c.recalls??0)+
+      " · موافقات "+(c.approvals??0)+" (أصلية "+(c.original_approvals??0)+"، منها NDA/BLA "+(c.new_drug_or_biologic_approvals??"—")+"، جزيء جديد "+(c.new_molecule_approvals??"—")+") · سحوبات "+(c.recalls??0)+
       " (Class I: "+(c.class_i_recalls??0)+") · مرتبطة برمز "+(c.matched_to_ticker??0)+
       " · التحديث: "+stamp(report.generated_at)+" · وقائع تنظيمية لا تعني اتجاه سعر.");
     const lines=fdaLines(report);
