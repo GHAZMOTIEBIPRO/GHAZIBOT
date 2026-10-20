@@ -1,0 +1,135 @@
+{
+ "schema": "ghazi.explosion_stage_evaluation.v1",
+ "generated_at": "2026-10-20T04:35:22.769823+00:00",
+ "source_audit_updated_at": "2026-10-20T04:32:18.561727+00:00",
+ "population": {
+  "eligible_stage_signals": 693,
+  "decisive": 508,
+  "sessions": 29,
+  "pooled_direction_baseline": 0.3937
+ },
+ "stages": {
+  "PRESSURE_BUILDING": {
+   "signals": 415,
+   "decisive": 306,
+   "successes": 110,
+   "pending": 58,
+   "non_decisive": 51,
+   "precision_direction": 0.3595,
+   "precision_ci95": [
+    0.3078,
+    0.4147
+   ],
+   "lift_vs_pooled_baseline": -0.0342,
+   "breakeven_hit_rate": 0.3846,
+   "recall_share_of_all_successes": 0.55,
+   "expectancy_gross_pct": -0.327,
+   "expectancy_net_pct": -1.252,
+   "big_move_any_direction_rate": 0.5373,
+   "big_move_measured": 415,
+   "verdict_sample_sufficient": true,
+   "time_split": {
+    "early_sessions_before": "2026-09-21",
+    "early": {
+     "decisive": 258,
+     "precision_direction": 0.3798,
+     "expectancy_net_pct": -0.995
+    },
+    "late": {
+     "decisive": 48,
+     "precision_direction": 0.25,
+     "expectancy_net_pct": -2.629
+    }
+   }
+  },
+  "IGNITION": {
+   "signals": 29,
+   "decisive": 20,
+   "successes": 6,
+   "pending": 8,
+   "non_decisive": 1,
+   "precision_direction": 0.3,
+   "precision_ci95": [
+    0.1455,
+    0.519
+   ],
+   "lift_vs_pooled_baseline": -0.0937,
+   "breakeven_hit_rate": 0.375,
+   "recall_share_of_all_successes": 0.03,
+   "expectancy_gross_pct": -1.2,
+   "expectancy_net_pct": -2.385,
+   "big_move_any_direction_rate": 0.5862,
+   "big_move_measured": 29,
+   "verdict_sample_sufficient": false,
+   "time_split": {
+    "early_sessions_before": "2026-09-21",
+    "early": {
+     "decisive": 20,
+     "precision_direction": 0.3,
+     "expectancy_net_pct": -2.385
+    },
+    "late": {
+     "decisive": 0,
+     "precision_direction": null,
+     "expectancy_net_pct": null
+    }
+   }
+  },
+  "EXPLOSION": {
+   "signals": 249,
+   "decisive": 182,
+   "successes": 84,
+   "pending": 64,
+   "non_decisive": 3,
+   "precision_direction": 0.4615,
+   "precision_ci95": [
+    0.3907,
+    0.534
+   ],
+   "lift_vs_pooled_baseline": 0.0678,
+   "breakeven_hit_rate": 0.5,
+   "recall_share_of_all_successes": 0.42,
+   "expectancy_gross_pct": -0.462,
+   "expectancy_net_pct": -1.422,
+   "big_move_any_direction_rate": 0.7309,
+   "big_move_measured": 249,
+   "verdict_sample_sufficient": true,
+   "time_split": {
+    "early_sessions_before": "2026-09-21",
+    "early": {
+     "decisive": 182,
+     "precision_direction": 0.4615,
+     "expectancy_net_pct": -1.422
+    },
+    "late": {
+     "decisive": 0,
+     "precision_direction": null,
+     "expectancy_net_pct": null
+    }
+   }
+  }
+ },
+ "feature_capture": {
+  "records_with_entry_features_v1": 0,
+  "records_with_time_normalized_rvol": 5,
+  "gating_hypotheses_testable": false,
+  "reason": "stage rule changes are evaluated only after enough decisive records carry signal-time features, on later sessions than those used to propose them"
+ },
+ "cost_model": {
+  "round_trip_pct_by_entry_price": {
+   "<2": 1.5,
+   "2-10": 0.6,
+   ">=10": 0.2
+  },
+  "assumption_not_measured_fills": true
+ },
+ "definitions": {
+  "precision_direction": "audit success / decisive (own target before own stop)",
+  "big_move_any_direction_rate": "share with MFE >= target or MAE <= -target; not direction accuracy",
+  "expectancy": "mean threshold payoff per decisive signal; non-decisive and pending excluded"
+ },
+ "research_only": true,
+ "decision_authority": false,
+ "score_is_probability": false,
+ "live_rules_changed": false
+}
