@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-20T18:57:37.001460+00:00",
+ "generated_at": "2026-10-20T18:58:18.291622+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -54,7 +54,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 40.0,
+   "value": 30.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -63,7 +63,7 @@
     "options_analytics": "LICENSE_BLOCKED",
     "spx_gamma": "LICENSE_BLOCKED",
     "explosion_discovery": "AVAILABLE",
-    "classical_direction": "AVAILABLE",
+    "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
     "macro_positioning": "AVAILABLE"
@@ -80,7 +80,7 @@
     "index_charts.json": "PASS/BLOCKED_PENDING_PERMISSION",
     "stock_watch_charts.json": "PASS/BLOCKED_PENDING_PERMISSION",
     "liquidity_map.json": "PASS/BLOCKED_PENDING_PERMISSION",
-    "classical_direction.json": "PASS/RESTRICTED",
+    "classical_direction.json": "PASS/BLOCKED_PENDING_PERMISSION",
     "decision_brief.json": "PASS/OK_FOR_STATED_USE",
     "explosion_hunter.json": "PASS/RESTRICTED",
     "explosion_stage_evaluation.json": "PASS/OK_FOR_STATED_USE",
@@ -99,12 +99,12 @@
    "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
   },
   "ANALYTICAL_VALIDITY": {
-   "status": "FAILING",
+   "status": "PASSING",
    "value": null,
    "unit": "status",
    "evidence": {
     "run_id": 39479257695,
-    "conclusion": null,
+    "conclusion": "success",
     "at": "2026-10-20T18:57:21Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
