@@ -1,7 +1,7 @@
 {
   "service": "GHAZIBOT",
-  "status": "healthy",
-  "generated_at": "2026-10-20T11:38:24.413221+00:00",
+  "status": "degraded",
+  "generated_at": "2026-10-20T11:43:57.232179+00:00",
   "schema_version": 7,
   "health_schema_version": 3,
   "runtime_source": "bot-state/live_dashboard_status",
@@ -14,35 +14,36 @@
   },
   "workflow_health": {
     "publisher": {
-      "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
-      "source_run_id": "39415298055",
+      "source_workflow": "BLACK BOX Omega Stock Radar",
+      "source_run_id": "39415388969",
       "mode": "artifact_to_bot_state_status_only"
     },
     "paths": {
       "fast_discovery": {
         "status": "HEALTHY",
         "generated_at": "2026-10-20T11:23:16.332352+00:00",
-        "age_minutes": 15.13,
+        "age_minutes": 20.68,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": null,
         "reasons": []
       },
       "stocks": {
-        "status": "HEALTHY",
-        "generated_at": "2026-10-20T11:12:59.903045+00:00",
-        "age_minutes": 25.41,
+        "status": "DEGRADED",
+        "generated_at": "2026-10-20T11:30:41.795107+00:00",
+        "age_minutes": 13.26,
         "maximum_age_minutes": 90.0,
-        "candidate_count": 1,
+        "candidate_count": 2,
         "provider_readiness": null,
         "reasons": [
+          "1 stock-path data/source errors recorded",
           "No candidate currently has an official primary cause; alerts must state cause unknown"
         ]
       },
       "options": {
         "status": "STALE",
         "generated_at": "2026-10-19T19:43:21.393889+00:00",
-        "age_minutes": 955.05,
+        "age_minutes": 960.6,
         "maximum_age_minutes": 45.0,
         "candidate_count": 0,
         "provider_readiness": "FALLBACK_ONLY",
