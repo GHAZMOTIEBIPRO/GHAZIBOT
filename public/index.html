@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="./terminal-hub.css?v=20261020-4">
+  <link rel="stylesheet" href="./terminal-hub.css?v=20261020-5">
 </head>
 <body>
   <div class="page-shell">
@@ -206,6 +206,11 @@
           <span id="terminal-chart-direction">بانتظار بيانات الشارت</span></div>
           <span id="terminal-chart-date">—</span></div>
         <div id="terminal-candle-chart" class="terminal-candle-chart" role="img" aria-label="مخطط الشموع اليابانية من بيانات أسعار السوق المنشورة"></div>
+        <details id="terminal-tv-chart" class="terminal-tv-chart">
+          <summary>شارت TradingView المضمّن (عرض مرخص من TradingView بعلامته وبياناته)</summary>
+          <div id="terminal-tv-chart-slot" class="terminal-tv-chart-slot"></div>
+          <p class="terminal-footnote">يعرض TradingView أسعاره ومصادره وتوقيتاته داخل الأداة نفسها؛ GHAZI RADAR لا يعيد نشر هذه البيانات ولا يستخدمها في التحليل.</p>
+        </details>
         <div id="terminal-chart-levels" class="terminal-chart-metrics"></div>
         <section id="terminal-decision-card" class="terminal-evidence terminal-decision-card" aria-labelledby="terminal-decision-card-title">
           <div class="terminal-evidence-head">
@@ -800,6 +805,6 @@
   <script src="./terminal-oos.js?v=20261020-1" defer></script>
   <script src="./terminal-decision.js?v=20261020-3" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./terminal-hub.js?v=20261020-22" defer></script>
+  <script src="./terminal-hub.js?v=20261020-23" defer></script>
 </body>
 </html>
