@@ -59,9 +59,9 @@ module uses FRED series.
 
 | Source | Current use | Status |
 |---|---|---|
-| Yahoo (yfinance / yahooquery / chart API) | Candles for charts and research | robots.txt disallows the chart/options endpoints for automated agents. Kept only as a labelled research fallback until a permitted source replaces it. |
-| api.nasdaq.com screener / movers | Full-market discovery | robots.txt disallows it. Same status. |
-| Cboe CDN delayed options JSON | Model GEX inputs | Allowed by robots.txt; delayed, labelled DELAYED / MODEL_ESTIMATED, never execution-grade. |
+| Yahoo (yfinance / yahooquery / chart API) | Candles for charts and research | robots.txt disallows the chart/options endpoints, and Yahoo's terms forbid automated collection without prior permission. Still running as a labelled fallback: **owner decision pending** (switching it off removes the site's charts until a licensed feed exists). |
+| api.nasdaq.com screener / movers | Full-market discovery | robots.txt disallows it and nasdaq.com terms allow personal non-commercial use only. Same status: **owner decision pending**. |
+| Cboe CDN delayed options JSON | Model GEX inputs, option analytics | **Gated off (2026-10-20).** robots.txt does not forbid it, but Cboe's delayed-quote pages prohibit auto-extraction of delayed quote table data, and Cboe's data policies treat single-security, price-like derived data as fee liable. Re-enable with `CBOE_DELAYED_AUTOMATION_APPROVED=true` only after a Cboe DataShop licence or written permission. |
 | nasdaqtrader SymDir, OCC | Symbol lists, open interest | Allowed. |
 | TradingView widgets | Public price display (ticker tape, market overview) | Embedded with TradingView branding; data is not redistributed by this project. |
 
@@ -81,3 +81,27 @@ sources would replace one terms problem with another. A compliant design is:
 
 Both steps need the owner: account keys plus a written confirmation of the
 provider's terms for this use. Until then nothing is switched silently.
+
+## Terms by use type (research of official pages, 2026-10-20)
+
+Provider pages were not reachable from the build sandbox, so most quotes
+come from search extracts of the providers' own pages and must be
+confirmed on the live pages. Only the IEX policy PDF, the yfinance README
+and the Lightweight Charts NOTICE were read in full.
+
+| Provider | Internal automated | Non-display | Public raw | Public derived | Real-time display |
+|---|---|---|---|---|---|
+| Cboe delayed quotes | prohibited (auto-extraction) | licence (2026 non-display categories) | not permitted | single-security price-like derived data generally fee liable | n/a |
+| OPRA | via licensed vendor | fees may apply | vendor agreement even when delayed | unclear | licence + fees |
+| Yahoo | prohibited without permission | prohibited | prohibited | unclear (collection itself unauthorised) | prohibited |
+| Nasdaq website / API | personal non-commercial only | licence | prohibited | licence holders only | licence |
+| Alpaca Basic (IEX) | allowed for the account holder | account holder only | prohibited without written consent | unclear | prohibited |
+| IEX (policy Jan 2022) | delayed free | delayed free | delayed free only via a subscriber that allows it | allowed free for derived data | agreement |
+| Tiingo free | personal/internal; no persistent storage on free plans | internal | prohibited | unclear | redistribution licence |
+| TradingView widgets | n/a (no data access) | n/a | n/a | n/a | allowed inside the widget with branding kept |
+
+Consequences applied: Cboe automated reads gated off by default. Pending
+owner decisions: Yahoo and Nasdaq automated use; whether to request
+licences (Cboe DataShop, OPRA vendor agreement, IEX/Tiingo/Alpaca
+consent for derived publication); replacing self-hosted candles with a
+TradingView chart widget for public display.

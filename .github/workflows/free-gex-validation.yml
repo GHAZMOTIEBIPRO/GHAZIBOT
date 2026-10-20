@@ -9,6 +9,7 @@ on:
       - "options_radar/ghazi_gex_multi.py"
       - "options_radar/gamma_interpretation.py"
       - "options_radar/chain_analytics.py"
+      - "options_radar/source_permissions.py"
       - "scripts/build_options_analytics.py"
       - "public/spx/index.html"
       - "public/spx/spx.js"
@@ -55,10 +56,14 @@ jobs:
           fi
 
       - name: Run integrated GEX validation
+        env:
+          CBOE_DELAYED_AUTOMATION_APPROVED: ${{ vars.CBOE_DELAYED_AUTOMATION_APPROVED || 'false' }}
         run: python -m options_radar.free_gex_validation
 
       - name: Derived option analytics for indices and large caps (Cboe delayed)
         continue-on-error: true
+        env:
+          CBOE_DELAYED_AUTOMATION_APPROVED: ${{ vars.CBOE_DELAYED_AUTOMATION_APPROVED || 'false' }}
         run: python -m scripts.build_options_analytics --output public/data/options_analytics.json
 
       - name: Unit-check SPXW 0DTE engine

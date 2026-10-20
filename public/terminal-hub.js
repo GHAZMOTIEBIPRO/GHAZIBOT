@@ -411,6 +411,9 @@
     box.replaceChildren();
     const report=state.optionsAnalytics;
     if(!report){put("terminal-options-analytics-status","لا يوجد تقرير تحليلات عقود منشور بعد.");return;}
+    if(report.status==="SOURCE_TERMS_BLOCKED"){
+      put("terminal-options-analytics-status","متوقف: "+String(report.reason_ar||"شروط المصدر تمنع الجلب الآلي")+
+        " · التقرير: "+stamp(report.generated_at));return;}
     put("terminal-options-analytics-status","المصدر: "+report.source+" · التقرير: "+stamp(report.generated_at)+
       " · مؤجل وليس تنفيذيًا · لا تُنشر أسعار العقود الخام"+
       (Object.keys(report.errors||{}).length?" · تعذر: "+Object.keys(report.errors).join("، "):""));
@@ -1395,7 +1398,8 @@
       status:modelled?"نموذج تقديري · SHADOW":gexSources<2?
         "SHADOW — جاما من مصدر رقمي واحد أو بلا بيانات":"SHADOW — توافق تجريبي غير معتمد",
       metrics:out,
-      note:(modelled?lines+" ":"لا توجد سلسلة عقود صالحة للمحرك. ")+validation+
+      note:(modelled?lines+" ":engine?.status==="SOURCE_TERMS_BLOCKED"?
+          "محرك جاما متوقف: "+String(engine.reason_ar||"")+". ":"لا توجد سلسلة عقود صالحة للمحرك. ")+validation+
         " · مُقاس: السعر وIV (مؤخر) وOI (جلسة سابقة) · نموذج: GEX والانقلاب والجدران والتحوط."+
         " · "+(symbol==="SPY"?"هذه مستويات SPX وليست قيم خيارات SPY. ":"")+
         "لا تثبت الأرقام تمركز صانع السوق أو اتجاه الغد. التقرير: "+stamp(data?.generated_at)+"."
@@ -1403,14 +1407,19 @@
   }
   const HUB_FRESH={FRESH:"حديث",STALE:"قديم",MISSING:"غير منشور",UNTIMED:"بلا وقت موثق",FUTURE_TIMESTAMP:"وقت مستقبلي مرفوض"};
   const HUB_LICENSE={DERIVED_PUBLIC:"قيم مشتقة",FALLBACK_LABELLED:"مصدر احتياطي غير مرخص للأتمتة",
-    OFFICIAL_PUBLIC:"مصدر رسمي/مسموح",INTERNAL_METRIC:"قياس داخلي"};
+    OFFICIAL_PUBLIC:"مصدر رسمي/مسموح",INTERNAL_METRIC:"قياس داخلي",TERMS_RESTRICTED:"شروط المزود تقيد الاستخدام",
+    MIXED_HEADLINES_AND_OFFICIAL:"إصدارات رسمية + عناوين بحث"};
+  const HUB_RIGHTS={BLOCKED_PENDING_PERMISSION:"متوقف حتى الإذن",RESTRICTED:"مقيد",
+    NOT_AUTHORISED_FALLBACK:"غير مصرح (احتياطي)",OK_FOR_STATED_USE:"مسموح للاستخدام المذكور",UNKNOWN:"غير معروف"};
   function hubLines(hub){
     if(!Array.isArray(hub?.datasets))return [];
     return hub.datasets.map(d=>({
       title:String(d.title_ar||d.file),
       tone:d.freshness==="FRESH"&&d.validation==="PASS"?"UP":d.freshness==="MISSING"?null:"DOWN",
       status:(HUB_FRESH[d.freshness]||d.freshness)+(d.validation==="FAIL"?" · فشل التحقق":""),
+      rights:HUB_RIGHTS[d.rights_status]||"غير معروف",
       detail:"المصدر: "+String(d.source||"—")+" · "+(HUB_LICENSE[d.license_class]||d.license_class)+
+        " · حق الاستخدام: "+(HUB_RIGHTS[d.rights_status]||"غير معروف")+
         " · العمر: "+(Number.isFinite(d.age_minutes)?fmt(d.age_minutes/60,1)+" ساعة":"—")+
         " · الإيقاع المتوقع: "+fmt(d.cadence_min,0)+" د · "+String(d.limitations||"")
     }));
@@ -1425,7 +1434,8 @@
       " · حديثة "+(f.FRESH||0)+" · قديمة "+(f.STALE||0)+" · غير منشورة "+(f.MISSING||0)+
       " · فشل تحقق "+(hub.summary?.validation_failures??0)+
       " · مصادر احتياطية: "+((hub.summary?.fallback_sources||[]).join("، ")||"لا يوجد")+
-      " · الكتالوج: "+stamp(hub.generated_at)+" · الأوقات من الملفات نفسها وليست أوقات أسعار.");
+      " · الكتالوج: "+stamp(hub.generated_at)+" · الأوقات من الملفات نفسها وليست أوقات أسعار."+
+      " · الحداثة لا تعني صحة البيانات ولا حق نشرها؛ حق الاستخدام معروض لكل مصدر على حدة.");
     for(const line of hubLines(hub)){
       const item=txt("article","","terminal-structural-item");
       const head=txt("div","","terminal-structural-title");
