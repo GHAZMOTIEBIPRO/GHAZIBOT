@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-19T22:41:06.421222+00:00",
+  "generated_at": "2026-10-20T04:00:10.478745+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
-  "source_count_available": 3,
+  "source_count_available": 4,
   "independent_numerical_gex_sources": 1,
   "gamma_consensus_verified": false,
   "quote_timestamp_verified": false,
@@ -69,13 +69,116 @@
       "contracts": 20334,
       "spxw_0dte": true,
       "note_ar": "CBOE العام مؤخر؛ ليس مصدراً لتنفيذ لحظي."
+    },
+    {
+      "available": true,
+      "source": "ghazi_gex_multi_reimplementation",
+      "spot": 7690.73,
+      "gex": -28.908929948858596,
+      "flip": 7760.807506225479,
+      "call_wall": 7800.0,
+      "put_wall": 7700.0,
+      "regime": "negative"
     }
   ],
   "integrated_engines": {
     "ghazi_gex_multi": {
-      "available": false,
-      "source": "ghazi_gex_multi_reimplementation",
-      "error": "ValueError: No usable SPX option chain"
+      "available": true,
+      "engine": "ghazi_gex_multi_reimplementation",
+      "methodology_sources": [
+        "itsfabtrading/Gex-Multi",
+        "MitchelTurner/GEX"
+      ],
+      "policy": "shadow_validation_never_signal_authority",
+      "spot": 7690.73,
+      "net_gex": -28.908929948858596,
+      "gamma_flip": 7760.807506225479,
+      "call_wall": 7800.0,
+      "put_wall": 7700.0,
+      "magnet": 7750.0,
+      "gamma_regime": "negative",
+      "front_expiry": "2026-10-20",
+      "expirations_used": 4,
+      "zdte_call_wall": 7725.0,
+      "zdte_put_wall": 7550.0,
+      "zdte_share_abs_gex": 0.172206932547044,
+      "greek_exposure_near_spot": {
+        "dex": -14138373.01812509,
+        "vanna": 24175218.65646598,
+        "charm": -372981867.9343328,
+        "vomma": 1732601491.2794974,
+        "zomma": 424351360.4637707
+      },
+      "gci": 0.05611856401578,
+      "put_call_oi_ratio": 2.713040933659242,
+      "provenance": {
+        "source": "Cboe delayed public JSON",
+        "provider_snapshot_time": "2026-10-20 03:55:11",
+        "underlying_last_trade_time": "2026-10-19T16:14:59",
+        "spot": "DELAYED",
+        "open_interest": "HISTORICAL",
+        "implied_volatility": "DELAYED",
+        "gamma_and_greeks": "MODEL_ESTIMATED",
+        "levels": "MODEL_ESTIMATED",
+        "dealer_positioning": "UNAVAILABLE",
+        "order_flow": "UNAVAILABLE",
+        "assumptions": [
+          "Black-Scholes gamma from delayed IV, rate 0, business-day time floor of one day.",
+          "Sign convention: calls +, puts - (assumes dealers long calls / short puts); real counterparties are not visible in aggregate open interest.",
+          "Open interest is the exchange's prior-session figure, not intraday flow."
+        ],
+        "execution_grade": false
+      },
+      "top_abs_gamma": [
+        {
+          "strike": 7700.0,
+          "net_gex": -2.3173972144442
+        },
+        {
+          "strike": 7650.0,
+          "net_gex": -1.925309680607028
+        },
+        {
+          "strike": 7600.0,
+          "net_gex": -1.7296568570600683
+        },
+        {
+          "strike": 7625.0,
+          "net_gex": -1.5619842544545142
+        },
+        {
+          "strike": 7550.0,
+          "net_gex": -1.3245280240325221
+        },
+        {
+          "strike": 7670.0,
+          "net_gex": -1.2218730338182076
+        },
+        {
+          "strike": 7675.0,
+          "net_gex": -1.129020490099158
+        },
+        {
+          "strike": 7690.0,
+          "net_gex": -1.1179201191782697
+        },
+        {
+          "strike": 7655.0,
+          "net_gex": -0.9531386826922386
+        },
+        {
+          "strike": 7640.0,
+          "net_gex": -0.8886964728121822
+        }
+      ],
+      "data_quality": {
+        "contracts": 1835,
+        "strikes": 292,
+        "expirations": 4,
+        "has_spxw": true,
+        "coverage_ok": true
+      },
+      "generated_at": "2026-10-20T04:00:10.463865+00:00"
     },
     "upstream_methodology": [
       "itsfabtrading/Gex-Multi",
