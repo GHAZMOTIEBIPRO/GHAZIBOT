@@ -17,6 +17,10 @@ concurrency:
   group: ghazi-free-options-sources
   cancel-in-progress: false
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   update-source-context:
     runs-on: ubuntu-latest

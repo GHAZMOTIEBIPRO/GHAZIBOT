@@ -46,6 +46,7 @@ def test_sec_ticker_map_uses_local_fallback_when_live_endpoint_is_blocked(tmp_pa
 
 
 def test_yahoo_statement_fallback_labels_source_and_calculates_growth(monkeypatch):
+    monkeypatch.setenv("YAHOO_AUTOMATED_ACCESS_APPROVED", "true")  # logic test with a mocked transport
     columns = pd.to_datetime([
         "2026-03-31", "2025-12-31", "2025-09-30", "2025-06-30", "2025-03-31"
     ])

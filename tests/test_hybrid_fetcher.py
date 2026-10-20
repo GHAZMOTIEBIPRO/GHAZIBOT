@@ -58,6 +58,7 @@ def test_black_scholes_put_delta_is_negative():
 
 
 def test_yahooquery_fallback_can_precede_yfinance_without_breaking(monkeypatch):
+    monkeypatch.setenv("YAHOO_AUTOMATED_ACCESS_APPROVED", "true")  # transport logic, gate tested elsewhere
     settings = Settings(stock_provider_order="yahooquery,yahoo")
     fetcher = DataFetcher(settings)
     index = pd.to_datetime(["2026-10-01T14:30:00Z"])
@@ -81,6 +82,7 @@ def test_yahooquery_fallback_can_precede_yfinance_without_breaking(monkeypatch):
 
 
 def test_yahooquery_can_serve_as_free_same_family_transport(monkeypatch):
+    monkeypatch.setenv("YAHOO_AUTOMATED_ACCESS_APPROVED", "true")  # transport logic, gate tested elsewhere
     settings = Settings(stock_provider_order="yahooquery,yahoo")
     fetcher = DataFetcher(settings)
     index = pd.to_datetime(["2026-10-01T14:30:00Z"])

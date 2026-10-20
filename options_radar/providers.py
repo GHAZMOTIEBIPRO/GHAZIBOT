@@ -13,6 +13,7 @@ import yfinance as yf
 
 from .market_bars import get_daily_history
 from .settings import Settings
+from .source_permissions import require
 
 LOGGER = logging.getLogger(__name__)
 STANDARD_COLUMNS = [
@@ -78,6 +79,7 @@ class YahooProvider(OptionsProvider):
         self.settings = settings
 
     def get_chain(self, symbol: str, min_dte: int, max_dte: int) -> pd.DataFrame:
+        require("yahoo")
         ticker = yf.Ticker(symbol)
         today = date.today()
         expirations = [
@@ -428,6 +430,7 @@ def get_price_history(symbol: str, period: str = "1y") -> pd.DataFrame:
         return get_daily_history(settings, symbol, period=period)
     except Exception as exc:
         LOGGER.warning("Hybrid daily history failed for %s; using Yahoo: %s", symbol, exc)
+        require("yahoo")
         data = yf.download(
             symbol,
             period=period,

@@ -20,6 +20,7 @@ from urllib3.util.retry import Retry
 
 from .advanced_signals import is_standard_occ_contract
 from .settings import Settings
+from .source_permissions import require
 
 LOGGER = logging.getLogger(__name__)
 RIYADH_TZ = ZoneInfo("Asia/Riyadh")
@@ -381,6 +382,7 @@ class DataFetcher:
         # yahooquery is an alternate client for the same unofficial Yahoo data
         # family. It improves transport resilience but never counts as an
         # independent market source.
+        require("yahoo")
         from yahooquery import Ticker
 
         normalized_interval = "5m" if interval in {"5m", "5min"} else interval
@@ -415,6 +417,7 @@ class DataFetcher:
     def _yahoo_bars(
         symbol: str, start: pd.Timestamp, end: pd.Timestamp, interval: str
     ) -> pd.DataFrame:
+        require("yahoo")
         data = yf.download(
             symbol,
             start=start.to_pydatetime(),
@@ -621,6 +624,7 @@ class DataFetcher:
         return _option_frame(rows)
 
     def _yahoo_chain(self, symbol: str, min_dte: int, max_dte: int) -> pd.DataFrame:
+        require("yahoo")
         ticker = yf.Ticker(symbol)
         today = date.today()
         expirations = [

@@ -16,6 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shadow
+from options_radar.source_permissions import allowed, blocked_report, require
 from options_radar.stock_watch_confluence import price_confluence_shadow
 from options_radar.volume_liquidity import liquidity_context, read_ar
 from scripts.build_index_chart_snapshot import pack_bars
@@ -323,6 +324,7 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
     if now.tzinfo is None:
         raise ValueError("aware now required")
     if provider is None:
+        require("yahoo")
         import yfinance as provider
     dynamic = valid_dynamic_symbols(dynamic_symbols)
     watch = WATCH + dynamic
@@ -487,6 +489,17 @@ def main() -> int:
     p.add_argument("--liquidity-output",type=Path,default=None)
     args=p.parse_args()
     now=datetime.now(timezone.utc)
+    if not allowed("yahoo"):
+        stamp=now.isoformat()
+        outputs=[(args.output,"ghazi.stock_charts.v1")]
+        if args.liquidity_output:
+            outputs.append((args.liquidity_output,"ghazi.liquidity_map.v1"))
+        for path,schema in outputs:
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_text(json.dumps(blocked_report("yahoo",schema=schema,generated_at=stamp),
+                                       ensure_ascii=False)+"\n",encoding="utf-8")
+        print("Stock watch OHLC: SOURCE_TERMS_BLOCKED (Yahoo automated access not permitted)")
+        return 0
     media=load_news_attention(args.news_source, now=now)
     dynamic=load_dynamic_symbols(
         args.discovery_source, now=now, news_path=args.news_source,

@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from options_radar.halt_news_engine import NewsEvent, collect_fast_news, fetch_nasdaq_halts
+from options_radar.source_permissions import require
 
 NASDAQ_SCREENER = "https://api.nasdaq.com/api/screener/stocks"
 STRUCTURAL_PATH = Path("data/cache/structural_microfloat_candidates.json")
@@ -83,6 +84,7 @@ def _valid_common(symbol: str, name: str) -> bool:
 
 
 def _nasdaq_rows() -> list[dict[str, Any]]:
+    require("nasdaq_web")
     headers = {
         "User-Agent": "Mozilla/5.0 (compatible; BLACK-BOX-Omega/Fast-Radar)",
         "Accept": "application/json,text/plain,*/*",

@@ -18,6 +18,7 @@ import yfinance as yf
 
 from .clinicaltrials_registry import scan_recent_clinicaltrials
 from .settings import Settings
+from .source_permissions import allowed
 
 LOGGER = logging.getLogger(__name__)
 SEC_BASE = "https://www.sec.gov"
@@ -492,6 +493,8 @@ class CatalystScanner:
 
     def _yahoo_news_events(self, symbols: Iterable[str], max_per_symbol: int = 4) -> list[CatalystEvent]:
         events: list[CatalystEvent] = []
+        if not allowed("yahoo"):
+            return events
         for symbol in symbols:
             try:
                 items = yf.Ticker(symbol).news or []

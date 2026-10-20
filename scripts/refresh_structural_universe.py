@@ -13,6 +13,12 @@ from typing import Any
 import requests
 import yfinance as yf
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from options_radar.source_permissions import require
+
 NASDAQ_SCREENER = "https://api.nasdaq.com/api/screener/stocks"
 CACHE_PATH = Path("data/cache/structural_microfloat_candidates.json")
 UNIVERSE_PATH = Path("data/universe.txt")
@@ -55,6 +61,7 @@ def _valid_symbol(value: Any) -> bool:
 
 
 def _nasdaq_rows() -> list[dict[str, Any]]:
+    require("nasdaq_web")
     headers = {
         "User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/Structural-Scanner)",
         "Accept": "application/json,text/plain,*/*",
@@ -132,6 +139,7 @@ def _yahoo_profile(row: dict[str, Any]) -> dict[str, Any]:
     symbol = row["symbol"]
     info: dict[str, Any] = {}
     try:
+        require("yahoo")
         raw = yf.Ticker(symbol).info
         if isinstance(raw, dict):
             info = raw

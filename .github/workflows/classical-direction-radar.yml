@@ -29,6 +29,10 @@ permissions:
   contents: read
   actions: read
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   classical-direction:
     runs-on: ubuntu-latest
@@ -108,6 +112,23 @@ jobs:
           print(f"reason={'regular_session' if is_open else 'market_closed'}")
           PY
 
+      - name: Check that a permitted price source exists
+        id: sources
+        shell: bash
+        run: |
+          # Yahoo is usable only with its permission variable; otherwise a
+          # configured account API must exist. Without either, skip the scan
+          # and say why instead of failing on 0% coverage.
+          usable=false
+          [[ "$YAHOO_AUTOMATED_ACCESS_APPROVED" == "true" ]] && usable=true
+          for key in "$TIINGO_API_KEY" "$FINNHUB_API_KEY" "$TRADIER_TOKEN" "$ALPACA_API_KEY" "$TWELVE_DATA_API_KEY" "$POLYGON_API_KEY" "$ALPHA_VANTAGE_API_KEY"; do
+            [[ -n "$key" ]] && usable=true
+          done
+          echo "usable=$usable" >> "$GITHUB_OUTPUT"
+          if [[ "$usable" != "true" ]]; then
+            echo "::notice::SOURCE_TERMS_BLOCKED: Yahoo automated access is not permitted and no account price API is configured; classical direction scan skipped."
+          fi
+
       - name: Verify Cboe exchange-listing fallback endpoint (PR only)
         if: github.event_name == 'pull_request'
         run: |
@@ -120,14 +141,14 @@ jobs:
           PY
 
       - name: Run classical direction radar
-        if: steps.market.outputs.scan == 'true'
+        if: steps.market.outputs.scan == 'true' && steps.sources.outputs.usable == 'true'
         run: >-
           python -m scripts.run_classical_direction_radar
           --output public/data/classical_direction_latest.json
           --max-symbols "$CLASSICAL_DIRECTION_MAX_SYMBOLS"
 
       - name: Validate classical-only semantics
-        if: steps.market.outputs.scan == 'true'
+        if: steps.market.outputs.scan == 'true' && steps.sources.outputs.usable == 'true'
         run: |
           python - <<'PY'
           import json
@@ -159,7 +180,7 @@ jobs:
           PY
 
       - name: Upload classical direction payload
-        if: always() && steps.market.outputs.scan == 'true'
+        if: always() && steps.market.outputs.scan == 'true' && steps.sources.outputs.usable == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: classical-direction-radar
@@ -168,7 +189,7 @@ jobs:
           retention-days: 14
 
       - name: Restore centralized Telegram destination
-        if: steps.market.outputs.send == 'true' && env.TELEGRAM_CHAT_ID == ''
+        if: steps.market.outputs.send == 'true' && steps.sources.outputs.usable == 'true' && env.TELEGRAM_CHAT_ID == ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -190,11 +211,11 @@ jobs:
           fi
 
       - name: Resolve Telegram destination
-        if: steps.market.outputs.send == 'true'
+        if: steps.market.outputs.send == 'true' && steps.sources.outputs.usable == 'true'
         run: python scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
 
       - name: Restore classical alert state
-        if: steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.send == 'true' && steps.sources.outputs.usable == 'true' && env.TELEGRAM_READY == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -209,14 +230,14 @@ jobs:
           done
 
       - name: Send Arabic classical direction alerts
-        if: steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.send == 'true' && steps.sources.outputs.usable == 'true' && env.TELEGRAM_READY == 'true'
         run: >-
           python scripts/send_classical_direction_alerts.py
           --payload public/data/classical_direction_latest.json
           --state data/live/classical_direction_alert_state.json
 
       - name: Upload classical alert state
-        if: steps.market.outputs.send == 'true' && env.TELEGRAM_READY == 'true'
+        if: steps.market.outputs.send == 'true' && steps.sources.outputs.usable == 'true' && env.TELEGRAM_READY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: classical-direction-state
@@ -229,5 +250,5 @@ jobs:
         run: echo "Classical direction radar skipped because the U.S. regular session is closed."
 
       - name: Push validation-only status
-        if: steps.market.outputs.scan == 'true' && steps.market.outputs.send != 'true'
+        if: steps.market.outputs.scan == 'true' && steps.sources.outputs.usable == 'true' && steps.market.outputs.send != 'true'
         run: echo "Classical direction radar validated without sending a pre-market Telegram alert."

@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from options_radar.index_direction import DIRECTION_SYMBOLS, build_index_direction
+from options_radar.source_permissions import allowed, blocked_report, require
 
 NY = ZoneInfo("America/New_York")
 SYMBOLS = {
@@ -324,6 +325,7 @@ def make_report(daily: dict[str, pd.DataFrame],
 
 
 def fetch_frames() -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
+    require("yahoo")
     import yfinance as yf  # Optional at import-time: tests are always offline.
     daily, intraday, five_min = {}, {}, {}
     for symbol, (ticker, _, _) in SYMBOLS.items():
@@ -354,6 +356,17 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--charts-output", type=Path, default=None)
     args = parser.parse_args()
+    if not allowed("yahoo"):
+        stamp = datetime.now(timezone.utc).isoformat()
+        targets = [(args.output, "ghazi.index_research.v1")]
+        if args.charts_output is not None:
+            targets.append((args.charts_output, "ghazi.index_charts.v1"))
+        for path, schema in targets:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(blocked_report("yahoo", schema=schema, generated_at=stamp),
+                                       ensure_ascii=False) + "\n", encoding="utf-8")
+        print("GHAZI INDEX RADAR: SOURCE_TERMS_BLOCKED (Yahoo automated access not permitted)")
+        return 0
     daily, intraday, five_min = fetch_frames()
     now = datetime.now(timezone.utc)
     result = make_report(daily, intraday, now=now, five_min=five_min)

@@ -67,7 +67,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,modelLab:null,tracking:null,pendingSymbol:null};
+    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,modelLab:null,tracking:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -174,9 +174,20 @@
       return data;
     }
     const t=validDate(data?.generated_at);
+    const blocked=blockedReason(data);
+    if(blocked&&t!==null){state.blocked[type]=blocked;throw Error("source terms blocked");}
     if(t===null||t>Date.now()+5*60000||!schemaOK[type](data))
       throw Error("schema/timestamp invalid");
+    delete state.blocked[type];
     return data;
+  }
+  // A producer whose only source does not permit automated access publishes
+  // a blocked report instead of data; show its reason, never stale bars.
+  function blockedReason(data){
+    if(data?.status!=="SOURCE_TERMS_BLOCKED")return null;
+    const reason=typeof data.reason_ar==="string"&&data.reason_ar.trim()?data.reason_ar.trim().slice(0,400):
+      "مصدر هذه البيانات لا يسمح بالجلب الآلي دون إذن.";
+    return reason;
   }
   async function loadFeed(type){
     const outcome=await Promise.allSettled(FEEDS[type].map(url=>request(url,type)));
@@ -1115,6 +1126,13 @@
       put("terminal-chart-reading","لا توجد شموع مكتملة لهذا الرمز/الفريم في التقرير المتاح. لا نرسم شارتًا تقديريًا. "+
         (!INDEX_ORDER.includes(symbol)?"فريمات الأسهم تعتمد على توفر المصدر وقد تختفي أو تتأخر.":"المؤشرات تحتاج نشر ملف شموع المؤشرات."));
       put("terminal-chart-scenario","لا تُعرض أهداف ATR دون شموع مكتملة كافية.");
+      const terms=state.blocked[INDEX_ORDER.includes(symbol)?"charts":"watch"];
+      if(terms){
+        put("terminal-chart-direction","الشموع متوقفة لأسباب ترخيص المصدر");
+        put("terminal-chart-reading",terms+" اعرض الشارت عبر TradingView المرخّص أدناه.");
+        const box=$("terminal-tv-chart");
+        if(box&&!box.open){box.open=true;renderTradingView(symbol);}
+      }
       renderGamma(symbol);
       if(!INDEX_ORDER.includes(symbol)&&!state.stockCharts &&
          !state.watchCharts?.symbols?.[symbol]){
@@ -1658,7 +1676,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

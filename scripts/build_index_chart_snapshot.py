@@ -125,6 +125,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    from options_radar.source_permissions import allowed, blocked_report
+    if not allowed("yahoo"):
+        write_chart_report(args.output, blocked_report(
+            "yahoo", schema="ghazi.index_charts.v1", generated_at=datetime.now(timezone.utc).isoformat()))
+        print("Index OHLC: SOURCE_TERMS_BLOCKED (Yahoo automated access not permitted)")
+        return 0
     from scripts.build_index_context import fetch_frames
     daily, intraday, five = fetch_frames()
     report = chart_report(daily, intraday, five, now=datetime.now(timezone.utc))

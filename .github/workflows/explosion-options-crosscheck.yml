@@ -16,6 +16,10 @@ permissions:
   contents: read
   actions: read
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   crosscheck:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}

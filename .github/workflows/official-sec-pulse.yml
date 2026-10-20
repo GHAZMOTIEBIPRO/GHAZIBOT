@@ -17,6 +17,10 @@ concurrency:
   group: ghazi-official-sec-issuer-pulse
   cancel-in-progress: false
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   build-official-filings:
     runs-on: ubuntu-latest

@@ -43,7 +43,8 @@ def test_market_bars_accepts_yahooquery_as_same_family_transport(monkeypatch):
     assert "unofficial" in result.freshness.lower()
 
 
-def test_yahooquery_is_reported_as_same_family_fallback():
+def test_yahooquery_is_reported_as_same_family_fallback(monkeypatch):
+    monkeypatch.setenv("YAHOO_AUTOMATED_ACCESS_APPROVED", "true")  # logic test with a mocked transport
     sources = bars.configured_bar_sources(Settings())
     yahooquery = next(row for row in sources if row["name"] == "yahooquery")
     assert yahooquery["configured"] is True

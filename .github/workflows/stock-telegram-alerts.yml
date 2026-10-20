@@ -15,6 +15,10 @@ permissions:
   contents: read
   actions: read
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   notify-stock-fallback:
     runs-on: ubuntu-latest

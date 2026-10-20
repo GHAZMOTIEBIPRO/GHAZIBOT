@@ -28,6 +28,10 @@ concurrency:
   group: ghazi-stock-watch-charts
   cancel-in-progress: false
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   stock-chart-research:
     # A failed upstream cannot trigger fabricated zero-data reports.

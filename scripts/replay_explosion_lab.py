@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import yfinance as yf
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from options_radar.source_permissions import allowed, require
 
 OUTPUT_PATH = Path("data/replay/explosion_replay_report.json")
 DEFAULT_SYMBOLS = "RGC,BNAI,ATXG,HOLO,MLGO"
@@ -205,6 +212,7 @@ def _largest_event(frame: pd.DataFrame, threshold: float) -> dict[str, Any]:
 
 def replay_symbol(symbol: str, period: str, threshold: float, target_return_pct: float = 25.0) -> dict[str, Any]:
     try:
+        require("yahoo")
         history = yf.download(symbol, period=period, interval="1d", auto_adjust=False, progress=False, threads=False)
     except Exception as exc:
         return {"symbol": symbol, "error": f"{type(exc).__name__}: {exc}"}
@@ -277,6 +285,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if not allowed("yahoo"):
+        # Keep the last aggregate-only report rather than overwrite it with errors.
+        print("Skipped: SOURCE_TERMS_BLOCKED (Yahoo automated access not permitted)")
+        return 0
     symbols = [token.strip().upper() for token in str(args.symbols).split(",") if token.strip()]
     return run(symbols=symbols, period=args.period, threshold=args.threshold, output=Path(args.output), target_return_pct=args.target_return_pct)
 

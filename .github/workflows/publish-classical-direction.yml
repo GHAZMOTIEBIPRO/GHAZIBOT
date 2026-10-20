@@ -21,6 +21,10 @@ concurrency:
   group: ghazi-classical-direction-publisher
   cancel-in-progress: false
 
+env:
+  YAHOO_AUTOMATED_ACCESS_APPROVED: ${{ vars.YAHOO_AUTOMATED_ACCESS_APPROVED || 'false' }}
+  NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest
