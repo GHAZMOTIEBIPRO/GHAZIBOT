@@ -1296,6 +1296,14 @@
     if(panel==="chart")requestAnimationFrame(()=>renderChart());
     if(panel==="advanced")$("terminal-panel-advanced")?.scrollIntoView({block:"start",behavior:"smooth"});
   }
+  // Deep link from alerts: ?chart=SYMBOL. Unknown symbols fall back to SPX
+  // in refreshSymbols, so a link can never inject arbitrary content.
+  function symbolFromLink(search){
+    try{
+      const value=String(new URLSearchParams(search||"").get("chart")||"").toUpperCase();
+      return /^[A-Z][A-Z0-9.-]{0,9}$/.test(value)?value:null;
+    }catch{return null;}
+  }
   function chooseChart(symbol){
     state.symbol=symbol;state.tf="1d";
     const tf=$("terminal-chart-timeframe");if(tf)tf.value="1d";
@@ -1362,7 +1370,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
@@ -1408,6 +1416,8 @@
         renderMarketChart(radarData);
     }
   });
+  const linked=symbolFromLink(window.location.search);
+  if(linked)chooseChart(linked);
   refresh();
   setInterval(refresh,5*60*1000);
 })();

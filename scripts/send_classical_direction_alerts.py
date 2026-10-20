@@ -6,14 +6,18 @@ import html
 import json
 import math
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import exchange_calendars as xcals
 import pandas as pd
 
 from options_radar.telegram_transport import send_html_message
+
+SITE_URL = "https://ghazibot.vercel.app"
 
 
 def _load(path: str | Path, default: Any) -> Any:
@@ -108,6 +112,17 @@ def _message(row: dict[str, Any]) -> str:
     if invalidation:
         word = "تحت" if decision == "CALL" else "فوق"
         lines.append(f"• تضعف/تلغى الفكرة إذا عاد السهم {word} <b>${float(invalidation):,.2f}</b>")
+    targets = row.get("targets") if isinstance(row.get("targets"), dict) else {}
+    try:
+        entry, t1, t2 = (float(targets[k]) for k in ("entry", "t1", "t2"))
+        rr = float(targets["t1_reward_to_risk"])
+    except (KeyError, TypeError, ValueError):
+        entry = None
+    if entry is not None and all(math.isfinite(v) and v > 0 for v in (entry, t1, t2)) and math.isfinite(rr):
+        lines.append(
+            f"• دخول مشروط: <b>${entry:,.2f}</b> | T1: <b>${t1:,.2f}</b> | T2: <b>${t2:,.2f}</b>"
+        )
+        lines.append(f"• عائد/مخاطرة نظري حتى T1: <b>{rr:.2f}</b> (ليس احتمال وصول)")
 
     lines.extend(
         [
@@ -117,6 +132,8 @@ def _message(row: dict[str, Any]) -> str:
             "اختيار السترايك وتاريخ الانتهاء غير داخل هذا التنبيه لأن بيانات العقود غير معتمدة حاليًا.",
         ]
     )
+    if re.fullmatch(r"[A-Z][A-Z0-9.-]{0,9}", symbol):
+        lines.extend(["", f'🔗 <a href="{SITE_URL}/?chart={quote(symbol)}">الشارت والأدلة على الموقع</a>'])
     return "\n".join(lines)
 
 
