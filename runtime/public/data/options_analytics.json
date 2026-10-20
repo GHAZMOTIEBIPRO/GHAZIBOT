@@ -1,0 +1,2408 @@
+{
+ "schema": "ghazi.options_analytics.v1",
+ "generated_at": "2026-10-20T10:17:54.374439+00:00",
+ "source": "Cboe delayed public option chains (cdn.cboe.com); derived values only",
+ "symbols": {
+  "SPX": {
+   "symbol": "SPX",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:17:12",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 7690.73,
+   "expected_move": {
+    "expiry": "2026-10-20",
+    "dte": 0,
+    "atm_strike": 7690.0,
+    "move_abs": 37.15,
+    "move_pct": 0.48,
+    "range_low": 7653.58,
+    "range_high": 7727.88,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-20",
+     "atm_iv": 0.1796
+    },
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.1542
+    },
+    {
+     "expiry": "2026-10-22",
+     "atm_iv": 0.154
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.1528
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.1274
+    },
+    {
+     "expiry": "2026-10-27",
+     "atm_iv": 0.1291
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-20",
+    "put25_iv": 0.2004,
+    "call25_iv": 0.1647,
+    "put_minus_call": 0.0357,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 7850.0,
+      "oi": 17156
+     },
+     {
+      "strike": 7800.0,
+      "oi": 16143
+     },
+     {
+      "strike": 7750.0,
+      "oi": 15655
+     }
+    ],
+    "put": [
+     {
+      "strike": 6300.0,
+      "oi": 86814
+     },
+     {
+      "strike": 6400.0,
+      "oi": 67947
+     },
+     {
+      "strike": 6800.0,
+      "oi": 30352
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-20",
+     "2026-10-21",
+     "2026-10-22",
+     "2026-10-23"
+    ]
+   },
+   "put_call_volume_ratio": 1.408,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 7640.0,
+      "delta": 0.59,
+      "spread_pct": 0.35,
+      "oi": 106,
+      "volume": 70
+     },
+     {
+      "expiry": "2026-11-30",
+      "dte": 41,
+      "strike": 7650.0,
+      "delta": 0.58,
+      "spread_pct": 0.44,
+      "oi": 406,
+      "volume": 2
+     },
+     {
+      "expiry": "2026-11-30",
+      "dte": 41,
+      "strike": 7700.0,
+      "delta": 0.53,
+      "spread_pct": 0.46,
+      "oi": 961,
+      "volume": 111
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 7770.0,
+      "delta": -0.57,
+      "spread_pct": 0.4,
+      "oi": 177,
+      "volume": 20
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 7765.0,
+      "delta": -0.56,
+      "spread_pct": 0.4,
+      "oi": 155,
+      "volume": 10
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 7750.0,
+      "delta": -0.54,
+      "spread_pct": 0.42,
+      "oi": 903,
+      "volume": 174
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 29492
+  },
+  "NDX": {
+   "symbol": "NDX",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:08:10",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 29529.3438,
+   "expected_move": {
+    "expiry": "2026-10-20",
+    "dte": 0,
+    "atm_strike": 29530.0,
+    "move_abs": 268.2,
+    "move_pct": 0.91,
+    "range_low": 29261.14,
+    "range_high": 29797.54,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-20",
+     "atm_iv": 0.2185
+    },
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.2263
+    },
+    {
+     "expiry": "2026-10-22",
+     "atm_iv": 0.2382
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.2386
+    },
+    {
+     "expiry": "2026-10-27",
+     "atm_iv": 0.2092
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-20",
+    "put25_iv": 0.2339,
+    "call25_iv": 0.2064,
+    "put_minus_call": 0.0275,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 29600.0,
+      "oi": 369
+     },
+     {
+      "strike": 29860.0,
+      "oi": 263
+     },
+     {
+      "strike": 29750.0,
+      "oi": 247
+     }
+    ],
+    "put": [
+     {
+      "strike": 22000.0,
+      "oi": 1805
+     },
+     {
+      "strike": 26000.0,
+      "oi": 1505
+     },
+     {
+      "strike": 24000.0,
+      "oi": 715
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-20",
+     "2026-10-21",
+     "2026-10-22",
+     "2026-10-23"
+    ]
+   },
+   "put_call_volume_ratio": 1.198,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 29650.0,
+      "delta": 0.51,
+      "spread_pct": 2.55,
+      "oi": 291,
+      "volume": 1
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 29675.0,
+      "delta": 0.5,
+      "spread_pct": 2.6,
+      "oi": 3508,
+      "volume": 43
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 30000.0,
+      "delta": 0.43,
+      "spread_pct": 3.35,
+      "oi": 194,
+      "volume": 5
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 30000.0,
+      "delta": -0.57,
+      "spread_pct": 2.1,
+      "oi": 191,
+      "volume": 45
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 29500.0,
+      "delta": -0.46,
+      "spread_pct": 2.7,
+      "oi": 101,
+      "volume": 13
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 29100.0,
+      "delta": -0.38,
+      "spread_pct": 3.68,
+      "oi": 240,
+      "volume": 3
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 16588
+  },
+  "SPY": {
+   "symbol": "SPY",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:12:42",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 766.26,
+   "expected_move": {
+    "expiry": "2026-10-20",
+    "dte": 0,
+    "atm_strike": 766.0,
+    "move_abs": 4.4,
+    "move_pct": 0.57,
+    "range_low": 761.86,
+    "range_high": 770.66,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-20",
+     "atm_iv": 0.1341
+    },
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.1409
+    },
+    {
+     "expiry": "2026-10-22",
+     "atm_iv": 0.1432
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.1455
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.1252
+    },
+    {
+     "expiry": "2026-10-27",
+     "atm_iv": 0.127
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-20",
+    "put25_iv": 0.1467,
+    "call25_iv": 0.1207,
+    "put_minus_call": 0.026,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 790.0,
+      "oi": 41343
+     },
+     {
+      "strike": 780.0,
+      "oi": 38532
+     },
+     {
+      "strike": 770.0,
+      "oi": 27592
+     }
+    ],
+    "put": [
+     {
+      "strike": 745.0,
+      "oi": 58287
+     },
+     {
+      "strike": 731.0,
+      "oi": 42717
+     },
+     {
+      "strike": 769.0,
+      "oi": 38668
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-20",
+     "2026-10-21",
+     "2026-10-22",
+     "2026-10-23"
+    ]
+   },
+   "put_call_volume_ratio": 1.204,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 768.0,
+      "delta": 0.53,
+      "spread_pct": 0.29,
+      "oi": 4284,
+      "volume": 2001
+     },
+     {
+      "expiry": "2026-11-27",
+      "dte": 38,
+      "strike": 770.0,
+      "delta": 0.52,
+      "spread_pct": 0.29,
+      "oi": 182,
+      "volume": 133
+     },
+     {
+      "expiry": "2026-10-21",
+      "dte": 1,
+      "strike": 767.0,
+      "delta": 0.51,
+      "spread_pct": 0.31,
+      "oi": 1317,
+      "volume": 6619
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-10-28",
+      "dte": 8,
+      "strike": 764.0,
+      "delta": -0.41,
+      "spread_pct": 0.39,
+      "oi": 165,
+      "volume": 142
+     },
+     {
+      "expiry": "2026-10-28",
+      "dte": 8,
+      "strike": 767.0,
+      "delta": -0.48,
+      "spread_pct": 0.48,
+      "oi": 1058,
+      "volume": 1433
+     },
+     {
+      "expiry": "2026-10-29",
+      "dte": 9,
+      "strike": 765.0,
+      "delta": -0.44,
+      "spread_pct": 0.5,
+      "oi": 655,
+      "volume": 374
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 12726
+  },
+  "QQQ": {
+   "symbol": "QQQ",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 09:59:09",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 715.29,
+   "expected_move": {
+    "expiry": "2026-10-20",
+    "dte": 0,
+    "atm_strike": 715.0,
+    "move_abs": 7.76,
+    "move_pct": 1.08,
+    "range_low": 707.53,
+    "range_high": 723.04,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-20",
+     "atm_iv": 0.2368
+    },
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.2439
+    },
+    {
+     "expiry": "2026-10-22",
+     "atm_iv": 0.2472
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.2462
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.2122
+    },
+    {
+     "expiry": "2026-10-27",
+     "atm_iv": 0.2162
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-20",
+    "put25_iv": 0.2452,
+    "call25_iv": 0.2012,
+    "put_minus_call": 0.044,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 735.0,
+      "oi": 34075
+     },
+     {
+      "strike": 725.0,
+      "oi": 26041
+     },
+     {
+      "strike": 730.0,
+      "oi": 21869
+     }
+    ],
+    "put": [
+     {
+      "strike": 710.0,
+      "oi": 55169
+     },
+     {
+      "strike": 711.0,
+      "oi": 44339
+     },
+     {
+      "strike": 700.0,
+      "oi": 40804
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-20",
+     "2026-10-21",
+     "2026-10-22",
+     "2026-10-23"
+    ]
+   },
+   "put_call_volume_ratio": 1.159,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 715.0,
+      "delta": 0.57,
+      "spread_pct": 0.59,
+      "oi": 3431,
+      "volume": 837
+     },
+     {
+      "expiry": "2026-10-30",
+      "dte": 10,
+      "strike": 717.0,
+      "delta": 0.55,
+      "spread_pct": 0.6,
+      "oi": 697,
+      "volume": 130
+     },
+     {
+      "expiry": "2026-10-26",
+      "dte": 6,
+      "strike": 719.0,
+      "delta": 0.51,
+      "spread_pct": 0.61,
+      "oi": 392,
+      "volume": 1818
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 725.0,
+      "delta": -0.53,
+      "spread_pct": 0.45,
+      "oi": 12330,
+      "volume": 1035
+     },
+     {
+      "expiry": "2026-10-30",
+      "dte": 10,
+      "strike": 723.0,
+      "delta": -0.54,
+      "spread_pct": 0.68,
+      "oi": 2007,
+      "volume": 245
+     },
+     {
+      "expiry": "2026-10-30",
+      "dte": 10,
+      "strike": 719.0,
+      "delta": -0.49,
+      "spread_pct": 0.7,
+      "oi": 999,
+      "volume": 1613
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 10872
+  },
+  "IWM": {
+   "symbol": "IWM",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:01:01",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 271.18,
+   "expected_move": {
+    "expiry": "2026-10-20",
+    "dte": 0,
+    "atm_strike": 271.0,
+    "move_abs": 2.14,
+    "move_pct": 0.79,
+    "range_low": 269.04,
+    "range_high": 273.32,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-20",
+     "atm_iv": 0.1875
+    },
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.1908
+    },
+    {
+     "expiry": "2026-10-22",
+     "atm_iv": 0.194
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.1987
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.1714
+    },
+    {
+     "expiry": "2026-10-27",
+     "atm_iv": 0.1759
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-20",
+    "put25_iv": 0.2041,
+    "call25_iv": 0.1791,
+    "put_minus_call": 0.025,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 275.0,
+      "oi": 24385
+     },
+     {
+      "strike": 277.0,
+      "oi": 17922
+     },
+     {
+      "strike": 281.0,
+      "oi": 13113
+     }
+    ],
+    "put": [
+     {
+      "strike": 267.0,
+      "oi": 25301
+     },
+     {
+      "strike": 265.0,
+      "oi": 15197
+     },
+     {
+      "strike": 260.0,
+      "oi": 15113
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-20",
+     "2026-10-21",
+     "2026-10-22",
+     "2026-10-23"
+    ]
+   },
+   "put_call_volume_ratio": 1.22,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 272.0,
+      "delta": 0.52,
+      "spread_pct": 0.94,
+      "oi": 10967,
+      "volume": 1368
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 270.0,
+      "delta": 0.57,
+      "spread_pct": 1.06,
+      "oi": 4018,
+      "volume": 621
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 271.0,
+      "delta": 0.54,
+      "spread_pct": 1.16,
+      "oi": 5085,
+      "volume": 590
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 273.0,
+      "delta": -0.52,
+      "spread_pct": 1.19,
+      "oi": 3226,
+      "volume": 690
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 271.0,
+      "delta": -0.47,
+      "spread_pct": 1.2,
+      "oi": 5793,
+      "volume": 1385
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 272.0,
+      "delta": -0.49,
+      "spread_pct": 1.28,
+      "oi": 5754,
+      "volume": 600
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 5534
+  },
+  "AAPL": {
+   "symbol": "AAPL",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:08:14",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 339.67,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 340.0,
+    "move_abs": 5.93,
+    "move_pct": 1.75,
+    "range_low": 333.74,
+    "range_high": 345.6,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.2643
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.2722
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.2351
+    },
+    {
+     "expiry": "2026-10-28",
+     "atm_iv": 0.2353
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.2457
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.2837,
+    "call25_iv": 0.2448,
+    "put_minus_call": 0.0389,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 355.0,
+      "oi": 27801
+     },
+     {
+      "strike": 350.0,
+      "oi": 27674
+     },
+     {
+      "strike": 360.0,
+      "oi": 16415
+     }
+    ],
+    "put": [
+     {
+      "strike": 195.0,
+      "oi": 19129
+     },
+     {
+      "strike": 335.0,
+      "oi": 14891
+     },
+     {
+      "strike": 340.0,
+      "oi": 14852
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28"
+    ]
+   },
+   "put_call_volume_ratio": 0.88,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 340.0,
+      "delta": 0.58,
+      "spread_pct": 1.92,
+      "oi": 15199,
+      "volume": 2063
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 345.0,
+      "delta": 0.5,
+      "spread_pct": 2.43,
+      "oi": 10775,
+      "volume": 2978
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 350.0,
+      "delta": 0.43,
+      "spread_pct": 2.55,
+      "oi": 25994,
+      "volume": 1662
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 345.0,
+      "delta": -0.5,
+      "spread_pct": 2.64,
+      "oi": 3401,
+      "volume": 1252
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 335.0,
+      "delta": -0.36,
+      "spread_pct": 2.76,
+      "oi": 4782,
+      "volume": 333
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 340.0,
+      "delta": -0.43,
+      "spread_pct": 3.3,
+      "oi": 12081,
+      "volume": 1335
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 3320
+  },
+  "NVDA": {
+   "symbol": "NVDA",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:15:40",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 216.68,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 217.5,
+    "move_abs": 4.67,
+    "move_pct": 2.15,
+    "range_low": 212.02,
+    "range_high": 221.34,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.3609
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.3671
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.3188
+    },
+    {
+     "expiry": "2026-10-28",
+     "atm_iv": 0.3389
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.354
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.3876,
+    "call25_iv": 0.3507,
+    "put_minus_call": 0.0369,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 230.0,
+      "oi": 72126
+     },
+     {
+      "strike": 240.0,
+      "oi": 66073
+     },
+     {
+      "strike": 220.0,
+      "oi": 61596
+     }
+    ],
+    "put": [
+     {
+      "strike": 200.0,
+      "oi": 26631
+     },
+     {
+      "strike": 210.0,
+      "oi": 22322
+     },
+     {
+      "strike": 220.0,
+      "oi": 22032
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28"
+    ]
+   },
+   "put_call_volume_ratio": 0.603,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 215.0,
+      "delta": 0.57,
+      "spread_pct": 1.29,
+      "oi": 12501,
+      "volume": 3787
+     },
+     {
+      "expiry": "2026-10-26",
+      "dte": 6,
+      "strike": 217.5,
+      "delta": 0.5,
+      "spread_pct": 1.34,
+      "oi": 1344,
+      "volume": 2232
+     },
+     {
+      "expiry": "2026-10-21",
+      "dte": 1,
+      "strike": 217.5,
+      "delta": 0.49,
+      "spread_pct": 1.39,
+      "oi": 5283,
+      "volume": 31216
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-10-26",
+      "dte": 6,
+      "strike": 215.0,
+      "delta": -0.4,
+      "spread_pct": 0.7,
+      "oi": 1240,
+      "volume": 1588
+     },
+     {
+      "expiry": "2026-11-27",
+      "dte": 38,
+      "strike": 220.0,
+      "delta": -0.51,
+      "spread_pct": 1.3,
+      "oi": 978,
+      "volume": 302
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 217.5,
+      "delta": -0.5,
+      "spread_pct": 1.44,
+      "oi": 10423,
+      "volume": 8787
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 4192
+  },
+  "TSLA": {
+   "symbol": "TSLA",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:08:15",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 368.8,
+   "expected_move": {
+    "expiry": "2026-10-23",
+    "dte": 3,
+    "atm_strike": 370.0,
+    "move_abs": 23.62,
+    "move_pct": 6.41,
+    "range_low": 345.18,
+    "range_high": 392.43,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.7628
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.6096
+    },
+    {
+     "expiry": "2026-10-28",
+     "atm_iv": 0.5816
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.5549
+    },
+    {
+     "expiry": "2026-11-02",
+     "atm_iv": 0.5283
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-23",
+    "put25_iv": 0.7786,
+    "call25_iv": 0.7499,
+    "put_minus_call": 0.0287,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 400.0,
+      "oi": 25859
+     },
+     {
+      "strike": 380.0,
+      "oi": 16195
+     },
+     {
+      "strike": 385.0,
+      "oi": 15579
+     }
+    ],
+    "put": [
+     {
+      "strike": 130.0,
+      "oi": 24794
+     },
+     {
+      "strike": 220.0,
+      "oi": 21610
+     },
+     {
+      "strike": 180.0,
+      "oi": 12388
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28",
+     "2026-10-30"
+    ]
+   },
+   "put_call_volume_ratio": 0.684,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 367.5,
+      "delta": 0.53,
+      "spread_pct": 0.82,
+      "oi": 3196,
+      "volume": 5482
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 370.0,
+      "delta": 0.49,
+      "spread_pct": 0.91,
+      "oi": 9222,
+      "volume": 13413
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 365.0,
+      "delta": 0.56,
+      "spread_pct": 1.11,
+      "oi": 6210,
+      "volume": 8043
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 372.5,
+      "delta": -0.54,
+      "spread_pct": 0.71,
+      "oi": 696,
+      "volume": 471
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 375.0,
+      "delta": -0.57,
+      "spread_pct": 0.97,
+      "oi": 2518,
+      "volume": 2748
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 370.0,
+      "delta": -0.51,
+      "spread_pct": 1.18,
+      "oi": 3872,
+      "volume": 12076
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 4854
+  },
+  "AMD": {
+   "symbol": "AMD",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 09:43:38",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 528.0,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 527.5,
+    "move_abs": 21.58,
+    "move_pct": 4.09,
+    "range_low": 506.43,
+    "range_high": 549.58,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.622
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.6225
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.5441
+    },
+    {
+     "expiry": "2026-10-28",
+     "atm_iv": 0.555
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.6291,
+    "call25_iv": 0.6001,
+    "put_minus_call": 0.029,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 600.0,
+      "oi": 8388
+     },
+     {
+      "strike": 620.0,
+      "oi": 5886
+     },
+     {
+      "strike": 570.0,
+      "oi": 4990
+     }
+    ],
+    "put": [
+     {
+      "strike": 140.0,
+      "oi": 10002
+     },
+     {
+      "strike": 355.0,
+      "oi": 7803
+     },
+     {
+      "strike": 145.0,
+      "oi": 4290
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28"
+    ]
+   },
+   "put_call_volume_ratio": 0.85,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 530.0,
+      "delta": 0.58,
+      "spread_pct": 1.78,
+      "oi": 1319,
+      "volume": 203
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 552.5,
+      "delta": 0.48,
+      "spread_pct": 1.91,
+      "oi": 132,
+      "volume": 156
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 540.0,
+      "delta": 0.49,
+      "spread_pct": 1.93,
+      "oi": 1728,
+      "volume": 2163
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 560.0,
+      "delta": -0.55,
+      "spread_pct": 1.76,
+      "oi": 5757,
+      "volume": 175
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 530.0,
+      "delta": -0.42,
+      "spread_pct": 1.87,
+      "oi": 3152,
+      "volume": 587
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 520.0,
+      "delta": -0.38,
+      "spread_pct": 1.99,
+      "oi": 2372,
+      "volume": 292
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 6754
+  },
+  "MSFT": {
+   "symbol": "MSFT",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 09:36:18",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 534.56,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 535.0,
+    "move_abs": 8.18,
+    "move_pct": 1.53,
+    "range_low": 526.38,
+    "range_high": 542.73,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.2529
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.2622
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.2245
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.4017
+    },
+    {
+     "expiry": "2026-11-02",
+     "atm_iv": 0.3639
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.2771,
+    "call25_iv": 0.2461,
+    "put_minus_call": 0.031,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 575.0,
+      "oi": 24331
+     },
+     {
+      "strike": 570.0,
+      "oi": 23036
+     },
+     {
+      "strike": 600.0,
+      "oi": 21440
+     }
+    ],
+    "put": [
+     {
+      "strike": 500.0,
+      "oi": 7922
+     },
+     {
+      "strike": 540.0,
+      "oi": 7296
+     },
+     {
+      "strike": 525.0,
+      "oi": 6655
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-30"
+    ]
+   },
+   "put_call_volume_ratio": 0.816,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 535.0,
+      "delta": 0.52,
+      "spread_pct": 3.04,
+      "oi": 19940,
+      "volume": 607
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 560.0,
+      "delta": 0.32,
+      "spread_pct": 3.21,
+      "oi": 10810,
+      "volume": 521
+     },
+     {
+      "expiry": "2026-10-30",
+      "dte": 10,
+      "strike": 550.0,
+      "delta": 0.35,
+      "spread_pct": 3.66,
+      "oi": 4187,
+      "volume": 723
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 525.0,
+      "delta": -0.41,
+      "spread_pct": 3.58,
+      "oi": 1708,
+      "volume": 87
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 515.0,
+      "delta": -0.33,
+      "spread_pct": 3.85,
+      "oi": 2530,
+      "volume": 115
+     },
+     {
+      "expiry": "2026-10-30",
+      "dte": 10,
+      "strike": 537.5,
+      "delta": -0.53,
+      "spread_pct": 3.95,
+      "oi": 392,
+      "volume": 63
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 3782
+  },
+  "AMZN": {
+   "symbol": "AMZN",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:14:25",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 263.0,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 262.5,
+    "move_abs": 5.33,
+    "move_pct": 2.03,
+    "range_low": 257.67,
+    "range_high": 268.33,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.3418
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.3438
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.2923
+    },
+    {
+     "expiry": "2026-10-28",
+     "atm_iv": 0.3055
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.5377
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.3682,
+    "call25_iv": 0.3418,
+    "put_minus_call": 0.0264,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 260.0,
+      "oi": 32105
+     },
+     {
+      "strike": 270.0,
+      "oi": 28574
+     },
+     {
+      "strike": 265.0,
+      "oi": 24570
+     }
+    ],
+    "put": [
+     {
+      "strike": 235.0,
+      "oi": 9443
+     },
+     {
+      "strike": 245.0,
+      "oi": 8469
+     },
+     {
+      "strike": 250.0,
+      "oi": 8422
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28"
+    ]
+   },
+   "put_call_volume_ratio": 0.44,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 262.5,
+      "delta": 0.54,
+      "spread_pct": 1.94,
+      "oi": 626,
+      "volume": 782
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 260.0,
+      "delta": 0.57,
+      "spread_pct": 2.11,
+      "oi": 18314,
+      "volume": 21726
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 265.0,
+      "delta": 0.51,
+      "spread_pct": 2.15,
+      "oi": 22834,
+      "volume": 4723
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 260.0,
+      "delta": -0.43,
+      "spread_pct": 1.85,
+      "oi": 9810,
+      "volume": 1174
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 262.5,
+      "delta": -0.47,
+      "spread_pct": 2.09,
+      "oi": 1278,
+      "volume": 3167
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 250.0,
+      "delta": -0.31,
+      "spread_pct": 2.2,
+      "oi": 24867,
+      "volume": 2337
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 2426
+  },
+  "META": {
+   "symbol": "META",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:06:10",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 701.27,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 702.5,
+    "move_abs": 37.6,
+    "move_pct": 5.36,
+    "range_low": 663.67,
+    "range_high": 738.87,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.9128
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.827
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.6522
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.9119,
+    "call25_iv": 0.9006,
+    "put_minus_call": 0.0113,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 780.0,
+      "oi": 8648
+     },
+     {
+      "strike": 800.0,
+      "oi": 8083
+     },
+     {
+      "strike": 750.0,
+      "oi": 6850
+     }
+    ],
+    "put": [
+     {
+      "strike": 750.0,
+      "oi": 12777
+     },
+     {
+      "strike": 650.0,
+      "oi": 6178
+     },
+     {
+      "strike": 760.0,
+      "oi": 5032
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28"
+    ]
+   },
+   "put_call_volume_ratio": 0.472,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 700.0,
+      "delta": 0.56,
+      "spread_pct": 0.73,
+      "oi": 1866,
+      "volume": 3056
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 720.0,
+      "delta": 0.43,
+      "spread_pct": 0.83,
+      "oi": 1500,
+      "volume": 2257
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 695.0,
+      "delta": 0.59,
+      "spread_pct": 0.83,
+      "oi": 430,
+      "volume": 429
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 697.5,
+      "delta": -0.43,
+      "spread_pct": 0.73,
+      "oi": 169,
+      "volume": 361
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 710.0,
+      "delta": -0.51,
+      "spread_pct": 0.75,
+      "oi": 1204,
+      "volume": 604
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 720.0,
+      "delta": -0.58,
+      "spread_pct": 0.77,
+      "oi": 1464,
+      "volume": 299
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 7436
+  },
+  "GOOGL": {
+   "symbol": "GOOGL",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:17:20",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 343.55,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 342.5,
+    "move_abs": 7.01,
+    "move_pct": 2.04,
+    "range_low": 336.54,
+    "range_high": 350.56,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.3373
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.3352
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.2864
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.4639
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.346,
+    "call25_iv": 0.318,
+    "put_minus_call": 0.028,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 352.5,
+      "oi": 17783
+     },
+     {
+      "strike": 350.0,
+      "oi": 15346
+     },
+     {
+      "strike": 360.0,
+      "oi": 13871
+     }
+    ],
+    "put": [
+     {
+      "strike": 350.0,
+      "oi": 13431
+     },
+     {
+      "strike": 295.0,
+      "oi": 8629
+     },
+     {
+      "strike": 305.0,
+      "oi": 7980
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-30"
+    ]
+   },
+   "put_call_volume_ratio": 0.297,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 350.0,
+      "delta": 0.47,
+      "spread_pct": 2.37,
+      "oi": 10308,
+      "volume": 916
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 355.0,
+      "delta": 0.42,
+      "spread_pct": 3.31,
+      "oi": 32324,
+      "volume": 811
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 340.0,
+      "delta": 0.58,
+      "spread_pct": 3.65,
+      "oi": 8802,
+      "volume": 163
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-10-30",
+      "dte": 10,
+      "strike": 347.5,
+      "delta": -0.53,
+      "spread_pct": 4.37,
+      "oi": 424,
+      "volume": 157
+     },
+     {
+      "expiry": "2026-10-30",
+      "dte": 10,
+      "strike": 345.0,
+      "delta": -0.49,
+      "spread_pct": 4.9,
+      "oi": 979,
+      "volume": 305
+     },
+     {
+      "expiry": "2026-11-06",
+      "dte": 17,
+      "strike": 345.0,
+      "delta": -0.49,
+      "spread_pct": 5.19,
+      "oi": 385,
+      "volume": 89
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 4500
+  },
+  "AVGO": {
+   "symbol": "AVGO",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 10:05:04",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 332.748,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 332.5,
+    "move_abs": 8.62,
+    "move_pct": 2.59,
+    "range_low": 324.12,
+    "range_high": 341.37,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.429
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.4252
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.3678
+    },
+    {
+     "expiry": "2026-10-28",
+     "atm_iv": 0.3897
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.3994
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.4408,
+    "call25_iv": 0.4183,
+    "put_minus_call": 0.0225,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 345.0,
+      "oi": 6488
+     },
+     {
+      "strike": 352.5,
+      "oi": 5383
+     },
+     {
+      "strike": 360.0,
+      "oi": 4932
+     }
+    ],
+    "put": [
+     {
+      "strike": 330.0,
+      "oi": 3298
+     },
+     {
+      "strike": 320.0,
+      "oi": 3085
+     },
+     {
+      "strike": 335.0,
+      "oi": 2852
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28"
+    ]
+   },
+   "put_call_volume_ratio": 0.576,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 330.0,
+      "delta": 0.58,
+      "spread_pct": 2.47,
+      "oi": 2079,
+      "volume": 729
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 340.0,
+      "delta": 0.48,
+      "spread_pct": 2.66,
+      "oi": 6725,
+      "volume": 822
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 332.5,
+      "delta": 0.56,
+      "spread_pct": 2.67,
+      "oi": 688,
+      "volume": 698
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 340.0,
+      "delta": -0.53,
+      "spread_pct": 2.02,
+      "oi": 13705,
+      "volume": 541
+     },
+     {
+      "expiry": "2026-11-27",
+      "dte": 38,
+      "strike": 340.0,
+      "delta": -0.52,
+      "spread_pct": 2.44,
+      "oi": 520,
+      "volume": 76
+     },
+     {
+      "expiry": "2026-11-27",
+      "dte": 38,
+      "strike": 330.0,
+      "delta": -0.42,
+      "spread_pct": 3.72,
+      "oi": 1000,
+      "volume": 126
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 3082
+  },
+  "MU": {
+   "symbol": "MU",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 09:57:24",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 880.56,
+   "expected_move": {
+    "expiry": "2026-10-21",
+    "dte": 1,
+    "atm_strike": 880.0,
+    "move_abs": 37.52,
+    "move_pct": 4.26,
+    "range_low": 843.03,
+    "range_high": 918.08,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-21",
+     "atm_iv": 0.5873
+    },
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.5847
+    },
+    {
+     "expiry": "2026-10-26",
+     "atm_iv": 0.5029
+    },
+    {
+     "expiry": "2026-10-28",
+     "atm_iv": 0.5258
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.5387
+    },
+    {
+     "expiry": "2026-11-02",
+     "atm_iv": 0.5115
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-21",
+    "put25_iv": 0.5922,
+    "call25_iv": 0.554,
+    "put_minus_call": 0.0382,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 1000.0,
+      "oi": 9506
+     },
+     {
+      "strike": 980.0,
+      "oi": 7116
+     },
+     {
+      "strike": 950.0,
+      "oi": 6985
+     }
+    ],
+    "put": [
+     {
+      "strike": 550.0,
+      "oi": 20695
+     },
+     {
+      "strike": 150.0,
+      "oi": 15067
+     },
+     {
+      "strike": 515.0,
+      "oi": 10106
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-21",
+     "2026-10-23",
+     "2026-10-26",
+     "2026-10-28"
+    ]
+   },
+   "put_call_volume_ratio": 0.612,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 910.0,
+      "delta": 0.53,
+      "spread_pct": 1.42,
+      "oi": 7173,
+      "volume": 658
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 900.0,
+      "delta": 0.56,
+      "spread_pct": 1.64,
+      "oi": 4445,
+      "volume": 620
+     },
+     {
+      "expiry": "2026-10-21",
+      "dte": 1,
+      "strike": 920.0,
+      "delta": 0.36,
+      "spread_pct": 1.68,
+      "oi": 1119,
+      "volume": 7202
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 910.0,
+      "delta": -0.52,
+      "spread_pct": 2.11,
+      "oi": 1044,
+      "volume": 1969
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 880.0,
+      "delta": -0.31,
+      "spread_pct": 2.19,
+      "oi": 1909,
+      "volume": 2813
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 900.0,
+      "delta": -0.45,
+      "spread_pct": 2.24,
+      "oi": 6297,
+      "volume": 945
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 11360
+  },
+  "PLTR": {
+   "symbol": "PLTR",
+   "source": "Cboe delayed public option chain",
+   "provider_snapshot_time": "2026-10-20 09:59:14",
+   "execution_grade": false,
+   "probability": null,
+   "status": "OK",
+   "spot_delayed": 192.7341,
+   "expected_move": {
+    "expiry": "2026-10-23",
+    "dte": 3,
+    "atm_strike": 192.5,
+    "move_abs": 8.75,
+    "move_pct": 4.54,
+    "range_low": 183.98,
+    "range_high": 201.48,
+    "data_class": "DELAYED_QUOTE",
+    "method": "ATM straddle mid"
+   },
+   "atm_iv_term": [
+    {
+     "expiry": "2026-10-23",
+     "atm_iv": 0.5331
+    },
+    {
+     "expiry": "2026-10-30",
+     "atm_iv": 0.497
+    },
+    {
+     "expiry": "2026-11-06",
+     "atm_iv": 0.7209
+    },
+    {
+     "expiry": "2026-11-13",
+     "atm_iv": 0.6623
+    },
+    {
+     "expiry": "2026-11-20",
+     "atm_iv": 0.6236
+    },
+    {
+     "expiry": "2026-11-27",
+     "atm_iv": 0.5886
+    }
+   ],
+   "skew_25d": {
+    "expiry": "2026-10-23",
+    "put25_iv": 0.5564,
+    "call25_iv": 0.5071,
+    "put_minus_call": 0.0493,
+    "data_class": "PROVIDER_MODEL"
+   },
+   "oi_concentration": {
+    "call": [
+     {
+      "strike": 205.0,
+      "oi": 21500
+     },
+     {
+      "strike": 200.0,
+      "oi": 17092
+     },
+     {
+      "strike": 207.5,
+      "oi": 15730
+     }
+    ],
+    "put": [
+     {
+      "strike": 190.0,
+      "oi": 16771
+     },
+     {
+      "strike": 125.0,
+      "oi": 16197
+     },
+     {
+      "strike": 170.0,
+      "oi": 14008
+     }
+    ],
+    "data_class": "HISTORICAL",
+    "expirations": [
+     "2026-10-23",
+     "2026-10-30",
+     "2026-11-06",
+     "2026-11-13"
+    ]
+   },
+   "put_call_volume_ratio": 0.726,
+   "liquid_contract_screen": {
+    "call": [
+     {
+      "expiry": "2026-11-13",
+      "dte": 24,
+      "strike": 190.0,
+      "delta": 0.59,
+      "spread_pct": 0.95,
+      "oi": 219,
+      "volume": 88
+     },
+     {
+      "expiry": "2026-11-27",
+      "dte": 38,
+      "strike": 195.0,
+      "delta": 0.54,
+      "spread_pct": 1.01,
+      "oi": 107,
+      "volume": 71
+     },
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 195.0,
+      "delta": 0.54,
+      "spread_pct": 1.06,
+      "oi": 4303,
+      "volume": 704
+     }
+    ],
+    "put": [
+     {
+      "expiry": "2026-11-20",
+      "dte": 31,
+      "strike": 185.0,
+      "delta": -0.36,
+      "spread_pct": 1.02,
+      "oi": 10518,
+      "volume": 7338
+     },
+     {
+      "expiry": "2026-11-13",
+      "dte": 24,
+      "strike": 205.0,
+      "delta": -0.59,
+      "spread_pct": 1.04,
+      "oi": 108,
+      "volume": 13
+     },
+     {
+      "expiry": "2026-10-23",
+      "dte": 3,
+      "strike": 195.0,
+      "delta": -0.52,
+      "spread_pct": 1.08,
+      "oi": 3613,
+      "volume": 7974
+     }
+    ],
+    "rule": "|delta| 0.30-0.60, 1-45 DTE, spread <= 10.0%, OI >= 100, volume > 0; delayed quotes, not executable"
+   },
+   "contracts_seen": 2472
+  }
+ },
+ "errors": {},
+ "research_only": true,
+ "execution_grade": false,
+ "raw_quotes_published": false,
+ "data_classes": {
+  "DELAYED_QUOTE": "derived from delayed bid/ask",
+  "PROVIDER_MODEL": "Cboe's own IV/delta, delayed",
+  "HISTORICAL": "open interest from the prior session"
+ }
+}
