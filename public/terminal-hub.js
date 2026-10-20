@@ -26,6 +26,7 @@
     optionsAnalytics:[ROOT+"bot-state/runtime/public/data/options_analytics.json"],
     dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
     macro:[ROOT+"bot-state/runtime/public/data/public_macro.json"],
+    fda:[ROOT+"bot-state/runtime/public/data/fda_events.json"],
     modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
     tracking:[ROOT+"bot-state/runtime/public/data/signal_tracking.json"],
   };
@@ -68,7 +69,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,modelLab:null,tracking:null,pendingSymbol:null};
+    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,fda:null,modelLab:null,tracking:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -143,6 +144,8 @@
     modelLab:d=>d?.schema==="ghazi.explosion_model_lab.v1"&&d.research_only===true&&
       d.live_rules_changed===false&&d.models&&typeof d.models==="object",
     dataHub:d=>d?.schema==="ghazi.data_hub.v1"&&d.decision_authority===false&&Array.isArray(d.datasets),
+    fda:d=>d?.schema==="ghazi.fda_events.v1"&&d.decision_authority===false&&
+      Array.isArray(d.approvals)&&Array.isArray(d.recalls),
     macro:d=>d?.schema==="ghazi.public_macro.v1"&&d.decision_authority===false&&d.execution_authority===false&&
       d.cftc_index_futures&&typeof d.cftc_index_futures==="object"&&d.treasury_curve&&typeof d.treasury_curve==="object",
     optionsAnalytics:d=>d?.schema==="ghazi.options_analytics.v1"&&d.research_only===true&&
@@ -1520,6 +1523,47 @@
     }
     return out;
   }
+  const FDA_TYPE={APPROVAL_ORIGINAL:"موافقة على طلب أصلي",APPROVAL_SUPPLEMENT:"موافقة على ملحق",RECALL:"سحب منتج"};
+  // Official FDA events; a ticker appears only for a confident name match.
+  function fdaLines(report,limit=12){
+    if(!report)return [];
+    const rows=[...(report.approvals||[]),...(report.recalls||[])]
+      .filter(e=>e&&typeof e==="object")
+      .sort((a,b)=>({HIGH:0,MEDIUM:1,LOW:2}[a.importance]??3)-({HIGH:0,MEDIUM:1,LOW:2}[b.importance]??3)||
+        String(b.date||"").localeCompare(String(a.date||"")))
+      .slice(0,limit);
+    return rows.map(e=>({
+      title:(e.ticker?e.ticker+" · ":"")+String(e.sponsor||e.firm||"—").slice(0,80),
+      tone:e.importance==="HIGH"?"STALE":null,
+      status:(FDA_TYPE[e.event_type]||e.event_type)+" · "+String(e.date||"—"),
+      detail:[e.products?.length?"المنتج: "+e.products.join("، "):e.product?"المنتج: "+String(e.product).slice(0,120):"",
+        e.classification?"التصنيف: "+e.classification:"",e.review_priority?"أولوية المراجعة: "+e.review_priority:"",
+        e.reason?"السبب: "+String(e.reason).slice(0,140):"",
+        e.ticker?"الرمز بمطابقة الاسم القانوني":"بلا رمز (لا مطابقة مؤكدة)",
+        "الأهمية: "+String(e.importance_reason||"—")].filter(Boolean).join(" · "),
+      url:safeOfficial(e.official_url)||null}));
+  }
+  function renderFda(){
+    const box=$("terminal-fda");if(!box)return;
+    box.replaceChildren();
+    const report=state.fda;
+    if(!report){put("terminal-fda-status","لم تُنشر أحداث FDA بعد.");return;}
+    const c=report.counts||{};
+    put("terminal-fda-status","المصدر: openFDA (ملك عام CC0) · آخر "+String(report.window?.start||"—")+" ← "+String(report.window?.end||"—")+
+      " · موافقات "+(c.approvals??0)+" (أصلية "+(c.original_approvals??0)+") · سحوبات "+(c.recalls??0)+
+      " (Class I: "+(c.class_i_recalls??0)+") · مرتبطة برمز "+(c.matched_to_ticker??0)+
+      " · التحديث: "+stamp(report.generated_at)+" · وقائع تنظيمية لا تعني اتجاه سعر.");
+    const lines=fdaLines(report);
+    if(!lines.length){box.append(txt("p","لا أحداث في النافذة الحالية.","terminal-empty"));return;}
+    for(const line of lines){
+      const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
+      head.append(txt("strong",line.title),chip(line.status,line.tone));
+      item.append(head,txt("small",line.detail,"terminal-structural-notice"));
+      if(line.url){const a=document.createElement("a");a.href=line.url;a.target="_blank";a.rel="noopener noreferrer";
+        a.textContent="صفحة FDA الرسمية ↗";item.append(a);}
+      box.append(item);
+    }
+  }
   function renderMacro(){
     const box=$("terminal-macro");if(!box)return;
     box.replaceChildren();
@@ -1759,20 +1803,20 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","modelLab","tracking"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","modelLab","tracking"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.modelLab,state.tracking]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.modelLab,state.tracking]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderOps();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderFda();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
