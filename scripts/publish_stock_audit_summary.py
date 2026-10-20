@@ -34,6 +34,7 @@ def build_summary(audit: dict, *, now: datetime) -> dict:
         "ambiguous", "non_decisive", "pending", "unavailable", "invalid_session",
         "independent_60m_sessions", "coverage_60m_applicable_records",
         "coverage_60m_not_applicable_after_close",
+        "coverage_60m_not_applicable_before_open",
     )}
     if counts["covered_60m"] > counts["records"]:
         raise ValueError("covered_60m cannot exceed eligible records")

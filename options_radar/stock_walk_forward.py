@@ -234,8 +234,11 @@ def coverage_gap_diagnostics(audit: dict[str, Any]) -> dict[str, Any]:
     counts = audit.get("coverage") if isinstance(audit.get("coverage"), dict) else {}
     eligible = int(max(0, _number(counts.get("eligible_records"))))
     not_applicable = int(max(0, _number(counts.get("coverage_60m_not_applicable_after_close"))))
+    pre_open = int(max(0, _number(counts.get("coverage_60m_not_applicable_before_open"))))
+    not_applicable += pre_open
     # Same denominator as the gate: horizons ending after the regular close
-    # are not applicable to a 60m intraday observation.
+    # or before the regular open are not applicable to a 60m intraday
+    # observation on regular-session bars.
     eligible = max(0, eligible - min(not_applicable, eligible)) if eligible else 0
     observed = int(max(0, _number(counts.get("covered_60m"))))
     if eligible == 0:
@@ -264,8 +267,9 @@ def coverage_gap_diagnostics(audit: dict[str, Any]) -> dict[str, Any]:
     for row in rows.values():
         if (not isinstance(row, dict)
                 or row.get("signal_session_valid") is False
-                or row.get("coverage_60m_applicability")
-                == "NOT_APPLICABLE_HORIZON_AFTER_REGULAR_CLOSE"):
+                or row.get("coverage_60m_applicability") in {
+                    "NOT_APPLICABLE_HORIZON_AFTER_REGULAR_CLOSE",
+                    "NOT_APPLICABLE_HORIZON_BEFORE_REGULAR_OPEN"}):
             continue
         record_coverage = (row.get("coverage")
                            if isinstance(row.get("coverage"), dict) else {})
@@ -283,7 +287,8 @@ def coverage_gap_diagnostics(audit: dict[str, Any]) -> dict[str, Any]:
         "diagnosed_missing_records_sampled": inspected_missing,
         "missing_reason_count_is_exhaustive": inspected_missing == eligible - observed,
         "eligible_records": eligible,
-        "not_applicable_after_close_records": not_applicable,
+        "not_applicable_after_close_records": not_applicable - pre_open,
+        "not_applicable_before_open_records": pre_open,
         "covered_60m_records": observed,
         "missing_60m_records": eligible - observed,
         "minimum_required_60m_records": required,
