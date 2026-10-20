@@ -1,10 +1,24 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import shutil
 from pathlib import Path
 from typing import Any
+
+# Public files pass through the licence guard on their way to bot-state;
+# loaded by path so the guard needs no package import.
+_guard_spec = importlib.util.spec_from_file_location(
+    "ghazi_public_guard", Path(__file__).resolve().parents[1] / "options_radar" / "public_guard.py")
+public_guard = importlib.util.module_from_spec(_guard_spec)
+_guard_spec.loader.exec_module(public_guard)
+
+GUARDED_PUBLIC_FILES = {
+    "public/data/latest.json": "latest",
+    "public/data/contract_guardian.json": "guardian",
+    "public/data/decision_brief.json": "generic",
+}
 
 RUNTIME_PATHS = (
     "public/data/latest.json",
@@ -158,7 +172,13 @@ def publish_runtime_state(*, repo_root: Path, vault_root: Path) -> dict[str, int
             continue
         validate_runtime_file(source)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
+        kind = GUARDED_PUBLIC_FILES.get(relative)
+        if kind:
+            payload = json.loads(source.read_text(encoding="utf-8"))
+            guarded = public_guard.guard_payload(payload, kind=kind)
+            destination.write_text(json.dumps(guarded, ensure_ascii=False), encoding="utf-8")
+        else:
+            shutil.copy2(source, destination)
         published += 1
 
     manifest = {

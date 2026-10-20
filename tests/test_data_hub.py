@@ -36,5 +36,5 @@ def test_build_catalogs_every_registered_file(tmp_path):
     assert rows["options_analytics.json"]["freshness"] == "MISSING"
     assert report["summary"]["fallback_sources"] == []
     assert rows["stock_watch_charts.json"]["license_class"] == "TERMS_RESTRICTED"
-    assert set(report["source_gates"]) == {"cboe_delayed", "yahoo", "nasdaq_web"}
+    assert set(report["source_gates"]) == {"cboe_delayed", "yahoo", "nasdaq_web", "community_gex"}
     assert report["policy"]["network_requests"] is False

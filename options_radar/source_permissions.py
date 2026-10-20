@@ -17,6 +17,12 @@ docs/OPEN_SOURCE_AND_DATA_SOURCE_DECISIONS.md):
   Services using any automated means ... for any purpose without our express,
   prior permission"; robots.txt on query1/query2.finance.yahoo.com (the hosts
   yfinance and yahooquery call) is ``Disallow: /``.
+- Community SPX gamma feeds on GitHub (dhawalc/spx-gamma-levels,
+  Alexduanran/spx-0dte-archive): no licence file (GitHub reports
+  NOASSERTION); one README claims CC BY 4.0 but neither names a licensed
+  upstream for the option chains it is computed from, and the archive
+  describes its inputs as perishable feeds. Rights are UNKNOWN, and UNKNOWN
+  is not permission.
 - Nasdaq.com terms: licence "solely for your personal, non-commercial use"
   and users must not use "any process, whether automated or manual, to
   capture data or content from the Service"; api.nasdaq.com robots.txt is
@@ -29,6 +35,7 @@ import os
 CBOE_VARIABLE = "CBOE_DELAYED_AUTOMATION_APPROVED"
 YAHOO_VARIABLE = "YAHOO_AUTOMATED_ACCESS_APPROVED"
 NASDAQ_WEB_VARIABLE = "NASDAQ_WEB_AUTOMATION_APPROVED"
+COMMUNITY_GEX_VARIABLE = "COMMUNITY_GEX_DATA_APPROVED"
 
 GATES: dict[str, dict[str, str]] = {
     "cboe_delayed": {
@@ -56,6 +63,15 @@ GATES: dict[str, dict[str, str]] = {
                    "reads stay off until Nasdaq grants permission"),
         "reason_ar": ("شروط Nasdaq.com للاستخدام الشخصي غير التجاري فقط وتمنع التقاط بيانات الموقع آليًا أو "
                       "يدويًا، وملف robots.txt لـ api.nasdaq.com يمنع كل المسارات؛ الجلب الآلي متوقف حتى إذن Nasdaq"),
+    },
+    "community_gex": {
+        "variable": COMMUNITY_GEX_VARIABLE,
+        "source": "Community SPX gamma feeds (dhawalc/spx-gamma-levels, Alexduanran/spx-0dte-archive)",
+        "reason": ("These GitHub feeds have no licence file and do not name a licensed upstream for the "
+                   "option chains they are computed from; their data rights are unknown, so automated "
+                   "reads stay off until the rights are verified"),
+        "reason_ar": ("مستودعات جاما المجتمعية على GitHub بلا ملف ترخيص ولا تذكر مصدرًا مرخصًا لسلاسل الخيارات "
+                      "التي تُحسب منها؛ حقوقها غير معروفة، فالقراءة الآلية متوقفة حتى التحقق منها"),
     },
 }
 

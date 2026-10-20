@@ -45,7 +45,35 @@ env:
   NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
 
 jobs:
+  source-gate:
+    # Skip the scan with a notice when its only inputs are closed sources.
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      usable: ${{ steps.gate.outputs.usable }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check for a permitted market-data source
+        id: gate
+        env:
+          HAS_TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY != '' }}
+          HAS_FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY != '' }}
+          HAS_TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN != '' }}
+          HAS_ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY != '' }}
+          HAS_TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY != '' }}
+          HAS_POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY != '' }}
+          HAS_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY != '' }}
+          HAS_MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN != '' }}
+        run: python scripts/price_source_gate.py --require options,price
+
   scan-options:
+    needs: [source-gate]
+    if: needs.source-gate.outputs.usable == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

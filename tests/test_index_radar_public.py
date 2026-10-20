@@ -178,6 +178,10 @@ def test_homepage_indicators_and_news_are_visible_without_opening_tabs() -> None
     import json
     data=json.loads(Path("public/data/index_radar.json").read_text(encoding="utf-8"))
     assert data["schema"] == "ghazi.index_research.v1"
+    if data.get("status") == "SOURCE_TERMS_BLOCKED":
+        # The fallback copy must not carry prices from a closed source.
+        assert data["symbols"] == {} and data["reason_ar"]
+        return
     assert data["coverage"]["daily_validated"] > 0
     assert data["symbols"]["SPX"]["last_completed_session_date"] is not None
     assert data["index_options_signal_authority"] is False

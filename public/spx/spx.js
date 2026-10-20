@@ -108,6 +108,13 @@ async function boot(){
       getFirstJSON([DURABLE+'free_data_health.json','../data/free_data_health.json']).catch(()=>({overall:'degraded',sources:[]})),
       getFirstJSON([DURABLE+'free_gex_validation.json','../data/free_gex_validation.json']).catch(()=>({decision:'SHADOW_ONLY',agreement_score:0,reasons_ar:['لا توجد نتيجة تحقق منشورة حالياً.']}))
     ]);
+    if(d&&d.status==='SOURCE_TERMS_BLOCKED'){
+      lastSnapshot=null;lastOptions={};render({},{});renderTargets({});
+      $('status').textContent='LICENSE_BLOCKED • '+(d.generated_at||'');$('status').className='status warn';
+      $('reason').textContent=String(d.reason_ar||'مصدر بيانات SPX لا يسمح بالجلب الآلي دون إذن.').slice(0,400);
+      $('sources').textContent='Price: — (source terms) • Updated: '+(d.generated_at||'—');
+      return;
+    }
     lastSnapshot=d;lastOptions=o;
     render(d,o);renderFreeHealth(h);renderValidation(v);renderAdvanced(v);renderTargets(d);
     const age=marketAge(d), optionTime=o?.generated_at||o?.updated_at||'';
