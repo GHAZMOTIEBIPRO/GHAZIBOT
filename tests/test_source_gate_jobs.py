@@ -76,7 +76,7 @@ def test_community_gex_feeds_make_no_request(monkeypatch, tmp_path):
     monkeypatch.setattr(fgv, "fetch_json_source", no_request)
     monkeypatch.setattr(fgv, "fetch_archive", no_request)
     monkeypatch.setattr(fgv, "get", lambda url, timeout=15: (_ for _ in ()).throw(OSError("offline")))
-    monkeypatch.setattr(fgv, "HISTORY", Path("/nonexistent/history.json"))
+    monkeypatch.setattr(fgv, "HISTORY", tmp_path / "history.json")
     rows = fgv.build()["sources"]
     community = [r for r in rows if r.get("source") in fgv.SOURCES]
     assert len(community) == 2 and all(r["status"] == "SOURCE_TERMS_BLOCKED" for r in community)
