@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T04:51:31.094542+00:00",
+  "generated_at": "2026-10-20T05:01:51.773521+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
   "source_count_available": 4,
@@ -74,8 +74,8 @@
       "available": true,
       "source": "ghazi_gex_multi_reimplementation",
       "spot": 7690.73,
-      "gex": -28.908929948858596,
-      "flip": 7760.807506225479,
+      "gex": -30.319814295721898,
+      "flip": 7758.205242404858,
       "call_wall": 7800.0,
       "put_wall": 7700.0,
       "regime": "negative"
@@ -91,25 +91,25 @@
       ],
       "policy": "shadow_validation_never_signal_authority",
       "spot": 7690.73,
-      "net_gex": -28.908929948858596,
-      "gamma_flip": 7760.807506225479,
+      "net_gex": -30.319814295721898,
+      "gamma_flip": 7758.205242404858,
       "call_wall": 7800.0,
       "put_wall": 7700.0,
-      "magnet": 7750.0,
+      "magnet": 7700.0,
       "gamma_regime": "negative",
       "front_expiry": "2026-10-20",
       "expirations_used": 4,
       "zdte_call_wall": 7725.0,
-      "zdte_put_wall": 7550.0,
-      "zdte_share_abs_gex": 0.172206932547044,
+      "zdte_put_wall": 7650.0,
+      "zdte_share_abs_gex": 0.16255398318022865,
       "greek_exposure_near_spot": {
-        "dex": -14138373.01812509,
-        "vanna": 24175218.65646598,
-        "charm": -372981867.9343328,
-        "vomma": 1732601491.2794974,
-        "zomma": 424351360.4637707
+        "dex": -14581180.909540039,
+        "vanna": 21481972.61951098,
+        "charm": -431927955.89291716,
+        "vomma": 439066399.5794572,
+        "zomma": 478861292.29401207
       },
-      "gci": 0.05611856401578,
+      "gci": 0.06223883399074579,
       "put_call_oi_ratio": 2.713040933659242,
       "provenance": {
         "source": "Cboe delayed public JSON",
@@ -123,7 +123,7 @@
         "dealer_positioning": "UNAVAILABLE",
         "order_flow": "UNAVAILABLE",
         "assumptions": [
-          "Black-Scholes gamma from delayed IV, rate 0, business-day time floor of one day.",
+          "Black-Scholes gamma from delayed IV, rate 0, calendar time to settlement (SPXW 16:00 ET, SPX AM 09:30 ET), 30-minute floor.",
           "Sign convention: calls +, puts - (assumes dealers long calls / short puts); real counterparties are not visible in aggregate open interest.",
           "Open interest is the exchange's prior-session figure, not intraday flow."
         ],
@@ -131,50 +131,54 @@
       },
       "greek_check": {
         "compared": 715,
-        "median_abs_rel_diff": 0.2014,
-        "p90_abs_rel_diff": 1.5503,
-        "basis": "near-spot contracts with provider gamma > 0; both values are models"
+        "median_abs_rel_diff": 0.2051,
+        "p90_abs_rel_diff": 0.5462,
+        "basis": "near-spot contracts with provider gamma > 0; both values are models",
+        "legacy_business_day_clock": {
+          "median_abs_rel_diff": 0.2014,
+          "p90_abs_rel_diff": 1.5503
+        }
       },
       "top_abs_gamma": [
         {
           "strike": 7700.0,
-          "net_gex": -2.3173972144442
+          "net_gex": -2.491325180869846
         },
         {
           "strike": 7650.0,
-          "net_gex": -1.925309680607028
+          "net_gex": -2.158254430542822
         },
         {
           "strike": 7600.0,
-          "net_gex": -1.7296568570600683
+          "net_gex": -1.6841659803509468
         },
         {
           "strike": 7625.0,
-          "net_gex": -1.5619842544545142
-        },
-        {
-          "strike": 7550.0,
-          "net_gex": -1.3245280240325221
-        },
-        {
-          "strike": 7670.0,
-          "net_gex": -1.2218730338182076
-        },
-        {
-          "strike": 7675.0,
-          "net_gex": -1.129020490099158
+          "net_gex": -1.5712388966182664
         },
         {
           "strike": 7690.0,
-          "net_gex": -1.1179201191782697
+          "net_gex": -1.293926484822131
+        },
+        {
+          "strike": 7670.0,
+          "net_gex": -1.2863313794867077
+        },
+        {
+          "strike": 7675.0,
+          "net_gex": -1.2650367625685635
         },
         {
           "strike": 7655.0,
-          "net_gex": -0.9531386826922386
+          "net_gex": -1.092236911980959
         },
         {
           "strike": 7640.0,
-          "net_gex": -0.8886964728121822
+          "net_gex": -0.9532998900327283
+        },
+        {
+          "strike": 7645.0,
+          "net_gex": -0.951338644645669
         }
       ],
       "data_quality": {
@@ -184,7 +188,7 @@
         "has_spxw": true,
         "coverage_ok": true
       },
-      "generated_at": "2026-10-20T04:51:31.074654+00:00"
+      "generated_at": "2026-10-20T05:01:51.753400+00:00"
     },
     "upstream_methodology": [
       "itsfabtrading/Gex-Multi",
@@ -195,16 +199,16 @@
       "spot": 7690.73,
       "regime": "negative",
       "distance_pct": {
-        "gamma_flip": 0.91,
+        "gamma_flip": 0.88,
         "call_wall": 1.42,
         "put_wall": 0.12
       },
-      "hedging_pressure_bn_per_1pct": 28.91,
+      "hedging_pressure_bn_per_1pct": 30.32,
       "hedging_direction_model": "AMPLIFYING",
       "relevant_expirations": {
         "front": "2026-10-20",
         "count": 4,
-        "front_share_abs_gex": 0.172206932547044
+        "front_share_abs_gex": 0.16255398318022865
       },
       "measured_inputs": [
         "spot (Cboe delayed)",
@@ -219,12 +223,12 @@
         "regime"
       ],
       "reading_ar": [
-        "السعر تحت نقطة الانقلاب التقديرية (7,761): نظام جاما سالب في النموذج، وقد يضخم التحوط الحركة في الاتجاهين؛ تقلب أعلى محتمل.",
+        "السعر تحت نقطة الانقلاب التقديرية (7,758): نظام جاما سالب في النموذج، وقد يضخم التحوط الحركة في الاتجاهين؛ تقلب أعلى محتمل.",
         "Call Wall 7,800 (+1.42%): مستوى مقاومة نموذجي محتمل، ليس سقفًا مضمونًا.",
         "السعر ليس بين الجدارين؛ قراءة الجدران كنطاق غير صالحة الآن.",
-        "ضغط التحوط التقديري: نحو 28.9 مليار $ لكل حركة 1% (مع اتجاه الحركة) بافتراض أن المتعاملين مشترون للكول وبائعون للبوت.",
-        "الجاما موزعة على سترايكات كثيرة (GCI 5.6%).",
-        "حصة أقرب انتهاء (2026-10-20) من الجاما: 17%؛ أثرها يتلاشى بعد انتهائها."
+        "ضغط التحوط التقديري: نحو 30.3 مليار $ لكل حركة 1% (مع اتجاه الحركة) بافتراض أن المتعاملين مشترون للكول وبائعون للبوت.",
+        "الجاما موزعة على سترايكات كثيرة (GCI 6.2%).",
+        "حصة أقرب انتهاء (2026-10-20) من الجاما: 16%؛ أثرها يتلاشى بعد انتهائها."
       ],
       "is_measured_dealer_position": false
     },
@@ -242,7 +246,7 @@
       "minimum_sessions_for_verdict": 20,
       "method": "last snapshot before each session vs that session's realized high/low; baseline is a band of equal width centred on the snapshot spot"
     },
-    "history_entries": 3
+    "history_entries": 4
   },
   "research_indicators_ar": [
     "GEX",
