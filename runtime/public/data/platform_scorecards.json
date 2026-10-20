@@ -1,10 +1,10 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-20T19:48:19.037085+00:00",
+ "generated_at": "2026-10-20T19:58:41.532648+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 87.7,
+   "value": 87.8,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
@@ -16,20 +16,20 @@
      "failure": 30
     },
     "options-contract-radar.yml": {
-     "success": 16,
+     "success": 17,
      "failure": 14
     },
     "fast-explosion-radar.yml": {
      "success": 83
     },
     "classical-direction-radar.yml": {
-     "success": 33
+     "success": 34
     },
     "index-radar.yml": {
      "success": 9
     },
     "stock-watch-charts.yml": {
-     "success": 8,
+     "success": 9,
      "cancelled": 1,
      "failure": 6
     },
@@ -37,16 +37,16 @@
      "success": 2
     },
     "site-evidence-strength.yml": {
-     "success": 42,
+     "success": 43,
      "skipped": 9,
      "cancelled": 2
     },
     "free-gex-validation.yml": {
-     "success": 38
+     "success": 39
     },
     "market-orchestrator.yml": {
      "cancelled": 10,
-     "success": 23
+     "success": 22
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
@@ -73,7 +73,7 @@
   },
   "DATA_TRUST": {
    "status": "MEASURED",
-   "value": 60.0,
+   "value": 61.9,
    "unit": "percent of published datasets",
    "evidence": {
     "index_radar.json": "PASS/BLOCKED_PENDING_PERMISSION",
@@ -89,6 +89,7 @@
     "free_options_sources.json": "PASS/OK_FOR_STATED_USE",
     "free_public_intelligence.json": "PASS/OK_FOR_STATED_USE",
     "public_macro.json": "PASS/OK_FOR_STATED_USE",
+    "fda_events.json": "PASS/OK_FOR_STATED_USE",
     "sec_filing_pulse.json": "PASS/OK_FOR_STATED_USE",
     "source_agreement.json": "PASS/OK_FOR_STATED_USE",
     "stock_audit_public.json": "PASS/OK_FOR_STATED_USE",
@@ -105,9 +106,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 39480351896,
+    "run_id": 39487866991,
     "conclusion": "success",
-    "at": "2026-10-20T19:04:48Z"
+    "at": "2026-10-20T19:57:33Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -201,11 +202,11 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "checked_at": "2026-10-20T19:30:16.646390+00:00",
-    "status": "ACCEPTED_BY_TELEGRAM",
+    "checked_at": "2026-10-20T19:49:06.975879+00:00",
+    "status": "CONNECTION_VERIFIED_NOT_SENT",
     "sent": 0,
-    "edited": 1,
-    "unchanged": 86,
+    "edited": 0,
+    "unchanged": 0,
     "bot_api_responded": true,
     "destination_api_verified": true
    },
