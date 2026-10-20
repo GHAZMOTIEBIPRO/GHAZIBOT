@@ -263,8 +263,10 @@ jobs:
         run: >-
           ruff check
           options_radar/free_public_intelligence.py
+          options_radar/news_impact.py
           scripts/send_free_macro_reminders.py
           tests/test_free_public_intelligence.py
+          tests/test_news_impact.py
 
       - name: Causal stock confluence and free news provenance Ruff gate
         run: |

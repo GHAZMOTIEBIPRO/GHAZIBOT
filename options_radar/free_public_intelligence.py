@@ -24,6 +24,7 @@ from options_radar.github_listing_discovery import (
     resolve_public_issuers,
     symbols_from_brief,
 )
+from options_radar.news_impact import annotate as annotate_news_impact
 
 GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 BLS_ICS = "https://www.bls.gov/schedule/news_release/bls.ics"
@@ -786,6 +787,7 @@ def main() -> None:
         payload = retain_verified_news_context(
             payload, previous, now=current, dynamic_names=dynamic_names,
         )
+    payload = annotate_news_impact(payload, now=current)
     dest = Path(args.output)
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(".tmp")

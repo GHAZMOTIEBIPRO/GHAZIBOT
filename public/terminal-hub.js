@@ -655,6 +655,8 @@
       item.potential_dilution_review===true||
       item.event_topic==="RISK_OR_ADVERSE_EVENT_MENTION";
     card.append(chip(risky?"تحذير / مراجعة":official?"إفصاح أصلي":"خبر تجميعي",risky?"DOWN":null));
+    const impact={HIGH:"أثر مرتفع",MEDIUM:"أثر متوسط",LOW:"أثر منخفض"}[item.impact_level];
+    if(impact)card.append(chip(impact+" · قاعدة موثقة",item.impact_level==="HIGH"?"UP":null));
     card.append(txt("h5",official?
       String(item.symbol||"—")+" · "+String(item.form||"إفصاح"):
       String(item.symbol||"—")+" · "+String(item.headline||"عنوان غير متاح")));
@@ -720,7 +722,8 @@
       " · أحدث تقرير أخبار: "+stamp(feed?.generated_at)+
       (errors.length?" · أعطال موثقة: "+errors.slice(0,3).join("، "):"")+
       (retries.length?" · إعادة المحاولة التلقائية: "+retries.join("، "):"")+
-      " · العنوان الإخباري لا يثبت قوة أثر الخبر.");
+      " · العنوان الإخباري لا يثبت قوة أثر الخبر."+
+      (feed?.impact_policy?.version?" · مستوى الأثر تصنيف انتباه بقواعد ثابتة، ليس اتجاهًا ولا احتمالًا؛ الأخبار غير الرسمية لا تتجاوز «متوسط».":""));
   }
   function uniqueValidBars(rows){
     const res=new Map();
