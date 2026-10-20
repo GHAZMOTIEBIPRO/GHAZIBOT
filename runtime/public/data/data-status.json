@@ -1,28 +1,18 @@
 {
-  "status": "healthy",
-  "generated_at": "2026-10-20T11:30:44.788945+00:00",
-  "dataset_age_minutes": 947.39,
-  "last_successful_refresh": "2026-10-20T11:30:44.788945+00:00",
-  "option_provider": "phase5_hybrid",
-  "option_provider_readiness": {
-    "status": "FALLBACK_ONLY",
-    "production_quote_ready": false,
-    "production_flow_ready": false,
-    "reasons": [
-      "Payload age 46.7m exceeds the 45m safety limit.",
-      "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-      "55 chain(s) are Yahoo/YFinance-only fallback",
-      "55 chain(s) contain delayed, indicative, or unofficial sources"
-    ]
-  },
+  "status": "degraded",
+  "generated_at": "2026-10-20T11:33:03.490221+00:00",
+  "dataset_age_minutes": 0.3,
+  "last_successful_refresh": null,
+  "option_provider": "unknown",
+  "option_provider_readiness": null,
   "source_status": {
-    "active_stock_sources": 2,
+    "active_stock_sources": 1,
     "active_option_sources": 1,
-    "option_provider_readiness": "FALLBACK_ONLY",
-    "production_option_quotes": false,
-    "production_option_flow": false,
+    "option_provider_readiness": null,
+    "production_option_quotes": null,
+    "production_option_flow": null,
     "sec_fulltext": {
-      "checked_at": "2026-10-20T11:06:02.262347+00:00",
+      "checked_at": "2026-10-20T11:32:53.310963+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
@@ -48,35 +38,26 @@
     "stock_price_source_families_reported": [
       "yahoo"
     ],
-    "stock_non_price_context_sources_reported": [
-      "finra_reg_sho"
-    ],
+    "stock_non_price_context_sources_reported": [],
     "stock_primary_non_yahoo_families_reported": [],
-    "option_chain_source_families": [
-      "yahoo"
-    ],
+    "option_chain_source_families": [],
     "option_chain_unclassified_sources": [],
     "option_live_primary_chains_reported": 0,
     "option_cross_source_chains_reported": 0,
-    "option_fallback_only_chains_reported": 14,
+    "option_fallback_only_chains_reported": 0,
     "options_execution_quote_ready": false,
     "options_trade_flow_ready": false,
     "blocking_codes": [
-      "YAHOO_RESEARCH_ONLY",
+      "NO_VERIFIED_OPTION_PROVIDER_FAMILY",
       "NO_INDEPENDENT_CROSS_SOURCE_CHAIN",
       "NO_EXECUTION_GRADE_OPTION_QUOTE",
       "NO_VERIFIED_OPTION_TRADE_FLOW"
     ],
-    "top_option_rejection_reasons": {
-      "invalid_bid_ask": 346,
-      "delta_outside_030_060": 2,
-      "spread_above_15pct": 1,
-      "option_volume_below_200": 1
-    },
+    "top_option_rejection_reasons": {},
     "public_licensing_notice": "Personal-use brokerage API access does not grant public market-data redistribution rights. Do not expose tokens or unlicensed raw quotes."
   },
   "row_counts": {
-    "stocks": 15,
+    "stocks": 0,
     "options": 0,
     "catalysts": 48,
     "expiry_contracts": 0
@@ -85,9 +66,9 @@
     "stale_options": 0,
     "missing_expiry_family": 0,
     "duplicate_events_collapsed": 31,
-    "errors": 1,
-    "critical_errors": 0,
-    "fallback_only_option_chains": 14,
+    "errors": 2,
+    "critical_errors": 2,
+    "fallback_only_option_chains": 0,
     "live_primary_option_chains": 0
   },
   "sec_incremental": {
@@ -102,55 +83,11 @@
     "access_blocked": 16,
     "request_failures": 16,
     "processed_accessions": 0,
-    "updated_at": "2026-10-20T11:06:12.645430+00:00",
+    "updated_at": "2026-10-20T11:33:01.738758+00:00",
     "outcome": "ACCESS_BLOCKED"
   },
   "run_duration_seconds": null,
   "reasons": [
-    "options: Payload age 46.7m exceeds the 45m safety limit.; No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade; 55 chain(s) are Yahoo/YFinance-only fallback; 55 chain(s) contain delayed, indicative, or unofficial sources"
-  ],
-  "runtime_source": "bot-state/live_dashboard_status",
-  "workflow_health": {
-    "publisher": {
-      "source_workflow": "BLACK BOX Omega Fast Explosion Radar",
-      "source_run_id": "39415298055",
-      "mode": "artifact_to_bot_state_status_only"
-    },
-    "paths": {
-      "fast_discovery": {
-        "status": "HEALTHY",
-        "generated_at": "2026-10-20T11:23:16.332352+00:00",
-        "age_minutes": 7.47,
-        "maximum_age_minutes": 45.0,
-        "candidate_count": 0,
-        "provider_readiness": null,
-        "reasons": []
-      },
-      "stocks": {
-        "status": "HEALTHY",
-        "generated_at": "2026-10-20T11:12:59.903045+00:00",
-        "age_minutes": 17.75,
-        "maximum_age_minutes": 90.0,
-        "candidate_count": 1,
-        "provider_readiness": null,
-        "reasons": [
-          "No candidate currently has an official primary cause; alerts must state cause unknown"
-        ]
-      },
-      "options": {
-        "status": "STALE",
-        "generated_at": "2026-10-19T19:43:21.393889+00:00",
-        "age_minutes": 947.39,
-        "maximum_age_minutes": 45.0,
-        "candidate_count": 0,
-        "provider_readiness": "FALLBACK_ONLY",
-        "reasons": [
-          "Payload age 46.7m exceeds the 45m safety limit.",
-          "No contract has a verified fresh executable quote; delayed, indicative, unofficial, stale, trade-time-only, or label-only sources remain research-grade",
-          "55 chain(s) are Yahoo/YFinance-only fallback",
-          "55 chain(s) contain delayed, indicative, or unofficial sources"
-        ]
-      }
-    }
-  }
+    "2 critical pipeline error(s)"
+  ]
 }
