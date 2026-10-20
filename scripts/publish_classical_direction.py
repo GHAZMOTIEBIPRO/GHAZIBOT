@@ -84,11 +84,32 @@ def build_digest(payload: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     }
 
 
+def blocked_digest(now: datetime, reason: str) -> dict[str, Any]:
+    """Withdraw the public digest while no permitted price source exists."""
+    return {
+        "schema": "ghazi.classical_direction_public.v1", "generated_at": now.isoformat(),
+        "status": "SOURCE_TERMS_BLOCKED", "operational_status": "LICENSE_BLOCKED",
+        "reason": reason,
+        "reason_ar": ("لا يوجد مصدر أسعار مسموح: الجلب الآلي من Yahoo غير مسموح ولا يوجد مفتاح API لحساب مرخص؛ "
+                      "سُحبت قراءات الاتجاه السابقة بدل عرضها كأنها حالية."),
+        "counts": {}, "companies": [], "research_only": True, "execution_authority": False,
+        "probability": None, "option_data_used_for_direction": False,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True)
+    parser.add_argument("--input", default="")
     parser.add_argument("--output", required=True)
+    parser.add_argument("--source-blocked", default="", help="reason; publish a withdrawn digest instead")
     args = parser.parse_args()
+    if args.source_blocked:
+        digest = blocked_digest(datetime.now(timezone.utc), args.source_blocked)
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(digest, ensure_ascii=False) + "\n", encoding="utf-8")
+        print("Classical digest: SOURCE_TERMS_BLOCKED; previous readings withdrawn")
+        return 0
     payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
     digest = build_digest(payload if isinstance(payload, dict) else {}, now=datetime.now(timezone.utc))
     out = Path(args.output)

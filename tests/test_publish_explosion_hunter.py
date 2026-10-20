@@ -52,6 +52,7 @@ def test_only_https_sec_links_survive_and_fields_are_explicit():
 def test_naive_clock_rejected_and_main_never_fabricates(tmp_path: Path, monkeypatch):
     with pytest.raises(ValueError):
         build_digest(_state(), now=NOW.replace(tzinfo=None))
+    monkeypatch.setenv("NASDAQ_WEB_AUTOMATION_APPROVED", "true")  # gate-closed path tested elsewhere
     out = tmp_path / "out.json"
     monkeypatch.setattr(sys, "argv", ["x", "--input", str(tmp_path / "missing.json"), "--output", str(out)])
     assert mod.main() == 0 and not out.exists()

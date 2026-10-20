@@ -7,6 +7,7 @@ on:
     paths:
       - "scripts/build_site_strength.py"
       - "scripts/build_data_hub.py"
+      - "scripts/build_platform_scorecards.py"
       - "tests/test_site_strength.py"
       - ".github/workflows/site-evidence-strength.yml"
   workflow_run:
@@ -22,6 +23,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: ghazi-evidence-strength-publisher
@@ -65,6 +67,15 @@ jobs:
           python app/scripts/build_data_hub.py
           --data-dir state/runtime/public/data
           --output state/runtime/public/data/data_hub.json
+      - name: Independent platform scorecards (no combined score)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python app/scripts/build_platform_scorecards.py
+          --data-dir state/runtime/public/data
+          --state-dir state/state
+          --runtime-dir state/runtime
+          --output state/runtime/public/data/platform_scorecards.json
       - name: Publish only source-backed readiness report
         shell: bash
         run: |
@@ -72,7 +83,7 @@ jobs:
           cd state
           git config user.name "GHAZI Evidence Audit"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json
+          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json runtime/public/data/platform_scorecards.json
           if git diff --cached --quiet; then
             echo "Evidence report unchanged"
             exit 0
