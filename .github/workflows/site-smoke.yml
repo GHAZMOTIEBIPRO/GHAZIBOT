@@ -1,0 +1,68 @@
+name: GHAZI Site Smoke (production browser check)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/site_smoke.cjs"
+      - ".github/workflows/site-smoke.yml"
+  # Four checks a day; the site is static, so this is enough to notice a
+  # broken deploy without spending runner minutes.
+  schedule:
+    - cron: "37 1,7,13,19 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-site-smoke-publisher
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install a pinned Playwright with Chromium
+        working-directory: app
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Load the public pages like a visitor (390 px)
+        working-directory: app
+        run: node scripts/site_smoke.cjs ../state/runtime/public/data/site_smoke.json
+      - name: Publish only the smoke report
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI Site Smoke"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/site_smoke.json
+          if git diff --cached --quiet; then
+            echo "Smoke report unchanged."
+            exit 0
+          fi
+          git commit -m "state: production site smoke check [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Failed to publish smoke report after retries." >&2
+          exit 1

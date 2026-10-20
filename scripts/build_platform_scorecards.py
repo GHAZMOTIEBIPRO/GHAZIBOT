@@ -152,9 +152,12 @@ def trust(hub: Any) -> dict[str, Any]:
 
 
 def validity(test_runs: list[dict[str, Any]] | None) -> dict[str, Any]:
-    if not test_runs:
-        return _metric("UNMEASURED", None, "status", {}, "no CI run on main read", "تعذر قراءة نتيجة اختبارات الحساب.")
-    latest = max(test_runs, key=lambda r: str(r.get("created_at")))
+    completed = [r for r in test_runs or [] if r.get("status") == "completed" and r.get("conclusion")]
+    if not completed:
+        return _metric("UNMEASURED", None, "status", {}, "no completed CI run on main read",
+                       "تعذر قراءة نتيجة اختبارات الحساب.")
+    # An in-progress run has no verdict yet; judge the latest finished one.
+    latest = max(completed, key=lambda r: str(r.get("created_at")))
     conclusion = latest.get("conclusion")
     return _metric("PASSING" if conclusion == "success" else "FAILING", None, "status",
                    {"run_id": latest.get("id"), "conclusion": conclusion, "at": latest.get("created_at")},
