@@ -11,7 +11,7 @@ The output is research/validation data only until walk-forward promotion.
 
 from __future__ import annotations
 
-import json, math, urllib.request
+import json, math, re, urllib.request
 from datetime import datetime, timezone, date
 from typing import Any
 
@@ -91,6 +91,33 @@ def years_to_expiry(expiry, session_date):
     return max(days, 1) / BUSINESS_DAYS
 
 
+OCC_SYMBOL = re.compile(r"^([A-Z]{1,6})(\d{2})(\d{2})(\d{2})([CP])(\d{8})$")
+
+
+def parse_occ(symbol):
+    """ROOT + YYMMDD + C/P + strike*1000 (8 digits), e.g. SPXW261020C07700000.
+
+    Cboe's delayed chain carries the contract identity only in this symbol.
+    """
+    m = OCC_SYMBOL.match(str(symbol or "").strip().upper())
+    if not m:
+        return None
+    root, yy, mm, dd, cp, strike = m.groups()
+    try:
+        expiry = date(2000 + int(yy), int(mm), int(dd)).isoformat()
+    except ValueError:
+        return None
+    value = int(strike) / 1000
+    if value <= 0:
+        return None
+    return {"root": root, "expiry": expiry, "type": "call" if cp == "C" else "put", "strike": value}
+
+
+def _explicit_type(x):
+    typ = str(x.get("option_type") or x.get("type") or "").lower()
+    return "call" if typ.startswith("c") else "put" if typ.startswith("p") else None
+
+
 def contract_rows(payload):
     data = payload.get("data") if isinstance(payload, dict) else None
     if not isinstance(data, dict):
@@ -99,29 +126,57 @@ def contract_rows(payload):
     opts = data.get("options") or []
     rows = []
     for x in opts:
+        if not isinstance(x, dict):
+            continue
         sym = str(x.get("option") or "").upper()
         # SPXW is critical for 0DTE. Do not silently discard it.
         if not sym.startswith("SPX"):
             continue
+        occ = parse_occ(sym)
         strike = f(x.get("strike"))
+        exp = x.get("expiration_date") or x.get("expiration")
+        typ = _explicit_type(x)
+        if occ:
+            # OCC identity is authoritative; explicit fields must agree with it.
+            if (strike is not None and abs(strike - occ["strike"]) > 1e-6) or \
+                    (exp and str(exp)[:10] != occ["expiry"]) or (typ and typ != occ["type"]):
+                continue
+            strike, exp, typ = occ["strike"], occ["expiry"], occ["type"]
         iv = f(x.get("iv") or x.get("implied_volatility"))
         oi = f(x.get("open_interest"))
-        exp = x.get("expiration_date") or x.get("expiration")
-        if strike and iv and oi is not None and exp:
-            typ = str(x.get("option_type") or x.get("type") or "").lower()
-            if typ.startswith("c"):
-                typ = "call"
-            elif typ.startswith("p"):
-                typ = "put"
-            else:
-                # CBOE option symbol: last character C/P.
-                typ = "call" if sym.endswith("C") else ("put" if sym.endswith("P") else "")
-            if typ:
-                rows.append({"symbol": sym, "strike": strike, "iv": iv / 100 if iv > 1 else iv,
-                             "oi": oi, "expiry": str(exp)[:10], "type": typ})
+        if strike and iv and iv > 0 and oi is not None and oi >= 0 and exp and typ:
+            # Cboe reports IV as a decimal (0.15). Values above 5 can only be
+            # percent points; decimal IV above 100% is real for far wings.
+            rows.append({"symbol": sym, "strike": strike, "iv": iv / 100 if iv > 5 else iv,
+                         "oi": oi, "expiry": str(exp)[:10], "type": typ})
     if spot is None or not rows:
         raise ValueError("No usable SPX option chain")
     return spot, rows
+
+
+def provenance(payload):
+    """Per-input data class for the public payload. Never claims live data."""
+    data = payload.get("data") if isinstance(payload, dict) else {}
+    data = data if isinstance(data, dict) else {}
+    return {
+        "source": "Cboe delayed public JSON",
+        "provider_snapshot_time": payload.get("timestamp") if isinstance(payload, dict) else None,
+        "underlying_last_trade_time": data.get("last_trade_time"),
+        "spot": "DELAYED",
+        "open_interest": "HISTORICAL",
+        "implied_volatility": "DELAYED",
+        "gamma_and_greeks": "MODEL_ESTIMATED",
+        "levels": "MODEL_ESTIMATED",
+        "dealer_positioning": "UNAVAILABLE",
+        "order_flow": "UNAVAILABLE",
+        "assumptions": [
+            "Black-Scholes gamma from delayed IV, rate 0, business-day time floor of one day.",
+            ("Sign convention: calls +, puts - (assumes dealers long calls / short puts); "
+             "real counterparties are not visible in aggregate open interest."),
+            "Open interest is the exchange's prior-session figure, not intraday flow.",
+        ],
+        "execution_grade": False,
+    }
 
 
 def interpolate_flip(profile):
@@ -179,7 +234,6 @@ def build(payload=None, session_date=None):
     net_gex = sum(by_strike[k]["net"] for k in eligible)
 
     front = expiries[0]
-    zero = [k for k in eligible if str(front) == str(front)]
     front_map = {}
     for r in rows:
         if r["expiry"] != front: continue
@@ -223,6 +277,10 @@ def build(payload=None, session_date=None):
         "gamma_regime": regime, "front_expiry": front,
         "expirations_used": len(expiries), "zdte_call_wall": zdte_call,
         "zdte_put_wall": zdte_put, "zdte_share_abs_gex": zdte_share,
+        "greek_exposure_near_spot": greek_totals,
+        "gci": concentration,
+        "put_call_oi_ratio": pc_oi,
+        "provenance": provenance(payload),
         "top_abs_gamma": sorted(
             [{"strike": k, "net_gex": by_strike[k]["net"]} for k in eligible],
             key=lambda x: abs(x["net_gex"]), reverse=True)[:10],

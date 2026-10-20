@@ -1118,9 +1118,12 @@
       ["Put Wall",pw,""]]){
       grid?.append(putMetric(label,value===null?"غير متاح":fmt(value,1)+suffix));
     }
-    const actual=data.integrated_engines?.ghazi_gex_multi?.available===true;
+    const engine=data.integrated_engines?.ghazi_gex_multi;
+    const actual=engine?.available===true;
+    const modelled=actual&&engine.provenance?.levels==="MODEL_ESTIMATED";
     const note="مصادر GEX رقمية: "+gexSources+
       " · محرك السلسلة المتكاملة: "+(actual?"يملك مدخلاً بحثياً":"لا توجد سلسلة عقود صالحة")+
+      (modelled?" (Cboe مؤخر · OI من الجلسة السابقة · المستويات تقدير نموذجي · تمركز صانع السوق غير متاح)":"")+
       " · "+(symbol==="SPY"?"هذه مستويات SPX وليست قيم خيارات SPY. ":"")+
       (gexSources<2?"لا يوجد نصاب مستقل لتأكيد قيمة GEX. ":"")+
       "الأرقام لا تثبت تمركز صانع السوق أو اتجاه الغد. "+
