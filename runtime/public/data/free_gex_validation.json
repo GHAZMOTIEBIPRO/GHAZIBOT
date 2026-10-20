@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T10:51:56.920501+00:00",
+  "generated_at": "2026-10-20T11:30:20.631178+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
   "source_count_available": 2,
@@ -67,7 +67,7 @@
       "source": "Cboe delayed quotes (cdn.cboe.com)",
       "reason": "Cboe's delayed-quote terms prohibit automated extraction; automated reads stay off until a licence or written permission is recorded",
       "reason_ar": "شروط Cboe تمنع الاستخراج الآلي لجداول الأسعار المؤجلة؛ الجلب الآلي متوقف حتى الحصول على ترخيص أو إذن مكتوب",
-      "enable_with": "repository variable CBOE_DELAYED_AUTOMATION_APPROVED=true (only after permission)"
+      "enable_with": "repository variable CBOE_DELAYED_AUTOMATION_APPROVED=true (only after the provider's permission)"
     }
   ],
   "integrated_engines": {
@@ -78,7 +78,7 @@
       "source": "Cboe delayed quotes (cdn.cboe.com)",
       "reason": "Cboe's delayed-quote terms prohibit automated extraction; automated reads stay off until a licence or written permission is recorded",
       "reason_ar": "شروط Cboe تمنع الاستخراج الآلي لجداول الأسعار المؤجلة؛ الجلب الآلي متوقف حتى الحصول على ترخيص أو إذن مكتوب",
-      "enable_with": "repository variable CBOE_DELAYED_AUTOMATION_APPROVED=true (only after permission)"
+      "enable_with": "repository variable CBOE_DELAYED_AUTOMATION_APPROVED=true (only after the provider's permission)"
     },
     "upstream_methodology": [
       "itsfabtrading/Gex-Multi",
@@ -100,7 +100,7 @@
       "minimum_sessions_for_verdict": 20,
       "method": "last snapshot before each session vs that session's realized high/low; baseline is a band of equal width centred on the snapshot spot"
     },
-    "history_entries": 7
+    "history_entries": 8
   },
   "research_indicators_ar": [
     "GEX",
