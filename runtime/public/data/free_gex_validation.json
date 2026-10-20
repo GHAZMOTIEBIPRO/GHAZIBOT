@@ -1,65 +1,55 @@
 {
-  "generated_at": "2026-10-20T18:49:07.186306+00:00",
+  "generated_at": "2026-10-20T18:50:21.106725+00:00",
   "policy": "shadow_validation_never_signal_authority",
   "decision": "SHADOW_ONLY",
-  "source_count_available": 2,
-  "independent_numerical_gex_sources": 1,
+  "source_count_available": 0,
+  "independent_numerical_gex_sources": 0,
   "gamma_consensus_verified": false,
   "quote_timestamp_verified": false,
-  "agreement_score": 1.0,
+  "agreement_score": 0.0,
   "metrics": {
     "spot": {
-      "count": 2,
-      "median": 7704.48,
-      "relative_disagreement": 0.0036
+      "count": 0,
+      "median": null,
+      "relative_disagreement": null
     },
     "gex": {
-      "count": 1,
-      "median": -46282899738.64496,
+      "count": 0,
+      "median": null,
       "relative_disagreement": null
     },
     "flip": {
-      "count": 1,
-      "median": 7707.358603987256,
+      "count": 0,
+      "median": null,
       "relative_disagreement": null
     },
     "call_wall": {
-      "count": 2,
-      "median": 7915.0,
-      "relative_disagreement": 0.0467
+      "count": 0,
+      "median": null,
+      "relative_disagreement": null
     },
     "put_wall": {
-      "count": 2,
-      "median": 7680.0,
-      "relative_disagreement": 0.0078
+      "count": 0,
+      "median": null,
+      "relative_disagreement": null
     }
   },
   "sources": [
     {
-      "available": true,
+      "available": false,
+      "status": "SOURCE_TERMS_BLOCKED",
       "source": "dhawalc/spx-gamma-levels",
-      "source_observation_date": "2026-10-20",
-      "quote_timestamp_verified": false,
-      "spot": 7690.73,
-      "gex": -46282899738.64496,
-      "flip": 7707.358603987256,
-      "call_wall": 8100.0,
-      "put_wall": 7650.0,
-      "regime": "negative"
+      "reason": "These GitHub feeds have no licence file and do not name a licensed upstream for the option chains they are computed from; their data rights are unknown, so automated reads stay off until the rights are verified",
+      "reason_ar": "مستودعات جاما المجتمعية على GitHub بلا ملف ترخيص ولا تذكر مصدرًا مرخصًا لسلاسل الخيارات التي تُحسب منها؛ حقوقها غير معروفة، فالقراءة الآلية متوقفة حتى التحقق منها",
+      "enable_with": "repository variable COMMUNITY_GEX_DATA_APPROVED=true (only after the provider's permission)"
     },
     {
-      "available": true,
+      "available": false,
+      "status": "SOURCE_TERMS_BLOCKED",
       "source": "Alexduanran/spx-0dte-archive",
-      "source_observation_date": "2026-10-20",
-      "quote_timestamp_verified": false,
-      "spot": 7718.23,
-      "gex": null,
-      "flip": null,
-      "call_wall": 7730.0,
-      "put_wall": 7710.0,
-      "contracts": null,
-      "timestamp": "2026-10-20T14:45:00",
-      "spxw_0dte": true
+      "reason": "These GitHub feeds have no licence file and do not name a licensed upstream for the option chains they are computed from; their data rights are unknown, so automated reads stay off until the rights are verified",
+      "reason_ar": "مستودعات جاما المجتمعية على GitHub بلا ملف ترخيص ولا تذكر مصدرًا مرخصًا لسلاسل الخيارات التي تُحسب منها؛ حقوقها غير معروفة، فالقراءة الآلية متوقفة حتى التحقق منها",
+      "enable_with": "repository variable COMMUNITY_GEX_DATA_APPROVED=true (only after the provider's permission)"
     },
     {
       "available": false,
@@ -100,7 +90,7 @@
       "minimum_sessions_for_verdict": 20,
       "method": "last snapshot before each session vs that session's realized high/low; baseline is a band of equal width centred on the snapshot spot"
     },
-    "history_entries": 27
+    "history_entries": 28
   },
   "research_indicators_ar": [
     "GEX",
@@ -142,7 +132,9 @@
     "مصادر البحث لا تملك سلطة منفردة على الإشارة.",
     "CBOE العام مؤخر؛ بعض المستودعات البحثية ليست تغذية لحظية.",
     "لا يتم اعتماد مصدر جديد إلا بعد عينة تاريخية كافية واختبار walk-forward.",
-    "لا يوجد مصدران مستقلان على الأقل لقيمة GEX الرقمية؛ لا نعرض هذا كتوافق جاما موثق."
+    "عدد المصادر القابلة للمقارنة أقل من 2.",
+    "لا يوجد مصدران مستقلان على الأقل لقيمة GEX الرقمية؛ لا نعرض هذا كتوافق جاما موثق.",
+    "التوافق الحالي أقل من 60%."
   ],
   "promotion_status_ar": "محرك GEX الجديد مدمج فعلياً ويحسب المستويات وGreeks المتقدمة، لكنه لا يملك سلطة على CALL/PUT قبل اكتمال الاختبار التاريخي."
 }
