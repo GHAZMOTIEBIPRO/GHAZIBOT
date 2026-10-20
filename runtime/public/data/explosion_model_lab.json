@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.explosion_model_lab.v1",
- "generated_at": "2026-10-20T10:55:37.328952+00:00",
+ "generated_at": "2026-10-20T11:01:18.939962+00:00",
  "universe": {
   "requested": 308,
   "with_bars": 294,
@@ -19,6 +19,7 @@
  },
  "models": {
   "BASELINE_ALL_DAYS": {
+   "side": "long",
    "all": {
     "signals": 67337,
     "symbols": 289,
@@ -48,10 +49,44 @@
     "mean_net_pct": -1.322,
     "median_net_pct": -5.2,
     "ambiguous_counted_as_loss": 1730
+   }
+  },
+  "BASELINE_SHORT_ALL_DAYS": {
+   "side": "short",
+   "all": {
+    "signals": 67337,
+    "symbols": 289,
+    "target_hit_rate": 0.3368,
+    "target_hit_rate_ci_low": 0.3333,
+    "breakeven_hit_rate": 0.3846,
+    "mean_net_pct": -0.244,
+    "median_net_pct": -5.2,
+    "ambiguous_counted_as_loss": 2866
    },
-   "beats_baseline_both_halves_and_positive_late": false
+   "early": {
+    "signals": 31799,
+    "symbols": 268,
+    "target_hit_rate": 0.3328,
+    "target_hit_rate_ci_low": 0.3277,
+    "breakeven_hit_rate": 0.3846,
+    "mean_net_pct": -0.196,
+    "median_net_pct": -5.2,
+    "ambiguous_counted_as_loss": 1184
+   },
+   "late": {
+    "signals": 35538,
+    "symbols": 280,
+    "target_hit_rate": 0.3404,
+    "target_hit_rate_ci_low": 0.3355,
+    "breakeven_hit_rate": 0.3846,
+    "mean_net_pct": -0.287,
+    "median_net_pct": -5.2,
+    "ambiguous_counted_as_loss": 1682
+   }
   },
   "BREAKOUT_VOLUME": {
+   "side": "long",
+   "baseline": "BASELINE_ALL_DAYS",
    "all": {
     "signals": 840,
     "symbols": 221,
@@ -85,6 +120,8 @@
    "beats_baseline_both_halves_and_positive_late": false
   },
   "RELATIVE_STRENGTH": {
+   "side": "long",
+   "baseline": "BASELINE_ALL_DAYS",
    "all": {
     "signals": 10156,
     "symbols": 274,
@@ -118,6 +155,8 @@
    "beats_baseline_both_halves_and_positive_late": false
   },
   "LIQUIDITY_EXPANSION": {
+   "side": "long",
+   "baseline": "BASELINE_ALL_DAYS",
    "all": {
     "signals": 662,
     "symbols": 213,
@@ -151,6 +190,8 @@
    "beats_baseline_both_halves_and_positive_late": false
   },
   "GAP_CONTINUATION": {
+   "side": "long",
+   "baseline": "BASELINE_ALL_DAYS",
    "all": {
     "signals": 1001,
     "symbols": 239,
@@ -184,6 +225,8 @@
    "beats_baseline_both_halves_and_positive_late": false
   },
   "FAILED_BREAKOUT_REVERSAL": {
+   "side": "short",
+   "baseline": "BASELINE_SHORT_ALL_DAYS",
    "all": {
     "signals": 1220,
     "symbols": 232,
@@ -230,10 +273,33 @@
   "status": "OK",
   "days": 434,
   "reps": 1000,
-  "pvalue_consistent": 0.006,
-  "pvalue_lower": 0.006,
-  "pvalue_upper": 0.006,
-  "null": "no model beats the all-days baseline",
+  "pvalue_consistent": 0.498,
+  "pvalue_lower": 0.498,
+  "pvalue_upper": 0.999,
+  "baseline": "BASELINE_ALL_DAYS",
+  "models": [
+   "BREAKOUT_VOLUME",
+   "RELATIVE_STRENGTH",
+   "LIQUIDITY_EXPANSION",
+   "GAP_CONTINUATION"
+  ],
+  "null": "no model beats the same-side all-days baseline",
+  "library": "arch (NCSA) Hansen SPA",
+  "no_signal_days": "model takes the baseline value (zero excess)",
+  "relative_only": "beating a losing baseline is not profitability; see mean_net_pct"
+ },
+ "spa_short": {
+  "status": "OK",
+  "days": 434,
+  "reps": 1000,
+  "pvalue_consistent": 0.766,
+  "pvalue_lower": 0.521,
+  "pvalue_upper": 0.766,
+  "baseline": "BASELINE_SHORT_ALL_DAYS",
+  "models": [
+   "FAILED_BREAKOUT_REVERSAL"
+  ],
+  "null": "no model beats the same-side all-days baseline",
   "library": "arch (NCSA) Hansen SPA",
   "no_signal_days": "model takes the baseline value (zero excess)",
   "relative_only": "beating a losing baseline is not profitability; see mean_net_pct"
