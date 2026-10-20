@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from options_radar.gammagrid_research import load_gammagrid_research_snapshot
+from options_radar.source_permissions import require
 
 
 SQUAWKFLOW_URL = os.getenv(
@@ -46,6 +47,7 @@ def _distance_pct(spot: float, level: float | None) -> float | None:
 
 
 def fetch_daily_gamma(timeout: int = 12) -> dict[str, Any]:
+    require("community_gex")
     raw = json.loads(_get(SQUAWKFLOW_URL, timeout).decode("utf-8"))
     if not isinstance(raw, dict) or str(raw.get("symbol", "")).upper() != "SPX":
         raise ValueError("Unexpected SPX gamma-levels payload")
@@ -79,6 +81,7 @@ def _archive_rows(timeout: int = 12) -> list[dict[str, Any]]:
 
 
 def fetch_latest_0dte_snapshot(timeout: int = 12) -> dict[str, Any]:
+    require("community_gex")
     rows = _archive_rows(timeout)
     if not rows:
         raise ValueError("Empty SPX 0DTE archive")

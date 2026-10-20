@@ -131,6 +131,16 @@ def render_message(kind: str, event: dict[str, str], previous_failed: int | None
     if kind == "manual":
         title = "اختبار مراقب فشل التشغيل"
         details = "تم تشغيل مراقب Telegram يدويًا للتحقق من اتصال التنبيهات."
+    elif kind == "paused":
+        title = "إيقاف مسار بسبب شروط مصدر البيانات"
+        details = (
+            f"المسار: {name}\n"
+            f"Run ID: {run_id}\n"
+            f"التشغيل الفاشل السابق: {previous_failed or 'غير معروف'}\n"
+            "توقف الفشل لأن المسار لم يعد يعمل: لا يوجد مصدر بيانات مسموح له "
+            "(الجلب الآلي من Yahoo وNasdaq.com غير مسموح ولا يوجد مفتاح API لحساب مرخص).\n"
+            "هذا ليس تعافيًا؛ لن تصدر إشارات من هذا المسار حتى يتوفر مصدر مسموح."
+        )
     elif kind == "recovery":
         title = "تعافي تشغيل Omega"
         details = (
@@ -151,7 +161,7 @@ def render_message(kind: str, event: dict[str, str], previous_failed: int | None
             f"Run ID: {run_id}\n"
             "هذا التحذير يخص التشغيل المذكور؛ قد ينجح تشغيل أحدث بعده."
         )
-    icon = "✅" if kind == "recovery" else "🚨" if kind == "failure" else "ℹ️"
+    icon = "✅" if kind == "recovery" else "🚨" if kind == "failure" else "⏸️" if kind == "paused" else "ℹ️"
     return (
         f"<b>{icon} {html.escape(title)}</b>\n\n"
         f"{html.escape(details)}\n\n"
@@ -204,6 +214,38 @@ def fetch_run(*, repository: str, run_id: int, token: str) -> dict[str, Any] | N
         return None
 
 
+def paused_by_source_gate(jobs: list[dict[str, Any]] | None) -> bool:
+    """True when the run succeeded only because its source gate skipped the scan."""
+    if not jobs:
+        return False
+    gate = [j for j in jobs if str(j.get("name")) == "source-gate"]
+    if not gate or gate[0].get("conclusion") != "success":
+        return False
+    others = [j for j in jobs if str(j.get("name")) not in {"source-gate", "verify-workflow-registration"}]
+    return bool(others) and all(j.get("conclusion") == "skipped" for j in others)
+
+
+def fetch_run_jobs(*, repository: str, run_id: int, token: str) -> list[dict[str, Any]] | None:
+    if not repository or run_id <= 0 or not token:
+        return None
+    try:
+        response = requests.get(
+            f"https://api.github.com/repos/{repository}/actions/runs/{run_id}/jobs",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        rows = payload.get("jobs") if isinstance(payload, dict) else None
+        return rows if isinstance(rows, list) else None
+    except (requests.RequestException, ValueError, TypeError):
+        return None
+
+
 def _resolve_event() -> tuple[dict[str, str], int, bool]:
     """(event, workflow_id, relayed). A relayed run is classified like a real
     workflow_run event, never as a manual connectivity test."""
@@ -236,7 +278,7 @@ def main() -> int:
     event, workflow_id, relayed = _resolve_event()
     if args.send:
         kind = os.getenv("WATCHDOG_KIND", "")
-        if kind not in {"manual", "failure", "recovery"}:
+        if kind not in {"manual", "failure", "recovery", "paused"}:
             raise SystemExit("No verified notice to send")
         previous = _run_number(os.getenv("WATCHDOG_PREVIOUS_FAILED")) or None
         from scripts.telegram_transport import send_html_message
@@ -260,6 +302,12 @@ def main() -> int:
         history=history,
         manual=manual,
     )
+    if kind == "recovery" and paused_by_source_gate(fetch_run_jobs(
+            repository=str(os.getenv("GITHUB_REPOSITORY") or ""),
+            run_id=run_id,
+            token=str(os.getenv("GH_TOKEN") or ""))):
+        # Green because the scan was skipped for source terms, not repaired.
+        kind = "paused"
     _output({
         "notify": "true" if kind != "ignore" else "false",
         "kind": kind,

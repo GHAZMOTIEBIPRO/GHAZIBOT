@@ -118,7 +118,9 @@ def test_stock_registration_smoke_is_isolated_from_real_alert_job():
     verify = jobs["verify-workflow-registration"]
     deep = jobs["deep-stock-validation"]
     assert verify["if"] == "github.event_name == 'push'"
-    assert deep["if"] == "github.event_name == 'workflow_dispatch'"
+    assert deep["if"] == ("github.event_name == 'workflow_dispatch' && "
+                          "needs.source-gate.outputs.usable == 'true'")
+    assert "TELEGRAM" not in str(jobs["source-gate"])
     assert "black-box-stock-registration" in parsed["concurrency"]["group"]
     assert "black-box-omega-stock-radar" in parsed["concurrency"]["group"]
     assert verify["permissions"] == {"contents": "read"}

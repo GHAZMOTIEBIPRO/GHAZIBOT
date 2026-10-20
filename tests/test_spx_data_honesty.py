@@ -61,8 +61,8 @@ assert.equal(legacy.confidence, null);
             self.assertIsNone(result["call_above"])
 
     def test_zero_volume_never_substitutes_spot_for_vwap(self):
-        workflow = (ROOT / ".github/workflows/spx-dashboard.yml").read_text()
-        code = workflow.split("python - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+        # The snapshot code moved from the workflow into its own script.
+        code = (ROOT / "scripts/build_spx_dashboard.py").read_text()
         tree = ast.parse(textwrap.dedent(code))
         assignment = next(
             node for node in ast.walk(tree)

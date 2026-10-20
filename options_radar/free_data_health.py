@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import urllib.error
 import urllib.request
@@ -14,6 +15,12 @@ else:
     from source_payload_validation import validate_source_payload
 
 USER_AGENT = "GHAZI Market Radar 207104176+GHAZMOTIEBIPRO@users.noreply.github.com"
+
+# Loaded by path: this module also runs as a plain script.
+_perm_spec = importlib.util.spec_from_file_location(
+    "ghazi_source_permissions_health", Path(__file__).with_name("source_permissions.py"))
+_permissions = importlib.util.module_from_spec(_perm_spec)
+_perm_spec.loader.exec_module(_permissions)
 
 SOURCES: tuple[dict[str, Any], ...] = (
     {
@@ -63,6 +70,7 @@ SOURCES: tuple[dict[str, Any], ...] = (
         "authority": "open_source_shadow",
         "role": "gamma_cross_validation",
         "method": "GET",
+        "gate": "community_gex",
     },
     {
         "name": "Alexduanran/spx-0dte-archive",
@@ -71,6 +79,7 @@ SOURCES: tuple[dict[str, Any], ...] = (
         "authority": "open_source_shadow",
         "role": "gamma_history_validation",
         "method": "GET",
+        "gate": "community_gex",
     },
 )
 
@@ -143,6 +152,11 @@ def check(source: dict[str, Any]) -> dict[str, Any]:
         "signal_authority": False,
         "independent_family_key": source["family"],
     }
+    gate = source.get("gate")
+    if gate and not _permissions.allowed(gate):
+        block = _permissions.block_record(gate)
+        return {**base, "ok": False, "status": block["status"], "license_blocked": True,
+                "error": block["reason"]}
     try:
         return {**base, **_request(source)}
     except urllib.error.HTTPError as exc:

@@ -178,10 +178,9 @@
     }
     const t=validDate(data?.generated_at);
     const blocked=blockedReason(data);
-    if(blocked&&t!==null){state.blocked[type]=blocked;throw Error("source terms blocked");}
+    if(blocked&&t!==null)throw Object.assign(Error("source terms blocked"),{blocked});
     if(t===null||t>Date.now()+5*60000||!schemaOK[type](data))
       throw Error("schema/timestamp invalid");
-    delete state.blocked[type];
     return data;
   }
   // A producer whose only source does not permit automated access publishes
@@ -194,6 +193,11 @@
   }
   async function loadFeed(type){
     const outcome=await Promise.allSettled(FEEDS[type].map(url=>request(url,type)));
+    // A blocked report from the durable feed outranks an older local copy:
+    // never fall back to data the producer has withdrawn.
+    const block=outcome.find(x=>x.status==="rejected"&&x.reason?.blocked);
+    if(block){state.blocked[type]=block.reason.blocked;return null;}
+    delete state.blocked[type];
     const ready=outcome.filter(x=>x.status==="fulfilled").map(x=>x.value);
     ready.sort((a,b)=>Date.parse(b.generated_at)-Date.parse(a.generated_at));
     return ready[0]||null;

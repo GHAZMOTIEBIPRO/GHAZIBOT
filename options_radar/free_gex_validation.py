@@ -12,7 +12,7 @@ from typing import Any
 
 from .gamma_interpretation import history_entry, interpret, validate_levels
 from .ghazi_gex_multi import build as build_ghazi_gex
-from .source_permissions import CBOE_BLOCK, cboe_delayed_automation_allowed
+from .source_permissions import CBOE_BLOCK, allowed, block_record, cboe_delayed_automation_allowed
 
 CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json"
 SOURCES = {
@@ -169,10 +169,15 @@ def compare_metric(rows: list[dict[str, Any]], key: str) -> dict[str, Any]:
 
 
 def build() -> dict[str, Any]:
-    rows = [
-        safe_fetch("dhawalc/spx-gamma-levels", lambda: fetch_json_source("dhawalc/spx-gamma-levels", SOURCES["dhawalc/spx-gamma-levels"])),
-        safe_fetch("Alexduanran/spx-0dte-archive", lambda: fetch_archive(SOURCES["Alexduanran/spx-0dte-archive"])),
-    ]
+    if allowed("community_gex"):
+        rows = [
+            safe_fetch("dhawalc/spx-gamma-levels", lambda: fetch_json_source("dhawalc/spx-gamma-levels", SOURCES["dhawalc/spx-gamma-levels"])),
+            safe_fetch("Alexduanran/spx-0dte-archive", lambda: fetch_archive(SOURCES["Alexduanran/spx-0dte-archive"])),
+        ]
+    else:
+        # Unknown data rights: no request; the rows say why.
+        rows = [{"available": False, **block_record("community_gex"), "source": name}
+                for name in ("dhawalc/spx-gamma-levels", "Alexduanran/spx-0dte-archive")]
     if cboe_delayed_automation_allowed():
         rows.append(safe_fetch("CBOE delayed public", lambda: fetch_cboe(CBOE_URL)))
         ghazi_engine = safe_fetch("ghazi_gex_multi_reimplementation", lambda: build_ghazi_gex())
