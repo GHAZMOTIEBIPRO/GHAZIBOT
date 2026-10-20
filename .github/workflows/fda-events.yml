@@ -7,6 +7,8 @@ on:
     paths:
       - "options_radar/fda_events.py"
       - "scripts/build_fda_events.py"
+      - "scripts/send_fda_alerts.py"
+      - "data/fda_sponsor_aliases.json"
       - ".github/workflows/fda-events.yml"
   # openFDA refreshes these endpoints about weekly; two weekday runs keep
   # the window current without polling.
@@ -16,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: ghazi-radar-fda-events
@@ -24,7 +27,10 @@ concurrency:
 jobs:
   update-fda-events:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,10 +45,48 @@ jobs:
         with:
           python-version: "3.12"
       - name: Fetch FDA approvals and recalls (standard library only)
+        id: build
         run: >-
           python app/scripts/build_fda_events.py
           --output state/runtime/public/data/fda_events.json
-      - name: Publish only the FDA events document
+      - name: Install Telegram transport dependency
+        run: pip install "requests>=2.32,<3.0"
+      - name: Restore Telegram destination when chat secret is absent
+        if: env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml; do
+            for run_id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download -R "$GITHUB_REPOSITORY" "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                if [[ -s telegram_runtime/connection.enc ]]; then
+                  break 2
+                fi
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+          exit 0
+      - name: Resolve Telegram destination
+        run: python app/scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+      # This workflow is the only writer of state/fda/fda_alert_state.json.
+      - name: Alert important FDA events (deduplicated, no backlog)
+        id: alerts
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          python app/scripts/send_fda_alerts.py
+          --events state/runtime/public/data/fda_events.json
+          --state state/state/fda/fda_alert_state.json
+      - name: Publish the FDA events document and alert state
+        if: always() && steps.build.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -50,6 +94,9 @@ jobs:
           git config user.name "GHAZI RADAR FDA Events"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
           git add runtime/public/data/fda_events.json
+          if [[ -f state/fda/fda_alert_state.json ]]; then
+            git add state/fda/fda_alert_state.json
+          fi
           if git diff --cached --quiet; then
             echo "FDA events unchanged."
             exit 0
