@@ -96,12 +96,25 @@
       if(boom.stage==="EXTENDED")contra.push("الحركة ممتدة في رادار الانفجار؛ خطر مطاردة");
       else context.push("ضمن رادار الانفجار: "+(boom.stage_ar||boom.stage)+" (أداء المراحل تاريخيًا دون التعادل)");
     }
+    const opt=feeds.options?.symbols?.[symbol];
+    if(opt?.status==="OK"&&opt.expected_move&&num(opt.expected_move.move_pct)){
+      const em=opt.expected_move;
+      context.push("حركة متوقعة من عقود Cboe المؤجلة: ±"+fx(em.move_pct)+"% حتى "+em.expiry+
+        " ("+fx(em.range_low)+"–"+fx(em.range_high)+")، ليست احتمالًا");
+      const age=ageHours(feeds.options.generated_at,now);
+      freshness.push(["تحليلات العقود",age,age!==null&&age<=STALE_HOURS]);
+      if(num(dir?.t1)&&num(em.range_high)&&num(em.range_low)&&
+        (side==="CALL"&&dir.t1>em.range_high||side==="PUT"&&dir.t1<em.range_low))
+        contra.push("T1 أبعد من الحركة المتوقعة في سوق العقود حتى "+em.expiry);
+    }
     if(symbol==="SPX"&&feeds.gamma?.integrated_engines?.interpretation){
       const g=feeds.gamma.integrated_engines.interpretation;
       context.push("جاما (نموذج): "+(g.hedging_direction_model==="DAMPENING"?"تحوط يهدئ الحركة":
         g.hedging_direction_model==="AMPLIFYING"?"تحوط قد يضخم الحركة":"غير محدد"));
     }
-    const stale=freshness.some(([,,ok])=>!ok);
+    // Only the direction feed gates the verdict; stale secondary feeds are
+    // shown as stale but must not block or create a CALL/PUT.
+    const stale=freshness.some(([label,,ok])=>label==="الاتجاه"&&!ok);
     const verdict=!dir?"NO_ANALYSIS":stale?"WAIT_STALE":
       dir.status==="WAIT"?"WAIT":dir.status==="NO_TRADE"?"NO_TRADE":side;
     const VERDICT_AR={CALL:"CALL بحثي",PUT:"PUT بحثي",WAIT:"انتظار",NO_TRADE:"لا تداول",

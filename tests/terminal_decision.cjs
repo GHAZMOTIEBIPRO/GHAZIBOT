@@ -46,6 +46,17 @@ const old=build("COST",{...feeds,classical:{...classical,source_generated_at:"20
 assert.equal(old.verdict,"WAIT_STALE");
 assert.equal(old.freshness.find(f=>f.label==="الاتجاه").fresh,false);
 
+// A stale secondary feed is shown as stale but does not block the verdict.
+const staleNews=build("COST",{...feeds,news:{...news,generated_at:"2026-10-17T10:00:00Z"}},now);
+assert.equal(staleNews.verdict,"CALL");
+assert.equal(staleNews.freshness.find(f=>f.label==="الأخبار").fresh,false);
+
+// Option-implied expected move is context, and a T1 beyond it is contrary evidence.
+const withOptions=build("COST",{...feeds,options:{generated_at:fresh,symbols:{COST:{status:"OK",
+  expected_move:{move_pct:0.9,expiry:"2026-10-23",range_low:987,range_high:1005}}}}},now);
+assert.ok(withOptions.context.some(x=>x.includes("±0.9%")));
+assert.ok(withOptions.contra.some(x=>x.includes("T1 أبعد من الحركة المتوقعة")));
+
 // Missing secondary feeds do not break the card.
 const bare=build("COST",{classical},now);
 assert.equal(bare.verdict,"CALL");
