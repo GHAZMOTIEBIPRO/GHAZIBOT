@@ -16,6 +16,45 @@ just because it is popular.
 | polakowo/vectorbt | Apache-2.0 + Commons Clause | Not added | Commons Clause restricts selling; the walk-forward and stage evaluators already cover the needed backtests. |
 | OpenBB-finance/OpenBB | Apache-2.0 | Not added | Large dependency; its market data still comes from providers with their own keys and terms, so it does not solve licensing. |
 
+## Wide GitHub survey (2026-10-20)
+
+97 items evaluated (90 repositories, 7 data sources) across market data,
+technical analysis, options, news/filings, quant research and screeners.
+Licenses were read from each LICENSE file; last activity from a shallow
+clone of the default branch. 53 repositories passed screening (32 pass,
+21 conditional); 37 failed.
+
+Integrated so far, each because it fixed or measured something real:
+
+| Project | License | Use | Result |
+|---|---|---|---|
+| CarloLepelaars/blackscholes | MIT | Test-only oracle for the engine's Greeks (`tests/test_greeks_reference.py`) | Found the zomma formula off by 1/(sigma*T) (x3,333 short-dated); fixed in #315. |
+| Cboe per-contract gamma (data, not a library) | n/a | `greek_check` A/B of the engine's clock | Calendar-to-settlement clock: median drift 2.4% vs 6.8%, p90 26% vs 161% (#311). |
+
+Ranked next candidates (permissive, maintained, adds a measurable capability):
+
+1. skfolio (BSD-3) - purged/embargoed combinatorial CV for the walk-forward harness.
+2. arch (NCSA) - SPA / StepM / MCS tests so stage-rule variants are compared without data snooping.
+3. alphalens-reloaded (Apache-2.0) - descriptive IC and decay of radar scores (association, not probability).
+4. QuantLib (BSD-3) - American-exercise Greeks for single-name contracts (shadow check of European values).
+5. talipp (MIT) - incremental indicators for the stream overlay with batch-parity tests.
+6. ruptures (BSD-2) + statsmodels (BSD-3) - volatility/RVOL regime breaks and HAC t-statistics.
+7. edgartools / secfsdstools - filing-dated shares outstanding and public float (blocked until SEC_USER_AGENT).
+8. FinanceDatabase (MIT) - sector/industry mapping for sector-relative strength (internal use only).
+
+Rejected for core: GPL/AGPL/LGPL (optionlab is now GPL-3.0, FinancePy,
+backtrader, backtesting.py, gammagrid, edgar-crawler, pypbo, finta,
+tulipy, nautilus_trader, MibianLib); no license (pandas-ta original repo
+is gone, chart_patterns, gex-tracker); non-commercial (PatternPy,
+mlfinlab); scrapers whose sources forbid automation (TradingView-Screener,
+tvdatafeed, finviz, finvizfinance).
+
+Existing-stack findings: `py_vollib_vectorized` in requirements-research.txt
+has had no commit or release since 2021-02; `py_lets_be_rational` ships no
+LICENSE file (MIT only in setup.py); FRED's terms reportedly restrict
+training ML/AI systems on its content, to be checked before any learning
+module uses FRED series.
+
 ## Market data used automatically
 
 | Source | Current use | Status |
