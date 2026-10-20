@@ -1,0 +1,67 @@
+name: GHAZI RADAR Public Macro (CFTC + Treasury)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "options_radar/public_macro.py"
+      - "scripts/build_public_macro.py"
+      - ".github/workflows/public-macro.yml"
+  # Treasury posts the daily curve after the 15:30 ET quote window; CFTC
+  # posts Traders in Financial Futures on Friday afternoon ET. Two weekday
+  # runs cover both without polling.
+  schedule:
+    - cron: "43 12 * * 1-5"
+    - cron: "43 22 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-radar-public-macro
+  cancel-in-progress: false
+
+jobs:
+  update-public-macro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch CFTC positioning and the Treasury curve (standard library only)
+        run: >-
+          python app/scripts/build_public_macro.py
+          --output state/runtime/public/data/public_macro.json
+      - name: Publish only the public macro document to durable state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Public Macro"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/public_macro.json
+          if git diff --cached --quiet; then
+            echo "Public macro unchanged."
+            exit 0
+          fi
+          git commit -m "state: CFTC positioning and Treasury curve [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep "$attempt"
+          done
+          echo "Failed to publish public macro after retries." >&2
+          exit 1

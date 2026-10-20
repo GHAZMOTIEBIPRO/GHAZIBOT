@@ -63,6 +63,7 @@ module uses FRED series.
 | api.nasdaq.com screener / movers | Full-market discovery | **Gated off (2026-10-20)** after reading the full nasdaq.com terms. Re-enable with `NASDAQ_WEB_AUTOMATION_APPROVED=true` only after Nasdaq's written permission. |
 | Cboe CDN delayed options JSON | Model GEX inputs, option analytics | **Gated off (2026-10-20).** robots.txt does not forbid it, but Cboe's delayed-quote pages prohibit auto-extraction of delayed quote table data, and Cboe's data policies treat single-security, price-like derived data as fee liable. Re-enable with `CBOE_DELAYED_AUTOMATION_APPROVED=true` only after a Cboe DataShop licence or written permission. |
 | nasdaqtrader SymDir and halt RSS, OCC | Symbol lists, halts, open interest | Still running. nasdaqtrader.com is a separate site; its terms were not readable by the probe (page rendered without terms text) and must be confirmed. |
+| CFTC Traders in Financial Futures + U.S. Treasury par yield curve | Index-futures positioning (ES, NQ, RTY, YM, VX) and rate backdrop (`public_macro.json`) | U.S. government publications, no automated-access restriction. Weekly / daily context only. |
 | TradingView widgets | Public price display (ticker tape, market overview) | Embedded with TradingView branding; data is not redistributed by this project. |
 
 ### Why Yahoo was not simply swapped for Alpaca or Tiingo
