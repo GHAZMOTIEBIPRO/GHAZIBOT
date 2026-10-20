@@ -90,6 +90,36 @@ def test_future_catalyst_time_is_not_freshness():
     assert entry_features(row, NOW)["catalyst"]["age_minutes"] is None
 
 
+def test_evaluator_runs_without_third_party_packages(tmp_path):
+    """The walk-forward workflow installs nothing; the CLI must not import
+    pandas/numpy directly or through the options_radar package."""
+    import ast
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    tree = ast.parse((root / "options_radar/explosion_stage_evaluation.py").read_text(encoding="utf-8"))
+    imported = {(n.module or "").split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)}
+    imported |= {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
+    assert imported <= {"__future__", "math", "collections", "datetime", "typing"}
+    audit = tmp_path / "audit.json"
+    audit.write_text(json.dumps({"records": {"a": rec("EXPLOSION", "success", "2026-09-01")}}))
+    out = tmp_path / "out.json"
+    blocker = tmp_path / "block"
+    blocker.mkdir()
+    for name in ("pandas", "numpy"):
+        (blocker / f"{name}.py").write_text("raise ImportError('blocked for test')\n")
+    env = {"PYTHONPATH": str(blocker), "PATH": "/usr/bin:/bin"}
+    result = subprocess.run(
+        [sys.executable, "-m", "scripts.run_explosion_stage_evaluation",
+         "--audit", str(audit), "--output", str(out)],
+        cwd=root, env=env, capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(out.read_text())["population"]["decisive"] == 1
+
+
 @pytest.mark.parametrize("stamp,phase", [
     (datetime(2026, 10, 20, 12, 0, tzinfo=timezone.utc), "PRE_MARKET"),
     (datetime(2026, 10, 20, 15, 0, tzinfo=timezone.utc), "REGULAR"),
