@@ -55,3 +55,18 @@ def test_naive_clock_rejected_and_main_never_fabricates(tmp_path: Path, monkeypa
     out = tmp_path / "out.json"
     monkeypatch.setattr(sys, "argv", ["x", "--input", str(tmp_path / "missing.json"), "--output", str(out)])
     assert mod.main() == 0 and not out.exists()
+
+
+def test_full_day_ratio_is_not_called_rvol_and_same_time_rvol_needs_measurement():
+    state = _state()
+    state["symbols"]["BBB"]["time_normalized_rvol"] = {
+        "available": True, "ratio": 0.42, "sample_sessions": 12}
+    state["symbols"]["AAA"]["time_normalized_rvol"] = {"available": False, "ratio": 3.0}
+    rows = {r["symbol"]: r for r in build_digest(state, now=NOW)["candidates"]}
+    assert "rvol" not in rows["AAA"]
+    assert rows["AAA"]["volume_vs_avg_day"] == 4.2
+    assert rows["AAA"]["rvol_same_time"] is None  # unavailable is not a number
+    assert rows["BBB"]["rvol_same_time"] == 0.42
+    assert rows["BBB"]["rvol_same_time_sessions"] == 12
+    assert rows["BBB"]["volume_flag"] == "PRESSURE_WITHOUT_SAME_TIME_VOLUME"
+    assert rows["AAA"]["volume_flag"] is None and rows["DDD"]["volume_flag"] is None

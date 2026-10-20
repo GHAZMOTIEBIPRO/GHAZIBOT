@@ -588,7 +588,10 @@
       item.append(title,
         pair("ترتيب بحثي",fmt(row.score,1)+" / 100"),
         pair("حركة اليوم",Number.isFinite(row.day_move_pct)?fmt(row.day_move_pct,2)+"%":"غير متاح"),
-        pair("حجم نسبي RVOL",Number.isFinite(row.rvol)?fmt(row.rvol,2)+"×":"غير متاح"),
+        pair("RVOL بنفس الوقت",Number.isFinite(row.rvol_same_time)?
+          fmt(row.rvol_same_time,2)+"× · "+(row.rvol_same_time_sessions||"—")+" جلسة مقارنة":"غير متاح"),
+        pair("حجم اليوم حتى الآن ÷ متوسط يوم كامل",
+          Number.isFinite(row.volume_vs_avg_day??row.rvol)?fmt(row.volume_vs_avg_day??row.rvol,2)+"×":"غير متاح"),
         pair("أسهم حرة",Number.isFinite(row.float_shares)?fmt(row.float_shares/1e6,2)+" مليون":"غير متاح"),
         pair("سيولة دولارية",Number.isFinite(row.dollar_volume)?fmt(row.dollar_volume/1e6,2)+" مليون $":"غير متاح"));
       if(row.catalyst_headline){const h=txt("p",String(row.catalyst_headline).slice(0,160));h.dir="auto";item.append(h);}
@@ -598,6 +601,8 @@
         item.append(txt("small","تحذير: مخاطر تخفيف ملكية مرتفعة","terminal-structural-notice"));
       if(row.stage==="EXTENDED")
         item.append(txt("small","الحركة ممتدة؛ الدخول المتأخر عالي المخاطر","terminal-structural-notice"));
+      if(row.volume_flag==="PRESSURE_WITHOUT_SAME_TIME_VOLUME")
+        item.append(txt("small","ضغط بلا حجم داعم: الحجم أقل من المعتاد لنفس الوقت؛ يحتاج تأكيدًا قبل اعتباره بناء ضغط","terminal-structural-notice"));
       target.append(item);
     }
     if(!rows.length)target.append(txt("p","لا توجد أسهم في مراحل الضغط أو الاشتعال في آخر فحص.","terminal-empty"));
