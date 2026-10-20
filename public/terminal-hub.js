@@ -23,6 +23,7 @@
     classical:[ROOT+"bot-state/runtime/public/data/classical_direction.json"],
     liquidity:[ROOT+"bot-state/runtime/public/data/liquidity_map.json"],
     stageEval:[ROOT+"bot-state/runtime/public/data/explosion_stage_evaluation.json"],
+    optionsAnalytics:[ROOT+"bot-state/runtime/public/data/options_analytics.json"],
   };
   const INDEX_ORDER=["SPX","NDX","DJI","RUT","VIX","SPY","QQQ","IWM","DIA"];
   const LARGE=["AAPL","NVDA","MSFT","AMZN","META","GOOGL","TSLA","AVGO","AMD","MU","ORCL","BAC","OXY","CVX","GILD"];
@@ -63,7 +64,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,pendingSymbol:null};
+    oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -133,6 +134,8 @@
       Array.isArray(d.companies),
     explosion:d=>d?.schema==="ghazi.explosion_hunter_public.v1"&&d.research_only===true&&
       d.score_is_probability===false&&d.execution_authority===false&&Array.isArray(d.candidates),
+    optionsAnalytics:d=>d?.schema==="ghazi.options_analytics.v1"&&d.research_only===true&&
+      d.execution_grade===false&&d.raw_quotes_published===false&&d.symbols&&typeof d.symbols==="object",
     stageEval:d=>d?.schema==="ghazi.explosion_stage_evaluation.v1"&&d.research_only===true&&
       d.decision_authority===false&&d.score_is_probability===false&&d.stages&&typeof d.stages==="object",
     liquidity:d=>d?.schema==="ghazi.liquidity_map.v1"&&d.order_book_available===false&&
@@ -374,7 +377,45 @@
       breakdown.append(line);
     }
   }
+  function optionsSummary(row){
+    if(!row||row.status!=="OK")return null;
+    const pct=x=>Number.isFinite(x)?fmt(100*x,1)+"%":"—";
+    const em=row.expected_move,iv=row.atm_iv_term?.[0],sk=row.skew_25d;
+    const oi=row.oi_concentration||{};
+    return {
+      headline:(em?"حركة متوقعة ±"+fmt(em.move_pct,2)+"% حتى "+em.expiry+" ("+fmt(em.range_low)+"–"+fmt(em.range_high)+")":
+        "الحركة المتوقعة غير متاحة")+" · IV عند السعر "+(iv?pct(iv.atm_iv):"—"),
+      details:[
+        "انحراف 25 دلتا (بوت − كول): "+(sk?pct(sk.put_minus_call):"غير متاح"),
+        "نسبة حجم البوت/الكول: "+(Number.isFinite(row.put_call_volume_ratio)?fmt(row.put_call_volume_ratio,2):"—"),
+        "أعلى OI كول: "+((oi.call||[]).map(x=>fmt(x.strike)).join("، ")||"—")+
+          " · أعلى OI بوت: "+((oi.put||[]).map(x=>fmt(x.strike)).join("، ")||"—")+" (جلسة سابقة)",
+        "هيكل IV: "+((row.atm_iv_term||[]).slice(0,4).map(t=>t.expiry.slice(5)+" "+pct(t.atm_iv)).join(" · ")||"—"),
+        "عقود سيولة جيدة (بحثي، غير تنفيذي): كول "+(row.liquid_contract_screen?.call?.length||0)+
+          " · بوت "+(row.liquid_contract_screen?.put?.length||0)
+      ].concat(["call","put"].flatMap(side=>(row.liquid_contract_screen?.[side]||[]).map(c=>
+        (side==="call"?"CALL ":"PUT ")+fmt(c.strike)+" · "+c.expiry+" · دلتا "+fmt(c.delta,2)+
+        " · سبريد "+fmt(c.spread_pct,1)+"% · OI "+fmt(c.oi,0))))
+    };
+  }
+  function renderOptionsAnalytics(){
+    const box=$("terminal-options-analytics");if(!box)return;
+    box.replaceChildren();
+    const report=state.optionsAnalytics;
+    if(!report){put("terminal-options-analytics-status","لا يوجد تقرير تحليلات عقود منشور بعد.");return;}
+    put("terminal-options-analytics-status","المصدر: "+report.source+" · التقرير: "+stamp(report.generated_at)+
+      " · مؤجل وليس تنفيذيًا · لا تُنشر أسعار العقود الخام"+
+      (Object.keys(report.errors||{}).length?" · تعذر: "+Object.keys(report.errors).join("، "):""));
+    for(const [symbol,row] of Object.entries(report.symbols||{})){
+      const view=optionsSummary(row);
+      const item=txt("details","","terminal-structural-item");
+      item.append(txt("summary",symbol+" · "+(view?view.headline:"بيانات غير متاحة")));
+      for(const line of view?.details||[])item.append(txt("small",line,"terminal-structural-notice"));
+      box.append(item);
+    }
+  }
   function renderOptions(){
+    renderOptionsAnalytics();
     const target=$("terminal-options-readiness"),grid=$("terminal-options-breakdown");
     if(!target||!grid)return;grid.replaceChildren();
     const data=state.runtime?.option_provider_readiness;
@@ -1192,7 +1233,7 @@
     let card;
     try{
       card=api.build(symbol,{index:state.quotes,classical:state.classical,liquidity:state.liquidity,
-        news:state.news,explosion:state.explosion,gamma:state.gamma});
+        news:state.news,explosion:state.explosion,gamma:state.gamma,options:state.optionsAnalytics});
     }catch{put("terminal-decision-card-verdict","تعذر بناء الخلاصة");return;}
     put("terminal-decision-card-verdict",card.verdictAr+" · "+card.evidenceBalance);
     const group=(title,items,empty)=>{
@@ -1471,10 +1512,10 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
@@ -1484,7 +1525,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

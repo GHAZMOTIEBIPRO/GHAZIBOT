@@ -8,6 +8,8 @@ on:
       - "options_radar/free_gex_validation.py"
       - "options_radar/ghazi_gex_multi.py"
       - "options_radar/gamma_interpretation.py"
+      - "options_radar/chain_analytics.py"
+      - "scripts/build_options_analytics.py"
       - "public/spx/index.html"
       - "public/spx/spx.js"
       - "research/spx_intelligence_catalog_ar.json"
@@ -23,7 +25,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,6 +56,10 @@ jobs:
 
       - name: Run integrated GEX validation
         run: python -m options_radar.free_gex_validation
+
+      - name: Derived option analytics for indices and large caps (Cboe delayed)
+        continue-on-error: true
+        run: python -m scripts.build_options_analytics --output public/data/options_analytics.json
 
       - name: Unit-check SPXW 0DTE engine
         run: |
@@ -111,6 +117,10 @@ jobs:
           mkdir -p state/runtime/public/data
           cp public/data/free_gex_validation.json state/runtime/public/data/free_gex_validation.json
           cp public/data/free_gex_validation_history.json state/runtime/public/data/free_gex_validation_history.json
+          if [ -s public/data/options_analytics.json ]; then
+            cp public/data/options_analytics.json state/runtime/public/data/options_analytics.json
+            git -C state add runtime/public/data/options_analytics.json
+          fi
           cd state
           git config user.name "BLACK BOX Omega GEX State"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"

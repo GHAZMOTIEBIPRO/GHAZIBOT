@@ -214,6 +214,14 @@ def _root(symbol):
     return occ["root"] if occ else ("SPXW" if str(symbol).upper().startswith("SPXW") else "SPX")
 
 
+def _median(values):
+    values = sorted(values)
+    if not values:
+        return None
+    mid = len(values) // 2
+    return round(values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2, 4)
+
+
 def _summary(diffs):
     diffs = sorted(diffs)
     if not diffs:
@@ -231,7 +239,7 @@ def gamma_check(rows, spot, time_of, legacy_time_of=None):
     drifts, not which one is "true". When `legacy_time_of` is given the old
     business-day clock is scored on the same contracts, as an A/B check.
     """
-    diffs, legacy = [], []
+    diffs, legacy, ratios = [], [], []
     for r in rows:
         provider = r.get("provider_gamma")
         t = time_of(r)
@@ -241,6 +249,7 @@ def gamma_check(rows, spot, time_of, legacy_time_of=None):
         if model <= 0:
             continue
         diffs.append(abs(model - provider) / provider)
+        ratios.append(model / provider)
         old_t = legacy_time_of(r) if legacy_time_of else None
         if old_t is not None:
             old = gamma_bs(spot, r["strike"], r["iv"], old_t)
@@ -251,6 +260,9 @@ def gamma_check(rows, spot, time_of, legacy_time_of=None):
         "compared": len(diffs),
         "median_abs_rel_diff": median,
         "p90_abs_rel_diff": p90,
+        # Signed: >1 model above Cboe. sqrt(365/252)=1.2035 would point to a
+        # trading-day vs calendar-day time basis difference.
+        "median_ratio_model_to_provider": _median(ratios),
         "basis": "near-spot contracts with provider gamma > 0; both values are models",
     }
     if legacy_time_of is not None:

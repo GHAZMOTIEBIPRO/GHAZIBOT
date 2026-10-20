@@ -98,6 +98,7 @@ def test_greek_check_compares_model_gamma_with_provider_gamma():
     out = gamma_check(rows, 7600.0, lambda r: t)
     assert out["compared"] == 2  # missing provider gamma is skipped, not zero
     assert out["median_abs_rel_diff"] == 0.5  # (0 + 1.0) / 2
+    assert out["median_ratio_model_to_provider"] == 1.5  # ratios 1.0 and 2.0
     assert gamma_check([], 7600.0, lambda r: t)["median_abs_rel_diff"] is None
     built = build(payload=cboe_payload(), session_date=day)
     assert built["greek_check"]["compared"] > 0
