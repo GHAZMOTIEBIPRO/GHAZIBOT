@@ -13,3 +13,16 @@
   .ghazi-tv-widget { padding: 10px; }
   .ghazi-tv-widget tv-market-overview { min-height: 480px; }
 }
+
+/* TradingView embed slots (tv-intelligence.js); heights reserve space so the page does not jump. */
+.ghazi-tv-buttons{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0}
+.ghazi-tv-buttons button[aria-pressed="true"]{outline:2px solid currentColor}
+.ghazi-tv-slot{width:100%;min-height:220px;margin:.5rem 0;overflow:hidden}
+.ghazi-tv-slot--info{min-height:120px}
+.ghazi-tv-slot--ta{min-height:450px}
+.ghazi-tv-slot--tall{min-height:520px}
+.tv-stock-form{display:flex;gap:.4rem;align-items:center}
+.tv-stock-form input{width:7.5rem;max-width:40vw;padding:.35rem .5rem;direction:ltr;text-transform:uppercase}
+.tv-stock-grid{display:grid;grid-template-columns:1fr;gap:.75rem}
+@media (min-width:900px){.tv-stock-grid{grid-template-columns:1fr 1fr}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

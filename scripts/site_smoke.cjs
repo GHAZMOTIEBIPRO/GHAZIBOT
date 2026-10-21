@@ -37,6 +37,18 @@ const out = process.argv[2] || "site_smoke.json";
             spx_status: t("status"),
           };
         });
+        // TradingView widgets load lazily: open the section, scroll to it, then
+        // count the frames TradingView injected (their content stays inside them).
+        const tvTarget = label === "chart_nvda" ? ["chart", "tv-stock-ta"] : label === "home" ? ["indices", "tv-index-ta"] : null;
+        if (tvTarget) {
+          await page.evaluate(([tab, id]) => {
+            document.querySelector(`[data-terminal-tab="${tab}"]`)?.click();
+            document.getElementById(id)?.scrollIntoView();
+          }, tvTarget);
+          await page.waitForTimeout(8000);
+          info.tradingview_frames = await page.evaluate(id =>
+            document.getElementById(id)?.querySelectorAll("iframe").length || 0, tvTarget[1]);
+        }
         pages[key] = { http_status: status, errors, ...info };
       } catch (error) {
         pages[key] = { http_status: status, errors: [...errors, String(error).slice(0, 200)], overflow: null };
@@ -54,5 +66,5 @@ const out = process.argv[2] || "site_smoke.json";
   };
   fs.writeFileSync(out, JSON.stringify(report, null, 1));
   console.log(JSON.stringify(Object.fromEntries(Object.entries(pages).map(([k, v]) =>
-    [k, { http: v.http_status, errors: (v.errors || []).length, overflow: v.overflow, blocked: v.blocked_reason_shown }]))));
+    [k, { http: v.http_status, errors: (v.errors || []).length, overflow: v.overflow, blocked: v.blocked_reason_shown, tv: v.tradingview_frames }]))));
 })();

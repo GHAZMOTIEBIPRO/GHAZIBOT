@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="./omega.css?v=20260807-omega">
   <link rel="stylesheet" href="./ghazi-radar-quality.css?v=20261018-1">
   <link rel="stylesheet" href="./bls-macro.css?v=20261018-1">
-  <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261018-1">
+  <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261021-1">
   <link rel="stylesheet" href="./contract-risk-lab.css?v=20261018-1">
   <link rel="stylesheet" href="./index-radar.css?v=20261018-1">
   <link rel="stylesheet" href="./catalyst-overview.css?v=20261018-2">
@@ -130,8 +130,16 @@
         <header class="terminal-section-head"><div><p class="terminal-overline">US INDICES</p>
           <h3>المؤشرات الأمريكية</h3><p>SPX · NDX · Dow · Russell · VIX والصناديق المرتبطة بها. الأسعار من آخر شموع مكتملة وليست أسعار تنفيذ.</p></div>
           <button class="terminal-action" data-chart-symbol="SPX" type="button">شارت SPX <span>↗</span></button></header>
+        <section class="terminal-evidence ghazi-tv-widget" aria-labelledby="tv-index-title">
+          <p class="terminal-overline">TRADINGVIEW · MULTI-TIMEFRAME</p>
+          <h4 id="tv-index-title">الاتجاه الفني متعدد الفريمات للمؤشرات (5 دقائق حتى شهري)</h4>
+          <p class="terminal-footnote">اختر المؤشر ثم الفريم داخل الأداة. التقييم (شراء/بيع/حياد) يحسبه TradingView آليًا من متوسطات ومذبذبات قياسية؛ ليس قرارًا من GHAZI ولا احتمال نجاح، والأسعار داخله قد تتأخر بحسب البورصة.</p>
+          <div id="tv-index-buttons" class="ghazi-tv-buttons" role="group" aria-label="اختيار المؤشر"></div>
+          <div id="tv-index-info" class="ghazi-tv-slot ghazi-tv-slot--info"></div>
+          <div id="tv-index-ta" class="ghazi-tv-slot ghazi-tv-slot--ta"></div>
+        </section>
         <div id="terminal-index-grid" class="terminal-index-grid"><p class="terminal-empty">جاري تحميل تحليل المؤشرات…</p></div>
-        <p id="terminal-index-footnote" class="terminal-footnote">المصدر: Yahoo / yfinance · الأرقام بحثية وقد تتأخر، وSPX ليس SPY.</p>
+        <p id="terminal-index-footnote" class="terminal-footnote">تحليل GHAZI الخاص للمؤشرات متوقف حتى توفر مصدر أسعار مرخص؛ SPX ليس SPY.</p>
         <details class="terminal-data-hub terminal-macro" open>
           <summary>تموضع العقود الآجلة للمؤشرات (CFTC) وعائدات الخزانة</summary>
           <p id="terminal-macro-status" class="terminal-footnote">جاري التحميل…</p>
@@ -147,6 +155,13 @@
             <p>CALL أو PUT فقط عند توافق اليومي والساعة و15 دقيقة على السهم نفسه؛ بدون بيانات أوبشن. الأهداف من الدعوم والمقاومات المكتملة وليست احتمال وصول.</p></div></header>
           <p id="terminal-classical-health" class="terminal-footnote" aria-live="polite">قراءة آخر تحليل…</p>
           <div id="terminal-classical-list" class="terminal-structural-list"><p class="terminal-empty">جاري التحميل…</p></div>
+        </section>
+        <section class="terminal-evidence ghazi-tv-widget" aria-labelledby="tv-large-title">
+          <p class="terminal-overline">TRADINGVIEW · S&amp;P 500</p>
+          <h4 id="tv-large-title">خريطة الشركات الكبرى حسب القيمة السوقية والقطاع، وفرز الأسهم الأمريكية</h4>
+          <p class="terminal-footnote">القائمة ديناميكية من TradingView (الأكبر قيمة، الأكثر نشاطًا، الأكثر صعودًا… من شريط الأداة). اضغط أي سهم في صفحة الشارت لعرض تحليله.</p>
+          <div id="tv-heatmap" class="ghazi-tv-slot ghazi-tv-slot--tall"></div>
+          <div id="tv-screener" class="ghazi-tv-slot ghazi-tv-slot--tall"></div>
         </section>
         <div id="terminal-large-grid" class="terminal-stock-grid"><p class="terminal-empty">جاري تحميل الأسهم…</p></div>
         <p id="terminal-large-note" class="terminal-footnote">قائمة متابعة للشركات المعروفة وكبيرة الحجم؛ التصنيف لا يعادل التحقق اللحظي من القيمة السوقية.</p>
@@ -191,9 +206,14 @@
           <p id="terminal-fda-status" class="terminal-footnote">جاري التحميل…</p>
           <div id="terminal-fda" class="terminal-structural-list"></div>
         </details>
+        <details class="terminal-data-hub" open>
+          <summary>التقويم الاقتصادي الأمريكي (TradingView): CPI · PPI · FOMC · الوظائف</summary>
+          <p class="terminal-footnote">مواعيد الأحداث ذات الأهمية العالية والمتوسطة. المواعيد سياق؛ نتيجة البيان لا تحدد اتجاه السوق وحدها.</p>
+          <div id="tv-calendar" class="ghazi-tv-slot ghazi-tv-slot--tall"></div>
+        </details>
         <div class="terminal-news-columns"><div><h4>الأخبار والملفات الرسمية <span>SEC</span></h4>
           <div id="terminal-official-news" class="terminal-news-list"><p class="terminal-empty">فحص SEC جارٍ…</p></div></div>
-          <div><h4>الأخبار البحثية <span>Google News / RSS</span></h4>
+          <div><h4>الأخبار البحثية <span>GDELT</span></h4>
           <div id="terminal-public-news" class="terminal-news-list"><p class="terminal-empty">قراءة الأخبار…</p></div></div></div>
       </section>
       <section class="terminal-panel" id="terminal-panel-chart" aria-label="شارت الأسعار والتحليل الفني" hidden>
@@ -221,6 +241,25 @@
           <div id="terminal-tv-chart-slot" class="terminal-tv-chart-slot"></div>
           <p class="terminal-footnote">يعرض TradingView أسعاره ومصادره وتوقيتاته داخل الأداة نفسها؛ GHAZI RADAR لا يعيد نشر هذه البيانات ولا يستخدمها في التحليل.</p>
         </details>
+        <section id="tv-stock-intel" class="terminal-evidence tv-stock-intel" aria-labelledby="tv-stock-title">
+          <div class="terminal-evidence-head">
+            <div><p class="terminal-overline">STOCK PAGE · عرض TradingView</p>
+              <h3 id="tv-stock-title">صفحة السهم: التحليل الفني والملف المالي والأخبار</h3></div>
+            <form id="tv-stock-form" class="tv-stock-form" role="search">
+              <label for="tv-stock-input" class="sr-only">رمز السهم</label>
+              <input id="tv-stock-input" type="text" inputmode="latin" autocomplete="off" maxlength="10" placeholder="مثل NVDA" pattern="[A-Za-z][A-Za-z0-9.\-]{0,9}">
+              <button type="submit" class="secondary-button">عرض</button>
+            </form>
+          </div>
+          <p id="tv-stock-status" class="terminal-footnote">جاري التحميل…</p>
+          <div class="tv-stock-grid">
+            <div id="tv-stock-ta" class="ghazi-tv-slot ghazi-tv-slot--ta"></div>
+            <div id="tv-stock-profile" class="ghazi-tv-slot"></div>
+            <div id="tv-stock-financials" class="ghazi-tv-slot ghazi-tv-slot--tall"></div>
+            <div id="tv-stock-news" class="ghazi-tv-slot ghazi-tv-slot--tall"></div>
+          </div>
+          <p class="terminal-footnote">هذه الأدوات تعرض بيانات TradingView داخلها فقط ولا تدخل في قرار GHAZI؛ قرار المحرك (CALL / PUT / WAIT / DATA UNAVAILABLE) في بطاقة القرار أدناه ويعتمد على مصادر مرخصة لنا فقط.</p>
+        </section>
         <div id="terminal-chart-levels" class="terminal-chart-metrics"></div>
         <section id="terminal-decision-card" class="terminal-evidence terminal-decision-card" aria-labelledby="terminal-decision-card-title">
           <div class="terminal-evidence-head">
@@ -816,6 +855,7 @@
   <script src="./terminal-oos.js?v=20261020-1" defer></script>
   <script src="./terminal-decision.js?v=20261020-3" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./terminal-hub.js?v=20261020-32" defer></script>
+  <script src="./tv-intelligence.js?v=20261021-1" defer></script>
+  <script src="./terminal-hub.js?v=20261021-1" defer></script>
 </body>
 </html>
