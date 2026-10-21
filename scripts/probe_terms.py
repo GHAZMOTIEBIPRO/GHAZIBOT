@@ -82,7 +82,26 @@ PAGES = {
     "businesswire_robots": "https://feed.businesswire.com/robots.txt",
     "filingpulse_terms": "https://filingpulse.io/terms",
     "filingpulse_api_robots": "https://api.filingpulse.io/robots.txt",
+    # Free-plan limits and data coverage of the account APIs (2026-10-21).
+    "twelvedata_pricing": "https://twelvedata.com/pricing",
+    "finnhub_pricing": "https://finnhub.io/pricing",
+    "alphavantage_premium": "https://www.alphavantage.co/premium/",
+    "tiingo_pricing": "https://www.tiingo.com/about/pricing",
+    "eodhd_pricing": "https://eodhd.com/pricing",
+    "fmp_pricing": "https://site.financialmodelingprep.com/pricing-plans",
+    "massive_pricing": "https://massive.com/pricing",
+    "alpaca_market_data": "https://docs.alpaca.markets/docs/about-market-data-api",
+    "alpaca_disclosures": "https://alpaca.markets/disclosures",
+    "tradier_market_data_docs": "https://documentation.tradier.com/brokerage-api/overview/market-data",
 }
+# Pages whose whole text is printed (bounded), so specific clauses on derived
+# data, non-price analytics, storage, sharing and plan limits can be quoted
+# rather than inferred from keyword lines.
+FULL_TEXT = {"twelvedata_terms", "twelvedata_pricing", "finnhub_terms", "finnhub_pricing", "alphavantage_terms",
+             "alphavantage_premium", "fmp_terms", "eodhd_terms", "tiingo_tos", "tiingo_pricing", "massive_terms",
+             "nasdaq_data_link_terms", "alpaca_terms", "alpaca_market_data", "tradier_terms",
+             "tradier_market_data_docs", "eodhd_pricing", "fmp_pricing", "massive_pricing", "alpaca_disclosures"}
+FULL_MAX = 40000
 KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|non-?commercial|"
                       r"commercial|display|derived|extract|reproduc|permission|licen[cs]e|"
                       r"internal|store|storage|retain|cache|third[- ]part|public|website|disallow|"
@@ -129,6 +148,11 @@ def main(only: list[str]) -> int:
             continue
         body = pdf_text(r.content) if "pdf" in kind or url.endswith(".pdf") else text_of(r.text)
         lines = [ln.strip() for ln in re.split(r"\n|(?<=[.;])\s{2,}", body) if len(ln.strip()) > 40]
+        if name in FULL_TEXT:
+            print("FULL_TEXT_BEGIN")
+            print("\n".join(lines)[:FULL_MAX])
+            print("FULL_TEXT_END")
+            continue
         hits = [ln for ln in lines if KEYWORDS.search(ln)]
         for ln in hits[:MAX_LINES]:
             print("-", ln[:700])
