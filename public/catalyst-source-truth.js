@@ -14,18 +14,18 @@
   function assessment(market,engines,now=Date.now()){
     const mt=time(market?.generated_at,now);
     const validMarket=market&&VALID_STATES.has(String(market.status||"").toLowerCase())&&
-      mt!==null&&now-mt<=120*60000&&market.coverage_diagnostics&&typeof market.coverage_diagnostics==="object";
+      mt!==null&&now-mt>=0&&now-mt<=120*60000&&market.coverage_diagnostics&&typeof market.coverage_diagnostics==="object";
     const marketStatus=validMarket?market.status.toLowerCase():"unavailable";
     const coverage=validMarket?market.coverage_diagnostics:{};
     const eAt=time(engines?.generated_at,now);
     const validEngines=!!(engines&&engines.decision_authority===false&&
-      engines.contains_secrets===false&&eAt!==null&&now-eAt<=120*60000&&
+      engines.contains_secrets===false&&eAt!==null&&now-eAt>=0&&now-eAt<=120*60000&&
       engines.paths&&typeof engines.paths==="object");
     const quoteReady=validMarket&&coverage.options_execution_quote_ready===true&&
       coverage.options_trade_flow_ready===true;
     const sec=validMarket?market.source_status?.sec_fulltext:null;
     const secObserved=time(sec?.checked_at,now);
-    const secVerified=sec&&sec.available===true&&secObserved!==null&&now-secObserved<=120*60000;
+    const secVerified=sec&&sec.available===true&&secObserved!==null&&now-secObserved>=0&&now-secObserved<=120*60000;
     const failureCodes=Array.isArray(coverage.blocking_codes)?coverage.blocking_codes
       .filter(s=>typeof s==="string").slice(0,5):[];
     const healthStatus={
@@ -50,7 +50,7 @@
       const path=validEngines?engines.paths[key]:null;
       const ts=time(path?.generated_at,now);
       const age=ts===null?null:Math.max(0,Math.round((now-ts)/60000));
-      const healthy=path?.status==="HEALTHY"&&age!==null&&
+      const healthy=path?.status==="HEALTHY"&&age!==null&&ts<=now&&
         age<=Math.min(120,Number.isFinite(path.maximum_age_minutes)?path.maximum_age_minutes:90);
       summary.push({key,name:label,value:healthy?"تقرير تشغيل حديث":"لا يوجد دليل تشغيل حديث",
         note:validEngines?(age!==null?"وقت بيانات المحرك: "+path.generated_at+
