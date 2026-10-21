@@ -149,6 +149,14 @@ def test_public_gate_mode_needs_public_display_right(monkeypatch):
     spec.loader.exec_module(psg)
     monkeypatch.setenv("HAS_TWELVE_DATA_API_KEY", "true")
     assert psg.key_usable("TWELVE_DATA_API_KEY") is True  # automated + internal VERIFIED
-    assert psg.key_usable("TWELVE_DATA_API_KEY", public=True) is False  # public derived UNKNOWN
+    assert psg.key_usable("TWELVE_DATA_API_KEY", public=True) is False
+    # Twelve Data lists "(g) Create derivative works for redistribution" as prohibited
+    # (run 39529567535): RESTRICTED, so the owner's confirmation cannot open it.
     monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "twelve_data")
-    assert psg.key_usable("TWELVE_DATA_API_KEY", public=True) is True
+    assert psg.key_usable("TWELVE_DATA_API_KEY", public=True) is False
+    # UNKNOWN terms (Tradier: terms page 404) need the owner's confirmation of the plan's terms.
+    monkeypatch.setenv("HAS_TRADIER_TOKEN", "true")
+    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "")
+    assert psg.key_usable("TRADIER_TOKEN", public=True) is False
+    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "tradier")
+    assert psg.key_usable("TRADIER_TOKEN", public=True) is True

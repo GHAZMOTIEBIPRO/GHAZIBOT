@@ -41,6 +41,11 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "Unless otherwise expressly stated, you may not access or reuse the Services, or any portion thereof, for any commercial purpose."
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "Unless you have explicit written permission, you must not reproduce, modify, rent, lease, sell, trade, distribute, transmit, broadcast, publicly perform, create derivative works based on, or exploit for any commercial purposes"
     }
    },
    "api_key_required": false,
@@ -81,6 +86,11 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "license to use the Services solely for your personal, non-commercial use"
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "you shall not market, sell or distribute the Services or otherwise provide the Services to any third parties including, but not limited to, placing or distributing any Nasdaq’s content on a third party platform"
     }
    },
    "api_key_required": false,
@@ -120,6 +130,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
+     "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": null
     }
    },
@@ -161,12 +176,18 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "Unfortunately, you cannot redistribute Alpaca API data."
     }
    },
    "api_key_required": true,
    "cost_note": "Market Data Agreement PDF (https://files.alpaca.markets/disclosures/library/MarketDataAgreement.pdf) returned 403, so storage/derived/commercial terms are unverified. alpaca.markets/terms matched only trading-risk text. Repo secrets HAS_ALPACA_API_KEY=false, ALPACA_USE_AUTHORIZED=false.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "لا يجوز إعادة توزيع بيانات Alpaca API (أي لا عرض علني للأسعار الخام)، وباقي الحقوق غير معروفة لأن اتفاقية بيانات السوق أعادت 403."
+   "summary_ar": "لا يجوز إعادة توزيع بيانات Alpaca API (أي لا عرض علني للأسعار الخام)، وباقي الحقوق غير معروفة لأن اتفاقية بيانات السوق أعادت 403.",
+   "free_plan_note": "Basic plan: \"for equities only the IEX exchange, for options only the indicative feed\"; standard plans are \"real time IEX or 15 mins delayed SIP\"."
   },
   "tiingo": {
    "name": "Tiingo",
@@ -192,7 +213,8 @@
     },
     "public_display_derived": {
      "status": "RESTRICTED",
-     "evidence": "A Starter Plan or Trial Plan does not permit persistent storage of Derived Products, during the plan or after it ends."
+     "evidence": "A Starter Plan or Trial Plan does not permit persistent storage of Derived Products, during the plan or after it ends.",
+     "note": "Paid Plan only: Derived Products may be distributed without written approval if they cannot substitute for or reverse-engineer Tiingo Data (Section 1.6); terms text was cut at 40k characters, re-read pending"
     },
     "github_actions_automation": {
      "status": "UNKNOWN",
@@ -201,6 +223,11 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "you shall not license, sell, rent, lease, transfer, assign, reproduce, distribute, host or otherwise commercially exploit Company Properties"
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "tables, files, feeds, APIs, databases, dashboards, charts, downloads, or query tools that display, deliver, or permit extraction of Tiingo Data or a substantially equivalent substitute;"
     }
    },
    "api_key_required": true,
@@ -219,8 +246,9 @@
      "evidence": null
     },
     "internal_analysis": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "All plan listed on Finnhub website is [...] personal use unless explicitly stated otherwise. Personal plan can't be used by any business",
+     "evidence_run": "39529567535"
     },
     "persistent_storage": {
      "status": "UNKNOWN",
@@ -241,12 +269,18 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "personal use unless explicitly stated otherwise. Personal plan can’t be used by any business even"
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "You hereby agree to not redistribute or share access to data or derived results from the data obtained"
     }
    },
    "api_key_required": true,
    "cost_note": "All listed plans are personal use unless stated otherwise; redistribution of data or derived results requires written approval from Finnhub. No refunds.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "خطط Finnhub شخصية افتراضيًا؛ ممنوع إعادة توزيع البيانات أو النتائج المشتقة منها لأي طرف ثالث دون موافقة كتابية."
+   "summary_ar": "خطط Finnhub شخصية افتراضيًا؛ ممنوع إعادة توزيع البيانات أو النتائج المشتقة منها لأي طرف ثالث دون موافقة كتابية.",
+   "free_plan_note": "\"There is a 30 API calls/second limit on top of all plan's limit\"; plan table rendered by JavaScript."
   },
   "twelve_data": {
    "name": "Twelve Data",
@@ -271,8 +305,9 @@
      "evidence": "(e) Redistribute or provide external display of Data only if and as expressly authorized by a Redistribution Rights Add-On or separate written agreement with Twelve Data"
     },
     "public_display_derived": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "(g) Create derivative works for redistribution [listed as prohibited]; Derived Data may be created (\"(c) Create Derived Data that cannot be reverse-engineered to recreate the original Data\") but no clause grants distributing it",
+     "evidence_run": "39529567535"
     },
     "github_actions_automation": {
      "status": "VERIFIED",
@@ -281,12 +316,23 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "(l) Use Free Tier data for commercial purposes"
+    },
+    "derived_data_internal": {
+     "status": "VERIFIED",
+     "evidence_run": "39529567535",
+     "evidence": "Customer retains rights to Derived Data created in compliance with this Agreement."
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "(e) Redistribute or provide external display of Data only if and as expressly authorized by a Redistribution Rights Add-On or separate written agreement with Twelve Data"
     }
    },
    "api_key_required": true,
    "cost_note": "Free tier exists but no commercial use. Storage allowed only for Internal Use within Documentation timeframes (a public GitHub branch is external provision = Redistribution). External display needs a Redistribution Rights Add-On or written agreement. Creating non-reverse-engineerable Derived Data is allowed, but public display of derived output is not explicitly addressed and '(f) Create derivative financial products without explicit written permission' is prohibited.",
    "rate_limit_note": "Rate limits per Subscription Tier; '(h) Use automated tools to exceed API Rate Limits or create excessive load' is prohibited.",
-   "summary_ar": "يُسمح بالوصول الآلي والتحليل الداخلي فقط؛ العرض الخارجي يتطلب إضافة حقوق إعادة التوزيع، والاستخدام التجاري للطبقة المجانية ممنوع."
+   "summary_ar": "يُسمح بالوصول الآلي والتحليل الداخلي فقط؛ العرض الخارجي يتطلب إضافة حقوق إعادة التوزيع، والاستخدام التجاري للطبقة المجانية ممنوع.",
+   "free_plan_note": "\"API credits reset each minute.\" Per-plan credit numbers are rendered by JavaScript and were not in the fetched text."
   },
   "massive_polygon": {
    "name": "Massive (formerly Polygon.io)",
@@ -321,6 +367,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": null
     }
    },
    "api_key_required": true,
@@ -339,20 +390,23 @@
      "evidence": null
     },
     "internal_analysis": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "goes beyond investment analysis, research, testing, monitoring, and any other activities that are private and individual in nature [commercial-use test; private research is inside the personal grant]",
+     "evidence_run": "39529567535"
     },
     "persistent_storage": {
      "status": "UNKNOWN",
      "evidence": null
     },
     "public_display_raw": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "iii. You plan to use or provide information accessed through the Alpha Vantage Platform as part of any type of commercial activity that allows individuals or entities other than User to access information directly or [indirectly] -> commercial use needing a separate agreement",
+     "evidence_run": "39529567535"
     },
     "public_display_derived": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "iii. You plan to use or provide information accessed through the Alpha Vantage Platform as part of any type of commercial activity that allows individuals or entities other than User to access information directly or [indirectly] -> commercial use needing a separate agreement",
+     "evidence_run": "39529567535"
     },
     "github_actions_automation": {
      "status": "UNKNOWN",
@@ -361,12 +415,18 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "or control, for personal, non-commercial use, unless you and Alpha"
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "iii. You plan to use or provide information accessed through the Alpha Vantage Platform as part of any type of commercial activity that allows individuals or entities other than User to access information directly or [indirectly] -> commercial use needing a separate agreement"
     }
    },
    "api_key_required": true,
    "cost_note": "Grant is for personal, non-commercial use unless a separate agreement exists; commercial use requires contacting Alpha Vantage. PDF text in log is fragmented, so access/storage/display scope is not decidable.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "الترخيص شخصي غير تجاري ما لم يوجد اتفاق منفصل، وباقي الحقوق غير محسومة لأن نص الشروط في السجل مجزأ."
+   "summary_ar": "الترخيص شخصي غير تجاري ما لم يوجد اتفاق منفصل، وباقي الحقوق غير محسومة لأن نص الشروط في السجل مجزأ.",
+   "free_plan_note": "\"(25 API requests per day)\" for free keys; realtime, 15-minute delayed US data and options need an entitlement."
   },
   "fmp": {
    "name": "Financial Modeling Prep (FMP)",
@@ -388,7 +448,8 @@
     },
     "public_display_raw": {
      "status": "RESTRICTED",
-     "evidence": "Without a specific agreement with FMP, customers are prohibited from showcasing FMP Services or Data on platforms including but not limited to websites, blogs"
+     "evidence": "Without a specific agreement with FMP, customers are prohibited from showcasing FMP Services or Data on platforms including but not limited to websites, blogs",
+     "evidence_pricing": "Displaying or redistributing data sourced from FMP requires a specific Data Display and Licensing Agreement with FMP."
     },
     "public_display_derived": {
      "status": "RESTRICTED",
@@ -401,12 +462,18 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "strictly for their own personal, non-business and non-commercial purposes"
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "Without a specific agreement with FMP, customers are prohibited from showcasing FMP Services or Data on platforms including but not limited to websites, blogs"
     }
    },
    "api_key_required": true,
    "cost_note": "Self-serve licence is individual, personal, non-commercial; 'market research' counts as commercial analysis. Any website display needs a specific agreement with FMP. Data must be deleted on termination.",
    "rate_limit_note": "Bound by an API Call Rate Limit and a Data Usage Limit, detailed on the pricing page/dashboard and changeable without notice.",
-   "summary_ar": "يُسمح بالوصول إلى واجهة FMP للاستخدام الشخصي فقط؛ ممنوع عرض البيانات أو مشتقاتها على موقع عام أو دمجها في أداة يصل إليها الغير دون اتفاق خاص."
+   "summary_ar": "يُسمح بالوصول إلى واجهة FMP للاستخدام الشخصي فقط؛ ممنوع عرض البيانات أو مشتقاتها على موقع عام أو دمجها في أداة يصل إليها الغير دون اتفاق خاص.",
+   "free_plan_note": "\"Free plan - 500MB\" trailing 30-day bandwidth."
   },
   "eodhd": {
    "name": "EOD Historical Data (EODHD)",
@@ -441,12 +508,18 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "Non-Professional Users are permitted to store, manipulate, and analyze the data for private, non-commercial purposes."
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "Selling, reselling, retransmitting, redistributing, displaying, or granting access to the Information or Services, whether in its original or repackaged form."
     }
    },
    "api_key_required": true,
    "cost_note": "Non-Professional (personal) users may store/analyze privately for non-commercial purposes only; storage in a public GitHub branch grants access and is prohibited. Commercial use requires contacting EODHD. Terms state prices 'are indicative and not appropriate for trading purposes' (research/context-grade only).",
    "rate_limit_note": "Page has a section 'API Limits: Daily Calls, Rate Limits and Costs'; numbers not captured in log.",
-   "summary_ar": "يُسمح للمستخدم الشخصي بالتحليل والتخزين الخاص غير التجاري فقط؛ ممنوع عرض البيانات أو إتاحتها بأي شكل خام أو معاد تغليفه."
+   "summary_ar": "يُسمح للمستخدم الشخصي بالتحليل والتخزين الخاص غير التجاري فقط؛ ممنوع عرض البيانات أو إتاحتها بأي شكل خام أو معاد تغليفه.",
+   "free_plan_note": "\"Once you register you get 20 free API calls per day. Some data types are not accessible on the free package.\""
   },
   "marketdata_app": {
    "name": "MarketData.app",
@@ -481,6 +554,11 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "Any company, organization, or corporate entity wishing to create an account must enter into a separate commercial agreement with us."
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "You may not sell, resell, retransmit, or redistribute or make our data or any third-party data available to anyone."
     }
    },
    "api_key_required": true,
@@ -521,12 +599,18 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": null
     }
    },
    "api_key_required": true,
    "cost_note": "Terms URL returned 404; no licensing text captured.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "صفحة الشروط أعادت 404 فلا يمكن تأكيد أي حق."
+   "summary_ar": "صفحة الشروط أعادت 404 فلا يمكن تأكيد أي حق.",
+   "free_plan_note": "\"Real-time data is available to all Tradier Brokerage account holders\"; delayed data is \"delayed industry-standard 15 minutes\"."
   },
   "nasdaq_data_link": {
    "name": "Nasdaq Data Link",
@@ -560,6 +644,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
+     "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": null
     }
    },
@@ -601,6 +690,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": null
     }
    },
    "api_key_required": "unknown",
@@ -640,6 +734,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     }
    },
@@ -682,6 +781,11 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "Except as otherwise expressly permitted by separate agreement, we do not permit commercial usage of any of our services or APIs."
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "TradingView grants all users of tradingview.com, and all other available versions of the site, the ability to use snapshots of TradingView charts in analysis, press releases, books, articles, blog posts and other publications."
     }
    },
    "api_key_required": false,
@@ -722,6 +826,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": null
     }
    },
    "api_key_required": false,
@@ -761,6 +870,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
+     "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": null
     }
    },
@@ -803,6 +917,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": null
     }
    },
    "api_key_required": "unknown",
@@ -844,6 +963,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "You may use the BEA API to develop a service or service to search, display, analyze, retrieve, view and otherwise"
     }
    },
    "api_key_required": true,
@@ -884,6 +1008,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": null
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data."
     }
    },
    "api_key_required": "unknown",
@@ -923,6 +1052,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "VERIFIED",
+     "evidence": "You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission."
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": "You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission."
     }
    },
@@ -964,6 +1098,11 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "finra.org Terms of Use (read in full): content \"shall be used ONLY for your own non-commercial personal or professional use\"; users may not \"develop or create a database of data using the FINRA Website\" or \"use any data mining, scraping or harvesting tools (including robots)\"; FINRA API Terms of Service (read in full, updated 2026-03-19): \"Developer shall access the Licensed APIs and the Licensed Data solely using access credentials provided to Developer by FINRA\""
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "finra.org Terms of Use (read in full): content \"shall be used ONLY for your own non-commercial personal or professional use\"; users may not \"develop or create a database of data using the FINRA Website\" or \"use any data mining, scraping or harvesting tools (including robots)\"; FINRA API Terms of Service (read in full, updated 2026-03-19): \"Developer shall access the Licensed APIs and the Licensed Data solely using access credentials provided to Developer by FINRA\""
     }
    },
    "api_key_required": "unknown",
@@ -1004,6 +1143,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "VERIFIED",
+     "evidence": "The data is offered free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes."
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": "The data is offered free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes."
     }
    },
@@ -1050,6 +1194,11 @@
      "status": "VERIFIED",
      "evidence": "An official website of the United States Government",
      "basis": "U.S. government publication (verified from full documents in run 39413336941); log text only confirms .gov origin"
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "An official website of the United States Government"
     }
    },
    "api_key_required": false,
@@ -1089,6 +1238,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" (federalreserve.gov/disclaimer.htm, read in full)"
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" (federalreserve.gov/disclaimer.htm, read in full)"
     }
    },
@@ -1131,6 +1285,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     }
    },
    "api_key_required": "unknown",
@@ -1171,6 +1330,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
+     "evidence": "Google Terms (read in full): users must not use \"automated means to access content from any of our services in violation of the machine-readable instructions on our web pages (for example, robots.txt files that disallow crawling ...)\"; news.google.com/robots.txt: \"User-agent: * Disallow: /\" without an Allow for /rss/; publisher content \"You may not use this content without that person or organization's permission\""
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": "Google Terms (read in full): users must not use \"automated means to access content from any of our services in violation of the machine-readable instructions on our web pages (for example, robots.txt files that disallow crawling ...)\"; news.google.com/robots.txt: \"User-agent: * Disallow: /\" without an Allow for /rss/; publisher content \"You may not use this content without that person or organization's permission\""
     }
    },
@@ -1213,6 +1377,11 @@
     "commercial_use_on_free_tier": {
      "status": "RESTRICTED",
      "evidence": "PR Newswire Terms of Use (read in full): users may not \"use any robot, spider, site search/retrieval application, or other manual or automatic device or process to access, search, download, retrieve, index or 'data mine' any content or data from the Site\" nor \"reproduce, distribute, 'frame,' 'mirror,' 'scrape,' republish or retransmit\" content without express prior written permission"
+    },
+    "telegram_sharing": {
+     "status": "RESTRICTED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "PR Newswire Terms of Use (read in full): users may not \"use any robot, spider, site search/retrieval application, or other manual or automatic device or process to access, search, download, retrieve, index or 'data mine' any content or data from the Site\" nor \"reproduce, distribute, 'frame,' 'mirror,' 'scrape,' republish or retransmit\" content without express prior written permission"
     }
    },
    "api_key_required": false,
@@ -1253,6 +1422,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
+     "evidence": "Terms page, RSS page and robots.txt answer the runner with HTTP 403; rights unverified."
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": "Terms page, RSS page and robots.txt answer the runner with HTTP 403; rights unverified."
     }
    },
@@ -1295,6 +1469,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": "Terms page and feed robots.txt timed out from the runner; rights unverified."
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "Terms page and feed robots.txt timed out from the runner; rights unverified."
     }
    },
    "api_key_required": false,
@@ -1335,6 +1514,11 @@
     },
     "commercial_use_on_free_tier": {
      "status": "VERIFIED",
+     "evidence": "GDELT about page (read in full): \"all datasets released by the GDELT Project are available for unlimited and unrestricted use for any academic, commercial, or governmental use of any kind without fee\"; \"You may redistribute, rehost, republish, and mirror any of the GDELT datasets in any form. However, any use or redistribution of the data must include a citation to the GDELT Project and a link to this website\""
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
      "evidence": "GDELT about page (read in full): \"all datasets released by the GDELT Project are available for unlimited and unrestricted use for any academic, commercial, or governmental use of any kind without fee\"; \"You may redistribute, rehost, republish, and mirror any of the GDELT datasets in any form. However, any use or redistribution of the data must include a citation to the GDELT Project and a link to this website\""
     }
    },
@@ -1377,6 +1561,11 @@
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
      "evidence": "No terms page found (HTTP 404); used only with FILINGPULSE_API_KEY, which is not configured."
+    },
+    "telegram_sharing": {
+     "status": "UNKNOWN",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "No terms page found (HTTP 404); used only with FILINGPULSE_API_KEY, which is not configured."
     }
    },
    "api_key_required": false,
@@ -1385,5 +1574,6 @@
    "summary_ar": "لا توجد صفحة شروط لـ FilingPulse؛ غير مفعّل لعدم وجود مفتاح.",
    "evidence_run": "39523530990"
   }
- }
+ },
+ "full_text_run": "39529567535"
 }
