@@ -28,7 +28,12 @@ def _date(value: Any) -> date | None:
 
 
 def _expiration_date(value: Any) -> date | None:
-    if isinstance(value, date) and not isinstance(value, pd.Timestamp):
+    # An expiry is a calendar date, not a provider event timestamp.
+    if isinstance(value, pd.Timestamp):
+        if pd.isna(value):
+            return None
+        return value.date() if value.tz is None else value.tz_convert("America/New_York").date()
+    if isinstance(value, date):
         return value
     if isinstance(value, str):
         try:
