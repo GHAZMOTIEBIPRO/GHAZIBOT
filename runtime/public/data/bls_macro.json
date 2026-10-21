@@ -1,39 +1,11 @@
 {
   "schema": "ghazi_radar.bls_macro.v1",
-  "generated_at": "2026-10-21T00:42:53.473137+00:00",
-  "source": "U.S. Bureau of Labor Statistics",
-  "source_url": "https://api.bls.gov/publicAPI/v1/timeseries/data/",
-  "source_family": "bls_official",
-  "authority": "OFFICIAL_MACRO_CONTEXT_ONLY",
-  "is_realtime": false,
-  "may_trigger_call_put": false,
-  "indicators": {
-    "cpi_yoy_pct": {
-      "period": "2026-09",
-      "unit": "%",
-      "value": 3.738
-    },
-    "core_cpi_yoy_pct": {
-      "period": "2026-09",
-      "unit": "%",
-      "value": 2.564
-    },
-    "unemployment_pct": {
-      "period": "2026-09",
-      "unit": "%",
-      "value": 4.2
-    },
-    "payroll_change_thousands": {
-      "period": "2026-09",
-      "unit": "thousands",
-      "value": 29.0
-    }
-  },
-  "notes": [
-    "CPI YoY from unadjusted indices for the same month of the preceding year.",
-    "Unemployment and nonfarm payrolls are seasonally adjusted monthly series.",
-    "Payroll change derives from revised monthly level data, not a live release headline.",
-    "Observation month is not market quote time or economic release timestamp.",
-    "BLS.gov cannot vouch for data or analysis after retrieval from BLS.gov."
-  ]
+  "generated_at": "2026-10-21T00:48:28.218469+00:00",
+  "status": "SOURCE_TERMS_BLOCKED",
+  "source": "U.S. Bureau of Labor Statistics (api.bls.gov, release calendar)",
+  "reason": "BLS terms pages refuse the runner (HTTP 403), so the API terms of service could not be verified; automated reads stay off until the published BLS terms are recorded for this use",
+  "reason_ar": "صفحات شروط BLS ترفض خادم التشغيل (403) فلم يمكن التحقق من شروط الواجهة؛ الجلب الآلي متوقف حتى تسجيل شروط BLS المنشورة لهذا الاستخدام",
+  "enable_with": "repository variable BLS_AUTOMATION_APPROVED=true (only after the provider's permission)",
+  "execution_authority": false,
+  "may_trigger_call_put": false
 }
