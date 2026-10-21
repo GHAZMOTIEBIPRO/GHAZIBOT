@@ -56,6 +56,26 @@ Added 2026-10-21 (runner probe 39521600490):
   official BLS copyright and API terms pages may record them and open the
   gate; that records the provider's published terms, not the owner's own
   approval.
+
+Added 2026-10-21 (runner probe 39523530990):
+
+- Google Terms of Service (read in full) forbid "using automated means to
+  access content from any of our services in violation of the
+  machine-readable instructions on our web pages (for example, robots.txt
+  files that disallow crawling ...)"; news.google.com/robots.txt is
+  ``User-agent: * Disallow: /`` and does not allow /rss/. Google also says
+  third-party content in Google News may not be used "without that person
+  or organization's permission".
+- PR Newswire Terms of Use (read in full): users may not "use any robot,
+  spider, site search/retrieval application, or other manual or automatic
+  device or process to access, search, download, retrieve, index or 'data
+  mine' any content", nor "reproduce, distribute, ... 'scrape,' republish
+  or retransmit" content without express prior written permission.
+  GlobeNewswire answers the runner with 403 and Business Wire timed out, so
+  their terms are UNKNOWN; the three wires share one gate.
+- GDELT (read in full) is open for "unlimited and unrestricted use ... of
+  any kind without fee" with a citation and link to gdeltproject.org, so it
+  is not gated.
 """
 from __future__ import annotations
 
@@ -70,6 +90,8 @@ NASDAQTRADER_VARIABLE = "NASDAQTRADER_AUTOMATION_APPROVED"
 FINRA_API_VARIABLE = "FINRA_API_AUTOMATION_APPROVED"
 FRED_VARIABLE = "FRED_AUTOMATION_APPROVED"
 BLS_VARIABLE = "BLS_AUTOMATION_APPROVED"
+GOOGLE_NEWS_VARIABLE = "GOOGLE_NEWS_AUTOMATION_APPROVED"
+PRESS_WIRE_VARIABLE = "PRESS_WIRE_RSS_APPROVED"
 
 GATES: dict[str, dict[str, str]] = {
     "cboe_delayed": {
@@ -150,6 +172,24 @@ GATES: dict[str, dict[str, str]] = {
                    "verified; automated reads stay off until the published BLS terms are recorded for this use"),
         "reason_ar": ("صفحات شروط BLS ترفض خادم التشغيل (403) فلم يمكن التحقق من شروط الواجهة؛ الجلب الآلي "
                       "متوقف حتى تسجيل شروط BLS المنشورة لهذا الاستخدام"),
+    },
+    "google_news": {
+        "variable": GOOGLE_NEWS_VARIABLE,
+        "source": "Google News RSS search (news.google.com/rss)",
+        "reason": ("Google's terms forbid automated access that ignores robots.txt, and news.google.com "
+                   "robots.txt disallows the RSS search paths; publisher content there also needs the "
+                   "publisher's permission; automated reads stay off"),
+        "reason_ar": ("شروط Google تمنع الوصول الآلي المخالف لملف robots.txt، وملف news.google.com يمنع مسارات "
+                      "RSS، ومحتوى الناشرين يحتاج إذنهم؛ الجلب الآلي متوقف"),
+    },
+    "press_wire_rss": {
+        "variable": PRESS_WIRE_VARIABLE,
+        "source": "Press-wire RSS (PR Newswire, GlobeNewswire, Business Wire)",
+        "reason": ("PR Newswire's terms forbid robots or automatic processes that download or index its "
+                   "content and any republishing without written permission; GlobeNewswire and Business Wire "
+                   "terms could not be read from the runner; automated reads stay off until permission"),
+        "reason_ar": ("شروط PR Newswire تمنع الأدوات الآلية لتنزيل محتواها أو فهرسته وإعادة نشره دون إذن مكتوب، "
+                      "وتعذرت قراءة شروط GlobeNewswire وBusiness Wire؛ الجلب الآلي متوقف حتى الإذن"),
     },
 }
 

@@ -25,7 +25,7 @@ from options_radar.github_listing_discovery import (
     symbols_from_brief,
 )
 from options_radar.news_impact import annotate as annotate_news_impact
-from options_radar.source_permissions import SourceTermsBlocked, require
+from options_radar.source_permissions import SourceTermsBlocked, allowed, require
 
 GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 BLS_ICS = "https://www.bls.gov/schedule/news_release/bls.ics"
@@ -196,6 +196,8 @@ def press_wire_attention(
     bypass controls, store copyrighted article content, or imply official
     issuer attribution. Avoid ambiguous bare ticker matches.
     """
+    if not allowed("press_wire_rss"):
+        return [], {publisher: "SOURCE_TERMS_BLOCKED" for publisher in PRESS_WIRE_RSS}
     current = now or datetime.now(UTC)
     watch = [
         x for x in dict.fromkeys(str(s).upper().strip() for s in symbols)
@@ -321,6 +323,8 @@ def google_issuer_attention(
     RSS may change or block hosted runners. Only headlines explicitly naming
     the *queried* issuer qualify; Google matching/translation is not evidence.
     """
+    if not allowed("google_news"):
+        return [], {"all": "SOURCE_TERMS_BLOCKED"}
     current = now or datetime.now(UTC)
     preference = ("RGC", "BNAI", "RKLB", "IONQ", "SOUN", "ASTS",
                   "RGTI", "SOFI", "MU", "NVDA", "AMD", "AAPL",
@@ -694,6 +698,13 @@ def retain_verified_news_context(
     unchanged, and previous collection timestamp is retained separately.
     Filter stale or unverified/unmatched stories to fail closed.
     """
+    if not allowed("google_news"):
+        # A closed gate also withdraws headlines collected before it closed.
+        current["google_news_attention"] = []
+        current["google_news_retention"] = {"historical_stories_preserved": 0,
+                                            "note": "SOURCE_TERMS_BLOCKED: Google News RSS gate closed"}
+        current.pop("_new_stories", None)
+        return current
     names = {**ISSUER_NAMES, **{
         s: (name,) for s, name in (dynamic_names or {}).items()
         if s not in ISSUER_NAMES and _SYMBOL_RE.fullmatch(s)

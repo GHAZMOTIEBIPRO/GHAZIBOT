@@ -11,7 +11,7 @@ from typing import Any
 
 import requests
 
-from .source_permissions import require
+from .source_permissions import SourceTermsBlocked, require
 
 NASDAQ_HALT_RSS = os.getenv("NASDAQ_HALT_RSS_URL", "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts")
 ALPHA_VANTAGE_NEWS = "https://www.alphavantage.co/query"
@@ -243,6 +243,7 @@ def _get_rss(url: str, *, params: dict[str, str] | None = None) -> bytes:
 
 
 def fetch_globenewswire_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
+    require("press_wire_rss")
     content = _get_rss(GLOBENEWSWIRE_PUBLIC_RSS)
     return _parse_release_feed(
         content,
@@ -253,6 +254,7 @@ def fetch_globenewswire_news(known_symbols: set[str] | None = None) -> list[News
 
 
 def fetch_businesswire_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
+    require("press_wire_rss")
     content = _get_rss(BUSINESS_WIRE_RSS)
     return _parse_release_feed(
         content,
@@ -266,6 +268,8 @@ def fetch_prnewswire_news(known_symbols: set[str] | None = None) -> list[NewsEve
     # PR Newswire publishes RSS feeds. Google News RSS is used only as a
     # keyless discovery transport here; headlines/links remain attributed to
     # PR Newswire and never become official proof inside the stock path.
+    require("google_news")
+    require("press_wire_rss")
     content = _get_rss(
         GOOGLE_NEWS_RSS,
         params={
@@ -382,6 +386,8 @@ def collect_fast_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
     for fetcher in fetchers:
         try:
             events.extend(fetcher(known_symbols=known_symbols))
+        except SourceTermsBlocked as exc:
+            print(f"Fast news provider skipped: {fetcher.__name__}: {exc.block['status']}")
         except requests.RequestException as exc:
             print(f"Fast news provider skipped: {fetcher.__name__}: {type(exc).__name__}: {exc}")
         except (ET.ParseError, ValueError) as exc:
