@@ -1,0 +1,71 @@
+name: GHAZI RADAR Catalyst Watchlist
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_catalyst_watchlist.py"
+      - ".github/workflows/catalyst-watchlist.yml"
+  # Rebuilt only after its inputs are republished; no schedule of its own.
+  workflow_run:
+    workflows:
+      - GHAZI RADAR FDA Events (openFDA, CC0)
+      - GHAZI RADAR Official SEC Issuer Filings
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-radar-catalyst-watchlist
+  cancel-in-progress: false
+
+jobs:
+  catalyst-watchlist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # This workflow is the only writer of catalyst_watchlist.json. No price
+      # input is passed: no permitted public-display price source exists yet.
+      - name: Build the catalyst watchlist from published official events
+        run: >-
+          python app/scripts/build_catalyst_watchlist.py
+          --fda state/runtime/public/data/fda_events.json
+          --sec state/runtime/public/data/sec_filing_pulse.json
+          --output state/runtime/public/data/catalyst_watchlist.json
+      - name: Publish the catalyst watchlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Catalyst Watchlist"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/catalyst_watchlist.json
+          if git diff --cached --quiet; then
+            echo "Catalyst watchlist unchanged."
+            exit 0
+          fi
+          git commit -m "state: official catalyst watchlist [skip ci]"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2 + RANDOM % 5))
+          done
+          echo "Failed to publish the catalyst watchlist after retries." >&2
+          exit 1

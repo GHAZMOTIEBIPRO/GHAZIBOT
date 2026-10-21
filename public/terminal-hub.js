@@ -27,6 +27,7 @@
     dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
     macro:[ROOT+"bot-state/runtime/public/data/public_macro.json"],
     fda:[ROOT+"bot-state/runtime/public/data/fda_events.json"],
+    catalysts:[ROOT+"bot-state/runtime/public/data/catalyst_watchlist.json"],
     modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
     tracking:[ROOT+"bot-state/runtime/public/data/signal_tracking.json"],
   };
@@ -69,7 +70,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,fda:null,modelLab:null,tracking:null,pendingSymbol:null};
+    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,fda:null,catalysts:null,modelLab:null,tracking:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -146,6 +147,8 @@
     dataHub:d=>d?.schema==="ghazi.data_hub.v1"&&d.decision_authority===false&&Array.isArray(d.datasets),
     fda:d=>d?.schema==="ghazi.fda_events.v1"&&d.decision_authority===false&&
       Array.isArray(d.approvals)&&Array.isArray(d.recalls),
+    catalysts:d=>d?.schema==="ghazi.catalyst_watchlist.v1"&&d.decision_authority===false&&
+      d.execution_authority===false&&Array.isArray(d.watchlist)&&Array.isArray(d.price_confirmed_signals),
     macro:d=>d?.schema==="ghazi.public_macro.v1"&&d.decision_authority===false&&d.execution_authority===false&&
       d.cftc_index_futures&&typeof d.cftc_index_futures==="object"&&d.treasury_curve&&typeof d.treasury_curve==="object",
     optionsAnalytics:d=>d?.schema==="ghazi.options_analytics.v1"&&d.research_only===true&&
@@ -1570,6 +1573,47 @@
       box.append(item);
     }
   }
+  const CATALYST_KIND={FDA_APPROVAL:"موافقة FDA",FDA_SUPPLEMENT:"ملحق FDA",FDA_RECALL:"سحب FDA",
+    DILUTION_RISK:"خطر تخفيف",CHARTER_OR_REVERSE_SPLIT_REVIEW:"تعديل نظام/تقسيم عكسي",LISTING_NOTICE:"إشعار إدراج",
+    MATERIAL_AGREEMENT:"عقد جوهري",EARNINGS_RELEASE:"نتائج",INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري"};
+  // Official catalysts only; never a price band or a signal without a permitted current quote.
+  function catalystLines(report,limit=20){
+    if(!report||!Array.isArray(report.watchlist))return [];
+    return report.watchlist.filter(e=>e&&/^[A-Z][A-Z0-9.\-]{0,9}$/.test(e.symbol||"")).slice(0,limit).map(e=>({
+      title:e.symbol,
+      tone:e.dilution_risk||e.charter_or_reverse_split_review?"DOWN":e.highest_importance==="HIGH"?"STALE":null,
+      status:({HIGH:"أولوية مراجعة عالية",MEDIUM:"أولوية متوسطة",LOW:"أولوية منخفضة"}[e.highest_importance]||"—")+" · "+String(e.latest_date||"—"),
+      price:e.sub10_confirmed===true?"تحت 10$ بسعر حديث مسموح":"نطاق السعر غير مؤكد (لا سعر مسموح حديث)",
+      items:(e.catalysts||[]).slice(0,4).map(c=>({text:(CATALYST_KIND[c.kind]||c.kind)+" · "+String(c.date||"—")+
+        (c.label?" · "+String(c.label).slice(0,90):"")+" · "+String(c.source||""),url:safeOfficial(c.source_url)}))}));
+  }
+  function renderCatalysts(){
+    const box=$("terminal-catalyst-list");if(!box)return;
+    box.replaceChildren();
+    const report=state.catalysts;
+    if(!report){put("terminal-catalyst-status","لم تُنشر قائمة المحفزات بعد.");put("terminal-price-confirmed","");return;}
+    const src=report.sources||{};
+    put("terminal-catalyst-status","المصادر: openFDA"+(src.sec_edgar?" + SEC EDGAR":" (SEC غير متاح: "+String(src.sec_status||"—")+")")+
+      " · آخر "+String(report.window_days||30)+" يومًا · "+report.watchlist.length+" سهمًا · التحديث: "+stamp(report.generated_at)+
+      " · أولوية المراجعة لا تعني اتجاه السعر.");
+    put("terminal-price-confirmed",report.price_confirmed_signals.length?
+      "الإشارات المؤكدة سعريًا: "+report.price_confirmed_signals.length:
+      "الإشارات المؤكدة سعريًا: لا توجد — "+String(report.price_confirmation?.note_ar||"لا يوجد مصدر أسعار مسموح."));
+    const lines=catalystLines(report);
+    if(!lines.length){box.append(txt("p","لا محفزات رسمية مرتبطة برمز في النافذة الحالية.","terminal-empty"));return;}
+    for(const line of lines){
+      const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
+      head.append(txt("strong",line.title),chip(line.status,line.tone));
+      item.append(head,txt("small",line.price,"terminal-structural-notice"));
+      for(const c of line.items){
+        const row=txt("small",c.text,"terminal-structural-notice");
+        if(c.url){const a=document.createElement("a");a.href=c.url;a.target="_blank";a.rel="noopener noreferrer";
+          a.textContent=" المصدر الرسمي ↗";row.append(a);}
+        item.append(row);
+      }
+      box.append(item);
+    }
+  }
   function renderMacro(){
     const box=$("terminal-macro");if(!box)return;
     box.replaceChildren();
@@ -1811,20 +1855,20 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","modelLab","tracking"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","catalysts","modelLab","tracking"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.modelLab,state.tracking]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.catalysts,state.modelLab,state.tracking]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderFda();renderOps();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderFda();renderCatalysts();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
