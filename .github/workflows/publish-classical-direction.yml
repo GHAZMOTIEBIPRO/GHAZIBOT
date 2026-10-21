@@ -64,6 +64,7 @@ jobs:
         id: gate
         env:
           DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED || '' }}
+          PUBLIC_DISPLAY_TERMS_CONFIRMED: ${{ vars.PUBLIC_DISPLAY_TERMS_CONFIRMED || '' }}
           HAS_TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY != '' }}
           HAS_FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY != '' }}
           HAS_TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN != '' }}
@@ -71,7 +72,8 @@ jobs:
           HAS_TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY != '' }}
           HAS_POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY != '' }}
           HAS_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY != '' }}
-        run: python publisher/scripts/price_source_gate.py --require price
+        # The digest is public: an internal-analysis key alone is not enough.
+        run: python publisher/scripts/price_source_gate.py --require price --public
 
       - name: Withdraw the public digest while no permitted source exists
         if: steps.gate.outputs.usable != 'true'
