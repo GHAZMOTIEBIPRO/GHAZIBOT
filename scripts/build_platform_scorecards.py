@@ -10,7 +10,8 @@ evidence, and never folds them into one number:
 4. ANALYTICAL_VALIDITY - the computation test suite on main (not edge)
 5. SIGNAL_PERFORMANCE  - walk-forward gate and SPA results versus baselines
 6. WEBSITE_FUNCTIONALITY - only from a recorded browser check, else unmeasured
-7. TELEGRAM_DELIVERY   - Bot API acceptance recorded by the delivery audit
+7. TELEGRAM_DELIVERY   - a message accepted with its message_id (ops digest
+                         delivery log), else Bot API checks of the delivery audit
 
 Standard library only; it reads published files and the GitHub Actions
 API with the workflow token. Missing evidence is reported as UNMEASURED,
@@ -196,7 +197,21 @@ def website(smoke: Any) -> dict[str, Any]:
                    "يقيس سلامة العرض لا صحة البيانات المعروضة.")
 
 
-def telegram(audit: Any, now: datetime) -> dict[str, Any]:
+def _last_delivery(digest: Any) -> dict[str, Any] | None:
+    log = digest.get("delivery_log") if isinstance(digest, dict) else None
+    sent = [e for e in log or [] if isinstance(e, dict) and isinstance(e.get("message_id"), int)
+            and e["message_id"] > 0 and _parse(e.get("sent_at"))]
+    return max(sent, key=lambda e: _parse(e["sent_at"])) if sent else None
+
+
+def telegram(audit: Any, now: datetime, digest: Any = None) -> dict[str, Any]:
+    last = _last_delivery(digest)
+    if last is not None and now - _parse(last["sent_at"]) <= timedelta(hours=36):
+        return _metric("DELIVERED", None, "status",
+                       {"last_sent_at": last["sent_at"], "kind": last.get("kind"), "message_id": last["message_id"],
+                        "log": "state/telegram/ops_digest_state.json"},
+                       "Telegram accepted a message and returned its message_id (ops digest delivery log)",
+                       "Telegram قبل رسالة فعلية وأعاد رقمها؛ هذا لا يثبت أن المستخدم قرأها.")
     if not isinstance(audit, dict):
         return _metric("UNMEASURED", None, "status", {}, "no delivery audit", "لا يوجد سجل تسليم.")
     checked = _parse(audit.get("checked_at"))
@@ -224,7 +239,8 @@ def build(data_dir: Path, state_dir: Path, runtime_dir: Path, now: datetime,
             "SIGNAL_PERFORMANCE": signal_performance(_load(state_dir / "stocks/stock_walk_forward.json"),
                                                      _load(data_dir / "explosion_model_lab.json")),
             "WEBSITE_FUNCTIONALITY": website(_load(data_dir / "site_smoke.json")),
-            "TELEGRAM_DELIVERY": telegram(_load(runtime_dir / "data/live/guardian_delivery_audit.json"), now),
+            "TELEGRAM_DELIVERY": telegram(_load(runtime_dir / "data/live/guardian_delivery_audit.json"), now,
+                                          _load(state_dir / "telegram/ops_digest_state.json")),
         },
         "original_evidence_score": {
             "value": strength.get("strength_score") if isinstance(strength, dict) else None,
