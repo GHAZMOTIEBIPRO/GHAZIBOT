@@ -11,7 +11,7 @@ import hashlib
 import html
 import json
 from collections.abc import Callable
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -98,7 +98,7 @@ def candidates(report: dict[str, Any], *, now: datetime,
             label = str(event.get("label") or "")[:150]
             if not label.strip():
                 continue
-            raw = "|".join((symbol, source, kind, day, url, label))
+            raw = f"{symbol}|{source}|{kind}|{day}|{url}|{label}"
             digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
             unique[digest] = {
                 "key": digest, "symbol": symbol, "source": source,
