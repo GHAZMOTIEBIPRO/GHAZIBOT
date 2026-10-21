@@ -132,8 +132,9 @@ def test_riyadh_daily_brief_source_authentication_and_research_only():
 
 
 def test_riyadh_daily_brief_dedupe_and_failed_send_retry():
-    from scripts.send_catalyst_watchlist_alerts import send_daily_brief
     from types import SimpleNamespace
+
+    from scripts.send_catalyst_watchlist_alerts import send_daily_brief
     event_report = report(row())
     initial, _ = run(event_report, None, now=NOW, send=lambda _: None)
     msgs = []
