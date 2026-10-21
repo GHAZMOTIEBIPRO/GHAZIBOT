@@ -328,11 +328,13 @@ jobs:
 
       - name: Official catalyst desk and Telegram regression
         run: |
-          ruff check scripts/send_catalyst_watchlist_alerts.py tests/test_catalyst_watchlist_telegram.py
-          python -m pytest -q tests/test_catalyst_watchlist_telegram.py tests/test_catalyst_watchlist.py tests/test_fda_alerts.py
+          ruff check scripts/send_catalyst_watchlist_alerts.py scripts/catalyst_health_context.py tests/test_catalyst_watchlist_telegram.py tests/test_catalyst_health_context.py
+          python -m pytest -q tests/test_catalyst_watchlist_telegram.py tests/test_catalyst_watchlist.py tests/test_fda_alerts.py tests/test_catalyst_health_context.py
           node --check public/catalyst-desk.js
           node --check public/catalyst-chart.js
+          node --check public/catalyst-source-truth.js
           node tests/terminal_catalyst_desk.cjs
+          node tests/terminal_source_truth.cjs
 
       - name: JavaScript syntax gate
         run: |
