@@ -176,7 +176,9 @@ def test_failed_telegram_leaves_unsent_and_never_logs_source_data():
 
 def test_workflow_single_writer_and_authorization_enforced():
     from pathlib import Path
+
     import yaml
+
     workflow = Path(".github/workflows/alpaca-iex-vcp-private.yml").read_text()
     parsed = yaml.safe_load(workflow)
     assert parsed[True]["schedule"] == [{"cron": "30 1 * * 2-6"}]
