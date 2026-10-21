@@ -43,6 +43,9 @@ def test_true_closed_candles_for_small_cap_watch():
         pd.Timestamp("2026-10-16 15:40",tz=NY).timestamp())
     assert out["intervals"]["5m"]["technical"]["ema_fast"] is not None
     assert out["options_execution_grade"] is False
+    assert out["vcp_minervini_shadow"]["schema"] == "ghazi.vcp_minervini_shadow.v1"
+    assert out["vcp_minervini_shadow"]["research_only"] is True
+    assert out["vcp_minervini_shadow"]["option_execution_eligible"] is False
 
 
 def test_weekend_history_not_promoted_to_current_and_no_faked_5m():

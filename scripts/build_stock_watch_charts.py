@@ -18,6 +18,7 @@ import pandas as pd
 from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shadow
 from options_radar.source_permissions import allowed, blocked_report, require
 from options_radar.stock_watch_confluence import price_confluence_shadow
+from options_radar.vcp_minervini_shadow import vcp_trend_shadow
 from options_radar.volume_liquidity import liquidity_context, read_ar
 from scripts.build_index_chart_snapshot import pack_bars
 from scripts.build_index_context import (
@@ -303,6 +304,7 @@ def pack_symbol(
     # scores, and no falsely independent data provider claim.
     volatility_shadow = bollinger_compression_shadow(clean_day)
     confluence = price_confluence_shadow(clean_day)
+    vcp = vcp_trend_shadow(clean_day)
     media = (news_attention or {}).get(symbol)
     return {
         "symbol": symbol, "category": ("VOLATILE_GROWTH_WATCH" if symbol in SMALL_WATCH
@@ -314,6 +316,7 @@ def pack_symbol(
         "options_execution_grade": False,
         "volatility_shadow": volatility_shadow,
         "price_confluence": confluence,
+        "vcp_minervini_shadow": vcp,
         "news_attention": media if isinstance(media, dict) else None,
     }
 

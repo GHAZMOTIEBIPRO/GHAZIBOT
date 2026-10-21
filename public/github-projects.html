@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1625">
+<meta name="description" content="مكتبة 50 مشروع GitHub مع تمييز الروابط المتحققة ومراحل الربط الحقيقي بمنصة GHAZI RADAR">
+<title>50 مشروع GitHub للسوق الأمريكي | GHAZI RADAR</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#152e47,#08111b 55%,#070d13);
+color:#e9f3ff;font:15px/1.75 "Noto Sans Arabic",Tahoma,Arial,sans-serif}
+main{max-width:1250px;margin:auto;padding:24px 20px 68px}
+a{color:#9bebff}
+.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.top a{text-decoration:none}
+.tag{font:700 11px/1.6 system-ui,sans-serif;color:#80ddc9;letter-spacing:.12em}
+h1{font-size:clamp(26px,4vw,42px);line-height:1.3;margin:36px 0 10px}
+.lede{max-width:900px;color:#b5cfde;font-size:15px}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin:25px 0}
+.stats>span{background:#102539;border:1px solid #345369;border-radius:12px;padding:11px 17px}
+.controls{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;
+background:#132537;border:1px solid #345369;border-radius:14px;padding:17px;margin-bottom:20px}
+.controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#c4dbe9}
+input,select{background:#081729;color:#edfaff;border:1px solid #48687d;
+border-radius:8px;padding:10px;font:inherit;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.project-card{padding:17px;background:#132336;border:1px solid #284357;border-radius:13px;
+display:flex;flex-direction:column;gap:8px;min-width:0}
+.project-top{display:flex;justify-content:space-between;align-items:start;gap:8px}
+.project-top strong{font-size:15px}.project-top small{white-space:nowrap;color:#82d6d5}
+.project-card p{color:#e0ecf9;margin:1px 0;font-size:13px}
+.project-card>small{color:#a7c0d0;font-size:11px}
+.project-card>a{display:inline-block;border:1px solid #4094a6;background:#144052;
+border-radius:8px;padding:7px 11px;max-width:max-content;text-decoration:none;margin-top:auto}
+.unverified{color:#c6aec0;font-size:12px;margin-top:auto}
+.notice{font-size:13px;color:#b6d4df;border-inline-start:3px solid #509aae;padding:8px 15px}
+@media(max-width:940px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr}}
+</style>
+</head><body><main>
+<nav class="top"><a href="./index.html">← العودة إلى GHAZI RADAR</a><span class="tag">SOURCE-CHECKED GITHUB RESEARCH</span></nav>
+<h1>50 مشروع GitHub للسوق الأمريكي</h1>
+<p class="lede">قائمة مراجعة حقيقية من 50 اسمًا وردت في البحث. 34 رابطًا محددًا، والبقية أسماء عامة تحتاج تحديد المستودع قبل دمجها. كل بطاقة تبيّن هل استفدنا من منهجيتها، وهل توجد وظيفة مماثلة لدينا، أم أنها ما زالت مرجعًا فقط.</p>
+<div class="stats"><span>المشاريع: <b>50</b></span><span>روابط مستودعات محددة: <b>34</b></span><span>أسماء غير محددة: <b>16</b></span><span>النتائج المعروضة: <b id="projects-count">—</b></span></div>
+<div class="controls" aria-label="فلترة المشاريع">
+<label>اسم أو رابط مشروع<input id="projects-query" type="search" placeholder="مثال: Gamma, EdgarTools, QuantStats"></label>
+<label>التخصص<select id="projects-group"><option value="all">كل التخصصات</option>
+<option value="breakout">اختراقات وفلترة</option><option value="options">أوبشن وGamma</option>
+<option value="platform">منصات وذكاء اصطناعي</option><option value="source">أخبار وبيانات</option>
+<option value="technical">شارت واختبارات</option></select></label>
+<label>حالة الاستفادة<select id="projects-status"><option value="all">جميع الحالات</option>
+<option value="methodology">طبقنا منهجية مستقلة</option><option value="existing">وظائف قائمة</option>
+<option value="reference">مرجع لم يُدمج</option><option value="review">يحتاج مراجعة</option>
+<option value="blocked">مقيد أو مصدر بيانات محظور</option><option value="ambiguous">اسم عام</option></select></label>
+</div>
+<p class="notice">«رابط GitHub» لا يعني تشغيل المشروع في GHAZI RADAR، ووجود رخصة مفتوحة للكود لا يمنح ترخيصًا لإعادة نشر أسعار Yahoo أو Cboe أو عقود OPRA. لن تُعرض إشارات CALL/PUT التنفيذية إلا بعد تأكيد بياناتها وفق البوابات القائمة.</p>
+<section id="projects-results" class="grid" aria-live="polite"></section>
+</main><script src="./github-projects.js?v=20261022" defer></script></body></html>
