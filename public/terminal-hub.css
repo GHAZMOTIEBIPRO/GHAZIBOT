@@ -381,3 +381,11 @@ body{background:radial-gradient(ellipse 1100px 420px at 52% -140px,rgba(24,122,1
 .terminal-tv-chart summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
 .terminal-tv-chart-slot{height:420px;max-width:100%;overflow:hidden}
 @media(max-width:640px){.terminal-tv-chart-slot{height:340px}}
+
+/* GHAZI brief: compact sections, folded when empty */
+.terminal-brief-headline{font-weight:600;margin:6px 0 10px;line-height:1.6;overflow-wrap:anywhere}
+.terminal-brief-section{border-top:1px solid var(--terminal-line, rgba(127,127,127,.25));padding:6px 0}
+.terminal-brief-section summary{cursor:pointer;font-weight:600;font-size:14px}
+.terminal-brief-section ul{margin:6px 0 0;padding-inline-start:18px}
+.terminal-brief-section li{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.terminal-brief-section.is-empty summary{opacity:.75}

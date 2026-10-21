@@ -1071,8 +1071,13 @@
     // Explosion candidates receive alert links too.
     const boom=(state.explosion?.candidates||[]).map(x=>x?.symbol)
       .filter(s=>typeof s==="string"&&/^[A-Z][A-Z0-9.-]{0,9}$/.test(s));
+    // Catalyst watchlist and SEC filers get a company page (brief + TradingView)
+    // even without chart bars; so does any well-formed ?chart= symbol.
+    const catalysts=[...(state.catalysts?.watchlist||[]),...(Array.isArray(state.sec?.filings)?state.sec.filings:[])]
+      .map(x=>x?.symbol).filter(s=>typeof s==="string"&&/^[A-Z][A-Z0-9.-]{0,9}$/.test(s));
+    const linked=[state.pendingSymbol,current].filter(s=>typeof s==="string"&&/^[A-Z][A-Z0-9.-]{0,9}$/.test(s));
     const known=[...new Set([...INDEX_ORDER,...LARGE,...VOLATILE,
-      ...discoveries,...watched,...fallback,...classical,...boom])];
+      ...discoveries,...watched,...fallback,...classical,...boom,...catalysts,...linked])];
     // A ?chart= symbol waits for the first full feed load before it can be
     // judged unknown; otherwise the early fallback would overwrite it.
     const pending=state.pendingSymbol&&known.includes(state.pendingSymbol)?state.pendingSymbol:null;
@@ -1110,6 +1115,7 @@
     const symbol=state.symbol,tf=state.tf;
     // The summary uses published engine feeds, not candles, so it renders
     // even when this symbol has no chart bars.
+    renderBrief(symbol);
     renderDecisionCard(symbol);
     renderTradingView(symbol);
     if(typeof window!=="undefined"&&window.GhaziTV)window.GhaziTV.renderSymbol(symbol);
@@ -1354,6 +1360,30 @@
     script.src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.textContent=JSON.stringify(config);
     holder.append(inner,script);slot.append(holder);
+  }
+  // Sections that stay open; the rest fold to keep the brief readable on a phone.
+  const BRIEF_OPEN=new Set(["catalysts","filings","technical","scenarios","can","cannot"]);
+  function renderBrief(symbol){
+    const body=$("terminal-brief-body");if(!body)return;
+    body.replaceChildren();
+    const api=typeof GhaziDecision!=="undefined"?GhaziDecision:null;
+    if(!api||typeof api.brief!=="function"){put("terminal-brief-headline","الملخص غير متاح");return;}
+    let b;
+    try{
+      b=api.brief(symbol,{index:state.quotes,classical:state.classical,liquidity:state.liquidity,news:state.news,
+        explosion:state.explosion,gamma:state.gamma,options:state.optionsAnalytics,tracking:state.tracking,
+        dataHub:state.dataHub,catalysts:state.catalysts,sec:state.sec,brief:state.brief});
+    }catch{put("terminal-brief-headline","تعذر بناء الملخص");return;}
+    put("terminal-brief-headline",symbol+" · "+b.headline);
+    for(const section of b.sections){
+      const box=document.createElement("details");
+      box.className="terminal-brief-section"+(section.empty?" is-empty":"");
+      box.open=BRIEF_OPEN.has(section.key)&&!section.empty;
+      box.append(txt("summary",section.title));
+      const list=txt("ul","");
+      for(const line of section.lines)list.append(txt("li",line));
+      box.append(list);body.append(box);
+    }
   }
   function renderDecisionCard(symbol){
     const body=$("terminal-decision-card-body");if(!body)return;
