@@ -3,7 +3,8 @@
  * research signal authority; Date.now never stands in for quote/event time. */
 (function(root){
   const BASE="https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/";
-  const URLS={market:BASE+"data-status.json",engines:BASE+"live_dashboard_status.json"};
+  const URLS={market:BASE+"data-status.json",engines:BASE+"live_dashboard_status.json",
+    alpaca:BASE+"alpaca_iex_vcp_health.json"};
   const VALID_STATES=new Set(["healthy","degraded","critical","unavailable"]);
   const ENGINES=["fast_discovery","stocks","options"];
   function time(raw,now){
@@ -63,7 +64,28 @@
       generatedAt:validMarket?market.generated_at:null,
       items:summary,decisionAuthority:false};
   }
-  if(typeof module!=="undefined"&&module.exports)module.exports={assessment,time,URLS};
+  function alpacaReadiness(report,now=Date.now()){
+    const at=time(report?.generated_at,now);
+    const valid=report?.schema==="ghazi.alpaca_iex_vcp_health.v1"&&at!==null&&
+      now>=at&&now-at<=48*3600000&&report.raw_market_data_published===false&&
+      report.tickers_published===false&&report.indicators_published===false&&
+      report.trade_signals_published===false&&report.execution_authority===false&&
+      report.option_quote_verified===false;
+    const authorized=valid&&report.status==="INTERNAL_RESEARCH";
+    const unsuccessful=valid&&report.status==="INTERNAL_NO_VALID_BARS";
+    return {
+      key:"alpaca",name:"Alpaca IEX · بحث VCP داخلي",
+      value:authorized?"أبحاث يومية مكتملة من IEX فقط":
+        unsuccessful?"الاتصال البحثي مفعل لكن الشموع غير كافية":
+        "غير مفعل أو لا يوجد تقرير حديث موثوق",
+      note:valid?
+        "لا يتم نشر الشموع أو أسماء الأسهم أو نتائج VCP. المصدر بورصة IEX فقط، وليس SIP. تاريخ التقرير "+report.generated_at:
+        "يلزم مفتاح Alpaca، تصريح استخدام داخلي، وتقرير صالح؛ لا يعني فتح الحساب ترخيص نشر.",
+      status:authorized?"healthy":unsuccessful?"degraded":"unavailable",
+    };
+  }
+  if(typeof module!=="undefined"&&module.exports)
+    module.exports={assessment,time,URLS,alpacaReadiness};
   if(typeof document==="undefined"||!root)return;
   const $=id=>document.getElementById(id);
   function item(tag,text,cls){const el=document.createElement(tag);el.textContent=text;if(cls)el.className=cls;return el;}
@@ -89,9 +111,12 @@
     return content;
   }
   async function refresh(){
-    const [market,engines]=await Promise.allSettled([read(URLS.market),read(URLS.engines)]);
-    render(assessment(market.status==="fulfilled"?market.value:null,
-      engines.status==="fulfilled"?engines.value:null));
+    const [market,engines,alpaca]=await Promise.allSettled([
+      read(URLS.market),read(URLS.engines),read(URLS.alpaca)]);
+    const source=assessment(market.status==="fulfilled"?market.value:null,
+      engines.status==="fulfilled"?engines.value:null);
+    source.items.push(alpacaReadiness(alpaca.status==="fulfilled"?alpaca.value:null));
+    render(source);
   }
   root.GhaziSourceTruth={refresh};
   document.addEventListener("DOMContentLoaded",()=>{
