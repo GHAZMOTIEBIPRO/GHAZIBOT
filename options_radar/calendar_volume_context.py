@@ -27,6 +27,17 @@ def _date(value: Any) -> date | None:
     return parsed.tz_convert("America/New_York").date()
 
 
+def _expiration_date(value: Any) -> date | None:
+    if isinstance(value, date) and not isinstance(value, pd.Timestamp):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value[:10])
+        except ValueError:
+            return None
+    return _date(value)
+
+
 def calendar_adjusted_contract_volume(
     current_volume: Any,
     history: pd.DataFrame | None,
@@ -55,7 +66,7 @@ def calendar_adjusted_contract_volume(
         "source_event_time_required": True,
     }
     observed = _date(observed_at)
-    expiry = _date(expiration)
+    expiry = _expiration_date(expiration)
     if observed is None or expiry is None:
         return {**base, "reason": "MISSING_DATED_PROVENANCE"}
     dte = (expiry - observed).days
