@@ -52,11 +52,13 @@ def _atr14(values: list[tuple[float, float, float, float, float]]) -> list[float
     return ranges
 
 
-def vcp_trend_shadow(frame: pd.DataFrame) -> dict:
+def vcp_trend_shadow(frame: pd.DataFrame, *, source_family: str = "yahoo") -> dict:
+    if source_family not in {"yahoo", "alpaca_iex"}:
+        raise ValueError("unknown OHLCV family; no implicit source upgrade")
     base = {
         "schema": "ghazi.vcp_minervini_shadow.v1",
         "available": False, "stage": "INSUFFICIENT", "source_last_daily_bar": None,
-        "source_family": "yahoo", "research_only": True,
+        "source_family": source_family, "research_only": True,
         "independent_confirmation": False, "option_execution_eligible": False,
         "data_authority": "COMPLETED_DAILY_OHLCV_RESEARCH_ONLY",
         "volume_dry_up": None, "atr_contraction": None, "ema_stack": None,
