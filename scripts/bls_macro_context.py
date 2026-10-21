@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import re
@@ -12,6 +13,10 @@ from urllib.request import Request, urlopen
 API = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 SERIES = ("CUUR0000SA0", "CUUR0000SA0L1E", "LNS14000000", "CES0000000001")
 MAX_BYTES = 800_000
+_gate_spec = importlib.util.spec_from_file_location(
+    "ghazi_source_permissions", Path(__file__).resolve().parents[1] / "options_radar" / "source_permissions.py")
+source_permissions = importlib.util.module_from_spec(_gate_spec)
+_gate_spec.loader.exec_module(source_permissions)
 
 
 def fetch_bls_json(opener=urlopen) -> dict:
@@ -119,6 +124,17 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if not source_permissions.allowed("bls"):
+        # Replace the public file so earlier BLS values do not stay on the site.
+        snapshot = source_permissions.blocked_report(
+            "bls", schema="ghazi_radar.bls_macro.v1", generated_at=datetime.now(timezone.utc).isoformat())
+        snapshot.pop("symbols", None)
+        snapshot.pop("coverage", None)
+        snapshot["may_trigger_call_put"] = False
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print("BLS context withheld:", snapshot["reason"])
+        return 0
     snapshot = build_snapshot(fetch_bls_json())
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temp = args.output.with_suffix(args.output.suffix + ".tmp")

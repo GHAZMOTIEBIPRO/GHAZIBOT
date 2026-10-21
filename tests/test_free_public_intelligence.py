@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
+import pytest
 import requests
 
 from options_radar.free_public_intelligence import (
@@ -24,6 +25,13 @@ from scripts.send_free_macro_reminders import (
     select_macro_reminders,
     send_from_file,
 )
+
+
+@pytest.fixture(autouse=True)
+def _bls_gate_open(monkeypatch):
+    # Calendar parsing once BLS terms are recorded; the closed gate is
+    # covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
+    monkeypatch.setenv("BLS_AUTOMATION_APPROVED", "true")
 
 NOW = datetime(2026, 10, 14, 13, 15, tzinfo=timezone.utc)
 ICS = """BEGIN:VCALENDAR

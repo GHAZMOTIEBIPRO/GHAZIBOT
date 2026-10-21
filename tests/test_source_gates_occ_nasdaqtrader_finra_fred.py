@@ -21,7 +21,7 @@ from options_radar import (
 from options_radar.source_permissions import SourceTermsBlocked
 
 ROOT = Path(__file__).resolve().parents[1]
-NEW_GATES = ("occ_market_data", "nasdaqtrader", "finra_api", "fred")
+NEW_GATES = ("occ_market_data", "nasdaqtrader", "finra_api", "fred", "bls")
 
 
 class NoNetwork:
@@ -108,3 +108,21 @@ def test_every_caller_of_these_hosts_checks_a_gate():
         if hosts.search(text):
             assert re.search(r"allowed\(\"(occ_market_data|nasdaqtrader|finra_api|fred)\"\)|"
                              r"require\(\"(occ_market_data|nasdaqtrader|finra_api|fred)\"\)", text), path.name
+
+
+def test_bls_calendar_and_macro_context_are_withheld(tmp_path, monkeypatch):
+    import json
+    import sys
+
+    from options_radar import free_public_intelligence as fpi
+    from scripts import bls_macro_context
+
+    with pytest.raises(SourceTermsBlocked):
+        fpi.bls_upcoming(session=NoNetwork())
+    out = tmp_path / "bls_macro.json"
+    out.write_text('{"indicators": {"cpi_yoy_pct": {"value": 3.1}}}')
+    monkeypatch.setattr(bls_macro_context, "fetch_bls_json", NoNetwork().get)
+    monkeypatch.setattr(sys, "argv", ["x", "--output", str(out)])
+    assert bls_macro_context.main() == 0
+    report = json.loads(out.read_text())
+    assert report["status"] == "SOURCE_TERMS_BLOCKED" and "indicators" not in report

@@ -50,6 +50,12 @@ Added 2026-10-21 (runner probe 39521600490):
 - FRED: the terms pages time out from the runner (UNKNOWN); the search-index
   text of the official API terms forbids storing, caching or archiving FRED
   content, which persistent state would do.
+- BLS: every www.bls.gov terms page answers the runner with 403, also with a
+  declared User-Agent (runs 39521600490, 39522604250), so the API terms
+  could not be read; UNKNOWN is not permission. An owner who reads the
+  official BLS copyright and API terms pages may record them and open the
+  gate; that records the provider's published terms, not the owner's own
+  approval.
 """
 from __future__ import annotations
 
@@ -63,6 +69,7 @@ OCC_VARIABLE = "OCC_MARKET_DATA_AUTOMATION_APPROVED"
 NASDAQTRADER_VARIABLE = "NASDAQTRADER_AUTOMATION_APPROVED"
 FINRA_API_VARIABLE = "FINRA_API_AUTOMATION_APPROVED"
 FRED_VARIABLE = "FRED_AUTOMATION_APPROVED"
+BLS_VARIABLE = "BLS_AUTOMATION_APPROVED"
 
 GATES: dict[str, dict[str, str]] = {
     "cboe_delayed": {
@@ -135,6 +142,14 @@ GATES: dict[str, dict[str, str]] = {
                    "for this use"),
         "reason_ar": ("تعذر قراءة شروط FRED من خادم التشغيل، وشروط واجهتها الرسمية تمنع تخزين محتواها أو "
                       "تخزينه مؤقتًا أو أرشفته؛ الجلب الآلي متوقف حتى التحقق من الشروط لهذا الاستخدام"),
+    },
+    "bls": {
+        "variable": BLS_VARIABLE,
+        "source": "U.S. Bureau of Labor Statistics (api.bls.gov, release calendar)",
+        "reason": ("BLS terms pages refuse the runner (HTTP 403), so the API terms of service could not be "
+                   "verified; automated reads stay off until the published BLS terms are recorded for this use"),
+        "reason_ar": ("صفحات شروط BLS ترفض خادم التشغيل (403) فلم يمكن التحقق من شروط الواجهة؛ الجلب الآلي "
+                      "متوقف حتى تسجيل شروط BLS المنشورة لهذا الاستخدام"),
     },
 }
 
