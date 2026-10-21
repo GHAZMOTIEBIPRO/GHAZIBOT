@@ -93,6 +93,14 @@ PAGES = {
     "alpaca_market_data": "https://docs.alpaca.markets/docs/about-market-data-api",
     "alpaca_disclosures": "https://alpaca.markets/disclosures",
     "tradier_market_data_docs": "https://documentation.tradier.com/brokerage-api/overview/market-data",
+    # Markdown versions the providers publish for automated readers; their
+    # HTML pricing pages render the plan tables with JavaScript (run 39529567535).
+    "twelvedata_pricing_md": "https://twelvedata.com/pricing.md",
+    "twelvedata_llms": "https://twelvedata.com/llms.txt",
+    "alpaca_market_data_md": "https://docs.alpaca.markets/us/docs/about-market-data-api.md",
+    "alpaca_llms": "https://docs.alpaca.markets/us/llms.txt",
+    "tradier_llms": "https://docs.tradier.com/llms.txt",
+    "massive_individual_terms": "https://massive.com/legal/individual-terms",
 }
 # Pages whose whole text is printed (bounded), so specific clauses on derived
 # data, non-price analytics, storage, sharing and plan limits can be quoted
@@ -100,8 +108,13 @@ PAGES = {
 FULL_TEXT = {"twelvedata_terms", "twelvedata_pricing", "finnhub_terms", "finnhub_pricing", "alphavantage_terms",
              "alphavantage_premium", "fmp_terms", "eodhd_terms", "tiingo_tos", "tiingo_pricing", "massive_terms",
              "nasdaq_data_link_terms", "alpaca_terms", "alpaca_market_data", "tradier_terms",
-             "tradier_market_data_docs", "eodhd_pricing", "fmp_pricing", "massive_pricing", "alpaca_disclosures"}
+             "tradier_market_data_docs", "eodhd_pricing", "fmp_pricing", "massive_pricing", "alpaca_disclosures",
+             "twelvedata_pricing_md", "twelvedata_llms", "alpaca_market_data_md", "alpaca_llms", "tradier_llms",
+             "massive_individual_terms"}
 FULL_MAX = 40000
+# Tiingo's terms run past 40k characters; the derived-product and storage
+# sections continue after the first cut.
+FULL_MAX_PAGE = {"tiingo_tos": 160000}
 KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|non-?commercial|"
                       r"commercial|display|derived|extract|reproduc|permission|licen[cs]e|"
                       r"internal|store|storage|retain|cache|third[- ]part|public|website|disallow|"
@@ -150,7 +163,7 @@ def main(only: list[str]) -> int:
         lines = [ln.strip() for ln in re.split(r"\n|(?<=[.;])\s{2,}", body) if len(ln.strip()) > 40]
         if name in FULL_TEXT:
             print("FULL_TEXT_BEGIN")
-            print("\n".join(lines)[:FULL_MAX])
+            print("\n".join(lines)[:FULL_MAX_PAGE.get(name, FULL_MAX)])
             print("FULL_TEXT_END")
             continue
         hits = [ln for ln in lines if KEYWORDS.search(ln)]
