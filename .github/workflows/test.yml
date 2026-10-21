@@ -316,6 +316,11 @@ jobs:
         continue-on-error: true
         run: ruff check .
 
+      - name: Independent gamma heatmap research regression
+        run: |
+          ruff check options_radar/gamma_heatmap_research.py tests/test_gamma_heatmap_research.py
+          python -m pytest -q tests/test_gamma_heatmap_research.py
+
       - name: JavaScript syntax gate
         run: |
           node --check public/app.js
