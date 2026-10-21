@@ -67,6 +67,21 @@ PAGES = {
     "sec_privacy_information": "https://www.sec.gov/about/privacy-information",
     "finra_terms_of_use": "https://www.finra.org/terms-of-use",
     "finra_api_terms_service": "https://developer.finra.org/finra-api-terms-service",
+    # News sources still running with unassessed rights (2026-10-21).
+    "google_terms": "https://policies.google.com/terms?hl=en",
+    "google_news_robots": "https://news.google.com/robots.txt",
+    "gdelt_terms": "https://www.gdeltproject.org/about.html",
+    "gdelt_api_robots": "https://api.gdeltproject.org/robots.txt",
+    "prnewswire_terms": "https://www.prnewswire.com/terms-of-use/",
+    "prnewswire_rss": "https://www.prnewswire.com/rss/",
+    "prnewswire_robots": "https://www.prnewswire.com/robots.txt",
+    "globenewswire_terms": "https://www.globenewswire.com/en/legal/terms-of-use",
+    "globenewswire_rss": "https://www.globenewswire.com/rss/list",
+    "globenewswire_robots": "https://www.globenewswire.com/robots.txt",
+    "businesswire_terms": "https://www.businesswire.com/portal/site/home/terms-of-use/",
+    "businesswire_robots": "https://feed.businesswire.com/robots.txt",
+    "filingpulse_terms": "https://filingpulse.io/terms",
+    "filingpulse_api_robots": "https://api.filingpulse.io/robots.txt",
 }
 KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|non-?commercial|"
                       r"commercial|display|derived|extract|reproduc|permission|licen[cs]e|"
