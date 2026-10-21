@@ -550,6 +550,31 @@
         card.append(pair("تجارب تاريخية مكتملة (5 جلسات)",
           String(replay.matured_events)+" · لا تمثل نسبة نجاح"));
     }
+    const vcp=stockInfo?.vcp_minervini_shadow;
+    if(vcp?.available===true&&vcp?.schema==="ghazi.vcp_minervini_shadow.v1"&&
+       vcp.research_only===true&&vcp.option_execution_eligible===false&&
+       vcp.independent_confirmation===false&&vcp.source_family==="yahoo"&&
+       stockInfo?.historical_cache_only!==true&&
+       typeof vcp.source_last_daily_bar==="string"){
+      const stages={
+        TIGHT_WATCH:"ترقب انكماش VCP · 4 عوامل متوافقة",
+        DEVELOPING:"نموذج قيد التشكّل · عوامل جزئية",
+        NO_SETUP:"لا يوجد نموذج VCP مكتمل",
+      };
+      card.append(pair("Qullamaggie / Minervini · بحثي",
+        (stages[vcp.stage]||"البيانات غير كافية")+
+        " · جلسة "+vcp.source_last_daily_bar));
+      if(Number.isFinite(vcp.distance_from_55d_high_pct))
+        card.append(pair("البعد عن قمة 55 جلسة سابقة",
+          fmt(vcp.distance_from_55d_high_pct,2)+"% · دون ادعاء اختراق حي"));
+      if(Number.isFinite(vcp.atr_ratio)&&Number.isFinite(vcp.volume_ratio))
+        card.append(pair("انكماش ATR / الحجم",
+          fmt(vcp.atr_ratio,2)+" / "+fmt(vcp.volume_ratio,2)+
+          " · أقل من 1 يعني انخفاضًا عن الفترة السابقة"));
+      card.append(txt("small",
+        "بيانات يومية مكتملة فقط؛ لا تأكيد مصدر مستقل، ولا إشارة شراء أو CALL/PUT.",
+        "terminal-stock-news-missing"));
+    }
     const media=stockInfo?.news_attention;
     if(media?.authority==="NEWS_SEARCH_ATTENTION_ONLY"&&
        media.official_catalyst_verified===false)
