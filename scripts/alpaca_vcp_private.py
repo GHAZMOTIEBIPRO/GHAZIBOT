@@ -166,7 +166,15 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
     gate = authorization(env)
     if gate != "AUTHORIZED_INTERNAL_ONLY":
         return _public_status(gate, now=now), state if isinstance(state, dict) else {}
-    state = dict(state) if isinstance(state, dict) else {}
+    source_state = state if isinstance(state, dict) else {}
+    # Keep the durable public-branch state free of any injected provider bars.
+    state = {}
+    session = source_state.get("last_private_session")
+    message_id = source_state.get("private_message_id")
+    if isinstance(session, str) and re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", session):
+        state["last_private_session"] = session
+    if type(message_id) is int and message_id > 0:
+        state["private_message_id"] = message_id
     failures = 0
     bars_seen = 0
     valid = 0
