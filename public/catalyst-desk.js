@@ -77,6 +77,14 @@
         el("span","",row.dilution?"يوجد خطر تخفيف يحتاج مراجعة":"ليس تأكيدًا للاتجاه"),
         el("span","",row.sub10?"أقل من 10$ بسعر مؤهل":"سعر السهم غير متحقق"));
       card.append(facts);
+      const chartAction=el("button","chart-open","فتح شارت "+row.symbol+" · 1D / 1H / 15m / 5m");
+      chartAction.type="button";
+      chartAction.setAttribute("aria-label","عرض شارت TradingView للسهم "+row.symbol);
+      chartAction.addEventListener("click",()=>{
+        if(typeof window!=="undefined"&&window.GhaziCatalystChart)
+          window.GhaziCatalystChart.open(row.symbol);
+      });
+      card.append(chartAction);
       if(row.url){const a=el("a","source","فتح المصدر الرسمي ↗");a.href=row.url;a.target="_blank";a.rel="noopener noreferrer";card.append(a);}
       else card.append(el("p","line","لم يُنشر رابط وثيقة صالح لهذه الواقعة."));
       panel.append(card);
