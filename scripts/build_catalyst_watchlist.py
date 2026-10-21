@@ -138,12 +138,12 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime) -> dict[str, Any]:
             by_symbol.setdefault(item["symbol"], []).append(item)
     entries = []
     for symbol, items in by_symbol.items():
-        items.sort(key=lambda x: (x["date"], RANK[x["importance"]]), reverse=True)
+        items.sort(key=lambda x: (RANK[x["importance"]], x["date"]), reverse=True)
         top = max(RANK[x["importance"]] for x in items)
         entries.append({
             "symbol": symbol,
             "highest_importance": next(k for k, v in RANK.items() if v == top),
-            "latest_date": items[0]["date"],
+            "latest_date": max(x["date"] for x in items),
             "catalyst_count": len(items),
             "dilution_risk": any(x["kind"] == "DILUTION_RISK" for x in items),
             "charter_or_reverse_split_review": any(x["kind"] == "CHARTER_OR_REVERSE_SPLIT_REVIEW" for x in items),

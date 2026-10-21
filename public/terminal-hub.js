@@ -1634,7 +1634,7 @@
     }
   }
   const RIGHT_LABELS={automated_access:"وصول آلي",persistent_storage:"تخزين",public_display_raw:"عرض عام خام",
-    public_display_derived:"عرض مشتقات"};
+    public_display_derived:"عرض مشتقات",telegram_sharing:"مشاركة Telegram"};
   const RIGHT_STATUS={VERIFIED:"مسموح",RESTRICTED:"مقيد",UNKNOWN:"غير معروف"};
   // Official-terms rights per provider; UNKNOWN is shown as not permitted.
   function rightsLines(hub){
@@ -1651,6 +1651,22 @@
           (p?.summary_ar?" · "+String(p.summary_ar).slice(0,220):"")};
     });
   }
+  const ENGINE_AR={PRICE:"الأسعار",VOLUME:"الحجم",NEWS:"الأخبار",FUNDAMENTAL:"الأساسيات",OPTIONS:"الأوبشن",
+    MACRO:"الاقتصاد الكلي",REGULATORY:"التنظيمي (FDA/SEC)"};
+  const ENGINE_STATUS_AR={PUBLIC_SOURCE_AVAILABLE:"مصدر مسموح بالنشر",INTERNAL_ONLY_WITH_KEY:"بحث داخلي فقط عند إضافة مفتاح",
+    DISPLAY_WIDGET_ONLY:"عرض عبر ودجت فقط",NO_PERMITTED_SOURCE:"لا مصدر مسموح"};
+  // One line per engine: which providers its recorded rights allow, never a key's presence.
+  function engineLines(hub){
+    const engines=hub?.source_rights?.engines;
+    if(!engines||typeof engines!=="object")return [];
+    return Object.entries(engines).filter(([k])=>ENGINE_AR[k]).map(([k,e])=>({
+      title:"محرك "+ENGINE_AR[k],
+      tone:e?.status==="PUBLIC_SOURCE_AVAILABLE"?"UP":e?.status==="NO_PERMITTED_SOURCE"?"DOWN":null,
+      status:ENGINE_STATUS_AR[e?.status]||"غير معروف",
+      detail:"للنشر: "+((e?.public_sources||[]).join("، ")||"لا يوجد")+
+        " · داخلي فقط: "+((e?.internal_only_sources||[]).join("، ")||"لا يوجد")+
+        " · محجوب: "+(Object.entries(e?.providers||{}).filter(([,c])=>c==="BLOCKED").map(([p])=>p).join("، ")||"لا يوجد")}));
+  }
   function renderDataHub(){
     const box=$("terminal-data-hub");if(!box)return;
     box.replaceChildren();
@@ -1665,6 +1681,11 @@
       " · مصادر احتياطية: "+((hub.summary?.fallback_sources||[]).join("، ")||"لا يوجد")+
       " · الكتالوج: "+stamp(hub.generated_at)+" · الأوقات من الملفات نفسها وليست أوقات أسعار."+
       " · الحداثة لا تعني صحة البيانات ولا حق نشرها؛ حق الاستخدام معروض لكل مصدر على حدة.");
+    for(const line of engineLines(hub)){
+      const item=txt("article","","terminal-structural-item"),title=txt("div","","terminal-structural-title");
+      title.append(txt("strong",line.title),chip(line.status,line.tone));
+      item.append(title,txt("small",line.detail,"terminal-structural-notice"));box.append(item);
+    }
     const rights=rightsLines(hub);
     if(rights.length){
       const head=txt("p","حقوق الاستخدام حسب الشروط الرسمية (فحص "+String(hub.source_rights.checked_at||"—")+
@@ -1868,7 +1889,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines};
+    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

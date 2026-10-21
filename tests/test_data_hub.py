@@ -63,3 +63,20 @@ def test_every_dataset_gets_one_directive_state(tmp_path):
     assert "LIVE" not in states.values()
     assert sum(report["summary"]["data_states"].values()) == len(REGISTRY)
     assert all(r["data_state_ar"] == report["data_states"][r["data_state"]] for r in report["datasets"])
+
+
+def test_engines_split_providers_by_recorded_rights_only():
+    from scripts.build_data_hub import _source_rights, provider_class
+
+    engines = _source_rights()["engines"]
+    assert set(engines) == {"PRICE", "VOLUME", "NEWS", "FUNDAMENTAL", "OPTIONS", "MACRO", "REGULATORY"}
+    # No free price provider is publishable; Twelve Data is internal research only.
+    assert engines["PRICE"]["public_sources"] == [] and engines["VOLUME"]["public_sources"] == []
+    assert "twelve_data" in engines["PRICE"]["internal_only_sources"]
+    assert engines["PRICE"]["providers"]["tradingview_widgets"] == "DISPLAY_WIDGET_ONLY"
+    assert engines["PRICE"]["providers"]["yahoo"] == "BLOCKED"
+    assert engines["OPTIONS"]["status"] == "NO_PERMITTED_SOURCE"
+    assert engines["MACRO"]["status"] == "PUBLIC_SOURCE_AVAILABLE"
+    assert "openfda" in engines["REGULATORY"]["public_sources"]
+    assert "gdelt" in engines["NEWS"]["public_sources"] and engines["NEWS"]["providers"]["google_news_rss"] == "BLOCKED"
+    assert provider_class("x", {"automated_access": "UNKNOWN"}) == "UNKNOWN"
