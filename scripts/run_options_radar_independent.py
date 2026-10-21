@@ -19,6 +19,7 @@ os.environ.setdefault("CALIBRATION_PATH", "data/live/options_calibration.json")
 from options_radar.catalysts import best_catalyst_map
 from options_radar.event_source_policy import event_source_evidence
 from options_radar.free_gamma_engine import analyze_free_gamma, contract_gamma_metrics
+from options_radar.gamma_heatmap_research import build_gamma_heatmap_research
 from options_radar.occ_free_context import OccDailyVolumeClient, side_alignment
 from options_radar.official_event_scan import scan_official_events
 from options_radar.optionable_universe import IndependentOptionableUniverse
@@ -196,7 +197,9 @@ def _attach_gamma_and_occ(
     for symbol in symbols:
         try:
             gamma_map, _ = analyze_free_gamma(symbol, settings=settings, fetcher=radar.fetcher)
-            gamma_maps[symbol] = gamma_map.as_dict()
+            mapped = gamma_map.as_dict()
+            mapped["heatmap_research"] = build_gamma_heatmap_research(mapped)
+            gamma_maps[symbol] = mapped
         except Exception as exc:
             errors[f"gamma:{symbol}"] = f"{type(exc).__name__}: {exc}"
             gamma_maps[symbol] = {
