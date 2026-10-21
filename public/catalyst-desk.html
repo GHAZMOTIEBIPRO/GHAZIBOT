@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a1220">
+<meta name="description" content="GHAZI RADAR: شاشة فرز محفزات SEC وFDA الرسمية فقط، حسب المصدر وتاريخ الحدث.">
+<title>GHAZI RADAR — Official Catalyst Desk</title>
+<link rel="stylesheet" href="./catalyst-desk.css?v=20261021-1">
+</head>
+<body>
+<main class="shell">
+  <nav class="top"><a href="./index.html" class="back">← GHAZI RADAR</a><span class="tag">OFFICIAL CATALYST INTELLIGENCE</span></nav>
+  <header class="hero">
+    <div><p class="kicker">BLACK BOX Ω · OFFICIAL SOURCE DESK</p>
+      <h1>رادار المحفزات الرسمية</h1>
+      <p class="lede">ابحث في الأحداث التنظيمية المنسوبة إلى شركات أمريكية، وفرزها حسب الخطورة والتاريخ والمصدر. لا نختلق سعرًا أو حجم تداول أو هدفًا للسهم عند غياب المصدر المؤهل.</p>
+    </div>
+    <div class="state" role="status" aria-live="polite">
+      <strong id="desk-status">تحميل التقرير…</strong>
+      <span id="desk-updated">—</span>
+      <button type="button" id="desk-reload">تحديث التقرير</button>
+    </div>
+  </header>
+  <section class="stats" aria-label="ملخص التغطية">
+    <article><small>الشركات في التقرير</small><strong id="desk-companies">—</strong></article>
+    <article><small>الأحداث المدرجة</small><strong id="desk-events">—</strong></article>
+    <article><small>مرشحات تحتاج فحص خطر التخفيف</small><strong id="desk-dilution">—</strong></article>
+    <article><small>أسهم أقل من 10$ بسعر متحقق</small><strong id="desk-sub10">—</strong></article>
+  </section>
+  <section class="control" aria-label="فلترة الرادار">
+    <label>بحث برمز الشركة أو الحدث<input id="desk-query" type="search" placeholder="مثال: ABBV أو FDA أو KEYTRUDA"></label>
+    <label>أهمية الحدث<select id="desk-importance"><option value="all">جميع الدرجات</option><option value="HIGH">مرتفعة</option><option value="MEDIUM">متوسطة</option><option value="LOW">منخفضة</option></select></label>
+    <label>نوع الحدث<select id="desk-kind"><option value="all">كل الأنواع</option><option value="FDA_APPROVAL">موافقات FDA</option><option value="FDA_SUPPLEMENT">تحديثات FDA</option><option value="FDA_RECALL">سحب منتجات</option><option value="DILUTION_RISK">مخاطر تخفيف</option><option value="other">إفصاحات رسمية أخرى</option></select></label>
+    <label>الترتيب<select id="desk-sort"><option value="importance">الأهم أولًا</option><option value="recent">الأحدث أولًا</option><option value="symbol">رمز الشركة</option></select></label>
+  </section>
+  <p class="notice" id="desk-rights">المصادر الرسمية لا تعني وجود أسعار تنفيذية. تواريخ الأحداث تختلف عن وقت إنشاء التقرير.</p>
+  <section id="desk-results" class="results" aria-live="polite"><p class="empty">جاري تحميل الأحداث الرسمية…</p></section>
+  <footer>تحليل وصفي من الإفصاحات التنظيمية، لا يمثل توصية CALL / PUT أو توقع ارتفاع. يؤكد كل رابط المصدر الأصلي فقط، ولا يثبت أثره السعري. <a href="./index.html">العودة إلى GHAZI RADAR</a></footer>
+</main>
+<script src="./catalyst-desk.js?v=20261021-1" defer></script>
+</body></html>
