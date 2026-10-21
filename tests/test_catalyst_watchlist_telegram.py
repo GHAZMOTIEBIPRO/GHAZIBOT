@@ -112,3 +112,55 @@ def test_invalid_report_cannot_emit_readiness_notice():
     after, outcome = run(invalid, seeded, now=NOW, send=notices.append, notify_ready=True)
     assert outcome["ready_notice_sent"] is False
     assert not notices and "ready_notice_at" not in after
+
+
+
+def test_riyadh_daily_brief_source_authentication_and_research_only():
+    from scripts.send_catalyst_watchlist_alerts import daily_brief_candidates, daily_brief_message
+    base = report(row())
+    result = daily_brief_candidates(base, now=NOW)
+    assert len(result) == 1 and result[0]["symbol"] == "ABBV"
+    txt = daily_brief_message(base, result, now=NOW)
+    assert "الملخص الرسمي اليومي" in txt and "ليست" in txt
+    assert "2026-10-20" in txt and "www.accessdata.fda.gov" in txt
+    assert "CALL/PUT" in txt
+    assert daily_brief_candidates(report(row(), generated_at=(NOW-timedelta(days=3)).isoformat()),
+                                  now=NOW) == []
+    assert daily_brief_candidates(report(row(), sources={"openfda": False}), now=NOW) == []
+    assert daily_brief_candidates(report(row(source_url="https://evil.example/")),
+                                  now=NOW) == []
+
+
+def test_riyadh_daily_brief_dedupe_and_failed_send_retry():
+    from scripts.send_catalyst_watchlist_alerts import send_daily_brief
+    from types import SimpleNamespace
+    event_report = report(row())
+    initial, _ = run(event_report, None, now=NOW, send=lambda _: None)
+    msgs = []
+    state, result = send_daily_brief(event_report, initial, now=NOW,
+                                     send=lambda message: msgs.append(message) or SimpleNamespace(message_id=987))
+    assert result["mode"] == "sent" and result["sent"] == 1
+    assert state["daily_brief_message_id"] == 987
+    _, second = send_daily_brief(event_report, state, now=NOW,
+                                send=lambda message: msgs.append(message))
+    assert second["mode"] == "already_sent" and len(msgs) == 1
+
+    def offline(_):
+        raise RuntimeError("Telegram timeout")
+    failed_state, failure = send_daily_brief(event_report, initial, now=NOW, send=offline)
+    assert failure["failed"] == "RuntimeError" and "daily_brief_date" not in failed_state
+    recovered, delivery = send_daily_brief(event_report, failed_state, now=NOW,
+                                           send=lambda _: SimpleNamespace(message_id=988))
+    assert delivery["sent"] == 1 and recovered["daily_brief_message_id"] == 988
+
+
+def test_daily_digest_groups_issuer_and_excludes_future_and_unsafe_domains():
+    from scripts.send_catalyst_watchlist_alerts import daily_brief_candidates
+    same = row()
+    same["catalysts"].extend([
+        {**same["catalysts"][0], "date": "2026-10-19", "importance": "HIGH"},
+        {**same["catalysts"][0], "date": "2026-10-21", "source_url": "https://evil.com/report"},
+        {**same["catalysts"][0], "date": "2026-11-30"},
+    ])
+    events = daily_brief_candidates(report(same), now=NOW)
+    assert len(events) == 1 and events[0]["date"] == "2026-10-19"
