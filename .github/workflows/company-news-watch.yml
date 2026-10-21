@@ -106,7 +106,8 @@ jobs:
           exit 1
 
       - name: Diagnose official BLS feed event shape (PR only)
-        if: github.event_name == 'pull_request'
+        # Direct BLS read: only once the BLS terms are recorded (source gate).
+        if: github.event_name == 'pull_request' && env.BLS_AUTOMATION_APPROVED == 'true'
         run: |
           python - <<'PY'
           import requests
