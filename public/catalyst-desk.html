@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a1220">
 <meta name="description" content="GHAZI RADAR: شاشة فرز محفزات SEC وFDA الرسمية فقط، حسب المصدر وتاريخ الحدث.">
 <title>GHAZI RADAR — Official Catalyst Desk</title>
-<link rel="stylesheet" href="./catalyst-desk.css?v=20261021-1">
+<link rel="stylesheet" href="./catalyst-desk.css?v=20261022-1">
 </head>
 <body>
 <main class="shell">
@@ -34,9 +34,26 @@
     <label>نوع الحدث<select id="desk-kind"><option value="all">كل الأنواع</option><option value="FDA_APPROVAL">موافقات FDA</option><option value="FDA_SUPPLEMENT">تحديثات FDA</option><option value="FDA_RECALL">سحب منتجات</option><option value="DILUTION_RISK">مخاطر تخفيف</option><option value="other">إفصاحات رسمية أخرى</option></select></label>
     <label>الترتيب<select id="desk-sort"><option value="importance">الأهم أولًا</option><option value="recent">الأحدث أولًا</option><option value="symbol">رمز الشركة</option></select></label>
   </section>
+  <section id="desk-chart-panel" class="chart-desk" aria-label="شارت TradingView المستضاف" hidden>
+    <div class="chart-desk-head">
+      <div><h2 id="desk-chart-title">شارت السهم</h2>
+        <p>اختر 1D أو 1H أو 15m أو 5m. الرسوم من TradingView؛ ليست شموعًا مجلوبة من البوت.</p></div>
+      <button type="button" id="desk-chart-close" class="chart-quit">إغلاق الشارت ×</button>
+    </div>
+    <div class="chart-timeframes" role="group" aria-label="الفريمات">
+      <button type="button" data-desk-tf="D" aria-pressed="true">يومي 1D</button>
+      <button type="button" data-desk-tf="60" aria-pressed="false">ساعة 1H</button>
+      <button type="button" data-desk-tf="15" aria-pressed="false">15 دقيقة</button>
+      <button type="button" data-desk-tf="5" aria-pressed="false">5 دقائق</button>
+    </div>
+    <div id="desk-chart-widget" class="chart-container"></div>
+    <p id="desk-chart-notice" class="chart-footnote" role="status">الشارت يستضيفه TradingView مباشرة؛ لا يتم التقاط الأسعار لتوليد توصيات.</p>
+    <p class="chart-footnote">Gamma/GEX وعقود الخيارات تحتاج بيانات مستقلة مؤهلة وترخيصًا يسمح بالنشر؛ لا نستنتجها من الشموع.</p>
+  </section>
   <p class="notice" id="desk-rights">المصادر الرسمية لا تعني وجود أسعار تنفيذية. تواريخ الأحداث تختلف عن وقت إنشاء التقرير.</p>
   <section id="desk-results" class="results" aria-live="polite"><p class="empty">جاري تحميل الأحداث الرسمية…</p></section>
   <footer>تحليل وصفي من الإفصاحات التنظيمية، لا يمثل توصية CALL / PUT أو توقع ارتفاع. يؤكد كل رابط المصدر الأصلي فقط، ولا يثبت أثره السعري. <a href="./index.html">العودة إلى GHAZI RADAR</a></footer>
 </main>
-<script src="./catalyst-desk.js?v=20261021-1" defer></script>
+<script src="./catalyst-desk.js?v=20261022-1" defer></script>
+<script src="./catalyst-chart.js?v=20261022-1" defer></script>
 </body></html>
