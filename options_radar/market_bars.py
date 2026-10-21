@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -10,6 +11,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+from . import twelve_data_budget as td_budget
 from .settings import Settings
 from .source_permissions import allowed, require
 
@@ -276,26 +278,48 @@ def _finnhub(settings: Settings, symbol: str, *, interval: str, start: datetime,
     )
 
 
+_TD_GUARD: td_budget.CreditGuard | None = None
+_TD_CACHE = td_budget.RequestCache()
+
+
+def _twelve_data_guard() -> td_budget.CreditGuard:
+    """One credit guard per process, sized by the engine's planned allowance."""
+    global _TD_GUARD
+    if _TD_GUARD is None:
+        engine = os.getenv("TWELVE_DATA_ENGINE", "watchlist_daily")
+        _TD_GUARD = td_budget.CreditGuard.for_engine(
+            engine if engine in td_budget.ENGINE_PLAN else "watchlist_daily")
+    return _TD_GUARD
+
+
 def _twelve_data(settings: Settings, symbol: str, *, interval: str, start: datetime,
                  end: datetime) -> BarResult:
     if not settings.twelve_data_api_key:
         raise RuntimeError("TWELVE_DATA_API_KEY is not configured")
-    response = requests.get(
-        "https://api.twelvedata.com/time_series",
-        params={
-            "symbol": symbol,
-            "interval": "1day" if interval == "1d" else "5min",
-            "start_date": start.strftime("%Y-%m-%d %H:%M:%S"),
-            "end_date": end.strftime("%Y-%m-%d %H:%M:%S"),
-            "outputsize": 5000,
-            "timezone": "UTC",
-            "adjust": "splits",
-            "apikey": settings.twelve_data_api_key,
-        },
-        timeout=30,
-    )
-    response.raise_for_status()
-    payload = response.json()
+    td_interval = "1day" if interval == "1d" else "5min"
+    params = {
+        "symbol": symbol,
+        "interval": td_interval,
+        "start_date": start.strftime("%Y-%m-%d %H:%M:%S"),
+        "end_date": end.strftime("%Y-%m-%d %H:%M:%S"),
+        "outputsize": 5000,
+        "timezone": "UTC",
+        "adjust": "splits",
+        "apikey": settings.twelve_data_api_key,
+    }
+
+    def fetch() -> Any:
+        response = requests.get("https://api.twelvedata.com/time_series", params=params, timeout=30)
+        if response.status_code == 429:
+            return {"status": "error", "code": 429, "message": "API credits exhausted"}
+        response.raise_for_status()
+        return response.json()
+
+    # QuotaExhausted is a RuntimeError, so callers fall back or report the
+    # source unavailable instead of publishing partial numbers.
+    payload = td_budget.guarded_fetch(
+        fetch, key=("time_series", symbol, td_interval, params["start_date"][:13], params["end_date"][:13]),
+        interval=td_interval, symbols=1, endpoint="time_series", guard=_twelve_data_guard(), cache=_TD_CACHE)
     if payload.get("status") == "error":
         raise RuntimeError(str(payload.get("message", "Twelve Data error")))
     frame = pd.DataFrame(payload.get("values", []) or [])
