@@ -87,7 +87,7 @@ jobs:
           set -euo pipefail
           extra=()
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            extra+=(--daily-brief)
+            extra+=(--daily-brief --market-health state/runtime/public/data/data-status.json)
           fi
           python -m scripts.send_catalyst_watchlist_alerts \
             --report state/runtime/public/data/catalyst_watchlist.json \
