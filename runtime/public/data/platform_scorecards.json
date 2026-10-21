@@ -1,30 +1,28 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-21T18:35:14.202553+00:00",
+ "generated_at": "2026-10-21T19:48:38.371223+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 84.1,
+   "value": 82.0,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 45,
-     "cancelled": 5
+     "success": 42,
+     "cancelled": 3
     },
     "stock-radar.yml": {
-     "success": 30,
-     "failure": 1
+     "success": 23
     },
     "options-contract-radar.yml": {
-     "success": 32,
-     "failure": 1
+     "success": 33
     },
     "fast-explosion-radar.yml": {
-     "failure": 56,
-     "success": 29
+     "failure": 63,
+     "success": 23
     },
     "classical-direction-radar.yml": {
-     "success": 32
+     "success": 33
     },
     "index-radar.yml": {
      "success": 9
@@ -36,15 +34,15 @@
      "success": 3
     },
     "site-evidence-strength.yml": {
-     "success": 56,
+     "success": 50,
      "cancelled": 10
     },
     "free-gex-validation.yml": {
      "success": 33
     },
     "market-orchestrator.yml": {
-     "cancelled": 8,
-     "success": 25
+     "success": 25,
+     "cancelled": 7
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
