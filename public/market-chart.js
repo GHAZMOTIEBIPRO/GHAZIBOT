@@ -183,7 +183,7 @@ function ghaziRenderSelectedChart(data, symbol) {
   const pattern = research?.breakout === "ABOVE_PRIOR_20_HIGH" ? " · إغلاق فوق قمة 20 شمعة"
     : research?.breakout === "BELOW_PRIOR_20_LOW" ? " · إغلاق تحت قاع 20 شمعة" : "";
   note.textContent = symbol + " — " + side + pattern +
-    " · مشتق من الشموع المنشورة، وليس أسعارًا لحظية أو إثبات تنفيذ. بوابة V11 لم تتغير.";
+    " · مشتق من الشموع المنشورة، وليس أسعارًا لحظية أو إثبات تنفيذ. لا يغيّر بوابة V11.";
   if (typeof ResizeObserver !== "undefined") {
     ghaziChartResizeObserver = new ResizeObserver(() => {
       if (ghaziChart) ghaziChart.timeScale().fitContent();
