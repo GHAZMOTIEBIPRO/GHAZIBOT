@@ -139,6 +139,13 @@ class FlowAnalyzer:
             for _, row in ranked[["contract_symbol", "volume"]].iterrows()
             if pd.notna(row["volume"])
         }
+        provenance = {
+            str(row["contract_symbol"]): (
+                row.get("last_trade_timestamp"),
+                row.get("expiration"),
+            )
+            for _, row in ranked.iterrows()
+        }
         results: dict[
             str, tuple[ContractVolumeAnomaly | None, str | None]
         ] = {}
@@ -153,9 +160,12 @@ class FlowAnalyzer:
                 try:
                     raw = future.result()
                     history = self._history_frame(raw)
+                    observed_at, expiry = provenance.get(contract, (None, None))
                     profile = analyze_contract_volume_anomaly(
                         current_volume.get(contract),
                         history,
+                        observed_at=observed_at,
+                        expiration=expiry,
                     )
                     source = str(getattr(raw, "source", "") or "") or None
                     results[contract] = (profile, source)
@@ -323,6 +333,9 @@ class FlowAnalyzer:
         )
         frame["historical_volume_observations"] = contracts.map(
             lambda contract: profile_value(contract, "observations", 0)
+        )
+        frame["historical_calendar_context"] = contracts.map(
+            lambda contract: profile_value(contract, "calendar_volume", None)
         )
         frame["historical_volume_anomaly_flag"] = (
             pd.to_numeric(
