@@ -326,6 +326,13 @@ jobs:
           ruff check options_radar/calendar_volume_context.py tests/test_calendar_volume_context.py
           python -m pytest -q tests/test_calendar_volume_context.py tests/test_option_anomaly.py
 
+      - name: Alpaca IEX licensed private stock-VCP research regressions
+        run: |
+          ruff check scripts/alpaca_vcp_private.py options_radar/vcp_minervini_shadow.py tests/test_alpaca_vcp_private.py
+          python -m pytest -q tests/test_alpaca_vcp_private.py tests/test_vcp_minervini_shadow.py
+          node --check public/catalyst-source-truth.js
+          node tests/terminal_source_truth.cjs
+
       - name: GitHub 50 project registry and closed-bar VCP/Minervini research
         run: |
           ruff check options_radar/vcp_minervini_shadow.py scripts/build_stock_watch_charts.py tests/test_vcp_minervini_shadow.py

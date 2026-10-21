@@ -49,3 +49,21 @@ const html=fs.readFileSync(path.join(__dirname,"../public/catalyst-desk.html"),"
 assert.ok(html.includes('id="desk-truth-grid"'));
 assert.ok(html.includes('src="./catalyst-source-truth.js'));
 console.log("source trust dashboard rejects stale/future/missing rights evidence");
+
+
+const alpaca={
+  schema:"ghazi.alpaca_iex_vcp_health.v1",generated_at:"2026-10-21T22:50:00Z",
+  raw_market_data_published:false,tickers_published:false,
+  indicators_published:false,trade_signals_published:false,
+  execution_authority:false,option_quote_verified:false,
+  status:"INTERNAL_RESEARCH",valid_daily_histories:3,
+};
+const ready=s.alpacaReadiness(alpaca,now);
+assert.equal(ready.status,"healthy");
+assert.match(ready.value,/IEX/);
+assert.match(ready.note,/لا يتم نشر الشموع/);
+assert.equal(s.alpacaReadiness({...alpaca,status:"CREDENTIALS_MISSING"},now).status,"unavailable");
+assert.equal(s.alpacaReadiness({...alpaca,raw_market_data_published:true},now).status,"unavailable");
+assert.equal(s.alpacaReadiness({...alpaca,generated_at:"2026-10-16T22:50:00Z"},now).status,"unavailable");
+assert.equal(s.alpacaReadiness({...alpaca,generated_at:"2026-10-22T02:00:00Z"},now).status,"unavailable");
+assert.ok(s.URLS.alpaca.endsWith("/alpaca_iex_vcp_health.json"));
