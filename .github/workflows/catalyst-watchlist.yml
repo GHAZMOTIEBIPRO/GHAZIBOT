@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build_catalyst_watchlist.py"
+      - "scripts/send_catalyst_watchlist_alerts.py"
       - ".github/workflows/catalyst-watchlist.yml"
   # Rebuilt only after its inputs are republished; no schedule of its own.
   workflow_run:
@@ -17,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: ghazi-radar-catalyst-watchlist
@@ -25,7 +27,10 @@ concurrency:
 jobs:
   catalyst-watchlist:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,7 +52,42 @@ jobs:
           --fda state/runtime/public/data/fda_events.json
           --sec state/runtime/public/data/sec_filing_pulse.json
           --output state/runtime/public/data/catalyst_watchlist.json
+      - name: Install shared Telegram transport dependency
+        run: pip install "requests>=2.32,<3.0"
+      - name: Restore Telegram destination when chat secret is absent
+        if: env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml; do
+            for run_id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download -R "$GITHUB_REPOSITORY" "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                [[ -s telegram_runtime/connection.enc ]] && break 2
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+      - name: Resolve Telegram destination for official catalyst context
+        run: python app/scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+      - name: Send new medium-priority official catalyst updates
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_catalyst_watchlist_alerts
+          --report state/runtime/public/data/catalyst_watchlist.json
+          --state state/state/catalyst/catalyst_alert_state.json
+      - name: Report no Telegram destination
+        if: env.TELEGRAM_READY != 'true'
+        run: echo "Official catalyst report updated; Telegram delivery not configured."
       - name: Publish the catalyst watchlist
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -55,6 +95,9 @@ jobs:
           git config user.name "GHAZI RADAR Catalyst Watchlist"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
           git add runtime/public/data/catalyst_watchlist.json
+          if [[ -f state/catalyst/catalyst_alert_state.json ]]; then
+            git add state/catalyst/catalyst_alert_state.json
+          fi
           if git diff --cached --quiet; then
             echo "Catalyst watchlist unchanged."
             exit 0
