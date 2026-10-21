@@ -243,3 +243,24 @@ def test_8k_item_malformed_future_date_and_wrong_cik_fail_closed():
     report_data=report(111,["8-K"],dates=["2027-01-01"],items=["2.02"])
     assert parse_submissions("RGC",111,"Regencell",report_data,now=NOW)==[]
     assert parse_submissions("RGC",222,"Unrelated",report_data,now=NOW)==[]
+
+
+def test_insider_forms_capped_and_dilution_forms_flagged_without_inference():
+    forms=["4"]*6+["8-K","424B3","S-1/A","10-K/A","SC 13G"]
+    items=[""]*6+["5.03,3.01,9.01","","","",""]
+    rows=parse_submissions("RGC",111,"Regencell",report(111,forms,items=items),now=NOW)
+    insider=[row for row in rows if row["form"]=="4"]
+    assert len(insider)==3
+    assert all(row["event_type"]=="INSIDER_TRANSACTION_REVIEW" for row in insider)
+    assert all(row["event_topics"]==["INSIDER_OWNERSHIP_STATEMENT_REVIEW"] for row in insider)
+    assert all(row["potential_dilution_review"] is False for row in insider)
+    event=next(row for row in rows if row["form"]=="8-K")
+    assert "SHAREHOLDER_RIGHTS_OR_CHARTER_CHANGE_REVIEW" in event["event_topics"]
+    assert "LISTING_STANDARD_NOTICE_REVIEW" in event["event_topics"]
+    for form in ("424B3","S-1/A"):
+        row=next(r for r in rows if r["form"]==form)
+        assert row["event_type"]=="OFFERING_OR_DILUTION_REVIEW"
+        assert row["potential_dilution_review"] is True and row["new_shares_issued_verified"] is False
+    assert next(r for r in rows if r["form"]=="10-K/A")["event_type"]=="EARNINGS_OR_PERIODIC_REPORT_REVIEW"
+    assert any(r["form"]=="SC 13G" for r in rows)
+    assert all(row["positive_price_impact_verified"] is False for row in rows)
