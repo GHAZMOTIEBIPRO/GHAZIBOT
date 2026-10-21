@@ -1,6 +1,6 @@
 {
   "version": "FREE_DATA_FABRIC_V2",
-  "generated_at": "2026-10-20T22:41:31.589286+00:00",
+  "generated_at": "2026-10-21T00:43:30.294766+00:00",
   "policy": {
     "health_only_never_signal_authority": true,
     "same_family_does_not_increase_source_quorum": true,
@@ -73,8 +73,9 @@
       "signal_authority": false,
       "independent_family_key": "occ",
       "ok": false,
-      "status": 403,
-      "error": "HTTPError: HTTP Error 403: Forbidden"
+      "status": "SOURCE_TERMS_BLOCKED",
+      "license_blocked": true,
+      "error": "OCC's terms list launching any automated system (robots, spiders) to access its services as prohibited conduct, and theocc.com refuses automated readers, so its full terms could not be verified; automated reads stay off until OCC grants a licence or permission"
     },
     {
       "name": "U.S. Treasury yield curve",
@@ -94,11 +95,9 @@
       "signal_authority": false,
       "independent_family_key": "finra",
       "ok": false,
-      "transport_reachable": true,
-      "status": 200,
-      "bytes_sampled": 156,
-      "content_type": "text/plain",
-      "content_status": "FINRA_NON_JSON_RESPONSE"
+      "status": "SOURCE_TERMS_BLOCKED",
+      "license_blocked": true,
+      "error": "FINRA's API terms allow access only with FINRA-issued credentials and its website terms forbid scraping and limit use to non-commercial personal use; uncredentialed automated reads stay off until a FINRA developer account and terms acceptance are recorded"
     },
     {
       "name": "dhawalc/spx-gamma-levels",
