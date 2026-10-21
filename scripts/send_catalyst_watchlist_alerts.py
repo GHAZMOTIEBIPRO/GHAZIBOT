@@ -125,9 +125,26 @@ def message(event: dict[str, Any]) -> str:
     ])
 
 
+def readiness_message(report: dict[str, Any]) -> str:
+    """Once-only operational confirmation, never a stock/option signal."""
+    total = len(report.get("watchlist") or [])
+    providers = report.get("sources") or {}
+    fda = "متاح" if providers.get("openfda") is True else "غير متاح"
+    sec = "متاح" if providers.get("sec_edgar") is True else "غير متاح"
+    created = html.escape(str(report.get("generated_at") or "غير محدد")[:35])
+    return "\\n".join([
+        "✅ <b>GHAZI RADAR | تم ربط رادار المحفزات الرسمي</b>",
+        f"شركات في التقرير: <b>{total}</b> (قائمة متابعة تنظيمية، لا إشارات تداول)",
+        f"openFDA: <b>{fda}</b> · SEC EDGAR: <b>{sec}</b>",
+        f"تاريخ تقرير البيانات: {created}",
+        f'<a href="{SITE}">فتح الرادار على الموقع</a>',
+        "⚠️ لا توجد أسعار تنفيذية مثبتة من هذه الأحداث؛ CALL/PUT لا يتحدد من الخبر وحده.",
+        "التنبيهات التالية تخص أحداثًا رسمية جديدة مؤهلة فقط، مع منع تكرارها.",
+    ])
+
 def run(report: dict[str, Any], state: dict[str, Any] | None, *,
         now: datetime, send: Callable[[str], Any],
-        maximum_new: int = 3) -> tuple[dict[str, Any], dict[str, Any]]:
+        maximum_new: int = 3, notify_ready: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
     now = now.astimezone(timezone.utc)
@@ -142,6 +159,16 @@ def run(report: dict[str, Any], state: dict[str, Any] | None, *,
     seen = dict(state.get("seen") or {})
     sent = 0
     failed = None
+    ready_notice_sent = False
+    if notify_ready and not state.get("ready_notice_at") and found is not None:
+        try:
+            result = send(readiness_message(report))
+        except Exception as error:  # noqa: BLE001 - retry on a later validated run
+            return state, {"mode": "notification_failed", "sent": 0,
+                           "ready_notice_sent": False, "failed": type(error).__name__}
+        state = {**state, "ready_notice_at": stamp,
+                 "ready_notice_message_id": getattr(result, "message_id", None)}
+        ready_notice_sent = True
     for item in found:
         if item["key"] in seen:
             continue
@@ -159,7 +186,7 @@ def run(report: dict[str, Any], state: dict[str, Any] | None, *,
     seen = {key: value for key, value in seen.items()
             if isinstance(value, dict) and str(value.get("date") or "") >= cutoff}
     return {**state, "updated_at": stamp, "seen": seen}, {
-        "mode": "delivered", "sent": sent,
+        "mode": "delivered", "sent": sent, "ready_notice_sent": ready_notice_sent,
         "eligible": len(found), "pending": sum(item["key"] not in seen for item in found),
         "failed": failed,
     }
@@ -169,6 +196,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--state", type=Path, required=True)
+    parser.add_argument("--notify-ready", action="store_true",
+                        help="Send one operational connection confirmation after seeding.")
     args = parser.parse_args()
     try:
         report = json.loads(args.report.read_text(encoding="utf-8"))
@@ -180,7 +209,7 @@ def main() -> int:
     except (OSError, json.JSONDecodeError):
         old = None
     new_state, summary = run(report, old, now=datetime.now(timezone.utc),
-                             send=send_html_message)
+                             send=send_html_message, notify_ready=args.notify_ready)
     args.state.parent.mkdir(parents=True, exist_ok=True)
     temp = args.state.with_suffix(".tmp")
     temp.write_text(json.dumps(new_state, ensure_ascii=False, indent=2), encoding="utf-8")
