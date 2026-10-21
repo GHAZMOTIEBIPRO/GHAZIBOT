@@ -19,7 +19,7 @@ from scripts.alpaca_vcp_private import (
     sanitize_daily_bars,
 )
 
-NOW = datetime(2026, 10, 22, 2, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 22, 16, 0, tzinfo=timezone.utc)
 
 
 def sample_bars():
@@ -72,6 +72,7 @@ ENABLED = {"ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true",
 
 
 def test_no_credentials_or_attestation_sends_no_network_request():
+    assert authorization(ENABLED) == "AUTHORIZED_INTERNAL_ONLY"
     for env in ({}, {"ALPACA_API_KEY": "not-a-secret", "ALPACA_SECRET_KEY": "fake"},
                 {"ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}):
         client = Client()
