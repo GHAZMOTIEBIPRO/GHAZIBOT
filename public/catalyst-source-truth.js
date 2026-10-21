@@ -71,7 +71,8 @@
       report.tickers_published===false&&report.indicators_published===false&&
       report.trade_signals_published===false&&report.execution_authority===false&&
       report.option_quote_verified===false;
-    const authorized=valid&&report.status==="INTERNAL_RESEARCH";
+    const authorized=valid&&report.status==="INTERNAL_RESEARCH"&&
+      Number.isInteger(report.valid_daily_histories)&&report.valid_daily_histories>0;
     const unsuccessful=valid&&report.status==="INTERNAL_NO_VALID_BARS";
     return {
       key:"alpaca",name:"Alpaca IEX · بحث VCP داخلي",
