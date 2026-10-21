@@ -132,7 +132,7 @@ def readiness_message(report: dict[str, Any]) -> str:
     fda = "متاح" if providers.get("openfda") is True else "غير متاح"
     sec = "متاح" if providers.get("sec_edgar") is True else "غير متاح"
     created = html.escape(str(report.get("generated_at") or "غير محدد")[:35])
-    return "\\n".join([
+    return "\n".join([
         "✅ <b>GHAZI RADAR | تم ربط رادار المحفزات الرسمي</b>",
         f"شركات في التقرير: <b>{total}</b> (قائمة متابعة تنظيمية، لا إشارات تداول)",
         f"openFDA: <b>{fda}</b> · SEC EDGAR: <b>{sec}</b>",
@@ -160,7 +160,17 @@ def run(report: dict[str, Any], state: dict[str, Any] | None, *,
     sent = 0
     failed = None
     ready_notice_sent = False
-    if notify_ready and not state.get("ready_notice_at") and found is not None:
+    produced = _as_utc(report.get("generated_at"))
+    valid_report = (
+        report.get("schema") == REPORT
+        and report.get("research_only") is True
+        and report.get("decision_authority") is False
+        and report.get("execution_authority") is False
+        and isinstance(report.get("watchlist"), list)
+        and produced is not None
+        and timedelta(0) <= now - produced <= timedelta(hours=72)
+    )
+    if notify_ready and not state.get("ready_notice_at") and valid_report:
         try:
             result = send(readiness_message(report))
         except Exception as error:  # noqa: BLE001 - retry on a later validated run
