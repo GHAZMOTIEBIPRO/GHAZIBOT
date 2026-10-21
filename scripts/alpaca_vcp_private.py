@@ -171,7 +171,7 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
     state = {}
     session = source_state.get("last_private_session")
     message_id = source_state.get("private_message_id")
-    if isinstance(session, str) and re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", session):
+    if isinstance(session, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", session):
         state["last_private_session"] = session
     if type(message_id) is int and message_id > 0:
         state["private_message_id"] = message_id
