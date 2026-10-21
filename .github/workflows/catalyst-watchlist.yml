@@ -83,6 +83,7 @@ jobs:
           python -m scripts.send_catalyst_watchlist_alerts
           --report state/runtime/public/data/catalyst_watchlist.json
           --state state/state/catalyst/catalyst_alert_state.json
+          --notify-ready
       - name: Report no Telegram destination
         if: env.TELEGRAM_READY != 'true'
         run: echo "Official catalyst report updated; Telegram delivery not configured."
