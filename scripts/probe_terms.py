@@ -51,6 +51,22 @@ PAGES = {
     "cftc_public_reporting": "https://publicreporting.cftc.gov/stories/s/r4w3-av2u",
     "federalreserve_data": "https://www.federalreserve.gov/data.htm",
     "occ_market_data": "https://www.theocc.com/market-data/market-data-reports",
+    # Pages the first probe missed (wrong paths); located 2026-10-21 for the
+    # sources still running with UNKNOWN rights.
+    "nasdaqtrader_copyright": "https://www.nasdaqtrader.com/Trader.aspx?id=CopyDisclaimMain",
+    "nasdaqtrader_halt_rss": "https://www.nasdaqtrader.com/Trader.aspx?id=TradeHaltRSS",
+    "nasdaqtrader_halt_rss_terms":
+        "https://www.nasdaqtrader.com/content/administrationsupport/agreementstrading/THRSSFeedTermsCond.pdf",
+    "nasdaqtrader_robots": "https://www.nasdaqtrader.com/robots.txt",
+    "occ_terms": "https://www.theocc.com/specialpages/legal/terms-and-conditions",
+    "occ_rss_terms": "https://www.theocc.com/specialpages/legal/occ-rss-feeds",
+    "occ_marketdata_robots": "https://marketdata.theocc.com/robots.txt",
+    "bls_copyright": "https://www.bls.gov/opub/copyright-information.htm",
+    "bls_api_faqs": "https://www.bls.gov/developers/api_faqs.htm",
+    "federalreserve_disclaimer": "https://www.federalreserve.gov/disclaimer.htm",
+    "sec_privacy_information": "https://www.sec.gov/about/privacy-information",
+    "finra_terms_of_use": "https://www.finra.org/terms-of-use",
+    "finra_api_terms_service": "https://developer.finra.org/finra-api-terms-service",
 }
 KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|non-?commercial|"
                       r"commercial|display|derived|extract|reproduc|permission|licen[cs]e|"
