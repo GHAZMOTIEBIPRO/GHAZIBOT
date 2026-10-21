@@ -108,7 +108,7 @@ def fetch_daily_bars(symbol: str, *, now: datetime, api_key: str, api_secret: st
         response.raise_for_status()  # 401/403/429/5xx: fail closed, no spinning retry
         data = response.json()
         if not isinstance(data, dict) or not isinstance(data.get("bars"), list):
-            raise ValueError("malformed Alpaca bars response")
+            raise TypeError("malformed Alpaca bars response")
         batch = data["bars"]
         if len(batch) > 500 or len(gathered) + len(batch) > 1000:
             raise ValueError("unexpected Alpaca response volume")
