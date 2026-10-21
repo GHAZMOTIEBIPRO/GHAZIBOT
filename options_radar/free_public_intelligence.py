@@ -25,6 +25,7 @@ from options_radar.github_listing_discovery import (
     symbols_from_brief,
 )
 from options_radar.news_impact import annotate as annotate_news_impact
+from options_radar.source_permissions import SourceTermsBlocked, require
 
 GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 BLS_ICS = "https://www.bls.gov/schedule/news_release/bls.ics"
@@ -531,6 +532,7 @@ def parse_bls_calendar(
 
 
 def bls_upcoming(*, session: Any = requests, now: datetime | None = None) -> list[dict[str, Any]]:
+    require("bls")
     response = _get(BLS_ICS, session=session, headers={"Accept": "text/calendar,text/plain"})
     return parse_bls_calendar(response.text, now=now)
 
@@ -627,6 +629,9 @@ def build_context(*, symbols: list[str], now: datetime | None = None,
             continue
         try:
             pieces[key] = fn(session=session, now=current, **opts)
+        except SourceTermsBlocked:
+            pieces[key] = []
+            errors[key] = "SOURCE_TERMS_BLOCKED"
         except requests.HTTPError as exc:
             pieces[key] = []
             code = getattr(getattr(exc, "response", None), "status_code", None)
