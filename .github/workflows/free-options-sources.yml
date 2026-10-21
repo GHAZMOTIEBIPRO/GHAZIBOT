@@ -66,10 +66,10 @@ jobs:
           git add runtime/public/data/free_options_sources.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "state: free options provenance health [skip ci]"
-          for retry in 1 2 3; do
+          for retry in 1 2 3 4 5 6 7 8; do
             if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
             git rebase --abort >/dev/null 2>&1 || true
-            sleep "$retry"
+            sleep $((retry * 2 + RANDOM % 5))
           done
           echo "Failed to publish options free-source report" >&2
           exit 1

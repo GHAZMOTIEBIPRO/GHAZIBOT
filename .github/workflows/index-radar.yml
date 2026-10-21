@@ -69,12 +69,12 @@ jobs:
             exit 0
           fi
           git commit -m "state: research-only index levels [skip ci]"
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
               exit 0
             fi
             git rebase --abort >/dev/null 2>&1 || true
-            sleep "$attempt"
+            sleep $((attempt * 2 + RANDOM % 5))
           done
           echo "Could not publish index research state safely" >&2
           exit 1
