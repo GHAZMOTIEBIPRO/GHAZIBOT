@@ -1,0 +1,79 @@
+"""Realistic source-policy regression for the official catalyst Telegram bridge."""
+from datetime import datetime, timedelta, timezone
+
+from scripts.send_catalyst_watchlist_alerts import candidates, message, run
+
+NOW = datetime(2026, 10, 21, 20, 0, tzinfo=timezone.utc)
+
+
+def row(symbol="ABBV", **overrides):
+    event = {
+        "symbol": symbol, "kind": "FDA_SUPPLEMENT", "date": "2026-10-20",
+        "importance": "MEDIUM", "label": "Medicine efficacy supplement",
+        "source": "openFDA",
+        "source_url": "https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?ApplNo=212345",
+    }
+    event.update(overrides)
+    return {"symbol": symbol, "dilution_risk": False, "catalysts": [event]}
+
+
+def report(*entries, **options):
+    result = {
+        "schema": "ghazi.catalyst_watchlist.v1",
+        "research_only": True, "decision_authority": False, "execution_authority": False,
+        "generated_at": NOW.isoformat(), "sources": {"openfda": True, "sec_edgar": False},
+        "watchlist": list(entries),
+    }
+    result.update(options)
+    return result
+
+
+def test_initial_seed_is_silent_then_send_once():
+    msgs = []
+    first, s = run(report(row()), None, now=NOW, send=msgs.append)
+    assert s["mode"] == "seeded" and s["sent"] == 0 and not msgs
+    next_row = row("MRK")
+    second, result = run(report(row(), next_row), first, now=NOW, send=msgs.append)
+    assert result["sent"] == 1 and "MRK" in msgs[0]
+    _, result2 = run(report(row(), next_row), second, now=NOW, send=msgs.append)
+    assert result2["sent"] == 0 and len(msgs) == 1
+
+
+def test_fda_high_owned_by_existing_sender_and_no_untrusted_links():
+    assert candidates(report(row(importance="HIGH")), now=NOW) == []
+    assert candidates(report(row(source_url="http://example.com/fda")), now=NOW) == []
+    assert candidates(report(row(source_url="https://evil.example/attack")), now=NOW) == []
+    assert candidates(report(row(source_url=None)), now=NOW) == []
+    assert candidates(report(row(), sources={"openfda": False}), now=NOW) == []
+
+
+def test_stale_future_schema_wrong_or_price_claims_not_produced():
+    assert candidates(report(row(), generated_at=(NOW-timedelta(days=4)).isoformat()), now=NOW) == []
+    assert candidates(report(row(), generated_at=(NOW+timedelta(hours=2)).isoformat()), now=NOW) == []
+    assert candidates(report(row(), decision_authority=True), now=NOW) == []
+    assert candidates(report(row(date="2026-09-01")), now=NOW) == []
+    assert candidates(report(row(date="2026-11-01")), now=NOW) == []
+
+
+def test_escaped_html_and_send_failure_retry_state():
+    event = candidates(report(row(label="<script>alert(1)</script>")), now=NOW)[0]
+    text = message(event)
+    assert "&lt;script&gt;" in text and "<script>" not in text
+    assert "ليست توصية" in text
+    old, _ = run(report(), None, now=NOW, send=lambda _: None)
+
+    def fails(_):
+        raise RuntimeError("network down")
+    state, result = run(report(row()), old, now=NOW, send=fails)
+    assert result["failed"] == "RuntimeError" and not state["seen"]
+    state, result = run(report(row()), state, now=NOW, send=lambda _: None)
+    assert result["sent"] == 1 and len(state["seen"]) == 1
+
+
+def test_sec_source_requires_official_authorization():
+    entry = row("SOME", kind="DILUTION_RISK", importance="HIGH",
+                source="SEC EDGAR",
+                source_url="https://www.sec.gov/Archives/edgar/data/1234/form8k.htm")
+    assert candidates(report(entry), now=NOW) == []
+    eligible = candidates(report(entry, sources={"openfda": True, "sec_edgar": True}), now=NOW)
+    assert len(eligible) == 1 and eligible[0]["kind"] == "DILUTION_RISK"
