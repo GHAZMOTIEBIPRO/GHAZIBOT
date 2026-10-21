@@ -17,6 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
+from scripts.catalyst_health_context import health_context
 from scripts.telegram_transport import send_html_message
 
 SCHEMA = "ghazi.catalyst_watch_alert_state.v1"
@@ -277,7 +278,7 @@ def daily_brief_candidates(report: dict[str, Any], *, now: datetime,
 
 
 def daily_brief_message(report: dict[str, Any], picks: list[dict[str, Any]],
-                        *, now: datetime) -> str:
+                        *, now: datetime, market_health: Any = None) -> str:
     today = now.astimezone(DIGEST_TZ).date().isoformat()
     sources = report.get("sources") or {}
     source_status = ("openFDA متاح" if sources.get("openfda") is True else "openFDA غير متاح")
@@ -287,6 +288,20 @@ def daily_brief_message(report: dict[str, Any], picks: list[dict[str, Any]],
         f"المصادر: {html.escape(source_status)}",
         "هذه أحداث تنظيمية من أيام سابقة حسب التواريخ أدناه، وليست أخبار سعرية لحظية.",
     ]
+    verified = health_context(market_health, now=now)
+    if verified["available"]:
+        lines.append(
+            f"حالة نظام المصادر: {html.escape(verified['status_ar'])} "
+            f"| تقرير {html.escape(verified['source_time'])}"
+        )
+        lines.append(f"الأوبشن: {html.escape(verified['options_ar'])}")
+        lines.append(f"SEC: {html.escape(verified['sec_ar'])}")
+        if verified["blockers"]:
+            lines.append("أسباب المنع: " + html.escape(" | ".join(verified["blockers"])))
+    else:
+        lines.append("صحة محركات الأسعار والأوبشن: تقرير حديث غير متاح؛ لا إثبات تشغيل حي.")
+    if not picks:
+        lines.append("لا أحداث رسمية حديثة مؤهلة في المصادر المتاحة خلال نافذة هذا التقرير.")
     for item in picks:
         kind = DIGEST_TYPES[item["kind"]]
         caution = " | مراجعة مخاطر" if item["risk"] else ""
@@ -304,7 +319,8 @@ def daily_brief_message(report: dict[str, Any], picks: list[dict[str, Any]],
 
 
 def send_daily_brief(report: dict[str, Any], state: dict[str, Any], *,
-                     now: datetime, send: Callable[[str], Any]
+                     now: datetime, send: Callable[[str], Any],
+                     market_health: Any = None
                      ) -> tuple[dict[str, Any], dict[str, Any]]:
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
@@ -315,10 +331,24 @@ def send_daily_brief(report: dict[str, Any], state: dict[str, Any], *,
     if state.get("daily_brief_date") == day:
         return state, {"mode": "already_sent", "sent": 0}
     picks = daily_brief_candidates(report, now=now)
-    if not picks:
+    # No fresh source report means not even a health-only daily summary.
+    generated = _as_utc(report.get("generated_at"))
+    report_valid = (
+        report.get("schema") == REPORT
+        and report.get("research_only") is True
+        and report.get("decision_authority") is False
+        and report.get("execution_authority") is False
+        and isinstance(report.get("watchlist"), list)
+        and len(report["watchlist"]) <= 40
+        and generated is not None
+        and timedelta(0) <= now - generated <= timedelta(hours=48)
+    )
+    if not report_valid:
+        return state, {"mode": "stale_or_invalid_official_report", "sent": 0}
+    if not picks and not health_context(market_health, now=now)["available"]:
         return state, {"mode": "no_verified_recent_events", "sent": 0}
     try:
-        result = send(daily_brief_message(report, picks, now=now))
+        result = send(daily_brief_message(report, picks, now=now, market_health=market_health))
     except Exception as error:  # noqa: BLE001 - never mark success before Telegram confirms
         return state, {"mode": "failed", "sent": 0, "failed": type(error).__name__}
     return {
@@ -331,6 +361,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--state", type=Path, required=True)
+    parser.add_argument("--market-health", type=Path,
+                        help="Previously published market/option operational status (not quotes).")
     parser.add_argument("--daily-brief", action="store_true",
                         help="Send one Riyadh-dated daily official catalyst research summary.")
     parser.add_argument("--notify-ready", action="store_true",
@@ -349,8 +381,16 @@ def main() -> int:
                              send=send_html_message, notify_ready=args.notify_ready)
     digest = {}
     if args.daily_brief and not summary.get("failed") and new_state.get("schema") == SCHEMA:
-        new_state, digest = send_daily_brief(report, new_state,
-                                             now=datetime.now(timezone.utc), send=send_html_message)
+        health_report = {}
+        if args.market_health is not None:
+            try:
+                health_report = json.loads(args.market_health.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                pass
+        new_state, digest = send_daily_brief(
+            report, new_state, now=datetime.now(timezone.utc),
+            send=send_html_message, market_health=health_report
+        )
     args.state.parent.mkdir(parents=True, exist_ok=True)
     temp = args.state.with_suffix(".tmp")
     temp.write_text(json.dumps(new_state, ensure_ascii=False, indent=2), encoding="utf-8")
