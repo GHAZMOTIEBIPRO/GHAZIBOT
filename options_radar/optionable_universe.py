@@ -11,6 +11,8 @@ from typing import Any, Iterable
 
 import requests
 
+from .source_permissions import allowed
+
 LOGGER = logging.getLogger(__name__)
 
 OCC_DLP_URL = "https://marketdata.theocc.com/delo-download"
@@ -245,6 +247,10 @@ class IndependentOptionableUniverse:
         bool,
     ]:
         errors: dict[str, str] = {}
+        if not allowed("occ_market_data"):
+            # A closed gate also withholds the cached OCC directory: storing
+            # and reusing it is the same use the gate stops.
+            return [], [], [], {"occ": "SOURCE_TERMS_BLOCKED"}, False
         all_rows: list[dict[str, str]] = []
         successful_types: list[str] = []
         for product_type in ("EU", "IU"):

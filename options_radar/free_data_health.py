@@ -46,6 +46,7 @@ SOURCES: tuple[dict[str, Any], ...] = (
         "authority": "official",
         "role": "options_volume_context_contract",
         "method": "GET",
+        "gate": "occ_market_data",
     },
     {
         "name": "U.S. Treasury yield curve",
@@ -62,6 +63,7 @@ SOURCES: tuple[dict[str, Any], ...] = (
         "authority": "official",
         "role": "daily_short_sale_volume_context",
         "method": "POST_FINRA",
+        "gate": "finra_api",
     },
     {
         "name": "dhawalc/spx-gamma-levels",

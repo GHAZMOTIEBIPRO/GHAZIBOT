@@ -1221,6 +1221,7 @@ class DataFetcher:
 
     def fetch_fred_series(self, series_id: str, *, limit: int = 10) -> FetchResult[pd.DataFrame]:
         key = getattr(self.settings, "fred_api_key", None)
+        require("fred")
         if not key:
             raise DataUnavailableError(
                 f"fred:{series_id}",

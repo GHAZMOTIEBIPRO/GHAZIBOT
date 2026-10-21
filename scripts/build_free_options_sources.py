@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import json
 import os
 import re
@@ -25,6 +26,11 @@ from pathlib import Path
 from typing import Any
 
 import requests
+
+_gate_spec = importlib.util.spec_from_file_location(
+    "ghazi_source_permissions", Path(__file__).resolve().parents[1] / "options_radar" / "source_permissions.py")
+source_permissions = importlib.util.module_from_spec(_gate_spec)
+_gate_spec.loader.exec_module(source_permissions)
 
 FILINGPULSE = "https://api.filingpulse.io"
 OCC = "https://marketdata.theocc.com/daily-open-interest"
@@ -334,6 +340,8 @@ def parse_occ_series_oi(raw: str, *, symbol: str) -> dict:
 
 
 def _occ_text(session: Any, url: str, params: dict) -> tuple[str | None, str]:
+    if not source_permissions.allowed("occ_market_data"):
+        return None, "SOURCE_TERMS_BLOCKED"
     try:
         response = session.get(
             url, params=params, timeout=18, stream=True,

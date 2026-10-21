@@ -27,6 +27,29 @@ docs/OPEN_SOURCE_AND_DATA_SOURCE_DECISIONS.md):
   and users must not use "any process, whether automated or manual, to
   capture data or content from the Service"; api.nasdaq.com robots.txt is
   ``Disallow: /``.
+
+Added 2026-10-21 (runner probe 39521600490):
+
+- NasdaqTrader.com copyright statement (read in full): the Content "may not
+  be copied, reproduced, transmitted, displayed, performed, distributed,
+  rented, sublicensed, altered, stored for subsequent use or otherwise used
+  in whole or in part in any manner without the prior written consent of
+  Nasdaq", and the reports and data there "are proprietary to The Nasdaq,
+  Inc.". Covers the Symbol Directory files and the trade-halt RSS feed.
+- OCC: theocc.com answers the runner with 403, so its Terms and Conditions
+  could not be read in full; the search-index text of that official page
+  lists "use or launch any automated system, including robots, spiders,
+  or offline readers, to access the Services" as prohibited conduct.
+  Unreadable terms are UNKNOWN, and UNKNOWN is not permission.
+- FINRA API Terms of Service (read in full): "Developer shall access the
+  Licensed APIs and the Licensed Data solely using access credentials
+  provided to Developer by FINRA"; the finra.org Terms of Use forbid
+  "data mining, scraping or harvesting tools (including robots)" and limit
+  content to "non-commercial personal or professional use". The project
+  calls api.finra.org without FINRA credentials.
+- FRED: the terms pages time out from the runner (UNKNOWN); the search-index
+  text of the official API terms forbids storing, caching or archiving FRED
+  content, which persistent state would do.
 """
 from __future__ import annotations
 
@@ -36,6 +59,10 @@ CBOE_VARIABLE = "CBOE_DELAYED_AUTOMATION_APPROVED"
 YAHOO_VARIABLE = "YAHOO_AUTOMATED_ACCESS_APPROVED"
 NASDAQ_WEB_VARIABLE = "NASDAQ_WEB_AUTOMATION_APPROVED"
 COMMUNITY_GEX_VARIABLE = "COMMUNITY_GEX_DATA_APPROVED"
+OCC_VARIABLE = "OCC_MARKET_DATA_AUTOMATION_APPROVED"
+NASDAQTRADER_VARIABLE = "NASDAQTRADER_AUTOMATION_APPROVED"
+FINRA_API_VARIABLE = "FINRA_API_AUTOMATION_APPROVED"
+FRED_VARIABLE = "FRED_AUTOMATION_APPROVED"
 
 GATES: dict[str, dict[str, str]] = {
     "cboe_delayed": {
@@ -72,6 +99,42 @@ GATES: dict[str, dict[str, str]] = {
                    "reads stay off until the rights are verified"),
         "reason_ar": ("مستودعات جاما المجتمعية على GitHub بلا ملف ترخيص ولا تذكر مصدرًا مرخصًا لسلاسل الخيارات "
                       "التي تُحسب منها؛ حقوقها غير معروفة، فالقراءة الآلية متوقفة حتى التحقق منها"),
+    },
+    "occ_market_data": {
+        "variable": OCC_VARIABLE,
+        "source": "OCC market data reports (marketdata.theocc.com)",
+        "reason": ("OCC's terms list launching any automated system (robots, spiders) to access its services "
+                   "as prohibited conduct, and theocc.com refuses automated readers, so its full terms could "
+                   "not be verified; automated reads stay off until OCC grants a licence or permission"),
+        "reason_ar": ("شروط OCC تعدّ تشغيل أي نظام آلي للوصول إلى خدماتها سلوكًا محظورًا، وموقعها يرفض القراءة "
+                      "الآلية فلم يمكن التحقق من نصها كاملًا؛ الجلب الآلي متوقف حتى ترخيص أو إذن من OCC"),
+    },
+    "nasdaqtrader": {
+        "variable": NASDAQTRADER_VARIABLE,
+        "source": "NasdaqTrader.com (Symbol Directory files, trade-halt RSS)",
+        "reason": ("NasdaqTrader.com content and reports may not be copied, displayed, distributed, stored for "
+                   "subsequent use or otherwise used without Nasdaq's prior written consent; automated reads "
+                   "stay off until Nasdaq grants permission"),
+        "reason_ar": ("محتوى NasdaqTrader.com وتقاريره لا يجوز نسخها أو عرضها أو توزيعها أو تخزينها أو استخدامها "
+                      "دون موافقة Nasdaq الكتابية المسبقة؛ الجلب الآلي متوقف حتى إذن Nasdaq"),
+    },
+    "finra_api": {
+        "variable": FINRA_API_VARIABLE,
+        "source": "FINRA API (api.finra.org Reg SHO daily data)",
+        "reason": ("FINRA's API terms allow access only with FINRA-issued credentials and its website terms "
+                   "forbid scraping and limit use to non-commercial personal use; uncredentialed automated "
+                   "reads stay off until a FINRA developer account and terms acceptance are recorded"),
+        "reason_ar": ("شروط واجهة FINRA تسمح بالوصول فقط ببيانات اعتماد صادرة من FINRA وشروط موقعها تمنع الكشط "
+                      "وتقصر الاستخدام على غير التجاري؛ الجلب الآلي دون اعتماد متوقف حتى تسجيل حساب مطوّر وقبول الشروط"),
+    },
+    "fred": {
+        "variable": FRED_VARIABLE,
+        "source": "FRED API (api.stlouisfed.org)",
+        "reason": ("FRED's terms could not be read from the runner and its official API terms forbid storing, "
+                   "caching or archiving FRED content; automated reads stay off until the terms are verified "
+                   "for this use"),
+        "reason_ar": ("تعذر قراءة شروط FRED من خادم التشغيل، وشروط واجهتها الرسمية تمنع تخزين محتواها أو "
+                      "تخزينه مؤقتًا أو أرشفته؛ الجلب الآلي متوقف حتى التحقق من الشروط لهذا الاستخدام"),
     },
 }
 

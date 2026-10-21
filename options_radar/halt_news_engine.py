@@ -11,6 +11,8 @@ from typing import Any
 
 import requests
 
+from .source_permissions import require
+
 NASDAQ_HALT_RSS = os.getenv("NASDAQ_HALT_RSS_URL", "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts")
 ALPHA_VANTAGE_NEWS = "https://www.alphavantage.co/query"
 FINNHUB_NEWS = "https://finnhub.io/api/v1/news"
@@ -123,6 +125,7 @@ def _headline_sentiment(headline: str) -> float:
 
 
 def fetch_nasdaq_halts(known_symbols: set[str] | None = None) -> list[HaltEvent]:
+    require("nasdaqtrader")
     headers = {"User-Agent": "Mozilla/5.0 (compatible; BLACK-BOX-Omega/1.0)"}
     response = requests.get(NASDAQ_HALT_RSS, headers=headers, timeout=TIMEOUT)
     response.raise_for_status()

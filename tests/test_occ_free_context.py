@@ -1,4 +1,13 @@
+import pytest
+
 from options_radar.occ_free_context import parse_occ_volume_csv, side_alignment
+
+
+@pytest.fixture(autouse=True)
+def _occ_gate_open(monkeypatch):
+    # Parsing behaviour once OCC permission exists; the closed gate is
+    # covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
+    monkeypatch.setenv("OCC_MARKET_DATA_AUTOMATION_APPROVED", "true")
 
 
 def test_parse_occ_aggregate_columns():

@@ -15,6 +15,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .free_feed_validation import classify_http_response
+from .source_permissions import allowed, block_record
 
 LOGGER = logging.getLogger(__name__)
 
@@ -311,6 +312,11 @@ class OccFreeVolumeClient:
         reference_date: date | None = None,
     ) -> dict[str, Any]:
         report_type = OCC_REPORT_TYPES[report_key]
+        if not allowed("occ_market_data"):
+            block = block_record("occ_market_data")
+            return {"success": False, "source": "OCC Volume Query", "official": True, "report_key": report_key,
+                    "report_type": report_type, "context_only": True, "not_live_quote": True,
+                    "not_options_flow": True, "attempts": [], "error": block["status"], "source_block": block}
         circuit_reason = self._report_circuits.get(report_key)
         if circuit_reason:
             return {

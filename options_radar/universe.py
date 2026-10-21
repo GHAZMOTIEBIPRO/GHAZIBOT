@@ -138,6 +138,9 @@ def _is_us_exchange(exchange: str) -> bool:
 def _nasdaq_trader_symbols() -> list[str]:
     """Official symbol-directory fallback covering Nasdaq and other US listings."""
 
+    if not allowed("nasdaqtrader"):
+        LOGGER.info("Nasdaq Trader symbol directory skipped: source gate closed")
+        return []
     headers = {"User-Agent": "Mozilla/5.0 (compatible; GHAZI-Market-Radar/5.0)"}
     symbols: list[str] = []
     for url, symbol_field in (

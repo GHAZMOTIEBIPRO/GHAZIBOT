@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 import requests
 
 from options_radar.optionable_universe import (
@@ -9,6 +10,13 @@ from options_radar.optionable_universe import (
     _walk_cboe_active,
     parse_occ_dlp_text,
 )
+
+
+@pytest.fixture(autouse=True)
+def _occ_gate_open(monkeypatch):
+    # Parsing behaviour once OCC permission exists; the closed gate is
+    # covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
+    monkeypatch.setenv("OCC_MARKET_DATA_AUTOMATION_APPROVED", "true")
 
 
 def test_parse_occ_dlp_supports_pipe_and_deduplicates():
