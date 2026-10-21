@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a1220">
 <meta name="description" content="GHAZI RADAR: شاشة فرز محفزات SEC وFDA الرسمية فقط، حسب المصدر وتاريخ الحدث.">
 <title>GHAZI RADAR — Official Catalyst Desk</title>
-<link rel="stylesheet" href="./catalyst-desk.css?v=20261022-1">
+<link rel="stylesheet" href="./catalyst-desk.css?v=20261022-2">
 </head>
 <body>
 <main class="shell">
@@ -22,6 +22,19 @@
       <button type="button" id="desk-reload">تحديث التقرير</button>
     </div>
   </header>
+  <section class="truth-section" aria-labelledby="desk-truth-title">
+    <div class="truth-head">
+      <div><p class="kicker">MARKET SOURCE TRUTH</p>
+      <h2 id="desk-truth-title">حالة محركات الأسهم والأوبشن ومصادر الأخبار</h2>
+      <p>تقرير إنشاء البيانات ليس عرض سعر؛ والحالة القديمة لا تعني أن المحرك يعمل الآن. حالة SEC منفصلة عن الأحداث المعروضة.</p></div>
+      <button type="button" id="desk-truth-refresh">فحص التقارير</button>
+    </div>
+    <p id="desk-truth-status" role="status">التحقق من الحداثة والحقوق…</p>
+    <div id="desk-truth-grid" class="truth-grid" aria-live="polite">
+      <p class="empty">فحص آخر حالة منشورة، دون إعادة جلب أسعار من مصادر مغلقة…</p>
+    </div>
+    <p class="truth-foot">نتائج هذا القسم تشغيلية ووصفية؛ لا ترقى إلى توصية أو إثبات توفر عقد ولا تُغيّر بوابة V11.</p>
+  </section>
   <section class="stats" aria-label="ملخص التغطية">
     <article><small>الشركات في التقرير</small><strong id="desk-companies">—</strong></article>
     <article><small>الأحداث المدرجة</small><strong id="desk-events">—</strong></article>
@@ -56,4 +69,5 @@
 </main>
 <script src="./catalyst-desk.js?v=20261022-1" defer></script>
 <script src="./catalyst-chart.js?v=20261022-1" defer></script>
+<script src="./catalyst-source-truth.js?v=20261022-2" defer></script>
 </body></html>
