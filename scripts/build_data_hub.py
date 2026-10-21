@@ -20,7 +20,54 @@ SCHEMA = "ghazi.data_hub.v1"
 
 
 RIGHTS_KEYS = ("automated_access", "internal_analysis", "persistent_storage", "public_display_raw",
-               "public_display_derived", "github_actions_automation", "commercial_use_on_free_tier")
+               "public_display_derived", "github_actions_automation", "commercial_use_on_free_tier",
+               "telegram_sharing")
+# Which providers can feed each engine. The class of each provider comes
+# from its recorded rights only; a configured key never changes it.
+ENGINE_PROVIDERS = {
+    "PRICE": ("twelve_data", "tiingo", "finnhub", "alpaca", "alpha_vantage", "eodhd", "massive_polygon", "iex",
+              "yahoo", "nasdaq_web", "tradingview_widgets"),
+    "VOLUME": ("twelve_data", "tiingo", "finnhub", "alpaca", "alpha_vantage", "eodhd", "massive_polygon", "iex",
+               "yahoo", "nasdaq_web"),
+    "NEWS": ("gdelt", "federal_reserve", "sec_edgar", "google_news_rss", "prnewswire", "globenewswire",
+             "businesswire"),
+    "FUNDAMENTAL": ("sec_edgar", "fmp", "finnhub", "alpha_vantage", "eodhd", "nasdaq_data_link"),
+    "OPTIONS": ("tradier", "massive_polygon", "alpaca", "marketdata_app", "cboe_delayed", "occ", "finnhub"),
+    "MACRO": ("treasury_fiscaldata", "cftc", "federal_reserve", "bea", "census", "fred", "bls"),
+    "REGULATORY": ("openfda", "sec_edgar"),
+}
+
+
+def provider_class(key: str, rights: dict[str, str]) -> str:
+    """PUBLIC / DISPLAY_WIDGET_ONLY / INTERNAL_ONLY / BLOCKED / UNKNOWN from recorded rights."""
+    if key == "tradingview_widgets":
+        return "DISPLAY_WIDGET_ONLY"
+    if rights.get("automated_access") == "RESTRICTED":
+        return "BLOCKED"
+    if "VERIFIED" in (rights.get("public_display_raw"), rights.get("public_display_derived")):
+        return "PUBLIC"
+    if rights.get("automated_access") == "VERIFIED" and rights.get("internal_analysis") == "VERIFIED":
+        return "INTERNAL_ONLY"
+    if rights.get("internal_analysis") == "RESTRICTED":
+        return "BLOCKED"
+    return "UNKNOWN"
+
+
+def provider_engines(providers: dict[str, Any]) -> dict[str, Any]:
+    out = {}
+    for engine, keys in ENGINE_PROVIDERS.items():
+        classes = {k: provider_class(k, providers[k]["rights"]) for k in keys if k in providers}
+        public = sorted(k for k, c in classes.items() if c == "PUBLIC")
+        internal = sorted(k for k, c in classes.items() if c == "INTERNAL_ONLY")
+        out[engine] = {
+            "providers": classes,
+            "public_sources": public,
+            "internal_only_sources": internal,
+            "status": ("PUBLIC_SOURCE_AVAILABLE" if public else
+                       "INTERNAL_ONLY_WITH_KEY" if internal else
+                       "DISPLAY_WIDGET_ONLY" if "DISPLAY_WIDGET_ONLY" in classes.values() else "NO_PERMITTED_SOURCE"),
+        }
+    return out
 
 
 def _source_rights() -> dict[str, Any]:
@@ -39,7 +86,8 @@ def _source_rights() -> dict[str, Any]:
             "rights": {r: (rights.get(r) or {}).get("status", "UNKNOWN") for r in RIGHTS_KEYS},
         }
     return {"available": True, "checked_at": matrix.get("checked_at"), "evidence_run": matrix.get("evidence_run"),
-            "unknown_is_not_permission": True, "providers": providers}
+            "full_text_run": matrix.get("full_text_run"), "unknown_is_not_permission": True,
+            "providers": providers, "engines": provider_engines(providers)}
 
 
 def _source_gates() -> dict[str, Any]:

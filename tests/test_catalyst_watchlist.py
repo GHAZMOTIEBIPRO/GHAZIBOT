@@ -88,3 +88,13 @@ def test_workflow_is_single_writer_without_a_price_input():
     writers = [p.name for p in (ROOT / ".github/workflows").glob("*.yml")
                if "catalyst_watchlist.json" in p.read_text(encoding="utf-8")]
     assert writers == ["catalyst-watchlist.yml"]
+
+
+def test_most_important_catalyst_is_listed_first_and_latest_date_kept():
+    fda = {"approvals": [
+        {"event_type": "APPROVAL_SUPPLEMENT", "date": "2026-10-19", "ticker": "MRKX", "importance": "LOW"},
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-10", "ticker": "MRKX", "importance": "HIGH"}],
+        "recalls": []}
+    entry = cw.build(fda, None, None, NOW)["watchlist"][0]
+    assert [c["kind"] for c in entry["catalysts"]] == ["FDA_APPROVAL", "FDA_SUPPLEMENT"]
+    assert entry["latest_date"] == "2026-10-19" and entry["highest_importance"] == "HIGH"
