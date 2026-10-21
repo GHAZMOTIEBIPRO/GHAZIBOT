@@ -33,11 +33,18 @@ FALLBACK_TICKER_MAP = "https://raw.githubusercontent.com/jadchaar/sec-cik-mapper
 SUBMISSIONS_BASE = "https://data.sec.gov/submissions/"
 MAX_SYMBOLS = 24
 MAX_FILINGS = 70
+MAX_INSIDER_PER_ISSUER = 3
 WATCH_EXTRA = ("RGC", "BNAI", "RKLB", "IONQ", "RGTI", "ASTS", "SOUN")
-FORMS = frozenset({
-    "8-K", "8-K/A", "6-K", "10-Q", "10-K", "S-1", "S-3",
-    "F-3", "424B5", "424B2", "S-4", "SC 13D", "SC 13D/A",
+OFFERING_FORMS = frozenset({
+    "S-1", "S-1/A", "S-3", "S-3/A", "F-1", "F-3", "S-4",
+    "424B1", "424B2", "424B3", "424B4", "424B5", "424B7",
 })
+# Form 3/4/5: insider ownership statements filed under the issuer's CIK.
+INSIDER_FORMS = frozenset({"3", "4", "5", "4/A"})
+FORMS = frozenset({
+    "8-K", "8-K/A", "6-K", "10-Q", "10-K", "10-Q/A", "10-K/A",
+    "SC 13D", "SC 13D/A", "SC 13G", "SC 13G/A",
+}) | OFFERING_FORMS | INSIDER_FORMS
 TICKER = re.compile(r"[A-Z][A-Z0-9.\-]{0,8}\Z")
 DOCUMENT = re.compile(r"[A-Za-z0-9._-]{1,180}\Z")
 ACCESSION = re.compile(r"\d{10}-\d{2}-\d{6}\Z")
@@ -142,10 +149,12 @@ def candidate_local_cik_map(path: Path | None) -> dict[str, tuple[int, str]]:
 
 
 def _category(form: str) -> str:
-    if form in {"S-1","S-3","F-3","424B5","424B2","S-4"}:
+    if form in OFFERING_FORMS:
         return "OFFERING_OR_DILUTION_REVIEW"
-    if form in {"10-Q","10-K"}:
+    if form in {"10-Q","10-K","10-Q/A","10-K/A"}:
         return "EARNINGS_OR_PERIODIC_REPORT_REVIEW"
+    if form in INSIDER_FORMS:
+        return "INSIDER_TRANSACTION_REVIEW"
     if form in {"8-K","8-K/A","6-K"}:
         return "MATERIAL_EVENT_REVIEW"
     return "OWNERSHIP_CHANGE_REVIEW"
@@ -163,10 +172,13 @@ def filing_topics(form: str, raw_items: Any) -> tuple[list[str], list[str]]:
         # SEC submissions 'items' field may contain comma-delimited labels.
         codes = list(dict.fromkeys(re.findall(r"(?<![\d.])\d{1,2}\.\d{2}(?![\d.])", raw_items)))[:16]
     topics: list[str] = []
-    if form in {"10-Q", "10-K"}:
+    if form in {"10-Q", "10-K", "10-Q/A", "10-K/A"}:
         topics.append("PERIODIC_FINANCIAL_REPORT_REVIEW")
-    if form in {"S-1", "S-3", "F-3", "424B5", "424B2", "S-4"}:
+    if form in OFFERING_FORMS:
         topics.append("OFFERING_OR_REGISTRATION_TERMS_REVIEW")
+    if form in INSIDER_FORMS:
+        # The direction (buy/sell) and size are in the form's XML, not here.
+        topics.append("INSIDER_OWNERSHIP_STATEMENT_REVIEW")
     if "2.02" in codes:
         topics.append("EARNINGS_RELEASE_REVIEW")
     if "3.02" in codes:
@@ -177,6 +189,11 @@ def filing_topics(form: str, raw_items: Any) -> tuple[list[str], list[str]]:
         topics.append("DEBT_OBLIGATION_REVIEW")
     if "5.02" in codes:
         topics.append("MANAGEMENT_CHANGE_REVIEW")
+    if "3.03" in codes or "5.03" in codes:
+        # Reverse splits are disclosed under these items, among other changes.
+        topics.append("SHAREHOLDER_RIGHTS_OR_CHARTER_CHANGE_REVIEW")
+    if "3.01" in codes:
+        topics.append("LISTING_STANDARD_NOTICE_REVIEW")
     return codes, topics
 
 
@@ -205,11 +222,18 @@ def parse_submissions(symbol: str, cik: int, issuer: str, payload: dict, *,
     values=raw_items if has_items else [""]*len(forms)
     cutoff=now.date()-timedelta(days=max(1,lookback_days))
     rows=[]
+    insider_rows=0
     for form,day,acc,doc,items in zip(
         forms[:200],dates[:200],accessions[:200],docs[:200],values[:200]
     ):
         if form not in FORMS or not isinstance(day,str):
             continue
+        if form in INSIDER_FORMS:
+            # Large issuers file dozens of Form 4s; keep the newest few so
+            # they cannot crowd material events out of the shared cap.
+            if insider_rows>=MAX_INSIDER_PER_ISSUER:
+                continue
+            insider_rows+=1
         try:filed=date.fromisoformat(day)
         except ValueError:continue
         if not (cutoff<=filed<=now.date()):
