@@ -6,6 +6,8 @@ from typing import Any
 
 import pandas as pd
 
+from .calendar_volume_context import calendar_adjusted_contract_volume
+
 
 @dataclass(frozen=True)
 class ContractVolumeAnomaly:
@@ -17,6 +19,7 @@ class ContractVolumeAnomaly:
     empirical_percentile: float | None
     robust_z: float | None
     score: float
+    calendar_volume: dict[str, Any] | None = None
 
 
 def _finite(value: Any) -> float | None:
@@ -49,6 +52,8 @@ def analyze_contract_volume_anomaly(
     *,
     min_observations: int = 5,
     max_observations: int = 20,
+    observed_at: Any = None,
+    expiration: Any = None,
 ) -> ContractVolumeAnomaly:
     """Score current option volume against the contract's own prior sessions.
 
@@ -111,6 +116,9 @@ def analyze_contract_volume_anomaly(
         )
         score = ratio_component + percentile_component + z_component
 
+    calendar_context = calendar_adjusted_contract_volume(
+        current_volume, history, observed_at=observed_at, expiration=expiration,
+    )
     return ContractVolumeAnomaly(
         ready,
         observations,
@@ -120,4 +128,5 @@ def analyze_contract_volume_anomaly(
         round(percentile, 4) if percentile is not None else None,
         round(robust_z, 4) if robust_z is not None else None,
         round(max(0.0, min(100.0, score)), 2),
+        calendar_context,
     )
