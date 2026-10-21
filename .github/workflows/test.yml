@@ -318,6 +318,8 @@ jobs:
 
       - name: JavaScript syntax gate
         run: |
+          node --check public/market-chart.js
+          node tests/market_chart_overlays.cjs
           node --check public/app.js
           node --check public/decision-room.js
           node tests/decision_room.cjs
