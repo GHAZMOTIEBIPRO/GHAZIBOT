@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-21T01:58:07.314653+00:00",
+ "generated_at": "2026-10-21T01:58:58.668765+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -36,7 +36,7 @@
      "success": 4
     },
     "site-evidence-strength.yml": {
-     "success": 63,
+     "success": 64,
      "cancelled": 12,
      "skipped": 4
     },
@@ -105,9 +105,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 39529552071,
+    "run_id": 39530308888,
     "conclusion": "success",
-    "at": "2026-10-21T01:49:49Z"
+    "at": "2026-10-21T01:57:50Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -201,20 +201,17 @@
    "note_ar": "يقيس سلامة العرض لا صحة البيانات المعروضة."
   },
   "TELEGRAM_DELIVERY": {
-   "status": "API_VERIFIED",
+   "status": "DELIVERED",
    "value": null,
    "unit": "status",
    "evidence": {
-    "checked_at": "2026-10-21T01:30:40.434441+00:00",
-    "status": "CONNECTION_VERIFIED_NOT_SENT",
-    "sent": 0,
-    "edited": 0,
-    "unchanged": 0,
-    "bot_api_responded": true,
-    "destination_api_verified": true
+    "last_sent_at": "2026-10-21T01:58:17.284618+00:00",
+    "kind": "test",
+    "message_id": 1268,
+    "log": "state/telegram/ops_digest_state.json"
    },
-   "method": "Bot API identity and destination chat verified by the Contract Guardian delivery audit",
-   "note_ar": "قبول Telegram للرسالة لا يثبت أن المستخدم قرأها."
+   "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
+   "note_ar": "Telegram قبل رسالة فعلية وأعاد رقمها؛ هذا لا يثبت أن المستخدم قرأها."
   }
  },
  "original_evidence_score": {
