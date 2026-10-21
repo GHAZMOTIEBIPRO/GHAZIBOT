@@ -1109,6 +1109,7 @@
     // even when this symbol has no chart bars.
     renderDecisionCard(symbol);
     renderTradingView(symbol);
+    if(typeof window!=="undefined"&&window.GhaziTV)window.GhaziTV.renderSymbol(symbol);
     const indexFrame=state.charts?.symbols?.[symbol]?.intervals?.[tf];
     const stockFrame=state.watchCharts?.symbols?.[symbol]?.intervals?.[tf];
     const frame=indexFrame||stockFrame;
