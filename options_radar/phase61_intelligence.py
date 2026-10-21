@@ -16,6 +16,7 @@ from urllib3.util.retry import Retry
 
 from .phase61_providers import alpaca_option_snapshots, alpaca_stock_snapshots
 from .settings import Settings
+from .source_permissions import allowed
 
 INTELLIGENCE_AUDIT_PATH = Path("data/live/intelligence_audit.json")
 
@@ -110,6 +111,9 @@ def _collect_finra(client: requests.Session, settings: Settings, symbols: list[s
     audit = _attempt("finra_reg_sho", True)
     output: dict[str, dict[str, Any]] = {}
     endpoint = "https://api.finra.org/data/group/OTCMarket/name/regShoDaily"
+    if not allowed("finra_api"):
+        audit.update(success=False, error="SOURCE_TERMS_BLOCKED")
+        return {}, audit
     try:
         for symbol in symbols[:20]:
             response = client.post(

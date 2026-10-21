@@ -10,6 +10,7 @@ from typing import Any
 import requests
 
 from .occ_free_data import occ_activity_fields, screen_occ_volume_rows
+from .source_permissions import allowed, block_record
 
 OCC_VOLUME_QUERY_URL = "https://marketdata.theocc.com/volume-query"
 
@@ -116,6 +117,10 @@ class OccDailyVolumeClient:
         )
 
     def fetch(self, symbol: str, reference_date: date | None = None) -> dict[str, Any]:
+        if not allowed("occ_market_data"):
+            block = block_record("occ_market_data")
+            return {"success": False, "official": True, "source": "OCC Volume Query", "context_only": True,
+                    "attempts": [], "error": block["status"], "source_block": block}
         attempts: list[dict[str, Any]] = []
         for report_date in _business_dates(reference_date):
             compact = report_date.strftime("%Y%m%d")

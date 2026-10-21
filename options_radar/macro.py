@@ -8,6 +8,7 @@ from typing import Any
 import requests
 
 from .settings import Settings
+from .source_permissions import allowed
 
 LOGGER = logging.getLogger(__name__)
 TREASURY_XML = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
@@ -70,7 +71,7 @@ def fetch_treasury_curve(now: datetime | None = None) -> dict[str, Any]:
 
 
 def fetch_fred_latest(settings: Settings, series_id: str) -> dict[str, Any]:
-    if not settings.fred_api_key:
+    if not settings.fred_api_key or not allowed("fred"):
         return {}
     response = requests.get(
         FRED_OBSERVATIONS,

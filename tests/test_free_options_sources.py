@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
+import pytest
+
 from scripts.build_free_options_sources import (
     _issuer_records,
     _official_sec_link,
@@ -13,6 +15,14 @@ from scripts.build_free_options_sources import (
     parse_occ_market_oi,
     parse_occ_series_oi,
 )
+
+
+@pytest.fixture(autouse=True)
+def _occ_gate_open(monkeypatch):
+    # Parsing behaviour once OCC permission exists; the closed gate is
+    # covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
+    monkeypatch.setenv("OCC_MARKET_DATA_AUTOMATION_APPROVED", "true")
+
 
 NOW = datetime(2026, 10, 19, 9, tzinfo=timezone.utc)
 CIK = 320193

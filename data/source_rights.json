@@ -5,7 +5,7 @@
   "RESTRICTED",
   "UNKNOWN"
  ],
- "checked_at": "2026-10-20",
+ "checked_at": "2026-10-21",
  "evidence_run": "39478127523",
  "providers": {
   "yahoo": {
@@ -611,42 +611,43 @@
   "nasdaqtrader": {
    "name": "NasdaqTrader symbol directory",
    "category": "exchange",
-   "official_url": "https://www.nasdaqtrader.com/Trader.aspx?id=TermsOfUse",
-   "fetch_status": "404",
+   "official_url": "https://www.nasdaqtrader.com/Trader.aspx?id=CopyDisclaimMain",
+   "fetch_status": "200",
    "rights": {
     "automated_access": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     },
     "internal_analysis": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     },
     "persistent_storage": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     },
     "public_display_raw": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     },
     "public_display_derived": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     },
     "github_actions_automation": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     },
     "commercial_use_on_free_tier": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "\"[The Content] may not be copied, reproduced, transmitted, displayed, performed, distributed, rented, sublicensed, altered, stored for subsequent use or otherwise used in whole or in part in any manner without the prior written consent of Nasdaq\"; \"The reports and the other data and information here ... are proprietary to The Nasdaq, Inc.\" (nasdaqtrader.com Copyright/Disclaimer, read in full)"
     }
    },
    "api_key_required": false,
-   "cost_note": "TermsOfUse page is a soft 404 (HTTP 200 but final_url=...Trader.aspx?id=http404). SymbolDirDefs page (https://www.nasdaqtrader.com/Trader.aspx?id=SymbolDirDefs) returned 200 with no licensing clauses matched.",
+   "cost_note": "Prior written consent of Nasdaq required; gate NASDAQTRADER_AUTOMATION_APPROVED closed.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "صفحة شروط NasdaqTrader غير موجودة فعليًا وصفحة دليل الرموز بلا نص ترخيص، فكل الحقوق غير معروفة."
+   "summary_ar": "شروط NasdaqTrader تمنع نسخ المحتوى وتقاريره أو عرضها أو تخزينها أو استخدامها دون موافقة Nasdaq الكتابية المسبقة؛ دليل الرموز وتغذية الإيقافات متوقفان.",
+   "evidence_run": "39521600490"
   },
   "tradingview_widgets": {
    "name": "TradingView widgets / charts",
@@ -764,9 +765,10 @@
     }
    },
    "api_key_required": true,
-   "cost_note": "API terms and /legal/ both FETCH_ERROR ReadTimeout. Note: FRED redistributes third-party series whose rights vary per series; not verified here.",
+   "cost_note": "Terms pages time out from the runner (run 39521600490). The search-index text of the official API terms forbids storing, caching or archiving FRED content; gate FRED_AUTOMATION_APPROVED closed.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "انتهت مهلة جلب شروط FRED فكل الحقوق غير معروفة."
+   "summary_ar": "انتهت مهلة جلب شروط FRED فكل الحقوق غير معروفة.",
+   "evidence_run": "39521600490"
   },
   "bls": {
    "name": "U.S. Bureau of Labor Statistics API",
@@ -804,9 +806,10 @@
     }
    },
    "api_key_required": "unknown",
-   "cost_note": "Terms page returned 403; nothing captured.",
+   "cost_note": "bls.gov answers the runner with HTTP 403 for terms pages (run 39521600490); rights unverified, no automated BLS read is treated as permitted until the page is read.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "صفحة شروط BLS أعادت 403 فكل الحقوق غير معروفة."
+   "summary_ar": "صفحة شروط BLS أعادت 403 فكل الحقوق غير معروفة.",
+   "evidence_run": "39521600490"
   },
   "bea": {
    "name": "U.S. Bureau of Economic Analysis API",
@@ -931,42 +934,43 @@
   "finra": {
    "name": "FINRA API",
    "category": "government",
-   "official_url": "https://developer.finra.org/terms-of-service",
-   "fetch_status": "404",
+   "official_url": "https://developer.finra.org/finra-api-terms-service",
+   "fetch_status": "200",
    "rights": {
     "automated_access": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "finra.org Terms of Use (read in full): content \"shall be used ONLY for your own non-commercial personal or professional use\"; users may not \"develop or create a database of data using the FINRA Website\" or \"use any data mining, scraping or harvesting tools (including robots)\"; FINRA API Terms of Service (read in full, updated 2026-03-19): \"Developer shall access the Licensed APIs and the Licensed Data solely using access credentials provided to Developer by FINRA\""
     },
     "internal_analysis": {
      "status": "UNKNOWN",
-     "evidence": null
+     "evidence": "Allowed only under FINRA credentials and Specific Terms not yet accepted."
     },
     "persistent_storage": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "finra.org Terms of Use (read in full): content \"shall be used ONLY for your own non-commercial personal or professional use\"; users may not \"develop or create a database of data using the FINRA Website\" or \"use any data mining, scraping or harvesting tools (including robots)\"; FINRA API Terms of Service (read in full, updated 2026-03-19): \"Developer shall access the Licensed APIs and the Licensed Data solely using access credentials provided to Developer by FINRA\""
     },
     "public_display_raw": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "finra.org Terms of Use (read in full): content \"shall be used ONLY for your own non-commercial personal or professional use\"; users may not \"develop or create a database of data using the FINRA Website\" or \"use any data mining, scraping or harvesting tools (including robots)\"; FINRA API Terms of Service (read in full, updated 2026-03-19): \"Developer shall access the Licensed APIs and the Licensed Data solely using access credentials provided to Developer by FINRA\""
     },
     "public_display_derived": {
      "status": "UNKNOWN",
-     "evidence": null
+     "evidence": "API terms allow \"Resultant Data\" only where Specific Terms authorise it; not verified for these datasets."
     },
     "github_actions_automation": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "finra.org Terms of Use (read in full): content \"shall be used ONLY for your own non-commercial personal or professional use\"; users may not \"develop or create a database of data using the FINRA Website\" or \"use any data mining, scraping or harvesting tools (including robots)\"; FINRA API Terms of Service (read in full, updated 2026-03-19): \"Developer shall access the Licensed APIs and the Licensed Data solely using access credentials provided to Developer by FINRA\""
     },
     "commercial_use_on_free_tier": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "finra.org Terms of Use (read in full): content \"shall be used ONLY for your own non-commercial personal or professional use\"; users may not \"develop or create a database of data using the FINRA Website\" or \"use any data mining, scraping or harvesting tools (including robots)\"; FINRA API Terms of Service (read in full, updated 2026-03-19): \"Developer shall access the Licensed APIs and the Licensed Data solely using access credentials provided to Developer by FINRA\""
     }
    },
    "api_key_required": "unknown",
-   "cost_note": "Terms URL returned 404; nothing captured.",
+   "cost_note": "Needs a FINRA developer account and accepted terms; gate FINRA_API_AUTOMATION_APPROVED closed.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "صفحة شروط FINRA أعادت 404 فكل الحقوق غير معروفة."
+   "summary_ar": "شروط FINRA تمنع الكشط وإنشاء قواعد بيانات وتقصر الاستخدام على غير التجاري، وواجهتها تتطلب بيانات اعتماد صادرة منها؛ الجلب دون اعتماد متوقف.",
+   "evidence_run": "39521600490"
   },
   "treasury_fiscaldata": {
    "name": "U.S. Treasury Fiscal Data (and Treasury yield data)",
@@ -1056,82 +1060,84 @@
   "federal_reserve": {
    "name": "Federal Reserve Board data",
    "category": "government",
-   "official_url": "https://www.federalreserve.gov/data.htm",
+   "official_url": "https://www.federalreserve.gov/disclaimer.htm",
    "fetch_status": "200",
    "rights": {
     "automated_access": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" The disclaimer sets no restriction on the method of copying; non-Board material (marked third-party) is excluded."
     },
     "internal_analysis": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" (federalreserve.gov/disclaimer.htm, read in full)"
     },
     "persistent_storage": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" (federalreserve.gov/disclaimer.htm, read in full)"
     },
     "public_display_raw": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" (federalreserve.gov/disclaimer.htm, read in full)"
     },
     "public_display_derived": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" (federalreserve.gov/disclaimer.htm, read in full)"
     },
     "github_actions_automation": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" No restriction on method stated."
     },
     "commercial_use_on_free_tier": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "\"Unless otherwise indicated, information on Board's website is in the public domain and may be copied and distributed without permission. Please cite to the Board as the source of the information.\" (federalreserve.gov/disclaimer.htm, read in full)"
     }
    },
    "api_key_required": false,
-   "cost_note": "Page returned 200 but only navigation/dataset titles matched; no licence or usage text captured.",
+   "cost_note": "Public domain unless marked non-Board; cite the Board; seals and logos need written permission.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "صفحة بيانات الاحتياطي الفيدرالي لم تتضمن نص ترخيص في السجل، فكل الحقوق غير معروفة."
+   "summary_ar": "بيانات مجلس الاحتياطي الفيدرالي ملك عام ويجوز نسخها وتوزيعها دون إذن مع ذكر المجلس مصدرًا، باستثناء المواد المعلّمة لطرف ثالث والأختام والشعارات.",
+   "evidence_run": "39521600490"
   },
   "occ": {
    "name": "OCC (Options Clearing Corp) market data reports",
    "category": "options",
-   "official_url": "https://www.theocc.com/market-data/market-data-reports",
+   "official_url": "https://www.theocc.com/specialpages/legal/terms-and-conditions",
    "fetch_status": "403",
    "rights": {
     "automated_access": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     },
     "internal_analysis": {
      "status": "UNKNOWN",
-     "evidence": null
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     },
     "persistent_storage": {
      "status": "UNKNOWN",
-     "evidence": null
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     },
     "public_display_raw": {
      "status": "UNKNOWN",
-     "evidence": null
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     },
     "public_display_derived": {
      "status": "UNKNOWN",
-     "evidence": null
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     },
     "github_actions_automation": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     },
     "commercial_use_on_free_tier": {
      "status": "UNKNOWN",
-     "evidence": null
+     "evidence": "theocc.com answers the runner with HTTP 403, so the Terms and Conditions could not be read in full; the search-index text of the official page (theocc.com/specialpages/legal/terms-and-conditions) lists as prohibited conduct: \"use or launch any automated system, including 'robots,' 'spiders,' or 'offline readers,' to access the Services\". Other rights not readable (UNKNOWN)."
     }
    },
    "api_key_required": "unknown",
-   "cost_note": "Page returned 403; nothing captured.",
+   "cost_note": "OCC sells market data separately; gate OCC_MARKET_DATA_AUTOMATION_APPROVED closed.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "صفحة بيانات OCC أعادت 403 فكل الحقوق غير معروفة."
+   "summary_ar": "شروط OCC تعدّ تشغيل أي نظام آلي للوصول إلى خدماتها محظورًا (نص صفحة الشروط الرسمية في فهرس البحث؛ الموقع يرفض خادم التشغيل)؛ تقارير OCC متوقفة.",
+   "evidence_run": "39521600490"
   }
  }
 }

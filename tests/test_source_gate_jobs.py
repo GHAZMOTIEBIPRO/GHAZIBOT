@@ -88,4 +88,5 @@ def test_community_gex_feeds_make_no_request(monkeypatch, tmp_path):
     assert not any(r.get("available") for r in rows)
     monkeypatch.setattr(health, "_request", no_request)
     checked = [health.check(s) for s in health.SOURCES if s.get("gate")]
-    assert len(checked) == 2 and all(row["license_blocked"] for row in checked)
+    # Two community feeds plus OCC and FINRA (closed gates since 2026-10-21).
+    assert len(checked) == 4 and all(row["license_blocked"] for row in checked)

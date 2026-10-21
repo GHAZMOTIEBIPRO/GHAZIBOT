@@ -73,6 +73,7 @@ KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|n
                       r"internal|store|storage|retain|cache|third[- ]part|public|website|disallow|"
                       r"user-agent|rate limit|attribution|public domain)", re.IGNORECASE)
 UA = {"User-Agent": "Mozilla/5.0 (compatible; GHAZI-terms-review/1.1; research)"}
+BLS_UA = {"User-Agent": "GHAZI-RADAR-public-macro/1.0 (github.com/GHAZMOTIEBIPRO/GHAZIBOT)"}
 MAX_LINES = 45
 
 
@@ -96,8 +97,11 @@ def main(only: list[str]) -> int:
         if only and name not in only:
             continue
         print(f"\n===== {name} | {url}")
+        # bls.gov refuses anonymous clients; identify the project the same way
+        # the BLS API job does.
+        headers = BLS_UA if "bls.gov" in url else UA
         try:
-            r = requests.get(url, headers=UA, timeout=25)
+            r = requests.get(url, headers=headers, timeout=25)
         except requests.RequestException as exc:
             print(f"FETCH_ERROR {type(exc).__name__}")
             continue

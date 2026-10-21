@@ -7,6 +7,7 @@ import requests
 
 from . import phase61_intelligence
 from .settings import Settings
+from .source_permissions import allowed
 
 
 def _number(value: Any) -> float:
@@ -30,6 +31,9 @@ def _collect_finra_reg_sho(
         "checked_at": datetime.now(timezone.utc).isoformat(),
     }
     endpoint = "https://api.finra.org/data/group/OTCMarket/name/regShoDaily"
+    if not allowed("finra_api"):
+        audit.update(success=False, error="SOURCE_TERMS_BLOCKED")
+        return {}, audit
     output: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
     end_date = datetime.now(timezone.utc).date()
