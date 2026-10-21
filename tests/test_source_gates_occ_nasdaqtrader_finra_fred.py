@@ -21,7 +21,7 @@ from options_radar import (
 from options_radar.source_permissions import SourceTermsBlocked
 
 ROOT = Path(__file__).resolve().parents[1]
-NEW_GATES = ("occ_market_data", "nasdaqtrader", "finra_api", "fred", "bls")
+NEW_GATES = ("occ_market_data", "nasdaqtrader", "finra_api", "fred", "bls", "google_news", "press_wire_rss")
 
 
 class NoNetwork:
@@ -100,14 +100,15 @@ def test_fred_is_blocked_even_with_a_key():
 
 
 def test_every_caller_of_these_hosts_checks_a_gate():
-    hosts = re.compile(r"marketdata\.theocc\.com|nasdaqtrader\.com/(dynamic|rss)|api\.finra\.org|api\.stlouisfed\.org")
+    hosts = re.compile(r"marketdata\.theocc\.com|nasdaqtrader\.com/(dynamic|rss)|api\.finra\.org|api\.stlouisfed\.org|"
+                       r"news\.google\.com/rss|prnewswire\.com/rss|globenewswire\.com/RssFeed|feed\.businesswire\.com")
     for path in [*ROOT.glob("options_radar/*.py"), *ROOT.glob("scripts/*.py")]:
         if path.name in {"probe_terms.py", "free_data_health.py", "source_permissions.py"}:
             continue
         text = path.read_text(encoding="utf-8")
         if hosts.search(text):
-            assert re.search(r"allowed\(\"(occ_market_data|nasdaqtrader|finra_api|fred)\"\)|"
-                             r"require\(\"(occ_market_data|nasdaqtrader|finra_api|fred)\"\)", text), path.name
+            assert re.search(r"(allowed|require)\(\"(occ_market_data|nasdaqtrader|finra_api|fred|"
+                             r"google_news|press_wire_rss)\"\)", text), path.name
 
 
 def test_bls_calendar_and_macro_context_are_withheld(tmp_path, monkeypatch):
@@ -126,3 +127,24 @@ def test_bls_calendar_and_macro_context_are_withheld(tmp_path, monkeypatch):
     assert bls_macro_context.main() == 0
     report = json.loads(out.read_text())
     assert report["status"] == "SOURCE_TERMS_BLOCKED" and "indicators" not in report
+
+
+def test_google_news_and_press_wires_are_blocked_and_retained_headlines_withdrawn():
+    from datetime import datetime, timezone
+
+    from options_radar import free_public_intelligence as fpi
+
+    items, errors = fpi.google_issuer_attention(["AAPL"], session=NoNetwork())
+    assert items == [] and errors == {"all": "SOURCE_TERMS_BLOCKED"}
+    items, errors = fpi.press_wire_attention(["AAPL"], session=NoNetwork())
+    assert items == [] and set(errors.values()) == {"SOURCE_TERMS_BLOCKED"}
+    now = datetime(2026, 10, 21, tzinfo=timezone.utc)
+    previous = {"google_news_attention": [{"symbol": "AAPL", "url": "https://news.google.com/x",
+                                           "published_at": now.isoformat()}]}
+    current = fpi.retain_verified_news_context({"generated_at": now.isoformat()}, previous, now=now)
+    assert current["google_news_attention"] == []
+    for fetch in (halt_news_engine.fetch_globenewswire_news, halt_news_engine.fetch_businesswire_news,
+                  halt_news_engine.fetch_prnewswire_news):
+        with pytest.raises(SourceTermsBlocked):
+            fetch()
+    assert halt_news_engine.collect_fast_news() == []

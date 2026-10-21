@@ -3,9 +3,18 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 import requests
 
 import options_radar.free_public_intelligence as news
+
+
+@pytest.fixture(autouse=True)
+def _news_gates_open(monkeypatch):
+    # Parser and rotation behaviour once the news sources' terms permit it;
+    # the closed gates are covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
+    for name in ("GOOGLE_NEWS_AUTOMATION_APPROVED", "PRESS_WIRE_RSS_APPROVED", "BLS_AUTOMATION_APPROVED"):
+        monkeypatch.setenv(name, "true")
 
 NOW = datetime(2026, 10, 18, 16, tzinfo=timezone.utc)
 

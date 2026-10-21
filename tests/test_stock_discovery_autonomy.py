@@ -5,11 +5,24 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pandas as pd
+import pytest
 
 from options_radar.free_public_intelligence import google_issuer_attention
 from scripts.build_stock_watch_charts import (
-    FIVE_MIN, WATCH, collect, load_dynamic_symbols, pack_symbol,
+    FIVE_MIN,
+    WATCH,
+    collect,
+    load_dynamic_symbols,
+    pack_symbol,
 )
+
+
+@pytest.fixture(autouse=True)
+def _news_gates_open(monkeypatch):
+    # Parser and rotation behaviour once the news sources' terms permit it;
+    # the closed gates are covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
+    for name in ("GOOGLE_NEWS_AUTOMATION_APPROVED", "PRESS_WIRE_RSS_APPROVED", "BLS_AUTOMATION_APPROVED"):
+        monkeypatch.setenv(name, "true")
 
 NOW = datetime(2026, 10, 18, 14, 0, tzinfo=timezone.utc)
 

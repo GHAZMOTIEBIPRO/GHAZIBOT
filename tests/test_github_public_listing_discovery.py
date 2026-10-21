@@ -4,14 +4,28 @@ from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
 from pathlib import Path
 
+import pytest
 import requests
 
 from options_radar.free_public_intelligence import (
-    GOOGLE_NEWS_MAX_ISSUERS, google_issuer_attention, retain_verified_news_context,
+    GOOGLE_NEWS_MAX_ISSUERS,
+    google_issuer_attention,
+    retain_verified_news_context,
 )
 from options_radar.github_listing_discovery import (
-    LISTINGS, clean_issuer_name, resolve_public_issuers, symbols_from_brief,
+    LISTINGS,
+    clean_issuer_name,
+    resolve_public_issuers,
+    symbols_from_brief,
 )
+
+
+@pytest.fixture(autouse=True)
+def _news_gates_open(monkeypatch):
+    # Parser and rotation behaviour once the news sources' terms permit it;
+    # the closed gates are covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
+    for name in ("GOOGLE_NEWS_AUTOMATION_APPROVED", "PRESS_WIRE_RSS_APPROVED", "BLS_AUTOMATION_APPROVED"):
+        monkeypatch.setenv(name, "true")
 
 NOW = datetime(2026, 10, 18, 15, tzinfo=timezone.utc)
 

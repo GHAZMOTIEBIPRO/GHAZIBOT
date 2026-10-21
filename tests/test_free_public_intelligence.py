@@ -32,6 +32,8 @@ def _bls_gate_open(monkeypatch):
     # Calendar parsing once BLS terms are recorded; the closed gate is
     # covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
     monkeypatch.setenv("BLS_AUTOMATION_APPROVED", "true")
+    monkeypatch.setenv("GOOGLE_NEWS_AUTOMATION_APPROVED", "true")
+    monkeypatch.setenv("PRESS_WIRE_RSS_APPROVED", "true")
 
 NOW = datetime(2026, 10, 14, 13, 15, tzinfo=timezone.utc)
 ICS = """BEGIN:VCALENDAR
