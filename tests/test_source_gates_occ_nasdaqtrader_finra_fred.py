@@ -148,3 +148,22 @@ def test_google_news_and_press_wires_are_blocked_and_retained_headlines_withdraw
         with pytest.raises(SourceTermsBlocked):
             fetch()
     assert halt_news_engine.collect_fast_news() == []
+
+
+def test_inline_workflow_steps_do_not_bypass_source_gates():
+    import yaml
+
+    direct = {"BLS_ICS": "BLS_AUTOMATION_APPROVED", "api.bls.gov": "BLS_AUTOMATION_APPROVED",
+              "marketdata.theocc.com": "OCC_MARKET_DATA_AUTOMATION_APPROVED",
+              "nasdaqtrader.com": "NASDAQTRADER_AUTOMATION_APPROVED",
+              "api.finra.org": "FINRA_API_AUTOMATION_APPROVED",
+              "news.google.com": "GOOGLE_NEWS_AUTOMATION_APPROVED",
+              "prnewswire.com": "PRESS_WIRE_RSS_APPROVED", "globenewswire.com": "PRESS_WIRE_RSS_APPROVED"}
+    for path in (ROOT / ".github/workflows").glob("*.yml"):
+        workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
+        for job in (workflow.get("jobs") or {}).values():
+            for step in job.get("steps") or []:
+                run = str(step.get("run") or "")
+                for token, variable in direct.items():
+                    if token in run:
+                        assert variable in str(step.get("if") or ""), f"{path.name}: {step.get('name')}"
