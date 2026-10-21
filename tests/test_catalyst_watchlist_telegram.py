@@ -77,3 +77,38 @@ def test_sec_source_requires_official_authorization():
     assert candidates(report(entry), now=NOW) == []
     eligible = candidates(report(entry, sources={"openfda": True, "sec_edgar": True}), now=NOW)
     assert len(eligible) == 1 and eligible[0]["kind"] == "DILUTION_RISK"
+
+
+
+def test_one_time_real_telegram_readiness_notice_after_seed():
+    messages = []
+    base = report(row())
+    seeded, initial = run(base, None, now=NOW, send=messages.append, notify_ready=True)
+    assert initial["sent"] == 0 and messages == []
+    updated, delivery = run(base, seeded, now=NOW, send=messages.append, notify_ready=True)
+    assert delivery["ready_notice_sent"] is True
+    assert len(messages) == 1
+    assert "تم ربط رادار المحفزات الرسمي" in messages[0]
+    assert "18" not in messages[0]  # Count comes from the real input, not a hardcoded claim.
+    assert "\\n" not in messages[0]  # Render real HTML message lines.
+    _, replay = run(base, updated, now=NOW, send=messages.append, notify_ready=True)
+    assert replay["ready_notice_sent"] is False and len(messages) == 1
+
+
+def test_failed_readiness_does_not_mark_delivery_proven():
+    seeded, _ = run(report(row()), None, now=NOW, send=lambda _: None)
+    def fail(_):
+        raise RuntimeError("Telegram unreachable")
+    after, result = run(report(row()), seeded, now=NOW, send=fail, notify_ready=True)
+    assert result["failed"] == "RuntimeError"
+    assert "ready_notice_at" not in after
+    assert not any(x.get("status") == "sent" for x in after["seen"].values())
+
+
+def test_invalid_report_cannot_emit_readiness_notice():
+    seeded, _ = run(report(row()), None, now=NOW, send=lambda _: None)
+    notices = []
+    invalid = report(row(), generated_at=(NOW-timedelta(days=4)).isoformat())
+    after, outcome = run(invalid, seeded, now=NOW, send=notices.append, notify_ready=True)
+    assert outcome["ready_notice_sent"] is False
+    assert not notices and "ready_notice_at" not in after
