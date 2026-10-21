@@ -54,27 +54,35 @@ def _rights() -> dict:
         return {}
 
 
-def key_usable(key: str, rights: dict | None = None) -> bool:
+INTERNAL_RIGHTS = ("automated_access", "internal_analysis")
+# Publishing results on the public site is a separate right: a key that
+# allows internal analysis does not make its derived numbers publishable.
+PUBLIC_RIGHTS = ("automated_access", "public_display_derived")
+
+
+def key_usable(key: str, rights: dict | None = None, *, public: bool = False) -> bool:
     """A configured key counts only when the provider's terms allow our use."""
     if not _has(key):
         return False
     provider = KEY_PROVIDER.get(key)
     entry = (rights if rights is not None else _rights()).get(provider or "", {})
     statuses = [str((entry.get("rights", {}).get(right) or {}).get("status") or "UNKNOWN")
-                for right in ("automated_access", "internal_analysis")]
+                for right in (PUBLIC_RIGHTS if public else INTERNAL_RIGHTS)]
     if "RESTRICTED" in statuses or not entry:
         return False
     if all(status == "VERIFIED" for status in statuses):
         return True
-    confirmed = {x.strip() for x in os.getenv("DATA_TERMS_CONFIRMED", "").split(",") if x.strip()}
+    variable = "PUBLIC_DISPLAY_TERMS_CONFIRMED" if public else "DATA_TERMS_CONFIRMED"
+    confirmed = {x.strip() for x in os.getenv(variable, "").split(",") if x.strip()}
     return provider in confirmed
 
 
-def evaluate(requirements: list[str]) -> tuple[bool, list[str]]:
+def evaluate(requirements: list[str], *, public: bool = False) -> tuple[bool, list[str]]:
     missing = []
     rights = _rights()
     for need in requirements:
-        if permissions.allowed(GATED_SOURCE[need]) or any(key_usable(key, rights) for key in ACCOUNT_KEYS[need]):
+        if permissions.allowed(GATED_SOURCE[need]) or any(
+                key_usable(key, rights, public=public) for key in ACCOUNT_KEYS[need]):
             continue
         missing.append(need)
     return not missing, missing
@@ -83,12 +91,14 @@ def evaluate(requirements: list[str]) -> tuple[bool, list[str]]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--require", required=True, help="comma list of price, options, discovery")
+    parser.add_argument("--public", action="store_true",
+                        help="the job publishes to the public site: keys need a public-display right")
     args = parser.parse_args()
     needs = [x.strip() for x in args.require.split(",") if x.strip()]
     unknown = [x for x in needs if x not in GATED_SOURCE]
     if unknown:
         raise SystemExit(f"unknown requirement: {unknown}")
-    usable, missing = evaluate(needs)
+    usable, missing = evaluate(needs, public=args.public)
     reason = "" if usable else (
         "SOURCE_TERMS_BLOCKED: no permitted source for " + ", ".join(missing) +
         " (Yahoo/Nasdaq.com automated access not permitted and no account API configured); scan skipped")

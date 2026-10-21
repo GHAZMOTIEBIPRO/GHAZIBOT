@@ -36,7 +36,15 @@ FAMILY_TOKENS = {
     "nasdaq_web": ("api.nasdaq.com", "nasdaq screener", "nasdaq us-listed full-market screener", "nasdaq.com"),
     "cboe_delayed": ("cboe delayed", "cdn.cboe.com", "delayed_quotes"),
     "community_gex": ("dhawalc/spx-gamma-levels", "alexduanran/spx-0dte-archive", "squawkflow"),
+    # Account price APIs (free keys) may allow internal analysis, but none is
+    # verified for public display of its data or of numbers derived from it.
+    "account_price_apis": ("twelve_data", "twelvedata", "tiingo", "alpaca", "finnhub", "polygon",
+                           "massive", "alpha_vantage", "alphavantage", "eodhd", "financialmodelingprep",
+                           "tradier", "marketdata.app"),
 }
+# Families that are not source_permissions gates: closed unless the provider
+# is listed in PUBLIC_DISPLAY_TERMS_CONFIRMED (its written public-display right).
+NON_GATE_FAMILIES = {"account_price_apis"}
 SOURCE_KEYS = ("source", "data_source", "price_source", "quote_source", "provider", "bar_source",
                "chain_source", "feed_source", "fundamental_source", "audit_source")
 # Price-driven sections of the radar export (public/data/latest.json).
@@ -60,7 +68,10 @@ NOTE_AR = ("أُزيلت من الملف العام كل قيمة مصدرها �
 
 
 def closed_families() -> list[str]:
-    return [name for name in FAMILY_TOKENS if not _permissions.allowed(name)]
+    closed = [name for name in FAMILY_TOKENS if name not in NON_GATE_FAMILIES and not _permissions.allowed(name)]
+    if not os.getenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "").strip():
+        closed.append("account_price_apis")
+    return closed
 
 
 def family_of(value: Any, families: list[str]) -> str | None:

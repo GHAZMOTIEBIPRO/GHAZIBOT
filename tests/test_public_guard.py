@@ -9,7 +9,7 @@ from options_radar import public_guard as guard
 from options_radar import source_permissions as sp
 
 ROOT = Path(__file__).resolve().parents[1]
-CLOSED = ["yahoo", "nasdaq_web", "cboe_delayed", "community_gex"]
+CLOSED = ["yahoo", "nasdaq_web", "cboe_delayed", "community_gex", "account_price_apis"]
 
 
 @pytest.fixture(autouse=True)
@@ -66,9 +66,13 @@ def test_guardian_rows_without_permitted_quotes_become_identity_stubs():
     assert out["active_count"] == 0 and out["license_blocked_count"] == 1
 
 
-def test_permitted_stamped_quotes_keep_a_guardian_row():
+def test_account_api_quotes_need_a_public_display_right(monkeypatch):
     row = {"contract_symbol": "X", "stage": "ACTIVE", "entry_premium_reference": 1.2,
            "quote_snapshots": [{"source": "tradier", "provider_quote_timestamp": "2026-10-20T18:00:00Z", "bid": 1.1}]}
+    # An account key may allow internal analysis; it does not make the quote publishable.
+    out = guard.guard_payload({"active": [row], "terminal_recent": []}, kind="guardian")
+    assert "entry_premium_reference" not in out["active"][0]
+    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "tradier")
     out = guard.guard_payload({"active": [row], "terminal_recent": []}, kind="guardian")
     assert out["active"][0]["entry_premium_reference"] == 1.2 and out["active_count"] == 1
 
@@ -76,6 +80,7 @@ def test_permitted_stamped_quotes_keep_a_guardian_row():
 def test_open_gates_leave_payload_unchanged(monkeypatch):
     for gate in sp.GATES.values():
         monkeypatch.setenv(gate["variable"], "true")
+    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "tradier")
     payload = latest_payload()
     assert guard.guard_payload(payload, kind="latest") == payload
 
@@ -125,3 +130,25 @@ def test_no_workflow_calls_a_gated_provider_inline():
             if re.search(r"\byf\.(download|Ticker)\(|import yfinance|from yahooquery|api\.nasdaq\.com/api", line):
                 offenders.append(f"{path.name}:{number}")
     assert not offenders, offenders
+
+
+def test_twelve_data_derived_values_never_reach_public_files_without_the_right():
+    payload = {"classical": [{"symbol": "AAPL", "source": "twelve_data", "target_1": 250.0}],
+               "context": {"note": "kept"}}
+    out = guard.guard_payload(payload, kind="generic")
+    assert out["classical"] == [] and out["context"] == {"note": "kept"}
+    assert out["public_license_guard"]["redacted_objects"] == {"account_price_apis": 1}
+
+
+def test_public_gate_mode_needs_public_display_right(monkeypatch):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("psg_public", sp.__file__.replace(
+        "options_radar/source_permissions.py", "scripts/price_source_gate.py"))
+    psg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(psg)
+    monkeypatch.setenv("HAS_TWELVE_DATA_API_KEY", "true")
+    assert psg.key_usable("TWELVE_DATA_API_KEY") is True  # automated + internal VERIFIED
+    assert psg.key_usable("TWELVE_DATA_API_KEY", public=True) is False  # public derived UNKNOWN
+    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "twelve_data")
+    assert psg.key_usable("TWELVE_DATA_API_KEY", public=True) is True
