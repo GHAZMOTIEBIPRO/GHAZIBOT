@@ -1,7 +1,7 @@
 {
   "status": "degraded",
-  "generated_at": "2026-10-21T20:12:34.517102+00:00",
-  "dataset_age_minutes": 0.3,
+  "generated_at": "2026-10-21T20:26:58.940737+00:00",
+  "dataset_age_minutes": 0.5,
   "last_successful_refresh": null,
   "option_provider": "unknown",
   "option_provider_readiness": null,
@@ -12,14 +12,14 @@
     "production_option_quotes": null,
     "production_option_flow": null,
     "sec_fulltext": {
-      "checked_at": "2026-10-21T20:12:25.987799+00:00",
+      "checked_at": "2026-10-21T20:26:47.970370+00:00",
       "available": false,
       "source": "SEC EDGAR Full-Text Search",
       "endpoint": "https://efts.sec.gov/LATEST/search-index",
       "start_date": "2026-10-07",
       "end_date": "2026-10-21",
       "event_count": 0,
-      "message": "SEC EFTS circuit is open after a previous 403; no HTTP request was sent. Retry after 2026-10-21T20:25:23.753242+00:00. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
+      "message": "SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
       "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
       "fallbacks_active": [
         "SEC latest-form Atom feeds",
@@ -27,10 +27,9 @@
         "last valid SEC EFTS event cache"
       ],
       "http_status": 403,
-      "error_type": "SecEftsCircuitOpen",
-      "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 187, in request_efts_json\n    _raise_if_circuit_open()\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 124, in _raise_if_circuit_open\n    raise SecEftsCircuitOpen(retry_after)\noptions_radar.sec_efts_resilience.SecEftsCircuitOpen: SEC EFTS circuit is open after a previous 403; no HTTP request was sent. Retry after 2026-10-21T20:25:23.753242+00:00. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n",
-      "circuit_state": "open",
-      "circuit_retry_after": "2026-10-21T20:25:23.753242+00:00"
+      "error_type": "HTTPError",
+      "traceback_tail": "Traceback (most recent call last):\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/scripts/prime_sec_efts.py\", line 56, in main\n    payload = request_efts_json(\n              ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/GHAZIBOT/GHAZIBOT/options_radar/sec_efts_resilience.py\", line 200, in request_efts_json\n    raise requests.HTTPError(\nrequests.exceptions.HTTPError: SEC EFTS returned 403 Forbidden. The request is declared, but the shared runner IP may be blocked; a persistent cooldown was opened. Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.\n",
+      "circuit_state": "open"
     }
   },
   "coverage_diagnostics": {
@@ -65,7 +64,7 @@
   "quality_counts": {
     "stale_options": 0,
     "missing_expiry_family": 0,
-    "duplicate_events_collapsed": 37,
+    "duplicate_events_collapsed": 38,
     "errors": 2,
     "critical_errors": 2,
     "fallback_only_option_chains": 0,
@@ -83,7 +82,7 @@
     "access_blocked": 16,
     "request_failures": 16,
     "processed_accessions": 0,
-    "updated_at": "2026-10-21T20:12:33.272638+00:00",
+    "updated_at": "2026-10-21T20:26:57.107977+00:00",
     "outcome": "ACCESS_BLOCKED"
   },
   "run_duration_seconds": null,
