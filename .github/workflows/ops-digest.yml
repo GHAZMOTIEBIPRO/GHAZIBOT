@@ -1,0 +1,113 @@
+name: GHAZI RADAR Telegram Ops Digest
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "scheduled = change alerts + daily digest; test = also send one delivery test"
+        type: choice
+        options: [scheduled, test]
+        default: scheduled
+  # The Data Hub is rebuilt by the evidence workflow; a change alert can
+  # only follow a new catalog, so the digest runs right after it instead
+  # of polling. The daily digest is sent by the first run after 12:00 UTC.
+  workflow_run:
+    workflows:
+      - GHAZI Evidence Strength Score
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "23 12 * * *"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: ghazi-radar-ops-digest
+  cancel-in-progress: false
+
+jobs:
+  ops-digest:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Telegram transport dependency
+        run: pip install "requests>=2.32,<3.0"
+      - name: Restore Telegram destination when chat secret is absent
+        if: env.TELEGRAM_CHAT_ID == ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p telegram_runtime
+          for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml; do
+            for run_id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+              if gh run download -R "$GITHUB_REPOSITORY" "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+                if [[ -s telegram_runtime/connection.enc ]]; then
+                  break 2
+                fi
+              fi
+            done
+          done
+          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 \
+              -in telegram_runtime/connection.enc \
+              -out telegram_runtime/connection.json \
+              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+          fi
+          exit 0
+      - name: Resolve Telegram destination
+        run: python app/scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+      # This workflow is the only writer of state/telegram/ops_digest_state.json.
+      - name: Send source-health changes and the daily digest
+        id: digest
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          python app/scripts/send_ops_digest.py
+          --data-dir state/runtime/public/data
+          --state state/state/telegram/ops_digest_state.json
+          --mode ${{ inputs.mode || 'scheduled' }}
+      - name: Publish the digest state and delivery log
+        if: always() && steps.digest.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          if [[ ! -f state/telegram/ops_digest_state.json ]]; then
+            exit 0
+          fi
+          git config user.name "GHAZI RADAR Ops Digest"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add state/telegram/ops_digest_state.json
+          if git diff --cached --quiet; then
+            echo "Digest state unchanged."
+            exit 0
+          fi
+          git commit -m "state: Telegram ops digest delivery log [skip ci]"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2 + RANDOM % 5))
+          done
+          echo "Failed to publish the digest state after retries." >&2
+          exit 1
