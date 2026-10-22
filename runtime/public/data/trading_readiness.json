@@ -1,0 +1,61 @@
+{
+  "schema": "ghazi.trading_readiness.v1",
+  "generated_at": "2026-10-22T08:14:05.106256+00:00",
+  "status": "NOT_TRADE_READY",
+  "trade_recommendations_authorized": false,
+  "automated_execution_allowed": false,
+  "option_v11_execution_override": false,
+  "data_source_staleness_limit_minutes": 180,
+  "checks": {
+    "website_and_bot": true,
+    "independent_licensed_prices": false,
+    "market_operations": false,
+    "options_execution_sources": false,
+    "walk_forward_passed": false,
+    "stock_edge_proven": false,
+    "option_premium_outcomes_validated": false
+  },
+  "blockers": [
+    "NO_LICENSED_INDEPENDENT_EXECUTION_PRICE",
+    "NO_EXECUTION_GRADE_OPTION_CHAIN_AND_FLOW",
+    "OUT_OF_SAMPLE_WALK_FORWARD_NOT_PASSED",
+    "NO_VERIFIED_STOCK_TRADABLE_EDGE",
+    "NO_QUALIFIED_OPTION_PREMIUM_OUTCOMES",
+    "MARKET_OPERATIONS_NOT_HEALTHY"
+  ],
+  "historical_evidence": {
+    "stock_audit_records": 714,
+    "individually_close_time_verified_records": 58,
+    "walk_forward_research_passed": false,
+    "target_t1_intraday_matured": 412,
+    "target_t1_intraday_hits": 8,
+    "target_t1_historical_hit_rate_pct": 1.94,
+    "historical_target_calibration_ready_reported": true,
+    "qualified_option_closed_samples": 0,
+    "option_calibration_active": false,
+    "stage_cost_model_expectancy": [
+      {
+        "name": "PRESSURE_BUILDING",
+        "decisive": 306,
+        "modelled_net_expectancy_pct": -1.252,
+        "measured_executable_pnl": false
+      },
+      {
+        "name": "IGNITION",
+        "decisive": 20,
+        "modelled_net_expectancy_pct": -2.385,
+        "measured_executable_pnl": false
+      },
+      {
+        "name": "EXPLOSION",
+        "decisive": 182,
+        "modelled_net_expectancy_pct": -1.422,
+        "measured_executable_pnl": false
+      }
+    ],
+    "research_data_strength_score": 14.0,
+    "historical_hit_rate_is_profit_rate": false,
+    "historical_hit_rate_is_forward_probability": false
+  },
+  "scope_ar": "النتائج التاريخية وشموع Yahoo القديمة ليست دليل ربح أو أسعار تنفيذ. درجة البيانات ليست نسبة نجاح. لا يوجد اعتماد تداول تلقائي، ولا تجاوز لبوابة V11، ولا توصية CALL/PUT."
+}
