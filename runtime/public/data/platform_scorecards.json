@@ -1,23 +1,23 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-22T15:33:29.191196+00:00",
+ "generated_at": "2026-10-22T15:39:32.236434+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 63.8,
+   "value": 100.0,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 45
+     "success": 44
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {},
-    "fast-explosion-radar.yml": {
-     "failure": 83
+    "fast-explosion-radar.yml": {},
+    "classical-direction-radar.yml": {
+     "success": 30
     },
-    "classical-direction-radar.yml": {},
     "index-radar.yml": {
-     "success": 8
+     "success": 9
     },
     "stock-watch-charts.yml": {
      "success": 8
@@ -28,13 +28,8 @@
     "site-evidence-strength.yml": {
      "success": 32
     },
-    "free-gex-validation.yml": {
-     "success": 31
-    },
-    "market-orchestrator.yml": {
-     "success": 20,
-     "cancelled": 6
-    }
+    "free-gex-validation.yml": {},
+    "market-orchestrator.yml": {}
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
    "note_ar": "نجاح التشغيل لا يعني توفر البيانات؛ المسارات المتوقفة بسبب الترخيص تنجح لكنها لا تنتج إشارات."
