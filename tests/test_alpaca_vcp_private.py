@@ -13,6 +13,7 @@ from scripts.alpaca_vcp_private import (
     ENDPOINT,
     SCHEMA,
     authorization,
+    authorized_feed,
     fetch_daily_bars,
     private_message,
     run,
@@ -51,7 +52,8 @@ class FakeResponse:
 
 
 class Client:
-    def __init__(self, response: FakeResponse | None = None):
+    def __init__(self, response: FakeResponse | None = None, *, feed: str = "iex"):
+        self.feed = feed
         self.calls = []
         self.response = response or FakeResponse()
 
@@ -60,7 +62,8 @@ class Client:
         assert url.startswith(ENDPOINT)
         assert headers["APCA-API-KEY-ID"] == "not-a-secret"
         assert headers["APCA-API-SECRET-KEY"] == "fake"
-        assert params["feed"] == "iex"
+        assert params["feed"] == self.feed
+        assert params["end"] == "2026-10-22"  # fully completed previous NY days only
         assert params["timeframe"] == "1Day"
         assert params["adjustment"] == "raw"
         assert timeout <= 15
@@ -235,3 +238,77 @@ def test_private_telegram_without_confirmed_receipt_is_not_marked_sent():
     assert outcome["private_delivery"] == "UNCONFIRMED"
     assert "last_private_session" not in state
     assert "private_message_id" not in state
+
+
+def test_historical_sip_selection_requires_separate_license_attestation():
+    assert authorized_feed({}) == "iex"
+    assert authorized_feed({"ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": "false"}) == "iex"
+    assert authorized_feed({"ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": "true"}) == "sip"
+    assert authorization({"ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": "true",
+                          "ALPACA_API_KEY": "not-a-secret", "ALPACA_SECRET_KEY": "fake"}
+                         ) == "PROVIDER_TERMS_UNATTESTED"
+    denied = Client(feed="sip")
+    out, state = run(now=NOW, env={"ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": "true"},
+                     client=denied)
+    assert out["status"] == "PROVIDER_TERMS_UNATTESTED"
+    assert not denied.calls and state == {}
+
+
+def test_authorized_historical_sip_daily_vcp_is_not_realtime_or_independent():
+    env = {**ENABLED, "ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": "true",
+           "ALPACA_PRIVATE_ALERTS_AUTHORIZED": "true"}
+    client = Client(feed="sip")
+    sent = []
+    result, state = run(now=NOW, env=env, client=client,
+                        send=lambda value: sent.append(value)
+                        or SimpleNamespace(message_id=711),
+                        private_ready=True)
+    assert result["status"] == "INTERNAL_RESEARCH"
+    assert result["source_kind"] == "HISTORICAL_SIP_ONLY_NOT_REALTIME"
+    assert result["valid_daily_histories"] == 8
+    assert result["independent_source_confirmation"] is False
+    assert result["option_quote_verified"] is False
+    assert result["execution_authority"] is False
+    assert result["raw_market_data_published"] is False
+    assert result["tickers_published"] is False
+    assert "RGC" not in str(result)
+    assert state["private_message_id"] == 711
+    assert len(sent) == 1
+    assert "SIP تاريخي مكتمل" in sent[0]
+    assert "غير" in sent[0] and "لحظي" in sent[0]
+    assert all(call[1]["feed"] == "sip" for call in client.calls)
+    assert all(call[1]["end"] == "2026-10-22" for call in client.calls)
+    frame = sanitize_daily_bars(sample_bars(), now=NOW)
+    shadow = vcp_trend_shadow(frame, source_family="alpaca_historical_sip")
+    assert shadow["available"] is True
+    assert shadow["independent_confirmation"] is False
+    assert shadow["option_execution_eligible"] is False
+
+
+def test_historical_sip_rejection_does_not_fallback_to_iex_or_emit_alert():
+    env = {**ENABLED, "ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": "true",
+           "ALPACA_PRIVATE_ALERTS_AUTHORIZED": "true"}
+    client = Client(FakeResponse(bad=True), feed="sip")
+    sent = []
+    result, state = run(now=NOW, env=env, client=client,
+                        send=lambda msg: sent.append(msg),
+                        private_ready=True)
+    assert result["status"] == "INTERNAL_NO_VALID_BARS"
+    assert result["valid_daily_histories"] == 0
+    assert result["fetch_errors"] == 8
+    assert result["source_kind"] == "HISTORICAL_SIP_ONLY_NOT_REALTIME"
+    assert not sent and state == {}
+    assert len(client.calls) == 8
+    assert all(call[1]["feed"] == "sip" for call in client.calls)
+
+
+def test_sip_endpoint_never_uses_unapproved_feed_or_current_session():
+    client = Client(feed="sip")
+    got = fetch_daily_bars("AAPL", now=NOW, api_key="not-a-secret",
+                           api_secret="fake", session=client, feed="sip")
+    assert len(got) == 95
+    assert client.calls[0][1]["end"] == "2026-10-22"
+    with pytest.raises(ValueError):
+        fetch_daily_bars("AAPL", now=NOW, api_key="not-a-secret",
+                         api_secret="fake", session=client, feed="opra")
+    assert len(client.calls) == 1
