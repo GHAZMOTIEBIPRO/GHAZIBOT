@@ -207,7 +207,7 @@ def test_daily_digest_requires_telegram_ack_before_deduplication():
                        SimpleNamespace(message_id="123"), SimpleNamespace(message_id=0),
                        SimpleNamespace(message_id=True)):
         after, status = send_daily_brief(
-            event_report, initial, now=NOW, send=lambda _: incomplete
+            event_report, initial, now=NOW, send=lambda _, value=incomplete: value
         )
         assert status["mode"] == "delivery_unconfirmed"
         assert status["failed"] == "NO_TELEGRAM_MESSAGE_ID"
