@@ -154,9 +154,10 @@ def _public_status(reason: str, *, now: datetime, bars_seen: int = 0,
         "fetch_errors": failed,
         "source_kind": ("HISTORICAL_SIP_ONLY_NOT_REALTIME" if feed == "sip"
                         else "IEX_ONLY_NOT_CONSOLIDATED"),
-        "note_ar": (("بحث VCP داخلي من شموع SIP تاريخية مكتملة فقط؛ لا أسعار منشورة "
-                     if feed == "sip" else "بحث VCP داخلي من شموع IEX اليومية المكتملة فقط؛ لا أسعار منشورة ")
-                    "ولا دليل مصدر مستقل أو عرض سعر لحظي. الحالة ليست توقيت عرض سعر."
+        "note_ar": (((("بحث VCP داخلي من شموع SIP تاريخية مكتملة فقط؛ لا أسعار منشورة "
+                       if feed == "sip"
+                       else "بحث VCP داخلي من شموع IEX اليومية المكتملة فقط؛ لا أسعار منشورة ")
+                      + "ولا دليل مصدر مستقل أو عرض سعر لحظي. الحالة ليست توقيت عرض سعر.")
                     if reason.startswith("INTERNAL_") else
                     "المصدر متوقف حتى توفر مفاتيح Alpaca وإقرار صلاحية الاستخدام الداخلي."),
     }
@@ -173,7 +174,7 @@ def private_message(picks: list[dict[str, str]], session_day: str, *, feed: str 
     ]
     for pick in picks[:5]:
         lines.append(f"• <b>{html.escape(pick['symbol'])}</b> · ترقب VCP تاريخي")
-    lines.append("لا يوجد تحقق SIP أو تدفق خيارات أو أسعار تنفيذية لهذه القائمة.")
+    lines.append("لا يوجد تأكيد من مزود مستقل أو تدفق خيارات أو أسعار تنفيذية لهذه القائمة.")
     return "\n".join(lines)
 
 
