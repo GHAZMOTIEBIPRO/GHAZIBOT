@@ -12,6 +12,8 @@ on:
   # 05:15 UTC = 08:15 Asia/Riyadh year-round; weekends excluded.
   schedule:
     - cron: "15 5 * * 1-5"
+    # GitHub cron runs are best-effort: second scheduled delivery opportunity.
+    - cron: "15 8 * * 1-5"
   # Regulatory input changes still rebuild the report automatically.
   workflow_run:
     workflows:
@@ -85,14 +87,13 @@ jobs:
         if: env.TELEGRAM_READY == 'true'
         run: |
           set -euo pipefail
-          extra=()
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            extra+=(--daily-brief --market-health state/runtime/public/data/data-status.json)
-          fi
+          # Source-completion and main-push runs also catch up when a GitHub
+          # schedule is skipped. Python checks Riyadh 08:15 and one receipt/day.
           python -m scripts.send_catalyst_watchlist_alerts \
             --report state/runtime/public/data/catalyst_watchlist.json \
             --state state/state/catalyst/catalyst_alert_state.json \
-            --notify-ready "${extra[@]}"
+            --market-health state/runtime/public/data/data-status.json \
+            --daily-brief-if-due --notify-ready
       - name: Report no Telegram destination
         if: env.TELEGRAM_READY != 'true'
         run: echo "Official catalyst report updated; Telegram delivery not configured."
