@@ -349,6 +349,11 @@ jobs:
           node --check public/terminal-hub.js
           node tests/terminal_github_projects.cjs
 
+      - name: Public site and Telegram access proof regression
+        run: |
+          ruff check scripts/check_production_access.py tests/test_production_access.py
+          python -m pytest -q tests/test_production_access.py
+
       - name: Official catalyst desk and Telegram regression
         run: |
           ruff check scripts/send_catalyst_watchlist_alerts.py scripts/catalyst_health_context.py tests/test_catalyst_watchlist_telegram.py tests/test_catalyst_health_context.py
