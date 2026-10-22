@@ -1,35 +1,40 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-22T15:39:32.236434+00:00",
+ "generated_at": "2026-10-22T15:46:31.282587+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 100.0,
+   "value": 67.9,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 44
+     "success": 45
     },
     "stock-radar.yml": {},
-    "options-contract-radar.yml": {},
-    "fast-explosion-radar.yml": {},
-    "classical-direction-radar.yml": {
-     "success": 30
+    "options-contract-radar.yml": {
+     "success": 32
     },
+    "fast-explosion-radar.yml": {
+     "failure": 84
+    },
+    "classical-direction-radar.yml": {},
     "index-radar.yml": {
-     "success": 9
+     "success": 10
     },
     "stock-watch-charts.yml": {
      "success": 8
     },
-    "public-macro.yml": {
-     "success": 2
-    },
+    "public-macro.yml": {},
     "site-evidence-strength.yml": {
-     "success": 32
+     "success": 33
     },
-    "free-gex-validation.yml": {},
-    "market-orchestrator.yml": {}
+    "free-gex-validation.yml": {
+     "success": 30
+    },
+    "market-orchestrator.yml": {
+     "cancelled": 7,
+     "success": 20
+    }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
    "note_ar": "نجاح التشغيل لا يعني توفر البيانات؛ المسارات المتوقفة بسبب الترخيص تنجح لكنها لا تنتج إشارات."
@@ -85,12 +90,16 @@
    "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
   },
   "ANALYTICAL_VALIDITY": {
-   "status": "UNMEASURED",
+   "status": "PASSING",
    "value": null,
    "unit": "status",
-   "evidence": {},
-   "method": "no completed CI run on main read",
-   "note_ar": "تعذر قراءة نتيجة اختبارات الحساب."
+   "evidence": {
+    "run_id": 39775177261,
+    "conclusion": "success",
+    "at": "2026-10-22T12:02:39Z"
+   },
+   "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
+   "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
   },
   "SIGNAL_PERFORMANCE": {
    "status": "NO_PROVEN_EDGE",
