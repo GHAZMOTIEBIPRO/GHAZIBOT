@@ -4,8 +4,8 @@ const fs=require("node:fs");
 const path=require("node:path");
 const {PROJECTS,search,validRepo}=require("../public/github-projects.js");
 assert.equal(PROJECTS.length,50);
-assert.equal(PROJECTS.filter(p=>p.url!==null).length,34);
-assert.equal(PROJECTS.filter(p=>p.status==="ambiguous"&&p.url===null).length,16);
+assert.equal(PROJECTS.filter(p=>p.url!==null).length,37);
+assert.equal(PROJECTS.filter(p=>p.status==="ambiguous"&&p.url===null).length,13);
 assert.equal(new Set(PROJECTS.map(p=>p.number)).size,50);
 assert.deepEqual(search("GammaGrid").map(x=>x.name),["GammaGrid"]);
 assert.equal(search("delta","options").length,0);
@@ -26,7 +26,7 @@ for(const p of PROJECTS){
   else assert.equal(p.url,null);
 }
 
-assert.equal(search("","all","evidence").length,6);
+assert.equal(search("","all","evidence").length,7);
 assert.equal(search("","source","evidence").length,1);
 for(const p of search("","all","evidence")){
   assert.ok(["own_method","similar_idea","official_api_not_sdk","existing_feature"]
@@ -34,8 +34,8 @@ for(const p of search("","all","evidence")){
   assert.ok(fs.existsSync(path.join(__dirname,"..",p.evidence.path)));
   assert.ok(p.evidence.note.length>25);
 }
-assert.equal(PROJECTS.find(p=>p.number===3).status,"ambiguous");
-assert.equal(PROJECTS.find(p=>p.number===3).repo,null);
+assert.equal(PROJECTS.find(p=>p.number===3).status,"reference");
+assert.equal(PROJECTS.find(p=>p.number===3).repo,"SamPom100/UnusualVolumeDetector");
 assert.equal(PROJECTS.find(p=>p.number===33).evidence.kind,"official_api_not_sdk");
 assert.equal(PROJECTS.find(p=>p.number===1).evidence.kind,"own_method");
 assert.equal(PROJECTS.filter(p=>p.evidence?.kind==="own_method").length,2);
@@ -46,4 +46,7 @@ assert.ok(page.includes('src="./github-projects.js'));
 assert.ok(page.includes('id="projects-results"'));
 assert.ok(page.includes('value="evidence"'));
 assert.ok(main.includes('href="./github-projects.html"'));
-console.log("50 GitHub names, 34 verified repository paths, 16 unlinked ambiguous titles");
+console.log("50 GitHub names, 37 verified repository paths, 13 unlinked ambiguous titles");
+
+assert.equal(PROJECTS.find(p=>p.number===19).license,"GPL-3.0");
+assert.equal(PROJECTS.find(p=>p.number===50).status,"existing");
