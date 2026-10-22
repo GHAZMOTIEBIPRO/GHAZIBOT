@@ -140,6 +140,10 @@ def fetch_daily_bars(symbol: str, *, now: datetime, api_key: str, api_secret: st
 def _public_status(reason: str, *, now: datetime, bars_seen: int = 0,
                    valid_symbols: int = 0, failed: int = 0,
                    feed: str = "iex") -> dict[str, Any]:
+    note_ar = ("بحث VCP داخلي من شموع SIP تاريخية مكتملة فقط؛ لا أسعار منشورة "
+               if feed == "sip"
+               else "بحث VCP داخلي من شموع IEX اليومية المكتملة فقط؛ لا أسعار منشورة ")
+    note_ar += "ولا دليل مصدر مستقل أو عرض سعر لحظي. الحالة ليست توقيت عرض سعر."
     return {
         "schema": SCHEMA, "generated_at": now.astimezone(timezone.utc).isoformat(),
         "status": reason, "provider": ("Alpaca historical consolidated SIP (past completed sessions)"
@@ -154,11 +158,7 @@ def _public_status(reason: str, *, now: datetime, bars_seen: int = 0,
         "fetch_errors": failed,
         "source_kind": ("HISTORICAL_SIP_ONLY_NOT_REALTIME" if feed == "sip"
                         else "IEX_ONLY_NOT_CONSOLIDATED"),
-        "note_ar": (((("بحث VCP داخلي من شموع SIP تاريخية مكتملة فقط؛ لا أسعار منشورة "
-                       if feed == "sip"
-                       else "بحث VCP داخلي من شموع IEX اليومية المكتملة فقط؛ لا أسعار منشورة ")
-                      + "ولا دليل مصدر مستقل أو عرض سعر لحظي. الحالة ليست توقيت عرض سعر.")
-                    if reason.startswith("INTERNAL_") else
+        "note_ar": (note_ar if reason.startswith("INTERNAL_") else
                     "المصدر متوقف حتى توفر مفاتيح Alpaca وإقرار صلاحية الاستخدام الداخلي."),
     }
 
