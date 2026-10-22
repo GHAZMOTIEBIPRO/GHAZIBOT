@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from options_radar.daily_volume_breakout_shadow import daily_volume_breakout_shadow
 from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shadow
 from options_radar.source_permissions import allowed, blocked_report, require
 from options_radar.stock_watch_confluence import price_confluence_shadow
@@ -305,6 +306,7 @@ def pack_symbol(
     volatility_shadow = bollinger_compression_shadow(clean_day)
     confluence = price_confluence_shadow(clean_day)
     vcp = vcp_trend_shadow(clean_day)
+    volume_breakout = daily_volume_breakout_shadow(clean_day)
     media = (news_attention or {}).get(symbol)
     return {
         "symbol": symbol, "category": ("VOLATILE_GROWTH_WATCH" if symbol in SMALL_WATCH
@@ -317,6 +319,7 @@ def pack_symbol(
         "volatility_shadow": volatility_shadow,
         "price_confluence": confluence,
         "vcp_minervini_shadow": vcp,
+        "volume_breakout_shadow": volume_breakout,
         "news_attention": media if isinstance(media, dict) else None,
     }
 
@@ -336,7 +339,7 @@ def collect(*, now: datetime, provider=None, delay=lambda _: None,
     for symbol in watch:
         ticker = provider.Ticker(symbol)
         received = {}
-        for unit, period in (("1d", "3mo"), ("15m", "5d"), ("5m", "5d")):
+        for unit, period in (("1d", "6mo"), ("15m", "5d"), ("5m", "5d")):
             if unit == "5m" and symbol not in FIVE_MIN and symbol not in dynamic:
                 continue
             try:
