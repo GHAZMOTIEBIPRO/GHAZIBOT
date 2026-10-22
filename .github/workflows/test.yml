@@ -349,6 +349,13 @@ jobs:
           node --check public/terminal-hub.js
           node tests/terminal_github_projects.cjs
 
+      - name: Market data, target outcome and options trading-readiness gate
+        run: |
+          ruff check scripts/build_trading_readiness.py tests/test_trading_readiness.py
+          python -m pytest -q tests/test_trading_readiness.py
+          node --check public/trading-readiness.js
+          node tests/terminal_trading_readiness.cjs
+
       - name: Public site and Telegram access proof regression
         run: |
           ruff check scripts/check_production_access.py tests/test_production_access.py
