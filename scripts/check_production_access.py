@@ -24,6 +24,7 @@ PAGES = (
     ("homepage", MAIN + "/", "text/html", b"GHAZI RADAR"),
     ("catalyst_desk", MAIN + "/catalyst-desk.html", "text/html", b"Official Catalyst Desk"),
     ("github_50", MAIN + "/github-projects.html", "text/html", b"50"),
+    ("trading_readiness", MAIN + "/trading-readiness.html", "text/html", b"trading-readiness.js"),
     ("secondary_alias", SECONDARY + "/", "text/html", b"GHAZI RADAR"),
     ("site_health", MAIN + "/health", "application/json", b""),
     ("site_data_status", MAIN + "/data-status", "application/json", b""),
