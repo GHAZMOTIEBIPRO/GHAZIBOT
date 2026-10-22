@@ -506,6 +506,29 @@
       " · آخر إنشاء للتقرير: "+stamp(report.generated_at)+
       " · الشموع لا تعني سعر تداول لحظيًا.");
   }
+  function weeklySetupLine(vcp,historical=false){
+    const w=vcp?.weekly_context;
+    if(historical||vcp?.available!==true||vcp?.research_only!==true||
+       vcp?.source_family!=="yahoo"||vcp?.option_execution_eligible!==false||
+       vcp?.independent_confirmation!==false||
+       w?.schema!=="ghazi.weekly_setup_shadow.v1"||w.available!==true||
+       w.research_only!==true||w.independent_confirmation!==false||
+       w.option_execution_eligible!==false||w.weeks_used!==12||
+       !Number.isFinite(w.range_ratio)||w.range_ratio<0||
+       typeof w.trend_up!=="boolean"||typeof w.range_contraction!=="boolean"||
+       typeof w.weekly_breakout!=="boolean")return null;
+    const date=w.last_complete_week;
+    if(typeof date!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(date)||
+       typeof vcp.source_last_daily_bar!=="string"||date>vcp.source_last_daily_bar)return null;
+    const parsed=new Date(date+"T00:00:00Z");
+    if(!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==date||
+       parsed.getUTCDay()!==5)return null;
+    const aligned=w.status==="DAILY_WEEKLY_ALIGNED";
+    if(aligned&&(vcp.stage!=="TIGHT_WATCH"||!w.trend_up||!w.range_contraction))return null;
+    if(!aligned&&w.status!=="NO_WEEKLY_CONFIRMATION")return null;
+    return (aligned?"توافق الانكماش اليومي والأسبوعي":"لا تأكيد أسبوعي للنموذج اليومي")+
+      " · آخر أسبوع مكتمل "+date+" · سياق بحثي من نفس المصدر";
+  }
   function stockCard(symbol,entry,newsCount,label){
     const card=txt("article","","terminal-stock-card");
     const title=txt("div","","terminal-stock-title");
@@ -571,6 +594,8 @@
         card.append(pair("انكماش ATR / الحجم",
           fmt(vcp.atr_ratio,2)+" / "+fmt(vcp.volume_ratio,2)+
           " · أقل من 1 يعني انخفاضًا عن الفترة السابقة"));
+      const weeklyLine=weeklySetupLine(vcp,stockInfo?.historical_cache_only===true);
+      if(weeklyLine)card.append(pair("تأكيد الإطار الأسبوعي",weeklyLine));
       card.append(txt("small",
         "بيانات يومية مكتملة فقط؛ لا تأكيد مصدر مستقل، ولا إشارة شراء أو CALL/PUT.",
         "terminal-stock-news-missing"));
@@ -1971,7 +1996,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines};
+    module.exports={weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

@@ -10,6 +10,8 @@ import math
 
 import pandas as pd
 
+from options_radar.weekly_setup_shadow import weekly_setup_shadow
+
 STAGES = frozenset({"INSUFFICIENT", "NO_SETUP", "DEVELOPING", "TIGHT_WATCH"})
 
 
@@ -116,4 +118,5 @@ def vcp_trend_shadow(frame: pd.DataFrame, *, source_family: str = "yahoo") -> di
         "distance_from_55d_high_pct": round(distance, 2),
         "pivot": round(prior_55_high, 4),
         "reasons": reasons,
+        "weekly_context": weekly_setup_shadow(frame, daily_stage=stage),
     }

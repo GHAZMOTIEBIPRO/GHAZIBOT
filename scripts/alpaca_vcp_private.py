@@ -174,6 +174,11 @@ def private_message(picks: list[dict[str, str]], session_day: str, *, feed: str 
     ]
     for pick in picks[:5]:
         lines.append(f"• <b>{html.escape(pick['symbol'])}</b> · ترقب VCP تاريخي")
+        weekly_label = {
+            "DAILY_WEEKLY_ALIGNED": "توافق يومي وأسبوعي من نفس المصدر",
+            "NO_WEEKLY_CONFIRMATION": "لا تأكيد أسبوعي للنموذج اليومي",
+        }.get(pick.get("weekly_status", ""), "الشموع الأسبوعية غير كافية")
+        lines.append(f"  {weekly_label}")
     lines.append("لا يوجد تأكيد من مزود مستقل أو تدفق خيارات أو أسعار تنفيذية لهذه القائمة.")
     return "\n".join(lines)
 
@@ -235,7 +240,9 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
             if latest is None or day > latest:
                 latest = day
             if shadow["stage"] == "TIGHT_WATCH":
-                picks.append({"symbol": symbol, "day": day})
+                weekly = shadow.get("weekly_context") or {}
+                picks.append({"symbol": symbol, "day": day,
+                              "weekly_status": str(weekly.get("status") or "INSUFFICIENT")})
         except (ValueError, requests.RequestException, KeyError, TypeError):
             # Do not leak endpoint error text or API credentials to public logs.
             failures += 1
