@@ -49,6 +49,8 @@ def good(request, **kwargs):
     if "/data-status" in url:
         return Response(url, mime="application/json",
                         body=b'{"status":"degraded"}')
+    if "trading-readiness" in url:
+        return Response(url, body=b'trading-readiness.js')
     if "github-projects" in url:
         return Response(url, body=b'<title>50 projects</title>')
     if "catalyst-desk" in url:
@@ -65,7 +67,7 @@ def test_external_pages_and_bot_auth_can_succeed_without_price_claims():
     assert report["telegram_delivery_verified_by_this_check"] is False
     assert report["market_data_authority"] is False
     assert report["options_execution_authority"] is False
-    assert len(report["pages"]) == len(PAGES) == 6
+    assert len(report["pages"]) == len(PAGES) == 7
     assert all(x["http_status"] == 200 for x in report["pages"])
     assert "secret-test-token" not in json.dumps(report)
 
