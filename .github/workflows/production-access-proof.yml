@@ -1,0 +1,78 @@
+name: GHAZI RADAR Production Access Proof
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/check_production_access.py"
+      - ".github/workflows/production-access-proof.yml"
+      - "vercel.json"
+  # GitHub schedules may be delayed: this is a check, not a real-time monitor.
+  schedule:
+    - cron: "20 5,14 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-production-access-proof
+  cancel-in-progress: false
+
+jobs:
+  access-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Probe actual public site pages and Telegram bot auth
+        run: |
+          set -euo pipefail
+          python app/scripts/check_production_access.py \
+            --output state/runtime/public/data/production_access_health.json
+      - name: Publish dated non-secret access evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Production Access"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          if [[ -f runtime/public/data/production_access_health.json ]]; then
+            git add runtime/public/data/production_access_health.json
+          fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "state: verified external site and bot reachability [skip ci]"
+          for attempt in 1 2 3 4 5 6; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2 + RANDOM % 4))
+          done
+          echo "Could not persist reachability status" >&2
+          exit 1
+      - name: Flag unreachable production with evidence already saved
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path("state/runtime/public/data/production_access_health.json").read_text())
+          if not result.get("site_http_accessible") or not result.get("bot_api_authenticated"):
+              print("External site or bot identity check failed; see non-secret bot-state report")
+              raise SystemExit(1)
+          print("Verified HTTP production pages and Telegram getMe authentication")
+          PY
