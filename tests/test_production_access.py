@@ -10,7 +10,6 @@ from scripts.check_production_access import (
     audit,
     check_site,
     check_telegram,
-    get_response,
 )
 
 NOW = datetime(2026, 10, 22, 10, 0, tzinfo=timezone.utc)
