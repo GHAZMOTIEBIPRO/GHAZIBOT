@@ -1,11 +1,11 @@
-"""Alpaca Basic IEX-only *internal* VCP research, no public OHLC publication.
+"""Alpaca Basic *internal* completed-daily VCP research, no public OHLC publication.
 
 No key/attested non-display authorization -> zero API requests. This is not an
 automatic workaround for Yahoo terms; Alpaca trading/data access and private
 derived alerts require the account's applicable permissions.
 
 Never write prices, volume, pivot, named securities, or raw candle series to
-public bot-state. IEX is a single venue, not SIP/consolidated market coverage.
+public bot-state. IEX is single-venue; historical SIP requires separate authorization.
 """
 from __future__ import annotations
 
@@ -41,6 +41,16 @@ def authorization(env: Mapping[str, str]) -> str:
     ).strip():
         return "CREDENTIALS_MISSING"
     return "AUTHORIZED_INTERNAL_ONLY"
+
+
+def authorized_feed(env: Mapping[str, str]) -> str:
+    """Historical SIP is opt-in only, not permission to read real-time SIP.
+
+    Both sources stay within the same Alpaca account/source family;
+    historical SIP can improve coverage but cannot confirm independent prices.
+    """
+    return ("sip" if (env.get("ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED") or "")
+            .lower() == "true" else "iex")
 
 
 def sanitize_daily_bars(bars: Any, *, now: datetime) -> pd.DataFrame:
@@ -82,18 +92,22 @@ def sanitize_daily_bars(bars: Any, *, now: datetime) -> pd.DataFrame:
 
 
 def fetch_daily_bars(symbol: str, *, now: datetime, api_key: str, api_secret: str,
-                     session: Any = requests) -> list[dict]:
-    """Official Alpaca stock bars IEX feed, no retries or alternate forbidden source."""
+                     session: Any = requests, feed: str = "iex") -> list[dict]:
+    """Official Alpaca completed daily bars; explicit IEX or authorized historical SIP only."""
+    if feed not in {"iex", "sip"}:
+        raise ValueError("only IEX or owner-authorized historical SIP supported")
     if not SYMBOL_RE.fullmatch(symbol):
         raise ValueError("invalid stock symbol")
     if now.tzinfo is None:
         raise ValueError("aware timestamp required")
     params: dict[str, Any] = {
         "timeframe": "1Day",
-        "feed": "iex",  # Basic free tier: single-venue samples
+        "feed": feed,  # SIP only after separate owner attestation, historical previous session
         "adjustment": "raw",
         "start": (now - timedelta(days=235)).date().isoformat(),
-        "end": now.astimezone(timezone.utc).isoformat(),
+        # Exclude the entire still-forming NY trading day for *both* feeds.
+        # Free historical SIP is delayed and never authorizes real-time reads.
+        "end": now.astimezone(NY).date().isoformat(),
         "limit": 500,
         "sort": "asc",
     }
@@ -124,10 +138,12 @@ def fetch_daily_bars(symbol: str, *, now: datetime, api_key: str, api_secret: st
 
 
 def _public_status(reason: str, *, now: datetime, bars_seen: int = 0,
-                   valid_symbols: int = 0, failed: int = 0) -> dict[str, Any]:
+                   valid_symbols: int = 0, failed: int = 0,
+                   feed: str = "iex") -> dict[str, Any]:
     return {
         "schema": SCHEMA, "generated_at": now.astimezone(timezone.utc).isoformat(),
-        "status": reason, "provider": "Alpaca Basic IEX (one US exchange only)",
+        "status": reason, "provider": ("Alpaca historical consolidated SIP (past completed sessions)"
+                                          if feed == "sip" else "Alpaca Basic IEX (one US exchange only)"),
         "access_scope": "OWNER_AUTHORIZED_PRIVATE_NON_DISPLAY_RESEARCH",
         "raw_market_data_published": False, "tickers_published": False,
         "indicators_published": False, "trade_signals_published": False,
@@ -136,19 +152,23 @@ def _public_status(reason: str, *, now: datetime, bars_seen: int = 0,
         "requested_symbols": len(SYMBOLS) if reason.startswith("INTERNAL_") else 0,
         "valid_daily_histories": valid_symbols, "bar_samples_received": bars_seen,
         "fetch_errors": failed,
-        "source_kind": "IEX_ONLY_NOT_CONSOLIDATED",
-        "note_ar": ("بحث VCP داخلي من شموع IEX اليومية المكتملة فقط؛ لا أسعار منشورة "
-                    "ولا حكم على جميع البورصات الأمريكية. الحالة ليست توقيت عرض سعر."
+        "source_kind": ("HISTORICAL_SIP_ONLY_NOT_REALTIME" if feed == "sip"
+                        else "IEX_ONLY_NOT_CONSOLIDATED"),
+        "note_ar": (("بحث VCP داخلي من شموع SIP تاريخية مكتملة فقط؛ لا أسعار منشورة "
+                     if feed == "sip" else "بحث VCP داخلي من شموع IEX اليومية المكتملة فقط؛ لا أسعار منشورة ")
+                    "ولا دليل مصدر مستقل أو عرض سعر لحظي. الحالة ليست توقيت عرض سعر."
                     if reason.startswith("INTERNAL_") else
                     "المصدر متوقف حتى توفر مفاتيح Alpaca وإقرار صلاحية الاستخدام الداخلي."),
     }
 
 
-def private_message(picks: list[dict[str, str]], session_day: str) -> str:
+def private_message(picks: list[dict[str, str]], session_day: str, *, feed: str = "iex") -> str:
     lines = [
-        "<b>GHAZI RADAR · VCP بحثي خاص · IEX فقط</b>",
+        ("<b>GHAZI RADAR · VCP بحثي خاص · SIP تاريخي مكتمل</b>" if feed == "sip"
+         else "<b>GHAZI RADAR · VCP بحثي خاص · IEX فقط</b>"),
         f"جلسة الشموع المكتملة: {html.escape(session_day)}",
-        "بيانات Alpaca IEX تغطي بورصة واحدة، لا السوق الأمريكي كله.",
+        ("بيانات SIP تاريخية أقدم من الجلسة الحالية؛ ليست بثًا لحظيًا ولا مصدرًا مستقلًا."
+         if feed == "sip" else "بيانات Alpaca IEX تغطي بورصة واحدة، لا السوق الأمريكي كله."),
         "المؤشرات ليست إشارات شراء ولا توصيات CALL/PUT.",
     ]
     for pick in picks[:5]:
@@ -190,6 +210,7 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
     # workflow installs the full requirements.txt dependency set.
     from options_radar.vcp_minervini_shadow import vcp_trend_shadow
 
+    feed = authorized_feed(env)
     # Receipt state was reduced to an allowlisted schema before any provider IO.
     failures = 0
     bars_seen = 0
@@ -201,10 +222,11 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
             bars = fetch_daily_bars(symbol, now=now,
                                     api_key=env["ALPACA_API_KEY"],
                                     api_secret=env["ALPACA_SECRET_KEY"],
-                                    session=client)
+                                    session=client, feed=feed)
             bars_seen += len(bars)
             frame = sanitize_daily_bars(bars, now=now)
-            shadow = vcp_trend_shadow(frame, source_family="alpaca_iex")
+            shadow = vcp_trend_shadow(frame, source_family=(
+                "alpaca_historical_sip" if feed == "sip" else "alpaca_iex"))
             if not shadow["available"]:
                 continue
             valid += 1
@@ -218,7 +240,7 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
             failures += 1
     reason = "INTERNAL_RESEARCH" if valid else "INTERNAL_NO_VALID_BARS"
     result = _public_status(reason, now=now, bars_seen=bars_seen,
-                            valid_symbols=valid, failed=failures)
+                            valid_symbols=valid, failed=failures, feed=feed)
     # The original source session date is private. No tickers, pivots, or
     # derived signal counts are included in the published bot-state.
     if (latest and picks and private_ready
@@ -227,7 +249,7 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
         recent = [p for p in picks if p["day"] == latest]
         if recent:
             try:
-                receipt = send(private_message(recent, latest))
+                receipt = send(private_message(recent, latest, feed=feed))
             except Exception:  # noqa: BLE001 - retries preserve state on Telegram error
                 result["private_delivery"] = "FAILED"
             else:
@@ -261,7 +283,7 @@ def main() -> int:
         temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
                         encoding="utf-8")
         temp.replace(path)
-    print("Alpaca IEX internal VCP:", report["status"],
+    print("Alpaca completed daily internal VCP:", report["status"],
           "eligible histories:", report["valid_daily_histories"],
           "errors:", report["fetch_errors"],
           "private:", report.get("private_delivery", "NOT_SENT"))
