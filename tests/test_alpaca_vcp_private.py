@@ -189,3 +189,49 @@ def test_workflow_single_writer_and_authorization_enforced():
     assert "alpaca_vcp_private" in workflow
     assert "git push origin HEAD:bot-state" in workflow
     assert "stock_watch_charts.json" not in workflow
+
+
+def test_gated_run_imports_without_yahoo_dependencies():
+    """CI must prevent an eager market-package import on the blocked path."""
+    import ast
+    from pathlib import Path
+
+    module = ast.parse(Path("scripts/alpaca_vcp_private.py").read_text(encoding="utf-8"))
+    global_imports = [
+        stmt.module for stmt in module.body if isinstance(stmt, ast.ImportFrom)
+    ]
+    assert "options_radar.vcp_minervini_shadow" not in global_imports
+    assert "options_radar" not in global_imports
+    assert "yfinance" not in global_imports
+
+
+def test_denied_source_preserves_only_safe_dedupe_state():
+    from scripts.alpaca_vcp_private import clean_delivery_state
+
+    previously = {
+        "last_private_session": "2026-10-21", "private_message_id": 101,
+        "symbol": "SECRET_SOURCE_SYMBOL", "raw_ohlc": [100.0, 102.0],
+        "token": "not-a-real-secret",
+    }
+    assert clean_delivery_state(previously) == {
+        "last_private_session": "2026-10-21", "private_message_id": 101,
+    }
+    out, state = run(now=NOW, env={}, state=previously, client=Client())
+    assert out["status"] == "PROVIDER_TERMS_UNATTESTED"
+    assert state == clean_delivery_state(previously)
+    assert "SECRET_SOURCE_SYMBOL" not in str(out) and "token" not in state
+    assert clean_delivery_state({
+        "last_private_session": "not-a-date", "private_message_id": True,
+        "something": "wrong",
+    }) == {}
+
+
+def test_private_telegram_without_confirmed_receipt_is_not_marked_sent():
+    enabled = {**ENABLED, "ALPACA_PRIVATE_ALERTS_AUTHORIZED": "true"}
+    outcome, state = run(now=NOW, env=enabled, client=Client(),
+                         private_ready=True, send=lambda message: SimpleNamespace(
+                             message_id=None
+                         ))
+    assert outcome["private_delivery"] == "UNCONFIRMED"
+    assert "last_private_session" not in state
+    assert "private_message_id" not in state

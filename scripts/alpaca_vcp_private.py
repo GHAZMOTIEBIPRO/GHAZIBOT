@@ -23,7 +23,6 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import requests
 
-from options_radar.vcp_minervini_shadow import vcp_trend_shadow
 from scripts.telegram_transport import send_html_message
 
 NY = ZoneInfo("America/New_York")
@@ -158,23 +157,40 @@ def private_message(picks: list[dict[str, str]], session_day: str) -> str:
     return "\n".join(lines)
 
 
+def clean_delivery_state(value: Any) -> dict[str, Any]:
+    """Publish only dated delivery receipt metadata, even if access is revoked."""
+    state = value if isinstance(value, dict) else {}
+    clean: dict[str, Any] = {}
+    session = state.get("last_private_session")
+    try:
+        session_date = datetime.strptime(str(session), "%Y-%m-%d").date()
+        if session_date.isoformat() == session:
+            clean["last_private_session"] = session
+    except ValueError:
+        pass
+    message_id = state.get("private_message_id")
+    if type(message_id) is int and message_id > 0:
+        clean["private_message_id"] = message_id
+    return clean
+
+
 def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
         client: Any = requests, send: Callable[[str], Any] = send_html_message,
         private_ready: bool = False) -> tuple[dict, dict]:
     if now.tzinfo is None:
         raise ValueError("aware now required")
     gate = authorization(env)
+    state = clean_delivery_state(state)
     if gate != "AUTHORIZED_INTERNAL_ONLY":
-        return _public_status(gate, now=now), state if isinstance(state, dict) else {}
-    source_state = state if isinstance(state, dict) else {}
-    # Keep the durable public-branch state free of any injected provider bars.
-    state = {}
-    session = source_state.get("last_private_session")
-    message_id = source_state.get("private_message_id")
-    if isinstance(session, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", session):
-        state["last_private_session"] = session
-    if type(message_id) is int and message_id > 0:
-        state["private_message_id"] = message_id
+        # Denied access must not import optional market adapters or touch Alpaca;
+        # retain safe receipt metadata so reauthorization cannot resend a day.
+        return _public_status(gate, now=now), state
+    # The options package initializer pulls in many unrelated, optional market
+    # adapters. Load it only after verified credentials/permission, when the
+    # workflow installs the full requirements.txt dependency set.
+    from options_radar.vcp_minervini_shadow import vcp_trend_shadow
+
+    # Receipt state was reduced to an allowlisted schema before any provider IO.
     failures = 0
     bars_seen = 0
     valid = 0
@@ -215,9 +231,15 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
             except Exception:  # noqa: BLE001 - retries preserve state on Telegram error
                 result["private_delivery"] = "FAILED"
             else:
-                state["last_private_session"] = latest
-                state["private_message_id"] = getattr(receipt, "message_id", None)
-                result["private_delivery"] = "ACCEPTED"
+                message_id = getattr(receipt, "message_id", None)
+                if type(message_id) is int and message_id > 0:
+                    state["last_private_session"] = latest
+                    state["private_message_id"] = message_id
+                    result["private_delivery"] = "ACCEPTED"
+                else:
+                    # A successful function return without Telegram's receipt
+                    # is not delivery proof and must not poison deduplication.
+                    result["private_delivery"] = "UNCONFIRMED"
     return result, state
 
 
