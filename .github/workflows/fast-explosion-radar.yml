@@ -133,7 +133,9 @@ jobs:
         run: python scripts/explosion_hunter_research.py
 
       - name: Upload fast-radar evidence for unified Arabic notifier
-        if: steps.market_day.outputs.open == 'true'
+        # Retain the explicit failure report for diagnosis; downstream dispatch
+        # still requires a successful scan via its default success() condition.
+        if: always() && steps.market_day.outputs.open == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fast-market-state
