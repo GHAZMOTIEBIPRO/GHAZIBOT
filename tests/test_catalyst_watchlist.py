@@ -84,7 +84,7 @@ def test_no_inputs_is_an_explicit_empty_report():
 def test_workflow_is_single_writer_without_a_price_input():
     text = (ROOT / ".github/workflows/catalyst-watchlist.yml").read_text(encoding="utf-8")
     wf = yaml.safe_load(text)
-    assert wf[True]["schedule"] == [{"cron": "15 5 * * 1-5"}] and "--prices" not in text
+    assert wf[True]["schedule"] == [{"cron": "15 5 * * 1-5"}, {"cron": "15 8 * * 1-5"}] and "--prices" not in text
     writers = [p.name for p in (ROOT / ".github/workflows").glob("*.yml")
                if "catalyst_watchlist.json" in p.read_text(encoding="utf-8")]
     assert writers == ["catalyst-watchlist.yml"]
