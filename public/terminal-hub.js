@@ -575,6 +575,33 @@
         "بيانات يومية مكتملة فقط؛ لا تأكيد مصدر مستقل، ولا إشارة شراء أو CALL/PUT.",
         "terminal-stock-news-missing"));
     }
+    const volumeWatch=stockInfo?.volume_breakout_shadow;
+    if(volumeWatch?.available===true&&
+       volumeWatch.schema==="ghazi.daily_volume_breakout_shadow.v1"&&
+       volumeWatch.research_only===true&&
+       volumeWatch.independent_confirmation===false&&
+       volumeWatch.options_execution_eligible===false&&
+       volumeWatch.source_family==="yahoo"&&
+       stockInfo?.historical_cache_only!==true&&
+       typeof volumeWatch.source_last_daily_bar==="string"){
+      const stages={
+        BREAKOUT_VOLUME_WATCH:"اختراق قمة 55 جلسة مع ارتفاع حجم التداول",
+        BREAKOUT_PRICE_ONLY:"اختراق سعري دون تأكيد حجمي",
+        RETEST_HOLD_WATCH:"إعادة اختبار قمة سابقة مع تماسك الإغلاق",
+        HIGH_VOLUME_DOWN_RISK:"ارتفاع حجم التداول مع هبوط الإغلاق · انتباه للمخاطر",
+        VOLUME_SPIKE_WATCH:"ارتفاع غير معتاد في الحجم دون تأكيد اتجاه",
+        NO_PATTERN:"لا اختراق أو حجم غير اعتيادي مكتمل"
+      };
+      card.append(pair("Unusual Volume / Breakout · بحثي",
+        (stages[volumeWatch.stage]||"البيانات غير كافية")+
+        " · جلسة "+volumeWatch.source_last_daily_bar));
+      if(Number.isFinite(volumeWatch.volume_ratio_to_prior_20_median))
+        card.append(pair("الحجم إلى وسيط آخر 20 جلسة سابقة",
+          fmt(volumeWatch.volume_ratio_to_prior_20_median,2)+"× · لا يثبت شراء مؤسسيًا"));
+      card.append(txt("small",
+        "لا تأكيد من بورصات مستقلة أو أسعار تنفيذ عقود؛ ليست توصية تداول.",
+        "terminal-stock-news-missing"));
+    }
     const media=stockInfo?.news_attention;
     if(media?.authority==="NEWS_SEARCH_ATTENTION_ONLY"&&
        media.official_catalyst_verified===false)
