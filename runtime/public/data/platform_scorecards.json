@@ -1,36 +1,31 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-22T16:33:51.121240+00:00",
+ "generated_at": "2026-10-22T16:35:01.035925+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 58.7,
+   "value": 100.0,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
-    "options-radar.yml": {},
+    "options-radar.yml": {
+     "success": 45
+    },
     "stock-radar.yml": {},
-    "options-contract-radar.yml": {
-     "success": 34
-    },
-    "fast-explosion-radar.yml": {
-     "failure": 83
-    },
+    "options-contract-radar.yml": {},
+    "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
      "success": 30
     },
     "index-radar.yml": {},
-    "stock-watch-charts.yml": {},
+    "stock-watch-charts.yml": {
+     "success": 9
+    },
     "public-macro.yml": {
      "success": 2
     },
     "site-evidence-strength.yml": {},
-    "free-gex-validation.yml": {
-     "success": 33
-    },
-    "market-orchestrator.yml": {
-     "cancelled": 7,
-     "success": 19
-    }
+    "free-gex-validation.yml": {},
+    "market-orchestrator.yml": {}
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
    "note_ar": "نجاح التشغيل لا يعني توفر البيانات؛ المسارات المتوقفة بسبب الترخيص تنجح لكنها لا تنتج إشارات."
@@ -86,12 +81,16 @@
    "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
   },
   "ANALYTICAL_VALIDITY": {
-   "status": "UNMEASURED",
+   "status": "PASSING",
    "value": null,
    "unit": "status",
-   "evidence": {},
-   "method": "no completed CI run on main read",
-   "note_ar": "تعذر قراءة نتيجة اختبارات الحساب."
+   "evidence": {
+    "run_id": 39775177261,
+    "conclusion": "success",
+    "at": "2026-10-22T12:02:39Z"
+   },
+   "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
+   "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
   },
   "SIGNAL_PERFORMANCE": {
    "status": "NO_PROVEN_EDGE",
