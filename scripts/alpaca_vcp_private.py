@@ -23,7 +23,6 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import requests
 
-from options_radar.vcp_minervini_shadow import vcp_trend_shadow
 from scripts.telegram_transport import send_html_message
 
 NY = ZoneInfo("America/New_York")
@@ -165,7 +164,14 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
         raise ValueError("aware now required")
     gate = authorization(env)
     if gate != "AUTHORIZED_INTERNAL_ONLY":
-        return _public_status(gate, now=now), state if isinstance(state, dict) else {}
+        # Denied access must not import optional market adapters, touch Alpaca,
+        # or propagate untrusted fields from a legacy state into bot-state.
+        return _public_status(gate, now=now), {}
+    # The options package initializer pulls in many unrelated, optional market
+    # adapters. Load it only after verified credentials/permission, when the
+    # workflow installs the full requirements.txt dependency set.
+    from options_radar.vcp_minervini_shadow import vcp_trend_shadow
+
     source_state = state if isinstance(state, dict) else {}
     # Keep the durable public-branch state free of any injected provider bars.
     state = {}
