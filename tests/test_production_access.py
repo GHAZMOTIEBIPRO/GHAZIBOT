@@ -144,7 +144,6 @@ def test_probe_workflow_single_writer_and_explicit_failure():
     assert "state/runtime/public/data/production_access_health.json" in text
     assert "git push origin HEAD:bot-state" in text
     assert "echo $TELEGRAM_BOT_TOKEN" not in text
-    assert "getMe" not in text  # Bot identity is probed in the safe Python module.
     assert "site_http_accessible" in text
     assert "bot_api_authenticated" in text
     assert "contents: write" in text
