@@ -165,3 +165,58 @@ def test_daily_digest_groups_issuer_and_excludes_future_and_unsafe_domains():
     ])
     events = daily_brief_candidates(report(same), now=NOW)
     assert len(events) == 1 and events[0]["date"] == "2026-10-19"
+
+
+
+def test_daily_catchup_only_after_0815_riyadh_weekdays():
+    from pathlib import Path
+
+    import yaml
+
+    from scripts.send_catalyst_watchlist_alerts import daily_brief_due
+
+    assert daily_brief_due(datetime(2026, 10, 22, 5, 14, tzinfo=timezone.utc)) is False
+    assert daily_brief_due(datetime(2026, 10, 22, 5, 15, tzinfo=timezone.utc)) is True
+    assert daily_brief_due(datetime(2026, 10, 22, 7, 15, tzinfo=timezone.utc)) is True
+    assert daily_brief_due(datetime(2026, 10, 24, 8, 0, tzinfo=timezone.utc)) is False
+    try:
+        daily_brief_due(datetime(2026, 10, 22, 8, 15))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("naive local time must not be accepted")
+
+    wf = Path(".github/workflows/catalyst-watchlist.yml").read_text(encoding="utf-8")
+    parsed = yaml.safe_load(wf)
+    assert parsed[True]["schedule"] == [
+        {"cron": "15 5 * * 1-5"}, {"cron": "15 8 * * 1-5"}
+    ]
+    assert "--daily-brief-if-due" in wf
+    assert "--market-health state/runtime/public/data/data-status.json" in wf
+    assert "git push origin HEAD:bot-state" in wf
+
+
+def test_daily_digest_requires_telegram_ack_before_deduplication():
+    from types import SimpleNamespace
+
+    from scripts.send_catalyst_watchlist_alerts import send_daily_brief
+
+    event_report = report(row())
+    initial, _ = run(event_report, None, now=NOW, send=lambda _: None)
+    for incomplete in (None, SimpleNamespace(message_id=None),
+                       SimpleNamespace(message_id="123"), SimpleNamespace(message_id=0),
+                       SimpleNamespace(message_id=True)):
+        after, status = send_daily_brief(
+            event_report, initial, now=NOW, send=lambda _: incomplete
+        )
+        assert status["mode"] == "delivery_unconfirmed"
+        assert status["failed"] == "NO_TELEGRAM_MESSAGE_ID"
+        assert status["sent"] == 0 and after == initial
+        assert "daily_brief_date" not in after
+    verified, status = send_daily_brief(
+        event_report, initial, now=NOW,
+        send=lambda _: SimpleNamespace(message_id=773)
+    )
+    assert status["mode"] == "sent"
+    assert verified["daily_brief_message_id"] == 773
+    assert verified["daily_brief_date"] == "2026-10-21"
