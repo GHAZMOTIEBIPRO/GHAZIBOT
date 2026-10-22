@@ -32,6 +32,8 @@ display:flex;flex-direction:column;gap:8px;min-width:0}
 .project-card>a{display:inline-block;border:1px solid #4094a6;background:#144052;
 border-radius:8px;padding:7px 11px;max-width:max-content;text-decoration:none;margin-top:auto}
 .unverified{color:#c6aec0;font-size:12px;margin-top:auto}
+.project-evidence{border-inline-start:3px solid #7ecbc6;background:#0d2835;
+  padding:8px 11px;font-size:12px;color:#d8eee8!important;border-radius:6px}
 .notice{font-size:13px;color:#b6d4df;border-inline-start:3px solid #509aae;padding:8px 15px}
 @media(max-width:940px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr}}
@@ -39,7 +41,7 @@ border-radius:8px;padding:7px 11px;max-width:max-content;text-decoration:none;ma
 </head><body><main>
 <nav class="top"><a href="./index.html">← العودة إلى GHAZI RADAR</a><span class="tag">SOURCE-CHECKED GITHUB RESEARCH</span></nav>
 <h1>50 مشروع GitHub للسوق الأمريكي</h1>
-<p class="lede">قائمة مراجعة حقيقية من 50 اسمًا وردت في البحث. 34 رابطًا محددًا، والبقية أسماء عامة تحتاج تحديد المستودع قبل دمجها. كل بطاقة تبيّن هل استفدنا من منهجيتها، وهل توجد وظيفة مماثلة لدينا، أم أنها ما زالت مرجعًا فقط.</p>
+<p class="lede">قائمة مراجعة حقيقية من 50 اسمًا وردت في البحث. 34 رابطًا محددًا، والبقية أسماء عامة تحتاج تحديد المستودع قبل دمجها. كل بطاقة تبيّن هل استفدنا من منهجيتها، وهل توجد وظيفة مماثلة لدينا، أم أنها ما زالت مرجعًا فقط. البطاقات التي لها ملف برمجي محدد تعرض دليلها من مستودعنا، مع تمييز المنهجية المستقلة عن استيراد المشروع.</p>
 <div class="stats"><span>المشاريع: <b>50</b></span><span>روابط مستودعات محددة: <b>34</b></span><span>أسماء غير محددة: <b>16</b></span><span>النتائج المعروضة: <b id="projects-count">—</b></span></div>
 <div class="controls" aria-label="فلترة المشاريع">
 <label>اسم أو رابط مشروع<input id="projects-query" type="search" placeholder="مثال: Gamma, EdgarTools, QuantStats"></label>
@@ -47,11 +49,11 @@ border-radius:8px;padding:7px 11px;max-width:max-content;text-decoration:none;ma
 <option value="breakout">اختراقات وفلترة</option><option value="options">أوبشن وGamma</option>
 <option value="platform">منصات وذكاء اصطناعي</option><option value="source">أخبار وبيانات</option>
 <option value="technical">شارت واختبارات</option></select></label>
-<label>حالة الاستفادة<select id="projects-status"><option value="all">جميع الحالات</option>
+<label>حالة الاستفادة<select id="projects-status"><option value="all">جميع الحالات</option><option value="evidence">مع دليل كود في مستودعنا</option>
 <option value="methodology">طبقنا منهجية مستقلة</option><option value="existing">وظائف قائمة</option>
 <option value="reference">مرجع لم يُدمج</option><option value="review">يحتاج مراجعة</option>
 <option value="blocked">مقيد أو مصدر بيانات محظور</option><option value="ambiguous">اسم عام</option></select></label>
 </div>
-<p class="notice">«رابط GitHub» لا يعني تشغيل المشروع في GHAZI RADAR، ووجود رخصة مفتوحة للكود لا يمنح ترخيصًا لإعادة نشر أسعار Yahoo أو Cboe أو عقود OPRA. لن تُعرض إشارات CALL/PUT التنفيذية إلا بعد تأكيد بياناتها وفق البوابات القائمة.</p>
+<p class="notice">«دليل الكود» يعني وجود تنفيذ أو وظيفة في المستودع، لا يعني تنزيل المشروع الأصلي أو إثبات البيانات الحية. «رابط GitHub» لا يعني تشغيل المشروع في GHAZI RADAR، ووجود رخصة مفتوحة للكود لا يمنح ترخيصًا لإعادة نشر أسعار Yahoo أو Cboe أو عقود OPRA. لن تُعرض إشارات CALL/PUT التنفيذية إلا بعد تأكيد بياناتها وفق البوابات القائمة.</p>
 <section id="projects-results" class="grid" aria-live="polite"></section>
 </main><script src="./github-projects.js?v=20261022" defer></script></body></html>
