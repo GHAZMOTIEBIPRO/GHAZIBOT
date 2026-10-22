@@ -46,3 +46,15 @@ The *new* factors use **only already-acquired completed daily candles**, no new 
 - **Ambiguous**: name alone does not uniquely identify a particular repository, so link deliberately absent.
 
 **Runtime evidence is separate from CI**. Merge and Vercel `READY` prove code delivery; inspect durable bot-state for real current candles and Telegram receipt before claiming that data or live alerts work. Adding 50 dependencies would increase security and maintenance risk with no guarantee of new lawful data. 
+
+
+## Follow-up integration: completed-bar volume anomalies and auditability
+
+This second increment (2026-10-22) **does not** add fifty installed dependencies. It fixes a concrete pipeline bug and adds an independently written scanner for a functionality gap identified by the 50-project audit:
+
+1. **Previously broken daily history requirement.** The Yahoo-gated stock watcher requested `1d,3mo` (~60–65 market sessions), while the VCP shadow requires **at least 70 completely closed bars**. The gate now requests `1d,6mo` when and only when Yahoo has explicit automated-access authorization; otherwise it still makes no Yahoo request. This does not unlock any forbidden data source.
+2. **Generic project name #3, Unusual Volume Detector** has no uniquely identified repository. A separate, original `daily_volume_breakout_shadow.py` now analyzes the permitted pre-existing complete 1D bars. It compares the latest completed daily volume with the **median** of the previous 20 complete sessions (the evaluated bar excluded), flags >=2× volume anomalies, describes breakouts above the **previous** 55-session high with >=1.5× volume, and distinguishes independent retest holds and high-volume declines. It provides context, not buy/sell direction. No code was imported from an unidentified repo.
+3. **UI research panel:** each stock with genuine permitted/still-fresh candles gains a research-only volume-breakout context; only the exact `yahoo` source family with explicit false option execution authority can display this shadow. Historical cache-only observations are not promoted.
+4. **Evidence-first 50-project catalogue:** six entries now show a concrete GHAZIBOT source-file link and an unambiguous difference between `own_method`, `similar_idea`, `official_api_not_sdk`, and `existing_feature`. In particular Alpaca code uses a guarded **official IEX REST API**, not the candidate `alpaca-py` SDK; the SDK is **not installed** by this effort. The remaining unlinked 16 names remain ambiguous; a conceptual algorithm does not make an unknown GitHub repository a verified install.
+
+**Provider limits:** Yahoo remains `SOURCE_TERMS_BLOCKED` in current public state. Alpaca remains `PROVIDER_TERMS_UNATTESTED`. The above functions are merged code and offline-testable but do not imply that live stock candles, options contracts or market prices are operational. Provider terms are not bypassed. Project-specific upstream code has not been copied; Github repository availability says nothing about securities prediction precision. A complete 50/50 technical installation would add a major dependency and rights surface without a real benefit.
