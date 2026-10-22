@@ -53,7 +53,7 @@ def _atr14(values: list[tuple[float, float, float, float, float]]) -> list[float
 
 
 def vcp_trend_shadow(frame: pd.DataFrame, *, source_family: str = "yahoo") -> dict:
-    if source_family not in {"yahoo", "alpaca_iex"}:
+    if source_family not in {"yahoo", "alpaca_iex", "alpaca_historical_sip"}:
         raise ValueError("unknown OHLCV family; no implicit source upgrade")
     base = {
         "schema": "ghazi.vcp_minervini_shadow.v1",
