@@ -275,7 +275,7 @@ def test_authorized_historical_sip_daily_vcp_is_not_realtime_or_independent():
     assert state["private_message_id"] == 711
     assert len(sent) == 1
     assert "SIP تاريخي مكتمل" in sent[0]
-    assert "غير" in sent[0] and "لحظي" in sent[0]
+    assert "ليست بثًا لحظيًا" in sent[0]
     assert all(call[1]["feed"] == "sip" for call in client.calls)
     assert all(call[1]["end"] == "2026-10-22" for call in client.calls)
     frame = sanitize_daily_bars(sample_bars(), now=NOW)
