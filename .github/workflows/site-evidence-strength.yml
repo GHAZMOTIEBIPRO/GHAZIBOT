@@ -8,6 +8,7 @@ on:
       - "scripts/build_site_strength.py"
       - "scripts/build_data_hub.py"
       - "scripts/build_platform_scorecards.py"
+      - "scripts/build_trading_readiness.py"
       - "data/source_rights.json"
       - "tests/test_site_strength.py"
       - ".github/workflows/site-evidence-strength.yml"
@@ -84,6 +85,20 @@ jobs:
           --state-dir state/state
           --runtime-dir state/runtime
           --output state/runtime/public/data/platform_scorecards.json
+      - name: Evidence-based trade-readiness verdict (independent market-data and OOS gates)
+        run: |
+          python app/scripts/build_trading_readiness.py \
+            --agreement state/runtime/public/data/source_agreement.json \
+            --charts state/runtime/public/data/stock_watch_charts.json \
+            --operations state/runtime/public/data/data-status.json \
+            --access state/runtime/public/data/production_access_health.json \
+            --audit state/runtime/public/data/stock_audit_public.json \
+            --walk state/state/stocks/stock_walk_forward.json \
+            --targets state/runtime/data/live/omega_target_calibration.json \
+            --options state/state/performance/options_performance_report.json \
+            --stages state/runtime/public/data/explosion_stage_evaluation.json \
+            --strength state/runtime/public/data/site_strength.json \
+            --output state/runtime/public/data/trading_readiness.json
       - name: Publish only source-backed readiness report
         shell: bash
         run: |
@@ -91,7 +106,7 @@ jobs:
           cd state
           git config user.name "GHAZI Evidence Audit"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json runtime/public/data/platform_scorecards.json
+          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json runtime/public/data/platform_scorecards.json runtime/public/data/trading_readiness.json
           if git diff --cached --quiet; then
             echo "Evidence report unchanged"
             exit 0
