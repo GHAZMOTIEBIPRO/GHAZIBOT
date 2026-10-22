@@ -52,7 +52,7 @@ def good(request, **kwargs):
     if "github-projects" in url:
         return Response(url, body=b'<title>50 projects</title>')
     if "catalyst-desk" in url:
-        return Response(url, body='<title>GHAZI RADAR — Official Catalyst Desk</title>'.encode("utf-8"))
+        return Response(url, body='<title>GHAZI RADAR — Official Catalyst Desk</title>'.encode())
     return Response(url, body=b'<h1>GHAZI RADAR</h1>')
 
 
