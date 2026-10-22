@@ -32,7 +32,7 @@ PAGES = (
 
 def get_response(url: str, *, fetch: Any = urlopen) -> tuple[int, str, str, bytes]:
     """Only two allowlisted origins or the official Telegram getMe endpoint."""
-    if not (url.startswith(MAIN + "/") or url.startswith(SECONDARY + "/") or
+    if not (url.startswith((MAIN + "/", SECONDARY + "/")) or
             (url.startswith("https://api.telegram.org/bot") and url.endswith("/getMe"))):
         raise ValueError("URL outside access-probe allowlist")
     request = Request(url, headers={
