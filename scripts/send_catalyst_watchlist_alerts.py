@@ -206,6 +206,20 @@ def run(report: dict[str, Any], state: dict[str, Any] | None, *,
 
 
 DIGEST_TZ = ZoneInfo("Asia/Riyadh")
+
+
+def daily_brief_due(now: datetime) -> bool:
+    """Earliest local delivery 08:15 Riyadh Mon–Fri.
+
+    GitHub scheduled workflows are best-effort. The existing FDA/SEC completion
+    and main push triggers provide a deduplicated catch-up, not extra scanners.
+    """
+    if now.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    local = now.astimezone(DIGEST_TZ)
+    return local.weekday() < 5 and (local.hour, local.minute) >= (8, 15)
+
+
 DIGEST_TYPES = {
     "FDA_APPROVAL": "موافقة دوائية", "FDA_SUPPLEMENT": "تحديث موافقة",
     "FDA_RECALL": "سحب منتج", "DILUTION_RISK": "خطر تخفيف ملكية",
@@ -351,9 +365,15 @@ def send_daily_brief(report: dict[str, Any], state: dict[str, Any], *,
         result = send(daily_brief_message(report, picks, now=now, market_health=market_health))
     except Exception as error:  # noqa: BLE001 - never mark success before Telegram confirms
         return state, {"mode": "failed", "sent": 0, "failed": type(error).__name__}
+    receipt = getattr(result, "message_id", None)
+    if type(receipt) is not int or receipt <= 0:
+        # Without a Telegram message receipt, an accepted transport return
+        # alone is not enough to claim delivery or suppress a later retry.
+        return state, {"mode": "delivery_unconfirmed", "sent": 0,
+                       "failed": "NO_TELEGRAM_MESSAGE_ID"}
     return {
         **state, "daily_brief_date": day, "daily_brief_at": now.isoformat(),
-        "daily_brief_message_id": getattr(result, "message_id", None),
+        "daily_brief_message_id": receipt,
     }, {"mode": "sent", "sent": 1, "symbols": len(picks)}
 
 
@@ -365,6 +385,8 @@ def main() -> int:
                         help="Previously published market/option operational status (not quotes).")
     parser.add_argument("--daily-brief", action="store_true",
                         help="Send one Riyadh-dated daily official catalyst research summary.")
+    parser.add_argument("--daily-brief-if-due", action="store_true",
+                        help="After 08:15 Riyadh Mon–Fri, send daily digest at most once per day.")
     parser.add_argument("--notify-ready", action="store_true",
                         help="Send one operational connection confirmation after seeding.")
     args = parser.parse_args()
@@ -380,7 +402,10 @@ def main() -> int:
     new_state, summary = run(report, old, now=datetime.now(timezone.utc),
                              send=send_html_message, notify_ready=args.notify_ready)
     digest = {}
-    if args.daily_brief and not summary.get("failed") and new_state.get("schema") == SCHEMA:
+    if (args.daily_brief or (args.daily_brief_if_due
+                             and daily_brief_due(datetime.now(timezone.utc)))) and (
+        not summary.get("failed") and new_state.get("schema") == SCHEMA
+    ):
         health_report = {}
         if args.market_health is not None:
             try:
