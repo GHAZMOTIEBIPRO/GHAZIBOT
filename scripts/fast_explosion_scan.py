@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from options_radar.halt_news_engine import NewsEvent, collect_fast_news, fetch_nasdaq_halts
-from options_radar.source_permissions import require
+from options_radar.source_permissions import SourceTermsBlocked, require
 
 NASDAQ_SCREENER = "https://api.nasdaq.com/api/screener/stocks"
 STRUCTURAL_PATH = Path("data/cache/structural_microfloat_candidates.json")
@@ -403,9 +403,31 @@ def run(send_telegram: bool = True) -> int:
     structural = _structural_map()
     try:
         rows = _nasdaq_rows()
-    except Exception as exc:
-        print(f"Fast radar market fetch failed: {type(exc).__name__}: {exc}")
-        return 0
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("Empty market response")
+    except Exception as exc:  # noqa: BLE001 - terminal boundary records failure and exits nonzero
+        # Replace restored output, never relabel yesterday's candidates as a
+        # successful scan. generated_at describes this diagnostic, not a quote.
+        blocked = isinstance(exc, SourceTermsBlocked)
+        status = "SOURCE_TERMS_BLOCKED" if blocked else "MARKET_FETCH_FAILED"
+        _save(OUTPUT_PATH, {
+            "generated_at": _utc_now(),
+            "status": status,
+            "available": False,
+            "execution_authority": False,
+            "provider_quote_timestamp": None,
+            "error_type": type(exc).__name__,
+            "source_block": exc.block if blocked else None,
+            "market_rows_seen": 0,
+            "news_events_seen": 0,
+            "halt_events_seen": 0,
+            "score_is_probability": False,
+            "top": [], "actionable": [], "halts": [],
+        })
+        # Exception text can contain provider URLs/credentials; expose a bounded
+        # classification instead. A failed run must not dispatch Stock Radar.
+        print(f"Fast radar market fetch failed: {status} ({type(exc).__name__})")
+        return 2
     known_symbols = {
         str(row.get("symbol") or "").upper().strip()
         for row in rows
@@ -425,6 +447,8 @@ def run(send_telegram: bool = True) -> int:
         OUTPUT_PATH,
         {
             "generated_at": _utc_now(),
+            "status": "OK",
+            "available": True,
             "market_rows_seen": len(rows),
             "news_events_seen": len(news_events),
             "halt_events_seen": len(halts),
