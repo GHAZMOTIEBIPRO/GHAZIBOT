@@ -49,7 +49,7 @@
   function search(q="",category="all",status="all"){
     const needle=String(q).toLowerCase().trim();
     return normalized.filter(x=>(category==="all"||x.category===category)&&
-      (status==="all"||x.status===status)&&
+      (status==="all"||x.status===status||(status==="evidence"&&x.evidence!==null))&&
       (!needle||[x.name,x.repo||"",x.license].join(" ").toLowerCase().includes(needle)));
   }
   function render(rows){
