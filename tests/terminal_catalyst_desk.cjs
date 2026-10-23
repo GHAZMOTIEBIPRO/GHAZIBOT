@@ -42,3 +42,11 @@ assert.equal(tv.makeConfig("NVDA","D").allow_symbol_change,true);
 assert.match(tv.WIDGET,/tradingview\.com\/external-embedding\/embed-widget-advanced-chart\.js$/);
 assert.ok(page.includes('id="desk-chart-panel"'));
 assert.ok(page.includes('src="./catalyst-chart.js'));
+
+const clinical={...event,source:"ClinicalTrials.gov",kind:"TRIAL_RESULTS_POSTED",official_registry_only:true,outcome_direction:"NOT_INFERRED",match_method:"exact_normalised_name",source_url:"https://clinicaltrials.gov/study/NCT12345678"};
+const clinicalReport=report({sources:{clinicaltrials:true},watchlist:[{symbol:"ABBV",catalysts:[clinical]}]});
+assert.equal(desk.validate(clinicalReport,now).rows.length,1);
+assert.equal(desk.validate({...clinicalReport,sources:{}},now).rows.length,0);
+clinical.outcome_direction="bullish";
+assert.equal(desk.validate(clinicalReport,now).rows.length,0);
+assert.equal(desk.official("https://clinicaltrials.gov.evil/study/NCT12345678","ClinicalTrials.gov"),null);

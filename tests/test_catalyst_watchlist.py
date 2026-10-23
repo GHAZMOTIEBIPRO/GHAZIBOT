@@ -78,7 +78,7 @@ def test_under_10_only_from_a_current_quote_with_display_rights():
 def test_no_inputs_is_an_explicit_empty_report():
     report = cw.build(None, None, None, NOW)
     assert report["status"] == "NO_RECENT_CATALYSTS" and report["watchlist"] == []
-    assert report["sources"] == {"openfda": False, "sec_edgar": False, "sec_status": "MISSING"}
+    assert report["sources"] == {"openfda": False, "sec_edgar": False, "sec_status": "MISSING", "clinicaltrials": False, "clinicaltrials_status": "MISSING"}
 
 
 def test_workflow_is_single_writer_without_a_price_input():

@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import re
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -113,6 +115,43 @@ def sec_catalysts(sec: Any) -> list[dict[str, Any]]:
     return out
 
 
+def clinical_available(report: Any, now: datetime) -> bool:
+    if not isinstance(report, dict):
+        return False
+    produced = _parse(report.get("generated_at"))
+    if (report.get("schema") != "ghazi.clinical_registry_feed.v1"
+            or report.get("status") not in {"OK", "PARTIAL"}
+            or report.get("research_only") is not True
+            or report.get("decision_authority") is not False
+            or report.get("execution_authority") is not False
+            or produced is None or not timedelta(0) <= now - produced <= timedelta(hours=48)):
+        return False
+    return isinstance(report.get("events"), list)
+
+
+def clinical_catalysts(report: Any, now: datetime) -> list[dict[str, Any]]:
+    if not clinical_available(report, now):
+        return []
+    events = report.get("events")
+    if not isinstance(events, list):
+        return []
+    result = []
+    for event in events[:750]:
+        if (not isinstance(event, dict) or event.get("source") != "ClinicalTrials.gov"
+                or event.get("kind") not in {"TRIAL_RESULTS_POSTED", "TRIAL_STATUS_REVIEW", "TRIAL_REGISTRY_UPDATE"}
+                or event.get("importance") not in RANK
+                or event.get("official_registry_only") is not True
+                or event.get("outcome_direction") != "NOT_INFERRED"
+                or event.get("match_method") not in {"exact_normalised_name", "reviewed_sponsor_alias"}
+                or not re.fullmatch(r"[A-Z][A-Z0-9.-]{0,7}", str(event.get("symbol", "")))
+                or not re.fullmatch(r"https://clinicaltrials[.]gov/study/NCT[0-9]{8}", str(event.get("source_url", "")))):
+            continue
+        day = _day(event.get("date"))
+        if day and (now.date() - timedelta(days=14)).isoformat() <= day <= now.date().isoformat():
+            result.append(dict(event))
+    return result
+
+
 def price_band(symbol: str, prices: Any, now: datetime) -> dict[str, Any]:
     """Under-$10 only from a current quote whose source permits public display."""
     quote = (prices.get("quotes") or {}).get(symbol) if isinstance(prices, dict) else None
@@ -121,7 +160,7 @@ def price_band(symbol: str, prices: Any, now: datetime) -> dict[str, Any]:
         return unverified
     quoted = _parse(quote.get("quote_time"))
     price = quote.get("price")
-    if quoted is None or isinstance(price, bool) or not isinstance(price, (int, float)) or price <= 0:
+    if quoted is None or isinstance(price, bool) or not isinstance(price, (int, float)) or not math.isfinite(price) or price <= 0:
         return {**unverified, "reason": "QUOTE_INCOMPLETE"}
     if not timedelta(0) <= now - quoted <= timedelta(minutes=MAX_QUOTE_AGE_MIN):
         return {**unverified, "reason": "QUOTE_STALE"}
@@ -130,11 +169,11 @@ def price_band(symbol: str, prices: Any, now: datetime) -> dict[str, Any]:
             "quote_time": quoted.isoformat(), "source": quote.get("source")}
 
 
-def build(fda: Any, sec: Any, prices: Any, now: datetime) -> dict[str, Any]:
+def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
-    for item in fda_catalysts(fda) + sec_catalysts(sec):
-        if item["date"] >= cutoff:
+    for item in fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now):
+        if cutoff <= item["date"] <= now.date().isoformat():
             by_symbol.setdefault(item["symbol"], []).append(item)
     entries = []
     for symbol, items in by_symbol.items():
@@ -160,7 +199,9 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime) -> dict[str, Any]:
         "window_days": MAX_EVENT_AGE_DAYS,
         "sources": {"openfda": isinstance(fda, dict),
                     "sec_edgar": sec_used,
-                    "sec_status": sec.get("status") if isinstance(sec, dict) else "MISSING"},
+                    "sec_status": sec.get("status") if isinstance(sec, dict) else "MISSING",
+                    "clinicaltrials": clinical_available(clinical, now),
+                    "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING"},
         "watchlist": entries[:MAX_TICKERS],
         "price_confirmed_signals": [],
         "price_confirmation": {
@@ -168,7 +209,9 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime) -> dict[str, Any]:
             "rule": f"under ${SUB10_LIMIT:.0f} only from a quote <= {MAX_QUOTE_AGE_MIN} min old with public display rights",
             "note_ar": "لا نصنّف أي سهم تحت 10$ ولا نؤكد إشارة سعرية دون سعر حديث من مصدر يسمح بالنشر.",
         },
-        "notes_ar": ["قائمة متابعة محفزات رسمية وليست توصيات ولا إشارات دخول.",
+        "clinical_registry_attribution": "Courtesy of the U.S. National Library of Medicine",
+        "clinical_registry_database_license": "ODbL-1.0",
+        "notes_ar": ["سجلات ClinicalTrials.gov لا تثبت نجاح العلاج أو اتجاه السعر؛ لا تأييد من NLM وقد لا تعكس آخر تعديل.","قائمة متابعة محفزات رسمية وليست توصيات ولا إشارات دخول.",
                      "أهمية المحفز تعني أولوية المراجعة، لا اتجاه السعر."],
         "research_only": True,
         "decision_authority": False,
@@ -180,10 +223,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fda", type=Path, required=True)
     parser.add_argument("--sec", type=Path)
+    parser.add_argument("--clinical", type=Path)
     parser.add_argument("--prices", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    report = build(_load(args.fda), _load(args.sec), _load(args.prices), datetime.now(timezone.utc))
+    report = build(_load(args.fda), _load(args.sec), _load(args.prices), datetime.now(timezone.utc), _load(args.clinical))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Catalyst watchlist:", json.dumps({"status": report["status"], "tickers": len(report["watchlist"]),

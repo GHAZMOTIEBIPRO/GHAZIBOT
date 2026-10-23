@@ -27,15 +27,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="./terminal-hub.css?v=20261021-1">
+  <link rel="stylesheet" href="./radar-start.css?v=20261023-1">
 </head>
 <body>
+  <nav class="start-nav" aria-label="التنقل السريع"><a class="start-brand" href="./index.html">GHAZI <span>RADAR</span><small>رؤية أوضح للسوق الأمريكي</small></a><div><button type="button" data-start-home>الرئيسية</button><button type="button" data-start-panel="chart">حلّل سهمك</button><button type="button" data-start-panel="options">العقود</button><button type="button" data-start-gamma>القاما</button><button type="button" data-start-risk>الحاسبة</button><a href="./catalyst-desk.html">المحفزات</a><a href="./trading-readiness.html">النتائج والموثوقية</a></div></nav>
   <div class="page-shell">
     <header class="hero">
       <div>
         <p class="eyebrow">GHAZI RADAR · POWERED BY BLACK BOX Ω</p>
-        <h1>GHAZI RADAR</h1>
+        <h1>افهم الحركة.<br><span>قبل أن تتخذ القرار.</span></h1>
         <p class="brand-subtitle">رادار الأسهم الأمريكية والمؤشرات وعقود الخيارات</p>
-        <p class="hero-copy">منصة بحثية مجانية؛ تعرض جودة البيانات ووقت التقرير ومصدر التسعير وحدود الأوبشن بوضوح. درجة الترتيب ليست نسبة ربح، ووقت إعداد التقرير ليس وقت عرض السعر.</p>
+        <p class="hero-copy">السهم، الخبر، والعقد في مساحة بحث واحدة. ابدأ بالرمز، راجع ما يدعم الفكرة، واعرف ما قد يبطلها. حالة المصدر ظاهرة مع كل قراءة.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -47,6 +49,19 @@
       </div>
     </header>
 
+
+    <section class="start-desk" aria-label="ابدأ بحثك">
+      <article class="start-row start-primary">
+        <div><p class="start-kicker">ابدأ من هنا · الأسهم الأمريكية</p><h2>حلّل سهمك</h2><p>الشارت، القراءة الفنية، الملف المالي والأخبار. ابحث بالرمز لتفتح صفحة السهم.</p></div>
+        <form id="start-search" role="search"><label for="start-symbol">رمز السهم</label><div class="start-input"><input id="start-symbol" name="symbol" placeholder="مثال: NVDA" dir="ltr" maxlength="10" pattern="[A-Za-z][A-Za-z0-9.\-]{0,9}" required autocomplete="off"><button type="submit">افتح التحليل</button></div><p id="start-search-status" role="status">عرض TradingView داخل أدواته؛ تحليل الرادار بحسب توفر المصدر.</p></form>
+      </article>
+      <article class="start-row"><div><p class="start-kicker">العقود · CALL / PUT</p><h2>افهم نشاط الخيارات</h2><p>افحص السيولة ونشاط العقد وجودة التسعير. الحجم وحده لا يثبت أن المؤسسات تشتري.</p></div><button type="button" data-start-panel="options">افتح رادار العقود</button></article>
+      <article class="start-row"><div><p class="start-kicker">حاسبة تفاعلية · مدخلاتك أنت</p><h2>احسب المخاطرة قبل الدخول</h2><p>عقود CALL وPUT المشتراة: تكلفة الصفقة، عدد العقود، التعادل، وأقصى خسارة عند انتهاء العقد.</p></div><button type="button" data-start-risk>احسب صفقتك</button></article>
+      <article class="start-row"><div><p class="start-kicker">GAMMA / GEX · عند توفر المصدر</p><h2>راجع مستويات القاما</h2><p>سياق جاما ومصدره وتاريخه. إذا غابت سلسلة الخيارات المؤهلة، تظهر الحالة غير متاحة.</p></div><button type="button" data-start-gamma>افتح لوحة القاما</button></article>
+      <div class="start-links"><a href="./catalyst-desk.html"><span>01 / المحفزات</span><strong>ما الخبر وراء الحركة؟</strong><p>إفصاحات وقرارات دوائية وسجلات دراسات مع روابط المصادر.</p></a><button type="button" data-start-panel="small"><span>02 / الأسهم المضاربية</span><strong>راقب التحركات المبكرة</strong><p>قوائم المتابعة والأحجام والاختراقات وفق البيانات المتاحة.</p></button><a href="./trading-readiness.html"><span>03 / سجل الاعتمادية</span><strong>الدليل قبل الثقة</strong><p>صحة المصادر والنتائج خارج العينة وأسباب غياب الإشارة.</p></a></div>
+      <p class="start-note">منصة بحثية مجانية. النتائج غير الموثقة لا تُعرض كنسب نجاح، ووقت تحديث التقرير ليس وقت عرض السعر.</p>
+      <button class="start-all" type="button" data-start-panel="overview">استعرض مركز السوق بالكامل</button>
+    </section>
 
     <section class="terminal-shell" id="ghazi-terminal" aria-labelledby="terminal-title">
       <div class="terminal-intro">
@@ -876,6 +891,6 @@
   <script src="./terminal-decision.js?v=20261021-1" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
   <script src="./tv-intelligence.js?v=20261021-1" defer></script>
-  <script src="./terminal-hub.js?v=20261022-weekly" defer></script>
+  <script src="./terminal-hub.js?v=20261023-start" defer></script>
 </body>
 </html>

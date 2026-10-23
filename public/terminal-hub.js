@@ -1682,7 +1682,8 @@
   }
   const CATALYST_KIND={FDA_APPROVAL:"موافقة FDA",FDA_SUPPLEMENT:"ملحق FDA",FDA_RECALL:"سحب FDA",
     DILUTION_RISK:"خطر تخفيف",CHARTER_OR_REVERSE_SPLIT_REVIEW:"تعديل نظام/تقسيم عكسي",LISTING_NOTICE:"إشعار إدراج",
-    MATERIAL_AGREEMENT:"عقد جوهري",EARNINGS_RELEASE:"نتائج",INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري"};
+    MATERIAL_AGREEMENT:"عقد جوهري",EARNINGS_RELEASE:"نتائج",INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري",
+    TRIAL_RESULTS_POSTED:"نتائج منشورة بالسجل (الاتجاه غير مقيم)",TRIAL_STATUS_REVIEW:"مراجعة حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث سجل دراسة"};
   // Official catalysts only; never a price band or a signal without a permitted current quote.
   function catalystLines(report,limit=20){
     if(!report||!Array.isArray(report.watchlist))return [];
@@ -1702,7 +1703,8 @@
     const src=report.sources||{};
     put("terminal-catalyst-status","المصادر: openFDA"+(src.sec_edgar?" + SEC EDGAR":" (SEC غير متاح: "+String(src.sec_status||"—")+")")+
       " · آخر "+String(report.window_days||30)+" يومًا · "+report.watchlist.length+" سهمًا · التحديث: "+stamp(report.generated_at)+
-      " · أولوية المراجعة لا تعني اتجاه السعر.");
+      " · أولوية المراجعة لا تعني اتجاه السعر."+
+      (src.clinicaltrials?" · ClinicalTrials.gov: تغطية محدودة؛ Courtesy of the U.S. National Library of Medicine. لا تأييد من NLM وقد لا تعكس آخر تعديل.":""));
     put("terminal-price-confirmed",report.price_confirmed_signals.length?
       "الإشارات المؤكدة سعريًا: "+report.price_confirmed_signals.length:
       "الإشارات المؤكدة سعريًا: لا توجد — "+String(report.price_confirmation?.note_ar||"لا يوجد مصدر أسعار مسموح."));
@@ -1909,6 +1911,7 @@
     }
   }
   function choosePanel(panel){
+    document.body.classList.add("flow-open");
     state.panel=panel;
     document.querySelectorAll(".terminal-tab").forEach(button=>{
       const active=button.dataset.terminalTab===panel;
@@ -2044,6 +2047,40 @@
       if(typeof radarData!=="undefined"&&typeof renderMarketChart==="function"&&radarData)
         renderMarketChart(radarData);
     }
+  });
+  // Homepage actions reuse the existing terminal and calculator controllers.
+  document.body.classList.add("flow-ready");
+  function openStartPanel(panel){
+    choosePanel(panel);
+    $("ghazi-terminal")?.scrollIntoView({block:"start",behavior:"smooth"});
+  }
+  document.querySelectorAll("[data-start-panel]").forEach(button=>button.addEventListener("click",()=>openStartPanel(button.dataset.startPanel)));
+  document.querySelectorAll("[data-start-home]").forEach(button=>button.addEventListener("click",()=>{
+    document.body.classList.remove("flow-open");
+    const old=$("legacy-dashboard");if(old)old.hidden=true;
+    window.scrollTo({top:0,behavior:"smooth"});
+  }));
+  document.querySelectorAll("[data-start-gamma]").forEach(button=>button.addEventListener("click",()=>{
+    chooseChart("SPX");
+    $("terminal-gamma-panel")?.scrollIntoView({block:"start",behavior:"smooth"});
+  }));
+  document.querySelectorAll("[data-start-risk]").forEach(button=>button.addEventListener("click",()=>{
+    choosePanel("advanced");
+    const old=$("legacy-dashboard");if(old)old.hidden=false;
+    const toggle=$("terminal-toggle-legacy");if(toggle){toggle.setAttribute("aria-expanded","true");toggle.textContent="إخفاء لوحة الأدوات التفصيلية ↑";}
+    document.querySelector('[data-tab="risklab"]')?.click();
+    $("tab-risklab")?.scrollIntoView({block:"start",behavior:"smooth"});
+  }));
+  $("start-search")?.addEventListener("submit",event=>{
+    event.preventDefault();
+    const symbol=String($("start-symbol")?.value||"").trim().toUpperCase();
+    if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)){
+      put("start-search-status","أدخل رمز سهم صحيحًا مثل NVDA أو AAPL.");return;
+    }
+    chooseChart(symbol);
+    refreshSymbols();
+    put("start-search-status","تم فتح صفحة "+symbol+"؛ جودة بيانات الرادار موضحة بشكل مستقل.");
+    $("tv-stock-intel")?.scrollIntoView({block:"start",behavior:"smooth"});
   });
   const linked=symbolFromLink(window.location.search);
   if(linked){state.pendingSymbol=linked;chooseChart(linked);}

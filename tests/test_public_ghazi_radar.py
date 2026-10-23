@@ -8,7 +8,8 @@ APP = (ROOT / "public/app.js").read_text(encoding="utf-8")
 
 def test_public_branding_and_quality_panel():
     assert "<title>GHAZI RADAR" in HTML
-    assert "<h1>GHAZI RADAR</h1>" in HTML
+    assert 'class="start-brand"' in HTML and "GHAZI <span>RADAR</span>" in HTML
+    assert "<h1>افهم الحركة." in HTML
     assert "ghazi-radar-quality.js" in HTML
     for element_id in (
         "ghazi-stock-sources", "ghazi-option-sources",
