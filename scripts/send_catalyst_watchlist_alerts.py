@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import html
 import json
+import re
 from collections.abc import Callable
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -24,7 +25,8 @@ SCHEMA = "ghazi.catalyst_watch_alert_state.v1"
 REPORT = "ghazi.catalyst_watchlist.v1"
 ALLOWED = {"FDA_SUPPLEMENT", "FDA_APPROVAL", "FDA_RECALL",
            "DILUTION_RISK", "LISTING_NOTICE", "MATERIAL_AGREEMENT",
-           "EARNINGS_RELEASE", "CHARTER_OR_REVERSE_SPLIT_REVIEW"}
+           "EARNINGS_RELEASE", "CHARTER_OR_REVERSE_SPLIT_REVIEW",
+           "TRIAL_RESULTS_POSTED", "TRIAL_STATUS_REVIEW"}
 SITE = "https://ghazibot.vercel.app/catalyst-desk.html"
 
 
@@ -38,6 +40,9 @@ def official_url(url: Any, source: str) -> str | None:
         if source == "openFDA" and host in {
             "accessdata.fda.gov", "www.accessdata.fda.gov", "fda.gov", "www.fda.gov"
         }:
+            return value
+        if (source == "ClinicalTrials.gov" and host == "clinicaltrials.gov"
+                and re.fullmatch(r"/study/NCT[0-9]{8}", parsed.path) and not parsed.query and not parsed.fragment):
             return value
         if source == "SEC EDGAR" and host in {"sec.gov", "www.sec.gov"}:
             return value
@@ -54,6 +59,14 @@ def _as_utc(raw: Any) -> datetime | None:
     except ValueError:
         return None
     return parsed.astimezone(timezone.utc) if parsed.tzinfo else None
+
+
+def registry_event_valid(event: dict, sources: dict) -> bool:
+    return (sources.get("clinicaltrials") is True
+            and event.get("kind") in {"TRIAL_RESULTS_POSTED", "TRIAL_STATUS_REVIEW", "TRIAL_REGISTRY_UPDATE"}
+            and event.get("official_registry_only") is True
+            and event.get("outcome_direction") == "NOT_INFERRED"
+            and event.get("match_method") in {"exact_normalised_name", "reviewed_sponsor_alias"})
 
 
 def candidates(report: dict[str, Any], *, now: datetime,
@@ -92,7 +105,9 @@ def candidates(report: dict[str, Any], *, now: datetime,
                 continue
             if source == "SEC EDGAR" and permitted.get("sec_edgar") is not True:
                 continue
-            if source not in {"openFDA", "SEC EDGAR"}:
+            if source == "ClinicalTrials.gov" and not registry_event_valid(event, permitted):
+                continue
+            if source not in {"openFDA", "SEC EDGAR", "ClinicalTrials.gov"}:
                 continue
             url = official_url(event.get("source_url"), source)
             if url is None:
@@ -123,6 +138,8 @@ def message(event: dict[str, Any]) -> str:
         f"الحدث: {e(event['label'])}",
         f"تاريخ القرار/الإفصاح: {e(event['date'])}",
         f'<a href="{e(event["url"])}">الوثيقة الرسمية</a> · <a href="{SITE}">رادار المحفزات</a>',
+        *( ["سجل يقدمه الراعي؛ لا يثبت نجاح العلاج أو فشله. Courtesy of the U.S. National Library of Medicine"]
+           if event["source"] == "ClinicalTrials.gov" else []),
         "⚠️ لا تتوفر أسعار تنفيذ أو تأكيد اتجاه CALL/PUT من هذا الخبر. ليست توصية شراء.",
     ])
 
@@ -227,6 +244,8 @@ DIGEST_TYPES = {
     "LISTING_NOTICE": "إشعار إدراج", "MATERIAL_AGREEMENT": "اتفاقية",
     "EARNINGS_RELEASE": "نتائج مالية", "INSIDER_FILING": "ملكية مطلعين",
     "PERIODIC_REPORT": "تقرير دوري",
+    "TRIAL_RESULTS_POSTED": "نشر نتائج بالسجل (الاتجاه غير مقيم)",
+    "TRIAL_STATUS_REVIEW": "مراجعة حالة دراسة (سبب الإيقاف غير مثبت)",
 }
 
 
@@ -261,7 +280,8 @@ def daily_brief_candidates(report: dict[str, Any], *, now: datetime,
             source = str(event.get("source") or "")
             if ((source == "openFDA" and source_flags.get("openfda") is not True)
                     or (source == "SEC EDGAR" and source_flags.get("sec_edgar") is not True)
-                    or source not in {"openFDA", "SEC EDGAR"}):
+                    or (source == "ClinicalTrials.gov" and not registry_event_valid(event, source_flags))
+                    or source not in {"openFDA", "SEC EDGAR", "ClinicalTrials.gov"}):
                 continue
             importance = str(event.get("importance") or "")
             kind = str(event.get("kind") or "")
@@ -297,6 +317,7 @@ def daily_brief_message(report: dict[str, Any], picks: list[dict[str, Any]],
     sources = report.get("sources") or {}
     source_status = ("openFDA متاح" if sources.get("openfda") is True else "openFDA غير متاح")
     source_status += (" | SEC متاح" if sources.get("sec_edgar") is True else " | SEC غير متاح")
+    source_status += " | سجل الدراسات " + ("متاح" if sources.get("clinicaltrials") is True else "غير متاح")
     lines = [
         f"🗓 <b>GHAZI RADAR | الملخص الرسمي اليومي | {today}</b>",
         f"المصادر: {html.escape(source_status)}",
@@ -324,6 +345,8 @@ def daily_brief_message(report: dict[str, Any], picks: list[dict[str, Any]],
             f" | {html.escape(item['date'])}{caution}"
             f" | <a href=\"{html.escape(item['url'], quote=True)}\">المصدر</a>"
         )
+    if any(item["source"] == "ClinicalTrials.gov" for item in picks):
+        lines.append("سجلات الدراسات لا تثبت نجاح العلاج؛ Courtesy of the U.S. National Library of Medicine. لا تأييد من NLM وقد لا تعكس آخر تعديل.")
     lines.extend([
         f'<a href="{SITE}">تصفح المحفزات والشارتات</a>',
         ("⚠️ لا توجد أسعار أو عقود تنفيذية متحققة من هذه الوقائع. "

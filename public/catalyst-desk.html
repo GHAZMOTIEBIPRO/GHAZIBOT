@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0a1220">
-<meta name="description" content="GHAZI RADAR: شاشة فرز محفزات SEC وFDA الرسمية فقط، حسب المصدر وتاريخ الحدث.">
+<meta name="description" content="GHAZI RADAR: شاشة فرز محفزات SEC وFDA وسجل الدراسات، حسب المصدر وتاريخ الحدث.">
 <title>GHAZI RADAR — Official Catalyst Desk</title>
 <link rel="stylesheet" href="./catalyst-desk.css?v=20261022-2">
 </head>
 <body>
 <main class="shell">
+  <p class="truth-foot">بيانات سجل الدراسات: Courtesy of the U.S. National Library of Medicine. لا تأييد من NLM؛ قد لا تعكس أحدث تعديل. <a href="https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/clinical_registry.json">قاعدة بيانات السجل</a> متاحة بترخيص <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL-1.0</a>.</p>
   <nav class="top"><a href="./index.html" class="back">← GHAZI RADAR</a><span class="tag">OFFICIAL CATALYST INTELLIGENCE</span></nav>
   <header class="hero">
     <div><p class="kicker">BLACK BOX Ω · OFFICIAL SOURCE DESK</p>
@@ -44,7 +45,7 @@
   <section class="control" aria-label="فلترة الرادار">
     <label>بحث برمز الشركة أو الحدث<input id="desk-query" type="search" placeholder="مثال: ABBV أو FDA أو KEYTRUDA"></label>
     <label>أهمية الحدث<select id="desk-importance"><option value="all">جميع الدرجات</option><option value="HIGH">مرتفعة</option><option value="MEDIUM">متوسطة</option><option value="LOW">منخفضة</option></select></label>
-    <label>نوع الحدث<select id="desk-kind"><option value="all">كل الأنواع</option><option value="FDA_APPROVAL">موافقات FDA</option><option value="FDA_SUPPLEMENT">تحديثات FDA</option><option value="FDA_RECALL">سحب منتجات</option><option value="DILUTION_RISK">مخاطر تخفيف</option><option value="other">إفصاحات رسمية أخرى</option></select></label>
+    <label>نوع الحدث<select id="desk-kind"><option value="all">كل الأنواع</option><option value="FDA_APPROVAL">موافقات FDA</option><option value="FDA_SUPPLEMENT">تحديثات FDA</option><option value="FDA_RECALL">سحب منتجات</option><option value="DILUTION_RISK">مخاطر تخفيف</option><option value="TRIAL_RESULTS_POSTED">نتائج دراسات منشورة</option><option value="TRIAL_STATUS_REVIEW">حالة الدراسات</option><option value="other">إفصاحات رسمية أخرى</option></select></label>
     <label>الترتيب<select id="desk-sort"><option value="importance">الأهم أولًا</option><option value="recent">الأحدث أولًا</option><option value="symbol">رمز الشركة</option></select></label>
   </section>
   <section id="desk-chart-panel" class="chart-desk" aria-label="شارت TradingView المستضاف" hidden>
@@ -67,7 +68,7 @@
   <section id="desk-results" class="results" aria-live="polite"><p class="empty">جاري تحميل الأحداث الرسمية…</p></section>
   <footer>تحليل وصفي من الإفصاحات التنظيمية، لا يمثل توصية CALL / PUT أو توقع ارتفاع. يؤكد كل رابط المصدر الأصلي فقط، ولا يثبت أثره السعري. <a href="./index.html">العودة إلى GHAZI RADAR</a></footer>
 </main>
-<script src="./catalyst-desk.js?v=20261022-1" defer></script>
+<script src="./catalyst-desk.js?v=clinical-20261022-1" defer></script>
 <script src="./catalyst-chart.js?v=20261022-1" defer></script>
 <script src="./catalyst-source-truth.js?v=20261022-2" defer></script>
 </body></html>
