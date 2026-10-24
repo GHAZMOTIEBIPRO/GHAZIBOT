@@ -15,7 +15,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
 from scripts.catalyst_health_context import health_context
@@ -137,7 +137,7 @@ def message(event: dict[str, Any]) -> str:
         f"نوع: {e(event['kind'])} · أهمية للمتابعة: {e(event['importance'])}",
         f"الحدث: {e(event['label'])}",
         f"تاريخ القرار/الإفصاح: {e(event['date'])}",
-        f'<a href="{e(event["url"])}">الوثيقة الرسمية</a> · <a href="{SITE}">رادار المحفزات</a>',
+        f'<a href="{e(event["url"])}">الوثيقة الرسمية</a> · <a href="{SITE}?symbol={quote(event["symbol"], safe="")}">شارت وقراءة فنية للسهم</a>',
         *( ["سجل يقدمه الراعي؛ لا يثبت نجاح العلاج أو فشله. Courtesy of the U.S. National Library of Medicine"]
            if event["source"] == "ClinicalTrials.gov" else []),
         "⚠️ لا تتوفر أسعار تنفيذ أو تأكيد اتجاه CALL/PUT من هذا الخبر. ليست توصية شراء.",
