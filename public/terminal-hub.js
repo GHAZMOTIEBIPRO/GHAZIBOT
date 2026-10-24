@@ -47,7 +47,8 @@
   const fmt=(value,places=2)=>typeof value==="number" && Number.isFinite(value)
     ?value.toLocaleString("en-US",{maximumFractionDigits:places}):"—";
   const validDate=value=>{
-    const t=Date.parse(value||"");return Number.isFinite(t)?t:null;
+    if(typeof value!=="string"||!/(Z|[+-]\d{2}:\d{2})$/.test(value))return null;
+    const t=Date.parse(value);return Number.isFinite(t)?t:null;
   };
   const stamp=value=>{
     const t=validDate(value);
@@ -1814,6 +1815,13 @@
       box.append(item);
     }
   }
+  function trustReadiness(report,runtime,now=Date.now()){
+    const source=validDate(report?.generated_at), stamp=validDate(runtime?.generated_at);
+    return {reportCurrent:source!==null&&source<=now&&now-source<=720*60000,
+      executionReady:stamp!==null&&stamp<=now&&now-stamp<=90*60000&&
+        runtime?.option_provider_readiness?.production_quote_ready===true&&
+        runtime?.option_provider_readiness?.production_flow_ready===true};
+  }
   function renderTrust(){
     const wrap=$("terminal-trust-grid");if(!wrap)return;
     wrap.replaceChildren();
@@ -1821,11 +1829,10 @@
     const trustTime=validDate(report?.generated_at);
     const now=Date.now();
     const trustAge=trustTime===null?null:Math.max(0,Math.round((now-trustTime)/60000));
-    const reportCurrent=trustAge!==null&&trustAge<=720;
+    const {reportCurrent,executionReady}=trustReadiness(report,runtime,now);
     const sources=Array.isArray(report?.sources)?report.sources:[];
     const status=runtime?.option_provider_readiness;
-    const executionReady=status?.production_quote_ready===true &&
-      status?.production_flow_ready===true;
+
     put("terminal-trust-summary",
       "فحص المصادر: "+(trustTime===null?"غير متاح":stamp(report.generated_at))+
       (trustAge===null?"":" · عمر التقرير "+trustAge+" دقيقة")+
@@ -1999,7 +2006,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines};
+    module.exports={trustReadiness,weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

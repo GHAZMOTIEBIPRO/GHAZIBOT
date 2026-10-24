@@ -54,7 +54,8 @@
       const healthy=path?.status==="HEALTHY"&&age!==null&&ts<=now&&
         age<=Math.min(120,Number.isFinite(path.maximum_age_minutes)?path.maximum_age_minutes:90);
       summary.push({key,name:label,value:healthy?"تقرير تشغيل حديث":"لا يوجد دليل تشغيل حديث",
-        note:validEngines?(age!==null?"وقت بيانات المحرك: "+path.generated_at+
+        note:validEngines?(path?.reasons?.some(r=>String(r).startsWith("SOURCE_ARTIFACT_MISSING"))?
+          "آخر تشغيل لم ينتج ملف مسح متحققًا؛ نجاح المهمة لا يعني اكتمال التحليل.":age!==null?"وقت بيانات المحرك: "+path.generated_at+
           " · عمر البيانات "+age+" دقيقة":"وقت بيانات المحرك غير محدد"):
           "تقرير المحركات غائب أو قديم؛ لا تعتمد على الحالة القديمة.",
         status:healthy?"healthy":"unavailable"});

@@ -8,6 +8,7 @@ drawdown, win probabilities or executable option metrics from these samples.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from datetime import datetime, timezone
@@ -45,10 +46,22 @@ def build_quantstats_research(
         row for row in rows
         if row.get("_return_60m") is not None and _finite(row["_return_60m"]) is not None
     ]
+    legacy_count = sum(not (
+        isinstance(row.get("measurement_policy"), dict)
+        and row["measurement_policy"].get("measurement_version") == 2
+        and row["measurement_policy"].get("bar_completion_enforced_as_of") is True
+    ) for row in qualified)
+    qualified = [row for row in qualified if
+        isinstance(row.get("measurement_policy"), dict)
+        and row["measurement_policy"].get("measurement_version") == 2
+        and row["measurement_policy"].get("bar_completion_enforced_as_of") is True]
     sessions = {str(row["signal_session_date"]) for row in qualified}
     base = {
         "schema": "quantstats_stock_signals_shadow_v1",
         "source": "stock_outcome_audit_60m",
+        "audit_sha256": hashlib.sha256(json.dumps(audit, sort_keys=True, ensure_ascii=False,
+            allow_nan=False, separators=(",", ":")).encode()).hexdigest(),
+        "completed_bar_measurement_required": True,
         "provider": "QuantStats",
         "source_category": "RESEARCH_ONLY_UNOFFICIAL_YAHOO_BARS",
         "decision_authority": False,
@@ -61,6 +74,7 @@ def build_quantstats_research(
         "scope": "non-annualized, equally-weighted per-signal 60m directional percentage outcomes; not daily P&L",
         "counts": {
             "eligible_decisive_observations": len(qualified),
+            "excluded_legacy_decisive_observations": legacy_count,
             "distinct_sessions": len(sessions),
             "coverage_60m_pct": coverage_60,
         },

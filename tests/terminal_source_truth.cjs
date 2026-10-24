@@ -67,3 +67,10 @@ assert.equal(s.alpacaReadiness({...alpaca,raw_market_data_published:true},now).s
 assert.equal(s.alpacaReadiness({...alpaca,generated_at:"2026-10-16T22:50:00Z"},now).status,"unavailable");
 assert.equal(s.alpacaReadiness({...alpaca,generated_at:"2026-10-22T02:00:00Z"},now).status,"unavailable");
 assert.ok(s.URLS.alpaca.endsWith("/alpaca_iex_vcp_health.json"));
+
+const hub=require('../public/terminal-hub.js');
+const readyReport={generated_at:'2026-10-21T22:50:00Z',option_provider_readiness:{production_quote_ready:true,production_flow_ready:true}};
+assert.equal(hub.trustReadiness(readyReport,readyReport,now).executionReady,true);
+assert.equal(hub.trustReadiness(readyReport,{...readyReport,generated_at:'2026-10-20T22:50:00Z'},now).executionReady,false);
+assert.equal(hub.trustReadiness({...readyReport,generated_at:'2030-01-01T00:00:00Z'},readyReport,now).reportCurrent,false);
+assert.equal(hub.trustReadiness({...readyReport,generated_at:'2026-10-21T22:50:00'},readyReport,now).reportCurrent,false);

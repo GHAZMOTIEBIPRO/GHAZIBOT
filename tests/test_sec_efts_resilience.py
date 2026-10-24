@@ -145,3 +145,18 @@ def test_expired_circuit_allows_probe_and_closes_on_success(monkeypatch, tmp_pat
     assert circuit["http_status"] == 200
     assert circuit["consecutive_403"] == 0
     assert circuit["decision_authority"] is False
+
+
+def test_prime_does_not_claim_unchecked_fallbacks_are_active(monkeypatch, tmp_path):
+    from scripts import prime_sec_efts
+
+    def blocked(*args, **kwargs):
+        raise requests.HTTPError("blocked")
+
+    monkeypatch.setattr(sec_efts_resilience, "request_efts_json", blocked)
+    monkeypatch.setattr(prime_sec_efts, "STATUS_PATH", tmp_path / "status.json")
+    assert prime_sec_efts.main() == 0
+    result = json.loads((tmp_path / "status.json").read_text())
+    assert result["fallbacks_active"] == []
+    assert result["fallbacks_configured"]
+    assert result["fallback_availability"] == "NOT_VERIFIED_BY_EFTS_PROBE"

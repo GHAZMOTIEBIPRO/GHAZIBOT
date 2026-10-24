@@ -6,6 +6,7 @@ from scripts.run_quantstats_stock_shadow import build_quantstats_research
 def _event(i, *, pct=None, status=None, covered=True):
     return {
         "signal_id": str(i),
+        "measurement_policy": {"measurement_version": 2, "bar_completion_enforced_as_of": True},
         "symbol": "MU" if i % 2 else "AAPL",
         "signal_time": f"2026-10-{i // 2 + 1:02d}T14:00:00+00:00",
         "signal_session_date": f"2026-10-{i // 2 + 1:02d}",
@@ -116,3 +117,15 @@ def test_cost_sensitivity_uses_round_trip_basis_points_not_portfolio_pnl():
     assert scenarios[-1]["event_mean_net_return_pct"] == 0.0
     assert all(row["hypothetical"] is True for row in scenarios)
     assert "cost_sensitivity" not in build_quantstats_research({})
+
+
+def test_legacy_outcomes_are_not_promoted_by_new_code():
+    data = _audit()
+    for row in data["records"].values():
+        row.pop("measurement_policy")
+    result = build_quantstats_research(data)
+    assert result["status"] == "INSUFFICIENT_EVIDENCE"
+    assert result["counts"]["eligible_decisive_observations"] == 0
+    assert result["counts"]["excluded_legacy_decisive_observations"] == 24
+    assert result["metrics"] == {}
+    assert result["completed_bar_measurement_required"] is True

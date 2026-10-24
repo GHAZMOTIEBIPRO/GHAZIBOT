@@ -54,7 +54,7 @@ def _parse_timestamp(value: Any) -> datetime | None:
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        return None
     return parsed.astimezone(timezone.utc)
 
 
@@ -94,13 +94,13 @@ def _path_status_from_payload(
     generated_at = str(payload.get("generated_at") or "")
     generated = _parse_timestamp(generated_at)
     maximum_age = float(spec["maximum_age_minutes"])
-    if generated is None:
+    if generated is None or generated > current:
         return {
             "status": "CRITICAL",
             "file": relative,
             "generated_at": generated_at or None,
             "maximum_age_minutes": maximum_age,
-            "reasons": ["Payload has no valid generated_at timestamp."],
+            "reasons": ["Payload timestamp is missing, naive, or in the future."],
         }
 
     age_minutes = max(0.0, (current - generated).total_seconds() / 60.0)
@@ -141,6 +141,8 @@ def _path_status_from_payload(
         "maximum_age_minutes": maximum_age,
         "candidate_count": _non_empty_count(payload, tuple(spec["collections"])),
         "provider_readiness": readiness_status,
+        "production_quote_ready": isinstance(readiness, dict) and readiness.get("production_quote_ready") is True,
+        "production_flow_ready": isinstance(readiness, dict) and readiness.get("production_flow_ready") is True,
         "reasons": list(dict.fromkeys(reasons))[:8],
     }
 
@@ -158,7 +160,9 @@ def _aged_prior_status(prior: dict[str, Any], current: datetime) -> dict[str, An
         maximum_age = float(aged.get("maximum_age_minutes"))
     except (TypeError, ValueError):
         return aged
-    if generated is None:
+    if generated is None or generated > current:
+        aged["status"] = "CRITICAL"
+        aged["reasons"] = ["Previous payload timestamp is missing, naive, or in the future."]
         return aged
     age_minutes = max(0.0, (current - generated).total_seconds() / 60.0)
     aged["age_minutes"] = round(age_minutes, 2)
@@ -184,7 +188,8 @@ def _write_public_runtime_metadata(state_root: Path, status: dict[str, Any]) -> 
     paths = status.get("paths") if isinstance(status.get("paths"), dict) else {}
     options = paths.get("options") if isinstance(paths.get("options"), dict) else {}
     readiness = str(options.get("provider_readiness") or "UNKNOWN")
-    production_ready = readiness == "PRODUCTION_QUOTE_READY"
+    production_ready = options.get("status") == "HEALTHY" and options.get("production_quote_ready") is True
+    flow_ready = production_ready and options.get("production_flow_ready") is True
     overall = str(status.get("overall_status") or "CRITICAL")
     generated_at = str(status.get("generated_at") or "")
     safe_paths = {
@@ -220,7 +225,7 @@ def _write_public_runtime_metadata(state_root: Path, status: dict[str, Any]) -> 
             "critical_pipeline_ok": overall != "CRITICAL",
             "critical_pipeline_error_count": 0 if overall != "CRITICAL" else 1,
             "option_quotes_production_ready": production_ready,
-            "option_flow_production_ready": production_ready,
+            "option_flow_production_ready": flow_ready,
         },
         "workflow_health": {
             "publisher": status.get("publisher", {}),
@@ -239,7 +244,7 @@ def _write_public_runtime_metadata(state_root: Path, status: dict[str, Any]) -> 
         "option_provider_readiness": {
             "status": readiness,
             "production_quote_ready": production_ready,
-            "production_flow_ready": production_ready,
+            "production_flow_ready": flow_ready,
             "reasons": options.get("reasons", []),
         },
         "workflow_health": {
@@ -272,6 +277,7 @@ def build_live_dashboard_status(
     current: datetime,
     source_path: str | None = None,
     source_payload: Path | None = None,
+    missing_artifact: bool = False,
 ) -> dict[str, Any]:
     previous = _load_json(state_root / "public/data/live_dashboard_status.json") or {}
     previous_paths = previous.get("paths") if isinstance(previous.get("paths"), dict) else {}
@@ -284,13 +290,21 @@ def build_live_dashboard_status(
             else _path_status(name, state_root, current)
         )
 
-    if (source_path is None) != (source_payload is None):
+    if missing_artifact and (source_path not in PATH_SPECS or source_payload is not None):
+        raise ValueError("missing-artifact requires a known source path and no payload")
+    if not missing_artifact and (source_path is None) != (source_payload is None):
         raise ValueError("source_path and source_payload must be provided together")
     if source_path is not None and source_payload is not None:
         payload = _load_json(source_payload)
         if payload is None:
             raise ValueError(f"source payload is not a JSON object: {source_payload}")
         paths[source_path] = _path_status_from_payload(source_path, payload, current)
+
+    if missing_artifact:
+        # Keep the last data timestamp; the current attempt did not produce market data.
+        paths[source_path] = {**paths[source_path], "status": "UNAVAILABLE",
+                              "last_attempt_at": current.isoformat(),
+                              "reasons": ["SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact."]}
 
     critical = [
         name
@@ -327,7 +341,7 @@ def build_live_dashboard_status(
         "publisher": {
             "source_workflow": source_workflow,
             "source_run_id": str(source_run_id),
-            "mode": "artifact_to_bot_state_status_only",
+            "mode": "missing_artifact_status_only" if missing_artifact else "artifact_to_bot_state_status_only",
         },
     }
 
@@ -340,6 +354,7 @@ def publish_live_dashboard_status(
     current: datetime,
     source_path: str | None = None,
     source_payload: Path | None = None,
+    missing_artifact: bool = False,
 ) -> Path:
     output = state_root / "public/data/live_dashboard_status.json"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -350,10 +365,12 @@ def publish_live_dashboard_status(
         current=current,
         source_path=source_path,
         source_payload=source_payload,
+        missing_artifact=missing_artifact,
     )
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     validate_runtime_file(output)
-    _write_public_runtime_metadata(state_root, payload)
+    if not missing_artifact:
+        _write_public_runtime_metadata(state_root, payload)
     return output
 
 
@@ -366,9 +383,10 @@ def main() -> int:
     parser.add_argument("--source-run-id", required=True)
     parser.add_argument("--source-path", choices=sorted(PATH_SPECS))
     parser.add_argument("--source-payload")
+    parser.add_argument("--missing-artifact", action="store_true")
     parser.add_argument("--now", help="ISO-8601 UTC time for deterministic validation")
     args = parser.parse_args()
-    if bool(args.source_path) != bool(args.source_payload):
+    if not args.missing_artifact and bool(args.source_path) != bool(args.source_payload):
         parser.error("--source-path and --source-payload must be provided together")
 
     output = publish_live_dashboard_status(
@@ -378,6 +396,7 @@ def main() -> int:
         current=_now(args.now),
         source_path=args.source_path,
         source_payload=Path(args.source_payload) if args.source_payload else None,
+        missing_artifact=args.missing_artifact,
     )
     print(output)
     return 0

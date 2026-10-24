@@ -143,3 +143,40 @@ def test_live_status_merges_into_export_data_status_instead_of_erasing_it(tmp_pa
     assert merged["runtime_source"] == "bot-state/live_dashboard_status"
     assert "workflow_health" in merged
     assert merged["generated_at"] != "2026-09-29T14:00:00+00:00"
+
+
+def test_missing_artifact_preserves_data_time_and_does_not_refresh_market_metadata(tmp_path):
+    generated = "2026-10-21T12:00:00+00:00"
+    _write(tmp_path / "public/data/live_dashboard_status.json", {"paths": {"stocks": {
+        "status": "HEALTHY", "generated_at": generated, "maximum_age_minutes": 90}}})
+    _write(tmp_path / "public/data/data-status.json", {"generated_at": generated})
+    output = publish_live_dashboard_status(state_root=tmp_path, source_workflow="stock-radar.yml",
+        source_run_id="123", source_path="stocks", missing_artifact=True,
+        current=datetime(2026, 10, 24, tzinfo=timezone.utc))
+    data = json.loads(output.read_text())
+    assert data["paths"]["stocks"]["status"] == "UNAVAILABLE"
+    assert data["paths"]["stocks"]["generated_at"] == generated
+    assert data["publisher"]["mode"] == "missing_artifact_status_only"
+    assert json.loads((tmp_path / "public/data/data-status.json").read_text())["generated_at"] == generated
+
+
+def test_quote_readiness_never_implies_flow_or_survives_staleness(tmp_path):
+    generated = "2026-10-24T12:00:00+00:00"
+    _write(tmp_path / "public/data/options_latest.json", {"generated_at": generated,
+        "provider_readiness": {"production_quote_ready": True, "production_flow_ready": False}})
+    publish_live_dashboard_status(state_root=tmp_path, source_workflow="options", source_run_id="1",
+        current=datetime(2026, 10, 24, 12, 5, tzinfo=timezone.utc))
+    status_file = tmp_path / "public/data/data-status.json"
+    readiness = json.loads(status_file.read_text())["option_provider_readiness"]
+    assert readiness["production_quote_ready"] is True
+    assert readiness["production_flow_ready"] is False
+    publish_live_dashboard_status(state_root=tmp_path, source_workflow="options", source_run_id="2",
+        current=datetime(2026, 10, 24, 14, tzinfo=timezone.utc))
+    assert json.loads(status_file.read_text())["option_provider_readiness"]["production_quote_ready"] is False
+
+
+def test_future_payload_is_never_healthy(tmp_path):
+    _write(tmp_path / "public/data/stocks_latest.json", {"generated_at": "2030-01-01T00:00:00Z"})
+    result = publish_live_dashboard_status(state_root=tmp_path, source_workflow="stocks", source_run_id="1",
+        current=datetime(2026, 10, 24, tzinfo=timezone.utc))
+    assert json.loads(result.read_text())["paths"]["stocks"]["status"] == "CRITICAL"

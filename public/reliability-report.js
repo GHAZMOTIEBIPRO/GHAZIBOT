@@ -15,7 +15,7 @@
       "أخطاء الفحص: "+number(q.failure_count)+" · بصمات محفوظة: "+number(i.tracked),
       "سجلات تغيرت منذ أول مشاهدة: "+number(i.ever_changed),
       "حالة الإحصاء البحثي: "+({WITHHELD:"محجوب لعدم اكتمال فحص الجودة",INSUFFICIENT_EVIDENCE:"العينة غير كافية",
-        RESEARCH_METRICS_ONLY:"إحصاء وصفي متاح داخليًا؛ لا يثبت الربحية",UNAVAILABLE:"غير متاح"}[report.statistics_status]||"غير متاحة"),
+        RESEARCH_METRICS_ONLY:"إحصاء وصفي متاح داخليًا؛ لا يثبت الربحية",UNAVAILABLE:"غير متاح"}[(report.statistics_input_verified===true?report.statistics_status:"WITHHELD")]||"غير متاحة"),
       "آخر فحص: "+raw,
       "البصمة تبدأ عند أول مشاهدة في المدقق، ولا تثبت إرسال التنبيه. تكاليف الاختبار افتراضية؛ لا تمثل تنفيذًا فعليًا."];
   }
