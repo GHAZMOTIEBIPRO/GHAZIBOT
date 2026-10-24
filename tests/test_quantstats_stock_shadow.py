@@ -106,3 +106,13 @@ def test_quantstats_missing_dependency_does_not_modify_the_market_gate(monkeypat
     assert report["status"] == "UNAVAILABLE"
     assert report["metrics"] == {}
     assert report["execution_grade"] is False
+
+
+def test_cost_sensitivity_uses_round_trip_basis_points_not_portfolio_pnl():
+    result = build_quantstats_research(_audit(), quantstats_module=SimpleNamespace(stats=_ReferenceQuantStats()))
+    scenarios = result["cost_sensitivity"]
+    assert [row["round_trip_cost_bps"] for row in scenarios] == [0, 10, 25, 50]
+    assert scenarios[0]["event_mean_net_return_pct"] == 0.5
+    assert scenarios[-1]["event_mean_net_return_pct"] == 0.0
+    assert all(row["hypothetical"] is True for row in scenarios)
+    assert "cost_sensitivity" not in build_quantstats_research({})
