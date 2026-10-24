@@ -4,6 +4,11 @@ name: BLACK BOX Omega Live Dashboard Status
 run-name: "Live Dashboard Status · ${{ inputs.source_workflow || github.event.workflow_run.path || 'manual' }}"
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/live-dashboard-status.yml"
+      - "scripts/publish_live_dashboard_status.py"
   workflow_dispatch:
     inputs:
       source_workflow:
@@ -44,7 +49,7 @@ env:
 jobs:
   publish-status:
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_dispatch' || github.event_name == 'push' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -53,7 +58,7 @@ jobs:
       EVENT_NAME: ${{ github.event_name }}
       EVENT_WORKFLOW: ${{ github.event.workflow_run.name }}
       EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
-      INPUT_WORKFLOW: ${{ inputs.source_workflow }}
+      INPUT_WORKFLOW: ${{ inputs.source_workflow || 'stock-radar.yml' }}
 
     steps:
       - name: Check out publisher from main
@@ -81,7 +86,7 @@ jobs:
           required_file=""
           source_path=""
 
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "push" ]]; then
             workflow_file="$INPUT_WORKFLOW"
             case "$workflow_file" in
               fast-explosion-radar.yml) workflow_name="BLACK BOX Omega Fast Explosion Radar" ;;
@@ -119,7 +124,7 @@ jobs:
 
           # A successful workflow can legitimately have no artifact when the market is closed.
           # Resolve only a run that actually contains the required validated artifact.
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "push" ]]; then
             run_id="0"
             while read -r candidate; do
               [[ -n "$candidate" ]] || continue
