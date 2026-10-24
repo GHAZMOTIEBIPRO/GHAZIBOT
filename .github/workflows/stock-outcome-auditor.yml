@@ -16,6 +16,8 @@ on:
       - "scripts/run_stock_outcome_audit.py"
       - "scripts/publish_stock_audit_summary.py"
       - "scripts/run_quantstats_stock_shadow.py"
+      - "scripts/build_reliability_report.py"
+      - "options_radar/audit_quality.py"
   schedule:
     # Mid-session evidence capture reduces reliance on one after-hours job.
     - cron: "45 18 * * 1-5"
@@ -189,6 +191,14 @@ jobs:
           --audit data/live/stock_outcome_audit.json
           --output state/runtime/public/data/stock_audit_public.json
 
+      - name: Validate observations and preserve first-observed fingerprints
+        run: >-
+          python -m scripts.build_reliability_report
+          --audit data/live/stock_outcome_audit.json
+          --stats data/live/quantstats_stock_signals_shadow.json
+          --ledger state/runtime/audit_entry_fingerprints.json
+          --output state/runtime/public/data/reliability_report.json
+
       - name: Publish only the audited research digest
         shell: bash
         run: |
@@ -196,7 +206,10 @@ jobs:
           cd state
           git config user.name "GHAZI RADAR Evidence Audit"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/stock_audit_public.json
+          git add runtime/public/data/stock_audit_public.json runtime/public/data/reliability_report.json
+          if [[ -f runtime/audit_entry_fingerprints.json ]]; then
+            git add runtime/audit_entry_fingerprints.json
+          fi
           if git diff --cached --quiet; then
             echo "Public audit unchanged."
             exit 0

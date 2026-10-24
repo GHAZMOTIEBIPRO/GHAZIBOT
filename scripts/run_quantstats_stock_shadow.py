@@ -109,6 +109,14 @@ def build_quantstats_research(
         "event_negative_count": negatives,
         "event_zero_count": int((event_returns == 0).sum()),
     }
+    # Fixed round-trip cost assumptions; not measured spreads, fills or fees.
+    # Event observations overlap and must never become a portfolio equity curve.
+    base["cost_sensitivity"] = [
+        {"round_trip_cost_bps": bps, "hypothetical": True,
+         "event_mean_net_return_pct": round(float(event_returns.mean()) * 100 - bps / 100, 4),
+         "positive_after_cost_fraction": round(float((event_returns - bps / 10000 > 0).mean()), 4)}
+        for bps in (0, 10, 25, 50)
+    ]
     return {**base, "status": "RESEARCH_METRICS_ONLY", "reason": "not_portfolio_returns"}
 
 

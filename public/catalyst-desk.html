@@ -48,6 +48,12 @@
     <label>نوع الحدث<select id="desk-kind"><option value="all">كل الأنواع</option><option value="FDA_APPROVAL">موافقات FDA</option><option value="FDA_SUPPLEMENT">تحديثات FDA</option><option value="FDA_RECALL">سحب منتجات</option><option value="DILUTION_RISK">مخاطر تخفيف</option><option value="TRIAL_RESULTS_POSTED">نتائج دراسات منشورة</option><option value="TRIAL_STATUS_REVIEW">حالة الدراسات</option><option value="other">إفصاحات رسمية أخرى</option></select></label>
     <label>الترتيب<select id="desk-sort"><option value="importance">الأهم أولًا</option><option value="recent">الأحدث أولًا</option><option value="symbol">رمز الشركة</option></select></label>
   </section>
+  <section class="chart-desk" aria-labelledby="reliability-title">
+    <h2 id="reliability-title">جودة البيانات وسجل المتابعة</h2>
+    <p>اختبارات صحة السجلات مستقلة عن دقة التوقعات. لا توجد نسبة ثقة مثبتة بالتداول الحقيقي.</p>
+    <button id="reliability-refresh" type="button">تحديث فحص الجودة</button>
+    <div id="reliability-details" role="status">جارٍ تحميل تقرير المدقق…</div>
+  </section>
   <form id="desk-symbol-form" class="desk-symbol-form" aria-label="تحليل سهم دون حساب">
     <label for="desk-symbol">افتح شارت وقراءة فنية لأي سهم</label>
     <input id="desk-symbol" name="symbol" placeholder="NVDA" maxlength="8" dir="ltr" autocomplete="off" aria-describedby="desk-symbol-error">
@@ -83,4 +89,5 @@
 <script src="./catalyst-desk.js?v=clinical-20261022-1" defer></script>
 <script src="./catalyst-chart.js?v=20261024-1" defer></script>
 <script src="./catalyst-source-truth.js?v=20261022-2" defer></script>
+<script src="./reliability-report.js?v=20261024-1" defer></script>
 </body></html>

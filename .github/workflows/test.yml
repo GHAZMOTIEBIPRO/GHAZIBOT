@@ -38,6 +38,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Reliability validation regression
+        run: |
+          ruff check options_radar/audit_quality.py scripts/build_reliability_report.py tests/test_audit_reliability.py
+          node --check public/reliability-report.js
+          node tests/reliability_report.cjs
+
       - name: Unit and integration tests
         run: pytest -q
 
