@@ -58,6 +58,7 @@ def test_stale_future_schema_wrong_or_price_claims_not_produced():
 def test_escaped_html_and_send_failure_retry_state():
     event = candidates(report(row(label="<script>alert(1)</script>")), now=NOW)[0]
     text = message(event)
+    assert "catalyst-desk.html?symbol=" + event["symbol"] in text
     assert "&lt;script&gt;" in text and "<script>" not in text
     assert "ليست توصية" in text
     old, _ = run(report(), None, now=NOW, send=lambda _: None)
