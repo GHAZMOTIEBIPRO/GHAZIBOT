@@ -68,3 +68,16 @@ def test_corrupt_existing_ledger_is_not_silently_reset(tmp_path):
         read(file, optional=True)
     with pytest.raises(ValueError):
         update_ledger(audit(), {"schema": "bad"}, now=NOW)
+
+
+def test_stats_from_another_audit_or_legacy_policy_are_withheld():
+    from scripts.build_reliability_report import digest
+    data = audit()
+    stats = {"audit_sha256": digest(data), "completed_bar_measurement_required": True,
+             "decision_authority": False, "status": "INSUFFICIENT_EVIDENCE"}
+    assert build_report(data, {}, stats, now=NOW)[0]["statistics_input_verified"] is True
+    stats["audit_sha256"] = "other"
+    assert build_report(data, {}, stats, now=NOW)[0]["statistics_status"] == "WITHHELD"
+    stats["audit_sha256"] = digest(data)
+    stats["completed_bar_measurement_required"] = False
+    assert build_report(data, {}, stats, now=NOW)[0]["statistics_status"] == "WITHHELD"

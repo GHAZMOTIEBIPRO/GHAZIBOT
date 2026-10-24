@@ -178,7 +178,7 @@ def request_efts_json(
 
     A 403 is not retried. It opens a durable cooldown so later workflows can
     skip the same futile request while official latest-form feeds, Company
-    Facts/submissions data, and the last valid EFTS cache remain active.
+    Facts/submissions data, and event caches may be configured but require separate availability checks.
     """
 
     if max_attempts < 1:
@@ -200,7 +200,7 @@ def request_efts_json(
             raise requests.HTTPError(
                 "SEC EFTS returned 403 Forbidden. The request is declared, but "
                 "the shared runner IP may be blocked; a persistent cooldown was opened. "
-                "Official latest-form, submissions/Company Facts, and cached-event fallbacks remain active.",
+                "Fallback availability has not been verified by this EFTS request.",
                 response=response,
             )
         if status_code in _RETRYABLE_STATUSES and attempt + 1 < max_attempts:

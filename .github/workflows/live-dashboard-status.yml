@@ -110,6 +110,13 @@ jobs:
             *) echo "Unsupported workflow event: $workflow_name" >&2; exit 2 ;;
           esac
 
+          publish_missing() {
+            python publisher/scripts/publish_live_dashboard_status.py \
+              --state-root state/runtime --source-workflow "$workflow_name" \
+              --source-run-id "${run_id:-0}" --source-path "$source_path" --missing-artifact
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+          }
+
           # A successful workflow can legitimately have no artifact when the market is closed.
           # Resolve only a run that actually contains the required validated artifact.
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
@@ -123,13 +130,15 @@ jobs:
             done < <(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow_file" --status success --branch main --limit 20 --json databaseId --jq '.[].databaseId')
           else
             if ! gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" --jq '[.artifacts[] | select(.name == "'"$artifact_name"'" and .expired == false)] | length' | grep -q '^[1-9]'; then
-              echo "No $artifact_name artifact for source run $run_id; leaving prior live status unchanged."
+              echo "No $artifact_name artifact for source run $run_id; publishing missing-artifact status."
+              publish_missing
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           fi
           if [[ "$run_id" == "0" || -z "$run_id" ]]; then
-            echo "No successful source run contains a non-expired $artifact_name artifact; leaving prior live status unchanged."
+            echo "No successful source run contains a non-expired $artifact_name artifact; publishing missing-artifact status."
+            publish_missing
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -193,7 +202,7 @@ jobs:
           fi
 
       - name: Commit public runtime status to bot-state
-        if: steps.source.outputs.skip != 'true'
+        if: steps.source.outputs.skip != 'true' || steps.source.outputs.missing == 'true'
         shell: bash
         run: |
           set -euo pipefail

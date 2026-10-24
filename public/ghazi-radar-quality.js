@@ -11,7 +11,8 @@
   const integer = (value) => Number.isSafeInteger(value) && value >= 0
     ? value.toLocaleString("ar-SA") : "—";
   const timestamp = (value) => {
-    const t = Date.parse(value || "");
+    if(typeof value!=="string"||!/(Z|[+-]\d{2}:\d{2})$/.test(value))return null;
+    const t = Date.parse(value);
     return Number.isFinite(t) ? t : null;
   };
   const timeRiyadh = (value) => {
@@ -44,7 +45,7 @@
   function render(result) {
     const { payload: data, url } = result;
     const age = (Date.now() - timestamp(data.generated_at)) / 60000;
-    const current = age >= -5 && age <= 90;
+    const current = age >= 0 && age <= 90;
     const veryOld = age > 360 || age < -5;
     const readiness = data.option_provider_readiness;
     const sources = data.source_status || {};
@@ -57,8 +58,8 @@
     show("ghazi-option-sources", integer(sources.active_option_sources));
     show("ghazi-research-chains", integer(readiness.usable_chains));
     show("ghazi-approved-contracts", integer((data.row_counts || {}).options));
-    show("ghazi-option-readiness", flag(readiness.production_quote_ready));
-    show("ghazi-flow-readiness", flag(readiness.production_flow_ready));
+    show("ghazi-option-readiness", flag(current ? readiness.production_quote_ready : undefined));
+    show("ghazi-flow-readiness", flag(current ? readiness.production_flow_ready : undefined));
     show("ghazi-chain-providers", Array.isArray(readiness.sources) && readiness.sources.length ?
       readiness.sources.join("، ") : "لا يوجد مصدر مثبت");
     show("ghazi-report-time", timeRiyadh(data.generated_at));
@@ -91,11 +92,11 @@
     show("ghazi-contract-rejections", rejectionCounts.length ? rejectionCounts.map(([key, count]) =>
       (rejectionNames[key] || key) + ": " + integer(count)).join("؛ ") : "لا توجد إحصاءات رفض موثقة");
     const sec = sources.sec_fulltext;
-    show("ghazi-sec-status", sec && sec.available === true ? "متاح في آخر فحص" :
+    show("ghazi-sec-status", current && sec && sec.available === true ? "متاح في آخر فحص" :
       sec && sec.available === false ? "غير متاح؛ تحقق من مسارات الإفصاح البديلة" : "غير مؤكد");
     const reasons = Array.isArray(readiness.reasons) ? readiness.reasons : [];
     const qualityNote = $("ghazi-quality-note");
-    if (readiness.production_quote_ready !== true || readiness.production_flow_ready !== true) {
+    if (!current || readiness.production_quote_ready !== true || readiness.production_flow_ready !== true) {
       qualityNote.textContent = "أوبشن بحثي فقط: مصدر العقد أو توقيت السعر أو دليل التدفق لا يستوفي بوابة التنفيذ. " +
         "لا تجعل كثرة السلاسل أو درجة الترتيب بديلًا عن عروض Bid/Ask موثقة وحديثة.";
     } else {

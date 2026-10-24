@@ -37,7 +37,9 @@ def main() -> int:
         "event_count": 0,
         "message": "not checked",
         "retry_policy": "429/5xx bounded backoff; 403 opens a durable cooldown and is not repeatedly probed",
-        "fallbacks_active": [
+        "fallbacks_active": [],
+        "fallback_availability": "NOT_VERIFIED_BY_EFTS_PROBE",
+        "fallbacks_configured": [
             "SEC latest-form Atom feeds",
             "SEC submissions and Company Facts",
             "last valid SEC EFTS event cache",

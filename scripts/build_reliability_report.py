@@ -56,10 +56,15 @@ def build_report(audit: dict, ledger: dict, stats: dict, *, now: datetime) -> tu
         integrity = {"tracked": len(ledger.get("entries", {})), "added": 0,
                      "conflicts_this_pass": 0, "ever_changed": None,
                      "delivery_proven": False, "scope": "not_checked_invalid_or_empty_input"}
+    matching_stats = (quality["status"] == "VALID" and stats.get("audit_sha256") == digest(audit)
+                      and stats.get("completed_bar_measurement_required") is True
+                      and stats.get("decision_authority") is False
+                      and stats.get("status") in {"RESEARCH_METRICS_ONLY", "INSUFFICIENT_EVIDENCE", "UNAVAILABLE"})
     report = {"schema": "ghazi.reliability.v1", "generated_at": now.isoformat(),
               "decision_authority": False, "execution_grade": False, "proven_edge": False,
               "quality": quality, "integrity": integrity,
-              "statistics_status": stats.get("status", "UNAVAILABLE") if quality["status"] == "VALID"
+              "statistics_input_verified": matching_stats,
+              "statistics_status": stats.get("status", "UNAVAILABLE") if matching_stats
               and integrity["ever_changed"] == 0 else "WITHHELD",
               "cost_scenarios_are_hypothetical": True, "raw_market_data_published": False,
               "reason_ar": "فحص بنية البيانات وبصمة أول مشاهدة في المدقق؛ لا يثبت إرسال التنبيه أو ربحية التداول."}
