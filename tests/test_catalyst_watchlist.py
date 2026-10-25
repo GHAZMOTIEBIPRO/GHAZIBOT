@@ -121,4 +121,7 @@ def test_score_uses_strength_recency_reliability_and_flags_risk():
     assert all(e["candidate_status"] == "PRICE_VERIFICATION_NEEDED" for e in report["watchlist"])
     assert by["LLY"]["universe"] == "KNOWN_LARGE_ISSUER" and "LLY" not in report["small_cap_candidates"]
     assert report["small_cap_candidates"][0] == "NEWM"
+    assert "غير متحققين" in report["small_cap_candidates_note_ar"]
+    # Production 2026-10-25 listed these large/mid caps as small-cap candidates.
+    assert {"TAK", "BNTX", "MRNA", "TEVA", "BAX", "JAZZ", "INCY"} <= cw.KNOWN_LARGE_ISSUERS
     assert "ليست توقعًا" in report["ranking_rules"]["note_ar"] and report["ranking_rules"]["top_n"] == 3

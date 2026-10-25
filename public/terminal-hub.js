@@ -1711,7 +1711,8 @@
     const src=report.sources||{};
     put("terminal-catalyst-status","المصادر: openFDA"+(src.sec_edgar?" + SEC EDGAR":" (SEC غير متاح: "+String(src.sec_status||"—")+")")+
       " · آخر "+String(report.window_days||30)+" يومًا · "+report.watchlist.length+" سهمًا"+
-      (Array.isArray(report.small_cap_candidates)?" (مرشحو الأسهم الصغيرة: "+report.small_cap_candidates.length+")":"")+
+      (Array.isArray(report.small_cap_candidates)?" (خارج قائمة الشركات الكبيرة: "+report.small_cap_candidates.length+
+        "؛ الحجم والسعر غير متحققين)":"")+
       " · الترتيب بقوة المحفز وحداثته وموثوقية الربط · التحديث: "+stamp(report.generated_at)+
       " · أولوية المراجعة لا تعني اتجاه السعر."+
       (src.clinicaltrials?" · ClinicalTrials.gov: تغطية محدودة؛ Courtesy of the U.S. National Library of Medicine. لا تأييد من NLM وقد لا تعكس آخر تعديل.":""));
