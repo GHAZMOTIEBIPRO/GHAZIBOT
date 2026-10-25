@@ -101,6 +101,16 @@ PAGES = {
     "alpaca_llms": "https://docs.alpaca.markets/us/llms.txt",
     "tradier_llms": "https://docs.tradier.com/llms.txt",
     "massive_individual_terms": "https://massive.com/legal/individual-terms",
+    # Free price/candle candidates re-examined on 2026-10-25 (terms only).
+    "fred_legal": "https://fred.stlouisfed.org/legal/",
+    "fred_api_terms": "https://fred.stlouisfed.org/docs/api/terms_of_use.html",
+    "fred_series_sp500": "https://fred.stlouisfed.org/series/SP500",
+    "fred_series_vixcls": "https://fred.stlouisfed.org/series/VIXCLS",
+    "stooq_robots": "https://stooq.com/robots.txt",
+    "stooq_home": "https://stooq.com/",
+    "iex_market_data": "https://iextrading.com/trading/market-data/",
+    "alpaca_market_data_faq_md": "https://docs.alpaca.markets/us/docs/market-data-faq.md",
+    "massive_legal_index": "https://massive.com/legal",
 }
 # Pages whose whole text is printed (bounded), so specific clauses on derived
 # data, non-price analytics, storage, sharing and plan limits can be quoted
@@ -110,7 +120,8 @@ FULL_TEXT = {"twelvedata_terms", "twelvedata_pricing", "finnhub_terms", "finnhub
              "nasdaq_data_link_terms", "alpaca_terms", "alpaca_market_data", "tradier_terms",
              "tradier_market_data_docs", "eodhd_pricing", "fmp_pricing", "massive_pricing", "alpaca_disclosures",
              "twelvedata_pricing_md", "twelvedata_llms", "alpaca_market_data_md", "alpaca_llms", "tradier_llms",
-             "massive_individual_terms"}
+             "massive_individual_terms", "fred_legal", "fred_api_terms", "fred_series_sp500", "fred_series_vixcls",
+             "stooq_home", "iex_market_data", "alpaca_market_data_faq_md", "massive_legal_index"}
 FULL_MAX = 40000
 # Tiingo's terms run past 40k characters; the derived-product and storage
 # sections continue after the first cut.
