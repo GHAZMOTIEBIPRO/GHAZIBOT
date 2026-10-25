@@ -27,6 +27,7 @@
     dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
     macro:[ROOT+"bot-state/runtime/public/data/public_macro.json"],
     regimes:[ROOT+"bot-state/runtime/public/data/macro_regimes.json"],
+    plan:[ROOT+"bot-state/runtime/public/data/daily_plan.json"],
     fda:[ROOT+"bot-state/runtime/public/data/fda_events.json"],
     catalysts:[ROOT+"bot-state/runtime/public/data/catalyst_watchlist.json"],
     modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
@@ -72,7 +73,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,regimes:null,fda:null,catalysts:null,modelLab:null,tracking:null,pendingSymbol:null};
+    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,regimes:null,plan:null,fda:null,catalysts:null,modelLab:null,tracking:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -151,6 +152,8 @@
       Array.isArray(d.approvals)&&Array.isArray(d.recalls),
     catalysts:d=>d?.schema==="ghazi.catalyst_watchlist.v1"&&d.decision_authority===false&&
       d.execution_authority===false&&Array.isArray(d.watchlist)&&Array.isArray(d.price_confirmed_signals),
+    plan:d=>d?.schema==="ghazi.daily_plan_sheet.v1"&&d.decision_authority===false&&d.execution_authority===false&&
+      d.session&&typeof d.frames==="object",
     regimes:d=>d?.schema==="ghazi.macro_regimes.v2"&&d.decision_authority===false&&d.execution_authority===false&&
       d.series&&typeof d.series==="object",
     macro:d=>d?.schema==="ghazi.public_macro.v1"&&d.decision_authority===false&&d.execution_authority===false&&
@@ -1751,6 +1754,44 @@
           " · "+String(r.observations||0)+" ملاحظة · الانكسارات: "+(breaks.join("، ")||"لا يوجد")};
     });
   }
+  const FRAME_AR={weekly:"أسبوعي",daily:"يومي","4h":"4 ساعات","1h":"ساعة","15m":"15 دقيقة","5m":"5 دقائق"};
+  const KIND_SHORT={FDA_APPROVAL:"موافقة FDA",FDA_SUPPLEMENT:"ملحق FDA",FDA_RECALL:"سحب FDA",TRIAL_RESULTS_POSTED:"نتائج دراسة",
+    TRIAL_STATUS_REVIEW:"حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث سجل",DILUTION_RISK:"تخفيف",MERGER_OR_ACQUISITION:"اندماج"};
+  // Pre-open sheet: session facts, official catalysts and frame availability; no prices.
+  function planLines(plan){
+    if(!plan||!plan.session)return null;
+    const s=plan.session,t=s.today,n=s.next_session;
+    const session=t?"جلسة اليوم "+t.date+": "+t.open_new_york+"–"+t.close_new_york+" نيويورك ("+t.open_riyadh+"–"+t.close_riyadh+" الرياض)"+
+      (t.early_close?" · إغلاق مبكر":""):"لا جلسة اليوم"+(n?" · الجلسة القادمة "+n.date+" "+n.open_new_york+" نيويورك ("+n.open_riyadh+" الرياض)"+
+      (n.early_close?" · إغلاق مبكر":""):"");
+    const frames=Object.entries(plan.frames||{}).map(([k,f])=>(FRAME_AR[k]||k)+": "+(f.public==="AVAILABLE"?"متاح":
+      f.private_owner==="AVAILABLE"?"خاص بالمالك فقط":"غير متاح"));
+    const reasons=[...new Set(Object.values(plan.frames||{}).filter(f=>f.public!=="AVAILABLE").map(f=>String(f.reason||"")))].filter(Boolean);
+    const cats=(plan.catalysts||[]).map(c=>String(c.symbol)+" · "+(KIND_SHORT[c.kind]||c.kind)+" · "+String(c.date)+
+      (Number.isFinite(c.score)?" · أولوية "+c.score:"")+((c.risk_flags||[]).length?" · مخاطر: "+c.risk_flags.join("، "):""));
+    const m=plan.macro||{};
+    const macro=m.curve_date?"المنحنى "+m.curve_date+": فرق 10Y−2Y "+fmt(m.spreads_bp?.["10Y_2Y"],0)+" ن.أ · 10Y "+fmt(m.yields_pct?.["10Y"],2)+
+      "% · سلاسل بتغيّر انجراف: "+(m.regime_series_with_breaks??"—")+"/"+(m.regime_series??"—"):"لا بيانات منحنى";
+    return {session,last:"آخر جلسة مغلقة: "+String(s.last_closed_session||"—"),frames,reasons,cats,macro,
+      private:plan.private_mode?.enabled?"الوضع الخاص للمالك مفعّل (لا يُنشر)":"",generated:plan.generated_at};
+  }
+  function renderPlan(){
+    const body=$("terminal-plan-body");if(!body)return;
+    body.replaceChildren();
+    const lines=planLines(state.plan);
+    if(!lines){put("terminal-plan-status","لم تُنشر خطة اليوم بعد.");return;}
+    put("terminal-plan-status",lines.session);
+    const group=(title,items,open)=>{
+      const box=document.createElement("details");box.className="terminal-brief-section";box.open=open;
+      box.append(txt("summary",title));const list=txt("ul","");
+      for(const item of items)list.append(txt("li",item));box.append(list);body.append(box);
+    };
+    group("المحفزات الرسمية (آخر 3 أيام)",lines.cats.length?lines.cats:["لا محفزات رسمية حديثة"],true);
+    group("الخلفية الكلية",[lines.macro],false);
+    group("الفريمات المتاحة",[...lines.frames,...lines.reasons.map(r=>"السبب: "+r),lines.last],true);
+    if(lines.private)group("الوضع الخاص",[lines.private],false);
+    body.append(txt("p","وقت الإعداد: "+stamp(lines.generated)+" · لا أسعار ولا سيناريوهات سعرية دون شموع مسموحة.","terminal-footnote"));
+  }
   function renderMacro(){
     const box=$("terminal-macro");if(!box)return;
     box.replaceChildren();
@@ -2029,20 +2070,20 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","catalysts","modelLab","tracking","regimes"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","catalysts","modelLab","tracking","regimes","plan"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.catalysts,state.modelLab,state.tracking,state.regimes]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.catalysts,state.modelLab,state.tracking,state.regimes,state.plan]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderFda();renderCatalysts();renderOps();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderPlan();renderFda();renderCatalysts();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={trustReadiness,weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines,regimeLines};
+    module.exports={trustReadiness,weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines,regimeLines,planLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>
