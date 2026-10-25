@@ -133,7 +133,9 @@ jobs:
           }
 
           dispatch_pass() {
-          if (( utc_hour >= 8 && utc_hour <= 23 )); then
+          # Fast Explosion scans only api.nasdaq.com; with that gate closed a
+          # dispatch can only end in a skip, so it is not dispatched at all.
+          if (( utc_hour >= 8 && utc_hour <= 23 )) && [[ "${NASDAQ_WEB_AUTOMATION_APPROVED:-false}" == "true" ]]; then
             dispatch_if_stale fast-explosion-radar.yml 8 "Fast Explosion"
           fi
 

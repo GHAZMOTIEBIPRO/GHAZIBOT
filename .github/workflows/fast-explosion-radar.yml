@@ -99,8 +99,16 @@ jobs:
           print(f"reason={state.reason}")
           PY
 
-      - name: Restore previous full-market institutional snapshot and provider health
+      # The full-market scan's only source is api.nasdaq.com. With its gate
+      # closed the run stops here with a notice: no restored state, no scan,
+      # no Stock Radar dispatch, and no red run every cycle.
+      - name: Source gate for the full-market scan
+        id: gate
         if: steps.market_day.outputs.open == 'true'
+        run: python scripts/price_source_gate.py --require discovery
+
+      - name: Restore previous full-market institutional snapshot and provider health
+        if: steps.market_day.outputs.open == 'true' && steps.gate.outputs.usable == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -121,21 +129,21 @@ jobs:
           fi
 
       - name: Scan full US-listed market with institutional engine and data fabric
-        if: steps.market_day.outputs.open == 'true'
+        if: steps.market_day.outputs.open == 'true' && steps.gate.outputs.usable == 'true'
         run: python scripts/fast_explosion_scan_fabric.py --no-telegram
 
       - name: Enrich top microcaps with point-in-time SEC dilution evidence
-        if: steps.market_day.outputs.open == 'true'
+        if: steps.market_day.outputs.open == 'true' && steps.gate.outputs.usable == 'true'
         run: python scripts/enrich_microcap_sec_dilution.py
 
       - name: Classify 100pct Hunter research evidence without Telegram
-        if: steps.market_day.outputs.open == 'true'
+        if: steps.market_day.outputs.open == 'true' && steps.gate.outputs.usable == 'true'
         run: python scripts/explosion_hunter_research.py
 
       - name: Upload fast-radar evidence for unified Arabic notifier
         # Retain the explicit failure report for diagnosis; downstream dispatch
         # still requires a successful scan via its default success() condition.
-        if: always() && steps.market_day.outputs.open == 'true'
+        if: always() && steps.market_day.outputs.open == 'true' && steps.gate.outputs.usable == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fast-market-state
@@ -148,7 +156,7 @@ jobs:
           retention-days: 2
 
       - name: Dispatch dependent stock validation using this exact scan
-        if: steps.market_day.outputs.open == 'true'
+        if: steps.market_day.outputs.open == 'true' && steps.gate.outputs.usable == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -160,6 +168,13 @@ jobs:
           gh workflow run stock-radar.yml --repo "$GITHUB_REPOSITORY" --ref main \
             -f source_run_id="$GITHUB_RUN_ID"
           echo "Requested Stock Radar for completed Fast Radar artifact: source_run_id=$GITHUB_RUN_ID"
+
+      - name: Source-blocked status
+        if: steps.market_day.outputs.open == 'true' && steps.gate.outputs.usable != 'true'
+        env:
+          GATE_REASON: ${{ steps.gate.outputs.reason }}
+        run: |
+          echo "Fast stock radar skipped. ${GATE_REASON} No previous scan is restored or re-published."
 
       - name: Closed-market status
         if: steps.market_day.outputs.open != 'true'
