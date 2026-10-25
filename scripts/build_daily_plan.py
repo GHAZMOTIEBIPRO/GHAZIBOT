@@ -11,12 +11,19 @@ Public sheet (runtime/public/data/daily_plan.json), no prices:
   (state/daily_plan/<date>/morning.json); later runs only refresh the
   latest sheet.
 
-Owner-private mode: when Alpaca credentials exist and the owner set
-ALPACA_INTERNAL_DATA_USE_AUTHORIZED=true, completed IEX daily bars are
-fetched (options_radar.alpaca_delayed_research) and options_radar.daily_plan
-computes the plans. Those plans are written only to --private-output
-(outside the published state) because Alpaca data may not be
-redistributed; nothing from them reaches the public sheet.
+Owner-private mode (provider -> compute -> output policy -> sink):
+- Provider: options_radar.bar_providers.AlpacaBars (IEX feed), called only
+  when output_policy allows `fetch` (ALPACA_INTERNAL_DATA_USE_AUTHORIZED) and
+  keys exist. Daily bars plus 5-minute bars; 15m/1H/4H are built from the
+  5-minute bars on XNYS session boundaries (options_radar.bar_aggregation),
+  weekly from completed daily sessions.
+- Compute: options_radar.daily_plan (levels name their source and bar).
+- Sink: the owner's personal Telegram chat only, through
+  output_policy.deliver_private (needs ALPACA_PRIVATE_ALERTS_AUTHORIZED, a
+  TELEGRAM_OWNER_CHAT_ID different from the broadcast chat, and Telegram
+  confirming the chat is private). Nothing from the private plans reaches the
+  public sheet, bot-state, artifacts or logs; the public sheet records only
+  the delivery status.
 """
 from __future__ import annotations
 
@@ -32,7 +39,9 @@ import exchange_calendars as xcals
 import pandas as pd
 
 from options_radar import daily_plan as dp
-from options_radar.alpaca_delayed_research import fetch_completed_daily, policy_state
+from options_radar.bar_aggregation import frames_from_5m
+from options_radar.bar_providers import AlpacaBars
+from options_radar.output_policy import decide, deliver_private
 
 NY = ZoneInfo("America/New_York")
 RIYADH = ZoneInfo("Asia/Riyadh")
@@ -102,55 +111,107 @@ def macro_context(macro: Any, regimes: Any) -> dict[str, Any]:
             "regime_series": len(breaks)}
 
 
-def private_plans(facts: dict[str, Any], now: datetime, *, session: Any = None) -> dict[str, Any]:
-    key, secret = os.getenv("ALPACA_API_KEY", ""), os.getenv("ALPACA_SECRET_KEY", "")
-    allowed = os.getenv("ALPACA_INTERNAL_DATA_USE_AUTHORIZED", "").strip().lower() == "true"
-    state = policy_state(api_key=key, secret=secret, internal_use_allowed=allowed)
-    if not state["enabled"] or not facts.get("last_closed_session"):
-        return {"enabled": False, "reason": state["reason"], "plans": {}}
-    end = date.fromisoformat(facts["last_closed_session"])
-    provider = {"name": "alpaca_iex", "scope": "IEX_ONLY_COMPLETED_DAILY", "volume_scope": "IEX only (partial volume)",
-                "delay_note": "completed sessions only; latest 15 minutes never requested"}
-    plans = {}
+def _sessions(now: datetime, days: int) -> list[tuple[datetime, datetime]]:
+    cal = xcals.get_calendar("XNYS")
+    sched = cal.schedule.loc[str((now - timedelta(days=days)).date()):str(now.date())]
+    return [(pd.Timestamp(r["open"]).to_pydatetime(), pd.Timestamp(r["close"]).to_pydatetime())
+            for _, r in sched.iterrows() if pd.Timestamp(r["open"]).to_pydatetime() < now]
+
+
+def _daily_rows(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{"date": b["t"].astimezone(NY).date().isoformat(), "open": b["o"], "high": b["h"], "low": b["l"],
+             "close": b["c"], "volume": b["v"]} for b in bars]
+
+
+def private_plans(facts: dict[str, Any], now: datetime, *, session: Any = None,
+                  env: Any = None) -> dict[str, Any]:
+    env = os.environ if env is None else env
+    provider = AlpacaBars(env, **({"session": session} if session is not None else {}), now=now)
+    status = provider.status()
+    if status != "READY" or not facts.get("last_closed_session"):
+        reason = ("DATA_USE_PERMISSION_REQUIRED" if status == "DENIED_BY_POLICY" else
+                  "ACCOUNT_CREDENTIALS_NOT_CONFIGURED" if status == "CREDENTIALS_MISSING" else "NO_CLOSED_SESSION")
+        return {"enabled": False, "reason": reason, "plans": {}}
+    meta = {"name": provider.name, "scope": "IEX feed: one venue", "volume_scope": "IEX only (partial volume)",
+            "delay_note": "completed bars only; nothing from the latest 16 minutes is requested"}
+    sessions = _sessions(now, 60)
+    cutoff = now - timedelta(minutes=16)
+    plans, statuses = {}, {}
     for symbol in PLAN_SYMBOLS:
-        bars: list[dict[str, Any]] = []
-        for chunk in range(3):  # three 30-day windows, about 63 sessions
-            chunk_end = end - timedelta(days=31 * chunk)
-            kwargs = {"session": session} if session is not None else {}
-            got = fetch_completed_daily(symbol, start=chunk_end - timedelta(days=30), end=chunk_end, api_key=key,
-                                        secret=secret, internal_use_allowed=allowed, now=now, **kwargs)
-            bars.extend(got.get("bars") or [])
-        plans[symbol] = dp.plan_for_symbol(symbol, bars, last_closed_session=facts["last_closed_session"],
+        daily = provider.bars(symbol, "1d", now - timedelta(days=160), now)
+        intraday_start = sessions[-30][0] if len(sessions) >= 30 else (sessions[0][0] if sessions else now)
+        minute = provider.bars(symbol, "5m", intraday_start, now)
+        statuses[symbol] = {"daily": daily["status"], "5m": minute["status"]}
+        intraday = frames_from_5m(minute["bars"], sessions, cutoff) if minute["status"] == "OK" else {}
+        plans[symbol] = dp.plan_for_symbol(symbol, _daily_rows(daily["bars"]),
+                                           last_closed_session=facts["last_closed_session"],
                                            last_closed_week_end=facts["last_closed_week_end"] or "",
-                                           provider=provider)
-    return {"enabled": True, "reason": state["reason"], "plans": plans}
+                                           provider=meta, intraday=intraday)
+    return {"enabled": True, "reason": "OWNER_AUTHORIZED_INTERNAL_USE", "plans": plans, "fetch_status": statuses}
+
+
+def readiness(private: dict[str, Any], catalysts: list[Any], macro: dict[str, Any]) -> dict[str, Any]:
+    """Three separate answers; a fresh file is not a fresh technical analysis."""
+    available = [p for p in (private.get("plans") or {}).values() if p.get("available")]
+    frames = sorted({f for p in available for f in p.get("frames_available") or []})
+    mtf = ("FULL" if set(FRAMES) <= set(frames) else "PARTIAL" if frames else "UNAVAILABLE")
+    return {
+        "session_and_catalysts": "AVAILABLE" if (catalysts or macro.get("curve_date")) else "UNAVAILABLE",
+        "multi_timeframe": {"public": "UNAVAILABLE", "private_owner": mtf, "frames_private": frames},
+        "price_levels": {"public": "NOT_COMPUTED", "private_owner": "COMPUTED" if available else "NOT_COMPUTED"},
+    }
 
 
 def frames_status(private: dict[str, Any]) -> dict[str, Any]:
+    available = {f for p in (private.get("plans") or {}).values() if p.get("available")
+                 for f in p.get("frames_available") or []}
     status = {}
     for frame in FRAMES:
-        if frame in ("weekly", "daily") and private.get("enabled"):
-            status[frame] = {"public": "UNAVAILABLE", "private_owner": "AVAILABLE",
-                             "reason": "Alpaca IEX completed daily bars: internal use only, no redistribution"}
-        else:
-            status[frame] = {"public": "UNAVAILABLE",
-                             "private_owner": "UNAVAILABLE",
-                             "reason": ("no permitted public price source; Yahoo/Nasdaq.com automation not permitted"
-                                        if frame in ("weekly", "daily") and not private.get("enabled") else
-                                        "no permitted intraday bars (Alpaca free intraday is IEX-only and"
-                                        " not configured)")}
+        status[frame] = {"public": "UNAVAILABLE",
+                         "private_owner": "AVAILABLE" if frame in available else "UNAVAILABLE",
+                         "reason": ("Alpaca IEX bars: owner's internal use only, not redistributed" if frame in available
+                                    else "no permitted public price source; owner-private frames need Alpaca keys and"
+                                         " ALPACA_INTERNAL_DATA_USE_AUTHORIZED" if not private.get("enabled")
+                                    else "not enough completed bars for this frame")}
     return status
+
+
+def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
+    lines = [f"<b>خطة اليوم الخاصة — {facts.get('last_closed_session')}</b>",
+             "مصدر: Alpaca IEX (منصة واحدة، حجم جزئي). استخدام شخصي فقط؛ لا يُعاد نشره."]
+    for symbol, plan in (private.get("plans") or {}).items():
+        if not plan.get("available"):
+            continue
+        frames = plan.get("frames") or {}
+        trend = " · ".join(f"{k}:{dp.TREND_AR.get(v.get('trend'), v.get('trend'))}" for k, v in frames.items()
+                           if v.get("trend") not in ("UNAVAILABLE",))
+        day = plan.get("prior_session") or {}
+        lines.append(f"<b>{symbol}</b> {trend}")
+        lines.append(f"  أمس ({day.get('date')}): قمة {day.get('high')} · قاع {day.get('low')} · إغلاق {day.get('close')}")
+        for sc in plan.get("scenarios") or []:
+            if sc.get("trigger_level") is not None:
+                lines.append(f"  {sc['kind']}: محفز {sc['trigger_level']} · إبطال {sc['invalidation']}"
+                             f" · هدف {sc['target'] if sc['target'] is not None else 'لا مستوى مقاس'}")
+    lines.append("لا احتمال نجاح ولا توصية تنفيذ.")
+    return "\n".join(lines)[:3900]
 
 
 def build(now: datetime, watch: Any, macro: Any, regimes: Any, private: dict[str, Any]) -> dict[str, Any]:
     facts = calendar_facts(now)
+    catalysts = catalysts_today(watch, now)
+    macro_ctx = macro_context(macro, regimes)
+    ready = readiness(private, catalysts, macro_ctx)
+    full_public = ready["multi_timeframe"]["public"] == "FULL"
     return {
         "schema": "ghazi.daily_plan_sheet.v1", "generated_at": now.isoformat(),
+        # without public frames this is a session brief, not a technical plan
+        "title_ar": "خطة اليوم" if full_public else "موجز الجلسة والمحركات",
+        "readiness": ready,
         "session": facts, "frames": frames_status(private),
-        "catalysts": catalysts_today(watch, now), "macro": macro_context(macro, regimes),
+        "catalysts": catalysts, "macro": macro_ctx,
         "private_mode": {"enabled": private.get("enabled", False), "reason": private.get("reason"),
                          "symbols": sorted(private.get("plans") or {}) if private.get("enabled") else [],
-                         "published": False},
+                         "published": False, "delivery": private.get("delivery", "NOT_ATTEMPTED")},
         "public_price_plans": {},
         "notes_ar": ["خطة اليوم العامة لا تحتوي أسعارًا: لا يوجد مصدر أسعار يسمح بالعرض العام.",
                      "الأوقات من تقويم بورصة نيويورك (XNYS) بتوقيت نيويورك والرياض، مع الإغلاق المبكر والعطل.",
@@ -174,15 +235,31 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
     session_date = (facts.get("today") or {}).get("date")
+    morning_run = False
     if session_date:
-        morning = args.morning_dir / session_date / "morning.json"
+        day_dir = args.morning_dir / session_date
+        morning = day_dir / "morning.json"
+        day_dir.mkdir(parents=True, exist_ok=True)
         if not morning.exists():  # the morning copy is never rewritten
-            morning.parent.mkdir(parents=True, exist_ok=True)
             morning.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
-    if args.private_output and private.get("enabled"):
-        args.private_output.write_text(json.dumps(private, ensure_ascii=False), encoding="utf-8")
+            morning_run = True
+        else:  # later runs add dated updates beside it
+            (day_dir / f"update_{now.strftime('%H%MZ')}.json").write_text(
+                json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
+    # one private message per session (the morning run); updates stay in the dated copies
+    if morning_run and private.get("enabled") and any(p.get("available") for p in private["plans"].values()):
+        from scripts.telegram_transport import get_chat, send_html_message
+        delivered = deliver_private(private_message(private, facts), sources=["alpaca_iex"], env=os.environ,
+                                    get_chat=get_chat, send=lambda text, chat: send_html_message(text, chat_id=chat))
+        sheet["private_mode"]["delivery"] = delivered
+        args.output.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
+    if args.private_output and private.get("enabled") and decide("alpaca_iex", "store_private", os.environ).allowed:
+        args.private_output.write_text(json.dumps(private, ensure_ascii=False, default=str), encoding="utf-8")
+    # counts and statuses only: no symbol-level private values in the (public) log
     print("Daily plan:", json.dumps({"today": session_date, "last_closed": facts.get("last_closed_session"),
-                                      "private": private.get("reason"), "catalysts": len(sheet["catalysts"])}))
+                                      "private": private.get("reason"), "catalysts": len(sheet["catalysts"]),
+                                      "readiness": sheet["readiness"]["multi_timeframe"]["private_owner"],
+                                      "delivery": sheet["private_mode"]["delivery"]}))
     return 0
 
 

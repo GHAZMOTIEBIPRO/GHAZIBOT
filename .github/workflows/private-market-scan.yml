@@ -1,0 +1,57 @@
+name: GHAZI Private Market Scan (owner only)
+
+# Discovery -> measured momentum -> setup conditions on Alpaca IEX data, sent
+# only to the owner's personal Telegram chat (options_radar.output_policy).
+# Nothing is committed: no bot-state, no artifacts; logs carry statuses only.
+on:
+  workflow_dispatch:
+  # 14:47 / 16:47 / 18:47 UTC on weekdays (mid-session in EDT and EST); the
+  # script checks the XNYS session itself.
+  schedule:
+    - cron: "47 14 * * 1-5"
+    - cron: "47 16 * * 1-5"
+    - cron: "47 18 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghazi-private-market-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    # No runner is started unless the owner recorded the Alpaca attestation.
+    if: vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          sparse-checkout: runtime/public/data/catalyst_watchlist.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r app/requirements.txt
+      - name: Scan (status only in the log)
+        run: |
+          cd app
+          python -m scripts.private_market_scan \
+            --catalysts ../state/runtime/public/data/catalyst_watchlist.json \
+            --status-output "$RUNNER_TEMP/private_scan_status.json"

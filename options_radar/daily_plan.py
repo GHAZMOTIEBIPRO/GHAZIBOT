@@ -154,12 +154,20 @@ def plan_for_symbol(symbol: str, daily_bars: list[dict[str, Any]], *, last_close
     if len(daily) < 2:
         return {"symbol": symbol, "available": False, "reason": "fewer than two completed daily sessions",
                 "provider": provider.get("name")}
+    if daily[-1]["date"] != last_closed_session:
+        # old bars are not a plan for today; levels must come from the last closed session
+        return {"symbol": symbol, "available": False, "provider": provider.get("name"),
+                "reason": f"stale: last daily bar {daily[-1]['date']} is not the last closed session {last_closed_session}"}
+    intraday = {name: bars for name, bars in (intraday or {}).items()
+                if bars and str(bars[-1].get("end") or "")[:10] >= last_closed_session}
     weekly = weekly_from_daily(daily, last_closed_week_end=last_closed_week_end)
-    frames["weekly"] = {**frame_trend(weekly, fast=10, slow=20), "structure": structure(weekly, 8)}
-    frames["daily"] = {**frame_trend(daily), "structure": structure(daily)}
+    frames["weekly"] = {**frame_trend(weekly, fast=10, slow=20), "structure": structure(weekly, 8),
+                        "last_bar_end": weekly[-1]["end"] if weekly else None}
+    frames["daily"] = {**frame_trend(daily), "structure": structure(daily), "last_bar_end": daily[-1]["date"]}
     for name in ("4h", "1h", "15m", "5m"):
         bars = (intraday or {}).get(name) or []
-        frames[name] = ({**frame_trend(bars), "structure": structure(bars)} if bars else
+        frames[name] = ({**frame_trend(bars), "structure": structure(bars), "last_bar_end": bars[-1].get("end")}
+                        if bars else
                         {"trend": "UNAVAILABLE", "reason": "provider supplies no completed bars for this frame"})
     prior_day = daily[-1]
     prior_week = weekly[-1] if weekly else None
@@ -183,6 +191,16 @@ def plan_for_symbol(symbol: str, daily_bars: list[dict[str, Any]], *, last_close
         "agreement": {"frames_voting": len(votes), "largest_same_direction": agree,
                       "note": "frames agreeing is not a probability; data quality is reported separately"},
         "scenarios": scenarios(prior_day, prior_week, atr14),
+        # every level names where it came from and the bar it was measured on
+        "levels": [{"name": n, "value": v, "source": provider.get("name"), "bar": bar_id}
+                   for n, v, bar_id in (("prior_day_high", prior_day["high"], prior_day["date"]),
+                                        ("prior_day_low", prior_day["low"], prior_day["date"]),
+                                        ("prior_day_close", prior_day["close"], prior_day["date"]),
+                                        ("prior_week_high", prior_week["high"] if prior_week else None,
+                                         prior_week["week"] if prior_week else None),
+                                        ("prior_week_low", prior_week["low"] if prior_week else None,
+                                         prior_week["week"] if prior_week else None))
+                   if v is not None],
         "data_quality": {"daily_bars": len(daily), "weekly_bars": len(weekly),
                          "sufficient_for_ema50": len(daily) >= 50, "sufficient_for_atr14": atr14 is not None},
         "probability": None, "execution_authority": False,
