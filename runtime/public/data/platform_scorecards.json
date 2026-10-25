@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-25T08:02:03.583589+00:00",
+ "generated_at": "2026-10-25T08:06:21.334360+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,7 +8,7 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 12
+     "success": 13
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
@@ -30,7 +30,7 @@
      "success": 4
     },
     "site-evidence-strength.yml": {
-     "success": 11
+     "success": 12
     },
     "free-gex-validation.yml": {
      "success": 4
@@ -73,7 +73,7 @@
   },
   "DATA_TRUST": {
    "status": "MEASURED",
-   "value": 62.5,
+   "value": 64.0,
    "unit": "percent of published datasets",
    "evidence": {
     "index_radar.json": "PASS/BLOCKED_PENDING_PERMISSION",
@@ -90,6 +90,7 @@
     "free_public_intelligence.json": "PASS/OK_FOR_STATED_USE",
     "public_macro.json": "PASS/OK_FOR_STATED_USE",
     "macro_regimes.json": "PASS/OK_FOR_STATED_USE",
+    "daily_plan.json": "PASS/OK_FOR_STATED_USE",
     "fda_events.json": "PASS/OK_FOR_STATED_USE",
     "catalyst_watchlist.json": "PASS/OK_FOR_STATED_USE",
     "issuer_sizes.json": "PASS/OK_FOR_STATED_USE",
@@ -109,9 +110,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 40174665196,
+    "run_id": 40175017315,
     "conclusion": "success",
-    "at": "2026-10-25T07:56:12Z"
+    "at": "2026-10-25T08:01:46Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -209,9 +210,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "last_sent_at": "2026-10-25T07:50:32.319538+00:00",
+    "last_sent_at": "2026-10-25T08:02:36.293527+00:00",
     "kind": "change",
-    "message_id": 1296,
+    "message_id": 1297,
     "log": "state/telegram/ops_digest_state.json"
    },
    "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
@@ -249,7 +250,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-10-25T07:57:25.739921+00:00",
+   "generated_at": "2026-10-25T08:02:58.792228+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -342,16 +343,16 @@
   },
   "daily_plan": {
    "label_ar": "خطة اليوم",
-   "verdict_ar": "البيانات قديمة",
+   "verdict_ar": "يعمل",
    "run": "OK",
    "source": "AVAILABLE",
-   "data": "STALE",
-   "data_state": "UNKNOWN",
-   "analysis": "NOT_COMPUTED",
+   "data": "FRESH",
+   "data_state": "RESEARCH_ONLY",
+   "analysis": "COMPUTED",
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": null,
+   "generated_at": "2026-10-25T07:57:34.045218+00:00",
    "last_run_at": "2026-10-25T07:56:23Z"
   }
  },
