@@ -1,0 +1,916 @@
+{
+ "schema": "ghazi.macro_regimes.v1",
+ "generated_at": "2026-10-25T07:24:35.473260+00:00",
+ "history_generated_at": "2026-10-25T07:23:46.831608+00:00",
+ "status": "AVAILABLE",
+ "series": {
+  "treasury_10y_2y_bp": {
+   "label_ar": "فارق عائد 10 سنوات − سنتين (نقطة أساس)",
+   "unit": "bp",
+   "frequency": "daily",
+   "source": "U.S. Treasury par yield curve",
+   "observations": 453,
+   "available": true,
+   "first_date": "2025-01-02",
+   "last_date": "2026-10-23",
+   "latest_value": 31.0,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 20,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 2.096684,
+    "pen": 53.771964,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2025-02-03",
+    "2025-04-07",
+    "2025-11-24",
+    "2026-03-02",
+    "2026-05-22"
+   ],
+   "segments": [
+    {
+     "start": "2025-01-02",
+     "end": "2025-01-31",
+     "observations": 21,
+     "mean": 35.714
+    },
+    {
+     "start": "2025-02-03",
+     "end": "2025-04-04",
+     "observations": 44,
+     "mean": 28.114
+    },
+    {
+     "start": "2025-04-07",
+     "end": "2025-11-21",
+     "observations": 158,
+     "mean": 52.994
+    },
+    {
+     "start": "2025-11-24",
+     "end": "2026-02-27",
+     "observations": 65,
+     "mean": 65.154
+    },
+    {
+     "start": "2026-03-02",
+     "end": "2026-05-21",
+     "observations": 59,
+     "mean": 51.831
+    },
+    {
+     "start": "2026-05-22",
+     "end": "2026-10-23",
+     "observations": 106,
+     "mean": 39.104
+    }
+   ],
+   "current_regime": {
+    "since": "2026-05-22",
+    "observations": 106,
+    "mean": 39.104,
+    "previous_mean": 51.831,
+    "shift": -12.727
+   }
+  },
+  "treasury_10y_pct": {
+   "label_ar": "عائد الخزانة لأجل 10 سنوات (%)",
+   "unit": "%",
+   "frequency": "daily",
+   "source": "U.S. Treasury par yield curve",
+   "observations": 453,
+   "available": true,
+   "first_date": "2025-01-02",
+   "last_date": "2026-10-23",
+   "latest_value": 5.0,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 20,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 0.03145,
+    "pen": 0.012099,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2025-02-21",
+    "2025-08-27",
+    "2026-04-29",
+    "2026-07-21",
+    "2026-09-10"
+   ],
+   "segments": [
+    {
+     "start": "2025-01-02",
+     "end": "2025-02-20",
+     "observations": 34,
+     "mean": 4.585
+    },
+    {
+     "start": "2025-02-21",
+     "end": "2025-08-26",
+     "observations": 129,
+     "mean": 4.339
+    },
+    {
+     "start": "2025-08-27",
+     "end": "2026-04-28",
+     "observations": 167,
+     "mean": 4.166
+    },
+    {
+     "start": "2026-04-29",
+     "end": "2026-07-20",
+     "observations": 56,
+     "mean": 4.491
+    },
+    {
+     "start": "2026-07-21",
+     "end": "2026-09-09",
+     "observations": 36,
+     "mean": 4.7
+    },
+    {
+     "start": "2026-09-10",
+     "end": "2026-10-23",
+     "observations": 31,
+     "mean": 5.123
+    }
+   ],
+   "current_regime": {
+    "since": "2026-09-10",
+    "observations": 31,
+    "mean": 5.123,
+    "previous_mean": 4.7,
+    "shift": 0.423
+   }
+  },
+  "cftc_ES_asset_manager_net": {
+   "label_ar": "عقود E-mini S&P 500",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": 901377,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 18963.461178,
+    "pen": 3631986321.373624,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2023-12-26",
+    "2024-09-17",
+    "2025-01-14",
+    "2025-03-11",
+    "2025-09-23"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2023-12-19",
+     "observations": 8,
+     "mean": 755448.25
+    },
+    {
+     "start": "2023-12-26",
+     "end": "2024-09-10",
+     "observations": 38,
+     "mean": 937981.289
+    },
+    {
+     "start": "2024-09-17",
+     "end": "2025-01-07",
+     "observations": 17,
+     "mean": 1050594.0
+    },
+    {
+     "start": "2025-01-14",
+     "end": "2025-03-04",
+     "observations": 8,
+     "mean": 933465.0
+    },
+    {
+     "start": "2025-03-11",
+     "end": "2025-09-16",
+     "observations": 28,
+     "mean": 853306.464
+    },
+    {
+     "start": "2025-09-23",
+     "end": "2026-10-20",
+     "observations": 57,
+     "mean": 945149.667
+    }
+   ],
+   "current_regime": {
+    "since": "2025-09-23",
+    "observations": 57,
+    "mean": 945149.667,
+    "previous_mean": 853306.464,
+    "shift": 91843.203
+   }
+  },
+  "cftc_ES_leveraged_funds_net": {
+   "label_ar": "عقود E-mini S&P 500",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": -371245,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 30411.357473,
+    "pen": 9340725356.170221,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2024-01-23",
+    "2024-04-16",
+    "2025-08-12",
+    "2026-04-28",
+    "2026-06-23"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2024-01-16",
+     "observations": 12,
+     "mean": -317329.75
+    },
+    {
+     "start": "2024-01-23",
+     "end": "2024-04-09",
+     "observations": 12,
+     "mean": -413658.667
+    },
+    {
+     "start": "2024-04-16",
+     "end": "2025-08-05",
+     "observations": 69,
+     "mean": -296398.812
+    },
+    {
+     "start": "2025-08-12",
+     "end": "2026-04-21",
+     "observations": 37,
+     "mean": -404255.811
+    },
+    {
+     "start": "2026-04-28",
+     "end": "2026-06-16",
+     "observations": 8,
+     "mean": -446621.875
+    },
+    {
+     "start": "2026-06-23",
+     "end": "2026-10-20",
+     "observations": 18,
+     "mean": -343507.667
+    }
+   ],
+   "current_regime": {
+    "since": "2026-06-23",
+    "observations": 18,
+    "mean": -343507.667,
+    "previous_mean": -446621.875,
+    "shift": 103114.208
+   }
+  },
+  "cftc_NQ_asset_manager_net": {
+   "label_ar": "عقود Nasdaq-100 المصغرة",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": 77790,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 4151.43492,
+    "pen": 174062596.87358,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2024-07-23",
+    "2025-03-04",
+    "2025-05-20",
+    "2025-07-29",
+    "2026-02-03"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2024-07-16",
+     "observations": 38,
+     "mean": 85719.895
+    },
+    {
+     "start": "2024-07-23",
+     "end": "2025-02-25",
+     "observations": 32,
+     "mean": 68269.906
+    },
+    {
+     "start": "2025-03-04",
+     "end": "2025-05-13",
+     "observations": 11,
+     "mean": 40272.818
+    },
+    {
+     "start": "2025-05-20",
+     "end": "2025-07-22",
+     "observations": 10,
+     "mean": 56414.1
+    },
+    {
+     "start": "2025-07-29",
+     "end": "2026-01-27",
+     "observations": 27,
+     "mean": 79445.926
+    },
+    {
+     "start": "2026-02-03",
+     "end": "2026-10-20",
+     "observations": 38,
+     "mean": 72459.132
+    }
+   ],
+   "current_regime": {
+    "since": "2026-02-03",
+    "observations": 38,
+    "mean": 72459.132,
+    "previous_mean": 79445.926,
+    "shift": -6986.794
+   }
+  },
+  "cftc_NQ_leveraged_funds_net": {
+   "label_ar": "عقود Nasdaq-100 المصغرة",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": 950,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 7675.961233,
+    "pen": 595078878.418385,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2023-12-26",
+    "2025-02-25",
+    "2025-09-30",
+    "2026-03-17",
+    "2026-09-01"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2023-12-19",
+     "observations": 8,
+     "mean": -15760.25
+    },
+    {
+     "start": "2023-12-26",
+     "end": "2025-02-18",
+     "observations": 61,
+     "mean": -44569.82
+    },
+    {
+     "start": "2025-02-25",
+     "end": "2025-09-23",
+     "observations": 31,
+     "mean": -24085.355
+    },
+    {
+     "start": "2025-09-30",
+     "end": "2026-03-10",
+     "observations": 24,
+     "mean": -8496.083
+    },
+    {
+     "start": "2026-03-17",
+     "end": "2026-08-25",
+     "observations": 24,
+     "mean": -50624.792
+    },
+    {
+     "start": "2026-09-01",
+     "end": "2026-10-20",
+     "observations": 8,
+     "mean": -17201.5
+    }
+   ],
+   "current_regime": {
+    "since": "2026-09-01",
+    "observations": 8,
+    "mean": -17201.5,
+    "previous_mean": -50624.792,
+    "shift": 33423.292
+   }
+  },
+  "cftc_RTY_asset_manager_net": {
+   "label_ar": "عقود Russell 2000 المصغرة",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": 30960,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 6067.804373,
+    "pen": 371853720.94406,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2023-12-26",
+    "2024-09-17",
+    "2024-11-12",
+    "2025-01-14",
+    "2025-03-11"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2023-12-19",
+     "observations": 8,
+     "mean": 23980.25
+    },
+    {
+     "start": "2023-12-26",
+     "end": "2024-09-10",
+     "observations": 38,
+     "mean": 58168.289
+    },
+    {
+     "start": "2024-09-17",
+     "end": "2024-11-05",
+     "observations": 8,
+     "mean": 111093.75
+    },
+    {
+     "start": "2024-11-12",
+     "end": "2025-01-07",
+     "observations": 9,
+     "mean": 158767.444
+    },
+    {
+     "start": "2025-01-14",
+     "end": "2025-03-04",
+     "observations": 8,
+     "mean": 103032.625
+    },
+    {
+     "start": "2025-03-11",
+     "end": "2026-10-20",
+     "observations": 85,
+     "mean": 21322.647
+    }
+   ],
+   "current_regime": {
+    "since": "2025-03-11",
+    "observations": 85,
+    "mean": 21322.647,
+    "previous_mean": 103032.625,
+    "shift": -81709.978
+   }
+  },
+  "cftc_RTY_leveraged_funds_net": {
+   "label_ar": "عقود Russell 2000 المصغرة",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": -53035,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 7580.562097,
+    "pen": 580379160.246807,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2024-03-19",
+    "2024-07-16",
+    "2025-06-17",
+    "2025-11-25",
+    "2026-06-30"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2024-03-12",
+     "observations": 20,
+     "mean": -19891.05
+    },
+    {
+     "start": "2024-03-19",
+     "end": "2024-07-09",
+     "observations": 17,
+     "mean": -85843.882
+    },
+    {
+     "start": "2024-07-16",
+     "end": "2025-06-10",
+     "observations": 48,
+     "mean": -40020.25
+    },
+    {
+     "start": "2025-06-17",
+     "end": "2025-11-18",
+     "observations": 23,
+     "mean": -80591.696
+    },
+    {
+     "start": "2025-11-25",
+     "end": "2026-06-23",
+     "observations": 31,
+     "mean": -45491.419
+    },
+    {
+     "start": "2026-06-30",
+     "end": "2026-10-20",
+     "observations": 17,
+     "mean": -91764.294
+    }
+   ],
+   "current_regime": {
+    "since": "2026-06-30",
+    "observations": 17,
+    "mean": -91764.294,
+    "previous_mean": -45491.419,
+    "shift": -46272.875
+   }
+  },
+  "cftc_YM_asset_manager_net": {
+   "label_ar": "عقود داو جونز ($5)",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": 13066,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 2766.574938,
+    "pen": 77302558.330859,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2023-12-26",
+    "2024-04-02",
+    "2024-09-24",
+    "2024-12-17",
+    "2025-04-15"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2023-12-19",
+     "observations": 8,
+     "mean": 1387.25
+    },
+    {
+     "start": "2023-12-26",
+     "end": "2024-03-26",
+     "observations": 14,
+     "mean": 15457.929
+    },
+    {
+     "start": "2024-04-02",
+     "end": "2024-09-17",
+     "observations": 25,
+     "mean": 5848.4
+    },
+    {
+     "start": "2024-09-24",
+     "end": "2024-12-10",
+     "observations": 12,
+     "mean": 13108.583
+    },
+    {
+     "start": "2024-12-17",
+     "end": "2025-04-08",
+     "observations": 17,
+     "mean": 407.706
+    },
+    {
+     "start": "2025-04-15",
+     "end": "2026-10-20",
+     "observations": 80,
+     "mean": 7078.725
+    }
+   ],
+   "current_regime": {
+    "since": "2025-04-15",
+    "observations": 80,
+    "mean": 7078.725,
+    "previous_mean": 407.706,
+    "shift": 6671.019
+   }
+  },
+  "cftc_YM_leveraged_funds_net": {
+   "label_ar": "عقود داو جونز ($5)",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": -1967,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 2232.968783,
+    "pen": 50358674.864538,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2023-12-26",
+    "2024-06-04",
+    "2025-08-05",
+    "2025-09-30",
+    "2025-12-23"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2023-12-19",
+     "observations": 8,
+     "mean": -12290.375
+    },
+    {
+     "start": "2023-12-26",
+     "end": "2024-05-28",
+     "observations": 23,
+     "mean": 11833.435
+    },
+    {
+     "start": "2024-06-04",
+     "end": "2025-07-29",
+     "observations": 61,
+     "mean": 1776.885
+    },
+    {
+     "start": "2025-08-05",
+     "end": "2025-09-23",
+     "observations": 8,
+     "mean": -9438.625
+    },
+    {
+     "start": "2025-09-30",
+     "end": "2025-12-16",
+     "observations": 12,
+     "mean": -22304.0
+    },
+    {
+     "start": "2025-12-23",
+     "end": "2026-10-20",
+     "observations": 44,
+     "mean": -6374.364
+    }
+   ],
+   "current_regime": {
+    "since": "2025-12-23",
+    "observations": 44,
+    "mean": -6374.364,
+    "previous_mean": -22304.0,
+    "shift": 15929.636
+   }
+  },
+  "cftc_VX_asset_manager_net": {
+   "label_ar": "عقود VIX الآجلة",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": -57459,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 6642.295872,
+    "pen": 445600247.996364,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2024-05-07",
+    "2024-09-03",
+    "2025-12-16",
+    "2026-03-10",
+    "2026-06-09"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2024-04-30",
+     "observations": 27,
+     "mean": -5037.222
+    },
+    {
+     "start": "2024-05-07",
+     "end": "2024-08-27",
+     "observations": 17,
+     "mean": -33842.647
+    },
+    {
+     "start": "2024-09-03",
+     "end": "2025-12-09",
+     "observations": 67,
+     "mean": 9342.463
+    },
+    {
+     "start": "2025-12-16",
+     "end": "2026-03-03",
+     "observations": 12,
+     "mean": -32594.583
+    },
+    {
+     "start": "2026-03-10",
+     "end": "2026-06-02",
+     "observations": 13,
+     "mean": 2135.462
+    },
+    {
+     "start": "2026-06-09",
+     "end": "2026-10-20",
+     "observations": 20,
+     "mean": -41909.8
+    }
+   ],
+   "current_regime": {
+    "since": "2026-06-09",
+    "observations": 20,
+    "mean": -41909.8,
+    "previous_mean": 2135.462,
+    "shift": -44045.262
+   }
+  },
+  "cftc_VX_leveraged_funds_net": {
+   "label_ar": "عقود VIX الآجلة",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "available": true,
+   "first_date": "2023-10-31",
+   "last_date": "2026-10-20",
+   "latest_value": -20890,
+   "method": {
+    "library": "ruptures",
+    "version": "1.1.9",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "min_size": 8,
+    "penalty": "2 * sigma^2 * ln(n)",
+    "sigma": 7816.439082,
+    "pen": 617059276.182905,
+    "max_breaks": 5,
+    "capped": true
+   },
+   "change_points": [
+    "2024-07-23",
+    "2025-06-10",
+    "2025-08-05",
+    "2025-12-02",
+    "2026-06-16"
+   ],
+   "segments": [
+    {
+     "start": "2023-10-31",
+     "end": "2024-07-16",
+     "observations": 38,
+     "mean": -11361.789
+    },
+    {
+     "start": "2024-07-23",
+     "end": "2025-06-03",
+     "observations": 46,
+     "mean": -26031.826
+    },
+    {
+     "start": "2025-06-10",
+     "end": "2025-07-29",
+     "observations": 8,
+     "mean": -58440.75
+    },
+    {
+     "start": "2025-08-05",
+     "end": "2025-11-25",
+     "observations": 17,
+     "mean": -82974.059
+    },
+    {
+     "start": "2025-12-02",
+     "end": "2026-06-09",
+     "observations": 28,
+     "mean": -36667.714
+    },
+    {
+     "start": "2026-06-16",
+     "end": "2026-10-20",
+     "observations": 19,
+     "mean": -9918.947
+    }
+   ],
+   "current_regime": {
+    "since": "2026-06-16",
+    "observations": 19,
+    "mean": -9918.947,
+    "previous_mean": -36667.714,
+    "shift": 26748.767
+   }
+  }
+ },
+ "notes_ar": [
+  "تقسيم وصفي لتاريخ السلسلة إلى أنظمة بمتوسطات مختلفة؛ لا يتنبأ بالانكسار التالي ولا يحدد اتجاه السوق.",
+  "مراكز CFTC أسبوعية (الثلاثاء)؛ انكسار في صافي المراكز سياق لمن يحمل العقود وليس توقيتًا."
+ ],
+ "rights": "U.S. government publications (Treasury, CFTC); derived segmentation published with the sources cited",
+ "research_only": true,
+ "decision_authority": false,
+ "execution_authority": false
+}
