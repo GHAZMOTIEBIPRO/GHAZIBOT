@@ -1689,6 +1689,9 @@
     MATERIAL_AGREEMENT:"عقد جوهري",EARNINGS_RELEASE:"نتائج",INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري",
     TRIAL_RESULTS_POSTED:"نتائج منشورة بالسجل (الاتجاه غير مقيم)",TRIAL_STATUS_REVIEW:"مراجعة حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث سجل دراسة",
     MERGER_OR_ACQUISITION:"اندماج/استحواذ",ACTIVIST_STAKE:"حصة نشطة 13D"};
+  const SIZE_AR={SIZE_VERIFIED_SMALL:"صغيرة (Public Float أقل من 250 مليون$ حسب 10-K)",
+    SIZE_VERIFIED_MID:"متوسطة (Public Float 250–700 مليون$)",SIZE_VERIFIED_LARGE:"كبيرة (Public Float 700 مليون$ فأكثر)",
+    KNOWN_LARGE_ISSUER_LIST:"ضمن قائمة الشركات الكبيرة المرجعية (الحجم غير مقاس)",SIZE_UNVERIFIED:"الحجم السوقي غير متحقق"};
   // Official catalysts only; never a price band or a signal without a permitted current quote.
   function catalystLines(report,limit=20){
     if(!report||!Array.isArray(report.watchlist))return [];
@@ -1698,7 +1701,7 @@
       status:(Number.isFinite(e.catalyst_score)?"أولوية "+e.catalyst_score+"/100":
         ({HIGH:"أولوية مراجعة عالية",MEDIUM:"أولوية متوسطة",LOW:"أولوية منخفضة"}[e.highest_importance]||"—"))+" · "+String(e.latest_date||"—"),
       price:(e.sub10_confirmed===true?"تحت 10$ بسعر حديث مسموح":"مرشح يحتاج تحققًا سعريًا (لا سعر مسموح حديث)")+
-        (e.universe==="KNOWN_LARGE_ISSUER"?" · شركة كبيرة (خارج رادار الأسهم الصغيرة)":"")+
+        (SIZE_AR[e.universe]?" · "+SIZE_AR[e.universe]:" · الحجم السوقي غير متحقق")+
         (Array.isArray(e.risk_flags)&&e.risk_flags.length?" · مخاطر: "+e.risk_flags.join("، "):""),
       items:(e.catalysts||[]).slice(0,4).map(c=>({text:(CATALYST_KIND[c.kind]||c.kind)+" · "+String(c.date||"—")+
         (c.label?" · "+String(c.label).slice(0,90):"")+" · "+String(c.source||""),url:safeOfficial(c.source_url)}))}));
@@ -1711,8 +1714,8 @@
     const src=report.sources||{};
     put("terminal-catalyst-status","المصادر: openFDA"+(src.sec_edgar?" + SEC EDGAR":" (SEC غير متاح: "+String(src.sec_status||"—")+")")+
       " · آخر "+String(report.window_days||30)+" يومًا · "+report.watchlist.length+" سهمًا"+
-      (Array.isArray(report.small_cap_candidates)?" (خارج قائمة الشركات الكبيرة: "+report.small_cap_candidates.length+
-        "؛ الحجم والسعر غير متحققين)":"")+
+      (Array.isArray(report.small_cap_candidates)?" · صغيرة بحجم متحقق (SEC Public Float): "+report.small_cap_candidates.length:"")+
+      (Array.isArray(report.size_unverified_candidates)?" · حجمها غير متحقق: "+report.size_unverified_candidates.length:"")+
       " · الترتيب بقوة المحفز وحداثته وموثوقية الربط · التحديث: "+stamp(report.generated_at)+
       " · أولوية المراجعة لا تعني اتجاه السعر."+
       (src.clinicaltrials?" · ClinicalTrials.gov: تغطية محدودة؛ Courtesy of the U.S. National Library of Medicine. لا تأييد من NLM وقد لا تعكس آخر تعديل.":""));

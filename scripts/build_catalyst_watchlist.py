@@ -58,9 +58,10 @@ NEW_MOLECULE_BONUS = 10
 RELIABILITY = {"exact_normalised_name": 1.0, "issuer_cik": 1.0, "reviewed_sponsor_alias": 0.9}
 RISK_KINDS = {"DILUTION_RISK": "خطر تخفيف", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "تقسيم عكسي/تعديل نظام محتمل",
               "LISTING_NOTICE": "إشعار إدراج (خطر شطب)"}
-# Index-member issuers that are not small-cap candidates. A fixed list of
-# companies, not prices: it keeps megacaps out of the small-cap view and
-# never classifies anything as under $10.
+# Reference list of issuers known to be large. It is NOT a measurement: an
+# issuer on it is labelled KNOWN_LARGE_ISSUER_LIST (size unverified), and
+# when SEC public float exists the measured band wins and any disagreement
+# is reported in list_review.
 KNOWN_LARGE_ISSUERS = frozenset({
     "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "GOOG", "TSLA", "AVGO", "AMD", "ORCL", "BAC", "CVX", "OXY",
     "LLY", "ABBV", "MRK", "PFE", "JNJ", "BMY", "AMGN", "GILD", "TMO", "ABT", "DHR", "MDT", "UNH", "CVS", "REGN",
@@ -211,7 +212,36 @@ def score_entry(items: list[dict[str, Any]], now: datetime) -> dict[str, Any]:
             "risk_level": "HIGH" if risks else "NORMAL"}
 
 
-def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) -> dict[str, Any]:
+# Size from SEC public float (dei:EntityPublicFloat on the 10-K cover, measured
+# on the last business day of the second fiscal quarter). Thresholds are the
+# SEC's own (17 CFR 240.12b-2): smaller reporting company < $250M, large
+# accelerated filer >= $700M. Public float is not market capitalisation.
+SRC_FLOAT_USD = 250_000_000
+LARGE_ACCELERATED_FLOAT_USD = 700_000_000
+MAX_FLOAT_AGE_DAYS = 470  # one annual measurement plus filing time
+
+
+def size_band(symbol: str, sizes: Any, now: datetime) -> dict[str, Any]:
+    row = (sizes.get("symbols") or {}).get(symbol) if isinstance(sizes, dict) else None
+    unverified = {"universe": "KNOWN_LARGE_ISSUER_LIST" if symbol in KNOWN_LARGE_ISSUERS else "SIZE_UNVERIFIED",
+                  "size_basis": "NO_DOCUMENTED_SIZE"}
+    if not isinstance(row, dict):
+        return unverified
+    value, as_of, url = row.get("public_float_usd"), _day(row.get("public_float_as_of")), str(row.get("source_url") or "")
+    if (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0
+            or as_of is None or not url.startswith("https://www.sec.gov/")):
+        return {**unverified, "size_basis": "SEC_PUBLIC_FLOAT_INVALID"}
+    age = (now.date() - date.fromisoformat(as_of)).days
+    if not 0 <= age <= MAX_FLOAT_AGE_DAYS:
+        return {**unverified, "size_basis": "SEC_PUBLIC_FLOAT_STALE", "public_float_as_of": as_of}
+    universe = ("SIZE_VERIFIED_SMALL" if value < SRC_FLOAT_USD else
+                "SIZE_VERIFIED_LARGE" if value >= LARGE_ACCELERATED_FLOAT_USD else "SIZE_VERIFIED_MID")
+    return {"universe": universe, "size_basis": "SEC_PUBLIC_FLOAT", "public_float_usd": float(value),
+            "public_float_as_of": as_of, "size_source_url": url}
+
+
+def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
+          sizes: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
     for item in fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now):
@@ -232,7 +262,7 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) 
             **score_entry(items, now),
             **price_band(symbol, prices, now),
             "price_confirmed_signal": False,
-            "universe": "KNOWN_LARGE_ISSUER" if symbol in KNOWN_LARGE_ISSUERS else "SMALL_CAP_CANDIDATE",
+            **size_band(symbol, sizes, now),
         })
         band = entries[-1]["price_band"]
         entries[-1]["candidate_status"] = ("PRICE_VERIFICATION_NEEDED" if band == "UNVERIFIED" else
@@ -252,11 +282,21 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) 
                     "clinicaltrials": clinical_available(clinical, now),
                     "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING"},
         "watchlist": entries[:MAX_TICKERS],
-        # Small-cap view: issuers outside the large-issuer list, all still
-        # needing price verification before any under-$10 label.
-        "small_cap_candidates": [e["symbol"] for e in entries[:MAX_TICKERS] if e["universe"] == "SMALL_CAP_CANDIDATE"],
-        "small_cap_candidates_note_ar": ("خارج قائمة الشركات الكبيرة المعروفة فقط؛ حجم الشركة وسعرها غير متحققين "
-                                         "دون بيانات سعرية مسموحة."),
+        # Small caps only from a measured size; low price is a separate test
+        # (price_band) and neither implies the other.
+        "small_cap_candidates": [e["symbol"] for e in entries[:MAX_TICKERS] if e["universe"] == "SIZE_VERIFIED_SMALL"],
+        "size_unverified_candidates": [e["symbol"] for e in entries[:MAX_TICKERS] if e["universe"] == "SIZE_UNVERIFIED"],
+        "list_review": [{"symbol": e["symbol"], "measured": e["universe"]} for e in entries[:MAX_TICKERS]
+                        if e["symbol"] in KNOWN_LARGE_ISSUERS and e["universe"] in {"SIZE_VERIFIED_SMALL",
+                                                                                     "SIZE_VERIFIED_MID"}],
+        "size_rules": {
+            "basis": "SEC dei:EntityPublicFloat (10-K cover), as of the second fiscal quarter",
+            "small_below_usd": SRC_FLOAT_USD, "large_from_usd": LARGE_ACCELERATED_FLOAT_USD,
+            "max_age_days": MAX_FLOAT_AGE_DAYS, "rule": "17 CFR 240.12b-2",
+            "sources_status": "AVAILABLE" if isinstance(sizes, dict) and sizes.get("symbols") else "SEC_SIZE_DATA_UNAVAILABLE",
+            "note_ar": ("الحجم من القيمة السوقية للأسهم الحرة (Public Float) في إفصاح 10-K فقط؛ دونها «الحجم السوقي غير "
+                        "متحقق». انخفاض السعر اختبار منفصل لا يعني صغر الشركة."),
+        },
         "ranking_rules": {
             "points": POINTS, "new_molecule_bonus": NEW_MOLECULE_BONUS,
             "recency": "x (0.4 + 0.6 * (1 - age_days / 30))", "reliability": RELIABILITY,
@@ -285,9 +325,11 @@ def main() -> int:
     parser.add_argument("--sec", type=Path)
     parser.add_argument("--clinical", type=Path)
     parser.add_argument("--prices", type=Path)
+    parser.add_argument("--sizes", type=Path, help="SEC public-float file; absent until SEC access works")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    report = build(_load(args.fda), _load(args.sec), _load(args.prices), datetime.now(timezone.utc), _load(args.clinical))
+    report = build(_load(args.fda), _load(args.sec), _load(args.prices), datetime.now(timezone.utc),
+                   _load(args.clinical), _load(args.sizes))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Catalyst watchlist:", json.dumps({"status": report["status"], "tickers": len(report["watchlist"]),
