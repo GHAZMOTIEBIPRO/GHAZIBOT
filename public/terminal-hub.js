@@ -151,7 +151,7 @@
       Array.isArray(d.approvals)&&Array.isArray(d.recalls),
     catalysts:d=>d?.schema==="ghazi.catalyst_watchlist.v1"&&d.decision_authority===false&&
       d.execution_authority===false&&Array.isArray(d.watchlist)&&Array.isArray(d.price_confirmed_signals),
-    regimes:d=>d?.schema==="ghazi.macro_regimes.v1"&&d.decision_authority===false&&d.execution_authority===false&&
+    regimes:d=>d?.schema==="ghazi.macro_regimes.v2"&&d.decision_authority===false&&d.execution_authority===false&&
       d.series&&typeof d.series==="object",
     macro:d=>d?.schema==="ghazi.public_macro.v1"&&d.decision_authority===false&&d.execution_authority===false&&
       d.cftc_index_futures&&typeof d.cftc_index_futures==="object"&&d.treasury_curve&&typeof d.treasury_curve==="object",
@@ -1734,18 +1734,18 @@
       box.append(item);
     }
   }
-  // Structural breaks (ruptures) in public Treasury/CFTC series: descriptive, never a direction.
+  // Drift changes (ruptures on period changes) in public Treasury/CFTC series: descriptive, never a direction.
   function regimeLines(report){
     if(!report||typeof report.series!=="object")return [];
     return Object.entries(report.series).filter(([,r])=>r&&r.available===true&&r.current_regime).map(([key,r])=>{
-      const c=r.current_regime,unit=r.unit==="bp"?" ن.أ":r.unit==="%"?"%":"";
+      const c=r.current_regime,unit=r.unit==="bp"?" ن.أ":r.unit==="%"?"%":"",per=r.frequency==="weekly"?"أسبوع":"جلسة";
+      const breaks=(r.breaks||[]).map(b=>b.date+(b.hindsight_only?" (بأثر رجعي)":b.detectable_from?" (قابل للرصد "+b.detectable_from+")":""));
       return {key,title:String(r.label_ar||key).slice(0,80),
-        status:"نظام منذ "+String(c.since||"—"),tone:null,
-        detail:"متوسط النظام الحالي "+fmt(c.mean,2)+unit+
-          (Number.isFinite(c.previous_mean)?" مقابل "+fmt(c.previous_mean,2)+unit+" قبله (تغير "+(c.shift>0?"+":"")+fmt(c.shift,2)+")":
-            " · لا انكسار مكتشف في الفترة")+
+        status:breaks.length?"نظام منذ "+String(c.since||"—"):"لا تغيّر انجراف مكتشف",tone:null,
+        detail:"متوسط التغير لكل "+per+" "+fmt(c.mean_change,3)+unit+
+          (Number.isFinite(c.previous_mean_change)?" مقابل "+fmt(c.previous_mean_change,3)+unit+" قبله":"")+
           " · آخر قيمة "+fmt(r.latest_value,2)+unit+" بتاريخ "+String(r.last_date||"—")+
-          " · "+String(r.observations||0)+" ملاحظة · انكسارات: "+((r.change_points||[]).join("، ")||"لا يوجد")};
+          " · "+String(r.observations||0)+" ملاحظة · الانكسارات: "+(breaks.join("، ")||"لا يوجد")};
     });
   }
   function renderMacro(){
@@ -1768,7 +1768,7 @@
     }
     const regimes=regimeLines(state.regimes);
     if(regimes.length){
-      box.append(txt("p","أنظمة السلاسل (ruptures، تقسيم وصفي للتاريخ وليس توقعًا أو إشارة) · "+stamp(state.regimes.generated_at),"terminal-footnote"));
+      box.append(txt("p","تغيّر الانجراف في السلاسل (ruptures على التغيرات، معاير لإنذار كاذب 3–5%؛ وصف وليس توقعًا أو إشارة) · "+stamp(state.regimes.generated_at),"terminal-footnote"));
       for(const line of regimes){
         const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
         head.append(txt("strong",line.title),chip(line.status,line.tone));

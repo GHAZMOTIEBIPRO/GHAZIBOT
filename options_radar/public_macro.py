@@ -197,6 +197,7 @@ def history_series(cot_rows: list[dict[str, Any]], treasury_rows: list[dict[str,
                 continue
             series[f"cftc_{key}_{category}_net"] = {
                 "frequency": "weekly", "unit": "contracts", "source": "CFTC Traders in Financial Futures",
+                "release_lag_days": 3,
                 "label_ar": spec["label_ar"],
                 "dates": [w.isoformat() for w, _, _ in points], "values": [lg - sh for _, lg, sh in points]}
     return series
