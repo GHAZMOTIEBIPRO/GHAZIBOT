@@ -10,9 +10,11 @@ on:
       - ".github/workflows/daily-plan.yml"
   # Before the New York open in both EDT (11:47 UTC = 07:47 ET) and EST
   # (12:47 UTC = 07:47 ET); the script reads the XNYS calendar itself.
+  # A midday run adds a dated update (17:17 UTC = 13:17 EDT / 12:17 EST).
   schedule:
     - cron: "47 11 * * 1-5"
     - cron: "47 12 * * 1-5"
+    - cron: "17 17 * * 1-5"
 
 permissions:
   contents: write
@@ -29,6 +31,12 @@ jobs:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      # Private delivery: owner's personal chat only (output_policy.deliver_private
+      # checks it differs from the broadcast chat and that Telegram calls it private).
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:

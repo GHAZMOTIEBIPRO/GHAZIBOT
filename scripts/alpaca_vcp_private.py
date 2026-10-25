@@ -15,7 +15,7 @@ import json
 import os
 import re
 from collections.abc import Callable, Mapping
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -189,7 +189,7 @@ def clean_delivery_state(value: Any) -> dict[str, Any]:
     clean: dict[str, Any] = {}
     session = state.get("last_private_session")
     try:
-        session_date = datetime.strptime(str(session), "%Y-%m-%d").date()
+        session_date = date.fromisoformat(str(session))
         if session_date.isoformat() == session:
             clean["last_private_session"] = session
     except ValueError:
@@ -273,6 +273,30 @@ def run(*, now: datetime, env: Mapping[str, str], state: dict | None = None,
     return result, state
 
 
+def owner_send(env: Mapping[str, str]) -> Callable[[str], Any]:
+    """Send only to the owner's personal chat, never the broadcast chat.
+
+    output_policy.deliver_private checks the policy, that TELEGRAM_OWNER_CHAT_ID
+    differs from TELEGRAM_CHAT_ID and that Telegram reports a private chat.
+    """
+    from options_radar.output_policy import deliver_private
+    from scripts.telegram_transport import get_chat
+
+    def send(text: str) -> Any:
+        receipt: dict[str, Any] = {}
+
+        def _send(body: str, chat: str) -> Any:
+            receipt["r"] = send_html_message(body, chat_id=chat)
+            return receipt["r"]
+
+        status = deliver_private(text, sources=["alpaca_iex"], env=env, get_chat=get_chat, send=_send)
+        if status != "DELIVERED":
+            raise RuntimeError(status)
+        return receipt["r"]
+
+    return send
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--status", type=Path, required=True)
@@ -284,7 +308,7 @@ def main() -> int:
     except (OSError, ValueError):
         state = {}
     report, new_state = run(now=datetime.now(timezone.utc), env=os.environ,
-                            state=state, private_ready=args.private_ready)
+                            state=state, private_ready=args.private_ready, send=owner_send(os.environ))
     for path, payload in ((args.status, report), (args.state, new_state)):
         path.parent.mkdir(parents=True, exist_ok=True)
         temp = path.with_suffix(".tmp")

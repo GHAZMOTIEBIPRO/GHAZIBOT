@@ -86,8 +86,10 @@ def test_workflow_is_single_writer_without_a_price_input():
     text = (ROOT / ".github/workflows/catalyst-watchlist.yml").read_text(encoding="utf-8")
     wf = yaml.safe_load(text)
     assert wf[True]["schedule"] == [{"cron": "15 5 * * 1-5"}, {"cron": "15 8 * * 1-5"}] and "--prices" not in text
+    # readers (e.g. the private scan) may mention the file; only one workflow writes or commits it
     writers = [p.name for p in (ROOT / ".github/workflows").glob("*.yml")
-               if "catalyst_watchlist.json" in p.read_text(encoding="utf-8")]
+               if any("catalyst_watchlist.json" in line and ("--output" in line or "git add" in line)
+                      for line in p.read_text(encoding="utf-8").splitlines())]
     assert writers == ["catalyst-watchlist.yml"]
 
 

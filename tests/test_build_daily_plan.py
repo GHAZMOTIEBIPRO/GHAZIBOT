@@ -41,30 +41,81 @@ def test_sheet_lists_only_recent_catalyst_events_and_no_prices(monkeypatch):
     assert '"close":' not in text and '"open":' not in text
 
 
-def test_private_plans_use_alpaca_only_with_keys_and_owner_authorization(monkeypatch):
+def _bars_payload(start, n, step_minutes, base=100.0):
+    from datetime import timedelta
+    rows = []
+    for i in range(n):
+        t = start + timedelta(minutes=step_minutes * i)
+        price = base + i * 0.01
+        rows.append({"t": t.isoformat().replace("+00:00", "Z"), "o": price, "h": price + 0.2, "l": price - 0.2,
+                     "c": price + 0.05, "v": 1000})
+    return {"bars": rows, "next_page_token": None}
+
+
+def test_private_plans_need_policy_and_keys_and_build_intraday_frames(monkeypatch):
+    from datetime import timedelta
     calls = []
 
     class Response:
-        status_code, content = 200, b"{}"
+        status_code = 200
+
+        def __init__(self, payload):
+            self.payload = payload
 
         def json(self):
-            return {"bars": []}
+            return self.payload
 
     class Session:
         def get(self, url, params=None, headers=None, timeout=None):
-            calls.append(url)
-            return Response()
+            calls.append(params)
+            start, end = datetime.fromisoformat(params["start"]), datetime.fromisoformat(params["end"])
+            if params["timeframe"] == "1Day":
+                first = start.replace(hour=4, minute=0)
+                return Response(_bars_payload(first, int((end - first).total_seconds() // 86400) + 1, 24 * 60))
+            return Response(_bars_payload(start, int((end - start).total_seconds() // 300), 5))
 
-    now = datetime(2026, 10, 25, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 26, 18, 0, tzinfo=timezone.utc)  # Monday 14:00 New York
     facts = bdp.calendar_facts(now)
-    monkeypatch.setenv("ALPACA_API_KEY", "k")
-    monkeypatch.setenv("ALPACA_SECRET_KEY", "s")
-    monkeypatch.setenv("ALPACA_INTERNAL_DATA_USE_AUTHORIZED", "false")
-    assert bdp.private_plans(facts, now, session=Session())["enabled"] is False and calls == []
-    monkeypatch.setenv("ALPACA_INTERNAL_DATA_USE_AUTHORIZED", "true")
-    result = bdp.private_plans(facts, now, session=Session())
-    assert result["enabled"] is True and len(calls) == 3 * len(bdp.PLAN_SYMBOLS)
-    assert all(not p["available"] for p in result["plans"].values())  # empty fixture responses
+    denied = {"ALPACA_API_KEY": "k", "ALPACA_SECRET_KEY": "s", "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "false"}
+    assert bdp.private_plans(facts, now, session=Session(), env=denied)["reason"] == "DATA_USE_PERMISSION_REQUIRED"
+    no_keys = {"ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}
+    assert bdp.private_plans(facts, now, session=Session(), env=no_keys)["reason"] == "ACCOUNT_CREDENTIALS_NOT_CONFIGURED"
+    assert calls == []  # neither denial touched the provider
+    ok = {**denied, "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}
+    result = bdp.private_plans(facts, now, session=Session(), env=ok)
+    assert result["enabled"] is True and len(calls) == 2 * len(bdp.PLAN_SYMBOLS)
+    # nothing newer than now - 16 minutes is ever requested
+    assert all(datetime.fromisoformat(c["end"]) <= now - timedelta(minutes=16) for c in calls)
+    assert {c["feed"] for c in calls} == {"iex"}
+    plan = result["plans"]["SPY"]
+    assert plan["available"] is True
+    assert {"daily", "weekly", "4h", "1h", "15m", "5m"} <= set(plan["frames_available"])
+    # the 4H bucket in progress (13:30-16:00 today) is not used
+    assert plan["frames"]["4h"]["last_bar_end"] <= "2026-10-26T17:30:00+00:00"
+    assert all(level["source"] == "alpaca_iex" and level["bar"] for level in plan["levels"])
+    # a provider whose history stops weeks ago yields no plan, not an old one
+    stale = dict(result["plans"]["SPY"])
+    old = bdp.dp.plan_for_symbol("OLD", [{"date": "2026-09-04", "open": 1, "high": 2, "low": 0.5, "close": 1.5},
+                                         {"date": "2026-09-05", "open": 1, "high": 2, "low": 0.5, "close": 1.5}],
+                                 last_closed_session="2026-10-23", last_closed_week_end="2026-10-23",
+                                 provider={"name": "alpaca_iex"})
+    assert old["available"] is False and old["reason"].startswith("stale") and stale["available"] is True
+    sheet = bdp.build(now, None, None, None, result)
+    assert sheet["readiness"]["multi_timeframe"] == {"public": "UNAVAILABLE", "private_owner": "FULL",
+                                                     "frames_private": sorted(bdp.FRAMES)}
+    assert sheet["readiness"]["price_levels"] == {"public": "NOT_COMPUTED", "private_owner": "COMPUTED"}
+    assert sheet["title_ar"] == "موجز الجلسة والمحركات"  # no public frames: not a technical plan
+    assert sheet["public_price_plans"] == {} and '"close":' not in json.dumps(sheet)
+
+
+def test_sheet_without_any_frames_is_a_session_brief():
+    now = datetime(2026, 10, 25, 12, tzinfo=timezone.utc)
+    sheet = bdp.build(now, {"watchlist": []}, {"treasury_curve": {"curve_date": "2026-10-23"}}, None,
+                      {"enabled": False, "reason": "DATA_USE_PERMISSION_REQUIRED", "plans": {}})
+    assert sheet["title_ar"] == "موجز الجلسة والمحركات"
+    assert sheet["readiness"]["session_and_catalysts"] == "AVAILABLE"
+    assert sheet["readiness"]["multi_timeframe"]["private_owner"] == "UNAVAILABLE"
+    assert sheet["readiness"]["price_levels"]["private_owner"] == "NOT_COMPUTED"
 
 
 def test_workflow_publishes_sheet_and_morning_copy_but_never_private_output():

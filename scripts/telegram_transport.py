@@ -211,3 +211,20 @@ def verify_bot(token: str | None = None, timeout: int = 12) -> dict[str, Any]:
         "bot_id": result.get("id"),
         "username": result.get("username"),
     }
+
+
+def get_chat(chat_id: str, token: str | None = None, timeout: int = 12) -> dict[str, Any]:
+    """Telegram's own description of a destination (type: private/group/supergroup/channel).
+
+    Used to confirm that a "private" destination really is a one-to-one chat
+    before anything licensed for the owner's personal use is sent there.
+    """
+    bot_token = str(token or os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+    if not bot_token or not str(chat_id or "").strip():
+        raise RuntimeError("Telegram destination is not ready")
+    response = requests.get(_telegram_url(bot_token, "getChat"), params={"chat_id": chat_id}, timeout=timeout)
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict) or payload.get("ok") is not True or not isinstance(payload.get("result"), dict):
+        raise RuntimeError("Telegram getChat rejected")
+    return {"type": payload["result"].get("type")}

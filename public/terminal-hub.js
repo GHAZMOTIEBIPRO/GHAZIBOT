@@ -1800,8 +1800,21 @@
     const m=plan.macro||{};
     const macro=m.curve_date?"المنحنى "+m.curve_date+": فرق 10Y−2Y "+fmt(m.spreads_bp?.["10Y_2Y"],0)+" ن.أ · 10Y "+fmt(m.yields_pct?.["10Y"],2)+
       "% · سلاسل بتغيّر انجراف: "+(m.regime_series_with_breaks??"—")+"/"+(m.regime_series??"—"):"لا بيانات منحنى";
-    return {session,last:"آخر جلسة مغلقة: "+String(s.last_closed_session||"—"),frames,reasons,cats,macro,
-      private:plan.private_mode?.enabled?"الوضع الخاص للمالك مفعّل (لا يُنشر)":"",generated:plan.generated_at};
+    const r=plan.readiness||{};
+    const MTF_AR={FULL:"كامل",PARTIAL:"جزئي",UNAVAILABLE:"غير متاح"};
+    // three separate answers: a fresh file is not a fresh technical analysis
+    const readiness=[
+      "ملخص الجلسة والمحفزات والاقتصاد: "+(r.session_and_catalysts==="AVAILABLE"?"متاح":"غير متاح"),
+      "التحليل متعدد الفريمات: عام "+(MTF_AR[r.multi_timeframe?.public]||"غير متاح")+
+        " · خاص بالمالك "+(MTF_AR[r.multi_timeframe?.private_owner]||"غير متاح"),
+      "المستويات والسيناريوهات السعرية: عامة "+(r.price_levels?.public==="COMPUTED"?"محسوبة":"غير محسوبة")+
+        " · خاصة "+(r.price_levels?.private_owner==="COMPUTED"?"محسوبة":"غير محسوبة")];
+    const delivery={DELIVERED:"أُرسلت الخطة الخاصة لمحادثة المالك",NOT_ATTEMPTED:"",DENIED_BY_POLICY:"الإرسال الخاص غير مفعّل",
+      OWNER_CHAT_NOT_CONFIGURED:"لا توجد محادثة خاصة للمالك",DESTINATION_NOT_PRIVATE:"رُفض الإرسال: الوجهة ليست محادثة خاصة"};
+    return {title:String(plan.title_ar||"موجز الجلسة والمحركات"),readiness,session,
+      last:"آخر جلسة مغلقة: "+String(s.last_closed_session||"—"),frames,reasons,cats,macro,
+      private:plan.private_mode?.enabled?"الوضع الخاص للمالك مفعّل (لا يُنشر)"+
+        (delivery[plan.private_mode.delivery]?" · "+delivery[plan.private_mode.delivery]:""):"",generated:plan.generated_at};
   }
   const RUN_AR={OK:"سليم",FAILED:"فشل آخر تشغيل",NO_RUN_24H:"لا تشغيل خلال 24 ساعة",API_UNAVAILABLE:"سجل التشغيل غير متاح"};
   const SOURCE_AR={AVAILABLE:"متاح",BLOCKED_BY_TERMS:"محجوب حسب الشروط",REFUSED_OR_DOWN:"رفض الطلب أو لا يستجيب",
@@ -1842,12 +1855,14 @@
     body.replaceChildren();
     const lines=planLines(state.plan);
     if(!lines){put("terminal-plan-status","لم تُنشر خطة اليوم بعد.");return;}
+    put("terminal-plan-title",lines.title);
     put("terminal-plan-status",lines.session);
     const group=(title,items,open)=>{
       const box=document.createElement("details");box.className="terminal-brief-section";box.open=open;
       box.append(txt("summary",title));const list=txt("ul","");
       for(const item of items)list.append(txt("li",item));box.append(list);body.append(box);
     };
+    group("ما المتاح فعلًا",lines.readiness,true);
     group("المحفزات الرسمية (آخر 3 أيام)",lines.cats.length?lines.cats:["لا محفزات رسمية حديثة"],true);
     group("الخلفية الكلية",[lines.macro],false);
     group("الفريمات المتاحة",[...lines.frames,...lines.reasons.map(r=>"السبب: "+r),lines.last],true);

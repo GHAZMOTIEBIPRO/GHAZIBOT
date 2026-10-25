@@ -15,6 +15,14 @@ assert.deepEqual(l.frames,["أسبوعي: غير متاح","يومي: خاص ب�
 assert.match(l.cats[0],/GSK · موافقة FDA · 2026-10-20 · أولوية 60.8/);
 assert.match(l.macro,/فرق 10Y−2Y 31 ن\.أ/);
 assert.match(l.private,/لا يُنشر/);
+assert.equal(l.title,"موجز الجلسة والمحركات");
+assert.match(l.readiness[1],/التحليل متعدد الفريمات: عام غير متاح · خاص بالمالك غير متاح/);
+const ready=planLines({...sheet,title_ar:"موجز الجلسة والمحركات",readiness:{session_and_catalysts:"AVAILABLE",
+  multi_timeframe:{public:"UNAVAILABLE",private_owner:"PARTIAL"},price_levels:{public:"NOT_COMPUTED",private_owner:"COMPUTED"}},
+  private_mode:{enabled:true,delivery:"DELIVERED"}});
+assert.match(ready.readiness[1],/خاص بالمالك جزئي/);
+assert.match(ready.readiness[2],/عامة غير محسوبة · خاصة محسوبة/);
+assert.match(ready.private,/أُرسلت الخطة الخاصة لمحادثة المالك/);
 const early=planLines({...sheet,session:{...sheet.session,today:{date:"2026-11-27",open_new_york:"09:30",close_new_york:"13:00",
   open_riyadh:"17:30",close_riyadh:"21:00",early_close:true}}});
 assert.match(early.session,/إغلاق مبكر/);
