@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-10-25T07:50:02.613429+00:00",
+ "generated_at": "2026-10-25T08:02:03.583589+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,7 +8,7 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 10
+     "success": 12
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
@@ -30,13 +30,23 @@
      "success": 4
     },
     "site-evidence-strength.yml": {
-     "success": 10
+     "success": 11
     },
     "free-gex-validation.yml": {
      "success": 4
     },
     "market-orchestrator.yml": {
      "success": 9
+    },
+    "catalyst-watchlist.yml": {
+     "success": 4
+    },
+    "daily-plan.yml": {
+     "success": 2
+    },
+    "fda-events.yml": {},
+    "official-sec-pulse.yml": {
+     "success": 3
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
@@ -63,7 +73,7 @@
   },
   "DATA_TRUST": {
    "status": "MEASURED",
-   "value": 60.9,
+   "value": 62.5,
    "unit": "percent of published datasets",
    "evidence": {
     "index_radar.json": "PASS/BLOCKED_PENDING_PERMISSION",
@@ -82,6 +92,7 @@
     "macro_regimes.json": "PASS/OK_FOR_STATED_USE",
     "fda_events.json": "PASS/OK_FOR_STATED_USE",
     "catalyst_watchlist.json": "PASS/OK_FOR_STATED_USE",
+    "issuer_sizes.json": "PASS/OK_FOR_STATED_USE",
     "sec_filing_pulse.json": "PASS/OK_FOR_STATED_USE",
     "source_agreement.json": "PASS/OK_FOR_STATED_USE",
     "stock_audit_public.json": "PASS/OK_FOR_STATED_USE",
@@ -98,9 +109,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 40173798385,
+    "run_id": 40174665196,
     "conclusion": "success",
-    "at": "2026-10-25T07:42:39Z"
+    "at": "2026-10-25T07:56:12Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -198,13 +209,150 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "last_sent_at": "2026-10-24T16:59:38.572197+00:00",
+    "last_sent_at": "2026-10-25T07:50:32.319538+00:00",
     "kind": "change",
-    "message_id": 1295,
+    "message_id": 1296,
     "log": "state/telegram/ops_digest_state.json"
    },
    "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
    "note_ar": "Telegram قبل رسالة فعلية وأعاد رقمها؛ هذا لا يثبت أن المستخدم قرأها."
+  }
+ },
+ "engines": {
+  "fast_explosion": {
+   "label_ar": "رادار الانفجار السريع",
+   "verdict_ar": "متوقف لغياب مصدر مؤهل",
+   "run": "OK",
+   "source": "BLOCKED_BY_TERMS",
+   "data": "STALE",
+   "data_state": "LICENSE_BLOCKED",
+   "analysis": "NOT_COMPUTED",
+   "alerts": "NO_ALERT_PATH",
+   "closed_gates": [
+    "nasdaq_web"
+   ],
+   "rows": null,
+   "generated_at": "2026-10-21T00:06:12.921144+00:00",
+   "last_run_at": "2026-10-25T07:20:54Z"
+  },
+  "stock_radar": {
+   "label_ar": "رادار الأسهم",
+   "verdict_ar": "متوقف لغياب مصدر مؤهل",
+   "run": "NO_RUN_24H",
+   "source": "BLOCKED_BY_TERMS",
+   "data": "EMPTY",
+   "data_state": "RESEARCH_ONLY",
+   "analysis": "NOT_COMPUTED",
+   "alerts": "NO_ALERT_PATH",
+   "closed_gates": [
+    "nasdaq_web",
+    "yahoo"
+   ],
+   "rows": 0,
+   "generated_at": "2026-10-25T07:57:25.739921+00:00",
+   "last_run_at": null
+  },
+  "index_radar": {
+   "label_ar": "تحليل المؤشرات",
+   "verdict_ar": "متوقف لغياب مصدر مؤهل",
+   "run": "OK",
+   "source": "BLOCKED_BY_TERMS",
+   "data": "NOT_USABLE",
+   "data_state": "LICENSE_BLOCKED",
+   "analysis": "NOT_COMPUTED",
+   "alerts": "NO_ALERT_PATH",
+   "closed_gates": [
+    "yahoo"
+   ],
+   "rows": null,
+   "generated_at": "2026-10-24T21:31:24.056058+00:00",
+   "last_run_at": "2026-10-24T21:30:55Z"
+  },
+  "classical": {
+   "label_ar": "الاتجاه الكلاسيكي",
+   "verdict_ar": "متوقف لغياب مصدر مؤهل",
+   "run": "OK",
+   "source": "BLOCKED_BY_TERMS",
+   "data": "STALE",
+   "data_state": "LICENSE_BLOCKED",
+   "analysis": "NOT_COMPUTED",
+   "alerts": "NO_ALERT_PATH",
+   "closed_gates": [
+    "yahoo"
+   ],
+   "rows": null,
+   "generated_at": "2026-10-20T18:57:41.297165+00:00",
+   "last_run_at": "2026-10-24T21:30:40Z"
+  },
+  "catalysts": {
+   "label_ar": "المحفزات الرسمية",
+   "verdict_ar": "يعمل",
+   "run": "OK",
+   "source": "AVAILABLE",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
+   "alerts": "DELIVERED 2026-10-23T08:01:11.476688+00:00",
+   "closed_gates": [],
+   "rows": 34,
+   "generated_at": "2026-10-25T07:50:03.785009+00:00",
+   "last_run_at": "2026-10-25T07:49:45Z"
+  },
+  "fda": {
+   "label_ar": "أحداث FDA",
+   "verdict_ar": "يعمل",
+   "run": "NO_RUN_24H",
+   "source": "AVAILABLE",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
+   "alerts": "DELIVERED 2026-10-23T23:53:44.591621+00:00",
+   "closed_gates": [],
+   "rows": null,
+   "generated_at": "2026-10-23T23:53:34.162930+00:00",
+   "last_run_at": null
+  },
+  "sec": {
+   "label_ar": "إفصاحات SEC",
+   "verdict_ar": "متوقف: المصدر رفض الطلب أو لا يستجيب",
+   "run": "OK",
+   "source": "REFUSED_OR_DOWN",
+   "data": "NONE",
+   "data_state": "SOURCE_UNAVAILABLE",
+   "analysis": "NOT_COMPUTED",
+   "alerts": "NO_ALERT_PATH",
+   "closed_gates": [],
+   "rows": null,
+   "generated_at": "2026-10-25T07:15:17.717022+00:00",
+   "last_run_at": "2026-10-25T07:14:59Z"
+  },
+  "macro": {
+   "label_ar": "الخزانة وCFTC",
+   "verdict_ar": "يعمل",
+   "run": "OK",
+   "source": "AVAILABLE",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
+   "alerts": "NO_ALERT_PATH",
+   "closed_gates": [],
+   "rows": null,
+   "generated_at": "2026-10-25T07:44:03.808485+00:00",
+   "last_run_at": "2026-10-25T07:42:39Z"
+  },
+  "daily_plan": {
+   "label_ar": "خطة اليوم",
+   "verdict_ar": "البيانات قديمة",
+   "run": "OK",
+   "source": "AVAILABLE",
+   "data": "STALE",
+   "data_state": "UNKNOWN",
+   "analysis": "NOT_COMPUTED",
+   "alerts": "NO_ALERT_PATH",
+   "closed_gates": [],
+   "rows": null,
+   "generated_at": null,
+   "last_run_at": "2026-10-25T07:56:23Z"
   }
  },
  "original_evidence_score": {
