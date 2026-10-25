@@ -34,7 +34,7 @@ from typing import Any
 
 import requests
 
-from scripts.build_sec_filing_pulse import TICKERS_URL, _get, ticker_cik_map
+from scripts.build_sec_filing_pulse import TICKERS_URL, _get, sec_refusal, ticker_cik_map
 
 CONCEPT_URL = "https://data.sec.gov/api/xbrl/companyconcept/CIK{cik:010d}/dei/EntityPublicFloat.json"
 SHARES_URL = "https://data.sec.gov/api/xbrl/companyconcept/CIK{cik:010d}/dei/EntityCommonStockSharesOutstanding.json"
@@ -105,7 +105,7 @@ def build(symbols: list[str], *, agent: str | None, session: Any = requests,
     except Exception as exc:  # noqa: BLE001 - reported, never retried in a loop
         status = getattr(getattr(exc, "response", None), "status_code", None)
         return {**report, "status": f"SEC_REFUSED_HTTP_{status}" if status else "SEC_UNAVAILABLE",
-                "errors": {"ticker_map": type(exc).__name__}}
+                "errors": {"ticker_map": sec_refusal(exc)}}
     stopped = False
     for symbol in symbols[:MAX_SYMBOLS]:
         if stopped:

@@ -40,7 +40,7 @@ import pandas as pd
 
 from options_radar import daily_plan as dp
 from options_radar.bar_aggregation import frames_from_5m
-from options_radar.bar_providers import AlpacaBars
+from options_radar.bar_providers import COVERAGE, AlpacaBars
 from options_radar.output_policy import decide, deliver_private
 
 NY = ZoneInfo("America/New_York")
@@ -125,8 +125,30 @@ def _daily_rows(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
              "close": b["c"], "volume": b["v"]} for b in bars]
 
 
+def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessions: list[tuple[datetime, datetime]],
+                       now: datetime) -> tuple[dict[str, Any], dict[str, Any]]:
+    """One symbol: ~2 years of daily bars (a real weekly frame) and 30 sessions of 5-minute bars."""
+    daily = provider.bars(symbol, "1d", now - timedelta(days=740), now)
+    intraday_start = sessions[-30][0] if len(sessions) >= 30 else (sessions[0][0] if sessions else now)
+    minute = provider.bars(symbol, "5m", intraday_start, now)
+    feeds = {daily.get("feed"), minute.get("feed")} - {None}
+    status = {"daily": daily["status"], "5m": minute["status"], "feeds": sorted(feeds)}
+    feed = daily.get("feed") or minute.get("feed") or "unknown"
+    meta = {"name": f"alpaca_{feed}", "scope": COVERAGE.get(feed, feed),
+            "volume_scope": "all U.S. exchanges" if feed == "sip" else "IEX only (partial volume)",
+            "delay_note": "completed bars only; nothing from the latest 16 minutes is requested"}
+    intraday = (frames_from_5m(minute["bars"], sessions, now - timedelta(minutes=16))
+                if minute["status"] == "OK" and minute.get("feed") == daily.get("feed") else {})
+    if minute["status"] == "OK" and minute.get("feed") != daily.get("feed"):
+        status["note"] = "intraday dropped: its feed differs from the daily history"
+    plan = dp.plan_for_symbol(symbol, _daily_rows(daily["bars"]), last_closed_session=facts["last_closed_session"],
+                              last_closed_week_end=facts["last_closed_week_end"] or "", provider=meta,
+                              intraday=intraday)
+    return plan, status
+
+
 def private_plans(facts: dict[str, Any], now: datetime, *, session: Any = None,
-                  env: Any = None) -> dict[str, Any]:
+                  env: Any = None, symbols: tuple[str, ...] | None = None) -> dict[str, Any]:
     env = os.environ if env is None else env
     provider = AlpacaBars(env, **({"session": session} if session is not None else {}), now=now)
     status = provider.status()
@@ -134,21 +156,10 @@ def private_plans(facts: dict[str, Any], now: datetime, *, session: Any = None,
         reason = ("DATA_USE_PERMISSION_REQUIRED" if status == "DENIED_BY_POLICY" else
                   "ACCOUNT_CREDENTIALS_NOT_CONFIGURED" if status == "CREDENTIALS_MISSING" else "NO_CLOSED_SESSION")
         return {"enabled": False, "reason": reason, "plans": {}}
-    meta = {"name": provider.name, "scope": "IEX feed: one venue", "volume_scope": "IEX only (partial volume)",
-            "delay_note": "completed bars only; nothing from the latest 16 minutes is requested"}
     sessions = _sessions(now, 60)
-    cutoff = now - timedelta(minutes=16)
     plans, statuses = {}, {}
-    for symbol in PLAN_SYMBOLS:
-        daily = provider.bars(symbol, "1d", now - timedelta(days=160), now)
-        intraday_start = sessions[-30][0] if len(sessions) >= 30 else (sessions[0][0] if sessions else now)
-        minute = provider.bars(symbol, "5m", intraday_start, now)
-        statuses[symbol] = {"daily": daily["status"], "5m": minute["status"]}
-        intraday = frames_from_5m(minute["bars"], sessions, cutoff) if minute["status"] == "OK" else {}
-        plans[symbol] = dp.plan_for_symbol(symbol, _daily_rows(daily["bars"]),
-                                           last_closed_session=facts["last_closed_session"],
-                                           last_closed_week_end=facts["last_closed_week_end"] or "",
-                                           provider=meta, intraday=intraday)
+    for symbol in symbols or PLAN_SYMBOLS:
+        plans[symbol], statuses[symbol] = plan_from_provider(provider, symbol, facts, sessions, now)
     return {"enabled": True, "reason": "OWNER_AUTHORIZED_INTERNAL_USE", "plans": plans, "fetch_status": statuses}
 
 
@@ -180,7 +191,7 @@ def frames_status(private: dict[str, Any]) -> dict[str, Any]:
 
 def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
     lines = [f"<b>خطة اليوم الخاصة — {facts.get('last_closed_session')}</b>",
-             "مصدر: Alpaca IEX (منصة واحدة، حجم جزئي). استخدام شخصي فقط؛ لا يُعاد نشره."]
+             "مصدر: Alpaca (شموع مكتملة، لا شيء من آخر 16 دقيقة). استخدام شخصي فقط؛ لا يُعاد نشره."]
     for symbol, plan in (private.get("plans") or {}).items():
         if not plan.get("available"):
             continue
@@ -192,7 +203,7 @@ def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
         ups, downs = votes.count("UP"), votes.count("DOWN")
         agree = ("متفقة صعودًا" if ups and not downs else "متفقة هبوطًا" if downs and not ups else
                  f"متعارضة ({ups} صاعد / {downs} هابط)" if ups and downs else "بلا اتجاه واضح")
-        lines.append(f"<b>{symbol}</b> {trend}")
+        lines.append(f"<b>{symbol}</b> ({plan.get('provider_scope')}) {trend}")
         lines.append(f"  الفريمات: {agree} من {len(votes)}")
         lines.append(f"  أمس ({day.get('date')}): قمة {day.get('high')} · قاع {day.get('low')} · إغلاق {day.get('close')}")
         for sc in plan.get("scenarios") or []:

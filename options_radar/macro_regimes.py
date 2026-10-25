@@ -149,6 +149,17 @@ def build(history: dict[str, Any], *, generated_at: str) -> dict[str, Any]:
             "«قابل للرصد منذ» هو أول تاريخ كانت بياناته وحدها تُظهر الانكسار (مع تأخر نشر CFTC ثلاثة أيام)؛ ما قبله رؤية بأثر رجعي.",
             "مراكز CFTC أسبوعية كما في الثلاثاء وتُنشر الجمعة؛ سياق لمن يحمل العقود وليست توقيتًا.",
         ],
+        # Descriptive macro context only. Breaks are knowable late (synthetic median
+        # 35.5 sessions / 18 weeks), so they are not an early speculative signal and
+        # feed no short-term opportunity score until out-of-sample value is shown.
+        "use": {"role": "DESCRIPTIVE_MACRO_CONTEXT", "feeds_scores": False,
+                "synthetic_calibration": {"script": "scripts/calibrate_macro_regimes.py", "series_per_scenario": 200,
+                                          "false_break_series_pct": {"daily": "0.5-2.5", "weekly": "0.5-6"},
+                                          "power_at_0_5_sigma_pct": {"daily": 77, "weekly": 37.5},
+                                          "median_delay": {"daily_sessions": 35.5, "weekly_weeks": 18},
+                                          "note": "simulated series with known truth; not an accuracy on real markets"},
+                "note_ar": "سياق اقتصادي وصفي فقط؛ يُكتشف التغيّر متأخرًا (وسيط 35.5 جلسة أو 18 أسبوعًا في اختبار اصطناعي)، "
+                           "فلا يصلح تنبيهًا مبكرًا ولا يدخل في أي درجة فرصة."},
         "rights": "U.S. government publications (Treasury, CFTC); derived segmentation published with the sources cited",
         "research_only": True,
         "decision_authority": False,

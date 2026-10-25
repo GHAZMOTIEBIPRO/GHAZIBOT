@@ -32,7 +32,12 @@ const out = process.argv[2] || "site_smoke.json";
             overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
             // Hidden tabs are part of the page too; check all text for the reason.
             blocked_reason_shown: /متوقف|LICENSE_BLOCKED|شروط/.test(document.body.textContent || ""),
-            dollar_prices_shown: (body.match(/\$\s?\d{1,5}\.\d{2}/g) || []).length,
+            // Our own page text only: innerText never includes iframe content, so
+            // prices inside a permitted external widget (TradingView) are not
+            // counted here; a non-zero value means GHAZI itself printed a price.
+            own_dom_dollar_prices: (body.match(/\$\s?\d{1,5}\.\d{2}/g) || []).length,
+            external_widget_frames: [...document.querySelectorAll("iframe")]
+              .filter(f => /tradingview/.test(f.src || "")).length,
             index_panel: t("terminal-index-grid"),
             spx_status: t("status"),
           };

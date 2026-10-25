@@ -73,6 +73,28 @@ def symbols_from_brief(brief: dict, limit: int = MAX_SYMBOLS) -> list[str]:
     return result
 
 
+def sec_refusal(exc: Exception) -> str:
+    """Host and kind of an SEC failure, without the User-Agent or any content.
+
+    data.sec.gov answers an undeclared tool with "Your Request Originates from
+    an Undeclared Automated Tool" (identity); www.sec.gov can answer "Request
+    Rate Threshold Exceeded" (rate/IP, seen from shared GitHub runners).
+    Neither is retried within a run, and the identity is never changed.
+    """
+    response = getattr(exc, "response", None)
+    url = str(getattr(response, "url", "") or getattr(getattr(exc, "request", None), "url", "") or "")
+    host = url.split("/")[2] if url.count("/") >= 2 else "sec"
+    if response is None:
+        return f"{host}:NETWORK_{type(exc).__name__}"
+    code = getattr(response, "status_code", None)
+    text = str(getattr(response, "text", "") or "")[:4000]
+    if code == 429 or "Request Rate Threshold Exceeded" in text:
+        return f"{host}:RATE_LIMITED"
+    if "Undeclared Automated Tool" in text:
+        return f"{host}:IDENTITY_REFUSED"
+    return f"{host}:HTTP_{code}"
+
+
 def _get(session: Any, url: str, agent: str) -> dict:
     response = session.get(url,headers={
         "User-Agent":agent,
@@ -381,6 +403,7 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
             max_symbols=max_symbols)
     selected=symbols_from_brief(brief,max_symbols)
     failures={}
+    failure_kinds={}  # host:kind (IDENTITY_REFUSED, RATE_LIMITED, NETWORK_*, HTTP_*) per failure
     reports=[]
     inspected=0
     map_origin="OFFICIAL_SEC_TICKER_MAP"
@@ -394,6 +417,7 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
             mapping=ticker_cik_map(_get(session,TICKERS_URL,agent))
         except (requests.RequestException,ValueError,TypeError) as exc:
             failures["ticker_map"]=getattr(getattr(exc,"response",None),"status_code",None) or type(exc).__name__
+            failure_kinds["ticker_map"]=sec_refusal(exc)
     if not mapping and not cooldown:
         # A mirror is a *lookup only* and cannot authenticate a company by
         # itself. All mirrored matches require ticker confirmation by the
@@ -436,6 +460,7 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
             except (requests.RequestException,ValueError,TypeError) as exc:
                 status=getattr(getattr(exc,"response",None),"status_code",None)
                 failures[symbol]=f"HTTP_{status}" if status else type(exc).__name__
+                failure_kinds[symbol]=sec_refusal(exc)
                 # Refusal is not an empty filing list.
                 if status in (403,429):
                     break
@@ -472,7 +497,7 @@ def collect(brief: dict, *, now: datetime, session: Any = requests,
         "source":"US SEC EDGAR submissions and official ticker-CIK map",
         "coverage":{
             "symbols_requested":len(selected),"issuers_inspected":inspected,
-            "filings_verified":len(filings),"errors":failures,
+            "filings_verified":len(filings),"errors":failures,"error_kinds":failure_kinds,
         },
         "ticker_mapping_source":map_origin,
         "ticker_mapping_mirror_snapshot_date":("2025-02-28" if map_origin.startswith("UNVERIFIED") else None),

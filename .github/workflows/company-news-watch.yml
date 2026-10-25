@@ -69,8 +69,6 @@ jobs:
 
       - name: Build free GDELT and official macro context
         env:
-          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
-          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
         run: >-
           python -m options_radar.free_public_intelligence
           --output public/data/free_public_intelligence.json

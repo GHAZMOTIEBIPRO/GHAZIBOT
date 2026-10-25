@@ -5,10 +5,14 @@
 // the GHAZI engines, and TradingView's technical ratings stay TradingView's.
 //
 // Symbols were checked on a GitHub runner (tv-widget-probe.yml, runs
-// 40233630558 and 40234894415, 2026-10-25): cash indices (SP:SPX, NASDAQ:NDX,
-// DJ:DJI, TVC:RUT, CBOE:VIX) answer "only available on TradingView" in free
-// embeds, so each index is shown through the ETF that tracks it, labelled as
-// an ETF, with a link to the cash index on TradingView. CFDs are not used.
+// 40233630558, 40234894415 and 40238841618, 2026-10-25). Tested: SP:SPX,
+// TVC:SPX, NASDAQ:NDX, TVC:NDX, DJ:DJI, TVC:DJI, TVC:RUT, CBOE:VIX, TVC:VIX in
+// the mini-symbol-overview and advanced-chart embeds; all answered "only
+// available on TradingView" / "This symbol doesn't exist". That holds for
+// those symbols and widgets on that date, not for every TradingView product.
+// Each index is shown through the ETF that tracks it, labelled as an ETF,
+// with a link to the cash index on TradingView. CFDs are not used. Stock and
+// ETF quotes in the embeds were labelled "Cboe One" (not the consolidated tape).
 (function(root){
   const BASE="https://s3.tradingview.com/external-embedding/embed-widget-";
   const KINDS=new Set(["technical-analysis","symbol-info","symbol-profile","financials","timeline",
@@ -126,7 +130,7 @@
   function caption(info,interval){
     const frame=(INTERVALS.find(([v])=>v===interval)||INTERVALS[4])[1];
     return "الشارت الخارجي — TradingView · "+(info.tv||info.input)+" · الفريم: "+frame+" · "+info.note_ar+
-      " الأسعار والتوقيت من TradingView داخل الأداة؛ لا تُستخرج ولا تغذي تحليل غازي رادار.";
+      " الأسعار والتوقيت من TradingView داخل الأداة (مصدرها الظاهر في الأداة، مثل Cboe One)؛ لا تُستخرج ولا تغذي تحليل غازي رادار.";
   }
 
   // A chart view: symbol buttons + interval buttons + one advanced chart.
@@ -174,6 +178,7 @@
       frameBar.append(b);
     }
     box.ghaziShow=symbol=>{const s=String(symbol||"").toUpperCase();if(resolve(s)){current={...current,symbol:s};draw();}};
+    box.ghaziDraw=()=>{if(!slot.dataset.mounted)draw();};
     whenVisible(slot,draw);
   }
 
@@ -246,6 +251,15 @@
       whenVisible(indices,()=>renderIndex(indexSymbol));
     }
     for(const box of document.querySelectorAll("[data-tv-chart-view]"))chartView(box);
+    // A chart in a tab that just became visible mounts at once (the visibility
+    // observer alone missed one on phones, live check 2026-10-25).
+    document.addEventListener("click",event=>{
+      if(!event.target.closest("[data-terminal-tab],[data-terminal-go]"))return;
+      setTimeout(()=>{
+        for(const box of document.querySelectorAll("[data-tv-chart-view]"))
+          if(box.offsetParent!==null&&box.ghaziDraw)box.ghaziDraw();
+      },300);
+    });
     for(const [id,kind] of [["tv-heatmap","stock-heatmap"],["tv-screener","screener"],["tv-calendar","events"]]){
       const slot=$(id);whenVisible(slot,()=>mount(slot,kind,config(kind)));
     }

@@ -85,8 +85,6 @@ jobs:
           PYTHONPATH: app
           TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
           TIINGO_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TIINGO_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
-          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
-          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
           ALPACA_STOCK_FEED: sip
           TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
