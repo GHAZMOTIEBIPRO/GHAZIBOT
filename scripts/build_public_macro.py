@@ -62,6 +62,7 @@ def treasury_rows(today: datetime) -> list[dict]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
+    parser.add_argument("--history", help="optional path for the dated series used by the regime research")
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
     errors: dict[str, str] = {}
@@ -85,6 +86,9 @@ def main() -> int:
     temp = out.with_suffix(out.suffix + ".tmp")
     temp.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     temp.replace(out)
+    if args.history:
+        history = {"generated_at": report["generated_at"], "series": macro.history_series(cot, curve)}
+        Path(args.history).write_text(json.dumps(history, ensure_ascii=False), encoding="utf-8")
     print("Public macro:", json.dumps({
         "cftc_contracts": {k: (v.get("positions_as_of") or v.get("reason")) for k, v in report["cftc_index_futures"].items()},
         "curve_date": report["treasury_curve"].get("curve_date"),
