@@ -39,7 +39,8 @@ def _sec(status="OK"):
 def test_watchlist_from_official_events_ranked_without_price_claims():
     report = cw.build(FDA, _sec(), None, NOW)
     symbols = [e["symbol"] for e in report["watchlist"]]
-    assert symbols[:2] == ["RVSP", "ABCD"] and "OLDX" not in symbols and "FAKE" not in symbols
+    # ABCD: two HIGH events (approval 5 days old, offering 3 days old) outrank RVSP's one.
+    assert symbols[:2] == ["ABCD", "RVSP"] and "OLDX" not in symbols and "FAKE" not in symbols
     abcd = next(e for e in report["watchlist"] if e["symbol"] == "ABCD")
     assert abcd["dilution_risk"] is True and abcd["catalyst_count"] == 2
     assert {c["source"] for c in abcd["catalysts"]} == {"openFDA", "SEC EDGAR"}
@@ -98,3 +99,26 @@ def test_most_important_catalyst_is_listed_first_and_latest_date_kept():
     entry = cw.build(fda, None, None, NOW)["watchlist"][0]
     assert [c["kind"] for c in entry["catalysts"]] == ["FDA_APPROVAL", "FDA_SUPPLEMENT"]
     assert entry["latest_date"] == "2026-10-19" and entry["highest_importance"] == "HIGH"
+
+
+def test_score_uses_strength_recency_reliability_and_flags_risk():
+    fda = {"approvals": [
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-20", "ticker": "NEWM", "importance": "HIGH",
+         "submission_class": "Type 1 - New Molecular Entity", "match_method": "exact_normalised_name"},
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-20", "ticker": "ALIAS", "importance": "HIGH",
+         "submission_class": "Type 5 - New Formulation", "match_method": "reviewed_sponsor_alias"},
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-09-25", "ticker": "OLDH", "importance": "HIGH",
+         "match_method": "exact_normalised_name"},
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-20", "ticker": "LLY", "importance": "HIGH",
+         "match_method": "exact_normalised_name"}],
+        "recalls": [{"event_type": "RECALL", "date": "2026-10-20", "ticker": "RCLL", "importance": "HIGH"}]}
+    report = cw.build(fda, None, None, NOW)
+    by = {e["symbol"]: e for e in report["watchlist"]}
+    # new molecule > same-day formulation via alias > same event 26 days old
+    assert by["NEWM"]["catalyst_score"] > by["ALIAS"]["catalyst_score"] > by["OLDH"]["catalyst_score"]
+    assert by["NEWM"]["catalyst_score"] == round((35 + 10) * (0.4 + 0.6 * 29 / 30), 1)
+    assert by["RCLL"]["risk_flags"] == ["سحب منتج Class I"] and by["RCLL"]["risk_level"] == "HIGH"
+    assert all(e["candidate_status"] == "PRICE_VERIFICATION_NEEDED" for e in report["watchlist"])
+    assert by["LLY"]["universe"] == "KNOWN_LARGE_ISSUER" and "LLY" not in report["small_cap_candidates"]
+    assert report["small_cap_candidates"][0] == "NEWM"
+    assert "ليست توقعًا" in report["ranking_rules"]["note_ar"] and report["ranking_rules"]["top_n"] == 3

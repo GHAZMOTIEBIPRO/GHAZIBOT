@@ -264,3 +264,14 @@ def test_insider_forms_capped_and_dilution_forms_flagged_without_inference():
     assert next(r for r in rows if r["form"]=="10-K/A")["event_type"]=="EARNINGS_OR_PERIODIC_REPORT_REVIEW"
     assert any(r["form"]=="SC 13G" for r in rows)
     assert all(row["positive_price_impact_verified"] is False for row in rows)
+
+
+def test_merger_acquisition_and_activist_filings_are_labelled():
+    forms=["8-K","S-4","425","SC 13D"]
+    rows=parse_submissions("RGC",111,"Regencell",report(111,forms,items=["2.01,9.01","","",""]),now=NOW)
+    by={r["form"]:r for r in rows}
+    assert "ACQUISITION_OR_DISPOSITION_REVIEW" in by["8-K"]["event_topics"]
+    assert "MERGER_REGISTRATION_REVIEW" in by["S-4"]["event_topics"]
+    assert by["425"]["event_type"]=="MERGER_COMMUNICATION_REVIEW"
+    assert by["425"]["event_topics"]==["MERGER_REGISTRATION_REVIEW"]
+    assert by["SC 13D"]["event_topics"]==["ACTIVIST_STAKE_REVIEW"]

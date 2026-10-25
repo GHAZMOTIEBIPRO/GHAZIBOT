@@ -12,7 +12,7 @@ const report={watchlist:[
 const lines=catalystLines(report);
 assert.equal(lines.length,2);  // malformed symbol dropped
 assert.equal(lines[0].tone,"DOWN");
-assert.match(lines[0].price,/غير مؤكد/);
+assert.match(lines[0].price,/مرشح يحتاج تحققًا سعريًا/);
 assert.match(lines[0].items[0].text,/تقسيم عكسي/);
 assert.match(lines[0].items[0].url,/^https:\/\/www\.sec\.gov\//);
 assert.match(lines[1].price,/تحت 10\$ بسعر حديث مسموح/);
