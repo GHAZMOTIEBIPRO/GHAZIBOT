@@ -188,7 +188,12 @@ def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
         trend = " · ".join(f"{k}:{dp.TREND_AR.get(v.get('trend'), v.get('trend'))}" for k, v in frames.items()
                            if v.get("trend") not in ("UNAVAILABLE",))
         day = plan.get("prior_session") or {}
+        votes = [f.get("trend") for f in frames.values() if f.get("trend") in ("UP", "DOWN", "MIXED")]
+        ups, downs = votes.count("UP"), votes.count("DOWN")
+        agree = ("متفقة صعودًا" if ups and not downs else "متفقة هبوطًا" if downs and not ups else
+                 f"متعارضة ({ups} صاعد / {downs} هابط)" if ups and downs else "بلا اتجاه واضح")
         lines.append(f"<b>{symbol}</b> {trend}")
+        lines.append(f"  الفريمات: {agree} من {len(votes)}")
         lines.append(f"  أمس ({day.get('date')}): قمة {day.get('high')} · قاع {day.get('low')} · إغلاق {day.get('close')}")
         for sc in plan.get("scenarios") or []:
             if sc.get("trigger_level") is not None:
