@@ -1780,7 +1780,8 @@
   const RUN_AR={OK:"سليم",FAILED:"فشل آخر تشغيل",NO_RUN_24H:"لا تشغيل خلال 24 ساعة",API_UNAVAILABLE:"سجل التشغيل غير متاح"};
   const SOURCE_AR={AVAILABLE:"متاح",BLOCKED_BY_TERMS:"محجوب حسب الشروط",REFUSED_OR_DOWN:"رفض الطلب أو لا يستجيب",
     NO_OUTPUT:"لا مخرجات"};
-  const DATA_AR={FRESH:"حديثة",STALE:"قديمة",EMPTY:"حديثة لكن بلا نتائج",NONE:"غير موجودة",NOT_USABLE:"غير قابلة للاستخدام"};
+  const DATA_AR={FRESH:"حديثة",STALE:"قديمة",EMPTY:"حديثة لكن بلا نتائج",NONE:"غير موجودة",NOT_USABLE:"غير قابلة للاستخدام",
+    UNMEASURED:"حداثتها غير مقاسة"};
   // Five separate answers per engine; none of them is inferred from another.
   function engineStateLines(report){
     const engines=report?.engines;
