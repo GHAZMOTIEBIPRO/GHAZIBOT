@@ -73,6 +73,8 @@ def test_yahooquery_fallback_can_precede_yfinance_without_breaking(monkeypatch):
         return market_bars.BarResult(frame, "yahoo/yfinance", "unofficial")
 
     monkeypatch.setattr(market_bars, "_call_provider", fake_provider)
+    # the "yahoo" provider calls yfinance directly; keep the test off the network
+    monkeypatch.setattr(DataFetcher, "_yahoo_bars", staticmethod(lambda *a, **k: frame))
     result = fetcher.fetch_stock_bars("TEST", providers=["yahooquery", "yahoo"])
     assert result.source == "yahoo"
     assert len(result.attempts) == 2

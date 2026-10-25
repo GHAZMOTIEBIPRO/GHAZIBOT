@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = ["network: test opens real outbound connections (excluded from the hermetic suite)"]
 
 [tool.ruff]
 line-length = 100
