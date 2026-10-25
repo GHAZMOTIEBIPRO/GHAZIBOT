@@ -2,9 +2,15 @@
 const assert=require("node:assert/strict");
 const {tradingViewConfig,blockedReason}=require("../public/terminal-hub.js");
 
-assert.equal(tradingViewConfig("SPX").symbol,"SP:SPX");
+// The chart panel resolves symbols like the section charts: SPX shows SPY (labelled).
+assert.equal(tradingViewConfig("SPX").symbol,"AMEX:SPY");
 assert.equal(tradingViewConfig("QQQ").symbol,"NASDAQ:QQQ");
-assert.equal(tradingViewConfig("NVDA").symbol,"NVDA");
+assert.equal(tradingViewConfig("NVDA").symbol,"NASDAQ:NVDA");
+assert.equal(tradingViewConfig("VIX"),null);
+// The panel's timeframe drives the external chart's interval.
+assert.equal(tradingViewConfig("NVDA","15m").interval,"15");
+assert.equal(tradingViewConfig("NVDA","4h").interval,"240");
+assert.equal(tradingViewConfig("NVDA").interval,"D");
 const cfg=tradingViewConfig("RGC");
 assert.equal(cfg.allow_symbol_change,false);
 assert.equal(cfg.timezone,"America/New_York");

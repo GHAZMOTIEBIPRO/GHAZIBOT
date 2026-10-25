@@ -1217,15 +1217,16 @@
       state.watchCharts?.symbols?.[symbol]?.intervals?.[value] ||
       (value==="1d"&&state.stockCharts?.charts?.[symbol]));
     if(select){
-      for(const option of select.options)option.disabled=!hasFrame(option.value);
+      for(const option of select.options)option.disabled=false;
     }
     document.querySelectorAll("[data-terminal-tf]").forEach(button=>{
+      // The external chart follows every frame; GHAZI's own candles only where published.
       const available=hasFrame(button.dataset.terminalTf);
-      button.disabled=!available;
+      button.disabled=false;
       const pressed=state.tf===button.dataset.terminalTf;
       button.classList.toggle("active",pressed);
       button.setAttribute("aria-pressed",String(pressed));
-      button.title=available?"عرض شموع مكتملة":"لا توجد شموع فعلية متاحة لهذا الفريم";
+      button.title=available?"شموع غازي المكتملة + الشارت الخارجي":"الشارت الخارجي فقط؛ لا توجد شموع غازي لهذا الفريم";
     });
     const metric=$("terminal-chart-levels");if(metric)metric.replaceChildren();
     const decisionGrid=$("terminal-decision-levels");if(decisionGrid)decisionGrid.replaceChildren();
@@ -1420,23 +1421,37 @@
         (stale?" · الملف أقدم من 36 ساعة ولا يمثل الجلسة الحالية.":"")
     };
   }
-  // TradingView's embedded chart is the display route its terms allow (branding
-  // kept, data shown inside the widget only). Loaded only when opened.
-  const TV_SYMBOLS={SPX:"SP:SPX",NDX:"NASDAQ:NDX",DJI:"DJ:DJI",RUT:"TVC:RUT",VIX:"TVC:VIX",
-    SPY:"AMEX:SPY",QQQ:"NASDAQ:QQQ",IWM:"AMEX:IWM",DIA:"AMEX:DIA"};
-  function tradingViewConfig(symbol){
-    if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(String(symbol||"")))return null;
-    return {autosize:true,symbol:TV_SYMBOLS[symbol]||symbol,interval:"D",timezone:"America/New_York",
+  // TradingView's embedded chart is the external display route its terms allow
+  // (branding kept, data shown inside the widget only). Symbols resolve through
+  // tv-intelligence.js: cash indices show their ETF, labelled as such.
+  const TV_INTERVAL={"1d":"D","4h":"240","1h":"60","15m":"15","5m":"5"};
+  const tvApi=()=>typeof window!=="undefined"&&window.GhaziTV?window.GhaziTV:
+    (typeof require==="function"?require("./tv-intelligence.js"):null);
+  function tradingViewConfig(symbol,tf="1d"){
+    const api=tvApi();
+    const info=api?api.resolve(symbol):null;
+    if(!info||!info.tv)return null;
+    return {autosize:true,symbol:info.tv,interval:TV_INTERVAL[tf]||"D",timezone:"America/New_York",
       theme:"dark",style:"1",locale:"ar_AE",allow_symbol_change:false,hide_side_toolbar:true,
       support_host:"https://www.tradingview.com"};
   }
   function renderTradingView(symbol){
     const box=$("terminal-tv-chart"),slot=$("terminal-tv-chart-slot");
     if(!box||!slot||!box.open)return;
-    const config=tradingViewConfig(symbol);
-    if(!config||slot.dataset.symbol===symbol)return;
-    slot.dataset.symbol=symbol;
+    const api=tvApi(),info=api?api.resolve(symbol):null;
+    const config=tradingViewConfig(symbol,state.tf);
+    const key=symbol+":"+state.tf;
+    if(slot.dataset.symbol===key)return;
+    slot.dataset.symbol=key;
     slot.replaceChildren();
+    put("terminal-tv-chart-note",info?info.note_ar+" الأسعار والتوقيت من TradingView داخل الأداة؛ لا تغذي تحليل غازي رادار.":"");
+    if(!config){
+      if(info&&info.cash_url){
+        const a=document.createElement("a");a.href=info.cash_url;a.target="_blank";a.rel="noopener";
+        a.textContent="افتح "+info.input+" على TradingView ↗";slot.append(a);
+      }
+      return;
+    }
     const holder=document.createElement("div");
     holder.className="tradingview-widget-container";holder.style.height="100%";
     const inner=document.createElement("div");
@@ -2158,7 +2173,7 @@
   });
   $("ghazi-terminal")?.addEventListener("click",event=>{
     const btn=event.target.closest("[data-terminal-tf]");
-    if(!btn||btn.disabled)return;
+    if(!btn)return;
     state.tf=btn.dataset.terminalTf;
     const select=$("terminal-chart-timeframe");if(select)select.value=state.tf;
     renderChart();
