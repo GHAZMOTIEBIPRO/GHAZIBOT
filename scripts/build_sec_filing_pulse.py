@@ -43,7 +43,7 @@ OFFERING_FORMS = frozenset({
 INSIDER_FORMS = frozenset({"3", "4", "5", "4/A"})
 FORMS = frozenset({
     "8-K", "8-K/A", "6-K", "10-Q", "10-K", "10-Q/A", "10-K/A",
-    "SC 13D", "SC 13D/A", "SC 13G", "SC 13G/A",
+    "SC 13D", "SC 13D/A", "SC 13G", "SC 13G/A", "425",
 }) | OFFERING_FORMS | INSIDER_FORMS
 TICKER = re.compile(r"[A-Z][A-Z0-9.\-]{0,8}\Z")
 DOCUMENT = re.compile(r"[A-Za-z0-9._-]{1,180}\Z")
@@ -157,6 +157,8 @@ def _category(form: str) -> str:
         return "INSIDER_TRANSACTION_REVIEW"
     if form in {"8-K","8-K/A","6-K"}:
         return "MATERIAL_EVENT_REVIEW"
+    if form == "425":
+        return "MERGER_COMMUNICATION_REVIEW"
     return "OWNERSHIP_CHANGE_REVIEW"
 
 
@@ -185,6 +187,13 @@ def filing_topics(form: str, raw_items: Any) -> tuple[list[str], list[str]]:
         topics.append("UNREGISTERED_EQUITY_SALE_REVIEW")
     if "1.01" in codes:
         topics.append("MATERIAL_AGREEMENT_REVIEW")
+    if "2.01" in codes:
+        topics.append("ACQUISITION_OR_DISPOSITION_REVIEW")
+    if form in {"S-4", "425"}:
+        # Merger registration or business-combination communications.
+        topics.append("MERGER_REGISTRATION_REVIEW")
+    if form in {"SC 13D", "SC 13D/A"}:
+        topics.append("ACTIVIST_STAKE_REVIEW")
     if "2.03" in codes:
         topics.append("DEBT_OBLIGATION_REVIEW")
     if "5.02" in codes:

@@ -1684,15 +1684,19 @@
   const CATALYST_KIND={FDA_APPROVAL:"موافقة FDA",FDA_SUPPLEMENT:"ملحق FDA",FDA_RECALL:"سحب FDA",
     DILUTION_RISK:"خطر تخفيف",CHARTER_OR_REVERSE_SPLIT_REVIEW:"تعديل نظام/تقسيم عكسي",LISTING_NOTICE:"إشعار إدراج",
     MATERIAL_AGREEMENT:"عقد جوهري",EARNINGS_RELEASE:"نتائج",INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري",
-    TRIAL_RESULTS_POSTED:"نتائج منشورة بالسجل (الاتجاه غير مقيم)",TRIAL_STATUS_REVIEW:"مراجعة حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث سجل دراسة"};
+    TRIAL_RESULTS_POSTED:"نتائج منشورة بالسجل (الاتجاه غير مقيم)",TRIAL_STATUS_REVIEW:"مراجعة حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث سجل دراسة",
+    MERGER_OR_ACQUISITION:"اندماج/استحواذ",ACTIVIST_STAKE:"حصة نشطة 13D"};
   // Official catalysts only; never a price band or a signal without a permitted current quote.
   function catalystLines(report,limit=20){
     if(!report||!Array.isArray(report.watchlist))return [];
     return report.watchlist.filter(e=>e&&/^[A-Z][A-Z0-9.\-]{0,9}$/.test(e.symbol||"")).slice(0,limit).map(e=>({
       title:e.symbol,
       tone:e.dilution_risk||e.charter_or_reverse_split_review?"DOWN":e.highest_importance==="HIGH"?"STALE":null,
-      status:({HIGH:"أولوية مراجعة عالية",MEDIUM:"أولوية متوسطة",LOW:"أولوية منخفضة"}[e.highest_importance]||"—")+" · "+String(e.latest_date||"—"),
-      price:e.sub10_confirmed===true?"تحت 10$ بسعر حديث مسموح":"نطاق السعر غير مؤكد (لا سعر مسموح حديث)",
+      status:(Number.isFinite(e.catalyst_score)?"أولوية "+e.catalyst_score+"/100":
+        ({HIGH:"أولوية مراجعة عالية",MEDIUM:"أولوية متوسطة",LOW:"أولوية منخفضة"}[e.highest_importance]||"—"))+" · "+String(e.latest_date||"—"),
+      price:(e.sub10_confirmed===true?"تحت 10$ بسعر حديث مسموح":"مرشح يحتاج تحققًا سعريًا (لا سعر مسموح حديث)")+
+        (e.universe==="KNOWN_LARGE_ISSUER"?" · شركة كبيرة (خارج رادار الأسهم الصغيرة)":"")+
+        (Array.isArray(e.risk_flags)&&e.risk_flags.length?" · مخاطر: "+e.risk_flags.join("، "):""),
       items:(e.catalysts||[]).slice(0,4).map(c=>({text:(CATALYST_KIND[c.kind]||c.kind)+" · "+String(c.date||"—")+
         (c.label?" · "+String(c.label).slice(0,90):"")+" · "+String(c.source||""),url:safeOfficial(c.source_url)}))}));
   }
@@ -1703,7 +1707,9 @@
     if(!report){put("terminal-catalyst-status","لم تُنشر قائمة المحفزات بعد.");put("terminal-price-confirmed","");return;}
     const src=report.sources||{};
     put("terminal-catalyst-status","المصادر: openFDA"+(src.sec_edgar?" + SEC EDGAR":" (SEC غير متاح: "+String(src.sec_status||"—")+")")+
-      " · آخر "+String(report.window_days||30)+" يومًا · "+report.watchlist.length+" سهمًا · التحديث: "+stamp(report.generated_at)+
+      " · آخر "+String(report.window_days||30)+" يومًا · "+report.watchlist.length+" سهمًا"+
+      (Array.isArray(report.small_cap_candidates)?" (مرشحو الأسهم الصغيرة: "+report.small_cap_candidates.length+")":"")+
+      " · الترتيب بقوة المحفز وحداثته وموثوقية الربط · التحديث: "+stamp(report.generated_at)+
       " · أولوية المراجعة لا تعني اتجاه السعر."+
       (src.clinicaltrials?" · ClinicalTrials.gov: تغطية محدودة؛ Courtesy of the U.S. National Library of Medicine. لا تأييد من NLM وقد لا تعكس آخر تعديل.":""));
     put("terminal-price-confirmed",report.price_confirmed_signals.length?

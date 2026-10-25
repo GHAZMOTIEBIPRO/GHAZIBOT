@@ -147,7 +147,8 @@
   const KIND_AR={FDA_APPROVAL:"موافقة FDA",FDA_SUPPLEMENT:"ملحق FDA",FDA_RECALL:"سحب منتج (FDA)",
     DILUTION_RISK:"إصدار/تخفيف محتمل",CHARTER_OR_REVERSE_SPLIT_REVIEW:"تعديل النظام/تقسيم عكسي محتمل",
     LISTING_NOTICE:"إشعار معايير الإدراج",MATERIAL_AGREEMENT:"اتفاقية/عقد جوهري",EARNINGS_RELEASE:"إعلان نتائج",
-    INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري"};
+    INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري",MERGER_OR_ACQUISITION:"اندماج/استحواذ",
+    ACTIVIST_STAKE:"حصة نشطة تتجاوز 5%"};
   const day=s=>String(s||"").slice(0,10)||"—";
 
   /* Sectioned Arabic brief for one symbol. Catalysts, filings and news are
@@ -220,7 +221,9 @@
       "لا أهداف منشورة؛ المخاطر غير قابلة للقياس دون بيانات سعرية.");
     // 8. What can and cannot be concluded.
     const can=[],cannot=[];
-    if(cat.length)can.push("يوجد حدث رسمي موثق يستحق المراجعة ("+(entry?.highest_importance||"—")+" أولوية).");
+    if(cat.length)can.push("يوجد حدث رسمي موثق يستحق المراجعة ("+(Number.isFinite(entry?.catalyst_score)?
+      "أولوية "+entry.catalyst_score+"/100":(entry?.highest_importance||"—")+" أولوية")+").");
+    for(const r of entry?.risk_flags||[])if(!can.includes(r))can.push("مخاطر معلنة: "+r);
     if(filings.length)can.push("توجد إفصاحات SEC حديثة يمكن قراءتها من المصدر الأصلي.");
     if(card.verdict==="CALL"||card.verdict==="PUT")can.push("قراءة اتجاه بحثية من محرك سعري مستقل، ليست أمر تداول.");
     if(card.verdict==="NO_ANALYSIS"||card.verdict==="WAIT_STALE")cannot.push("اتجاه السهم (CALL/PUT): لا يصدر من الأخبار أو المحفزات وحدها.");

@@ -46,8 +46,26 @@ SEC_TOPICS = {
     "EARNINGS_RELEASE_REVIEW": ("EARNINGS_RELEASE", "MEDIUM", "إعلان نتائج"),
     "INSIDER_OWNERSHIP_STATEMENT_REVIEW": ("INSIDER_FILING", "LOW", "إفصاح ملكية مطلعين (Form 3/4/5)"),
     "PERIODIC_FINANCIAL_REPORT_REVIEW": ("PERIODIC_REPORT", "LOW", "تقرير دوري 10-Q/10-K"),
+    "ACQUISITION_OR_DISPOSITION_REVIEW": ("MERGER_OR_ACQUISITION", "HIGH", "إتمام استحواذ أو بيع أصول (8-K 2.01)"),
+    "MERGER_REGISTRATION_REVIEW": ("MERGER_OR_ACQUISITION", "HIGH", "تسجيل/مراسلات اندماج (S-4 / 425)"),
+    "ACTIVIST_STAKE_REVIEW": ("ACTIVIST_STAKE", "MEDIUM", "حصة نشطة تتجاوز 5% (SC 13D)"),
 }
 FDA_KIND = {"APPROVAL_ORIGINAL": "FDA_APPROVAL", "APPROVAL_SUPPLEMENT": "FDA_SUPPLEMENT", "RECALL": "FDA_RECALL"}
+# Review-priority points per catalyst; documented in the payload. They rank
+# what to read first and say nothing about price direction.
+POINTS = {"HIGH": 35, "MEDIUM": 22, "LOW": 8}
+NEW_MOLECULE_BONUS = 10
+RELIABILITY = {"exact_normalised_name": 1.0, "issuer_cik": 1.0, "reviewed_sponsor_alias": 0.9}
+RISK_KINDS = {"DILUTION_RISK": "خطر تخفيف", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "تقسيم عكسي/تعديل نظام محتمل",
+              "LISTING_NOTICE": "إشعار إدراج (خطر شطب)"}
+# Index-member issuers that are not small-cap candidates. A fixed list of
+# companies, not prices: it keeps megacaps out of the small-cap view and
+# never classifies anything as under $10.
+KNOWN_LARGE_ISSUERS = frozenset({
+    "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "GOOG", "TSLA", "AVGO", "AMD", "ORCL", "BAC", "CVX", "OXY",
+    "LLY", "ABBV", "MRK", "PFE", "JNJ", "BMY", "AMGN", "GILD", "TMO", "ABT", "DHR", "MDT", "UNH", "CVS", "REGN",
+    "VRTX", "ISRG", "AZN", "NVS", "GSK", "SNY", "NVO", "BIIB", "ZTS", "SYK", "BSX", "MU", "JPM", "WMT", "COST",
+})
 
 
 def _load(path: Path | None) -> Any:
@@ -90,7 +108,8 @@ def fda_catalysts(fda: Any) -> list[dict[str, Any]]:
             out.append({"symbol": str(row["ticker"]), "kind": kind, "date": day, "importance": row["importance"],
                         "label": label[:120], "reason": str(row.get("importance_reason") or "")[:160],
                         "source": "openFDA", "source_url": row.get("official_url"),
-                        "match_method": row.get("match_method")})
+                        "match_method": row.get("match_method"),
+                        "new_molecule": bool(re.match(r"Type [12]\b", str(row.get("submission_class") or "")))})
     return out
 
 
@@ -169,6 +188,24 @@ def price_band(symbol: str, prices: Any, now: datetime) -> dict[str, Any]:
             "quote_time": quoted.isoformat(), "source": quote.get("source")}
 
 
+def score_entry(items: list[dict[str, Any]], now: datetime) -> dict[str, Any]:
+    """Review priority 0-100 from strength x recency x reliability of the top three catalysts."""
+    parts = []
+    for item in items:
+        age = max(0, (now.date() - date.fromisoformat(item["date"])).days)
+        recency = max(0.0, 1 - age / MAX_EVENT_AGE_DAYS)
+        reliability = RELIABILITY.get(str(item.get("match_method")), 0.8)
+        points = POINTS[item["importance"]] + (NEW_MOLECULE_BONUS if item.get("new_molecule") else 0)
+        parts.append(points * (0.4 + 0.6 * recency) * reliability)
+    risks = sorted({RISK_KINDS[x["kind"]] for x in items if x["kind"] in RISK_KINDS}
+                   | ({"سحب منتج Class I"} if any(x["kind"] == "FDA_RECALL" and x["importance"] == "HIGH"
+                                                    for x in items) else set()))
+    newest = min(max(0, (now.date() - date.fromisoformat(x["date"])).days) for x in items)
+    return {"catalyst_score": round(min(100.0, sum(sorted(parts, reverse=True)[:3])), 1),
+            "days_since_latest": newest, "risk_flags": risks,
+            "risk_level": "HIGH" if risks else "NORMAL"}
+
+
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
@@ -187,10 +224,17 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) 
             "dilution_risk": any(x["kind"] == "DILUTION_RISK" for x in items),
             "charter_or_reverse_split_review": any(x["kind"] == "CHARTER_OR_REVERSE_SPLIT_REVIEW" for x in items),
             "catalysts": items[:MAX_CATALYSTS],
+            **score_entry(items, now),
             **price_band(symbol, prices, now),
             "price_confirmed_signal": False,
+            "universe": "KNOWN_LARGE_ISSUER" if symbol in KNOWN_LARGE_ISSUERS else "SMALL_CAP_CANDIDATE",
         })
-    entries.sort(key=lambda e: (RANK[e["highest_importance"]], e["latest_date"], e["catalyst_count"]), reverse=True)
+        band = entries[-1]["price_band"]
+        entries[-1]["candidate_status"] = ("PRICE_VERIFICATION_NEEDED" if band == "UNVERIFIED" else
+                                           "UNDER_10_CONFIRMED" if band == "UNDER_10" else "NOT_UNDER_10")
+    # Rank by review priority; fewer risk flags first on ties.
+    entries.sort(key=lambda e: (-e["catalyst_score"], len(e["risk_flags"]), -RANK[e["highest_importance"]],
+                                e["days_since_latest"]))
     sec_used = isinstance(sec, dict) and str(sec.get("status")) in SEC_OK
     return {
         "schema": SCHEMA,
@@ -203,6 +247,15 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) 
                     "clinicaltrials": clinical_available(clinical, now),
                     "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING"},
         "watchlist": entries[:MAX_TICKERS],
+        # Small-cap view: issuers outside the large-issuer list, all still
+        # needing price verification before any under-$10 label.
+        "small_cap_candidates": [e["symbol"] for e in entries[:MAX_TICKERS] if e["universe"] == "SMALL_CAP_CANDIDATE"],
+        "ranking_rules": {
+            "points": POINTS, "new_molecule_bonus": NEW_MOLECULE_BONUS,
+            "recency": "x (0.4 + 0.6 * (1 - age_days / 30))", "reliability": RELIABILITY,
+            "top_n": 3, "tie_break": "fewer risk flags first",
+            "note_ar": "الدرجة أولوية مراجعة للمحفز الرسمي، وليست توقعًا لاتجاه السعر أو احتمال ربح.",
+        },
         "price_confirmed_signals": [],
         "price_confirmation": {
             "status": "NO_PERMITTED_PRICE_SOURCE",
