@@ -118,3 +118,46 @@ def test_scorecards_are_separate_and_honest(tmp_path):
     assert report["combined_score"] is None and report["decision_grade"] is False
     assert report["original_evidence_score"] == {"value": 19, "weights_changed": False,
                                                  "note": "kept as published by site_strength.json with its original weights"}
+
+
+def test_engine_status_keeps_run_source_data_analysis_and_alerts_apart(tmp_path):
+    data, state = tmp_path / "data", tmp_path / "state"
+    _write(data / "data_hub.json", {
+        "source_gates": {"nasdaq_web": {"allowed": False}, "yahoo": {"allowed": False}},
+        "datasets": [
+            {"file": "explosion_hunter.json", "freshness": "STALE", "data_state": "LICENSE_BLOCKED"},
+            {"file": "decision_brief.json", "freshness": "FRESH", "data_state": "RESEARCH_ONLY"},
+            {"file": "fda_events.json", "freshness": "FRESH", "data_state": "DELAYED"},
+            {"file": "catalyst_watchlist.json", "freshness": "FRESH", "data_state": "DELAYED"},
+            {"file": "sec_filing_pulse.json", "freshness": "FRESH", "data_state": "SOURCE_UNAVAILABLE"}]})
+    _write(data / "explosion_hunter.json", {"status": "STALE"})
+    _write(data / "decision_brief.json", {"stocks": []})
+    _write(data / "fda_events.json", {})
+    _write(data / "catalyst_watchlist.json", {"watchlist": [{"symbol": "GSK"}]})
+    _write(data / "sec_filing_pulse.json", {"status": "SOURCE_UNAVAILABLE"})
+    _write(state / "fda/fda_alert_state.json", {"events": {
+        "a": {"at": "2026-10-20T19:57:54+00:00", "status": "seeded"},
+        "b": {"at": "2026-10-23T17:56:14+00:00", "status": "sent", "message_id": 1292}}})
+    # seeded rows and a timestamp without a Telegram message id are not deliveries
+    _write(state / "catalyst/catalyst_alert_state.json", {
+        "seeded_at": "2026-10-21T20:26:34+00:00", "seen": {"x": {"status": "seeded"}}})
+    runs = {"fast-explosion-radar.yml": [{"status": "completed", "conclusion": "success",
+                                          "created_at": "2026-10-25T07:20:54Z"}],
+            "fda-events.yml": [{"status": "completed", "conclusion": "failure", "created_at": "2026-10-25T06:00:00Z"},
+                               {"status": "in_progress", "conclusion": None, "created_at": "2026-10-25T07:00:00Z"}],
+            "stock-radar.yml": []}
+    eng = cards.engine_status(data, state, runs)
+    fast = eng["fast_explosion"]
+    # a green run does not restore an engine whose only source is closed
+    assert fast["run"] == "OK" and fast["source"] == "BLOCKED_BY_TERMS" and fast["data"] == "STALE"
+    assert fast["analysis"] == "NOT_COMPUTED" and fast["verdict_ar"] == "متوقف لغياب مصدر مؤهل"
+    stock = eng["stock_radar"]
+    assert stock["run"] == "NO_RUN_24H" and stock["data"] == "EMPTY" and stock["rows"] == 0
+    fda = eng["fda"]
+    assert fda["run"] == "FAILED" and fda["analysis"] == "COMPUTED"
+    assert fda["alerts"] == "DELIVERED 2026-10-23T17:56:14+00:00"
+    cat = eng["catalysts"]
+    assert cat["run"] == "API_UNAVAILABLE" and cat["alerts"] == "NONE_DELIVERED" and cat["rows"] == 1
+    assert eng["sec"]["source"] == "REFUSED_OR_DOWN" and eng["sec"]["data"] == "NONE"
+    assert eng["daily_plan"]["source"] == "NO_OUTPUT"
+    assert set(cards.ENGINE_WORKFLOWS).isdisjoint(cards.CORE_WORKFLOWS)

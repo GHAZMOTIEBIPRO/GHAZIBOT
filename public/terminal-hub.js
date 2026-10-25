@@ -28,6 +28,7 @@
     macro:[ROOT+"bot-state/runtime/public/data/public_macro.json"],
     regimes:[ROOT+"bot-state/runtime/public/data/macro_regimes.json"],
     plan:[ROOT+"bot-state/runtime/public/data/daily_plan.json"],
+    scorecards:[ROOT+"bot-state/runtime/public/data/platform_scorecards.json"],
     fda:[ROOT+"bot-state/runtime/public/data/fda_events.json"],
     catalysts:[ROOT+"bot-state/runtime/public/data/catalyst_watchlist.json"],
     modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
@@ -152,6 +153,7 @@
       Array.isArray(d.approvals)&&Array.isArray(d.recalls),
     catalysts:d=>d?.schema==="ghazi.catalyst_watchlist.v1"&&d.decision_authority===false&&
       d.execution_authority===false&&Array.isArray(d.watchlist)&&Array.isArray(d.price_confirmed_signals),
+    scorecards:d=>d?.schema==="ghazi.platform_scorecards.v1"&&d.decision_authority===false,
     plan:d=>d?.schema==="ghazi.daily_plan_sheet.v1"&&d.decision_authority===false&&d.execution_authority===false&&
       d.session&&typeof d.frames==="object",
     regimes:d=>d?.schema==="ghazi.macro_regimes.v2"&&d.decision_authority===false&&d.execution_authority===false&&
@@ -1775,6 +1777,39 @@
     return {session,last:"آخر جلسة مغلقة: "+String(s.last_closed_session||"—"),frames,reasons,cats,macro,
       private:plan.private_mode?.enabled?"الوضع الخاص للمالك مفعّل (لا يُنشر)":"",generated:plan.generated_at};
   }
+  const RUN_AR={OK:"سليم",FAILED:"فشل آخر تشغيل",NO_RUN_24H:"لا تشغيل خلال 24 ساعة",API_UNAVAILABLE:"سجل التشغيل غير متاح"};
+  const SOURCE_AR={AVAILABLE:"متاح",BLOCKED_BY_TERMS:"محجوب حسب الشروط",REFUSED_OR_DOWN:"رفض الطلب أو لا يستجيب",
+    NO_OUTPUT:"لا مخرجات"};
+  const DATA_AR={FRESH:"حديثة",STALE:"قديمة",EMPTY:"حديثة لكن بلا نتائج",NONE:"غير موجودة",NOT_USABLE:"غير قابلة للاستخدام"};
+  // Five separate answers per engine; none of them is inferred from another.
+  function engineStateLines(report){
+    const engines=report?.engines;
+    if(!engines||typeof engines!=="object")return [];
+    return Object.values(engines).filter(e=>e&&typeof e==="object").map(e=>{
+      const alerts=String(e.alerts||"");
+      const alert=alerts.startsWith("DELIVERED ")?"آخر تسليم "+stamp(alerts.slice(10)):
+        alerts==="NONE_DELIVERED"?"لم يُسلَّم تنبيه بعد":"لا مسار تنبيه";
+      return {title:String(e.label_ar||"—"),status:String(e.verdict_ar||"—"),
+        tone:e.analysis==="COMPUTED"?"UP":(e.source==="BLOCKED_BY_TERMS"||e.source==="REFUSED_OR_DOWN")?"DOWN":null,
+        detail:"التشغيل: "+(RUN_AR[e.run]||"غير معروف")+" · المصدر: "+(SOURCE_AR[e.source]||"غير معروف")+
+          ((e.closed_gates||[]).length?" ("+e.closed_gates.join("، ")+")":"")+
+          " · البيانات: "+(DATA_AR[e.data]||"غير معروفة")+(e.rows===null||e.rows===undefined?"":" ("+e.rows+" صف)")+
+          " · التحليل: "+(e.analysis==="COMPUTED"?"محسوب":"غير محسوب")+" · التنبيه: "+alert};
+    });
+  }
+  function renderEngineStates(){
+    const box=$("terminal-engine-states");if(!box)return;
+    box.replaceChildren();
+    const lines=engineStateLines(state.scorecards);
+    if(!lines.length){put("terminal-engine-states-status","لا يوجد تقرير حالة منشور بعد.");return;}
+    put("terminal-engine-states-status","تقرير "+stamp(state.scorecards.generated_at)+" · يعمل "+
+      lines.filter(l=>l.tone==="UP").length+" من "+lines.length);
+    for(const line of lines){
+      const item=txt("article","","terminal-structural-item"),title=txt("div","","terminal-structural-title");
+      title.append(txt("strong",line.title),chip(line.status,line.tone));
+      item.append(title,txt("small",line.detail,"terminal-structural-notice"));box.append(item);
+    }
+  }
   function renderPlan(){
     const body=$("terminal-plan-body");if(!body)return;
     body.replaceChildren();
@@ -2070,20 +2105,20 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","catalysts","modelLab","tracking","regimes","plan"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","catalysts","modelLab","tracking","regimes","plan","scorecards"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.catalysts,state.modelLab,state.tracking,state.regimes,state.plan]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.catalysts,state.modelLab,state.tracking,state.regimes,state.plan,state.scorecards]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
       " · تقارير الأسهم: "+stamp(state.brief?.source_generated_at));
-    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderPlan();renderFda();renderCatalysts();renderOps();renderOptions();renderFreeOptions();renderStrength();
+    renderOverview();renderIndices();renderStocks("large");renderStocks("small");renderStructuralWatch();renderExplosion();renderClassical();renderNews();renderTrust();renderDataHub();renderMacro();renderPlan();renderEngineStates();renderFda();renderCatalysts();renderOps();renderOptions();renderFreeOptions();renderStrength();
     refreshSymbols();
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={trustReadiness,weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines,regimeLines,planLines};
+    module.exports={trustReadiness,weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines,regimeLines,planLines,engineStateLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

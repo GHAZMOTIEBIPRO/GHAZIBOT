@@ -225,6 +225,88 @@ def telegram(audit: Any, now: datetime, digest: Any = None) -> dict[str, Any]:
                    "قبول Telegram للرسالة لا يثبت أن المستخدم قرأها.")
 
 
+# Each engine is reported on five separate questions; a green run says
+# nothing about the source, the data, the analysis or the alerts.
+ENGINES: dict[str, dict[str, Any]] = {
+    "fast_explosion": {"label_ar": "رادار الانفجار السريع", "workflow": "fast-explosion-radar.yml",
+                       "file": "explosion_hunter.json", "gates": ("nasdaq_web",)},
+    "stock_radar": {"label_ar": "رادار الأسهم", "workflow": "stock-radar.yml", "file": "decision_brief.json",
+                    "gates": ("nasdaq_web", "yahoo"), "rows": "stocks"},
+    "index_radar": {"label_ar": "تحليل المؤشرات", "workflow": "index-radar.yml", "file": "index_radar.json",
+                    "gates": ("yahoo",)},
+    "classical": {"label_ar": "الاتجاه الكلاسيكي", "workflow": "classical-direction-radar.yml",
+                  "file": "classical_direction.json", "gates": ("yahoo",)},
+    "catalysts": {"label_ar": "المحفزات الرسمية", "workflow": "catalyst-watchlist.yml", "file": "catalyst_watchlist.json",
+                  "gates": (), "rows": "watchlist", "alert_state": "catalyst/catalyst_alert_state.json"},
+    "fda": {"label_ar": "أحداث FDA", "workflow": "fda-events.yml", "file": "fda_events.json", "gates": (),
+            "alert_state": "fda/fda_alert_state.json"},
+    "sec": {"label_ar": "إفصاحات SEC", "workflow": "official-sec-pulse.yml", "file": "sec_filing_pulse.json", "gates": ()},
+    "macro": {"label_ar": "الخزانة وCFTC", "workflow": "public-macro.yml", "file": "public_macro.json", "gates": ()},
+    "daily_plan": {"label_ar": "خطة اليوم", "workflow": "daily-plan.yml", "file": "daily_plan.json", "gates": ()},
+}
+ENGINE_WORKFLOWS = tuple(sorted({e["workflow"] for e in ENGINES.values()} - set(CORE_WORKFLOWS)))
+WORKING_STATES = {"LIVE", "DELAYED", "HISTORICAL", "RESEARCH_ONLY", "MODEL_ESTIMATED"}
+BLOCK_STATUSES = {"SOURCE_TERMS_BLOCKED", "UNAVAILABLE", "SOURCE_UNAVAILABLE"}
+
+
+def _last_alert(state: Any) -> str | None:
+    """Latest Telegram delivery recorded in an alert state: only entries with a message_id count."""
+    if not isinstance(state, dict):
+        return None
+    # top-level "<name>_at" paired with "<name>_message_id" (briefs, notices)
+    stamps = [str(v) for k, v in state.items()
+              if k.endswith("_at") and state.get(k[:-3] + "_message_id") and isinstance(v, str)]
+    for table in ("events", "seen"):
+        rows = state.get(table)
+        for row in (rows.values() if isinstance(rows, dict) else []):
+            if isinstance(row, dict) and row.get("status") == "sent" and row.get("message_id") and row.get("at"):
+                stamps.append(str(row["at"]))
+    return max(stamps) if stamps else None
+
+
+def engine_status(data_dir: Path, state_dir: Path, runs: dict[str, list[dict[str, Any]] | None]) -> dict[str, Any]:
+    hub = _load(data_dir / "data_hub.json") or {}
+    rows = {r.get("file"): r for r in hub.get("datasets") or [] if isinstance(r, dict)}
+    gates = hub.get("source_gates") or {}
+    out = {}
+    for key, spec in ENGINES.items():
+        workflow_runs = runs.get(spec["workflow"]) if runs else None
+        completed = [r for r in workflow_runs or [] if r.get("status") == "completed"]
+        last = max(completed, key=lambda r: str(r.get("created_at") or ""), default=None)
+        run = ("API_UNAVAILABLE" if workflow_runs is None else "NO_RUN_24H" if last is None else
+               "OK" if last.get("conclusion") in ("success", "skipped") else "FAILED")
+        payload = _load(data_dir / spec["file"])
+        status = str(payload.get("status") or "") if isinstance(payload, dict) else ""
+        closed = [g for g in spec["gates"] if (gates.get(g) or {}).get("allowed") is False]
+        source = ("BLOCKED_BY_TERMS" if closed and (status == "SOURCE_TERMS_BLOCKED" or len(closed) == len(spec["gates"]))
+                  else "REFUSED_OR_DOWN" if status in BLOCK_STATUSES else
+                  "NO_OUTPUT" if payload is None else "AVAILABLE")
+        row = rows.get(spec["file"]) or {}
+        state = row.get("data_state") or ("DATA_UNAVAILABLE" if payload is None else "UNKNOWN")
+        items = payload.get(spec["rows"]) if isinstance(payload, dict) and spec.get("rows") else None
+        # freshness is the hub's measured age against the dataset cadence, not the provenance label
+        data = ("NONE" if payload is None or state in ("DATA_UNAVAILABLE", "SOURCE_UNAVAILABLE") else
+                "STALE" if row.get("freshness") != "FRESH" else
+                "EMPTY" if isinstance(items, list) and not items else
+                "FRESH" if state in WORKING_STATES else "NOT_USABLE")
+        analysis = "COMPUTED" if data == "FRESH" and source == "AVAILABLE" else "NOT_COMPUTED"
+        alert_file = spec.get("alert_state")
+        alert = (("DELIVERED " + str(_last_alert(_load(state_dir / alert_file)))) if alert_file and
+                 _last_alert(_load(state_dir / alert_file)) else "NONE_DELIVERED" if alert_file else "NO_ALERT_PATH")
+        verdict = ("متوقف لغياب مصدر مؤهل" if source == "BLOCKED_BY_TERMS" else
+                   "متوقف: المصدر رفض الطلب أو لا يستجيب" if source == "REFUSED_OR_DOWN" else
+                   "لم يُنتج مخرجات بعد" if source == "NO_OUTPUT" else
+                   "البيانات قديمة" if data == "STALE" else
+                   "يعمل بلا نتائج حالية" if data == "EMPTY" else
+                   "يعمل" if analysis == "COMPUTED" else "غير قابل للاستخدام")
+        out[key] = {"label_ar": spec["label_ar"], "verdict_ar": verdict, "run": run, "source": source, "data": data, "data_state": state,
+                    "analysis": analysis, "alerts": alert, "closed_gates": closed,
+                    "rows": len(items) if isinstance(items, list) else None,
+                    "generated_at": row.get("generated_at"),
+                    "last_run_at": last.get("created_at") if last else None}
+    return out
+
+
 def build(data_dir: Path, state_dir: Path, runtime_dir: Path, now: datetime,
           runs: dict[str, list[dict[str, Any]] | None], test_runs: list[dict[str, Any]] | None) -> dict[str, Any]:
     strength = _load(data_dir / "site_strength.json")
@@ -242,6 +324,7 @@ def build(data_dir: Path, state_dir: Path, runtime_dir: Path, now: datetime,
             "TELEGRAM_DELIVERY": telegram(_load(runtime_dir / "data/live/guardian_delivery_audit.json"), now,
                                           _load(state_dir / "telegram/ops_digest_state.json")),
         },
+        "engines": engine_status(data_dir, state_dir, runs),
         "original_evidence_score": {
             "value": strength.get("strength_score") if isinstance(strength, dict) else None,
             "weights_changed": False,
@@ -266,7 +349,8 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     repo, token = os.getenv("GITHUB_REPOSITORY", ""), os.getenv("GH_TOKEN", "")
     since = now - timedelta(hours=24)
-    runs = {w: github_runs(repo, token, w, since) for w in CORE_WORKFLOWS} if repo and token else {}
+    runs = ({w: github_runs(repo, token, w, since) for w in (*CORE_WORKFLOWS, *ENGINE_WORKFLOWS)}
+            if repo and token else {})
     test_runs = github_runs(repo, token, "test.yml", now - timedelta(days=3)) if repo and token else None
     report = build(args.data_dir, args.state_dir, args.runtime_dir, now, runs, test_runs)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
