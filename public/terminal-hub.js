@@ -1904,7 +1904,9 @@
     }
     const regimes=regimeLines(state.regimes);
     if(regimes.length){
-      box.append(txt("p","تغيّر الانجراف في السلاسل (ruptures على التغيرات، معاير لإنذار كاذب 3–5%؛ وصف وليس توقعًا أو إشارة) · "+stamp(state.regimes.generated_at),"terminal-footnote"));
+      box.append(txt("p","تغيّر الانجراف في السلاسل (ruptures على التغيرات) · "+
+        String(state.regimes.use?.note_ar||"سياق وصفي فقط؛ لا يدخل في أي درجة فرصة.")+
+        " نسب الاختبار اصطناعية على سلاسل محاكاة وليست دقة في السوق. · "+stamp(state.regimes.generated_at),"terminal-footnote"));
       for(const line of regimes){
         const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
         head.append(txt("strong",line.title),chip(line.status,line.tone));

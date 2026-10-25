@@ -1,0 +1,47 @@
+name: GHAZI Private Acceptance Run (owner only)
+
+# One manual end-to-end check of the private analysis on real Alpaca bars:
+# fetch -> validate -> frames -> scenarios -> save (runner temp only) ->
+# owner's personal Telegram chat -> sent message matches the saved result.
+# Nothing is committed or uploaded; the log carries checks and hashes only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    if: vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+          sparse-checkout: runtime/public/data/catalyst_watchlist.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r app/requirements.txt
+      - name: End-to-end check on the last completed session
+        run: |
+          cd app
+          python -m scripts.private_acceptance \
+            --catalysts ../state/runtime/public/data/catalyst_watchlist.json \
+            --private-output "$RUNNER_TEMP/private_acceptance.json"

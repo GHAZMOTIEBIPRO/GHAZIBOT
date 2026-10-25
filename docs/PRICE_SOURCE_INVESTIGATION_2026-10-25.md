@@ -73,6 +73,35 @@ Five uses are kept apart, because a source can allow one and forbid another:
 | (b) Delayed intraday (4H/1H/15m/5m) | Alpaca IEX 5-minute bars, request end held 16 min back | CODED and TESTED with synthetic fixtures (PR #388): 15m/1H/4H built from 5m on XNYS session boundaries; owner-private only. Not yet run live (no key). |
 | (c) Live | none qualified | Needs a licensed live feed with structured evidence (V11 gate); none is free. |
 
+## Alpaca investigation (closed as far as public documents allow, 2026-10-26)
+
+Read on the runner in run 40238841187 (official pages only):
+
+| Question | Answer | Evidence |
+|---|---|---|
+| Historical and recent bars | Basic (free, paper or live account): historical bars since 2016; the only limit is "latest 15 minutes". For SIP: "the `end` parameter must be at least 15 minutes old to query SIP data without a subscription". | docs.alpaca.markets about-market-data-api.md, market-data-faq.md |
+| Frames | Minute and daily bars are built from trades; other bars (e.g. 1Hour, 1Week) are aggregated from minute or daily bars. We request 5Min and 1Day and build 15m/1H/4H on XNYS session boundaries ourselves. | market-data-faq.md |
+| Coverage | Real time on Basic: IEX only (one exchange). Historical SIP: the consolidated tape ("100% of market volume"), allowed when 15+ minutes old. Snapshots and "latest" endpoints need a subscription for SIP, so ours use IEX and say so. | both pages |
+| Missing bars | "the bar is only emitted if none of its fields are 0": no bar means no qualifying trade, not a data fault. | market-data-faq.md |
+| Personal use and derived analysis | The Trading API is for individual traders "using Alpaca's trading platform directly". Redistribution: "Unfortunately, you cannot redistribute Alpaca API data." No public text on derived results was found. | alpaca.markets support page |
+| Storage, Telegram | Not addressed in the public pages. We keep data only inside the run (no cache, artifact, bot-state or log) and send only to the owner's own private chat after the owner records ALPACA_PRIVATE_ALERTS_AUTHORIZED. | design choice, not a provider statement |
+| Needs a subscription | Real-time SIP, the latest 15 minutes of SIP, SIP snapshots, more than 200 historical calls per minute (Algo Trader Plus). | about-market-data-api.md |
+| Market Data Agreement | `files.alpaca.markets/disclosures/library/MarketDataAgreement.pdf` answered **HTTP 403** to the runner, so it has **not** been read (an earlier note said it was fetched; that was wrong). It is shown to the account holder at sign-up. | run 40238841187 |
+| Screener (most actives / movers) | Not covered by the pages read; the scan does not depend on it. | — |
+
+The owner's `ALPACA_INTERNAL_DATA_USE_AUTHORIZED=true` records that the owner read and accepted Alpaca's
+agreements for personal use; it is not Alpaca's permission and does not replace reading the agreement.
+
+## Other checks on 2026-10-26
+
+- FDA press-release RSS: every fda.gov URL (feed, robots.txt, website policies) redirected the runner to
+  `apology_objects/abuse-detection-apology.html` (run 40238841187). The site's bot protection is not worked
+  around (no identity switching or retries), so this faster source is not usable from GitHub runners.
+- TradingView (runs 40233630558, 40234894415, 40238841618): the nine cash-index symbols tested
+  (SP:SPX, TVC:SPX, NASDAQ:NDX, TVC:NDX, DJ:DJI, TVC:DJI, TVC:RUT, CBOE:VIX, TVC:VIX) did not render in the
+  mini-symbol-overview and advanced-chart embeds; ETFs and 26 stock listings did. The finding is limited to
+  those symbols and widgets on that date. Stock and ETF quotes in the embeds were labelled "Cboe One".
+
 ## SEC access (not a price source, recorded here because it blocks size data)
 
 Run 40236507337 (fallback identity, no `SEC_USER_AGENT` secret): `data.sec.gov` answered 403 "Your Request

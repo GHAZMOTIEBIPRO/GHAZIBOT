@@ -6,7 +6,10 @@ borrowing bars from the next day:
 
 - 15m / 1H: consecutive buckets from 09:30 New York (1H: 09:30, 10:30, ...,
   15:30-16:00 is a half bucket).
-- 4H: 09:30-13:30 and 13:30-close (two buckets per day).
+- 4H: 09:30-13:30 and 13:30-close (two buckets per day). The regular
+  session is 6.5 hours, so the second bucket is 2.5 hours (shorter still on
+  early-close days): it is marked `partial` with its real `minutes`, never
+  presented as a full four-hour bar.
 
 A bucket is published only when it is complete: its end is at or before the
 cutoff (now minus the provider delay) and it holds at least one bar. The
@@ -50,7 +53,9 @@ def aggregate(bars_5m: list[dict[str, Any]], sessions: list[tuple[datetime, date
                 break
             rows = bars[bisect_left(stamps, start):bisect_left(stamps, end)]
             if rows:
-                out.append({"start": start.isoformat(), "end": end.isoformat(),
+                length = int((end - start).total_seconds() // 60)
+                out.append({"start": start.isoformat(), "end": end.isoformat(), "minutes": length,
+                            "partial": length < minutes,
                             "open": rows[0]["o"], "high": max(b["h"] for b in rows),
                             "low": min(b["l"] for b in rows), "close": rows[-1]["c"],
                             "volume": sum(b.get("v", 0) for b in rows), "bars_5m": len(rows)})

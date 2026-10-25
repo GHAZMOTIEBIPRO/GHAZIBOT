@@ -30,11 +30,14 @@ def check(agent: str) -> list[dict]:
             body = response.text[:4000] if response.status_code != 200 else ""
             title = re.search(r"<title[^>]*>(.*?)</title>", body, re.IGNORECASE | re.DOTALL)
             heading = re.search(r"<h1[^>]*>(.*?)</h1>", body, re.IGNORECASE | re.DOTALL)
-            out.append({"host": url.split("/")[2], "status": response.status_code,
+            kind = ("OK" if response.status_code == 200 else
+                    "RATE_LIMITED" if response.status_code == 429 or "Request Rate Threshold Exceeded" in body else
+                    "IDENTITY_REFUSED" if "Undeclared Automated Tool" in body else f"HTTP_{response.status_code}")
+            out.append({"host": url.split("/")[2], "status": response.status_code, "kind": kind,
                         "title": title.group(1).strip()[:100] if title else None,
                         "heading": heading.group(1).strip()[:120] if heading else None})
         except requests.RequestException as exc:
-            out.append({"host": url.split("/")[2], "error": type(exc).__name__})
+            out.append({"host": url.split("/")[2], "kind": "NETWORK", "error": type(exc).__name__})
     return out
 
 

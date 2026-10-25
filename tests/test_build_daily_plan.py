@@ -86,13 +86,15 @@ def test_private_plans_need_policy_and_keys_and_build_intraday_frames(monkeypatc
     assert result["enabled"] is True and len(calls) == 2 * len(bdp.PLAN_SYMBOLS)
     # nothing newer than now - 16 minutes is ever requested
     assert all(datetime.fromisoformat(c["end"]) <= now - timedelta(minutes=16) for c in calls)
-    assert {c["feed"] for c in calls} == {"iex"}
+    # completed history uses the consolidated tape (allowed on Basic when 15+ minutes old)
+    assert {c["feed"] for c in calls} == {"sip"}
     plan = result["plans"]["SPY"]
     assert plan["available"] is True
     assert {"daily", "weekly", "4h", "1h", "15m", "5m"} <= set(plan["frames_available"])
     # the 4H bucket in progress (13:30-16:00 today) is not used
     assert plan["frames"]["4h"]["last_bar_end"] <= "2026-10-26T17:30:00+00:00"
-    assert all(level["source"] == "alpaca_iex" and level["bar"] for level in plan["levels"])
+    assert all(level["source"] == "alpaca_sip" and level["bar"] for level in plan["levels"])
+    assert result["fetch_status"]["SPY"]["feeds"] == ["sip"]
     # a provider whose history stops weeks ago yields no plan, not an old one
     stale = dict(result["plans"]["SPY"])
     old = bdp.dp.plan_for_symbol("OLD", [{"date": "2026-09-04", "open": 1, "high": 2, "low": 0.5, "close": 1.5},

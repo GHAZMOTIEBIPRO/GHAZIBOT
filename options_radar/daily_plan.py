@@ -30,6 +30,14 @@ from typing import Any
 
 SCHEMA = "ghazi.daily_plan.v1"
 MIN_DAILY = 22          # EMA20 + one comparison
+# Minimum completed bars before a frame's trend is computed (fast EMA + 2 for a
+# slope); EMA50 needs 50, ATR14 needs 15. Below these the frame says why.
+REQUIREMENTS = {"weekly": {"trend_bars": 12, "ema": "EMA10/EMA20 (weeks)", "slow_from": 20},
+                "daily": {"trend_bars": 22, "ema": "EMA20/EMA50", "slow_from": 50, "atr14_from": 15},
+                "4h": {"trend_bars": 22, "ema": "EMA20/EMA50", "slow_from": 50},
+                "1h": {"trend_bars": 22, "ema": "EMA20/EMA50", "slow_from": 50},
+                "15m": {"trend_bars": 22, "ema": "EMA20/EMA50", "slow_from": 50},
+                "5m": {"trend_bars": 22, "ema": "EMA20/EMA50", "slow_from": 50}}
 TREND_AR = {"UP": "صاعد", "DOWN": "هابط", "MIXED": "مختلط", "INSUFFICIENT": "بيانات غير كافية",
             "UNAVAILABLE": "غير متاح"}
 
@@ -96,7 +104,8 @@ def weekly_from_daily(daily: list[dict[str, Any]], *, last_closed_week_end: str)
 def frame_trend(bars: list[dict[str, Any]], *, fast: int = 20, slow: int = 50) -> dict[str, Any]:
     closes = [b["close"] for b in bars]
     if len(closes) < fast + 2:
-        return {"trend": "INSUFFICIENT", "bars": len(closes)}
+        return {"trend": "INSUFFICIENT", "bars": len(closes),
+                "reason": f"needs {fast + 2} completed bars for EMA{fast} and its slope, has {len(closes)}"}
     f = ema(closes, fast)
     s = ema(closes, slow) if len(closes) >= slow else None
     last = closes[-1]
@@ -166,7 +175,8 @@ def plan_for_symbol(symbol: str, daily_bars: list[dict[str, Any]], *, last_close
     frames["daily"] = {**frame_trend(daily), "structure": structure(daily), "last_bar_end": daily[-1]["date"]}
     for name in ("4h", "1h", "15m", "5m"):
         bars = (intraday or {}).get(name) or []
-        frames[name] = ({**frame_trend(bars), "structure": structure(bars), "last_bar_end": bars[-1].get("end")}
+        frames[name] = ({**frame_trend(bars), "structure": structure(bars), "last_bar_end": bars[-1].get("end"),
+                         "partial_bars": sum(1 for x in bars if x.get("partial"))}
                         if bars else
                         {"trend": "UNAVAILABLE", "reason": "provider supplies no completed bars for this frame"})
     prior_day = daily[-1]
