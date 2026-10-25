@@ -1,9 +1,22 @@
 {
- "schema": "ghazi.issuer_sizes.v1",
- "generated_at": "2026-10-25T07:50:03.717216+00:00",
- "source": "SEC XBRL company concept dei:EntityPublicFloat",
+ "schema": "ghazi.issuer_sizes.v2",
+ "generated_at": "2026-10-25T21:19:22.478751+00:00",
+ "source": "SEC XBRL company concepts (dei) + SEC submissions",
  "symbols": {},
  "errors": {},
  "research_only": true,
+ "fields": {
+  "public_float_value": "USD held by non-affiliates; not market cap",
+  "shares_outstanding": "cover-page shares; not float",
+  "sec_filer_status": "SEC filing regime; not a market-cap class",
+  "market_cap": {
+   "status": "UNVERIFIED",
+   "reason": "needs a current price from a permitted source; none configured"
+  },
+  "float_shares": {
+   "status": "UNAVAILABLE",
+   "reason": "no permitted source for share float"
+  }
+ },
  "status": "SEC_IDENTITY_MISSING"
 }
