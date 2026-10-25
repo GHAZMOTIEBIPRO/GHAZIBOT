@@ -286,6 +286,7 @@ def engine_status(data_dir: Path, state_dir: Path, runs: dict[str, list[dict[str
         items = payload.get(spec["rows"]) if isinstance(payload, dict) and spec.get("rows") else None
         # freshness is the hub's measured age against the dataset cadence, not the provenance label
         data = ("NONE" if payload is None or state in ("DATA_UNAVAILABLE", "SOURCE_UNAVAILABLE") else
+                "UNMEASURED" if not row else
                 "STALE" if row.get("freshness") != "FRESH" else
                 "EMPTY" if isinstance(items, list) and not items else
                 "FRESH" if state in WORKING_STATES else "NOT_USABLE")
@@ -297,6 +298,7 @@ def engine_status(data_dir: Path, state_dir: Path, runs: dict[str, list[dict[str
                    "متوقف: المصدر رفض الطلب أو لا يستجيب" if source == "REFUSED_OR_DOWN" else
                    "لم يُنتج مخرجات بعد" if source == "NO_OUTPUT" else
                    "البيانات قديمة" if data == "STALE" else
+                   "الحداثة غير مقاسة" if data == "UNMEASURED" else
                    "يعمل بلا نتائج حالية" if data == "EMPTY" else
                    "يعمل" if analysis == "COMPUTED" else "غير قابل للاستخدام")
         out[key] = {"label_ar": spec["label_ar"], "verdict_ar": verdict, "run": run, "source": source, "data": data, "data_state": state,

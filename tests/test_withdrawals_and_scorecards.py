@@ -160,4 +160,8 @@ def test_engine_status_keeps_run_source_data_analysis_and_alerts_apart(tmp_path)
     assert cat["run"] == "API_UNAVAILABLE" and cat["alerts"] == "NONE_DELIVERED" and cat["rows"] == 1
     assert eng["sec"]["source"] == "REFUSED_OR_DOWN" and eng["sec"]["data"] == "NONE"
     assert eng["daily_plan"]["source"] == "NO_OUTPUT"
+    # a published file the hub does not catalogue is unmeasured, never "stale"
+    _write(data / "daily_plan.json", {"generated_at": "2026-10-25T07:57:34+00:00"})
+    plan = cards.engine_status(data, state, runs)["daily_plan"]
+    assert plan["data"] == "UNMEASURED" and plan["verdict_ar"] == "الحداثة غير مقاسة"
     assert set(cards.ENGINE_WORKFLOWS).isdisjoint(cards.CORE_WORKFLOWS)
