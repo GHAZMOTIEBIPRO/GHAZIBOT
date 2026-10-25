@@ -178,6 +178,25 @@
   }
 
   let indexSymbol="SPX",stockSymbol=null;
+  const WATCH_KEY="ghazi.watchlist.v1";
+  // A per-viewer convenience: kept in this browser only; storage may be unavailable.
+  function loadWatch(){
+    try{const v=JSON.parse(localStorage.getItem(WATCH_KEY)||"[]");return Array.isArray(v)?v.filter(s=>resolve(s)).slice(0,30):[];}
+    catch{return [];}
+  }
+  function saveWatch(list){try{localStorage.setItem(WATCH_KEY,JSON.stringify(list.slice(0,30)));}catch{/* storage blocked */}}
+  function renderWatch(){
+    const box=$("tv-watchlist");if(!box)return;
+    box.replaceChildren();
+    for(const sym of loadWatch()){
+      const b=document.createElement("button");b.type="button";b.className="secondary-button";b.textContent=sym;
+      b.addEventListener("click",()=>renderSymbol(sym));
+      const x=document.createElement("button");x.type="button";x.className="secondary-button";x.textContent="×";
+      x.setAttribute("aria-label","إزالة "+sym);
+      x.addEventListener("click",()=>{saveWatch(loadWatch().filter(s=>s!==sym));renderWatch();});
+      box.append(b,x);
+    }
+  }
 
   function renderIndex(symbol){
     indexSymbol=symbol;
@@ -230,6 +249,11 @@
     for(const [id,kind] of [["tv-heatmap","stock-heatmap"],["tv-screener","screener"],["tv-calendar","events"]]){
       const slot=$(id);whenVisible(slot,()=>mount(slot,kind,config(kind)));
     }
+    $("tv-watch-add")?.addEventListener("click",()=>{
+      if(!stockSymbol)return;
+      const list=loadWatch();if(!list.includes(stockSymbol))saveWatch([...list,stockSymbol]);renderWatch();
+    });
+    renderWatch();
     const form=$("tv-stock-form");
     form?.addEventListener("submit",event=>{
       event.preventDefault();renderSymbol($("tv-stock-input")?.value);

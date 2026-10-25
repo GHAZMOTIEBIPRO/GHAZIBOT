@@ -1724,10 +1724,24 @@
     return parts.join(" · ");
   }
   // Official catalysts only; never a price band or a signal without a permitted current quote.
-  function catalystLines(report,limit=20){
+  const IMPACT_AR={REGULATORY_DECISION:"قرار تنظيمي",REGULATORY_DECISION_MINOR:"قرار تنظيمي ثانوي",RISK:"خطر",
+    RESULTS_POSTED_DIRECTION_UNKNOWN:"نتائج منشورة (الاتجاه غير مقيم)",STATUS_CHANGE:"تغير حالة دراسة",
+    ADMINISTRATIVE:"تحديث إداري",OTHER:"أخرى"};
+  const IMPACT_FILTER={decisions:i=>String(i).startsWith("REGULATORY_DECISION"),results:i=>i==="RESULTS_POSTED_DIRECTION_UNKNOWN",
+    risks:i=>i==="RISK",no_admin:i=>i!=="ADMINISTRATIVE"};
+  // Filter by event type and sort, like a screener; each row says why it appears.
+  function catalystLines(report,limit=20,opts={}){
     if(!report||!Array.isArray(report.watchlist))return [];
-    return report.watchlist.filter(e=>e&&/^[A-Z][A-Z0-9.\-]{0,9}$/.test(e.symbol||"")).slice(0,limit).map(e=>({
-      title:e.symbol,
+    const keep=IMPACT_FILTER[opts.filter];
+    let rows=report.watchlist.filter(e=>e&&/^[A-Z][A-Z0-9.\-]{0,9}$/.test(e.symbol||""));
+    if(keep)rows=rows.filter(e=>(e.catalysts||[]).some(c=>keep(c.impact||"OTHER")));
+    if(opts.sort==="date")rows=[...rows].sort((x,y)=>String(y.latest_date).localeCompare(String(x.latest_date)));
+    return rows.slice(0,limit).map(e=>{
+      const top=(e.catalysts||[]).find(c=>!keep||keep(c.impact||"OTHER"))||(e.catalysts||[])[0]||{};
+      return {
+      title:e.symbol,symbol:e.symbol,
+      why:"سبب الظهور: "+(CATALYST_KIND[top.kind]||top.kind||"—")+" بتاريخ "+String(top.date||"—")+
+        " · النوع: "+(IMPACT_AR[top.impact]||"غير مصنف")+" · ليس توقعًا لاتجاه السعر",
       tone:e.dilution_risk||e.charter_or_reverse_split_review?"DOWN":e.highest_importance==="HIGH"?"STALE":null,
       status:(Number.isFinite(e.catalyst_score)?"أولوية "+e.catalyst_score+"/100":
         ({HIGH:"أولوية مراجعة عالية",MEDIUM:"أولوية متوسطة",LOW:"أولوية منخفضة"}[e.highest_importance]||"—"))+" · "+String(e.latest_date||"—"),
@@ -1735,7 +1749,8 @@
         " · "+sizeEvidence(e)+
         (Array.isArray(e.risk_flags)&&e.risk_flags.length?" · مخاطر: "+e.risk_flags.join("، "):""),
       items:(e.catalysts||[]).slice(0,4).map(c=>({text:(CATALYST_KIND[c.kind]||c.kind)+" · "+String(c.date||"—")+
-        (c.label?" · "+String(c.label).slice(0,90):"")+" · "+String(c.source||""),url:safeOfficial(c.source_url)}))}));
+        (c.label?" · "+String(c.label).slice(0,90):"")+" · "+String(c.source||""),url:safeOfficial(c.source_url)}))};
+    });
   }
   function renderCatalysts(){
     const box=$("terminal-catalyst-list");if(!box)return;
@@ -1753,12 +1768,12 @@
     put("terminal-price-confirmed",report.price_confirmed_signals.length?
       "الإشارات المؤكدة سعريًا: "+report.price_confirmed_signals.length:
       "الإشارات المؤكدة سعريًا: لا توجد — "+String(report.price_confirmation?.note_ar||"لا يوجد مصدر أسعار مسموح."));
-    const lines=catalystLines(report);
-    if(!lines.length){box.append(txt("p","لا محفزات رسمية مرتبطة برمز في النافذة الحالية.","terminal-empty"));return;}
+    const lines=catalystLines(report,20,{filter:$("terminal-catalyst-filter")?.value,sort:$("terminal-catalyst-sort")?.value});
+    if(!lines.length){box.append(txt("p","لا محفزات رسمية تطابق هذا الاختيار في النافذة الحالية.","terminal-empty"));return;}
     for(const line of lines){
       const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
-      head.append(txt("strong",line.title),chip(line.status,line.tone));
-      item.append(head,txt("small",line.price,"terminal-structural-notice"));
+      head.append(txt("strong",line.title),chip(line.status,line.tone),chartButton(line.symbol,"الشارت ↗"));
+      item.append(head,txt("small",line.why,"terminal-structural-notice"),txt("small",line.price,"terminal-structural-notice"));
       for(const c of line.items){
         const row=txt("small",c.text,"terminal-structural-notice");
         if(c.url){const a=document.createElement("a");a.href=c.url;a.target="_blank";a.rel="noopener noreferrer";
@@ -2182,6 +2197,8 @@
     $("terminal-chart-timeframe").value="1d";renderChart();
   });
   $("terminal-explosion-sort")?.addEventListener("change",()=>renderExplosion());
+  $("terminal-catalyst-filter")?.addEventListener("change",()=>renderCatalysts());
+  $("terminal-catalyst-sort")?.addEventListener("change",()=>renderCatalysts());
   $("terminal-tv-chart")?.addEventListener("toggle",()=>renderTradingView(state.symbol));
   $("terminal-chart-timeframe")?.addEventListener("change",event=>{
     state.tf=event.target.value;renderChart();

@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="./terminal-hub.css?v=20261021-1">
+  <link rel="stylesheet" href="./terminal-hub.css?v=20261026-1">
   <link rel="stylesheet" href="./radar-start.css?v=20261025-1">
   <link rel="stylesheet" href="./market-sections.css?v=20261025-1">
 </head>
@@ -247,6 +247,21 @@
             <h4>قائمة متابعة المحفزات (منفصلة عن الإشارات السعرية)</h4>
             <p>أسهم دخلت القائمة بحدث رسمي (FDA، وإفصاحات SEC عند توفرها): موافقات، سحوبات، طروحات وتخفيف، تعديلات النظام والتقسيم العكسي. لا تصنيف تحت 10$ ولا إشارة دخول دون سعر حديث من مصدر يسمح بالنشر.</p></div></header>
           <p id="terminal-catalyst-status" class="terminal-footnote" aria-live="polite">جاري التحميل…</p>
+          <div class="terminal-filter-row">
+            <label class="terminal-sort">نوع الحدث:
+              <select id="terminal-catalyst-filter" aria-label="تصفية المحفزات حسب النوع">
+                <option value="no_admin">بدون التحديثات الإدارية</option>
+                <option value="all">الكل</option>
+                <option value="decisions">قرارات تنظيمية</option>
+                <option value="results">نتائج دراسات منشورة</option>
+                <option value="risks">مخاطر (تخفيف، سحب، إدراج)</option>
+              </select></label>
+            <label class="terminal-sort">الترتيب:
+              <select id="terminal-catalyst-sort" aria-label="ترتيب المحفزات">
+                <option value="priority">أولوية المراجعة</option>
+                <option value="date">الأحدث أولًا</option>
+              </select></label>
+          </div>
           <div id="terminal-catalyst-list" class="terminal-structural-list"></div>
           <p id="terminal-price-confirmed" class="terminal-footnote">الإشارات المؤكدة سعريًا: جاري التحقق…</p>
         </section>
@@ -323,6 +338,9 @@
             </form>
           </div>
           <p id="tv-stock-status" class="terminal-footnote">جاري التحميل…</p>
+          <div class="tv-watchlist"><button id="tv-watch-add" type="button" class="secondary-button">+ أضف إلى قائمتي</button>
+            <div id="tv-watchlist" class="ghazi-tv-buttons" role="group" aria-label="قائمة المتابعة الشخصية"></div>
+            <small class="terminal-footnote">قائمتك محفوظة في هذا المتصفح فقط ولا تُرسل إلى أي خادم.</small></div>
           <div class="tv-stock-grid">
             <div id="tv-stock-ta" class="ghazi-tv-slot ghazi-tv-slot--ta"></div>
             <div id="tv-stock-profile" class="ghazi-tv-slot"></div>
@@ -387,6 +405,7 @@
         </section>
         <div id="terminal-options-readiness" class="terminal-options-status" role="status">فحص جودة سلسلة الخيارات…</div>
         <div id="terminal-options-breakdown" class="terminal-pulse-grid"></div>
+        <p class="terminal-footnote">نشاط الخيارات (الحجم والمراكز المفتوحة) وصفٌ لما يحدث في العقود، ولا يحدد اتجاه الصفقة؛ الاتجاه يُبنى من تحليل السهم نفسه أولًا ثم يُفحص العقد بشكل مستقل.</p>
         <p class="terminal-footnote">استمرار WATCH بحثي ممكن حتى عند عدم توفر OPRA، أما توصيات العقد ذات الأسعار التنفيذية فتخضع لبوابة V11 دون أي تخفيف.</p>
       </section>
       <section class="terminal-panel" id="terminal-panel-trust" aria-label="مركز موثوقية مصادر البيانات" hidden>
@@ -932,7 +951,7 @@
   <script src="./terminal-oos.js?v=20261020-1" defer></script>
   <script src="./terminal-decision.js?v=20261025-1" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./tv-intelligence.js?v=20261026-1" defer></script>
-  <script src="./terminal-hub.js?v=20261026-2" defer></script>
+  <script src="./tv-intelligence.js?v=20261026-2" defer></script>
+  <script src="./terminal-hub.js?v=20261026-3" defer></script>
 </body>
 </html>
