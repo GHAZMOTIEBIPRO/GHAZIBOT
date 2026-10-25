@@ -121,7 +121,8 @@ def test_score_uses_strength_recency_reliability_and_flags_risk():
     assert all(e["candidate_status"] == "PRICE_VERIFICATION_NEEDED" for e in report["watchlist"])
     # No documented size: nothing is called small; the reference list is labelled as a list.
     assert by["LLY"]["universe"] == "KNOWN_LARGE_ISSUER_LIST"
-    assert report["small_cap_candidates"] == [] and report["size_unverified_candidates"][0] == "NEWM"
+    assert by["NEWM"]["universe"] == "MARKET_CAP_UNVERIFIED" and by["NEWM"]["market_cap"]["status"] == "UNVERIFIED"
+    assert report["market_cap_unverified_candidates"][0] == "NEWM" and report["public_float_ranked"] == []
     assert report["size_rules"]["sources_status"] == "SEC_SIZE_DATA_UNAVAILABLE"
     assert "غير متحقق" in report["size_rules"]["note_ar"]
     # Production 2026-10-25 listed these large/mid caps as small-cap candidates.
@@ -129,26 +130,35 @@ def test_score_uses_strength_recency_reliability_and_flags_risk():
     assert "ليست توقعًا" in report["ranking_rules"]["note_ar"] and report["ranking_rules"]["top_n"] == 3
 
 
-def test_size_band_only_from_fresh_sec_public_float_and_list_is_reviewed():
+def test_size_fields_stay_separate_and_nothing_is_called_small_from_sec_thresholds():
     fda = {"approvals": [
         {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-20", "ticker": t, "importance": "HIGH"}
-        for t in ("TINY", "MIDC", "BIGC", "TEVA", "OLDF", "BADU")], "recalls": []}
-    url = "https://www.sec.gov/Archives/edgar/data/1/2/x.htm"
+        for t in ("TINY", "BIGC", "TEVA", "OLDF", "BADU")], "recalls": []}
+    url = "https://www.sec.gov/Archives/edgar/data/1/2/"
+    srch = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=1"
     sizes = {"symbols": {
-        "TINY": {"public_float_usd": 90e6, "public_float_as_of": "2026-06-30", "source_url": url},
-        "MIDC": {"public_float_usd": 400e6, "public_float_as_of": "2026-06-30", "source_url": url},
-        "BIGC": {"public_float_usd": 5e9, "public_float_as_of": "2026-06-30", "source_url": url},
-        "TEVA": {"public_float_usd": 200e6, "public_float_as_of": "2026-06-30", "source_url": url},
-        "OLDF": {"public_float_usd": 90e6, "public_float_as_of": "2024-06-28", "source_url": url},
-        "BADU": {"public_float_usd": 90e6, "public_float_as_of": "2026-06-30", "source_url": "https://evil.example/x"}}}
+        "TINY": {"public_float_value": {"usd": 90e6, "as_of": "2026-06-30", "source_url": url},
+                 "shares_outstanding": {"shares": 12_000_000, "as_of": "2026-08-01", "source_url": url},
+                 "sec_filer_status": {"category": "Non-accelerated filer", "smaller_reporting_company": True,
+                                      "exchanges": ["Nasdaq"], "source_url": srch}},
+        "BIGC": {"public_float_value": {"usd": 5e9, "as_of": "2026-06-30", "source_url": url}},
+        "TEVA": {"sec_filer_status": {"category": "Accelerated filer", "source_url": srch}},
+        "OLDF": {"public_float_value": {"usd": 90e6, "as_of": "2024-06-28", "source_url": url}},
+        "BADU": {"public_float_value": {"usd": 90e6, "as_of": "2026-06-30", "source_url": "https://evil.example/x"}}}}
     report = cw.build(fda, None, None, NOW, None, sizes)
     by = {e["symbol"]: e for e in report["watchlist"]}
-    assert by["TINY"]["universe"] == "SIZE_VERIFIED_SMALL" and by["TINY"]["size_basis"] == "SEC_PUBLIC_FLOAT"
-    assert by["MIDC"]["universe"] == "SIZE_VERIFIED_MID" and by["BIGC"]["universe"] == "SIZE_VERIFIED_LARGE"
-    assert by["OLDF"]["size_basis"] == "SEC_PUBLIC_FLOAT_STALE" and by["OLDF"]["universe"] == "SIZE_UNVERIFIED"
-    assert by["BADU"]["size_basis"] == "SEC_PUBLIC_FLOAT_INVALID"
-    assert sorted(report["small_cap_candidates"]) == ["TEVA", "TINY"]
-    # The reference list said TEVA is large; the measured float disagrees and is reported.
-    assert report["list_review"] == [{"symbol": "TEVA", "measured": "SIZE_VERIFIED_SMALL"}]
+    tiny = by["TINY"]
+    # SEC data is evidence only: market cap stays unverified and float shares unavailable
+    assert tiny["universe"] == "MARKET_CAP_UNVERIFIED" and tiny["market_cap"]["status"] == "UNVERIFIED"
+    assert tiny["float_shares"]["status"] == "UNAVAILABLE"
+    assert tiny["public_float_value"] == {"usd": 90e6, "as_of": "2026-06-30", "source_url": url, "stale": False}
+    assert tiny["shares_outstanding"]["shares"] == 12_000_000
+    assert tiny["sec_filer_status"]["category"] == "Non-accelerated filer"
+    assert tiny["sec_filer_status"]["smaller_reporting_company"] is True
+    assert by["OLDF"]["public_float_value"]["stale"] is True and by["BADU"]["public_float_value"] is None
+    assert [r["symbol"] for r in report["public_float_ranked"]] == ["TINY", "BIGC"]
+    assert "small_cap_candidates" not in report and "SIZE_VERIFIED_SMALL" not in str(report)
+    # the manual large list is reviewed against SEC filer status
+    assert report["list_review"] == [{"symbol": "TEVA", "sec_filer_status": "Accelerated filer"}]
     # Low price is a separate test: no price input, so nothing is under $10.
     assert all(e["sub10_confirmed"] is False for e in report["watchlist"])

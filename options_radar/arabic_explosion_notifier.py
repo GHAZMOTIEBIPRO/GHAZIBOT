@@ -198,7 +198,6 @@ def _float_shares(stock: dict[str, Any], delta: dict[str, Any]) -> float:
         stock.get("effective_float_estimate"),
         stock.get("public_float_shares"),
         stock.get("float_shares"),
-        stock.get("public_float"),
         stock.get("float"),
     ):
         number = _num(value)

@@ -159,9 +159,10 @@ REGISTRY: list[dict[str, Any]] = [
     {"file": "catalyst_watchlist.json", "title_ar": "قائمة متابعة المحفزات الرسمية", "kind": "REGULATORY_EVENTS",
      "source": "openFDA (CC0) + SEC EDGAR", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 720,
      "limitations": "محفزات رسمية لا اتجاه سعر؛ لا تصنيف تحت 10$ دون سعر مسموح حديث"},
-    {"file": "issuer_sizes.json", "title_ar": "حجم الشركات من SEC (Public Float)", "kind": "FILINGS",
-     "source": "SEC XBRL dei:EntityPublicFloat", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 1440,
-     "limitations": "قيمة الأسهم الحرة لغير المطلعين سنويًا من 10-K؛ ليست قيمة سوقية؛ يحتاج SEC_USER_AGENT"},
+    {"file": "issuer_sizes.json", "title_ar": "أدلة حجم الشركات من SEC (Public Float، الأسهم القائمة، تصنيف الإفصاح)",
+     "kind": "FILINGS", "source": "SEC XBRL dei + SEC submissions", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 1440,
+     "limitations": "حقول منفصلة: Public Float بالدولار ليست قيمة سوقية ولا عدد أسهم حرة؛ تصنيف الإفصاح ليس فئة رسملة؛"
+                    " القيمة السوقية غير متحققة دون سعر مسموح؛ يحتاج SEC_USER_AGENT"},
     {"file": "sec_filing_pulse.json", "title_ar": "إفصاحات SEC", "kind": "FILINGS",
      "source": "SEC EDGAR", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 240,
      "limitations": "محجوب حتى إضافة SEC_USER_AGENT"},
