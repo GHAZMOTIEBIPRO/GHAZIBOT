@@ -1,0 +1,38 @@
+name: TradingView widget symbol probe
+
+# Manual check of which symbols the free TradingView embeds render and which
+# instrument they display (cash index, ETF or CFD). Writes to the job
+# summary only; nothing is published or fed into analysis.
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "Comma-separated TradingView symbols (empty = default list)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "scripts/tv_widget_probe.cjs"
+      - ".github/workflows/tv-widget-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install a pinned Playwright with Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Render each symbol in the embed
+        env:
+          TV_PROBE_SYMBOLS: ${{ inputs.symbols }}
+        run: node scripts/tv_widget_probe.cjs
