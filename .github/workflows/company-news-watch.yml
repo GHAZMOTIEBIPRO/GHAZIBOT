@@ -68,7 +68,6 @@ jobs:
           fetch-depth: 0
 
       - name: Build free GDELT and official macro context
-        env:
         run: >-
           python -m options_radar.free_public_intelligence
           --output public/data/free_public_intelligence.json
