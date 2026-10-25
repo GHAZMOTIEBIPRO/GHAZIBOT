@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build_catalyst_watchlist.py"
+      - "scripts/build_issuer_sizes.py"
       - "scripts/build_clinical_registry_feed.py"
       - "data/company_aliases.json"
       - "data/fda_sponsor_aliases.json"
@@ -57,12 +58,25 @@ jobs:
       # input is passed: no permitted public-display price source exists yet.
       - name: Fetch bounded ClinicalTrials registry metadata
         run: python app/scripts/build_clinical_registry_feed.py --output state/runtime/public/data/clinical_registry.json
+      # Size classification input: SEC public float for the previous list's
+      # issuers. Without the SEC_USER_AGENT secret it records
+      # SEC_IDENTITY_MISSING and every issuer stays "size unverified".
+      - name: SEC public float for issuer size (official XBRL)
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: |
+          pip install "requests>=2.32,<3.0"
+          cd app
+          python -m scripts.build_issuer_sizes \
+            --watchlist ../state/runtime/public/data/catalyst_watchlist.json \
+            --output ../state/runtime/public/data/issuer_sizes.json
       - name: Build the catalyst watchlist from published official events
         run: >-
           python app/scripts/build_catalyst_watchlist.py
           --fda state/runtime/public/data/fda_events.json
           --sec state/runtime/public/data/sec_filing_pulse.json
           --clinical state/runtime/public/data/clinical_registry.json
+          --sizes state/runtime/public/data/issuer_sizes.json
           --output state/runtime/public/data/catalyst_watchlist.json
       - name: Install shared Telegram transport dependency
         run: pip install "requests>=2.32,<3.0"
@@ -112,6 +126,9 @@ jobs:
           git config user.name "GHAZI RADAR Catalyst Watchlist"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
           git add runtime/public/data/catalyst_watchlist.json runtime/public/data/clinical_registry.json
+          if [[ -f runtime/public/data/issuer_sizes.json ]]; then
+            git add runtime/public/data/issuer_sizes.json
+          fi
           if [[ -f state/catalyst/catalyst_alert_state.json ]]; then
             git add state/catalyst/catalyst_alert_state.json
           fi
