@@ -44,7 +44,7 @@ jobs:
       - run: python -m pip install "requests>=2.32,<3" "pypdf>=4,<6"
       - name: Official terms pages (relevant clauses only)
         env:
-          PROBE_TERMS_ONLY: massive_market_data_terms,massive_individuals_terms,tradier_faq,tradier_faq_md,alpaca_market_data_agreement
+          PROBE_TERMS_ONLY: alpaca_market_data_agreement,alpaca_market_data_faq_md,alpaca_market_data_md,alpaca_redistribute,fda_press_rss,fda_robots,fda_website_policies
         run: python scripts/probe_terms.py
       - name: SEC status codes and refusal titles only
         run: python scripts/probe_sec_access.py

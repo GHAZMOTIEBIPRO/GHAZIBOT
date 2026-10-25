@@ -116,6 +116,11 @@ PAGES = {
     "massive_individuals_terms": "https://massive.com/legal/individuals-terms-of-service",
     "tradier_faq": "https://docs.tradier.com/docs/faq",
     "tradier_faq_md": "https://docs.tradier.com/docs/faq.md",
+    # Official FDA news feed (faster than openFDA?) and its robots policy (2026-10-26).
+    "fda_press_rss": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml",
+    "fda_rss_index": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds",
+    "fda_robots": "https://www.fda.gov/robots.txt",
+    "fda_website_policies": "https://www.fda.gov/about-fda/about-website/website-policies",
 }
 # Pages whose whole text is printed (bounded), so specific clauses on derived
 # data, non-price analytics, storage, sharing and plan limits can be quoted
@@ -127,12 +132,13 @@ FULL_TEXT = {"twelvedata_terms", "twelvedata_pricing", "finnhub_terms", "finnhub
              "twelvedata_pricing_md", "twelvedata_llms", "alpaca_market_data_md", "alpaca_llms", "tradier_llms",
              "massive_individual_terms", "fred_legal", "fred_api_terms", "fred_series_sp500", "fred_series_vixcls",
              "stooq_home", "iex_market_data", "alpaca_market_data_faq_md", "massive_legal_index",
-             "massive_market_data_terms", "massive_individuals_terms", "tradier_faq", "tradier_faq_md",
-             "alpaca_market_data_agreement"}
+             "massive_market_data_terms", "massive_individuals_terms", "tradier_faq", "tradier_faq_md"}
 FULL_MAX = 40000
 # Tiingo's terms run past 40k characters; the derived-product and storage
 # sections continue after the first cut.
 FULL_MAX_PAGE = {"tiingo_tos": 160000}
+# Keyword-line pages that need more lines than MAX_LINES (long agreements).
+MAX_LINES_PAGE = {"alpaca_market_data_agreement": 140, "fda_website_policies": 60}
 KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|non-?commercial|"
                       r"commercial|display|derived|extract|reproduc|permission|licen[cs]e|"
                       r"internal|store|storage|retain|cache|third[- ]part|public|website|disallow|"
@@ -174,6 +180,9 @@ def main(only: list[str]) -> int:
         print(f"status={r.status_code} type={kind[:40]} bytes={len(r.content)} final_url={r.url[:120]}")
         if r.status_code != 200:
             continue
+        if url.endswith(".xml") or "xml" in kind:
+            print(r.text[:5000])  # feeds keep their tags (pubDate, guid) for timing checks
+            continue
         if url.endswith("robots.txt") or "json" in kind:
             print(r.text[:1500])
             continue
@@ -185,7 +194,7 @@ def main(only: list[str]) -> int:
             print("FULL_TEXT_END")
             continue
         hits = [ln for ln in lines if KEYWORDS.search(ln)]
-        for ln in hits[:MAX_LINES]:
+        for ln in hits[:MAX_LINES_PAGE.get(name, MAX_LINES)]:
             print("-", ln[:700])
     return 0
 

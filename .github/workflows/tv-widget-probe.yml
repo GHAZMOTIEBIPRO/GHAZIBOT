@@ -10,10 +10,15 @@ on:
         description: "Comma-separated TradingView symbols (empty = default list)"
         required: false
         default: ""
+      widgets:
+        description: "Widget types to test (mini-symbol-overview, advanced-chart)"
+        required: false
+        default: ""
   push:
     branches: [main]
     paths:
       - "scripts/tv_widget_probe.cjs"
+      - "scripts/tv_live_check.cjs"
       - ".github/workflows/tv-widget-probe.yml"
 
 permissions:
@@ -22,7 +27,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,4 +40,8 @@ jobs:
       - name: Render each symbol in the embed
         env:
           TV_PROBE_SYMBOLS: ${{ inputs.symbols }}
+          TV_PROBE_WIDGETS: ${{ inputs.widgets }}
         run: node scripts/tv_widget_probe.cjs
+      # What the live site's charts actually show (symbol, frame, error text).
+      - name: Visual check of the live site's external charts
+        run: node scripts/tv_live_check.cjs
