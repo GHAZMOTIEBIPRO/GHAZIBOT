@@ -59,9 +59,9 @@ RELIABILITY = {"exact_normalised_name": 1.0, "issuer_cik": 1.0, "reviewed_sponso
 RISK_KINDS = {"DILUTION_RISK": "خطر تخفيف", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "تقسيم عكسي/تعديل نظام محتمل",
               "LISTING_NOTICE": "إشعار إدراج (خطر شطب)"}
 # Reference list of issuers known to be large. It is NOT a measurement: an
-# issuer on it is labelled KNOWN_LARGE_ISSUER_LIST (size unverified), and
-# when SEC public float exists the measured band wins and any disagreement
-# is reported in list_review.
+# issuer on it is labelled KNOWN_LARGE_ISSUER_LIST (market cap unverified),
+# and an SEC filer status other than "Large accelerated filer" is reported in
+# list_review.
 KNOWN_LARGE_ISSUERS = frozenset({
     "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "GOOG", "TSLA", "AVGO", "AMD", "ORCL", "BAC", "CVX", "OXY",
     "LLY", "ABBV", "MRK", "PFE", "JNJ", "BMY", "AMGN", "GILD", "TMO", "ABT", "DHR", "MDT", "UNH", "CVS", "REGN",
@@ -212,32 +212,52 @@ def score_entry(items: list[dict[str, Any]], now: datetime) -> dict[str, Any]:
             "risk_level": "HIGH" if risks else "NORMAL"}
 
 
-# Size from SEC public float (dei:EntityPublicFloat on the 10-K cover, measured
-# on the last business day of the second fiscal quarter). Thresholds are the
-# SEC's own (17 CFR 240.12b-2): smaller reporting company < $250M, large
-# accelerated filer >= $700M. Public float is not market capitalisation.
-SRC_FLOAT_USD = 250_000_000
-LARGE_ACCELERATED_FLOAT_USD = 700_000_000
-MAX_FLOAT_AGE_DAYS = 470  # one annual measurement plus filing time
+# SEC public float (dei:EntityPublicFloat on the annual-report cover) is a
+# dollar value measured at the second fiscal quarter end; after this many
+# days it is flagged stale (one annual measurement plus filing time).
+MAX_FLOAT_AGE_DAYS = 470
 
 
-def size_band(symbol: str, sizes: Any, now: datetime) -> dict[str, Any]:
+def _sec_url(value: Any) -> str | None:
+    url = str(value or "")
+    return url if url.startswith("https://www.sec.gov/") else None
+
+
+def company_size(symbol: str, sizes: Any, now: datetime) -> dict[str, Any]:
+    """Separate size evidence. Market cap stays unverified without a permitted price.
+
+    SEC filing thresholds are a disclosure regime, not a market-cap class, so
+    no "small cap" label is derived from them.
+    """
     row = (sizes.get("symbols") or {}).get(symbol) if isinstance(sizes, dict) else None
-    unverified = {"universe": "KNOWN_LARGE_ISSUER_LIST" if symbol in KNOWN_LARGE_ISSUERS else "SIZE_UNVERIFIED",
-                  "size_basis": "NO_DOCUMENTED_SIZE"}
-    if not isinstance(row, dict):
-        return unverified
-    value, as_of, url = row.get("public_float_usd"), _day(row.get("public_float_as_of")), str(row.get("source_url") or "")
-    if (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0
-            or as_of is None or not url.startswith("https://www.sec.gov/")):
-        return {**unverified, "size_basis": "SEC_PUBLIC_FLOAT_INVALID"}
-    age = (now.date() - date.fromisoformat(as_of)).days
-    if not 0 <= age <= MAX_FLOAT_AGE_DAYS:
-        return {**unverified, "size_basis": "SEC_PUBLIC_FLOAT_STALE", "public_float_as_of": as_of}
-    universe = ("SIZE_VERIFIED_SMALL" if value < SRC_FLOAT_USD else
-                "SIZE_VERIFIED_LARGE" if value >= LARGE_ACCELERATED_FLOAT_USD else "SIZE_VERIFIED_MID")
-    return {"universe": universe, "size_basis": "SEC_PUBLIC_FLOAT", "public_float_usd": float(value),
-            "public_float_as_of": as_of, "size_source_url": url}
+    row = row if isinstance(row, dict) else {}
+    out: dict[str, Any] = {
+        "universe": "KNOWN_LARGE_ISSUER_LIST" if symbol in KNOWN_LARGE_ISSUERS else "MARKET_CAP_UNVERIFIED",
+        "market_cap": {"status": "UNVERIFIED", "reason": "no permitted current price"},
+        "float_shares": {"status": "UNAVAILABLE"},
+        "public_float_value": None, "shares_outstanding": None, "sec_filer_status": None,
+    }
+    pf = row.get("public_float_value")
+    if isinstance(pf, dict):
+        value, as_of, url = pf.get("usd"), _day(pf.get("as_of")), _sec_url(pf.get("source_url"))
+        if (not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and value > 0
+                and as_of and url):
+            age = (now.date() - date.fromisoformat(as_of)).days
+            if age >= 0:
+                out["public_float_value"] = {"usd": float(value), "as_of": as_of, "source_url": url,
+                                             "stale": age > MAX_FLOAT_AGE_DAYS}
+    so = row.get("shares_outstanding")
+    if isinstance(so, dict) and isinstance(so.get("shares"), int) and so["shares"] > 0 and _day(so.get("as_of")) \
+            and _sec_url(so.get("source_url")):
+        out["shares_outstanding"] = {"shares": so["shares"], "as_of": _day(so.get("as_of")),
+                                     "source_url": _sec_url(so.get("source_url"))}
+    fs = row.get("sec_filer_status")
+    if isinstance(fs, dict) and isinstance(fs.get("category"), str) and fs["category"].strip():
+        out["sec_filer_status"] = {"category": fs["category"].strip()[:60],
+                                   "smaller_reporting_company": fs.get("smaller_reporting_company") is True,
+                                   "exchanges": [str(x)[:20] for x in fs.get("exchanges") or []][:3],
+                                   "source_url": _sec_url(fs.get("source_url"))}
+    return out
 
 
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
@@ -262,7 +282,7 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
             **score_entry(items, now),
             **price_band(symbol, prices, now),
             "price_confirmed_signal": False,
-            **size_band(symbol, sizes, now),
+            **company_size(symbol, sizes, now),
         })
         band = entries[-1]["price_band"]
         entries[-1]["candidate_status"] = ("PRICE_VERIFICATION_NEEDED" if band == "UNVERIFIED" else
@@ -282,20 +302,33 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
                     "clinicaltrials": clinical_available(clinical, now),
                     "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING"},
         "watchlist": entries[:MAX_TICKERS],
-        # Small caps only from a measured size; low price is a separate test
-        # (price_band) and neither implies the other.
-        "small_cap_candidates": [e["symbol"] for e in entries[:MAX_TICKERS] if e["universe"] == "SIZE_VERIFIED_SMALL"],
-        "size_unverified_candidates": [e["symbol"] for e in entries[:MAX_TICKERS] if e["universe"] == "SIZE_UNVERIFIED"],
-        "list_review": [{"symbol": e["symbol"], "measured": e["universe"]} for e in entries[:MAX_TICKERS]
-                        if e["symbol"] in KNOWN_LARGE_ISSUERS and e["universe"] in {"SIZE_VERIFIED_SMALL",
-                                                                                     "SIZE_VERIFIED_MID"}],
+        # Market cap needs a permitted price; until then nothing is called small or
+        # large from SEC data. Low price (price_band) is a separate test.
+        "market_cap_unverified_candidates": [e["symbol"] for e in entries[:MAX_TICKERS]
+                                             if e["universe"] == "MARKET_CAP_UNVERIFIED"],
+        "public_float_ranked": sorted(
+            ({"symbol": e["symbol"], "usd": e["public_float_value"]["usd"], "as_of": e["public_float_value"]["as_of"]}
+             for e in entries[:MAX_TICKERS] if e.get("public_float_value") and not e["public_float_value"]["stale"]),
+            key=lambda r: r["usd"]),
+        # The reference list is a manual exclusion; SEC filer status that
+        # contradicts it is surfaced for review rather than silently trusted.
+        "list_review": [{"symbol": e["symbol"], "sec_filer_status": e["sec_filer_status"]["category"]}
+                        for e in entries[:MAX_TICKERS]
+                        if e["symbol"] in KNOWN_LARGE_ISSUERS and e.get("sec_filer_status")
+                        and e["sec_filer_status"]["category"].lower() != "large accelerated filer"],
         "size_rules": {
-            "basis": "SEC dei:EntityPublicFloat (10-K cover), as of the second fiscal quarter",
-            "small_below_usd": SRC_FLOAT_USD, "large_from_usd": LARGE_ACCELERATED_FLOAT_USD,
-            "max_age_days": MAX_FLOAT_AGE_DAYS, "rule": "17 CFR 240.12b-2",
+            "market_cap": "UNVERIFIED: shares outstanding x a current price from a permitted source (none configured)",
+            "public_float_value": "SEC dei:EntityPublicFloat: USD held by non-affiliates at the second fiscal quarter end;"
+                                  " not market cap and not a share count",
+            "shares_outstanding": "SEC dei:EntityCommonStockSharesOutstanding (cover page); not float",
+            "float_shares": "UNAVAILABLE: no permitted source",
+            "sec_filer_status": "SEC submissions filer category; a disclosure regime, not a market-cap class",
+            "known_large_issuer_list": "manual reference list used only to exclude obvious large issuers; reviewed"
+                                       " against SEC filer status",
+            "public_float_max_age_days": MAX_FLOAT_AGE_DAYS,
             "sources_status": "AVAILABLE" if isinstance(sizes, dict) and sizes.get("symbols") else "SEC_SIZE_DATA_UNAVAILABLE",
-            "note_ar": ("الحجم من القيمة السوقية للأسهم الحرة (Public Float) في إفصاح 10-K فقط؛ دونها «الحجم السوقي غير "
-                        "متحقق». انخفاض السعر اختبار منفصل لا يعني صغر الشركة."),
+            "note_ar": ("التصنيف السوقي غير متحقق: القيمة السوقية تحتاج سعرًا حاليًا من مصدر مسموح. قيمة Public Float "
+                        "من SEC بالدولار وتصنيف الإفصاح أدلة منفصلة، وليست تصنيف Small Cap. انخفاض السعر اختبار منفصل."),
         },
         "ranking_rules": {
             "points": POINTS, "new_molecule_bonus": NEW_MOLECULE_BONUS,

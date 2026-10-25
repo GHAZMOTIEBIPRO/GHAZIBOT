@@ -104,7 +104,7 @@ def _first_number(row: dict[str, Any], keys: tuple[str, ...]) -> float:
 
 
 def _float_shares(stock: dict[str, Any]) -> float:
-    return _first_number(stock, ("public_float_shares", "float_shares", "public_float", "float"))
+    return _first_number(stock, ("public_float_shares", "float_shares", "float"))
 
 
 def _shares_outstanding(stock: dict[str, Any]) -> float:
