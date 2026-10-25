@@ -164,3 +164,28 @@ def test_size_fields_stay_separate_and_nothing_is_called_small_from_sec_threshol
     assert report["list_review"] == [{"symbol": "TEVA", "sec_filer_status": "Accelerated filer"}]
     # Low price is a separate test: no price input, so nothing is under $10.
     assert all(e["sub10_confirmed"] is False for e in report["watchlist"])
+
+
+def test_impact_classes_and_one_record_per_underlying_event():
+    url = "https://clinicaltrials.gov/study/NCT01234567"
+    base = {"source": "ClinicalTrials.gov", "official_registry_only": True, "outcome_direction": "NOT_INFERRED",
+            "match_method": "exact_normalised_name", "symbol": "GSK", "source_url": url, "importance": "LOW"}
+    items = [{**base, "kind": "TRIAL_REGISTRY_UPDATE", "date": "2026-10-18"},
+             {**base, "kind": "TRIAL_REGISTRY_UPDATE", "date": "2026-10-20"},
+             {**base, "kind": "TRIAL_RESULTS_POSTED", "date": "2026-10-19", "importance": "MEDIUM"}]
+    unique = cw.dedupe(items)
+    assert sorted((i["kind"], i["date"]) for i in unique) == [("TRIAL_REGISTRY_UPDATE", "2026-10-20"),
+                                                              ("TRIAL_RESULTS_POSTED", "2026-10-19")]
+    assert cw.IMPACT["TRIAL_REGISTRY_UPDATE"] == "ADMINISTRATIVE"
+    assert cw.IMPACT["TRIAL_RESULTS_POSTED"] == "RESULTS_POSTED_DIRECTION_UNKNOWN"
+
+
+def test_daily_plan_does_not_list_an_administrative_update_as_a_catalyst():
+    from scripts import build_daily_plan as bdp
+    watch = {"watchlist": [
+        {"symbol": "ADMN", "catalysts": [{"kind": "TRIAL_REGISTRY_UPDATE", "date": "2026-10-20"}]},
+        {"symbol": "RSLT", "catalysts": [{"kind": "TRIAL_REGISTRY_UPDATE", "date": "2026-10-20"},
+                                         {"kind": "TRIAL_RESULTS_POSTED", "date": "2026-10-19"}]}]}
+    listed = bdp.catalysts_today(watch, NOW)
+    assert [(c["symbol"], c["kind"]) for c in listed] == [("RSLT", "TRIAL_RESULTS_POSTED")]
+

@@ -91,7 +91,9 @@ def catalysts_today(watch: Any, now: datetime, limit: int = 6) -> list[dict[str,
     cutoff = (now - timedelta(days=3)).date().isoformat()
     out = []
     for entry in (watch or {}).get("watchlist") or []:
-        recent = [c for c in (entry.get("catalysts") or []) if isinstance(c, dict) and str(c.get("date")) >= cutoff]
+        # an administrative registry edit is not a catalyst for the session
+        recent = [c for c in (entry.get("catalysts") or []) if isinstance(c, dict) and str(c.get("date")) >= cutoff
+                  and c.get("kind") != "TRIAL_REGISTRY_UPDATE"]
         if not isinstance(entry, dict) or not recent:
             continue
         top = recent[0]  # catalysts are ordered by importance, so this is the most important recent one

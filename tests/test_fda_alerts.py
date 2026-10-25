@@ -130,3 +130,25 @@ def test_workflow_is_single_writer_and_gated():
     writers = [p.name for p in (ROOT / ".github/workflows").glob("*.yml")
                if "fda_alert_state.json" in p.read_text(encoding="utf-8")]
     assert writers == ["fda-events.yml"]
+
+
+def test_timing_chain_is_recorded_and_late_events_are_follow_up_not_new():
+    report = {**_report(_event("LATE", "2026-10-16"), _event("FRESH", "2026-10-20")),
+              "source_last_updated": {"approvals": "2026-10-19", "recalls": None}}
+    state = {"schema": alerts.STATE_SCHEMA, "events": {}}
+    # first run sees both but may send none: first sighting is still recorded
+    held, summary = alerts.run(report, state, now=NOW, max_age_days=10, max_new=0, send=Sender())
+    assert summary["sent"] == 0 and set(held["first_seen"]) == {"LATE", "FRESH"}
+    later = datetime(2026, 10, 21, 9, 0, tzinfo=timezone.utc)
+    sender = Sender()
+    done, _ = alerts.run(report, held, now=later, max_age_days=10, max_new=5, send=sender)
+    by_text = {("LATE" if "تاريخ FDA: 2026-10-16" in t else "FRESH"): t for t in sender.sent}
+    assert "للمتابعة (رُصد بعد 4 يوم من تاريخ الحدث)" in by_text["LATE"]
+    assert "· جديد" in by_text["FRESH"]
+    # first sighting is the earlier run, distinct from the send time; source date shown as the dataset date
+    assert "أول رصد لدينا: 2026-10-20 21:30 UTC · الإرسال: 2026-10-21 09:00 UTC" in by_text["LATE"]
+    assert "تحديث بيانات openFDA: 2026-10-19" in by_text["LATE"]
+    assert "لا نملك وقت أول نشر في المصدر" in by_text["LATE"]
+    assert done["events"]["LATE"]["label"] == "FOLLOW_UP" and done["events"]["FRESH"]["label"] == "NEW"
+    assert done["events"]["LATE"]["first_seen_at"] == NOW.isoformat()
+
