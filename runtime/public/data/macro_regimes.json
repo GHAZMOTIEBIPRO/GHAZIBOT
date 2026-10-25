@@ -1,7 +1,7 @@
 {
  "schema": "ghazi.macro_regimes.v2",
- "generated_at": "2026-10-25T21:48:46.390710+00:00",
- "history_generated_at": "2026-10-25T21:48:00.633997+00:00",
+ "generated_at": "2026-10-25T22:25:37.965667+00:00",
+ "history_generated_at": "2026-10-25T22:24:52.504148+00:00",
  "status": "AVAILABLE",
  "series": {
   "treasury_10y_2y_bp": {
@@ -532,6 +532,28 @@
   "«قابل للرصد منذ» هو أول تاريخ كانت بياناته وحدها تُظهر الانكسار (مع تأخر نشر CFTC ثلاثة أيام)؛ ما قبله رؤية بأثر رجعي.",
   "مراكز CFTC أسبوعية كما في الثلاثاء وتُنشر الجمعة؛ سياق لمن يحمل العقود وليست توقيتًا."
  ],
+ "use": {
+  "role": "DESCRIPTIVE_MACRO_CONTEXT",
+  "feeds_scores": false,
+  "synthetic_calibration": {
+   "script": "scripts/calibrate_macro_regimes.py",
+   "series_per_scenario": 200,
+   "false_break_series_pct": {
+    "daily": "0.5-2.5",
+    "weekly": "0.5-6"
+   },
+   "power_at_0_5_sigma_pct": {
+    "daily": 77,
+    "weekly": 37.5
+   },
+   "median_delay": {
+    "daily_sessions": 35.5,
+    "weekly_weeks": 18
+   },
+   "note": "simulated series with known truth; not an accuracy on real markets"
+  },
+  "note_ar": "سياق اقتصادي وصفي فقط؛ يُكتشف التغيّر متأخرًا (وسيط 35.5 جلسة أو 18 أسبوعًا في اختبار اصطناعي)، فلا يصلح تنبيهًا مبكرًا ولا يدخل في أي درجة فرصة."
+ },
  "rights": "U.S. government publications (Treasury, CFTC); derived segmentation published with the sources cited",
  "research_only": true,
  "decision_authority": false,
