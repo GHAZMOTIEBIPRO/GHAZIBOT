@@ -7,6 +7,8 @@ on:
     paths:
       - "options_radar/public_macro.py"
       - "scripts/build_public_macro.py"
+      - "options_radar/macro_regimes.py"
+      - "scripts/build_macro_regimes.py"
       - ".github/workflows/public-macro.yml"
   # Treasury posts the daily curve after the 15:30 ET quote window; CFTC
   # posts Traders in Financial Futures on Friday afternoon ET. Two weekday
@@ -40,9 +42,25 @@ jobs:
         with:
           python-version: "3.12"
       - name: Fetch CFTC positioning and the Treasury curve (standard library only)
+        id: macro
         run: >-
           python app/scripts/build_public_macro.py
           --output state/runtime/public/data/public_macro.json
+          --history macro_history.json
+      # This workflow is the only writer of macro_regimes.json. A failure here
+      # keeps the previous regime file and never blocks the macro publish.
+      - name: Install the change-point library (ruptures, BSD-2-Clause)
+        id: regime_deps
+        if: steps.macro.outcome == 'success'
+        continue-on-error: true
+        run: pip install "numpy>=1.26,<3" "scipy>=1.11,<2" "ruptures==1.1.9"
+      - name: Structural breaks in the curve and positioning
+        if: steps.macro.outcome == 'success' && steps.regime_deps.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          python app/scripts/build_macro_regimes.py
+          --history macro_history.json
+          --output state/runtime/public/data/macro_regimes.json
       - name: Publish only the public macro document to durable state
         shell: bash
         run: |
@@ -51,6 +69,9 @@ jobs:
           git config user.name "GHAZI RADAR Public Macro"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
           git add runtime/public/data/public_macro.json
+          if [[ -f runtime/public/data/macro_regimes.json ]]; then
+            git add runtime/public/data/macro_regimes.json
+          fi
           if git diff --cached --quiet; then
             echo "Public macro unchanged."
             exit 0

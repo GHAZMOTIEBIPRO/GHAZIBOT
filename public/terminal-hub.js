@@ -26,6 +26,7 @@
     optionsAnalytics:[ROOT+"bot-state/runtime/public/data/options_analytics.json"],
     dataHub:[ROOT+"bot-state/runtime/public/data/data_hub.json"],
     macro:[ROOT+"bot-state/runtime/public/data/public_macro.json"],
+    regimes:[ROOT+"bot-state/runtime/public/data/macro_regimes.json"],
     fda:[ROOT+"bot-state/runtime/public/data/fda_events.json"],
     catalysts:[ROOT+"bot-state/runtime/public/data/catalyst_watchlist.json"],
     modelLab:[ROOT+"bot-state/runtime/public/data/explosion_model_lab.json"],
@@ -71,7 +72,7 @@
   const state={panel:"overview",symbol:"SPX",tf:"1d",ema:true,quotes:null,
     charts:null,brief:null,news:null,sec:null,watchCharts:null,gamma:null,
     stockCharts:null,plot:null,trust:null,runtime:null,audit:null,structural:null,
-    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,fda:null,catalysts:null,modelLab:null,tracking:null,pendingSymbol:null};
+    blocked:{},oos:null,sourceAgreement:null,freeOptions:null,strength:null,live:null,explosion:null,classical:null,liquidity:null,stageEval:null,optionsAnalytics:null,dataHub:null,macro:null,regimes:null,fda:null,catalysts:null,modelLab:null,tracking:null,pendingSymbol:null};
   const schemaOK={
     index:d=>d?.schema==="ghazi.index_research.v1" &&
       d.index_options_signal_authority===false,
@@ -150,6 +151,8 @@
       Array.isArray(d.approvals)&&Array.isArray(d.recalls),
     catalysts:d=>d?.schema==="ghazi.catalyst_watchlist.v1"&&d.decision_authority===false&&
       d.execution_authority===false&&Array.isArray(d.watchlist)&&Array.isArray(d.price_confirmed_signals),
+    regimes:d=>d?.schema==="ghazi.macro_regimes.v1"&&d.decision_authority===false&&d.execution_authority===false&&
+      d.series&&typeof d.series==="object",
     macro:d=>d?.schema==="ghazi.public_macro.v1"&&d.decision_authority===false&&d.execution_authority===false&&
       d.cftc_index_futures&&typeof d.cftc_index_futures==="object"&&d.treasury_curve&&typeof d.treasury_curve==="object",
     optionsAnalytics:d=>d?.schema==="ghazi.options_analytics.v1"&&d.research_only===true&&
@@ -1730,6 +1733,20 @@
       box.append(item);
     }
   }
+  // Structural breaks (ruptures) in public Treasury/CFTC series: descriptive, never a direction.
+  function regimeLines(report){
+    if(!report||typeof report.series!=="object")return [];
+    return Object.entries(report.series).filter(([,r])=>r&&r.available===true&&r.current_regime).map(([key,r])=>{
+      const c=r.current_regime,unit=r.unit==="bp"?" ن.أ":r.unit==="%"?"%":"";
+      return {key,title:String(r.label_ar||key).slice(0,80),
+        status:"نظام منذ "+String(c.since||"—"),tone:null,
+        detail:"متوسط النظام الحالي "+fmt(c.mean,2)+unit+
+          (Number.isFinite(c.previous_mean)?" مقابل "+fmt(c.previous_mean,2)+unit+" قبله (تغير "+(c.shift>0?"+":"")+fmt(c.shift,2)+")":
+            " · لا انكسار مكتشف في الفترة")+
+          " · آخر قيمة "+fmt(r.latest_value,2)+unit+" بتاريخ "+String(r.last_date||"—")+
+          " · "+String(r.observations||0)+" ملاحظة · انكسارات: "+((r.change_points||[]).join("، ")||"لا يوجد")};
+    });
+  }
   function renderMacro(){
     const box=$("terminal-macro");if(!box)return;
     box.replaceChildren();
@@ -1747,6 +1764,15 @@
       const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
       head.append(txt("strong",line.title),chip(line.status,line.tone));
       item.append(head,txt("small",line.detail,"terminal-structural-notice"));box.append(item);
+    }
+    const regimes=regimeLines(state.regimes);
+    if(regimes.length){
+      box.append(txt("p","أنظمة السلاسل (ruptures، تقسيم وصفي للتاريخ وليس توقعًا أو إشارة) · "+stamp(state.regimes.generated_at),"terminal-footnote"));
+      for(const line of regimes){
+        const item=txt("article","","terminal-structural-item"),head=txt("div","","terminal-structural-title");
+        head.append(txt("strong",line.title),chip(line.status,line.tone));
+        item.append(head,txt("small",line.detail,"terminal-structural-notice"));box.append(item);
+      }
     }
   }
   const RIGHT_LABELS={automated_access:"وصول آلي",persistent_storage:"تخزين",public_display_raw:"عرض عام خام",
@@ -1999,10 +2025,10 @@
     if(line)line.dataset.kind=sum.kind;
   }
   async function refresh(){
-    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","catalysts","modelLab","tracking"];
+    const types=["index","charts","brief","news","sec","freeOptions","watch","gamma","trust","runtime","audit","structural","oos","sourceAgreement","strength","live","explosion","classical","liquidity","stageEval","optionsAnalytics","dataHub","macro","fda","catalysts","modelLab","tracking","regimes"];
     const read=await Promise.allSettled(types.map(loadFeed));
     [state.quotes,state.charts,state.brief,state.news,state.sec,state.freeOptions,
-      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.catalysts,state.modelLab,state.tracking]=
+      state.watchCharts,state.gamma,state.trust,state.runtime,state.audit,state.structural,state.oos,state.sourceAgreement,state.strength,state.live,state.explosion,state.classical,state.liquidity,state.stageEval,state.optionsAnalytics,state.dataHub,state.macro,state.fda,state.catalysts,state.modelLab,state.tracking,state.regimes]=
       read.map(r=>r.status==="fulfilled"?r.value:null);
     put("terminal-data-state",state.quotes?"مؤشرات متاحة للبحث":"بيانات المؤشرات غير متاحة");
     put("terminal-data-time","آخر تحليل: "+stamp(state.quotes?.generated_at)+
@@ -2012,7 +2038,7 @@
     if(state.panel==="chart")renderChart();
   }
   if(typeof module!=="undefined"&&module.exports){
-    module.exports={trustReadiness,weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines};
+    module.exports={trustReadiness,weeklySetupLine,uniqueValidBars,ema,rsi,atr,safeOfficial,safeResearch,liquidityView,symbolFromLink,stageQualityLines,gammaView,optionsSummary,hubLines,sortCandidates,modelLabLines,tradingViewConfig,blockedReason,macroLines,rightsLines,fdaLines,catalystLines,engineLines,regimeLines};
   }
   if(typeof document==="undefined")return;
   document.querySelectorAll(".terminal-tab").forEach(button=>

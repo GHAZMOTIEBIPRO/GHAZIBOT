@@ -165,6 +165,43 @@ def treasury_curve(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def history_series(cot_rows: list[dict[str, Any]], treasury_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Dated series for regime research: 10Y-2Y spread and 10Y yield (daily),
+    and asset-manager / leveraged-fund net positions per index future (weekly).
+    Contract rows whose published name no longer matches are left out, as above."""
+    series: dict[str, Any] = {}
+    by_date = {row["date"]: row for row in treasury_rows if isinstance(row.get("date"), date)}
+    usable = [by_date[d] for d in sorted(by_date) if by_date[d].get("2Y") is not None
+              and by_date[d].get("10Y") is not None]
+    if usable:
+        series["treasury_10y_2y_bp"] = {
+            "frequency": "daily", "unit": "bp", "source": "U.S. Treasury par yield curve",
+            "dates": [r["date"].isoformat() for r in usable],
+            "values": [round((r["10Y"] - r["2Y"]) * 100, 1) for r in usable]}
+        series["treasury_10y_pct"] = {
+            "frequency": "daily", "unit": "%", "source": "U.S. Treasury par yield curve",
+            "dates": [r["date"].isoformat() for r in usable], "values": [r["10Y"] for r in usable]}
+    by_code: dict[str, list[tuple[date, dict[str, Any]]]] = {}
+    for row in cot_rows:
+        when = _report_date(row.get("report_date_as_yyyy_mm_dd")) if isinstance(row, dict) else None
+        if when is not None:
+            by_code.setdefault(str(row.get("cftc_contract_market_code", "")).strip(), []).append((when, row))
+    for key, spec in INDEX_CONTRACTS.items():
+        history = sorted({w: r for w, r in by_code.get(spec["code"], [])}.items())[-LOOKBACK_WEEKS:]
+        if not history or spec["token"] not in str(history[-1][1].get("market_and_exchange_names", "")).upper():
+            continue
+        for category in ("asset_manager", "leveraged_funds"):
+            long_key, short_key = CATEGORIES[category]
+            points = [(w, _int(r.get(long_key)), _int(r.get(short_key))) for w, r in history]
+            if any(lg is None or sh is None for _, lg, sh in points):
+                continue
+            series[f"cftc_{key}_{category}_net"] = {
+                "frequency": "weekly", "unit": "contracts", "source": "CFTC Traders in Financial Futures",
+                "label_ar": spec["label_ar"],
+                "dates": [w.isoformat() for w, _, _ in points], "values": [lg - sh for _, lg, sh in points]}
+    return series
+
+
 def build(cot_rows: list[dict[str, Any]], treasury_rows: list[dict[str, Any]], *, generated_at: str,
           errors: dict[str, str] | None = None) -> dict[str, Any]:
     return {
