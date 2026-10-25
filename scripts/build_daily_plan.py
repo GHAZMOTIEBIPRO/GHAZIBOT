@@ -172,7 +172,7 @@ def frames_status(private: dict[str, Any]) -> dict[str, Any]:
         status[frame] = {"public": "UNAVAILABLE",
                          "private_owner": "AVAILABLE" if frame in available else "UNAVAILABLE",
                          "reason": ("Alpaca IEX bars: owner's internal use only, not redistributed" if frame in available
-                                    else "no permitted public price source; owner-private frames need Alpaca keys and"
+                                    else "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and"
                                          " ALPACA_INTERNAL_DATA_USE_AUTHORIZED" if not private.get("enabled")
                                     else "not enough completed bars for this frame")}
     return status
@@ -215,7 +215,7 @@ def build(now: datetime, watch: Any, macro: Any, regimes: Any, private: dict[str
                          "symbols": sorted(private.get("plans") or {}) if private.get("enabled") else [],
                          "published": False, "delivery": private.get("delivery", "NOT_ATTEMPTED")},
         "public_price_plans": {},
-        "notes_ar": ["خطة اليوم العامة لا تحتوي أسعارًا: لا يوجد مصدر أسعار يسمح بالعرض العام.",
+        "notes_ar": ["الموجز العام بلا أسعار: لم نتحقق حتى الآن من مصدر مجاني مناسب لتغذية محركنا وإعادة توزيع مخرجاته ضمن الاستخدام المطلوب. الشارت الخارجي (TradingView) متاح في الأقسام لكنه لا يغذي تحليلنا.",
                      "الأوقات من تقويم بورصة نيويورك (XNYS) بتوقيت نيويورك والرياض، مع الإغلاق المبكر والعطل.",
                      "المحفزات رسمية وليست اتجاهًا؛ السيناريوهات السعرية تظهر فقط عند توفر شموع مسموحة."],
         "research_only": True, "decision_authority": False, "execution_authority": False,

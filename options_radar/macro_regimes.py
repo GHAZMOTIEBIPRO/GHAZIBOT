@@ -12,11 +12,15 @@ by construction. It now works on the period-to-period CHANGES:
 
 - ruptures Binseg, l2 cost: a break is a shift in the average change per
   period (drift).
-- penalty pen = 2 * var(changes) * ln(n) with the sample variance. On
-  synthetic series with no change (Gaussian, Student-t(3), isolated jumps,
-  weekly length) it flagged a break in 3-5% of runs; a known drift shift
-  was found in 94% (daily, 450 obs) and 78% (weekly, 155 obs) of runs
-  (tests/test_macro_regimes.py keeps the no-change cases).
+- penalty pen = 2 * var(changes) * ln(n) with the sample variance.
+  Calibration is reproducible with scripts/calibrate_macro_regimes.py
+  (seeded; 200 synthetic series per scenario; daily 450 / weekly 155
+  changes). With no change, the share of SERIES with any break was 0.5-2.5%
+  daily and 0.5-6% weekly (Gaussian, Student-t(3), Gaussian with two isolated
+  jumps; about +/-3 points of sampling uncertainty at 200 series). A drift shift of 0.5 standard deviations was found in 77% (daily)
+  and 37.5% (weekly) of series, with a median of 35.5 sessions / 18 weeks
+  before it was knowable. These are synthetic results, not an error rate on
+  real markets; tests/test_macro_regimes.py keeps the no-change cases.
 - minimum segment 20 sessions / 8 weeks; at most MAX_BREAKS breaks.
 - missing values are not filled: rows without both yields, or CFTC weeks
   without both legs, are left out upstream.
