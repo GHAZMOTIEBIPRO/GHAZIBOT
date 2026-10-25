@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="./omega.css?v=20260807-omega">
   <link rel="stylesheet" href="./ghazi-radar-quality.css?v=20261018-1">
   <link rel="stylesheet" href="./bls-macro.css?v=20261018-1">
-  <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261021-1">
+  <link rel="stylesheet" href="./ghazi-tv-widgets.css?v=20261026-1">
   <link rel="stylesheet" href="./contract-risk-lab.css?v=20261018-1">
   <link rel="stylesheet" href="./index-radar.css?v=20261018-1">
   <link rel="stylesheet" href="./catalyst-overview.css?v=20261018-2">
@@ -165,11 +165,18 @@
           <p id="terminal-plan-status" class="terminal-brief-headline" aria-live="polite">جاري التحميل…</p>
           <div id="terminal-plan-body"></div>
         </section>
+        <section class="terminal-evidence ghazi-tv-widget" aria-labelledby="tv-index-chart-title">
+          <p class="terminal-overline">الشارت الخارجي · TRADINGVIEW</p>
+          <h4 id="tv-index-chart-title">شارت المؤشرات: اختر المؤشر والفريم</h4>
+          <p class="terminal-footnote">المؤشرات النقدية (SPX وNDX وDow وRussell وVIX) غير متاحة في أدوات TradingView المجانية؛ يُعرض الصندوق المتداول (ETF) الذي يتتبع كل مؤشر مع توضيح ذلك ورابط للمؤشر النقدي. هذا عرض خارجي وليس تحليل غازي رادار.</p>
+          <div class="ghazi-tv-chart-view" data-tv-chart-view data-symbols="SPX,NDX,DJI,RUT,VIX"></div>
+        </section>
         <section class="terminal-evidence ghazi-tv-widget" aria-labelledby="tv-index-title">
           <p class="terminal-overline">TRADINGVIEW · MULTI-TIMEFRAME</p>
           <h4 id="tv-index-title">الاتجاه الفني متعدد الفريمات للمؤشرات (5 دقائق حتى شهري)</h4>
           <p class="terminal-footnote">اختر المؤشر ثم الفريم داخل الأداة. التقييم (شراء/بيع/حياد) يحسبه TradingView آليًا من متوسطات ومذبذبات قياسية؛ ليس قرارًا من GHAZI ولا احتمال نجاح، والأسعار داخله قد تتأخر بحسب البورصة.</p>
           <div id="tv-index-buttons" class="ghazi-tv-buttons" role="group" aria-label="اختيار المؤشر"></div>
+          <p id="tv-index-status" class="terminal-footnote"></p>
           <div id="tv-index-info" class="ghazi-tv-slot ghazi-tv-slot--info"></div>
           <div id="tv-index-ta" class="ghazi-tv-slot ghazi-tv-slot--ta"></div>
         </section>
@@ -191,6 +198,11 @@
           <p id="terminal-classical-health" class="terminal-footnote" aria-live="polite">قراءة آخر تحليل…</p>
           <div id="terminal-classical-list" class="terminal-structural-list"><p class="terminal-empty">جاري التحميل…</p></div>
         </section>
+        <section class="terminal-evidence ghazi-tv-widget" aria-labelledby="tv-large-chart-title">
+          <p class="terminal-overline">الشارت الخارجي · TRADINGVIEW</p>
+          <h4 id="tv-large-chart-title">شارت القياديات: اختر السهم والفريم (5 دقائق حتى أسبوعي)</h4>
+          <div class="ghazi-tv-chart-view" data-tv-chart-view data-symbols="NVDA,AAPL,MSFT,AMZN,META,GOOGL,TSLA,AVGO,AMD,MU,ORCL,BAC,OXY,CVX,GILD"></div>
+        </section>
         <section class="terminal-evidence ghazi-tv-widget" aria-labelledby="tv-large-title">
           <p class="terminal-overline">TRADINGVIEW · S&amp;P 500</p>
           <h4 id="tv-large-title">خريطة الشركات الكبرى حسب القيمة السوقية والقطاع، وفرز الأسهم الأمريكية</h4>
@@ -204,6 +216,12 @@
       <section class="terminal-panel" id="terminal-panel-small" aria-label="الأسهم الصغيرة والمضاربية" hidden>
         <header class="terminal-section-head"><div><p class="terminal-overline">HIGH VOLATILITY WATCH</p>
           <h3>الأسهم الصغيرة والمضاربية</h3><p>الشركات الناشئة وأسهم الحركة العالية؛ لا تُصنّف شركة بأنها صغيرة فعليًا إلا عند توافر بيانات رسملتها.</p></div></header>
+        <section class="terminal-evidence ghazi-tv-widget" aria-labelledby="tv-small-chart-title">
+          <p class="terminal-overline">الشارت الخارجي · TRADINGVIEW</p>
+          <h4 id="tv-small-chart-title">شارت الأسهم الصغيرة والمضاربية: اختر السهم والفريم</h4>
+          <p class="terminal-footnote">قائمة متابعة ثابتة للعرض فقط؛ ظهور السهم هنا لا يعني أنه صغير الرسملة أو أنه فرصة.</p>
+          <div class="ghazi-tv-chart-view" data-tv-chart-view data-symbols="SOUN,RGTI,IONQ,RKLB,ASTS,PLTR,SOFI,RGC,BNAI"></div>
+        </section>
         <section class="terminal-explosion" aria-labelledby="terminal-explosion-title">
           <header class="terminal-section-head"><div><p class="terminal-overline">EXPLOSION HUNTER · FULL-MARKET SCAN</p>
             <h4 id="terminal-explosion-title">رادار الانفجار المبكر</h4>
@@ -288,8 +306,9 @@
           <span id="terminal-chart-direction">بانتظار بيانات الشارت</span></div>
           <span id="terminal-chart-date">—</span></div>
         <div id="terminal-candle-chart" class="terminal-candle-chart" role="img" aria-label="مخطط الشموع اليابانية من بيانات أسعار السوق المنشورة"></div>
-        <details id="terminal-tv-chart" class="terminal-tv-chart">
-          <summary>شارت TradingView المضمّن (عرض مرخص من TradingView بعلامته وبياناته)</summary>
+        <details id="terminal-tv-chart" class="terminal-tv-chart" open>
+          <summary>الشارت الخارجي — TradingView (يتبع الرمز والفريم المختارين أعلاه)</summary>
+          <p id="terminal-tv-chart-note" class="terminal-footnote"></p>
           <div id="terminal-tv-chart-slot" class="terminal-tv-chart-slot"></div>
           <p class="terminal-footnote">يعرض TradingView أسعاره ومصادره وتوقيتاته داخل الأداة نفسها؛ GHAZI RADAR لا يعيد نشر هذه البيانات ولا يستخدمها في التحليل.</p>
         </details>
@@ -623,7 +642,7 @@
         </div>
         <div class="ghazi-tv-widget">
           <h3>SPX · Nasdaq · SPY · QQQ · VIX · الأسهم الأكثر متابعة</h3>
-          <tv-ticker-tape symbols="FOREXCOM:SPXUSD,FOREXCOM:NSXUSD,AMEX:SPY,NASDAQ:QQQ,CBOE:VIX,NASDAQ:NVDA,NASDAQ:AAPL,NASDAQ:TSLA,NASDAQ:AMD" show-hover></tv-ticker-tape>
+          <tv-ticker-tape symbols="AMEX:SPY,NASDAQ:QQQ,AMEX:DIA,AMEX:IWM,NASDAQ:NVDA,NASDAQ:AAPL,NASDAQ:TSLA,NASDAQ:AMD" show-hover></tv-ticker-tape>
         </div>
         <div class="ghazi-tv-widget">
           <h3>الأسهم الأمريكية الأكثر صعودًا وهبوطًا ونشاطًا</h3>
@@ -913,7 +932,7 @@
   <script src="./terminal-oos.js?v=20261020-1" defer></script>
   <script src="./terminal-decision.js?v=20261025-1" defer></script>
   <script src="./terminal-source-agreement.js?v=20261019-1" defer></script>
-  <script src="./tv-intelligence.js?v=20261021-1" defer></script>
-  <script src="./terminal-hub.js?v=20261025-7" defer></script>
+  <script src="./tv-intelligence.js?v=20261026-1" defer></script>
+  <script src="./terminal-hub.js?v=20261026-1" defer></script>
 </body>
 </html>
