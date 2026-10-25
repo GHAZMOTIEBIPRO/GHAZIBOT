@@ -43,6 +43,8 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install "requests>=2.32,<3" "pypdf>=4,<6"
       - name: Official terms pages (relevant clauses only)
+        env:
+          PROBE_TERMS_ONLY: massive_market_data_terms,massive_individuals_terms,tradier_faq,tradier_faq_md,alpaca_market_data_agreement
         run: python scripts/probe_terms.py
       - name: SEC status codes and refusal titles only
         run: python scripts/probe_sec_access.py
