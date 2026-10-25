@@ -28,17 +28,18 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="./terminal-hub.css?v=20261021-1">
   <link rel="stylesheet" href="./radar-start.css?v=20261025-1">
+  <link rel="stylesheet" href="./market-sections.css?v=20261025-1">
 </head>
 <body>
   <a class="skip-link" href="#start-search">تجاوز التنقل إلى البحث</a>
-  <nav class="start-nav" aria-label="التنقل السريع"><a class="start-brand" href="./index.html">GHAZI <span>RADAR</span><small>رؤية أوضح للسوق الأمريكي</small></a><div><button type="button" data-start-home>الرئيسية</button><button type="button" data-start-panel="chart">حلّل سهمك</button><button type="button" data-start-panel="options">العقود</button><button type="button" data-start-gamma>القاما</button><button type="button" data-start-risk>الحاسبة</button><a href="./catalyst-desk.html">المحفزات</a><a href="./trading-readiness.html">النتائج والموثوقية</a></div></nav>
+  <nav class="start-nav" aria-label="التنقل السريع"><a class="start-brand" href="./index.html">GHAZI <span>RADAR</span><small>رؤية أوضح للسوق الأمريكي</small></a><div><button type="button" data-start-home>الرئيسية</button><button type="button" data-start-panel="indices">المؤشرات</button><button type="button" data-start-panel="large">الأسهم الكبيرة</button><button type="button" data-start-panel="small">الأسهم الصغيرة</button><button type="button" data-start-panel="options">العقود</button><button type="button" data-start-panel="news">الأخبار</button><a href="./catalyst-desk.html">المحفزات</a><a href="./trading-readiness.html">النتائج والموثوقية</a></div></nav>
   <div class="page-shell">
     <header class="hero">
       <div>
         <p class="eyebrow">GHAZI RADAR · POWERED BY BLACK BOX Ω</p>
-        <h1>السوق الأمريكي.<br><span>رؤية مرتّبة. قرار مدروس.</span></h1>
+        <h1>السوق الأمريكي.<br><span>المؤشرات، الأسهم، وما وراء الحركة.</span></h1>
         <p class="brand-subtitle">رادار الأسهم الأمريكية والمؤشرات وعقود الخيارات</p>
-        <p class="hero-copy">مساحة عربية تجمع التحليل، الأخبار والمحـفزات، والأسهم الصغيرة وعقود الخيارات. اكتشف ما يستحق المتابعة، وافحص الدليل والمخاطرة قبل اتخاذ القرار.</p>
+        <p class="hero-copy">اختر قسمك. راقب السوق. افحص المصدر قبل القرار.</p>
       </div>
       <div class="status-panel">
         <span id="freshness-dot" class="status-dot"></span>
@@ -51,19 +52,26 @@
     </header>
 
 
-    <section class="start-desk" aria-label="ابدأ بحثك">
-      <div class="desk-section-label"><span>مساحة عملك</span><small>اختر المسار المناسب لفكرتك</small></div>
-      <article class="start-row start-primary">
-        <div><p class="start-kicker">ابدأ من هنا · الأسهم الأمريكية</p><h2>حلّل سهمك</h2><p>الشارت، القراءة الفنية، الملف المالي والأخبار. ابحث بالرمز لتفتح صفحة السهم.</p></div>
-        <form id="start-search" role="search"><label for="start-symbol">رمز السهم</label><div class="start-input"><input id="start-symbol" name="symbol" placeholder="مثال: NVDA" dir="ltr" maxlength="10" pattern="[A-Za-z][A-Za-z0-9.\-]{0,9}" required autocomplete="off"><button type="submit">افتح التحليل</button></div><p id="start-search-status" role="status">عرض TradingView داخل أدواته؛ تحليل الرادار بحسب توفر المصدر.</p></form>
-      </article>
-      <article class="start-row start-discovery"><div><p class="start-kicker">01 / اكتشاف مبكر · SMALL CAPS</p><h2>الأسهم الصغيرة والمحـفزات</h2><p>ابحث عن الزخم والاختراقات المحتملة، ثم راجع الخبر والسيولة ومخاطر التخفيف. قابلية الحركة ليست ضمانًا للصعود.</p></div><button type="button" data-start-panel="small">استكشف قائمة المتابعة ←</button></article>
-      <article class="start-row"><div><p class="start-kicker">02 / عقود الخيارات · CALL / PUT</p><h2>فرص الأوبشن تحت المجهر</h2><p>افحص نشاط العقد، السبريد، مدة الاستحقاق وجودة التسعير. الحركة المرتفعة المحتملة تأتي مع مخاطرة مرتفعة؛ الحجم وحده لا يثبت اتجاه الشراء.</p></div><button type="button" data-start-panel="options">افتح رادار العقود</button></article>
-      <article class="start-row start-utility"><div><p class="start-kicker">حاسبة تفاعلية · مدخلاتك أنت</p><h2>احسب المخاطرة قبل الدخول</h2><p>عقود CALL وPUT المشتراة: تكلفة الصفقة، عدد العقود، التعادل، وأقصى خسارة عند انتهاء العقد.</p></div><button type="button" data-start-risk>احسب صفقتك</button></article>
-      <article class="start-row start-utility"><div><p class="start-kicker">GAMMA / GEX · عند توفر المصدر</p><h2>راجع مستويات القاما</h2><p>سياق جاما ومصدره وتاريخه. إذا غابت سلسلة الخيارات المؤهلة، تظهر الحالة غير متاحة.</p></div><button type="button" data-start-gamma>افتح لوحة القاما</button></article>
-      <div class="start-links"><a href="./catalyst-desk.html"><span>01 / المحفزات</span><strong>ما الخبر وراء الحركة؟</strong><p>إفصاحات وقرارات دوائية وسجلات دراسات مع روابط المصادر.</p></a><button type="button" data-start-panel="small"><span>02 / الأسهم المضاربية</span><strong>راقب التحركات المبكرة</strong><p>قوائم المتابعة والأحجام والاختراقات وفق البيانات المتاحة.</p></button><a href="./trading-readiness.html"><span>03 / سجل الاعتمادية</span><strong>الدليل قبل الثقة</strong><p>صحة المصادر والنتائج خارج العينة وأسباب غياب الإشارة.</p></a></div>
-      <p class="start-note">منصة بحثية مجانية. النتائج غير الموثقة لا تُعرض كنسب نجاح، ووقت تحديث التقرير ليس وقت عرض السعر.</p>
-      <button class="start-all" type="button" data-start-panel="overview">استعرض مركز السوق بالكامل</button>
+    <section class="start-desk market-desk" aria-label="أقسام السوق الأمريكي">
+      <form id="start-search" role="search" class="market-search"><label for="start-symbol">ابحث عن سهم أو مؤشر</label><div class="start-input"><input id="start-symbol" name="symbol" placeholder="NVDA · AAPL · SPX" dir="ltr" maxlength="10" pattern="[A-Za-z][A-Za-z0-9.\-]{0,9}" required autocomplete="off"><button type="submit">فتح التحليل ←</button></div><p id="start-search-status" role="status">الشارت والتحليل حسب توفر المصدر.</p></form>
+      <div class="market-heading"><h2>السوق في أربعة أقسام</h2><p>اختر ما تتابعه، ثم انتقل إلى البيانات والتحليل.</p></div>
+      <section class="market-sector sector-indices" aria-labelledby="sector-indices-title">
+        <header><span class="sector-number">01</span><div><p class="sector-kicker">US INDICES</p><h2 id="sector-indices-title">المؤشرات الأمريكية</h2><p>اتجاه السوق العام، التذبذب، والتحليل متعدد الفريمات.</p></div><button type="button" data-start-panel="indices">فتح المؤشرات ←</button></header>
+        <div class="market-symbols"><a href="?chart=SPX"><strong>SPX</strong><span>S&amp;P 500</span></a><a href="?chart=NDX"><strong>NDX</strong><span>ناسداك 100</span></a><a href="?chart=DJI"><strong>DJI</strong><span>داو جونز</span></a><a href="?chart=RUT"><strong>RUT</strong><span>راسل 2000</span></a><a href="?chart=VIX"><strong>VIX</strong><span>مؤشر التذبذب</span></a></div>
+      </section>
+      <section class="market-sector sector-large" aria-labelledby="sector-large-title">
+        <header><span class="sector-number">02</span><div><p class="sector-kicker">LARGE CAPS · LIQUIDITY WATCH</p><h2 id="sector-large-title">الأسهم الكبيرة عالية السيولة</h2><p>متابعة الشركات الكبرى، نشاط التداول، الاتجاه الفني والقطاعات.</p></div><button type="button" data-start-panel="large">فتح الأسهم الكبيرة ←</button></header>
+        <div class="market-symbols"><a href="?chart=NVDA"><strong>NVDA</strong><span>إنفيديا</span></a><a href="?chart=AAPL"><strong>AAPL</strong><span>أبل</span></a><a href="?chart=MSFT"><strong>MSFT</strong><span>مايكروسوفت</span></a><a href="?chart=TSLA"><strong>TSLA</strong><span>تسلا</span></a><a href="?chart=AMZN"><strong>AMZN</strong><span>أمازون</span></a></div><p class="sector-note">اختصارات متابعة، وليست ترتيبًا لحظيًا لأعلى السيولة. راجع النشاط الحالي داخل القسم.</p>
+      </section>
+      <section class="market-sector sector-small" aria-labelledby="sector-small-title">
+        <header><span class="sector-number">03</span><div><p class="sector-kicker">SMALL CAPS · BREAKOUT WATCH</p><h2 id="sector-small-title">الأسهم الصغيرة وفرص الانفجار السعري</h2><p>رصد مبكر للزخم والاختراقات المحتملة، مع الخبر والسيولة ومخاطر الشركة.</p></div><button type="button" data-start-panel="small">فتح رادار الأسهم الصغيرة ←</button></header>
+        <div class="sector-topics"><span>الحجم غير المعتاد</span><span>الاختراقات الفنية</span><span>المحفزات والأخبار</span><span>الأسهم الحرة والتخفيف</span></div><p class="sector-note">مرشحات بحث ومتابعة؛ لا تعني ضمان انفجار سعري أو صعود.</p>
+      </section>
+      <section class="market-sector sector-tools" aria-labelledby="sector-tools-title">
+        <header><span class="sector-number">04</span><div><p class="sector-kicker">MARKET INTELLIGENCE</p><h2 id="sector-tools-title">السيولة والعقود والأخبار</h2><p>العوامل التي تفسر الحركة وتساعدك على تقييم الفرصة والمخاطرة.</p></div></header>
+        <div class="market-tool-grid"><button type="button" data-start-panel="chart"><strong>الحجم والسيولة ↗</strong><span>تحليل الحجم ومستويات مستنتجة من الشموع؛ ليست دفتر أوامر.</span></button><button type="button" data-start-panel="options"><strong>عقود الأوبشن ↗</strong><span>CALL / PUT، النشاط، السبريد وجودة التسعير.</span></button><button type="button" data-start-panel="news"><strong>أخبار السوق ↗</strong><span>الأخبار ومحركات الشركات بحسب التقارير المتاحة.</span></button><a href="./catalyst-desk.html"><strong>المحفزات الرسمية ↗</strong><span>إفصاحات وقرارات تنظيمية مع المصدر الأصلي.</span></a><button type="button" data-start-gamma><strong>القاما وGEX ↗</strong><span>قراءة مستويات القاما عند توفر سلسلة مؤهلة.</span></button><button type="button" data-start-risk><strong>حاسبة المخاطرة ↗</strong><span>تكلفة العقد والتعادل والخسارة المحتملة.</span></button></div>
+      </section>
+      <div class="market-footer"><span>البيانات غير المؤهلة تبقى للبحث، مع بيان المصدر وحداثته.</span><a href="./trading-readiness.html">النتائج وموثوقية البيانات ←</a><button type="button" data-start-panel="overview">ملخص السوق ←</button></div>
     </section>
 
     <section class="terminal-shell" id="ghazi-terminal" aria-labelledby="terminal-title">
