@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 from .settings import Settings
 
-SOURCE_AUDIT_PATH = Path("data/live/source_audit.json")
+SOURCE_AUDIT_PATH = Path(os.getenv("GHAZI_SOURCE_AUDIT_PATH", "data/live/source_audit.json"))
 
 
 def _read_json(path: Path) -> dict[str, Any]:

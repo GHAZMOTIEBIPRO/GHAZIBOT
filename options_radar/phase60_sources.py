@@ -3,6 +3,7 @@ from __future__ import annotations
 import atexit
 import json
 import math
+import os
 import threading
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -19,7 +20,7 @@ _ORIGINAL_OPTION_FETCH = hybrid_fetcher.DataFetcher.fetch_option_chain
 _INSTALLED = False
 _AUDIT_LOCK = threading.Lock()
 _SOURCE_AUDIT: dict[str, Any] = {"stocks": {}, "options": {}}
-_AUDIT_PATH = Path("data/live/source_audit.json")
+_AUDIT_PATH = Path(os.getenv("GHAZI_SOURCE_AUDIT_PATH", "data/live/source_audit.json"))
 
 
 def _normalise_name(value: str) -> str:

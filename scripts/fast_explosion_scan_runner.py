@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,7 +16,7 @@ from options_radar.microcap_hunter import assess_microcap_candidate
 from scripts import fast_explosion_scan as base
 
 LATEST_PATH = Path("public/data/latest.json")
-FAST_MARKET_STATE_PATH = Path("data/live/fast_market_state.json")
+FAST_MARKET_STATE_PATH = Path(os.getenv("FAST_MARKET_STATE_PATH", "data/live/fast_market_state.json"))
 _original_collect_fast_news = base.collect_fast_news
 _original_rank_market = base.rank_market
 
