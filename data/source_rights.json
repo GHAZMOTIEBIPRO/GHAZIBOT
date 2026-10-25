@@ -353,8 +353,8 @@
      "evidence": null
     },
     "public_display_raw": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "Market Data may not be copied, reproduced, republished, uploaded, posted, publicly displayed, encoded, translated, transmitted, or distributed in any way (including 'mirroring') without Massive's prior written consent (massive.com/legal/market-data-terms-of-service; fetched on the runner in run 40236507337, clause located via search excerpt)"
     },
     "public_display_derived": {
      "status": "UNKNOWN",
@@ -369,15 +369,16 @@
      "evidence": null
     },
     "telegram_sharing": {
-     "status": "UNKNOWN",
+     "status": "RESTRICTED",
      "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
-     "evidence": null
+     "evidence": "Market Data may not be copied, reproduced, republished, uploaded, posted, publicly displayed, encoded, translated, transmitted, or distributed in any way (including 'mirroring') without Massive's prior written consent (massive.com/legal/market-data-terms-of-service; fetched on the runner in run 40236507337, clause located via search excerpt)"
     }
    },
    "api_key_required": true,
    "cost_note": "polygon.io/terms redirects to massive.com/legal/terms. Log only shows that separate terms apply to 'Individual Use' (personal, non-business) vs 'Business Use' products; the operative licence clauses were not captured.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "الشروط مقسومة إلى استخدام فردي وتجاري لكن السجل لا يُظهر نصوصًا تحسم أي حق، فكل الحقوق غير معروفة."
+   "summary_ar": "شروط بيانات السوق تمنع النشر أو العرض العام دون موافقة كتابية؛ حقوق النتائج المشتقة غير محسومة؛ يتطلب مفتاحًا.",
+   "market_data_terms_url": "https://massive.com/legal/market-data-terms-of-service"
   },
   "alpha_vantage": {
    "name": "Alpha Vantage",
@@ -569,28 +570,29 @@
   "tradier": {
    "name": "Tradier",
    "category": "options",
-   "official_url": "https://tradier.com/terms-of-service",
-   "fetch_status": "404",
+   "official_url": "https://docs.tradier.com/docs/faq",
+   "fetch_status": "200",
    "rights": {
     "automated_access": {
      "status": "UNKNOWN",
      "evidence": null
     },
     "internal_analysis": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "VERIFIED",
+     "evidence": "Unless you are a Tradier Partner, Tradier APIs are intended for personal use only. (docs.tradier.com/docs/faq, runner run 40236507337, 2026-10-25)",
+     "scope": "personal use by the account holder"
     },
     "persistent_storage": {
      "status": "UNKNOWN",
      "evidence": null
     },
     "public_display_raw": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "Unless you are a Tradier Partner, Tradier APIs are intended for personal use only. (docs.tradier.com/docs/faq, runner run 40236507337, 2026-10-25)"
     },
     "public_display_derived": {
-     "status": "UNKNOWN",
-     "evidence": null
+     "status": "RESTRICTED",
+     "evidence": "Unless you are a Tradier Partner, Tradier APIs are intended for personal use only. (docs.tradier.com/docs/faq, runner run 40236507337, 2026-10-25)"
     },
     "github_actions_automation": {
      "status": "UNKNOWN",
@@ -601,15 +603,15 @@
      "evidence": null
     },
     "telegram_sharing": {
-     "status": "UNKNOWN",
+     "status": "RESTRICTED",
      "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
-     "evidence": null
+     "evidence": "Unless you are a Tradier Partner, Tradier APIs are intended for personal use only. (docs.tradier.com/docs/faq, runner run 40236507337, 2026-10-25)"
     }
    },
    "api_key_required": true,
-   "cost_note": "Terms URL returned 404; no licensing text captured.",
+   "cost_note": "The old tradier.com/terms-of-service URL returned 404 (an incomplete check, not a block); the current developer FAQ states personal use only unless a Tradier Partner, and that API access is free for Tradier Brokerage account holders.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "صفحة الشروط أعادت 404 فلا يمكن تأكيد أي حق.",
+   "summary_ar": "للاستخدام الشخصي فقط ما لم تكن شريكًا لدى Tradier؛ يتطلب حساب وساطة لدى Tradier؛ لا عرض عام.",
    "free_plan_note": "\"Real-time data is available to all Tradier Brokerage account holders\"; delayed data is \"delayed industry-standard 15 minutes\"."
   },
   "nasdaq_data_link": {

@@ -152,7 +152,7 @@ REGISTRY: list[dict[str, Any]] = [
      "limitations": "تقسيم وصفي لتاريخ السلاسل؛ لا يتنبأ بانكسار ولا يحدد اتجاهًا"},
     {"file": "daily_plan.json", "title_ar": "خطة اليوم قبل الافتتاح", "kind": "SESSION_PLAN",
      "source": "XNYS calendar + official catalysts + Treasury/CFTC", "license_class": "DERIVED_PUBLIC",
-     "cadence_min": 1440, "limitations": "بلا أسعار عامة: لا يوجد مصدر أسعار يسمح بالعرض؛ نسخة الصباح تُكتب مرة لكل جلسة"},
+     "cadence_min": 1440, "limitations": "بلا أسعار عامة: لم نتحقق بعد من مصدر مجاني يسمح بتغذية محركنا وإعادة توزيع مخرجاته؛ نسخة الصباح تُكتب مرة لكل جلسة"},
     {"file": "fda_events.json", "title_ar": "أحداث FDA الرسمية", "kind": "REGULATORY_EVENTS",
      "source": "openFDA (CC0)", "license_class": "OFFICIAL_PUBLIC", "cadence_min": 720,
      "limitations": "وقائع تنظيمية لا اتجاه سعر؛ openFDA يتأخر عن قرارات FDA أيامًا"},

@@ -154,9 +154,14 @@ def test_public_gate_mode_needs_public_display_right(monkeypatch):
     # (run 39529567535): RESTRICTED, so the owner's confirmation cannot open it.
     monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "twelve_data")
     assert psg.key_usable("TWELVE_DATA_API_KEY", public=True) is False
-    # UNKNOWN terms (Tradier: terms page 404) need the owner's confirmation of the plan's terms.
+    # Tradier: the current FAQ says personal use only (run 40236507337), so even the
+    # owner's confirmation cannot open public display.
     monkeypatch.setenv("HAS_TRADIER_TOKEN", "true")
-    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "")
-    assert psg.key_usable("TRADIER_TOKEN", public=True) is False
     monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "tradier")
-    assert psg.key_usable("TRADIER_TOKEN", public=True) is True
+    assert psg.key_usable("TRADIER_TOKEN", public=True) is False
+    # UNKNOWN terms (Massive: derived-result rights not settled) need the owner's confirmation.
+    monkeypatch.setenv("HAS_POLYGON_API_KEY", "true")
+    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "")
+    assert psg.key_usable("POLYGON_API_KEY", public=True) is False
+    monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "massive_polygon")
+    assert psg.key_usable("POLYGON_API_KEY", public=True) is True
