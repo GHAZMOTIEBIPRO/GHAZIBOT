@@ -23,6 +23,9 @@ _spec.loader.exec_module(fda)
 API = "https://api.fda.gov"
 HEADERS = {"User-Agent": "GHAZI-RADAR public-data research (github.com/GHAZMOTIEBIPRO/GHAZIBOT)"}
 WINDOW_DAYS = 30
+# openFDA's own dataset date per endpoint (meta.last_updated): when the source
+# last refreshed, not when an event happened or when we first saw it.
+SOURCE_UPDATED: dict[str, str] = {}
 
 
 def _get(path: str, params: dict[str, str], attempts: int = 3) -> list[dict]:
@@ -33,6 +36,9 @@ def _get(path: str, params: dict[str, str], attempts: int = 3) -> list[dict]:
             with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=30) as response:
                 payload = json.loads(response.read())
             results = payload.get("results") if isinstance(payload, dict) else None
+            meta = payload.get("meta") if isinstance(payload, dict) else None
+            if isinstance(meta, dict) and isinstance(meta.get("last_updated"), str):
+                SOURCE_UPDATED[path] = meta["last_updated"][:10]
             return results if isinstance(results, list) else []
         except urllib.error.HTTPError as exc:
             if exc.code == 404:  # openFDA answers 404 when nothing matches the search
@@ -73,6 +79,8 @@ def main() -> int:
         print("FDA events: both endpoints failed; keeping the previous file.", json.dumps(errors))
         return 1
     report = fda.build(approvals, recalls, generated_at=now.isoformat(), start=start, end=end, errors=errors)
+    report["source_last_updated"] = {"approvals": SOURCE_UPDATED.get("/drug/drugsfda.json"),
+                                     "recalls": SOURCE_UPDATED.get("/drug/enforcement.json")}
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(out.suffix + ".tmp")

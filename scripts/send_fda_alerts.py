@@ -12,6 +12,11 @@ ingredient (FDA Type 1/2), or a Class I recall.
   age is measured from the FDA date, not from when we saw it.
 - A message states the event as a regulatory fact with the official link;
   it is not a trade signal and implies no price direction.
+- Timing is kept apart: the FDA event date, openFDA's dataset date
+  (meta.last_updated), the first time our system saw the event, and the
+  send time. Without the source's own first-publication time the delay is
+  not attributed to the source. An event first seen more than
+  FRESH_DAYS after its date is labelled "للمتابعة" (follow-up), not new.
 """
 from __future__ import annotations
 
@@ -30,6 +35,7 @@ STATE_SCHEMA = "ghazi.fda_alert_state.v1"
 OFFICIAL_HOSTS = {"www.accessdata.fda.gov", "accessdata.fda.gov", "www.fda.gov", "fda.gov"}
 SITE_URL = "https://ghazibot.vercel.app"
 KEEP_DAYS = 90
+FRESH_DAYS = 1
 TYPE_AR = {"APPROVAL_ORIGINAL": "موافقة على طلب أصلي", "RECALL": "سحب منتج"}
 METHOD_AR = {"exact_normalised_name": "مطابقة الاسم القانوني",
              "reviewed_sponsor_alias": "اسم راعٍ مراجَع لدى FDA"}
@@ -51,12 +57,24 @@ def candidates(report: dict[str, Any], today: date, max_age_days: int) -> list[d
     return sorted(picked, key=lambda e: (str(e.get("date")), str(e["event_id"])), reverse=True)
 
 
-def format_message(event: dict[str, Any]) -> str:
+def timing(event: dict[str, Any], first_seen: str, sent_at: str, source_updated: Any) -> dict[str, Any]:
+    try:
+        lag = (date.fromisoformat(first_seen[:10]) - date.fromisoformat(str(event.get("date"))[:10])).days
+    except ValueError:
+        lag = None
+    return {"event_date": event.get("date"), "source_dataset_updated": source_updated, "first_seen_at": first_seen,
+            "sent_at": sent_at, "days_event_to_first_seen": lag,
+            "label": "NEW" if lag is not None and lag <= FRESH_DAYS else "FOLLOW_UP"}
+
+
+def format_message(event: dict[str, Any], when: dict[str, Any] | None = None) -> str:
     esc = html.escape
     who = str(event.get("sponsor") or event.get("firm") or "—")
     ticker = str(event.get("ticker") or "")
     head = f"<b>{esc(ticker)}</b> · {esc(who)}" if ticker else esc(who)
-    lines = [f"🏛️ <b>واقعة FDA رسمية — {esc(TYPE_AR[event['event_type']])}</b>", head]
+    label = "" if when is None else (" · جديد" if when["label"] == "NEW" else
+                                      f" · للمتابعة (رُصد بعد {when['days_event_to_first_seen']} يوم من تاريخ الحدث)")
+    lines = [f"🏛️ <b>واقعة FDA رسمية — {esc(TYPE_AR[event['event_type']])}</b>{esc(label)}", head]
     if event["event_type"] == "APPROVAL_ORIGINAL":
         products = "، ".join(str(p) for p in event.get("products") or []) or "—"
         lines.append(f"المنتج: {esc(products)} · {esc(str(event.get('application_kind') or ''))} "
@@ -68,6 +86,11 @@ def format_message(event: dict[str, Any]) -> str:
         lines.append(f"المنتج: {esc(str(event.get('product') or '—')[:160])}")
         lines.append(f"السبب: {esc(str(event.get('reason') or '—')[:200])}")
     lines.append(f"تاريخ FDA: {esc(str(event.get('date') or '—'))}")
+    if when is not None:
+        lines.append(f"تحديث بيانات openFDA: {esc(str(when['source_dataset_updated'] or 'غير معلن'))}"
+                     f" · أول رصد لدينا: {esc(when['first_seen_at'][:16].replace('T', ' '))} UTC"
+                     f" · الإرسال: {esc(when['sent_at'][:16].replace('T', ' '))} UTC")
+        lines.append("لا نملك وقت أول نشر في المصدر؛ الفارق بين تاريخ الحدث وأول رصد لا يُنسب كله للمصدر.")
     lines.append("الرمز: " + (METHOD_AR.get(str(event.get("match_method")), "مطابقة اسم") if ticker
                               else "بلا رمز (لا مطابقة مؤكدة لشركة مدرجة)"))
     official = _official(event.get("official_url"))
@@ -97,6 +120,10 @@ def run(report: dict[str, Any], state: dict[str, Any] | None, *, now: datetime, 
         new_state = {"schema": STATE_SCHEMA, "seeded_at": stamp, "updated_at": stamp, "events": seen}
         return new_state, {"mode": "seeded", "seeded": len(seen), "sent": 0, "failed": None}
     events = dict(state.get("events") or {})
+    first_seen = dict(state.get("first_seen") or {})
+    for event in picked:  # first time our system saw each event, sent or not
+        first_seen.setdefault(event["event_id"], {"at": stamp, "date": event.get("date")})
+    source_updated = (report.get("source_last_updated") or {})
     sent = 0
     failed = None
     for event in picked:
@@ -104,17 +131,21 @@ def run(report: dict[str, Any], state: dict[str, Any] | None, *, now: datetime, 
             continue
         if sent >= max_new:
             break
+        when = timing(event, first_seen[event["event_id"]]["at"], stamp,
+                      source_updated.get("recalls" if event["event_type"] == "RECALL" else "approvals"))
         try:
-            result = send(format_message(event))
+            result = send(format_message(event, when))
         except Exception as exc:  # noqa: BLE001 - stop on the first delivery failure; unsent events retry next run
             failed = f"{type(exc).__name__}: {str(exc)[:160]}"
             break
         events[event["event_id"]] = {"status": "sent", "date": event.get("date"), "at": stamp,
-                                     "message_id": getattr(result, "message_id", None)}
+                                     "message_id": getattr(result, "message_id", None),
+                                     "first_seen_at": when["first_seen_at"], "label": when["label"]}
         sent += 1
     cutoff = (today - timedelta(days=KEEP_DAYS)).isoformat()
     events = {k: v for k, v in events.items() if str((v or {}).get("date") or "9999") >= cutoff}
-    new_state = {**state, "updated_at": stamp, "events": events}
+    first_seen = {k: v for k, v in first_seen.items() if str((v or {}).get("date") or "9999") >= cutoff}
+    new_state = {**state, "updated_at": stamp, "events": events, "first_seen": first_seen}
     pending = sum(1 for e in picked if e["event_id"] not in events)
     return new_state, {"mode": "delivery", "candidates": len(picked), "sent": sent, "pending": pending, "failed": failed}
 

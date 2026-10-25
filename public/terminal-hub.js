@@ -1707,7 +1707,7 @@
   const CATALYST_KIND={FDA_APPROVAL:"موافقة FDA",FDA_SUPPLEMENT:"ملحق FDA",FDA_RECALL:"سحب FDA",
     DILUTION_RISK:"خطر تخفيف",CHARTER_OR_REVERSE_SPLIT_REVIEW:"تعديل نظام/تقسيم عكسي",LISTING_NOTICE:"إشعار إدراج",
     MATERIAL_AGREEMENT:"عقد جوهري",EARNINGS_RELEASE:"نتائج",INSIDER_FILING:"إفصاح مطلعين",PERIODIC_REPORT:"تقرير دوري",
-    TRIAL_RESULTS_POSTED:"نتائج منشورة بالسجل (الاتجاه غير مقيم)",TRIAL_STATUS_REVIEW:"مراجعة حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث سجل دراسة",
+    TRIAL_RESULTS_POSTED:"نتائج منشورة بالسجل (الاتجاه غير مقيم)",TRIAL_STATUS_REVIEW:"مراجعة حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث إداري في سجل دراسة (ليس محفزًا)",
     MERGER_OR_ACQUISITION:"اندماج/استحواذ",ACTIVIST_STAKE:"حصة نشطة 13D"};
   const SIZE_AR={KNOWN_LARGE_ISSUER_LIST:"شركة كبرى معروفة (قائمة مرجعية يدوية؛ القيمة السوقية غير مقاسة)",
     MARKET_CAP_UNVERIFIED:"التصنيف السوقي غير متحقق"};
@@ -1784,7 +1784,7 @@
   }
   const FRAME_AR={weekly:"أسبوعي",daily:"يومي","4h":"4 ساعات","1h":"ساعة","15m":"15 دقيقة","5m":"5 دقائق"};
   const KIND_SHORT={FDA_APPROVAL:"موافقة FDA",FDA_SUPPLEMENT:"ملحق FDA",FDA_RECALL:"سحب FDA",TRIAL_RESULTS_POSTED:"نتائج دراسة",
-    TRIAL_STATUS_REVIEW:"حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث سجل",DILUTION_RISK:"تخفيف",MERGER_OR_ACQUISITION:"اندماج"};
+    TRIAL_STATUS_REVIEW:"حالة دراسة",TRIAL_REGISTRY_UPDATE:"تحديث إداري",DILUTION_RISK:"تخفيف",MERGER_OR_ACQUISITION:"اندماج"};
   // Pre-open sheet: session facts, official catalysts and frame availability; no prices.
   function planLines(plan){
     if(!plan||!plan.session)return null;

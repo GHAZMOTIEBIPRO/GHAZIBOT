@@ -260,13 +260,31 @@ def company_size(symbol: str, sizes: Any, now: datetime) -> dict[str, Any]:
     return out
 
 
+# What an event is, independent of its review priority. A registry edit is
+# administrative; posted results say nothing about direction until read.
+IMPACT = {"FDA_APPROVAL": "REGULATORY_DECISION", "FDA_SUPPLEMENT": "REGULATORY_DECISION_MINOR",
+          "FDA_RECALL": "RISK", "DILUTION_RISK": "RISK", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "RISK",
+          "LISTING_NOTICE": "RISK", "TRIAL_RESULTS_POSTED": "RESULTS_POSTED_DIRECTION_UNKNOWN",
+          "TRIAL_STATUS_REVIEW": "STATUS_CHANGE", "TRIAL_REGISTRY_UPDATE": "ADMINISTRATIVE"}
+
+
+def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """One record per underlying event (same kind and official link): the latest wins."""
+    latest: dict[tuple[str, str], dict[str, Any]] = {}
+    for item in items:
+        key = (str(item.get("kind")), str(item.get("source_url") or item.get("label") or id(item)))
+        if key not in latest or str(item.get("date")) > str(latest[key].get("date")):
+            latest[key] = item
+    return list(latest.values())
+
+
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
           sizes: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
-    for item in fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now):
+    for item in dedupe(fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now)):
         if cutoff <= item["date"] <= now.date().isoformat():
-            by_symbol.setdefault(item["symbol"], []).append(item)
+            by_symbol.setdefault(item["symbol"], []).append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
     entries = []
     for symbol, items in by_symbol.items():
         items.sort(key=lambda x: (RANK[x["importance"]], x["date"]), reverse=True)
