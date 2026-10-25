@@ -1,4 +1,8 @@
-"""Change points in public macro series (ruptures): known breaks found, noise left alone."""
+"""Drift-change detection in public macro series (ruptures).
+
+The first version segmented levels and flagged 5 breaks on 100% of random
+walks with no change; these tests keep that failure from coming back.
+"""
 import importlib.util
 import json
 from datetime import date, timedelta
@@ -22,44 +26,61 @@ def _days(n, start=date(2025, 1, 2)):
     return [(start + timedelta(days=i)).isoformat() for i in range(n)]
 
 
-def test_known_level_shifts_are_found_near_their_dates():
-    rng = np.random.default_rng(7)
-    values = np.concatenate([rng.normal(-40, 3, 150), rng.normal(10, 3, 120), rng.normal(45, 3, 130)])
-    report = mr.regime_report("treasury_10y_2y_bp", {"frequency": "daily", "unit": "bp", "source": "test",
-                                                   "dates": _days(400), "values": [round(v, 1) for v in values]})
-    assert report["available"] is True
-    idx = [_days(400).index(d) for d in report["change_points"]]
-    assert len(idx) == 2 and abs(idx[0] - 150) <= 3 and abs(idx[1] - 270) <= 3
+def _spec_for(values, frequency="daily", lag=0):
+    return {"frequency": frequency, "unit": "bp", "source": "test", "release_lag_days": lag,
+            "dates": _days(len(values)), "values": [round(float(v), 3) for v in values]}
+
+
+@pytest.mark.parametrize("kind", ["gaussian", "student_t3", "jumps"])
+def test_random_walks_without_change_rarely_break(kind):
+    rng = np.random.default_rng({"gaussian": 1, "student_t3": 2, "jumps": 3}[kind])
+    flagged = 0
+    for _ in range(40):
+        steps = rng.normal(0, 3, 450) if kind == "gaussian" else rng.standard_t(3, 450) * 2
+        if kind == "jumps":
+            steps = steps + np.where(np.isin(np.arange(450), [100, 300]), 25, 0)
+        report = mr.regime_report("x", _spec_for(np.cumsum(steps)))
+        flagged += bool(report["breaks"])
+    assert flagged <= 4  # <= 10% of runs; calibration measured 3-5%
+
+
+def test_known_drift_shift_is_found_and_dated_when_knowable():
+    rng = np.random.default_rng(5)
+    steps = np.r_[rng.normal(0, 2, 300), rng.normal(2.0, 2, 150)]
+    report = mr.regime_report("treasury_10y_2y_bp", _spec_for(100 + np.cumsum(steps)))
+    assert report["available"] is True and len(report["breaks"]) >= 1
+    first = report["breaks"][0]
+    index = _days(451).index(first["date"])
+    assert abs(index - 301) <= 20
+    assert first["hindsight_only"] is False
+    # Knowable only after the break, using data that existed then.
+    assert first["detectable_from"] > first["date"]
     current = report["current_regime"]
-    assert current["since"] == report["change_points"][-1]
-    assert current["mean"] == pytest.approx(45, abs=1.5) and current["previous_mean"] == pytest.approx(10, abs=1.5)
-    assert current["shift"] == pytest.approx(35, abs=2)
-    assert report["method"]["library"] == "ruptures" and report["method"]["cost"] == "l2"
+    assert current["mean_change"] == pytest.approx(2.0, abs=0.5)
+    assert current["previous_mean_change"] == pytest.approx(0.0, abs=0.4)
+    assert report["method"]["input"] == "period changes"
 
 
-def test_pure_noise_has_no_breaks_and_short_or_bad_series_are_refused():
-    rng = np.random.default_rng(11)
-    noise = mr.regime_report("x", {"frequency": "daily", "dates": _days(300),
-                                   "values": list(rng.normal(0, 5, 300))})
-    assert noise["available"] is True and noise["change_points"] == []
-    assert noise["current_regime"]["previous_mean"] is None and noise["current_regime"]["shift"] is None
-    short = mr.regime_report("x", {"frequency": "weekly", "dates": _days(30), "values": [1.0] * 30})
-    assert short["available"] is False and "52" in short["reason"]
-    bad = mr.regime_report("x", {"frequency": "daily", "dates": _days(200), "values": [1.0] * 199 + [float("nan")]})
-    assert bad["available"] is False
-    flat = mr.regime_report("x", {"frequency": "daily", "dates": _days(200), "values": [3.0] * 200})
-    assert flat["available"] is True and flat["change_points"] == []
+def test_cftc_publication_lag_shifts_detectable_from():
+    rng = np.random.default_rng(8)
+    steps = np.r_[rng.normal(0, 1000, 100), rng.normal(3000, 1000, 56)]
+    plain = mr.regime_report("w", _spec_for(np.cumsum(steps), "weekly", 0))
+    lagged = mr.regime_report("w", _spec_for(np.cumsum(steps), "weekly", 3))
+    assert plain["breaks"] and lagged["breaks"]
+    a = date.fromisoformat(plain["breaks"][0]["detectable_from"])
+    b = date.fromisoformat(lagged["breaks"][0]["detectable_from"])
+    assert (b - a).days == 3 and lagged["release_lag_days"] == 3
 
 
-def test_breaks_are_capped_and_the_report_is_research_only():
-    values = []
-    for k in range(10):
-        values += [k * 50.0 + (i % 2) for i in range(25)]
-    report = mr.regime_report("x", {"frequency": "daily", "dates": _days(len(values)), "values": values})
-    assert len(report["change_points"]) <= mr.MAX_BREAKS
-    built = mr.build({"generated_at": "2026-10-24T01:00:00+00:00", "series": {
-        "x": {"frequency": "daily", "dates": _days(len(values)), "values": values}}}, generated_at="t")
-    assert built["status"] == "AVAILABLE" and built["research_only"] is True and built["decision_authority"] is False
+def test_short_bad_and_flat_series():
+    assert mr.regime_report("x", _spec_for([1.0] * 30, "weekly"))["available"] is False
+    bad = _spec_for([1.0] * 200)
+    bad["values"][-1] = float("nan")
+    assert mr.regime_report("x", bad)["available"] is False
+    flat = mr.regime_report("x", _spec_for([3.0] * 200))
+    assert flat["available"] is True and flat["breaks"] == []
+    built = mr.build({"generated_at": "t", "series": {"x": _spec_for(np.arange(200.0))}}, generated_at="t")
+    assert built["schema"] == "ghazi.macro_regimes.v2" and built["decision_authority"] is False
     assert mr.build({}, generated_at="t")["status"] == "DATA_UNAVAILABLE"
 
 
@@ -70,13 +91,12 @@ def test_history_series_from_raw_cftc_and_treasury_rows():
             "market_and_exchange_names": "E-MINI S&P 500 - CHICAGO MERCANTILE EXCHANGE",
             "asset_mgr_positions_long": "100", "asset_mgr_positions_short": "40",
             "lev_money_positions_long": "10", "lev_money_positions_short": "30"} for d in (6, 13, 20)]
-    cot.append({**cot[0], "cftc_contract_market_code": "209742",
-                "market_and_exchange_names": "SOMETHING ELSE"})
+    cot.append({**cot[0], "cftc_contract_market_code": "209742", "market_and_exchange_names": "SOMETHING ELSE"})
     series = pm.history_series(cot, curve)
     assert series["treasury_10y_2y_bp"]["values"][0] == 50.0 and len(series["treasury_10y_pct"]["dates"]) == 5
     assert series["cftc_ES_asset_manager_net"]["values"] == [60, 60, 60]
-    assert series["cftc_ES_leveraged_funds_net"]["frequency"] == "weekly"
-    assert not any(k.startswith("cftc_NQ") for k in series)  # name no longer matches the code
+    assert series["cftc_ES_leveraged_funds_net"]["release_lag_days"] == 3
+    assert not any(k.startswith("cftc_NQ") for k in series)
     json.dumps(series)
 
 
