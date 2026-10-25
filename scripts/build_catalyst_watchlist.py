@@ -65,6 +65,11 @@ KNOWN_LARGE_ISSUERS = frozenset({
     "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "GOOG", "TSLA", "AVGO", "AMD", "ORCL", "BAC", "CVX", "OXY",
     "LLY", "ABBV", "MRK", "PFE", "JNJ", "BMY", "AMGN", "GILD", "TMO", "ABT", "DHR", "MDT", "UNH", "CVS", "REGN",
     "VRTX", "ISRG", "AZN", "NVS", "GSK", "SNY", "NVO", "BIIB", "ZTS", "SYK", "BSX", "MU", "JPM", "WMT", "COST",
+    # Large and mid-cap health-care issuers seen in the FDA / ClinicalTrials
+    # feeds (production 2026-10-25 listed several as small-cap candidates).
+    "TAK", "BNTX", "MRNA", "BAX", "TEVA", "VTRS", "INCY", "JAZZ", "EXEL", "NBIX", "SRPT", "ALNY", "ILMN",
+    "IQV", "HUM", "CI", "ELV", "MCK", "COR", "CAH", "HCA", "GEHC", "RMD", "IDXX", "DXCM", "EW", "ZBH",
+    "ALGN", "WST", "MTD", "WAT", "BDX", "CRL", "UTHR", "BMRN", "ARGX", "BGNE", "ONC", "HLN", "PODD",
 })
 
 
@@ -250,6 +255,8 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None) 
         # Small-cap view: issuers outside the large-issuer list, all still
         # needing price verification before any under-$10 label.
         "small_cap_candidates": [e["symbol"] for e in entries[:MAX_TICKERS] if e["universe"] == "SMALL_CAP_CANDIDATE"],
+        "small_cap_candidates_note_ar": ("خارج قائمة الشركات الكبيرة المعروفة فقط؛ حجم الشركة وسعرها غير متحققين "
+                                         "دون بيانات سعرية مسموحة."),
         "ranking_rules": {
             "points": POINTS, "new_molecule_bonus": NEW_MOLECULE_BONUS,
             "recency": "x (0.4 + 0.6 * (1 - age_days / 30))", "reliability": RELIABILITY,
