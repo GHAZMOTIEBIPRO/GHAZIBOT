@@ -53,7 +53,7 @@ assert.equal(attention.checks.at(-1).state,"unknown");
 assert.ok(attention.checks.at(-1).detail.includes("غير رسمي"));
 const future={...fakeNews,latest_published_at:"2026-10-19T20:00:00Z"};
 assert.equal(evaluate({bars,scenario,newsAttention:future,now:NOW}).newsSearchAttention,false);
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 const js=fs.readFileSync("public/terminal-hub.js","utf8");
 const css=fs.readFileSync("public/terminal-hub.css","utf8");
 assert.ok(html.includes('id="terminal-evidence-grid"'));

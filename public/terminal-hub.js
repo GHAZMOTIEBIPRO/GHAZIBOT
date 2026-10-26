@@ -2264,6 +2264,12 @@
   });
   const linked=symbolFromLink(window.location.search);
   if(linked){state.pendingSymbol=linked;chooseChart(linked);}
+  // The new home page links its data center here: ?panel=trust (known panels only).
+  else{
+    let wanted=null;
+    try{wanted=new URLSearchParams(window.location.search).get("panel");}catch{wanted=null;}
+    if(wanted&&document.getElementById("terminal-panel-"+wanted)&&/^[a-z]{3,12}$/.test(wanted))openStartPanel(wanted);
+  }
   refresh().finally(()=>{state.pendingSymbol=null;});
   setInterval(refresh,5*60*1000);
 })();

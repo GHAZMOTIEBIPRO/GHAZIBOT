@@ -24,8 +24,24 @@ from options_radar.github_listing_discovery import (
 def _news_gates_open(monkeypatch):
     # Parser and rotation behaviour once the news sources' terms permit it;
     # the closed gates are covered in test_source_gates_occ_nasdaqtrader_finra_fred.py.
-    for name in ("GOOGLE_NEWS_AUTOMATION_APPROVED", "PRESS_WIRE_RSS_APPROVED", "BLS_AUTOMATION_APPROVED"):
+    for name in ("GOOGLE_NEWS_AUTOMATION_APPROVED", "PRESS_WIRE_RSS_APPROVED", "BLS_AUTOMATION_APPROVED",
+                 "NASDAQTRADER_AUTOMATION_APPROVED"):
         monkeypatch.setenv(name, "true")
+
+
+def test_mirrors_of_nasdaqtrader_files_follow_the_nasdaqtrader_gate(monkeypatch):
+    # The mirrors copy nasdaqtrader.com's symbol files; a PDDL label on the copy
+    # does not grant rights Nasdaq keeps, so no request is made while closed.
+    monkeypatch.setenv("NASDAQTRADER_AUTOMATION_APPROVED", "false")
+
+    class NoNetwork:
+        def get(self, *args, **kwargs):
+            raise AssertionError("no request while the nasdaqtrader gate is closed")
+
+    report = resolve_public_issuers(["ABCD"], now=NOW, previous=None, session=NoNetwork())
+    assert report["status"] == "SOURCE_TERMS_BLOCKED"
+    assert report["issuers"] == {}
+    assert "NASDAQTRADER_AUTOMATION_APPROVED" in report["enable_with"]
 
 NOW = datetime(2026, 10, 18, 15, tzinfo=timezone.utc)
 

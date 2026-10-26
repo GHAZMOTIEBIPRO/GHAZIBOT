@@ -39,7 +39,7 @@ for(const mutation of [
 ]) {
   assert.throws(()=>calculateLongOptionRisk({...input,...mutation}));
 }
-const text=fs.readFileSync("public/index.html","utf8");
+const text=fs.readFileSync("public/classic.html","utf8");
 for(const id of ["tab-risklab","ghazi-risk-form","risk-payoff-chart","risk-maxloss",
   "risk-count","risk-spread","risk-rr","risk-target","risk-stop"]) {
   assert.ok(text.includes('id="'+id+'"'),"missing "+id);

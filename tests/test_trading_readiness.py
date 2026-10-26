@@ -158,4 +158,4 @@ def test_uses_existing_single_writer_and_research_only_deployment():
     assert "git push origin HEAD:bot-state" in wf_text
     assert Path("public/trading-readiness.html").is_file()
     assert "trading-readiness.js" in Path("public/trading-readiness.html").read_text()
-    assert 'href="./trading-readiness.html"' in Path("public/index.html").read_text()
+    assert 'href="./trading-readiness.html"' in Path("public/classic.html").read_text()

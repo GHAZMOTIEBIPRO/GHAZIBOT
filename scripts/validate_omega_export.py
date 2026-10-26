@@ -91,7 +91,9 @@ def validate_payload(payload: dict) -> list[str]:
 
 def validate_ui(root: Path) -> list[str]:
     errors: list[str] = []
-    index = (root / "public/index.html").read_text(encoding="utf-8")
+    # The Omega workspace lives on the full dashboard (classic.html); the home page
+    # (index.html) is the short market view and has no Omega tab.
+    index = (root / "public/classic.html").read_text(encoding="utf-8")
     omega_js = (root / "public/omega.js").read_text(encoding="utf-8")
     for marker in (
         'data-tab="omega"',

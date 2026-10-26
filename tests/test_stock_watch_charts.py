@@ -115,7 +115,7 @@ def test_automatic_refresh_owns_one_dedicated_state_path():
     assert "runtime/public/data/stock_watch_charts.json" in text
     assert "runtime/public/data/index_charts.json" not in text
     assert "cancel-in-progress: false" in text
-    page=Path("public/index.html").read_text(encoding="utf-8")
+    page=Path("public/classic.html").read_text(encoding="utf-8")
     js=Path("public/terminal-hub.js").read_text(encoding="utf-8")
     assert 'id="terminal-gamma-metrics"' in page
     assert 'id="terminal-stock-chart-health"' in page

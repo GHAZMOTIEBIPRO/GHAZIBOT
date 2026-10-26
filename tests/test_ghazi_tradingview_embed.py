@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 def test_market_widgets_are_official_embedded_display_only():
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     assert 'data-tab="liveview"' in html
     assert 'id="tab-liveview"' in html
     assert "https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js" in html

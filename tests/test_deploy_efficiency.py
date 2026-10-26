@@ -46,5 +46,5 @@ def test_terminal_text_has_a_12px_floor_and_arabic_font_is_actually_loaded():
     css = Path("public/terminal-hub.css").read_text(encoding="utf-8")
     sizes = [float("0" + v) for v in re.findall(r"font-size:(\.[0-9]+)rem", css)]
     assert sizes and min(sizes) >= 0.75
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     assert "family=Noto+Sans+Arabic" in html and "display=swap" in html

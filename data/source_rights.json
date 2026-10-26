@@ -748,7 +748,8 @@
    "cost_note": "Prior written consent of Nasdaq required; gate NASDAQTRADER_AUTOMATION_APPROVED closed.",
    "rate_limit_note": "Not stated in log.",
    "summary_ar": "شروط NasdaqTrader تمنع نسخ المحتوى وتقاريره أو عرضها أو تخزينها أو استخدامها دون موافقة Nasdaq الكتابية المسبقة؛ دليل الرموز وتغذية الإيقافات متوقفان.",
-   "evidence_run": "39521600490"
+   "evidence_run": "39521600490",
+   "mirrors_note": "github.com/datasets/nasdaq-listings and nyse-other-listings copy these files (their datapackage names nasdaqtrader.com as the source and their READMEs defer to its copyright notice); the maintainers' PDDL cannot grant rights Nasdaq keeps, so the mirrors follow this gate (probe run 40266602180). The symbol look-up page states Nasdaq and its licensors \"retain all right, title and interest information including, but not limited to the symbols\"."
   },
   "tradingview_widgets": {
    "name": "TradingView widgets / charts",
@@ -1575,6 +1576,53 @@
    "rate_limit_note": "Not stated.",
    "summary_ar": "لا توجد صفحة شروط لـ FilingPulse؛ غير مفعّل لعدم وجود مفتاح.",
    "evidence_run": "39523530990"
+  },
+  "sp500_members_dataset": {
+   "name": "S&P 500 current members (datasets/s-and-p-500-companies, from Wikipedia)",
+   "category": "reference",
+   "official_url": "https://github.com/datasets/s-and-p-500-companies",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "datasets/s-and-p-500-companies datapackage.json (probe run 40266602180): licenses [ODC-PDDL-1.0], sources [\"Wikipedia — List of S&P 500 companies\"]; README: \"All data is licensed under the Open Data Commons Public Domain Dedication and License\". Upstream Wikipedia text is CC BY-SA 4.0, so the published file carries attribution and the CC BY-SA notice."
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "Attribute Wikipedia's 'List of S&P 500 companies' (CC BY-SA 4.0) and the data package.",
+   "rate_limit_note": "GitHub raw and API limits; read twice a week.",
+   "scope_note": "Current members only: not point-in-time membership, not for historical tests; no prices, market caps or index weights. Membership, names, sectors and CIKs are the only fields used.",
+   "summary_ar": "قائمة أعضاء S&P 500 الحاليين (الاسم والقطاع وCIK) بترخيص PDDL وأصلها ويكيبيديا (CC BY-SA)؛ تُذكر المصادر، ولا تصلح لاختبار تاريخي.",
+   "evidence_run": "40266602180"
   }
  },
  "full_text_run": "39529567535"

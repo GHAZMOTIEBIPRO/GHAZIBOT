@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 const app=fs.readFileSync("public/terminal-hub.js","utf8");
 const css=fs.readFileSync("public/terminal-hub.css","utf8");
 const wf=fs.readFileSync(".github/workflows/stock-watch-charts.yml","utf8");

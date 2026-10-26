@@ -26,7 +26,7 @@ assert.equal(desk.validate(report({sources:{openfda:false}}),now).rows.length,0)
 assert.equal(desk.official("javascript:alert(1)","openFDA"),null);
 assert.equal(desk.official("https://evil.com/","openFDA"),null);
 assert.match(desk.official(event.source_url,"openFDA"),/^https:/);
-const index=fs.readFileSync(path.join(__dirname,"../public/index.html"),"utf8");
+const index=fs.readFileSync(path.join(__dirname,"../public/classic.html"),"utf8");
 assert.ok(index.includes('href="./catalyst-desk.html"'));
 const page=fs.readFileSync(path.join(__dirname,"../public/catalyst-desk.html"),"utf8");
 assert.ok(page.includes('src="./catalyst-desk.js'));

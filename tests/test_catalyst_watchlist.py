@@ -189,3 +189,39 @@ def test_daily_plan_does_not_list_an_administrative_update_as_a_catalyst():
     listed = bdp.catalysts_today(watch, NOW)
     assert [(c["symbol"], c["kind"]) for c in listed] == [("RSLT", "TRIAL_RESULTS_POSTED")]
 
+
+def test_events_keep_event_date_source_update_and_first_detection_apart():
+    fda = {**FDA, "source_last_updated": {"approvals": "2026-10-20", "recalls": "2026-10-14"}}
+    first = cw.build(fda, None, None, NOW)
+    events = {e["symbol"]: e for e in first["events"]}
+    assert events["ABCD"]["date"] == "2026-10-16"              # FDA action date
+    assert events["ABCD"]["source_updated"] == "2026-10-20"    # openFDA dataset update, not a publication time
+    assert events["AMRX"]["source_updated"] == "2026-10-14"
+    assert events["ABCD"]["first_seen_at"] == NOW.isoformat() and events["ABCD"]["first_seen_basis"] == "THIS_RUN"
+    assert "first_seen_at" in first["event_time_fields"]
+    # A later run carries the first detection instead of resetting it.
+    later = cw.build(fda, None, None, NOW + timedelta(hours=6), previous=first)
+    again = {e["symbol"]: e for e in later["events"]}
+    assert again["ABCD"]["first_seen_at"] == NOW.isoformat() and again["ABCD"]["first_seen_basis"] == "CARRIED"
+
+
+def test_events_listed_before_tracking_get_no_invented_detection_time():
+    old = cw.build(FDA, None, None, NOW)
+    for entry in old["watchlist"]:            # a file written before the field existed
+        for c in entry["catalysts"]:
+            c.pop("first_seen_at", None)
+            c.pop("first_seen_basis", None)
+    old.pop("events")
+    report = cw.build(FDA, None, None, NOW + timedelta(hours=1), previous=old)
+    abcd = next(e for e in report["events"] if e["symbol"] == "ABCD")
+    assert abcd["first_seen_at"] is None and abcd["first_seen_basis"] == "BEFORE_TRACKING"
+
+
+def test_events_list_is_complete_beyond_the_per_ticker_cap():
+    rows = [{"event_type": "APPROVAL_SUPPLEMENT", "date": f"2026-10-{d:02d}", "ticker": "MANY", "importance": "LOW",
+             "products": [f"P{d}"], "official_url": f"https://www.accessdata.fda.gov/{d}"} for d in range(5, 20)]
+    report = cw.build({"approvals": rows, "recalls": []}, None, None, NOW)
+    assert len(report["watchlist"][0]["catalysts"]) == cw.MAX_CATALYSTS
+    assert len([e for e in report["events"] if e["symbol"] == "MANY"]) == 15
+    assert [e["date"] for e in report["events"]] == sorted((e["date"] for e in report["events"]), reverse=True)
+

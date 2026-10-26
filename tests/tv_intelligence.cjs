@@ -57,7 +57,7 @@ for(const forbidden of ["fetch(","XMLHttpRequest","postMessage","contentWindow",
   assert.ok(!source.includes(forbidden),forbidden);
 
 // The page wires every slot the module fills, a chart view per section, and no CFD.
-const html=fs.readFileSync(path.join(__dirname,"../public/index.html"),"utf8");
+const html=fs.readFileSync(path.join(__dirname,"../public/classic.html"),"utf8");
 for(const id of ["tv-index-buttons","tv-index-ta","tv-index-info","tv-heatmap","tv-screener","tv-calendar",
   "tv-stock-form","tv-stock-input","tv-stock-ta","tv-stock-profile","tv-stock-financials","tv-stock-news"])
   assert.ok(html.includes('id="'+id+'"'),id);

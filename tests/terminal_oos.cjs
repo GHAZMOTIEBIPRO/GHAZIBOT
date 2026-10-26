@@ -36,7 +36,7 @@ assert.equal(ready.claimedWinRate,null);
 assert.equal(ready.livePromotionAllowed,false);
 assert.equal(evaluate({...enough,gate:{...enough.gate,coverage_60m_pct:89.99}}).ready,false);
 assert.equal(evaluate({...enough,metrics:{...enough.metrics,oos_records:39}}).ready,false);
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 const js=fs.readFileSync("public/terminal-hub.js","utf8");
 assert.ok(html.includes('id="terminal-oos-status"'));
 assert.ok(html.indexOf("terminal-oos.js")<html.indexOf("terminal-hub.js"));

@@ -41,7 +41,7 @@ assert.equal(PROJECTS.find(p=>p.number===1).evidence.kind,"own_method");
 assert.equal(PROJECTS.filter(p=>p.evidence?.kind==="own_method").length,2);
 
 const page=fs.readFileSync(path.join(__dirname,"../public/github-projects.html"),"utf8");
-const main=fs.readFileSync(path.join(__dirname,"../public/index.html"),"utf8");
+const main=fs.readFileSync(path.join(__dirname,"../public/classic.html"),"utf8");
 assert.ok(page.includes('src="./github-projects.js'));
 assert.ok(page.includes('id="projects-results"'));
 assert.ok(page.includes('value="evidence"'));

@@ -9,6 +9,7 @@ on:
     paths:
       - "scripts/probe_sec_access.py"
       - "scripts/probe_terms.py"
+      - "scripts/probe_free_sources.py"
       - ".github/workflows/sec-access-probe.yml"
 
 permissions:
@@ -32,7 +33,7 @@ env:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     env:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Radar Research ghazi-bot@users.noreply.github.com' }}
       SEC_USER_AGENT_SECRET_SET: ${{ secrets.SEC_USER_AGENT != '' && 'yes' || '' }}
@@ -44,8 +45,10 @@ jobs:
       - run: python -m pip install "requests>=2.32,<3" "pypdf>=4,<6"
       - name: Official terms pages (relevant clauses only)
         env:
-          PROBE_TERMS_ONLY: alpaca_market_data_agreement,alpaca_market_data_faq_md,alpaca_market_data_md,alpaca_redistribute,fda_press_rss,fda_robots,fda_website_policies
+          PROBE_TERMS_ONLY: nasdaqtrader_terms,fmp_terms
         run: python scripts/probe_terms.py
+      - name: Free sources by category (one small request each)
+        run: python scripts/probe_free_sources.py
       - name: SEC status codes and refusal titles only
         run: python scripts/probe_sec_access.py
       # Presence booleans only (true/false); no secret value is ever read here.

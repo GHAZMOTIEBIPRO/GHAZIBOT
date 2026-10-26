@@ -1,0 +1,66 @@
+name: GHAZI UI before/after comparison
+
+# Serves main (before) and the pushed branch (after) side by side, pins every
+# bot-state data request to one commit so both pages read the same real data,
+# and records phone and desktop screenshots, a phone video and layout metrics.
+# The images go to the ui-review branch (review only; never main or
+# bot-state). Nothing here is published to the site or fed into analysis.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "public/**"
+      - "!public/data/**"
+      - "scripts/ui_compare.cjs"
+      - ".github/workflows/ui-compare.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-ui-compare
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: after
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: before
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install a pinned Playwright with Chromium
+        working-directory: after
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Serve both copies and compare
+        working-directory: after
+        run: |
+          python3 -m http.server 8001 --bind 127.0.0.1 --directory ../before/public >/dev/null 2>&1 &
+          python3 -m http.server 8002 --bind 127.0.0.1 --directory public >/dev/null 2>&1 &
+          sleep 2
+          export DATA_SHA="$(git ls-remote origin refs/heads/bot-state | cut -f1)"
+          echo "DATA_SHA=$DATA_SHA" >> "$GITHUB_ENV"
+          OUT=../ui-shots node scripts/ui_compare.cjs
+      - name: Store the images on the ui-review branch
+        working-directory: after
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan ui-review-snapshot
+          git rm -rq --cached . && git clean -fdq -e node_modules
+          cp ../ui-shots/* .
+          git add -- $(ls *.png *.webm metrics.json 2>/dev/null)
+          git commit -qm "UI before/after for ${GITHUB_SHA::8} (data ${DATA_SHA:-unpinned})"
+          git push -qf origin HEAD:refs/heads/ui-review

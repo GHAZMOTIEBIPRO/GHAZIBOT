@@ -64,7 +64,7 @@ dirty.push({...bullish[3],high:-30});
 assert.equal(research.clean(dirty).length,bullish.length);
 assert.equal(research.clean([{time:1799999999,open:100,high:90,low:99,close:101}]).length,0);
 
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 const app=fs.readFileSync("public/terminal-hub.js","utf8");
 const css=fs.readFileSync("public/terminal-hub.css","utf8");
 for(const tab of ["overview","indices","large","small","news","chart","options","trust","advanced"]){
