@@ -190,22 +190,28 @@ def event_key(item: dict[str, Any]) -> str:
     return "|".join(str(item.get(k) or "") for k in ("symbol", "kind", "date", "source_url", "label"))
 
 
-def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime) -> None:
+FIRST_SEEN_VERSION = 2
+
+
+def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime) -> str:
     """When each event first appeared in our published list (our detection, not the event).
 
-    Carried from the previous published file. An event already listed before this
-    field existed keeps first_seen_at = None (basis BEFORE_TRACKING) instead of a
-    made-up time; a new event gets this run's time.
+    Carried from the previous published file once tracking is running. On the
+    run that starts tracking (a previous file without the current tracking
+    version), every event already in the window gets first_seen_at = None
+    (basis BEFORE_TRACKING): the source feeds held them before this list did,
+    so stamping them with this run's time would claim a detection that did not
+    happen now. Only events that appear after tracking started get a time.
+    Returns the time tracking started.
     """
-    known: dict[str, str | None] = {}
-    if isinstance(previous, dict):
-        for old in previous.get("events") or []:
-            if isinstance(old, dict):
-                known[event_key(old)] = old.get("first_seen_at")
-        for entry in previous.get("watchlist") or []:
-            for old in (entry.get("catalysts") or []) if isinstance(entry, dict) else []:
-                if isinstance(old, dict):
-                    known.setdefault(event_key(old), old.get("first_seen_at"))
+    tracking = (isinstance(previous, dict) and previous.get("first_seen_version") == FIRST_SEEN_VERSION
+                and isinstance(previous.get("events"), list))
+    if not tracking:
+        for item in items:
+            item["first_seen_at"] = None
+            item["first_seen_basis"] = "BEFORE_TRACKING"
+        return now.isoformat()
+    known = {event_key(old): old.get("first_seen_at") for old in previous["events"] if isinstance(old, dict)}
     for item in items:
         key = event_key(item)
         if key in known:
@@ -214,6 +220,7 @@ def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime) -> Non
         else:
             item["first_seen_at"] = now.isoformat()
             item["first_seen_basis"] = "THIS_RUN"
+    return str(previous.get("first_seen_tracking_since") or now.isoformat())
 
 
 def price_band(symbol: str, prices: Any, now: datetime) -> dict[str, Any]:
@@ -325,7 +332,7 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
     for item in dedupe(fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now)):
         if cutoff <= item["date"] <= now.date().isoformat():
             events.append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
-    first_seen(events, previous, now)
+    tracking_since = first_seen(events, previous, now)
     for item in events:
         by_symbol.setdefault(item["symbol"], []).append(item)
     entries = []
@@ -367,6 +374,8 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
         # ticker), newest first, with three separate times: the event date, the
         # source's own update date, and when this list first showed the event.
         "events": sorted(events, key=lambda e: (e["date"], RANK[e["importance"]]), reverse=True)[:MAX_EVENTS],
+        "first_seen_version": FIRST_SEEN_VERSION,
+        "first_seen_tracking_since": tracking_since,
         "event_time_fields": {
             "date": "event date (FDA action date; registry update date for ClinicalTrials.gov)",
             "source_updated": "openFDA dataset update date, or the registry record's update date; not a per-event"

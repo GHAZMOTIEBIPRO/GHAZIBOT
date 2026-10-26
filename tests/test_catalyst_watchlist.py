@@ -197,24 +197,37 @@ def test_events_keep_event_date_source_update_and_first_detection_apart():
     assert events["ABCD"]["date"] == "2026-10-16"              # FDA action date
     assert events["ABCD"]["source_updated"] == "2026-10-20"    # openFDA dataset update, not a publication time
     assert events["AMRX"]["source_updated"] == "2026-10-14"
-    assert events["ABCD"]["first_seen_at"] == NOW.isoformat() and events["ABCD"]["first_seen_basis"] == "THIS_RUN"
+    # Tracking starts here: what the sources already held gets no detection time.
+    assert events["ABCD"]["first_seen_at"] is None and events["ABCD"]["first_seen_basis"] == "BEFORE_TRACKING"
+    assert first["first_seen_version"] == cw.FIRST_SEEN_VERSION and first["first_seen_tracking_since"] == NOW.isoformat()
     assert "first_seen_at" in first["event_time_fields"]
-    # A later run carries the first detection instead of resetting it.
-    later = cw.build(fda, None, None, NOW + timedelta(hours=6), previous=first)
+    # An event that appears after tracking started gets this run's time ...
+    newer = {**fda, "approvals": fda["approvals"] + [
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-21", "ticker": "NEWX", "importance": "HIGH",
+         "products": ["LATER"], "official_url": "https://www.accessdata.fda.gov/new"}]}
+    later = cw.build(newer, None, None, NOW + timedelta(hours=6), previous=first)
     again = {e["symbol"]: e for e in later["events"]}
-    assert again["ABCD"]["first_seen_at"] == NOW.isoformat() and again["ABCD"]["first_seen_basis"] == "CARRIED"
+    assert again["NEWX"]["first_seen_at"] == (NOW + timedelta(hours=6)).isoformat()
+    assert again["NEWX"]["first_seen_basis"] == "THIS_RUN"
+    assert again["ABCD"]["first_seen_at"] is None and again["ABCD"]["first_seen_basis"] == "BEFORE_TRACKING"
+    # ... which later runs carry unchanged, along with when tracking began.
+    third = cw.build(newer, None, None, NOW + timedelta(hours=12), previous=later)
+    kept = {e["symbol"]: e for e in third["events"]}
+    assert kept["NEWX"]["first_seen_at"] == (NOW + timedelta(hours=6)).isoformat()
+    assert kept["NEWX"]["first_seen_basis"] == "CARRIED"
+    assert third["first_seen_tracking_since"] == NOW.isoformat()
 
 
 def test_events_listed_before_tracking_get_no_invented_detection_time():
+    # A file from before tracking (no version), even one carrying times from an
+    # earlier rule, is a fresh start: no event keeps a detection time from it.
     old = cw.build(FDA, None, None, NOW)
-    for entry in old["watchlist"]:            # a file written before the field existed
-        for c in entry["catalysts"]:
-            c.pop("first_seen_at", None)
-            c.pop("first_seen_basis", None)
-    old.pop("events")
+    old.pop("first_seen_version")
+    for e in old["events"]:
+        e["first_seen_at"], e["first_seen_basis"] = NOW.isoformat(), "CARRIED"
     report = cw.build(FDA, None, None, NOW + timedelta(hours=1), previous=old)
-    abcd = next(e for e in report["events"] if e["symbol"] == "ABCD")
-    assert abcd["first_seen_at"] is None and abcd["first_seen_basis"] == "BEFORE_TRACKING"
+    assert all(e["first_seen_at"] is None and e["first_seen_basis"] == "BEFORE_TRACKING" for e in report["events"])
+    assert report["first_seen_tracking_since"] == (NOW + timedelta(hours=1)).isoformat()
 
 
 def test_events_list_is_complete_beyond_the_per_ticker_cap():
