@@ -46,7 +46,7 @@ for (const symbol of ["SPX","NDX"]) {
 assert.equal(decision(down,ready,NOW).state,"DOWN_WATCH");
 assert.notEqual(decision(rows(),ready,NOW).state,"CALL");
 assert.notEqual(decision(down,ready,NOW).state,"PUT");
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 for(const id of ["tab-decision","decision-main-state","decision-room-refresh",
   "decision-outcome-win-rate","decision-catalysts","decision-stock-list"]) {
   assert.ok(html.includes('id="'+id+'"'),"missing "+id);

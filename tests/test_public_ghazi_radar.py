@@ -1,7 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-HTML = (ROOT / "public/index.html").read_text(encoding="utf-8")
+HTML = (ROOT / "public/classic.html").read_text(encoding="utf-8")
 JS = (ROOT / "public/ghazi-radar-quality.js").read_text(encoding="utf-8")
 APP = (ROOT / "public/app.js").read_text(encoding="utf-8")
 

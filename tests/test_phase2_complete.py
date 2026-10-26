@@ -174,7 +174,7 @@ def test_calibration_waits_for_minimum_sample(tmp_path) -> None:
 
 
 def test_public_page_contains_rejected_and_calibration_sections() -> None:
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     javascript = Path("public/app.js").read_text(encoding="utf-8")
     assert 'data-tab="rejected"' in html
     assert 'data-tab="results"' in html

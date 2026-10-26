@@ -17,7 +17,7 @@ assert.ok(!verifiedSchema({schema:"ghazi.public_decision.v1",
     live_trade_quotes_verified:true,
     generated_at:"2026-10-18T11:13:00+00:00",
     source_generated_at:"2026-10-18T11:11:00+00:00"}));
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 assert.ok(html.indexOf('id="indices-overview"')<html.indexOf('<nav class="tabs"'));
 assert.ok(html.indexOf('id="catalyst-overview"')<html.indexOf('<nav class="tabs"'));
 assert.ok(html.includes("catalyst-overview.js"));

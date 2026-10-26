@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
-const page=fs.readFileSync("public/index.html","utf8");
+const page=fs.readFileSync("public/classic.html","utf8");
 const hub=fs.readFileSync("public/terminal-hub.js","utf8");
 const wf=fs.readFileSync(".github/workflows/site-evidence-strength.yml","utf8");
 for(const id of ["terminal-strength-score","terminal-strength-breakdown",

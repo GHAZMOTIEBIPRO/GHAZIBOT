@@ -86,7 +86,7 @@ def test_chart_source_is_same_index_fetch_cycle_without_second_scheduler():
 
 
 def test_frontend_sections_preserve_old_beta_and_chart_library():
-    html=Path("public/index.html").read_text(encoding="utf-8")
+    html=Path("public/classic.html").read_text(encoding="utf-8")
     for name in ("indices","large","small","news","chart","advanced"):
         assert f'id="terminal-panel-{name}"' in html
         assert f'data-terminal-tab="{name}"' in html

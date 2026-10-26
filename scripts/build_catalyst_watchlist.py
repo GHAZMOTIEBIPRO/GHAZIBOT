@@ -28,6 +28,7 @@ from typing import Any
 SCHEMA = "ghazi.catalyst_watchlist.v1"
 MAX_TICKERS = 40
 MAX_CATALYSTS = 6
+MAX_EVENTS = 400
 MAX_EVENT_AGE_DAYS = 30
 MAX_QUOTE_AGE_MIN = 20
 SUB10_LIMIT = 10.0
@@ -102,7 +103,11 @@ def fda_catalysts(fda: Any) -> list[dict[str, Any]]:
     out = []
     if not isinstance(fda, dict):
         return out
+    updated = fda.get("source_last_updated") if isinstance(fda.get("source_last_updated"), dict) else {}
     for key in ("approvals", "recalls"):
+        # openFDA's dataset update date: the event was available there by then.
+        # It is not a per-event publication time.
+        source_updated = _day(updated.get(key))
         for row in fda.get(key) or []:
             if not isinstance(row, dict) or not row.get("ticker") or row.get("importance") not in RANK:
                 continue
@@ -114,6 +119,8 @@ def fda_catalysts(fda: Any) -> list[dict[str, Any]]:
             out.append({"symbol": str(row["ticker"]), "kind": kind, "date": day, "importance": row["importance"],
                         "label": label[:120], "reason": str(row.get("importance_reason") or "")[:160],
                         "source": "openFDA", "source_url": row.get("official_url"),
+                        "source_updated": source_updated,
+                        "issuer": str(row.get("sponsor") or row.get("firm") or "")[:80] or None,
                         "match_method": row.get("match_method"),
                         "new_molecule": bool(re.match(r"Type [12]\b", str(row.get("submission_class") or "")))})
     return out
@@ -173,8 +180,40 @@ def clinical_catalysts(report: Any, now: datetime) -> list[dict[str, Any]]:
             continue
         day = _day(event.get("date"))
         if day and (now.date() - timedelta(days=14)).isoformat() <= day <= now.date().isoformat():
-            result.append(dict(event))
+            # The registry's own update date is when the change became public there.
+            result.append({**event, "source_updated": _day(event.get("registry_updated_date")) or day,
+                           "issuer": str(event.get("lead_sponsor") or "")[:80] or None})
     return result
+
+
+def event_key(item: dict[str, Any]) -> str:
+    return "|".join(str(item.get(k) or "") for k in ("symbol", "kind", "date", "source_url", "label"))
+
+
+def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime) -> None:
+    """When each event first appeared in our published list (our detection, not the event).
+
+    Carried from the previous published file. An event already listed before this
+    field existed keeps first_seen_at = None (basis BEFORE_TRACKING) instead of a
+    made-up time; a new event gets this run's time.
+    """
+    known: dict[str, str | None] = {}
+    if isinstance(previous, dict):
+        for old in previous.get("events") or []:
+            if isinstance(old, dict):
+                known[event_key(old)] = old.get("first_seen_at")
+        for entry in previous.get("watchlist") or []:
+            for old in (entry.get("catalysts") or []) if isinstance(entry, dict) else []:
+                if isinstance(old, dict):
+                    known.setdefault(event_key(old), old.get("first_seen_at"))
+    for item in items:
+        key = event_key(item)
+        if key in known:
+            item["first_seen_at"] = known[key]
+            item["first_seen_basis"] = "CARRIED" if known[key] else "BEFORE_TRACKING"
+        else:
+            item["first_seen_at"] = now.isoformat()
+            item["first_seen_basis"] = "THIS_RUN"
 
 
 def price_band(symbol: str, prices: Any, now: datetime) -> dict[str, Any]:
@@ -279,12 +318,16 @@ def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
-          sizes: Any = None) -> dict[str, Any]:
+          sizes: Any = None, previous: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
+    events: list[dict[str, Any]] = []
     for item in dedupe(fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now)):
         if cutoff <= item["date"] <= now.date().isoformat():
-            by_symbol.setdefault(item["symbol"], []).append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
+            events.append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
+    first_seen(events, previous, now)
+    for item in events:
+        by_symbol.setdefault(item["symbol"], []).append(item)
     entries = []
     for symbol, items in by_symbol.items():
         items.sort(key=lambda x: (RANK[x["importance"]], x["date"]), reverse=True)
@@ -320,6 +363,16 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
                     "clinicaltrials": clinical_available(clinical, now),
                     "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING"},
         "watchlist": entries[:MAX_TICKERS],
+        # Every matched event in the window (the watchlist keeps MAX_CATALYSTS per
+        # ticker), newest first, with three separate times: the event date, the
+        # source's own update date, and when this list first showed the event.
+        "events": sorted(events, key=lambda e: (e["date"], RANK[e["importance"]]), reverse=True)[:MAX_EVENTS],
+        "event_time_fields": {
+            "date": "event date (FDA action date; registry update date for ClinicalTrials.gov)",
+            "source_updated": "openFDA dataset update date, or the registry record's update date; not a per-event"
+                              " publication time for openFDA",
+            "first_seen_at": "first time this list showed the event; null = listed before tracking began",
+        },
         # Market cap needs a permitted price; until then nothing is called small or
         # large from SEC data. Low price (price_band) is a separate test.
         "market_cap_unverified_candidates": [e["symbol"] for e in entries[:MAX_TICKERS]
@@ -378,9 +431,12 @@ def main() -> int:
     parser.add_argument("--prices", type=Path)
     parser.add_argument("--sizes", type=Path, help="SEC public-float file; absent until SEC access works")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--previous", type=Path, help="previous published watchlist (default: --output before it is"
+                                                         " replaced); carries each event's first_seen_at")
     args = parser.parse_args()
+    previous = _load(args.previous or args.output)
     report = build(_load(args.fda), _load(args.sec), _load(args.prices), datetime.now(timezone.utc),
-                   _load(args.clinical), _load(args.sizes))
+                   _load(args.clinical), _load(args.sizes), previous)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Catalyst watchlist:", json.dumps({"status": report["status"], "tickers": len(report["watchlist"]),

@@ -151,7 +151,7 @@ def test_fallback_rejects_naive_intraday_times_and_invalid_ohlc() -> None:
 
 
 def test_site_includes_actual_index_engine_and_source_warning() -> None:
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     js = Path("public/index-radar.js").read_text(encoding="utf-8")
     assert 'data-tab="indices"' in html
     assert 'id="tab-indices"' in html
@@ -166,7 +166,7 @@ def test_site_includes_actual_index_engine_and_source_warning() -> None:
 
 def test_homepage_indicators_and_news_are_visible_without_opening_tabs() -> None:
     from pathlib import Path
-    html=Path("public/index.html").read_text(encoding="utf-8")
+    html=Path("public/classic.html").read_text(encoding="utf-8")
     begin=html.index('id="indices-overview"')
     tabs=html.index('<nav class="tabs"')
     assert begin < tabs

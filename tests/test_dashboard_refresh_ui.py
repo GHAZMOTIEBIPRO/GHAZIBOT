@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 def test_dashboard_separates_call_and_put_contracts() -> None:
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     javascript = Path("public/app.js").read_text(encoding="utf-8")
 
     assert 'id="call-options-body"' in html
@@ -15,7 +15,7 @@ def test_dashboard_separates_call_and_put_contracts() -> None:
 
 
 def test_dashboard_shows_exact_riyadh_report_time_without_claiming_quote_time() -> None:
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     javascript = Path("public/app.js").read_text(encoding="utf-8")
 
     assert 'id="last-updated"' in html

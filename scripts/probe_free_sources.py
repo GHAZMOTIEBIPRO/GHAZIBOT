@@ -24,6 +24,14 @@ import time
 
 import requests
 
+try:
+    from options_radar import source_permissions
+except ImportError:  # run as a file from the repository root
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from options_radar import source_permissions
+
 DEFAULT_SEC_AGENT = "GHAZI Radar Research ghazi-bot@users.noreply.github.com"
 WEB_UA = {"User-Agent": "Mozilla/5.0 (compatible; GHAZI-source-probe/1.0; research)"}
 TERMS = re.compile(r"(licen[cs]|copyright|terms|redistribut|commercial|permission|consent|free of charge|"
@@ -89,7 +97,13 @@ def nasdaqtrader() -> list[dict]:
     meta, r = _get("https://www.nasdaqtrader.com/robots.txt", WEB_UA)
     meta["body"] = r.text[:600] if r is not None and r.status_code == 200 else None
     out.append(meta)
+    # Even a HEAD is automated access to the files the terms cover: only with the gate open.
+    # (Run 40266602180 sent one HEAD per file before this gate was added; no contents were read.)
     for name in ("nasdaqlisted.txt", "otherlisted.txt"):
+        if not source_permissions.allowed("nasdaqtrader"):
+            out.append({"url": f"https://www.nasdaqtrader.com/dynamic/SymDir/{name}", "kind": "NOT_REQUESTED",
+                        **source_permissions.block_record("nasdaqtrader")})
+            continue
         time.sleep(1)
         meta, _ = _get(f"https://www.nasdaqtrader.com/dynamic/SymDir/{name}", WEB_UA, method="HEAD")
         meta["note"] = "HEAD only; contents not downloaded (site terms require written consent)"

@@ -8,7 +8,8 @@ const { chromium } = require("playwright");
 
 const SITES = (process.env.SMOKE_SITES || "https://ghazibot.vercel.app,https://ghazir.vercel.app")
   .split(",").map(s => s.trim()).filter(Boolean);
-const PAGES = [["home", "/"], ["chart_nvda", "/?chart=NVDA"], ["spx", "/spx/"]];
+const PAGES = [["home", "/"], ["chart_nvda", "/?chart=NVDA"], ["news", "/?tab=news"], ["classic", "/classic.html"],
+               ["spx", "/spx/"]];
 const out = process.argv[2] || "site_smoke.json";
 
 (async () => {
@@ -40,19 +41,28 @@ const out = process.argv[2] || "site_smoke.json";
               .filter(f => /tradingview/.test(f.src || "")).length,
             index_panel: t("terminal-index-grid"),
             spx_status: t("status"),
+            // New home page: rows shown, the chart state it recorded, and the smallest text.
+            list_rows: document.querySelectorAll("#gr-list .gr-row").length,
+            chart_state: document.querySelector("[data-gr-chart]")?.dataset.state || null,
+            chart_symbol: document.querySelector("[data-gr-chart]")?.dataset.symbol || null,
           };
         });
         // TradingView widgets load lazily: open the section, scroll to it, then
         // count the frames TradingView injected (their content stays inside them).
-        const tvTarget = label === "chart_nvda" ? ["chart", "tv-stock-ta"] : label === "home" ? ["indices", "tv-index-ta"] : null;
+        // New page: the price tape on home, the stock chart on a ?chart= link.
+        // The old page (classic.html) keeps its own lazy widgets.
+        const tvTarget = label === "chart_nvda" ? [null, "[data-gr-chart]"] : label === "home" ? [null, "#gr-tape"]
+          : label === "classic" ? ["indices", "#tv-index-ta"] : null;
         if (tvTarget) {
-          await page.evaluate(([tab, id]) => {
-            document.querySelector(`[data-terminal-tab="${tab}"]`)?.click();
-            document.getElementById(id)?.scrollIntoView();
+          await page.evaluate(([tab, sel]) => {
+            if (tab) document.querySelector(`[data-terminal-tab="${tab}"]`)?.click();
+            document.querySelector(sel)?.scrollIntoView();
           }, tvTarget);
           await page.waitForTimeout(8000);
-          info.tradingview_frames = await page.evaluate(id =>
-            document.getElementById(id)?.querySelectorAll("iframe").length || 0, tvTarget[1]);
+          info.tradingview_frames = await page.evaluate(sel =>
+            document.querySelector(sel)?.querySelectorAll("iframe").length || 0, tvTarget[1]);
+          if (label === "chart_nvda") info.chart_state = await page.evaluate(() =>
+            document.querySelector("[data-gr-chart]")?.dataset.state || null);
         }
         pages[key] = { http_status: status, errors, ...info };
       } catch (error) {

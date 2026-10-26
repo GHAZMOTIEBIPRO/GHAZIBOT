@@ -74,7 +74,7 @@ def test_weekend_hourly_data_is_not_current_market_quote():
 
 
 def test_hourly_uses_existing_index_and_stock_fetch_not_new_provider():
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     idx = Path("scripts/build_index_chart_snapshot.py").read_text(encoding="utf-8")
     stocks = Path("scripts/build_stock_watch_charts.py").read_text(encoding="utf-8")
     assert '<option value="1h">ساعة</option>' in html

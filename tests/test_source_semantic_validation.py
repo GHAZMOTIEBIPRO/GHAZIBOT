@@ -96,7 +96,7 @@ def test_direct_health_check_has_semantic_gate_even_with_http_200(monkeypatch):
 
 
 def test_source_dashboard_uses_verified_status_and_clocks():
-    page = Path("public/index.html").read_text(encoding="utf-8")
+    page = Path("public/classic.html").read_text(encoding="utf-8")
     app = Path("public/terminal-hub.js").read_text(encoding="utf-8")
     css = Path("public/terminal-hub.css").read_text(encoding="utf-8")
     assert 'id="terminal-panel-trust"' in page

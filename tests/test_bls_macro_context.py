@@ -64,7 +64,7 @@ def test_failed_provider_preserves_last_saved_file(tmp_path):
 
 
 def test_public_panel_has_conservative_schema():
-    html = Path("public/index.html").read_text(encoding="utf-8")
+    html = Path("public/classic.html").read_text(encoding="utf-8")
     js = Path("public/bls-macro.js").read_text(encoding="utf-8")
     assert 'id="tab-macro"' in html
     assert 'data-tab="macro"' in html

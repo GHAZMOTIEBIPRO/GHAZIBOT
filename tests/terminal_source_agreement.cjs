@@ -21,7 +21,7 @@ assert.equal(evaluate({...report,source_price_families:["yahoo","yahooquery"]}),
 assert.equal(evaluate({...report,independent_confirmations:2}),null);
 assert.equal(evaluate({...report,concordance_ratio:1}),null);
 assert.equal(evaluate({...report,massive_market_data_published:true}),null);
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 const js=fs.readFileSync("public/terminal-hub.js","utf8");
 assert.ok(html.includes('id="terminal-source-agreement-status"'));
 assert.ok(html.indexOf("terminal-source-agreement.js")<html.indexOf("terminal-hub.js"));

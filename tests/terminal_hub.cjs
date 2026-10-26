@@ -25,7 +25,7 @@ assert.equal(safeOfficial("https://www.sec.gov/Archives/edgar/test"),"https://ww
 assert.equal(safeOfficial("https://sec.gov.evil.test"),null);
 assert.equal(safeResearch("https://news.google.com/rss/articles/test"),"https://news.google.com/rss/articles/test");
 assert.equal(safeResearch("https://unrelated.example.com"),null);
-const html=fs.readFileSync("public/index.html","utf8");
+const html=fs.readFileSync("public/classic.html","utf8");
 assert.ok(html.includes('id="legacy-dashboard" hidden'));
 assert.ok(html.includes('id="terminal-candle-chart"'));
 for(const category of ["indices","large","small","news","chart","advanced"]){
@@ -34,7 +34,7 @@ for(const category of ["indices","large","small","news","chart","advanced"]){
 }
 console.log("GHAZI terminal/chart analysis source and layout acceptance: PASS");
 
-const html2=fs.readFileSync("public/index.html","utf8");
+const html2=fs.readFileSync("public/classic.html","utf8");
 const hub=fs.readFileSync("public/terminal-hub.js","utf8");
 assert.ok(html2.includes('id="terminal-gamma-metrics"'));
 assert.ok(html2.includes('id="terminal-chart-scenario"'));

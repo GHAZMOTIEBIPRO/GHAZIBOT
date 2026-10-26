@@ -19,6 +19,8 @@ from typing import Any
 
 import requests
 
+from options_radar import source_permissions
+
 LISTINGS = (
     ("nasdaq", "https://raw.githubusercontent.com/datasets/nasdaq-listings/main/data/nasdaq-listed.csv",
      "Symbol", "Security Name"),
@@ -162,6 +164,13 @@ def resolve_public_issuers(
     Previously saved names are shown only as stale metadata for up to 72 hours.
     """
     current = now.astimezone(timezone.utc)
+    # Both mirrors are copies of nasdaqtrader.com's symbol files (their
+    # datapackage names that source, and their READMEs defer to its copyright
+    # notice); the maintainers' PDDL cannot grant rights Nasdaq keeps, so the
+    # mirrors follow the nasdaqtrader gate (probe run 40266602180).
+    if not source_permissions.allowed("nasdaqtrader"):
+        return {"source_family": "github_public_listing_mirrors", **source_permissions.block_record("nasdaqtrader"),
+                "issuers": {}, "research_only": True}
     requested = []
     for value in symbols:
         name = _symbol(value)
