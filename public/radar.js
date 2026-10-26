@@ -179,7 +179,8 @@
         tags: [{ text: "CFTC", kind: "results" }], cftc: c || null };
     });
   }
-  // Large issuers outside the S&P 500 list (foreign listings) that the catalyst list knows.
+  // Large issuers the catalyst list knows that are not in the S&P 500 directory.
+  // Without the directory nothing is said about membership.
   function largeOutside(doc, members) {
     return new Set((doc && Array.isArray(doc.watchlist) ? doc.watchlist : [])
       .filter((e) => e && e.universe === "KNOWN_LARGE_ISSUER_LIST" && !members.has(e.symbol)).map((e) => e.symbol));
@@ -194,16 +195,19 @@
       const withEvents = [...evs.keys()].filter((s) => members.has(s) || foreign.has(s));
       symbols = [...new Set([...withEvents, ...CORE_LEADERS])];
     }
+    const known = members.size > 0;
     const rows = symbols.map((s, order) => {
       const meta = members.get(s);
       const list = evs.get(s) || [];
       const top = headline(list);
       const notable = top && top.info.group !== "admin";   // administrative updates never rank a company up
+      // No event: the sector line, not a repeated "nothing found" (the tab note says which sources exist).
+      const quietWhy = meta ? `${meta.sector_ar}${meta.sub_industry ? " · " + meta.sub_industry : ""}` : "قيادية · قطاعها غير محمّل";
+      const sizeTag = meta ? null : foreign.has(s) ? { text: known ? "شركة كبيرة خارج S&P 500" : "شركة كبيرة", kind: "admin" } : null;
       return { symbol: s, name: meta ? meta.name : FALLBACK_NAMES[s] || (top && top.issuer) || "",
-        why: top ? eventText(top) : "لا حدث رسمي جديد في مصادرنا",
+        why: top ? eventText(top) : quietWhy,
         quiet: !notable, time: top ? day(top.date) : "", latest: notable ? top.date : "", order,
-        tags: [meta ? { text: meta.sector_ar, kind: "admin" } : foreign.has(s) ? { text: "شركة كبيرة خارج S&P 500", kind: "admin" } : null,
-          top ? kindTag(top) : null].filter(Boolean) };
+        tags: [top && meta ? { text: meta.sector_ar, kind: "admin" } : null, sizeTag, top ? kindTag(top) : null].filter(Boolean) };
     });
     const core = (r) => (CORE_LEADERS.includes(r.symbol) ? 0 : 1);
     if (sort === "symbol") rows.sort((a, b) => a.symbol.localeCompare(b.symbol));
@@ -340,7 +344,8 @@
     holder.append(el("div", "tradingview-widget-container__widget"));
     const s = doc.createElement("script"); s.async = true; s.src = TAPE_SRC;
     s.textContent = JSON.stringify({ symbols: INDEX_ROWS.map((r) => ({ proName: `${r.symbol === "QQQ" ? "NASDAQ" : "AMEX"}:${r.symbol}`, title: r.symbol })),
-      showSymbolLogo: false, colorTheme: "dark", isTransparent: true, displayMode: "compact", locale: "ar_AE" });
+      // Opaque dark theme: a transparent frame on a dark-scheme page is painted white by the browser.
+      showSymbolLogo: false, colorTheme: "dark", isTransparent: false, displayMode: "compact", locale: "ar_AE" });
     s.onerror = () => { box.replaceChildren(); };
     holder.append(s); box.append(holder);
   }
@@ -417,7 +422,8 @@
         : "قائمة مختصرة؛ دليل أعضاء S&P 500 لم يُنشر بعد. الأحداث من FDA وClinicalTrials فقط؛ إفصاحات SEC متوقفة حاليًا.";
     } else if (state.tab === "small") {
       rows = smallRows(catalysts, directory, state.events);
-      note.textContent = "شركات خارج S&P 500 لديها حدث رسمي حديث. حجمها غير موثق: القيمة السوقية تحتاج سعرًا من مصدر يسمح بالنشر.";
+      note.textContent = (directory ? "شركات خارج S&P 500" : "شركات خارج قائمة الشركات الكبرى المعروفة") +
+        " لديها حدث رسمي حديث. حجمها غير موثق: القيمة السوقية تحتاج سعرًا من مصدر يسمح بالنشر.";
       if (!rows.length) list.append(el("p", "gr-empty", catalysts ? "لا شركات صغيرة بأحداث رسمية في آخر 30 يومًا." : "تعذّر تحميل قائمة الأحداث الرسمية."));
     } else if (state.tab === "options") {
       list.hidden = true;
@@ -430,12 +436,15 @@
           "التفاصيل الكاملة في مركز البيانات."]));
       extra.append(calculatorCard());
     } else if (state.tab === "news") {
-      for (const [v, t] of FILTERS) {
-        const b = el("button", "gr-chip", t); b.type = "button"; b.setAttribute("aria-pressed", String(v === state.newsFilter));
-        b.addEventListener("click", () => { state.newsFilter = v; renderTab(); });
-        tools.append(b);
-      }
-      tools.classList.add("gr-chips");
+      // Chips where they fit on one line; one dropdown on narrow screens.
+      if (root.matchMedia("(min-width: 600px)").matches) {
+        for (const [v, t] of FILTERS) {
+          const b = el("button", "gr-chip", t); b.type = "button"; b.setAttribute("aria-pressed", String(v === state.newsFilter));
+          b.addEventListener("click", () => { state.newsFilter = v; renderTab(); });
+          tools.append(b);
+        }
+        tools.classList.add("gr-chips");
+      } else tools.append(select(FILTERS, state.newsFilter, "نوع الخبر", (v) => { state.newsFilter = v; renderTab(); }));
       const shown = filterEvents(state.events, state.newsFilter);
       const src = catalysts && catalysts.sources ? catalysts.sources : {};
       note.textContent = `أحداث رسمية مرتبطة برموز: FDA${src.clinicaltrials ? " وClinicalTrials" : ""}. ` +
@@ -477,7 +486,7 @@
       el("p", null, "أدخل أرقام العقد من منصتك. لا تستخدم بيانات سوق، ولا تشمل القيمة الزمنية قبل الانتهاء أو العمولات."));
     const form = el("form", "gr-form");
     const field = (label, input) => { const l = el("label", null, label); l.append(input); form.append(l); return input; };
-    const type = field("نوع العقد", select([["CALL", "CALL (شراء)"], ["PUT", "PUT (بيع)"]], "CALL", "نوع العقد", () => calc()));
+    const type = field("نوع العقد", select([["CALL", "CALL (حق الشراء)"], ["PUT", "PUT (حق البيع)"]], "CALL", "نوع العقد", () => calc()));
     const num = (ph) => { const i = el("input"); i.type = "number"; i.step = "any"; i.min = "0"; i.inputMode = "decimal"; i.placeholder = ph; i.dir = "ltr"; return i; };
     const strike = field("سعر التنفيذ", num("مثال 200")), premium = field("سعر العقد للسهم", num("مثال 3.5"));
     const contracts = field("عدد العقود", num("1")), spot = field("سعر السهم الآن (اختياري)", num("مثال 195"));
@@ -560,6 +569,7 @@
     const reasons = el("ul", "gr-d-list");
     if (index) reasons.append(el("li", null, index.name + "؛ يُعرض بدل المؤشر النقدي غير المتاح في الأدوات المجانية."));
     if (member) reasons.append(el("li", null, `عضو في S&P 500 · ${member.sector_ar}${member.sub_industry ? " · " + member.sub_industry : ""}`));
+    else if (CORE_LEADERS.includes(symbol)) reasons.append(el("li", null, "ضمن قائمة القياديات المختصرة في الموقع."));
     if (top) reasons.append(el("li", null, `${top.info.label}: ${eventText(top)} (${day(top.date)})`));
     if (!reasons.children.length) reasons.append(el("li", null, "رمز من بحثك؛ لا يظهر في قوائمنا الحالية."));
     why.append(reasons); body.append(why);

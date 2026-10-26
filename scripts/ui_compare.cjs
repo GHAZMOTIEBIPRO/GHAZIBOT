@@ -60,7 +60,8 @@ function measure() {
     const style = getComputedStyle(el);
     sizes.push(parseFloat(style.fontSize));
     if (/غير متاح|غير متوفر|UNAVAILABLE|unavailable/.test(text)) unavailable++;
-    if (/^[A-Z][A-Z0-9 ·&\/+\-:.,()]{7,}$/.test(text)) english++;
+    // Interface labels only: official product or study names inside data rows are content, not labels.
+    if (/^[A-Z][A-Z0-9 ·&\/+\-:.,()]{7,}$/.test(text) && !el.closest(".gr-row, .gr-d-list")) english++;
     if (!seen.has(el)) {
       seen.add(el);
       const fg = rgb(style.color).slice(0, 3);
@@ -72,7 +73,9 @@ function measure() {
   }
   sizes.sort((x, y) => x - y);
   const at = (p) => sizes.length ? sizes[Math.floor((sizes.length - 1) * p)] : null;
-  const frame = [...document.querySelectorAll("iframe")].find((f) => /tradingview/i.test(f.src || "") && visible(f));
+  // The stock chart, not the price tape or other widgets: the new page's chart box, or the old page's chart views.
+  const frame = [...document.querySelectorAll("[data-gr-chart] iframe, [data-tv-chart-view] iframe, #terminal-tv-chart-slot iframe")]
+    .find((f) => /tradingview/i.test(f.src || "") && visible(f));
   return {
     page_height_px: document.documentElement.scrollHeight,
     viewport_height_px: innerHeight,

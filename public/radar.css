@@ -210,7 +210,8 @@ details.gr-more ul { margin: var(--s2) 0 0; padding-inline-start: var(--s5); col
 }
 @media (min-width: 1024px) {
   .gr-main { display: grid; grid-template-columns: minmax(360px, 440px) minmax(0, 1fr); gap: var(--s5); align-items: start; }
-  .gr-detail { position: sticky; top: 64px; inset: auto; z-index: 1; visibility: visible; transform: none; transition: none;
+  /* inset first: as a shorthand it would otherwise reset the sticky offset. */
+  .gr-detail { inset: auto; position: sticky; top: 64px; z-index: 1; visibility: visible; transform: none; transition: none;
     max-height: calc(100vh - 80px); padding: 0 var(--s4) var(--s4); background: var(--surface);
     border: 1px solid var(--line); border-radius: var(--radius); }
   .gr-d-head { background: var(--surface); }
