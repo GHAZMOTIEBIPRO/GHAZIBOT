@@ -85,6 +85,10 @@ function measure() {
     unavailable_mentions: unavailable,
     english_ops_labels: english,
     low_contrast_text_elements: lowContrast,
+    // Where the chart is on screen right after the stock opens, and whether it is
+    // visible without scrolling (a fixed detail sheet does not move with the page).
+    chart_top_on_screen_px: frame ? Math.round(frame.getBoundingClientRect().top) : null,
+    chart_visible_without_scrolling: frame ? frame.getBoundingClientRect().top >= 0 && frame.getBoundingClientRect().top < innerHeight - 80 : null,
     first_chart_frame_y_px: frame ? Math.round(frame.getBoundingClientRect().top + scrollY) : null,
     horizontal_overflow: document.documentElement.scrollWidth > innerWidth + 1,
   };
