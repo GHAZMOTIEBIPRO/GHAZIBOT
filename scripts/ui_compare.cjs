@@ -137,8 +137,11 @@ async function after(browser, kind) {
     await page.screenshot({ path: path.join(OUT, `after-${kind}-tab-${tab}.png`) });
   }
   // Same stock as the "before" flow: NVDA from the leaders tab.
-  await page.locator('[data-gr-tab="leaders"]').first().click();
-  await page.waitForTimeout(800);
+  const leaders = page.locator('[data-gr-tab="leaders"]').first();
+  if (await leaders.count()) {
+    await leaders.click();
+    await page.waitForTimeout(800);
+  }
   const row = page.locator('[data-gr-symbol="NVDA"]').first();
   if (await row.count()) {
     await row.click();
