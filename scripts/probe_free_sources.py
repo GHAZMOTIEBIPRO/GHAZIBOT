@@ -24,13 +24,20 @@ import time
 
 import requests
 
-try:
-    from options_radar import source_permissions
-except ImportError:  # run as a file from the repository root
-    import sys
+
+def _load_gates():
+    """source_permissions.py on its own: the options_radar package imports pandas,
+    which this light probe job does not install."""
+    import importlib.util
     from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from options_radar import source_permissions
+    path = Path(__file__).resolve().parents[1] / "options_radar" / "source_permissions.py"
+    spec = importlib.util.spec_from_file_location("ghazi_source_permissions", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+source_permissions = _load_gates()
 
 DEFAULT_SEC_AGENT = "GHAZI Radar Research ghazi-bot@users.noreply.github.com"
 WEB_UA = {"User-Agent": "Mozilla/5.0 (compatible; GHAZI-source-probe/1.0; research)"}
