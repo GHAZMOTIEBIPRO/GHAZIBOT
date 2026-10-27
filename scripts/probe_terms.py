@@ -55,6 +55,8 @@ PAGES = {
     # Pages the first probe missed (wrong paths); located 2026-10-21 for the
     # sources still running with UNKNOWN rights.
     "nasdaqtrader_copyright": "https://www.nasdaqtrader.com/Trader.aspx?id=CopyDisclaimMain",
+    "federal_register_policy": "https://www.federalregister.gov/reader-aids/using-federalregister-gov/legal-status",
+    "federal_register_api": "https://www.federalregister.gov/developers/documentation/api/v1",
     "nasdaqtrader_halt_rss": "https://www.nasdaqtrader.com/Trader.aspx?id=TradeHaltRSS",
     "nasdaqtrader_halt_rss_terms":
         "https://www.nasdaqtrader.com/content/administrationsupport/agreementstrading/THRSSFeedTermsCond.pdf",

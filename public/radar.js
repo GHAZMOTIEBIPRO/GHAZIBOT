@@ -870,8 +870,10 @@
       e.preventDefault();
       const pick = active >= 0 ? items[active] : suggest(index, input.value, 1)[0];
       const typed = String(input.value || "").trim().toUpperCase();
-      // An exact symbol opens as typed; a valid symbol outside every list still opens, marked unverified.
-      if (SYMBOL_RE.test(typed) && (!pick || pick.symbol !== typed) && index.every((it) => it.symbol !== typed)) choose(typed);
+      // A suggestion picked with the arrows wins; otherwise a valid symbol outside every list
+      // opens as typed (marked unverified) rather than the nearest name.
+      if (active >= 0) choose(items[active].symbol);
+      else if (SYMBOL_RE.test(typed) && (!pick || pick.symbol !== typed) && index.every((it) => it.symbol !== typed)) choose(typed);
       else if (pick) choose(pick.symbol); else if (SYMBOL_RE.test(typed)) choose(typed);
     });
   }
@@ -913,7 +915,7 @@
     renderTab();
     if (linked && SYMBOL_RE.test(linked)) openSymbol(linked, { push: false });
     const names = Object.keys(FILES);
-    const loaded = await Promise.all(names.map(load));
+    const loaded = await Promise.all(names.map((k) => load(k)));
     names.forEach((k, i) => { state.data[k] = loaded[i]; });
     state.loaded = true;
     state.events = eventRows(state.data.catalysts);

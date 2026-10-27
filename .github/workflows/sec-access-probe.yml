@@ -50,7 +50,7 @@ jobs:
       - run: python -m pip install "requests>=2.32,<3" "pypdf>=4,<6"
       - name: Official terms pages (relevant clauses only)
         env:
-          PROBE_TERMS_ONLY: nasdaqtrader_copyright
+          PROBE_TERMS_ONLY: federal_register_policy,federal_register_api
         run: python scripts/probe_terms.py
       # Real-data check of the new builders before merge; writes only to /tmp on the runner.
       - name: New builders on real data and link evidence
