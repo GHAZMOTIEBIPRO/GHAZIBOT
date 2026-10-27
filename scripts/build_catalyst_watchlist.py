@@ -223,10 +223,29 @@ SOURCE_FLAG = {"openFDA": "openfda", "SEC EDGAR": "sec_edgar", "ClinicalTrials.g
 # Published source feeds on bot-state whose commit history proves when our pipeline first held an event.
 HISTORY_FILES = {"runtime/public/data/fda_events.json": "fda", "runtime/public/data/clinical_registry.json": "clinical"}
 HISTORY_DAYS = 45
+# Each source's own published feed; its first commit on bot-state is when the source was added.
+SOURCE_FILES = {"openFDA": "runtime/public/data/fda_events.json",
+                "ClinicalTrials.gov": "runtime/public/data/clinical_registry.json",
+                "Federal Register": "runtime/public/data/federal_register.json"}
+
+
+def source_added_at(repo: Path, rev: str = "HEAD") -> dict[str, str]:
+    """Source name -> commit time of the first bot-state version of its feed."""
+    import subprocess
+
+    out = {}
+    for source, path in SOURCE_FILES.items():
+        log = subprocess.run(["git", "-C", str(repo), "log", rev, "--diff-filter=A", "--format=%cI", "--", path],
+                             capture_output=True, text=True, timeout=120, check=False)
+        stamps = [_parse(x) for x in log.stdout.split()]
+        stamps = [x for x in stamps if x]
+        if stamps:
+            out[source] = min(stamps).astimezone(timezone.utc).isoformat()
+    return out
 
 
 def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime,
-               history: dict[str, dict[str, str]] | None = None) -> str:
+               history: dict[str, dict[str, str]] | None = None, added: dict[str, str] | None = None) -> str:
     """When each event first appeared in our published data (our detection, not the event).
 
     Carried from the previous published file once tracking is running, with its
@@ -239,6 +258,7 @@ def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime,
     added or returning is not a detection). Returns the time tracking started.
     """
     history = history or {}
+    added = added or {}
     tracking = (isinstance(previous, dict) and previous.get("first_seen_version") == FIRST_SEEN_VERSION
                 and isinstance(previous.get("events"), list))
     known = ({event_key(old): old for old in previous["events"] if isinstance(old, dict)} if tracking else {})
@@ -248,8 +268,13 @@ def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime,
         old = known.get(key)
         if old is not None and old.get("first_seen_at"):
             item["first_seen_at"] = old["first_seen_at"]
-            item["first_seen_basis"] = old.get("first_seen_basis") if old.get("first_seen_basis") == "SOURCE_HISTORY" \
-                else "CARRIED"
+            basis = old.get("first_seen_basis")
+            item["first_seen_basis"] = basis if basis in {"SOURCE_HISTORY", "SOURCE_ADDED"} else "CARRIED"
+            # A time no later than the first published copy of the event's source is the
+            # source being added, not a detection (repairs a basis lost by an earlier carry).
+            seen, start = _parse(old["first_seen_at"]), _parse(added.get(str(item.get("source"))))
+            if item["first_seen_basis"] == "CARRIED" and seen and start and seen <= start:
+                item["first_seen_basis"] = "SOURCE_ADDED"
             if old.get("first_seen_evidence"):
                 item["first_seen_evidence"] = old["first_seen_evidence"]
         elif key in history:
@@ -418,7 +443,7 @@ def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
           sizes: Any = None, previous: Any = None, fr: Any = None,
-          history: dict[str, dict[str, str]] | None = None) -> dict[str, Any]:
+          history: dict[str, dict[str, str]] | None = None, added: dict[str, str] | None = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
     events: list[dict[str, Any]] = []
@@ -426,7 +451,7 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
                        + fr_catalysts(fr)):
         if cutoff <= item["date"] <= now.date().isoformat():
             events.append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
-    tracking_since = first_seen(events, previous, now, history)
+    tracking_since = first_seen(events, previous, now, history, added)
     for item in events:
         by_symbol.setdefault(item["symbol"], []).append(item)
     entries = []
@@ -550,8 +575,10 @@ def main() -> int:
     previous = _load(args.previous or args.output)
     now = datetime.now(timezone.utc)
     history = source_history(args.source_history, now) if args.source_history else None
+    added = source_added_at(args.source_history) if args.source_history else None
     report = build(_load(args.fda), _load(args.sec), _load(args.prices), now,
-                   _load(args.clinical), _load(args.sizes), previous, _load(args.federal_register), history)
+                   _load(args.clinical), _load(args.sizes), previous, _load(args.federal_register), history,
+                   added)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Catalyst watchlist:", json.dumps({"status": report["status"], "tickers": len(report["watchlist"]),

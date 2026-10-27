@@ -272,6 +272,34 @@ def test_a_source_added_or_returning_is_not_a_detection():
     assert next(e for e in third["events"] if e["symbol"] == "NEWX")["first_seen_basis"] == "THIS_RUN"
 
 
+def test_source_added_survives_the_next_run_and_a_lost_basis_is_repaired_from_history():
+    first = cw.build(FDA, None, None, NOW)
+    added = cw.build(FDA, _sec(), None, NOW + timedelta(hours=1), previous=first)
+    # The next run keeps SOURCE_ADDED (it once became CARRIED, which read as a detection).
+    later = cw.build(FDA, _sec(), None, NOW + timedelta(hours=2), previous=added)
+    rvsp = next(e for e in later["events"] if e["symbol"] == "RVSP")
+    assert rvsp["first_seen_basis"] == "SOURCE_ADDED"
+    assert rvsp["first_seen_at"] == (NOW + timedelta(hours=1)).isoformat()
+    # A published file that already lost it: the source feed's first commit came after that time.
+    for e in later["events"]:
+        if e["symbol"] == "RVSP":
+            e["first_seen_basis"] = "CARRIED"
+    commit = (NOW + timedelta(hours=1, seconds=20)).isoformat()
+    repaired = cw.build(FDA, _sec(), None, NOW + timedelta(hours=3), previous=later, added={"SEC EDGAR": commit})
+    assert next(e for e in repaired["events"] if e["symbol"] == "RVSP")["first_seen_basis"] == "SOURCE_ADDED"
+    # Openfda events detected after their source existed stay as they were.
+    earlier = (NOW - timedelta(days=30)).isoformat()
+    kept = cw.build(FDA, _sec(), None, NOW + timedelta(hours=3), previous=later, added={"openFDA": earlier})
+    assert {e["first_seen_basis"] for e in kept["events"] if e["source"] == "openFDA"} == {"BEFORE_TRACKING"}
+
+
+def test_source_added_time_is_the_first_commit_of_the_feed(tmp_path):
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    _commit(tmp_path, FDA, NOW - timedelta(days=3))
+    _commit(tmp_path, {**FDA, "recalls": []}, NOW - timedelta(days=2))
+    assert cw.source_added_at(tmp_path) == {"openFDA": (NOW - timedelta(days=3)).isoformat()}
+
+
 def test_events_listed_before_tracking_get_no_invented_detection_time():
     # A file from before tracking (no version), even one carrying times from an
     # earlier rule, is a fresh start: no event keeps a detection time from it.
