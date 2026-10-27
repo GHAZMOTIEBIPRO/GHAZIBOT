@@ -78,7 +78,8 @@ jobs:
           python scripts/build_catalyst_watchlist.py --fda $D/fda_events.json --sec $D/sec_filing_pulse.json \
             --clinical $D/clinical_registry.json --sizes $D/issuer_sizes.json \
             --federal-register ../ux-data/federal_register.json --source-history ../state \
-            --previous $D/catalyst_watchlist.json --output ../ux-data/catalyst_watchlist.json
+            --previous $D/catalyst_watchlist.json \
+            --output ../ux-data/preview_catalysts.json
       - name: User tasks (search, reason, source link, chart frame, back, Escape, scroll)
         id: ux
         working-directory: after
@@ -87,7 +88,7 @@ jobs:
           python3 -m http.server 8002 --bind 127.0.0.1 --directory public >/dev/null 2>&1 &
           sleep 1
           U=../ux-data
-          export UX_LOCAL_DATA="nasdaq_listed.json=$U/nasdaq_listed.json,federal_register.json=$U/federal_register.json,catalyst_watchlist.json=$U/catalyst_watchlist.json"
+          export UX_LOCAL_DATA="nasdaq_listed.json=$U/nasdaq_listed.json,federal_register.json=$U/federal_register.json,catalyst_watchlist.json=$U/preview_catalysts.json"
           OUT=../ui-shots node scripts/ux_tasks.cjs
       - name: Store the images on the ui-review branch
         working-directory: after
