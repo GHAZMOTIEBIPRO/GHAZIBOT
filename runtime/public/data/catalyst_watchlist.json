@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.catalyst_watchlist.v1",
- "generated_at": "2026-10-27T18:52:36.636236+00:00",
+ "generated_at": "2026-10-27T19:36:16.414068+00:00",
  "status": "AVAILABLE",
  "window_days": 30,
  "sources": {
@@ -8,7 +8,8 @@
   "sec_edgar": false,
   "sec_status": "UNAVAILABLE",
   "clinicaltrials": true,
-  "clinicaltrials_status": "PARTIAL"
+  "clinicaltrials_status": "PARTIAL",
+  "federal_register": true
  },
  "watchlist": [
   {
@@ -33,8 +34,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": true,
      "impact": "REGULATORY_DECISION",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T23:53:45+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "dbc93a4f4c1377db9bd6c7b8a6430f65b4ff7114"
+     }
     },
     {
      "symbol": "GSK",
@@ -92,8 +97,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-22T18:07:40+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65b6c1cd800589e055cc49426a17b67f7e19ca51"
+     }
     },
     {
      "symbol": "GSK",
@@ -147,6 +156,146 @@
    "reason": "NO_PERMITTED_CURRENT_QUOTE",
    "price_confirmed_signal": false,
    "universe": "KNOWN_LARGE_ISSUER_LIST",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
+   "symbol": "BA",
+   "highest_importance": "MEDIUM",
+   "latest_date": "2026-10-27",
+   "catalyst_count": 13,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "BA",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-27",
+     "importance": "MEDIUM",
+     "label": "FAA: The Boeing Company",
+     "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21864/airworthiness-directives-the-boeing-company-airplanes",
+     "source_updated": "2026-10-27",
+     "issuer": "The Boeing Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "The Boeing Company",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    },
+    {
+     "symbol": "BA",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-27",
+     "importance": "MEDIUM",
+     "label": "FAA: The Boeing Company",
+     "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21863/airworthiness-directives-the-boeing-company-airplanes",
+     "source_updated": "2026-10-27",
+     "issuer": "The Boeing Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "The Boeing Company",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    },
+    {
+     "symbol": "BA",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-27",
+     "importance": "MEDIUM",
+     "label": "FAA: The Boeing Company",
+     "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21862/airworthiness-directives-the-boeing-company-airplanes",
+     "source_updated": "2026-10-27",
+     "issuer": "The Boeing Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "The Boeing Company",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    },
+    {
+     "symbol": "BA",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-23",
+     "importance": "MEDIUM",
+     "label": "FAA: The Boeing Company",
+     "reason": "Airworthiness Directives; The Boeing Company Airplanes; Correction",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21686/airworthiness-directives-the-boeing-company-airplanes-correction",
+     "source_updated": "2026-10-23",
+     "issuer": "The Boeing Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "The Boeing Company",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    },
+    {
+     "symbol": "BA",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-19",
+     "importance": "MEDIUM",
+     "label": "FAA: The Boeing Company",
+     "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21333/airworthiness-directives-the-boeing-company-airplanes",
+     "source_updated": "2026-10-19",
+     "issuer": "The Boeing Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "The Boeing Company",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    },
+    {
+     "symbol": "BA",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-19",
+     "importance": "MEDIUM",
+     "label": "FAA: The Boeing Company",
+     "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21332/airworthiness-directives-the-boeing-company-airplanes",
+     "source_updated": "2026-10-19",
+     "issuer": "The Boeing Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "The Boeing Company",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 59.4,
+   "days_since_latest": 0,
+   "risk_flags": [
+    "توجيه صلاحية طيران إلزامي (FAA)"
+   ],
+   "risk_level": "HIGH",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
    "market_cap": {
     "status": "UNVERIFIED",
     "reason": "no permitted current price"
@@ -337,8 +486,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "MRK",
@@ -354,8 +507,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "MRK",
@@ -371,8 +528,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "MRK",
@@ -637,8 +798,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Amgen",
      "impact": "RESULTS_POSTED_DIRECTION_UNKNOWN",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "AMGN",
@@ -696,8 +861,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Amgen",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "AMGN",
@@ -717,8 +886,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Amgen",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "AMGN",
@@ -738,8 +911,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Amgen",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     }
    ],
    "catalyst_score": 38.1,
@@ -785,8 +962,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "NVS",
@@ -1004,7 +1185,7 @@
    "symbol": "TEVA",
    "highest_importance": "MEDIUM",
    "latest_date": "2026-10-21",
-   "catalyst_count": 9,
+   "catalyst_count": 10,
    "dilution_risk": false,
    "charter_or_reverse_split_review": false,
    "catalysts": [
@@ -1039,8 +1220,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T17:56:15+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "8742f3e110ed8c4bed59a04054f8315fec121f88"
+     }
     },
     {
      "symbol": "TEVA",
@@ -1056,8 +1241,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "TEVA",
@@ -1073,8 +1262,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "TEVA",
@@ -1136,7 +1329,7 @@
    "symbol": "AMRX",
    "highest_importance": "MEDIUM",
    "latest_date": "2026-10-27",
-   "catalyst_count": 16,
+   "catalyst_count": 17,
    "dilution_risk": false,
    "charter_or_reverse_split_review": false,
    "catalysts": [
@@ -1209,8 +1402,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "AMRX",
@@ -1226,8 +1423,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "AMRX",
@@ -1243,8 +1444,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     }
    ],
    "catalyst_score": 28.2,
@@ -1480,6 +1685,74 @@
    "reason": "NO_PERMITTED_CURRENT_QUOTE",
    "price_confirmed_signal": false,
    "universe": "KNOWN_LARGE_ISSUER_LIST",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
+   "symbol": "RTX",
+   "highest_importance": "MEDIUM",
+   "latest_date": "2026-10-19",
+   "catalyst_count": 2,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "RTX",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-19",
+     "importance": "MEDIUM",
+     "label": "FAA: Pratt & Whitney Division",
+     "reason": "Airworthiness Directives; Pratt & Whitney Division Engines",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21290/airworthiness-directives-pratt-and-whitney-division-engines",
+     "source_updated": "2026-10-19",
+     "issuer": "Pratt & Whitney Division",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "DIVISION_OF_LISTED_COMPANY",
+     "listed_company": "RTX Corporation",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    },
+    {
+     "symbol": "RTX",
+     "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-19",
+     "importance": "LOW",
+     "label": "FAA: Pratt & Whitney RTX Corporation",
+     "reason": "Airworthiness Directives; Pratt & Whitney RTX Corporation (Type Certificate Previously Held by Pratt & Whitney Division United Technologies Corporation) Engines",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21298/airworthiness-directives-pratt-and-whitney-rtx-corporation-type-certificate-previously-held-by-pratt",
+     "source_updated": "2026-10-19",
+     "issuer": "Pratt & Whitney RTX Corporation",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "DIVISION_OF_LISTED_COMPANY",
+     "listed_company": "RTX Corporation",
+     "impact": "STATUS_CHANGE",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 22.7,
+   "days_since_latest": 8,
+   "risk_flags": [
+    "توجيه صلاحية طيران إلزامي (FAA)"
+   ],
+   "risk_level": "HIGH",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
    "market_cap": {
     "status": "UNVERIFIED",
     "reason": "no permitted current price"
@@ -2049,8 +2322,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Takeda",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "TAK",
@@ -2070,8 +2347,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Takeda",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "TAK",
@@ -2091,8 +2372,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Takeda",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     }
    ],
    "catalyst_score": 21.5,
@@ -2412,8 +2697,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Biogen",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "BIIB",
@@ -2433,8 +2722,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Biogen",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "BIIB",
@@ -2454,8 +2747,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Biogen",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     }
    ],
    "catalyst_score": 21.2,
@@ -2547,8 +2844,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Jazz Pharmaceuticals",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     },
     {
      "symbol": "JAZZ",
@@ -2577,6 +2878,106 @@
    "reason": "NO_PERMITTED_CURRENT_QUOTE",
    "price_confirmed_signal": false,
    "universe": "KNOWN_LARGE_ISSUER_LIST",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
+   "symbol": "RAMP",
+   "highest_importance": "MEDIUM",
+   "latest_date": "2026-10-23",
+   "catalyst_count": 1,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "RAMP",
+     "kind": "FR_FTC_CONSENT_ORDER",
+     "date": "2026-10-23",
+     "importance": "MEDIUM",
+     "label": "FTC: LiveRamp",
+     "reason": "Publicis and LiveRamp; Analysis of Proposed Agreement Containing Consent Order To Aid Public Comment",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21659/publicis-and-liveramp-analysis-of-proposed-agreement-containing-consent-order-to-aid-public-comment",
+     "source_updated": "2026-10-23",
+     "issuer": "LiveRamp",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "LiveRamp Holdings, Inc.",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 18.2,
+   "days_since_latest": 4,
+   "risk_flags": [
+    "تسوية مقترحة مع FTC"
+   ],
+   "risk_level": "HIGH",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
+   "symbol": "GE",
+   "highest_importance": "MEDIUM",
+   "latest_date": "2026-10-22",
+   "catalyst_count": 1,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "GE",
+     "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-22",
+     "importance": "MEDIUM",
+     "label": "FAA: General Electric Company",
+     "reason": "Airworthiness Directives; General Electric Company Engines",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/22/2026-21590/airworthiness-directives-general-electric-company-engines",
+     "source_updated": "2026-10-22",
+     "issuer": "General Electric Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "GE Aerospace (legal name General Electric Company)",
+     "impact": "RISK",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 17.8,
+   "days_since_latest": 5,
+   "risk_flags": [
+    "توجيه صلاحية طيران إلزامي (FAA)"
+   ],
+   "risk_level": "HIGH",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
    "market_cap": {
     "status": "UNVERIFIED",
     "reason": "no permitted current price"
@@ -2823,8 +3224,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Gilead Sciences",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     }
    ],
    "catalyst_score": 13.8,
@@ -2895,8 +3300,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Exelixis",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     }
    ],
    "catalyst_score": 13.8,
@@ -2942,8 +3351,12 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     },
     {
      "symbol": "ANIP",
@@ -2982,6 +3395,168 @@
    ],
    "catalyst_score": 13.4,
    "days_since_latest": 13,
+   "risk_flags": [],
+   "risk_level": "NORMAL",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
+   "symbol": "IONS",
+   "highest_importance": "MEDIUM",
+   "latest_date": "2026-10-09",
+   "catalyst_count": 1,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "IONS",
+     "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+     "date": "2026-10-09",
+     "importance": "MEDIUM",
+     "label": "FDA: Ionis Pharmaceuticals, Inc.",
+     "reason": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ZANVASTRO (Zilganersen)",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20769/issuance-of-priority-review-voucher-rare-pediatric-disease-product-zanvastro-zilganersen",
+     "source_updated": "2026-10-09",
+     "issuer": "Ionis Pharmaceuticals, Inc.",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "Ionis Pharmaceuticals, Inc.",
+     "impact": "REGULATORY_DECISION",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 12.7,
+   "days_since_latest": 18,
+   "risk_flags": [],
+   "risk_level": "NORMAL",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
+   "symbol": "RARE",
+   "highest_importance": "MEDIUM",
+   "latest_date": "2026-10-06",
+   "catalyst_count": 1,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "RARE",
+     "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+     "date": "2026-10-06",
+     "importance": "MEDIUM",
+     "label": "FDA: Ultragenyx Pharmaceutical Inc.",
+     "reason": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; FAYUVI (rebisufligene etisparvovec-hopf)",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20434/issuance-of-priority-review-voucher-rare-pediatric-disease-product-fayuvi-rebisufligene",
+     "source_updated": "2026-10-06",
+     "issuer": "Ultragenyx Pharmaceutical Inc.",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "Ultragenyx Pharmaceutical Inc.",
+     "impact": "REGULATORY_DECISION",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 11.5,
+   "days_since_latest": 21,
+   "risk_flags": [],
+   "risk_level": "NORMAL",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
+   "symbol": "ERJ",
+   "highest_importance": "LOW",
+   "latest_date": "2026-10-27",
+   "catalyst_count": 2,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "ERJ",
+     "kind": "FR_SPECIAL_CONDITIONS",
+     "date": "2026-10-27",
+     "importance": "LOW",
+     "label": "FAA: Embraer S.A.",
+     "reason": "Special Conditions: Embraer S.A. Model ERJ 190-400 Airplane; Embraer Enhanced Takeoff System",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21907/special-conditions-embraer-sa-model-erj-190-400-airplane-embraer-enhanced-takeoff-system",
+     "source_updated": "2026-10-27",
+     "issuer": "Embraer S.A.",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)",
+     "impact": "STATUS_CHANGE",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    },
+    {
+     "symbol": "ERJ",
+     "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+     "date": "2026-10-01",
+     "importance": "LOW",
+     "label": "FAA: Embraer S.A.",
+     "reason": "Airworthiness Directives; Embraer S.A. Airplanes",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/01/2026-20076/airworthiness-directives-embraer-sa-airplanes",
+     "source_updated": "2026-10-01",
+     "issuer": "Embraer S.A.",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "SAME_ENTITY",
+     "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)",
+     "impact": "STATUS_CHANGE",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 10.7,
+   "days_since_latest": 0,
    "risk_flags": [],
    "risk_level": "NORMAL",
    "price_band": "UNVERIFIED",
@@ -3142,8 +3717,12 @@
      "source_updated": "2026-10-23",
      "issuer": "BioNTech SE",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     }
    ],
    "catalyst_score": 7.4,
@@ -3270,6 +3849,54 @@
    "candidate_status": "PRICE_VERIFICATION_NEEDED"
   },
   {
+   "symbol": "D",
+   "highest_importance": "LOW",
+   "latest_date": "2026-10-27",
+   "catalyst_count": 1,
+   "dilution_risk": false,
+   "charter_or_reverse_split_review": false,
+   "catalysts": [
+    {
+     "symbol": "D",
+     "kind": "FR_ENERGY_REGULATORY_FILING",
+     "date": "2026-10-27",
+     "importance": "LOW",
+     "label": "FERC: Virginia Electric and Power Company",
+     "reason": "Virginia Electric and Power Company d/b/a Dominion Energy Virginia, Allegheny Generating Company, and Bath County Energy, LLC; Notice of Revised Schedule for Environmental Assessment",
+     "source": "Federal Register",
+     "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21868/virginia-electric-and-power-company-dba-dominion-energy-virginia-allegheny-generating-company-and",
+     "source_updated": "2026-10-27",
+     "issuer": "Virginia Electric and Power Company",
+     "match_method": "reviewed_issuer_link",
+     "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+     "listed_company": "Dominion Energy, Inc.",
+     "impact": "STATUS_CHANGE",
+     "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+     "first_seen_basis": "SOURCE_ADDED"
+    }
+   ],
+   "catalyst_score": 7.2,
+   "days_since_latest": 0,
+   "risk_flags": [],
+   "risk_level": "NORMAL",
+   "price_band": "UNVERIFIED",
+   "sub10_confirmed": false,
+   "reason": "NO_PERMITTED_CURRENT_QUOTE",
+   "price_confirmed_signal": false,
+   "universe": "MARKET_CAP_UNVERIFIED",
+   "market_cap": {
+    "status": "UNVERIFIED",
+    "reason": "no permitted current price"
+   },
+   "float_shares": {
+    "status": "UNAVAILABLE"
+   },
+   "public_float_value": null,
+   "shares_outstanding": null,
+   "sec_filer_status": null,
+   "candidate_status": "PRICE_VERIFICATION_NEEDED"
+  },
+  {
    "symbol": "JNJ",
    "highest_importance": "LOW",
    "latest_date": "2026-10-26",
@@ -3346,8 +3973,12 @@
      "source_updated": "2026-10-23",
      "issuer": "Sarepta Therapeutics, Inc.",
      "impact": "ADMINISTRATIVE",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-23T13:21:51+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/clinical_registry.json",
+      "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+     }
     }
    ],
    "catalyst_score": 6.6,
@@ -3393,59 +4024,16 @@
      "match_method": "reviewed_sponsor_alias",
      "new_molecule": false,
      "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
+     "first_seen_at": "2026-10-20T23:58:35+00:00",
+     "first_seen_basis": "SOURCE_HISTORY",
+     "first_seen_evidence": {
+      "file": "runtime/public/data/fda_events.json",
+      "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+     }
     }
    ],
    "catalyst_score": 5.6,
    "days_since_latest": 11,
-   "risk_flags": [],
-   "risk_level": "NORMAL",
-   "price_band": "UNVERIFIED",
-   "sub10_confirmed": false,
-   "reason": "NO_PERMITTED_CURRENT_QUOTE",
-   "price_confirmed_signal": false,
-   "universe": "MARKET_CAP_UNVERIFIED",
-   "market_cap": {
-    "status": "UNVERIFIED",
-    "reason": "no permitted current price"
-   },
-   "float_shares": {
-    "status": "UNAVAILABLE"
-   },
-   "public_float_value": null,
-   "shares_outstanding": null,
-   "sec_filer_status": null,
-   "candidate_status": "PRICE_VERIFICATION_NEEDED"
-  },
-  {
-   "symbol": "BHC",
-   "highest_importance": "LOW",
-   "latest_date": "2026-10-14",
-   "catalyst_count": 1,
-   "dilution_risk": false,
-   "charter_or_reverse_split_review": false,
-   "catalysts": [
-    {
-     "symbol": "BHC",
-     "kind": "FDA_SUPPLEMENT",
-     "date": "2026-10-14",
-     "importance": "LOW",
-     "label": "APRISO",
-     "reason": "other supplement approved",
-     "source": "openFDA",
-     "source_url": "https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022301",
-     "source_updated": "2026-10-26",
-     "issuer": "SALIX",
-     "match_method": "reviewed_sponsor_alias",
-     "new_molecule": false,
-     "impact": "REGULATORY_DECISION_MINOR",
-     "first_seen_at": null,
-     "first_seen_basis": "BEFORE_TRACKING"
-    }
-   ],
-   "catalyst_score": 5.3,
-   "days_since_latest": 13,
    "risk_flags": [],
    "risk_level": "NORMAL",
    "price_band": "UNVERIFIED",
@@ -3550,6 +4138,60 @@
    "impact": "RESULTS_POSTED_DIRECTION_UNKNOWN",
    "first_seen_at": "2026-10-27T14:24:14.167537+00:00",
    "first_seen_basis": "CARRIED"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-27",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21864/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-27",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-27",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21863/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-27",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-27",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21862/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-27",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "VRTX",
@@ -5127,6 +5769,42 @@
    "first_seen_basis": "CARRIED"
   },
   {
+   "symbol": "ERJ",
+   "kind": "FR_SPECIAL_CONDITIONS",
+   "date": "2026-10-27",
+   "importance": "LOW",
+   "label": "FAA: Embraer S.A.",
+   "reason": "Special Conditions: Embraer S.A. Model ERJ 190-400 Airplane; Embraer Enhanced Takeoff System",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21907/special-conditions-embraer-sa-model-erj-190-400-airplane-embraer-enhanced-takeoff-system",
+   "source_updated": "2026-10-27",
+   "issuer": "Embraer S.A.",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "D",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "date": "2026-10-27",
+   "importance": "LOW",
+   "label": "FERC: Virginia Electric and Power Company",
+   "reason": "Virginia Electric and Power Company d/b/a Dominion Energy Virginia, Allegheny Generating Company, and Bath County Energy, LLC; Notice of Revised Schedule for Environmental Assessment",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21868/virginia-electric-and-power-company-dba-dominion-energy-virginia-allegheny-generating-company-and",
+   "source_updated": "2026-10-27",
+   "issuer": "Virginia Electric and Power Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "listed_company": "Dominion Energy, Inc.",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
    "symbol": "HLN",
    "kind": "TRIAL_RESULTS_POSTED",
    "importance": "MEDIUM",
@@ -6383,8 +7061,48 @@
    "source_updated": "2026-10-23",
    "issuer": "Amgen",
    "impact": "RESULTS_POSTED_DIRECTION_UNKNOWN",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-23",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes; Correction",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21686/airworthiness-directives-the-boeing-company-airplanes-correction",
+   "source_updated": "2026-10-23",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "RAMP",
+   "kind": "FR_FTC_CONSENT_ORDER",
+   "date": "2026-10-23",
+   "importance": "MEDIUM",
+   "label": "FTC: LiveRamp",
+   "reason": "Publicis and LiveRamp; Analysis of Proposed Agreement Containing Consent Order To Aid Public Comment",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21659/publicis-and-liveramp-analysis-of-proposed-agreement-containing-consent-order-to-aid-public-comment",
+   "source_updated": "2026-10-23",
+   "issuer": "LiveRamp",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "LiveRamp Holdings, Inc.",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "PFE",
@@ -6455,8 +7173,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Takeda",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "TAK",
@@ -6476,8 +7198,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Takeda",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "TAK",
@@ -6497,8 +7223,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Takeda",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "SRPT",
@@ -6518,8 +7248,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Sarepta Therapeutics, Inc.",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "PFE",
@@ -6539,8 +7273,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Pfizer",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "PFE",
@@ -6560,8 +7298,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Pfizer",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "PFE",
@@ -6581,8 +7323,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Pfizer",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "PFE",
@@ -6602,8 +7348,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Pfizer",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "PFE",
@@ -6623,8 +7373,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Pfizer",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "PFE",
@@ -6644,8 +7398,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Pfizer",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "NVS",
@@ -6665,8 +7423,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Novartis Pharmaceuticals",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "NVS",
@@ -6686,8 +7448,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Novartis Pharmaceuticals",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "NVS",
@@ -6707,8 +7473,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Novartis Pharmaceuticals",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "NVS",
@@ -6728,8 +7498,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Novartis Pharmaceuticals",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "NVS",
@@ -6749,8 +7523,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Novartis Pharmaceuticals",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6770,8 +7548,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6791,8 +7573,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6812,8 +7598,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6833,8 +7623,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6854,8 +7648,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6875,8 +7673,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6896,8 +7698,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6917,8 +7723,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "MRK",
@@ -6938,8 +7748,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Merck Sharp & Dohme LLC",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "JAZZ",
@@ -6959,8 +7773,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Jazz Pharmaceuticals",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "GSK",
@@ -6980,8 +7798,12 @@
    "source_updated": "2026-10-23",
    "issuer": "GlaxoSmithKline",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "GILD",
@@ -7001,8 +7823,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Gilead Sciences",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "EXEL",
@@ -7022,8 +7848,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Exelixis",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BNTX",
@@ -7043,8 +7873,12 @@
    "source_updated": "2026-10-23",
    "issuer": "BioNTech SE",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BMY",
@@ -7064,8 +7898,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Bristol-Myers Squibb",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BMY",
@@ -7085,8 +7923,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Bristol-Myers Squibb",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BMY",
@@ -7106,8 +7948,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Bristol-Myers Squibb",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BMY",
@@ -7127,8 +7973,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Bristol-Myers Squibb",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BIIB",
@@ -7148,8 +7998,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Biogen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BIIB",
@@ -7169,8 +8023,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Biogen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BIIB",
@@ -7190,8 +8048,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Biogen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "BIIB",
@@ -7211,8 +8073,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Biogen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7232,8 +8098,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7253,8 +8123,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7274,8 +8148,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7295,8 +8173,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7316,8 +8198,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7337,8 +8223,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7358,8 +8248,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7379,8 +8273,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AZN",
@@ -7400,8 +8298,12 @@
    "source_updated": "2026-10-23",
    "issuer": "AstraZeneca",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AMGN",
@@ -7421,8 +8323,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Amgen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AMGN",
@@ -7442,8 +8348,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Amgen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AMGN",
@@ -7463,8 +8373,12 @@
    "source_updated": "2026-10-23",
    "issuer": "Amgen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
   },
   {
    "symbol": "AMGN",
@@ -7484,8 +8398,30 @@
    "source_updated": "2026-10-23",
    "issuer": "Amgen",
    "impact": "ADMINISTRATIVE",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T13:21:51+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/clinical_registry.json",
+    "commit": "a070e87c1258b00c86bbb2ff06c9a83df88b2591"
+   }
+  },
+  {
+   "symbol": "GE",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-22",
+   "importance": "MEDIUM",
+   "label": "FAA: General Electric Company",
+   "reason": "Airworthiness Directives; General Electric Company Engines",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/22/2026-21590/airworthiness-directives-general-electric-company-engines",
+   "source_updated": "2026-10-22",
+   "issuer": "General Electric Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "GE Aerospace (legal name General Electric Company)",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "TEVA",
@@ -7518,8 +8454,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": true,
    "impact": "REGULATORY_DECISION",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T23:53:45+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "dbc93a4f4c1377db9bd6c7b8a6430f65b4ff7114"
+   }
   },
   {
    "symbol": "BMY",
@@ -7535,8 +8475,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T23:53:45+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "dbc93a4f4c1377db9bd6c7b8a6430f65b4ff7114"
+   }
   },
   {
    "symbol": "GSK",
@@ -7552,8 +8496,84 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-22T18:07:40+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65b6c1cd800589e055cc49426a17b67f7e19ca51"
+   }
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-19",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21333/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-19",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-19",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21332/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-19",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-19",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21326/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-19",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "RTX",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-19",
+   "importance": "MEDIUM",
+   "label": "FAA: Pratt & Whitney Division",
+   "reason": "Airworthiness Directives; Pratt & Whitney Division Engines",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21290/airworthiness-directives-pratt-and-whitney-division-engines",
+   "source_updated": "2026-10-19",
+   "issuer": "Pratt & Whitney Division",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "DIVISION_OF_LISTED_COMPANY",
+   "listed_company": "RTX Corporation",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "TEVA",
@@ -7569,8 +8589,30 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-23T17:56:15+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "8742f3e110ed8c4bed59a04054f8315fec121f88"
+   }
+  },
+  {
+   "symbol": "RTX",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-19",
+   "importance": "LOW",
+   "label": "FAA: Pratt & Whitney RTX Corporation",
+   "reason": "Airworthiness Directives; Pratt & Whitney RTX Corporation (Type Certificate Previously Held by Pratt & Whitney Division United Technologies Corporation) Engines",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21298/airworthiness-directives-pratt-and-whitney-rtx-corporation-type-certificate-previously-held-by-pratt",
+   "source_updated": "2026-10-19",
+   "issuer": "Pratt & Whitney RTX Corporation",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "DIVISION_OF_LISTED_COMPANY",
+   "listed_company": "RTX Corporation",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "MRK",
@@ -7586,8 +8628,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "MRK",
@@ -7603,8 +8649,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "ACAD",
@@ -7620,8 +8670,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "BMY",
@@ -7637,8 +8691,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "NVS",
@@ -7654,8 +8712,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "PFE",
@@ -7671,8 +8733,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "NVS",
@@ -7688,8 +8754,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "AMRX",
@@ -7705,8 +8775,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "AMRX",
@@ -7722,8 +8796,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "TEVA",
@@ -7739,8 +8817,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "TEVA",
@@ -7756,8 +8838,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "AMRX",
@@ -7773,8 +8859,30 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
+  },
+  {
+   "symbol": "KMI",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "date": "2026-10-15",
+   "importance": "LOW",
+   "label": "FERC: Tennessee Gas Pipeline Company, L.L.C.",
+   "reason": "Tennessee Gas Pipeline Company, L.L.C.; Notice of Request Under Blanket Authorization and Establishing Intervention and Protest Deadline",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/15/2026-21075/tennessee-gas-pipeline-company-llc-notice-of-request-under-blanket-authorization-and-establishing",
+   "source_updated": "2026-10-15",
+   "issuer": "Tennessee Gas Pipeline Company, L.L.C.",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "listed_company": "Kinder Morgan, Inc.",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "MRK",
@@ -7790,8 +8898,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "BHC",
@@ -7807,8 +8919,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "TAK",
@@ -7824,8 +8940,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "ABBV",
@@ -7841,8 +8961,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "TAK",
@@ -7858,8 +8982,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "PFE",
@@ -7875,8 +9003,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "ANIP",
@@ -7892,8 +9024,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "AMRX",
@@ -7909,8 +9045,12 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
   },
   {
    "symbol": "VTRS",
@@ -7943,8 +9083,48 @@
    "match_method": "reviewed_sponsor_alias",
    "new_molecule": false,
    "impact": "REGULATORY_DECISION_MINOR",
-   "first_seen_at": null,
-   "first_seen_basis": "BEFORE_TRACKING"
+   "first_seen_at": "2026-10-20T23:58:35+00:00",
+   "first_seen_basis": "SOURCE_HISTORY",
+   "first_seen_evidence": {
+    "file": "runtime/public/data/fda_events.json",
+    "commit": "65aa4d34bd23918fbc73502cdca9bf753f6ee48a"
+   }
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-14",
+   "importance": "LOW",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/14/2026-21009/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-14",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "XEL",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "date": "2026-10-14",
+   "importance": "LOW",
+   "label": "FERC: Public Service Company of Colorado",
+   "reason": "Public Service Company of Colorado; Notice of Availability of Environmental Assessment",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/14/2026-20999/public-service-company-of-colorado-notice-of-availability-of-environmental-assessment",
+   "source_updated": "2026-10-14",
+   "issuer": "Public Service Company of Colorado",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "listed_company": "Xcel Energy Inc.",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "LLY",
@@ -7981,6 +9161,42 @@
    "first_seen_basis": "BEFORE_TRACKING"
   },
   {
+   "symbol": "IONS",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "date": "2026-10-09",
+   "importance": "MEDIUM",
+   "label": "FDA: Ionis Pharmaceuticals, Inc.",
+   "reason": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ZANVASTRO (Zilganersen)",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20769/issuance-of-priority-review-voucher-rare-pediatric-disease-product-zanvastro-zilganersen",
+   "source_updated": "2026-10-09",
+   "issuer": "Ionis Pharmaceuticals, Inc.",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "Ionis Pharmaceuticals, Inc.",
+   "impact": "REGULATORY_DECISION",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "AMRX",
+   "kind": "FR_APPROVAL_WITHDRAWN",
+   "date": "2026-10-09",
+   "importance": "LOW",
+   "label": "FDA: Amneal Pharmaceuticals of New York, LLC",
+   "reason": "Amneal Pharmaceuticals of New York, LLC; Withdrawal of Approval of Abbreviated New Drug Application for Celecoxib Capsules, 50 Milligrams, 100 Milligrams, 200 Milligrams, and 400 Milligrams",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20758/amneal-pharmaceuticals-of-new-york-llc-withdrawal-of-approval-of-abbreviated-new-drug-application",
+   "source_updated": "2026-10-09",
+   "issuer": "Amneal Pharmaceuticals of New York, LLC",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "REVIEWED_FDA_SPONSOR_ALIAS",
+   "listed_company": null,
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
    "symbol": "AZN",
    "kind": "FDA_APPROVAL",
    "date": "2026-10-08",
@@ -7996,6 +9212,24 @@
    "impact": "REGULATORY_DECISION",
    "first_seen_at": null,
    "first_seen_basis": "BEFORE_TRACKING"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-08",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20680/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-08",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "AMRX",
@@ -8030,6 +9264,24 @@
    "impact": "REGULATORY_DECISION_MINOR",
    "first_seen_at": null,
    "first_seen_basis": "BEFORE_TRACKING"
+  },
+  {
+   "symbol": "CPK",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "date": "2026-10-08",
+   "importance": "LOW",
+   "label": "FERC: Eastern Shore Natural Gas Company",
+   "reason": "Eastern Shore Natural Gas Company; Notice of Application and Establishing Intervention Deadline",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20659/eastern-shore-natural-gas-company-notice-of-application-and-establishing-intervention-deadline",
+   "source_updated": "2026-10-08",
+   "issuer": "Eastern Shore Natural Gas Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "listed_company": "Chesapeake Utilities Corporation",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "AMRX",
@@ -8151,6 +9403,24 @@
    "first_seen_basis": "BEFORE_TRACKING"
   },
   {
+   "symbol": "RARE",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "date": "2026-10-06",
+   "importance": "MEDIUM",
+   "label": "FDA: Ultragenyx Pharmaceutical Inc.",
+   "reason": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; FAYUVI (rebisufligene etisparvovec-hopf)",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20434/issuance-of-priority-review-voucher-rare-pediatric-disease-product-fayuvi-rebisufligene",
+   "source_updated": "2026-10-06",
+   "issuer": "Ultragenyx Pharmaceutical Inc.",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "Ultragenyx Pharmaceutical Inc.",
+   "impact": "REGULATORY_DECISION",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
    "symbol": "BAX",
    "kind": "FDA_SUPPLEMENT",
    "date": "2026-10-06",
@@ -8202,6 +9472,42 @@
    "first_seen_basis": "BEFORE_TRACKING"
   },
   {
+   "symbol": "TEVA",
+   "kind": "FR_APPROVAL_WITHDRAWN",
+   "date": "2026-10-06",
+   "importance": "LOW",
+   "label": "FDA: Teva Pharmaceuticals USA, Inc.",
+   "reason": "Teva Pharmaceuticals USA, Inc., et al.; Withdrawal of Approval of 15 Abbreviated New Drug Applications; Correction",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20460/teva-pharmaceuticals-usa-inc-et-al-withdrawal-of-approval-of-15-abbreviated-new-drug-applications",
+   "source_updated": "2026-10-06",
+   "issuer": "Teva Pharmaceuticals USA, Inc.",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "listed_company": "Teva Pharmaceutical Industries Ltd. (American Depositary Shares on NYSE)",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "WMB",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "date": "2026-10-06",
+   "importance": "LOW",
+   "label": "FERC: Transcontinental Gas Pipe Line Company, LLC",
+   "reason": "Transcontinental Gas Pipe Line Company, LLC; Notice of Scoping Period Requesting Comments on Environmental Issues for the Proposed Leidy Access Expansion Project",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20450/transcontinental-gas-pipe-line-company-llc-notice-of-scoping-period-requesting-comments-on",
+   "source_updated": "2026-10-06",
+   "issuer": "Transcontinental Gas Pipe Line Company, LLC",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "listed_company": "The Williams Companies, Inc.",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
    "symbol": "ANIP",
    "kind": "FDA_SUPPLEMENT",
    "date": "2026-10-05",
@@ -8251,6 +9557,24 @@
    "impact": "REGULATORY_DECISION_MINOR",
    "first_seen_at": null,
    "first_seen_basis": "BEFORE_TRACKING"
+  },
+  {
+   "symbol": "HMC",
+   "kind": "FR_SPECIAL_CONDITIONS",
+   "date": "2026-10-05",
+   "importance": "LOW",
+   "label": "FAA: Honda Aircraft Company LLC",
+   "reason": "Special Conditions: Honda Aircraft Company LLC Model HA-480 Airplane; High Altitude Operation",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20350/special-conditions-honda-aircraft-company-llc-model-ha-480-airplane-high-altitude-operation",
+   "source_updated": "2026-10-05",
+   "issuer": "Honda Aircraft Company LLC",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "listed_company": "Honda Motor Co., Ltd. (American Depositary Shares on NYSE)",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "HLN",
@@ -8321,6 +9645,42 @@
    "first_seen_basis": "BEFORE_TRACKING"
   },
   {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-01",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/01/2026-20120/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-10-01",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "ERJ",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-10-01",
+   "importance": "LOW",
+   "label": "FAA: Embraer S.A.",
+   "reason": "Airworthiness Directives; Embraer S.A. Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/01/2026-20076/airworthiness-directives-embraer-sa-airplanes",
+   "source_updated": "2026-10-01",
+   "issuer": "Embraer S.A.",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)",
+   "impact": "STATUS_CHANGE",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
    "symbol": "AMRX",
    "kind": "FDA_RECALL",
    "date": "2026-09-30",
@@ -8370,6 +9730,24 @@
    "impact": "REGULATORY_DECISION_MINOR",
    "first_seen_at": null,
    "first_seen_basis": "BEFORE_TRACKING"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-09-29",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19956/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-09-29",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
   },
   {
    "symbol": "MRK",
@@ -8457,6 +9835,42 @@
    "first_seen_basis": "BEFORE_TRACKING"
   },
   {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-09-28",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/09/28/2026-19754/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-09-28",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-09-28",
+   "importance": "MEDIUM",
+   "label": "FAA: The Boeing Company",
+   "reason": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/09/28/2026-19751/airworthiness-directives-the-boeing-company-airplanes",
+   "source_updated": "2026-09-28",
+   "issuer": "The Boeing Company",
+   "match_method": "reviewed_issuer_link",
+   "link_relation": "SAME_ENTITY",
+   "listed_company": "The Boeing Company",
+   "impact": "RISK",
+   "first_seen_at": "2026-10-27T19:36:16.414068+00:00",
+   "first_seen_basis": "SOURCE_ADDED"
+  },
+  {
    "symbol": "PFE",
    "kind": "FDA_SUPPLEMENT",
    "date": "2026-09-28",
@@ -8510,19 +9924,32 @@
  ],
  "first_seen_version": 2,
  "first_seen_tracking_since": "2026-10-26T04:54:07.759765+00:00",
+ "first_seen_history": {
+  "examined": true,
+  "window_days": 45,
+  "events_dated": 76
+ },
  "event_time_fields": {
   "date": "event date (FDA action date; registry update date for ClinicalTrials.gov)",
   "source_updated": "openFDA dataset update date, or the registry record's update date; not a per-event publication time for openFDA",
-  "first_seen_at": "first time this list showed the event; null = listed before tracking began"
+  "first_seen_at": "first time our published data held the event (this list, or the source feed's bot-state commit for SOURCE_HISTORY); null = before tracking and not provable",
+  "first_seen_basis": "THIS_RUN | CARRIED | SOURCE_HISTORY (commit in first_seen_evidence) | SOURCE_ADDED (source new or returning in this run; not a detection) | BEFORE_TRACKING"
  },
  "market_cap_unverified_candidates": [
+  "BA",
   "AMRX",
+  "RTX",
   "INSM",
+  "RAMP",
+  "GE",
   "ANIP",
+  "IONS",
+  "RARE",
+  "ERJ",
   "CRSP",
   "SUPN",
-  "ACAD",
-  "BHC"
+  "D",
+  "ACAD"
  ],
  "public_float_ranked": [],
  "list_review": [],
@@ -8548,7 +9975,8 @@
   "reliability": {
    "exact_normalised_name": 1.0,
    "issuer_cik": 1.0,
-   "reviewed_sponsor_alias": 0.9
+   "reviewed_sponsor_alias": 0.9,
+   "reviewed_issuer_link": 0.9
   },
   "top_n": 3,
   "tie_break": "fewer risk flags first",
