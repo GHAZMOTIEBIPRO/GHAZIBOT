@@ -10,6 +10,7 @@ on:
       - "scripts/probe_sec_access.py"
       - "scripts/probe_terms.py"
       - "scripts/probe_free_sources.py"
+      - "scripts/probe_round3.py"
       - ".github/workflows/sec-access-probe.yml"
 
 permissions:
@@ -45,10 +46,10 @@ jobs:
       - run: python -m pip install "requests>=2.32,<3" "pypdf>=4,<6"
       - name: Official terms pages (relevant clauses only)
         env:
-          PROBE_TERMS_ONLY: nasdaqtrader_terms,fmp_terms
+          PROBE_TERMS_ONLY: nasdaqtrader_copyright
         run: python scripts/probe_terms.py
-      - name: Free sources by category (one small request each)
-        run: python scripts/probe_free_sources.py
+      - name: Product terms and candidate official sources (one request per URL)
+        run: python scripts/probe_round3.py
       - name: SEC status codes and refusal titles only
         run: python scripts/probe_sec_access.py
       # Presence booleans only (true/false); no secret value is ever read here.
