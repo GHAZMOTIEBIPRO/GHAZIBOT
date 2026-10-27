@@ -83,6 +83,7 @@ jobs:
           --clinical state/runtime/public/data/clinical_registry.json
           --sizes state/runtime/public/data/issuer_sizes.json
           --federal-register state/runtime/public/data/federal_register.json
+          --source-history state
           --output state/runtime/public/data/catalyst_watchlist.json
       - name: Install shared Telegram transport dependency
         run: pip install "requests>=2.32,<3.0"

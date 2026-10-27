@@ -63,17 +63,23 @@ def main() -> int:
             at = at if at >= 0 else body.lower().find("voucher")
             print("  PRV", e["document_number"], e["companies"], "|", body[max(0, at - 200):at + 300])
     table = json.loads((ROOT / "data" / "issuer_links.json").read_text(encoding="utf-8"))
+    listed = {r[0]: r[1] for r in nl.get("rows", [])} if nl else {}
     for link in table["links"]:
-        time.sleep(1)
         title = link["evidence_url"].rsplit("/", 1)[-1]
-        try:
-            r = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/html/{title}", timeout=30,
-                             headers={"User-Agent": "GHAZI-RADAR-link-review/1.0 (github.com/GHAZMOTIEBIPRO/GHAZIBOT)"})
-            text = r.text if r.ok else ""
-        except requests.RequestException as exc:
-            text, r = "", type("R", (), {"status_code": type(exc).__name__})()
+        status, text = "not tried", ""
+        for wait in (2, 8, 20):              # bounded retry on rate limiting
+            time.sleep(wait)
+            try:
+                r = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/html/{title}", timeout=30,
+                                 headers={"User-Agent": "GHAZI-RADAR-link-review/1.0 (github.com/GHAZMOTIEBIPRO/GHAZIBOT)"})
+                status, text = r.status_code, (r.text if r.ok else "")
+            except requests.RequestException as exc:
+                status, text = type(exc).__name__, ""
+            if status != 429:
+                break
         found = {t: (t in text) for t in link["evidence_check"]}
-        print("  EVIDENCE", link["ticker"], link["relation"], r.status_code, json.dumps(found))
+        in_nasdaq = listed.get(link["ticker"]) if link.get("exchange") == "NASDAQ" else "n/a (not Nasdaq-listed)"
+        print("  EVIDENCE", link["ticker"], link["relation"], status, json.dumps(found), "| nasdaqlisted:", in_nasdaq)
     return 0
 
 

@@ -1,5 +1,8 @@
 """Catalyst watchlist: official events only, no under-$10 claim without a permitted current quote."""
 import importlib.util
+import json
+import os
+import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -217,6 +220,56 @@ def test_events_keep_event_date_source_update_and_first_detection_apart():
     assert kept["NEWX"]["first_seen_at"] == (NOW + timedelta(hours=6)).isoformat()
     assert kept["NEWX"]["first_seen_basis"] == "CARRIED"
     assert third["first_seen_tracking_since"] == NOW.isoformat()
+
+
+def _commit(repo, data, when):
+    path = repo / "runtime" / "public" / "data" / "fda_events.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data), encoding="utf-8")
+    env = {**os.environ, "GIT_COMMITTER_DATE": when.isoformat(), "GIT_AUTHOR_DATE": when.isoformat(),
+           "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
+           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.invalid"}
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, env=env)
+    subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "state"], check=True, env=env)
+    return subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], check=True, capture_output=True,
+                          text=True).stdout.strip()
+
+
+def test_detection_time_recovered_only_from_source_feed_history(tmp_path):
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    only_abcd = {"approvals": FDA["approvals"][:1], "recalls": []}
+    _commit(tmp_path, only_abcd, NOW - timedelta(days=3))                 # oldest version: a baseline
+    sha = _commit(tmp_path, FDA, NOW - timedelta(days=2))                  # ACAD and AMRX appear here
+    history = cw.source_history(tmp_path, NOW)
+    report = cw.build(FDA, None, None, NOW, history=history)
+    ev = {e["symbol"]: e for e in report["events"]}
+    # In the oldest version: possibly older than it, so no time is claimed.
+    assert ev["ABCD"]["first_seen_at"] is None and ev["ABCD"]["first_seen_basis"] == "BEFORE_TRACKING"
+    # Appeared in a later commit: that commit is the evidence of first detection.
+    assert ev["ACAD"]["first_seen_basis"] == "SOURCE_HISTORY"
+    assert ev["ACAD"]["first_seen_at"] == (NOW - timedelta(days=2)).isoformat()
+    assert ev["ACAD"]["first_seen_evidence"] == {"file": "runtime/public/data/fda_events.json", "commit": sha}
+    assert ev["ACAD"]["date"] == "2026-10-15" and report["first_seen_tracking_since"] == NOW.isoformat()
+    assert report["first_seen_history"]["events_dated"] == 2
+    # Carried later with its basis and evidence; a saved time is never replaced by history.
+    later = cw.build(FDA, None, None, NOW + timedelta(hours=1), previous=report,
+                     history={k: {**v, "at": "2000-01-01T00:00:00+00:00"} for k, v in history.items()})
+    kept = {e["symbol"]: e for e in later["events"]}
+    assert kept["ACAD"]["first_seen_at"] == ev["ACAD"]["first_seen_at"]
+    assert kept["ACAD"]["first_seen_basis"] == "SOURCE_HISTORY" and kept["ACAD"]["first_seen_evidence"]["commit"] == sha
+
+
+def test_a_source_added_or_returning_is_not_a_detection():
+    first = cw.build(FDA, None, None, NOW)
+    sec_now = cw.build(FDA, _sec(), None, NOW + timedelta(hours=1), previous=first)
+    ev = {(e["symbol"], e["source"]): e for e in sec_now["events"]}
+    assert ev[("RVSP", "SEC EDGAR")]["first_seen_basis"] == "SOURCE_ADDED"
+    assert ev[("RVSP", "SEC EDGAR")]["first_seen_at"] == (NOW + timedelta(hours=1)).isoformat()
+    newer = {**FDA, "approvals": FDA["approvals"] + [
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-21", "ticker": "NEWX", "importance": "HIGH",
+         "products": ["LATER"]}]}
+    third = cw.build(newer, _sec(), None, NOW + timedelta(hours=2), previous=sec_now)
+    assert next(e for e in third["events"] if e["symbol"] == "NEWX")["first_seen_basis"] == "THIS_RUN"
 
 
 def test_events_listed_before_tracking_get_no_invented_detection_time():
