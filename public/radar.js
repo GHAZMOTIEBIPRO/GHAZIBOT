@@ -351,6 +351,17 @@
     return out;
   }
 
+  // known -> with official news -> bars fetched -> analysed -> qualified, each with its own count or reason.
+  const FUNNEL_REASON = { DATA_USE_PERMISSION_REQUIRED: "بانتظار إعداد مسار البيانات الخاص",
+    ACCOUNT_CREDENTIALS_NOT_CONFIGURED: "مفاتيح الحساب غير مضبوطة", NO_CLOSED_SESSION: "لا جلسة مكتملة بعد" };
+  function funnelLine(fn) {
+    const c = (k) => (fn[k] && Number.isFinite(fn[k].count) ? n(fn[k].count) : "—");
+    const bars = fn.bars_fetched || {};
+    const why = bars.count ? "" : ` (${FUNNEL_REASON[bars.status] || "لم تُجلب"})`;
+    return `معروفة ${c("known_symbols")} · لها أخبار ${c("with_official_news")} · جُلبت شموعها ${c("bars_fetched")}${why}` +
+      " · المؤهلة: تُقيَّم في المسح الخاص";
+  }
+
   // Share classes make securities and companies different counts (GOOGL and GOOG are one company).
   function companyCounts(dir) {
     const rows = dir && Array.isArray(dir.symbols) ? dir.symbols : [];
@@ -370,7 +381,7 @@
 
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
-    foldAr, nasdaqMap, flagRows, companyCounts, OPTION_DATA_KINDS, GAP_AR };
+    foldAr, nasdaqMap, flagRows, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -463,6 +474,9 @@
       const week = state.events.filter((e) => e.info.group !== "admin" && Date.now() - Date.parse(e.date + "T00:00:00Z") <= 7 * 864e5);
       add("أحداث رسمية مهمة خلال 7 أيام", n(week.length), "حُدّثت " + (ago(catalysts.generated_at, Date.now()) || "—"));
     }
+    // Price-analysis path, stage by stage: a symbol directory is not a price scan.
+    const fn = plan && plan.analysis_funnel;
+    if (fn) add("رموز حُللت سعريًا", n((fn.analysed || {}).count || 0), funnelLine(fn));
     if (!facts.children.length) facts.append(el("li", "gr-fact gr-muted", "ملخص السوق غير متاح الآن؛ تعذّر تحميل الملفات المنشورة."));
   }
   function renderTape() {

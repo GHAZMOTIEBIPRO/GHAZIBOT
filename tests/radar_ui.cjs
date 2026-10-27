@@ -150,4 +150,9 @@ assert.deepStrictEqual(R.optionMath({ type: "CALL", strike: 200, premium: 3.5, c
 assert.strictEqual(R.optionMath({ type: "PUT", strike: 200, premium: 3.5, contracts: 1 }).breakeven, 196.5);
 assert.strictEqual(R.optionMath({ type: "CALL", strike: 0, premium: 1 }), null);
 
+// --- price-analysis funnel: counts per stage, reason when bars are not fetched ---
+const fl = R.funnelLine({ known_symbols: { count: 5615 }, with_official_news: { count: 120 },
+  bars_fetched: { count: 0, status: "DATA_USE_PERMISSION_REQUIRED" }, analysed: { count: 0 }, qualified: { count: null } });
+assert.ok(/معروفة .*لها أخبار .*جُلبت شموعها 0 \(بانتظار إعداد مسار البيانات الخاص\)/.test(fl), fl);
+
 console.log("radar_ui ok");

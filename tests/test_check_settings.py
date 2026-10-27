@@ -59,6 +59,10 @@ def test_alpaca_keys_are_not_called_without_the_owner_attestation(tmp_path):
     assert report["settings"]["ALPACA_API_KEY"]["received"] == "PRESENT"
     assert report["settings"]["TELEGRAM_OWNER_CHAT_ID"]["received"] == "ABSENT_OR_NOT_PASSED"
     assert report["settings"]["ALPACA_INTERNAL_DATA_USE_AUTHORIZED"]["received"] == "UNSET"
+    # A broadcast chat found by the resolve step is not the secret being set.
+    resolved = cs.check({"TELEGRAM_CHAT_ID": "-100", "TELEGRAM_CHAT_ID_SECRET_SET": "false"}, tmp_path / "x.json", Spy({}))
+    assert resolved["settings"]["TELEGRAM_CHAT_ID"]["received"] == "ABSENT_OR_NOT_PASSED"
+    assert resolved["checks"]["broadcast_resolved"] is True
 
 
 def test_private_workflows_pass_the_canonical_names_and_resolve_the_broadcast_chat():

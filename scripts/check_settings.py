@@ -45,6 +45,11 @@ TG = "https://api.telegram.org/bot{token}/{method}"
 
 def value_class(name: str, env: dict[str, str]) -> str:
     raw = (env.get(name) or "").strip()
+    # The resolve step exports a found broadcast chat as TELEGRAM_CHAT_ID; whether
+    # the secret itself exists is recorded before that step.
+    flag = (env.get(f"{name}_SECRET_SET") or "").strip().lower()
+    if CANON[name][0] == "secret" and flag in ("true", "false"):
+        return "PRESENT" if flag == "true" else "ABSENT_OR_NOT_PASSED"
     if CANON[name][0] == "secret":
         return "PRESENT" if raw else "ABSENT_OR_NOT_PASSED"
     if not raw:
