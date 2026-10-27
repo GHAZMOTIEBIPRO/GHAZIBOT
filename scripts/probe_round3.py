@@ -51,10 +51,20 @@ def nasdaqtrader():
         if r is None or r.status_code != 200:
             continue
         lines = text_lines(r.text) if "<" in r.text[:500] else r.text.splitlines()
-        for line in lines[:260]:
-            print("  |", line[:400])
+        # The site menu fills the first few hundred lines; the product notices sit lower down.
+        notice = re.compile(r"(created, collected|without restriction|licens|retain|terms of serv|copyright|"
+                            r"events data|fund network|symbol director|ftp|nasdaqlisted|otherlisted|daily list|"
+                            r"security status|ex-date|when (issued|distributed)|ai |crawl|train|bot)", re.I)
+        print("  lines:", len(lines))
+        for i, line in enumerate(lines):
+            if notice.search(line) and len(line) > 25:
+                print(f"  [{i}] |", line[:1200])
+        if url.endswith("ai.txt"):
+            for line in lines[:80]:
+                print("  ai |", line[:300])
         links = sorted(set(re.findall(r'href="([^"]+)"', r.text, re.I)))
-        print("  LINKS:", json.dumps([x for x in links if not x.startswith("#")][:160]))
+        print("  DATA LINKS:", json.dumps([x for x in links if re.search(r"(symdir|symboldirectory|dynamic|\.txt|"
+                                                                          r"dailylist|ftp|rss|legal|terms)", x, re.I)]))
 
 
 def federal_register():
