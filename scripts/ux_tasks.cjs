@@ -59,9 +59,13 @@ async function run(device) {
     return page.$$eval("#gr-suggest li b", (els) => els.map((e) => e.textContent));
   };
 
-  await task(device, "find a stock by symbol (keyboard only)", async () => {
-    const list = await search("NVD");
+  await task(device, "find a stock by company name (keyboard only)", async () => {
+    // By name: with the Nasdaq directory loaded, a partial symbol such as "NVD" is itself a listed symbol.
+    const list = await search("nvidia");
     must(list[0] === "NVDA", "first suggestion " + list[0]);
+    const exact = await search("NVD");
+    must(exact[0] === "NVD", "an exact listed symbol ranks first: " + exact[0]);
+    await page.fill("#gr-q", ""); await search("nvidia");
     await page.keyboard.press("ArrowDown"); await page.keyboard.press("Enter");
     await page.waitForFunction(() => document.getElementById("gr-d-symbol").textContent === "NVDA");
     return { suggestions: list.slice(0, 3) };

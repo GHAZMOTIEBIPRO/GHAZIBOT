@@ -747,9 +747,48 @@
    "api_key_required": false,
    "cost_note": "Prior written consent of Nasdaq required; gate NASDAQTRADER_AUTOMATION_APPROVED closed.",
    "rate_limit_note": "Not stated in log.",
-   "summary_ar": "شروط NasdaqTrader تمنع نسخ المحتوى وتقاريره أو عرضها أو تخزينها أو استخدامها دون موافقة Nasdaq الكتابية المسبقة؛ دليل الرموز وتغذية الإيقافات متوقفان.",
+   "summary_ar": "شروط NasdaqTrader العامة تقيّد محتوى الموقع، لكن فقرة «Nasdaq Events Data» تتيح ملف «Nasdaq Listed» وتحديثات الحالة وEx-Date وWD/WI دون قيد؛ هذا الملف وحده مفعّل. ملف Fund Network مقيّد بنصه، وباقي الملفات (otherlisted وmpidlist وملفات الخيارات) غير محسومة. تغذية الإيقافات متوقفة.",
    "evidence_run": "39521600490",
-   "mirrors_note": "github.com/datasets/nasdaq-listings and nyse-other-listings copy these files (their datapackage names nasdaqtrader.com as the source and their READMEs defer to its copyright notice); the maintainers' PDDL cannot grant rights Nasdaq keeps, so the mirrors follow this gate (probe run 40266602180). The symbol look-up page states Nasdaq and its licensors \"retain all right, title and interest information including, but not limited to the symbols\"."
+   "mirrors_note": "github.com/datasets/nasdaq-listings and nyse-other-listings copy these files (their datapackage names nasdaqtrader.com as the source and their READMEs defer to its copyright notice); the maintainers' PDDL cannot grant rights Nasdaq keeps, so the mirrors follow this gate (probe run 40266602180). The symbol look-up page states Nasdaq and its licensors \"retain all right, title and interest information including, but not limited to the symbols\".",
+   "products": {
+    "nasdaqtrader_nasdaq_listed": {
+     "status": "GRANTED",
+     "files": [
+      "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt"
+     ],
+     "evidence": "\"Nasdaq Events Data: The data related to Nasdaq Security Status Updates, Nasdaq Ex-Date, When Distributed/When Issued, and Nasdaq Listed ... is provided as it exists in Nasdaq's records without restriction or any further licensing requirement\" (Symbol Look-Up page)",
+     "evidence_run": "40562010708"
+    },
+    "nasdaqtrader_other_listed": {
+     "status": "UNRESOLVED",
+     "files": [
+      "otherlisted.txt"
+     ],
+     "question": "Does 'Nasdaq Listed' in the Events Data notice cover the Other-Exchange Listed file, or does the site copyright notice govern it?"
+    },
+    "nasdaqtrader_market_participants": {
+     "status": "UNRESOLVED",
+     "files": [
+      "mpidlist"
+     ],
+     "question": "Is the market participant list Events Data or general site Content?"
+    },
+    "nasdaqtrader_options_files": {
+     "status": "UNRESOLVED",
+     "files": [
+      "phlxlistedstrikeswithoptionids.zip"
+     ],
+     "question": "Are the options listing files event records without licence, or market data under an agreement?"
+    },
+    "nasdaqtrader_fund_network": {
+     "status": "RESTRICTED",
+     "files": [
+      "mfundslist"
+     ],
+     "evidence": "\"Nasdaq and its licensors retain all right, title and interest ... internal non-commercial usage only unless separately licensed from Nasdaq\""
+    }
+   },
+   "products_note": "Per-product notices override the general site Content clause only for the products they name; the gate NASDAQTRADER_AUTOMATION_APPROVED stays closed for everything else."
   },
   "tradingview_widgets": {
    "name": "TradingView widgets / charts",
@@ -1623,6 +1662,52 @@
    "scope_note": "Current members only: not point-in-time membership, not for historical tests; no prices, market caps or index weights. Membership, names, sectors and CIKs are the only fields used.",
    "summary_ar": "قائمة أعضاء S&P 500 الحاليين (الاسم والقطاع وCIK) بترخيص PDDL وأصلها ويكيبيديا (CC BY-SA)؛ تُذكر المصادر، ولا تصلح لاختبار تاريخي.",
    "evidence_run": "40266602180"
+  },
+  "federal_register": {
+   "name": "Federal Register API (federalregister.gov)",
+   "category": "government",
+   "official_url": "https://www.federalregister.gov/developers/documentation/api/v1",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "\"FederalRegister.gov APIs do not require API keys; all you need is an HTTP client or browser.\" (API documentation)"
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. The site's legal-status page returned 404 in run 40566784620, so the basis is the statute, not a site licence page."
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. The site's legal-status page returned 404 in run 40566784620, so the basis is the statute, not a site licence page."
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. The site's legal-status page returned 404 in run 40566784620, so the basis is the statute, not a site licence page."
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. The site's legal-status page returned 404 in run 40566784620, so the basis is the statute, not a site licence page."
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "\"FederalRegister.gov APIs do not require API keys; all you need is an HTTP client or browser.\" (API documentation)"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. The site's legal-status page returned 404 in run 40566784620, so the basis is the statute, not a site licence page."
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "U.S. government works are not subject to copyright: 17 U.S.C. 105. The site's legal-status page returned 404 in run 40566784620, so the basis is the statute, not a site licence page."
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "No key. The FederalRegister.gov edition is not the official legal edition; \"This site displays a prototype of a 'Web 2.0' version of the daily Federal Register ... [it does not] provide legal notice to the public or judicial notice to the courts\" (API documentation page)",
+   "rate_limit_note": "Not stated in log; the builder waits 0.5 s between requests and reads at most 3 pages per agency.",
+   "summary_ar": "وثائق Federal Register أعمال حكومية أمريكية لا تخضع لحقوق النسخ (17 U.S.C. 105)، والـ API بلا مفتاح. نسخة الموقع ليست النسخة القانونية الرسمية. نربط الشركات بالرموز عبر جدول مراجَع فقط.",
+   "evidence_run": "40566784620"
   }
  },
  "full_text_run": "39529567535"
