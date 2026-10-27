@@ -22,7 +22,7 @@ OUT.mkdir(exist_ok=True)
 
 def run(script: str, out: Path) -> dict:
     r = subprocess.run([sys.executable, str(ROOT / "scripts" / script), "--output", str(out)],
-                       capture_output=True, text=True, timeout=300)
+                       capture_output=True, text=True, timeout=300, check=False)
     print(f"== {script}: exit {r.returncode}\n{r.stdout[-1500:]}{r.stderr[-800:]}")
     return json.loads(out.read_text(encoding="utf-8")) if out.is_file() else {}
 
@@ -41,8 +41,27 @@ def main() -> int:
         for e in fr["linked"]:
             print("  LINKED", e["date"], e["agency"], e["kind"], "|", e["title"][:110], "->",
                   [(x["name"], x["ticker"], x["relation"]) for x in e["links"]], e["source_url"])
-        for e in fr["company_unlinked"][:40]:
-            print("  UNLINKED", e["date"], e["agency"], e["kind"], [(u["name"], u["reason"]) for u in e["unmatched"]])
+        for e in fr["company_unlinked"]:
+            if e["agency"] in ("FERC", "NRC"):
+                continue
+            print("  UNLINKED", e["date"], e["agency"], e["kind"], [(u["name"], u["reason"]) for u in e["unmatched"]],
+                  "|", e["title"][:120])
+        energy = [e for e in fr["company_unlinked"] if e["agency"] in ("FERC", "NRC")]
+        names = sorted({u["name"] for e in energy for u in e["unmatched"]})
+        print("  ENERGY_UNLINKED", len(energy), "docs;", len(names), "names:", "; ".join(names)[:3000])
+        for e in fr["linked"] + fr["company_unlinked"]:
+            if e["kind"] != "FR_PRIORITY_REVIEW_VOUCHER":
+                continue
+            try:
+                meta = requests.get(f"https://www.federalregister.gov/api/v1/documents/{e['document_number']}.json",
+                                    params={"fields[]": "raw_text_url"}, timeout=30).json()
+                body = " ".join(requests.get(meta["raw_text_url"], timeout=30).text.split())
+            except (requests.RequestException, ValueError, KeyError) as exc:
+                print("  PRV", e["document_number"], "body unavailable", type(exc).__name__)
+                continue
+            at = body.lower().find("manufactured by")
+            at = at if at >= 0 else body.lower().find("voucher")
+            print("  PRV", e["document_number"], e["companies"], "|", body[max(0, at - 200):at + 300])
     table = json.loads((ROOT / "data" / "issuer_links.json").read_text(encoding="utf-8"))
     for link in table["links"]:
         time.sleep(1)

@@ -56,9 +56,12 @@ FDA_KIND = {"APPROVAL_ORIGINAL": "FDA_APPROVAL", "APPROVAL_SUPPLEMENT": "FDA_SUP
 # what to read first and say nothing about price direction.
 POINTS = {"HIGH": 35, "MEDIUM": 22, "LOW": 8}
 NEW_MOLECULE_BONUS = 10
-RELIABILITY = {"exact_normalised_name": 1.0, "issuer_cik": 1.0, "reviewed_sponsor_alias": 0.9}
+RELIABILITY = {"exact_normalised_name": 1.0, "issuer_cik": 1.0, "reviewed_sponsor_alias": 0.9,
+               "reviewed_issuer_link": 0.9}
 RISK_KINDS = {"DILUTION_RISK": "خطر تخفيف", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "تقسيم عكسي/تعديل نظام محتمل",
-              "LISTING_NOTICE": "إشعار إدراج (خطر شطب)"}
+              "LISTING_NOTICE": "إشعار إدراج (خطر شطب)",
+              "FR_AIRWORTHINESS_DIRECTIVE": "توجيه صلاحية طيران إلزامي (FAA)",
+              "FR_FTC_CONSENT_ORDER": "تسوية مقترحة مع FTC"}
 # Reference list of issuers known to be large. It is NOT a measurement: an
 # issuer on it is labelled KNOWN_LARGE_ISSUER_LIST (market cap unverified),
 # and an SEC filer status other than "Large accelerated filer" is reported in
@@ -186,6 +189,30 @@ def clinical_catalysts(report: Any, now: datetime) -> list[dict[str, Any]]:
     return result
 
 
+def fr_catalysts(fr: Any) -> list[dict[str, Any]]:
+    """Federal Register documents whose named company has a reviewed link (scripts/build_federal_register_feed.py)."""
+    out: list[dict[str, Any]] = []
+    if not isinstance(fr, dict) or fr.get("schema") != "ghazi.federal_register_feed.v1":
+        return out
+    for e in fr.get("linked") or []:
+        url = str(e.get("source_url") or "")
+        day = _day(e.get("date"))
+        if not url.startswith("https://www.federalregister.gov/") or day is None or e.get("kind") not in IMPACT:
+            continue
+        if e.get("importance") not in RANK:
+            continue
+        for link in e.get("links") or []:
+            ticker = str(link.get("ticker") or "")
+            if not re.fullmatch(r"[A-Z][A-Z0-9.-]{0,7}", ticker):
+                continue
+            out.append({"symbol": ticker, "kind": e["kind"], "date": day, "importance": e["importance"],
+                        "label": f"{e.get('agency')}: {link.get('name')}"[:120], "reason": str(e.get("title") or "")[:200],
+                        "source": "Federal Register", "source_url": url, "source_updated": day,
+                        "issuer": str(link.get("name") or "")[:80] or None, "match_method": "reviewed_issuer_link",
+                        "link_relation": link.get("relation"), "listed_company": link.get("listed_company")})
+    return out
+
+
 def event_key(item: dict[str, Any]) -> str:
     return "|".join(str(item.get(k) or "") for k in ("symbol", "kind", "date", "source_url", "label"))
 
@@ -311,7 +338,11 @@ def company_size(symbol: str, sizes: Any, now: datetime) -> dict[str, Any]:
 IMPACT = {"FDA_APPROVAL": "REGULATORY_DECISION", "FDA_SUPPLEMENT": "REGULATORY_DECISION_MINOR",
           "FDA_RECALL": "RISK", "DILUTION_RISK": "RISK", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "RISK",
           "LISTING_NOTICE": "RISK", "TRIAL_RESULTS_POSTED": "RESULTS_POSTED_DIRECTION_UNKNOWN",
-          "TRIAL_STATUS_REVIEW": "STATUS_CHANGE", "TRIAL_REGISTRY_UPDATE": "ADMINISTRATIVE"}
+          "TRIAL_STATUS_REVIEW": "STATUS_CHANGE", "TRIAL_REGISTRY_UPDATE": "ADMINISTRATIVE",
+          "FR_PRIORITY_REVIEW_VOUCHER": "REGULATORY_DECISION", "FR_APPROVAL_WITHDRAWN": "STATUS_CHANGE",
+          "FR_AIRWORTHINESS_DIRECTIVE": "RISK", "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": "STATUS_CHANGE",
+          "FR_SPECIAL_CONDITIONS": "STATUS_CHANGE", "FR_FTC_CONSENT_ORDER": "RISK",
+          "FR_ENERGY_REGULATORY_FILING": "STATUS_CHANGE", "FR_NUCLEAR_LICENSE_ACTION": "STATUS_CHANGE"}
 
 
 def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -325,11 +356,12 @@ def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
-          sizes: Any = None, previous: Any = None) -> dict[str, Any]:
+          sizes: Any = None, previous: Any = None, fr: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
     events: list[dict[str, Any]] = []
-    for item in dedupe(fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now)):
+    for item in dedupe(fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now)
+                       + fr_catalysts(fr)):
         if cutoff <= item["date"] <= now.date().isoformat():
             events.append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
     tracking_since = first_seen(events, previous, now)
@@ -368,7 +400,8 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
                     "sec_edgar": sec_used,
                     "sec_status": sec.get("status") if isinstance(sec, dict) else "MISSING",
                     "clinicaltrials": clinical_available(clinical, now),
-                    "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING"},
+                    "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING",
+                    "federal_register": isinstance(fr, dict) and fr.get("schema") == "ghazi.federal_register_feed.v1"},
         "watchlist": entries[:MAX_TICKERS],
         # Every matched event in the window (the watchlist keeps MAX_CATALYSTS per
         # ticker), newest first, with three separate times: the event date, the
@@ -439,13 +472,14 @@ def main() -> int:
     parser.add_argument("--clinical", type=Path)
     parser.add_argument("--prices", type=Path)
     parser.add_argument("--sizes", type=Path, help="SEC public-float file; absent until SEC access works")
+    parser.add_argument("--federal-register", type=Path, help="scripts/build_federal_register_feed.py output")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--previous", type=Path, help="previous published watchlist (default: --output before it is"
                                                          " replaced); carries each event's first_seen_at")
     args = parser.parse_args()
     previous = _load(args.previous or args.output)
     report = build(_load(args.fda), _load(args.sec), _load(args.prices), datetime.now(timezone.utc),
-                   _load(args.clinical), _load(args.sizes), previous)
+                   _load(args.clinical), _load(args.sizes), previous, _load(args.federal_register))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Catalyst watchlist:", json.dumps({"status": report["status"], "tickers": len(report["watchlist"]),

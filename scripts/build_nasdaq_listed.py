@@ -43,7 +43,7 @@ STATUS = {  # Nasdaq Symbol Directory definitions page
     "K": ("Deficient, Delinquent and Bankrupt", "لا يستوفي المعايير ومتأخر وفي إجراءات إفلاس"),
 }
 EQUITY = re.compile(r"(common stock|capital stock|ordinary shares?|american depositary shares?|common shares?|"
-                    r"class [a-z] (common )?(stock|shares?)|subordinate voting shares)", re.I)
+                    r"class [a-z] (common )?(stock|shares?)|subordinate voting shares)", re.IGNORECASE)
 
 
 class FileRejected(ValueError):

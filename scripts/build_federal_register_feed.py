@@ -52,11 +52,10 @@ KINDS = {
 }
 NOISE = re.compile(r"(Agency Information Collection|Sunshine Act|Combined Notice of Filings|Class [A-E] Airspace|"
                    r"Petition for Rulemaking of|Request for Nominations|Advisory Committee; .*Renewal|"
-                   r"Civil Penalty Inflation|Privacy Act of 1974)", re.I)
+                   r"Civil Penalty Inflation|Privacy Act of 1974)", re.IGNORECASE)
 COMPANY = re.compile(r"\b(Inc\.?|Incorporated|Corporation|Corp\.?|Company|Co\.|LLC|L\.L\.C\.|L\.P\.|LP|Ltd\.?|"
                      r"Limited|S\.A\.S?\.?|SAS|S\.p\.A\.|GmbH|AG|plc|N\.V\.|Holdings?)\b")
-
-
+FAA_PRODUCTS = r"(?:Airplanes|Helicopters|Engines|Gliders|Balloons|Propellers|Products|Rotorcraft)"
 LEGAL_SUFFIX = re.compile(r"(\s+(inc|incorporated|corp|corporation|co|company|llc|l l c|lp|l p|ltd|limited|plc|"
                           r"sa|s a|sas|ag|gmbh|nv|n v))+$")
 
@@ -76,14 +75,16 @@ def entities(doc: dict[str, Any], body: str | None = None) -> tuple[str | None, 
     agency = doc.get("agency")
     dtype = doc.get("type")
     if agency == "federal-aviation-administration":
-        m = re.match(r"Airworthiness Directives; (.+?) (Airplanes|Helicopters|Engines|Gliders|Balloons|Propellers|"
-                     r"Products|Rotorcraft)\b", title)
+        # The product word that ends the title section ("MD Helicopters, LLC Helicopters" names
+        # MD Helicopters, LLC); a product word inside the company name is not the end.
+        m = (re.match(rf"Airworthiness Directives; (.+) {FAA_PRODUCTS}\s*(?:;|$)", title)
+             or re.match(rf"Airworthiness Directives; (.+?) {FAA_PRODUCTS}\b", title))
         if m:
             return ("FR_AIRWORTHINESS_DIRECTIVE" if dtype == "Rule" else "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
-                    [re.sub(r"\s*\(.*$", "", m.group(1)).strip()])
+                    [re.sub(r"\s*\(.*$", "", m.group(1)).strip(" ,;")])
         m = re.match(r"Special Conditions: (.+?) Model\b", title)
         if m:
-            return "FR_SPECIAL_CONDITIONS", [m.group(1).strip()]
+            return "FR_SPECIAL_CONDITIONS", [m.group(1).strip(" ,;")]
         return None, []
     if agency == "federal-trade-commission":
         m = re.match(r"(.+?); Analysis of (Proposed )?(Agreement Containing )?Consent Order", title)
@@ -95,15 +96,20 @@ def entities(doc: dict[str, Any], body: str | None = None) -> tuple[str | None, 
         if m:
             return "FR_APPROVAL_WITHDRAWN", [m.group(1).strip()]
         if title.startswith("Issuance of Priority Review Voucher"):
-            # "... issuance of a priority review voucher to <Sponsor>." (sponsor named only in the body)
-            m = re.search(r"voucher (?:to|for) ([A-Z][A-Za-z0-9&.,' -]{2,80}?(?:Inc\.|LLC|Ltd\.|Limited|Corporation|"
-                          r"Corp\.|Company|plc|AG|GmbH|S\.A\.|N\.V\.))", body or "")
+            # The sponsor is named only in the body: "<PRODUCT>, manufactured by <Sponsor>, meets the
+            # criteria for a priority review voucher" or "... a priority review voucher to <Sponsor>".
+            suffix = r"(?:Inc\.|LLC|Ltd\.|Limited|Corporation|Corp\.|Company|plc|AG|GmbH|S\.A\.|N\.V\.)"
+            m = (re.search(rf"manufactured by ([A-Z][A-Za-z0-9&.,' -]{{2,80}}?{suffix})", body or "")
+                 or re.search(rf"voucher (?:to|for) ([A-Z][A-Za-z0-9&.,' -]{{2,80}}?{suffix})", body or ""))
             return "FR_PRIORITY_REVIEW_VOUCHER", [m.group(1).strip()] if m else []
         return None, []
     if agency in ("federal-energy-regulatory-commission", "nuclear-regulatory-commission") and ";" in title:
         head = title.split(";")[0].strip()
         head = re.split(r"\s+d/b/a\s+", head)[0].strip()
-        names = [x.strip() for x in re.split(r",\s+(?=[A-Z])|\s+and\s+(?=[A-Z])", head) if COMPANY.search(x)]
+        # List commas only ("A, B, and C"); a plain "and" can be part of a name
+        # ("Virginia Electric and Power Company"), and ", LLC" / ", Inc." belong to the name before them.
+        parts = re.split(r",\s+(?:and\s+)?(?!(?:Inc|LLC|L\.L\.C|L\.P|LP|Ltd|Limited|Corp|Co\b|S\.A|N\.V|plc)\b)", head)
+        names = [x.strip() for x in parts if COMPANY.search(x)]
         if names:
             return ("FR_ENERGY_REGULATORY_FILING" if agency.startswith("federal-energy")
                     else "FR_NUCLEAR_LICENSE_ACTION"), names

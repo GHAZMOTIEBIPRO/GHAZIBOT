@@ -1,46 +1,305 @@
 {
  "schema": "ghazi.issuer_links.v1",
- "policy": "Reviewed links from a company named in an official document to a U.S.-listed ticker: sponsor or named entity -> legal entity -> listed company (itself or its parent) -> ticker -> evidence. A row is added only for the listed company itself, a wholly owned subsidiary, or a renamed company; joint ventures, partly owned, private and non-U.S.-listed companies go to 'excluded' with the reason. Matching is exact on the normalised name (case, punctuation and a trailing legal suffix such as Inc/LLC/Corp removed); there is no similarity matching. Each row's evidence page is fetched on a runner and checked for the listed text before the row is marked verified.",
+ "policy": "Reviewed links from a company named in an official document to a U.S.-listed ticker: sponsor or named entity -> legal entity -> listed company (itself or its parent) -> ticker -> evidence. A row is added only for the listed company itself, a division of it, a wholly owned subsidiary, or a renamed company; joint ventures, partly owned, private and non-U.S.-listed companies go to 'excluded' with the reason. Matching is exact on the normalised name (case, punctuation and a trailing legal suffix such as Inc/LLC/Corp removed); there is no similarity matching. Each row's evidence page is fetched on a runner and checked for the listed text before the row is marked verified.",
  "reviewed_at": "2026-10-27",
  "links": [
-  {"names": ["The Boeing Company", "Boeing Company", "Boeing"], "legal_entity": "The Boeing Company",
-   "listed_company": "The Boeing Company", "ticker": "BA", "exchange": "NYSE", "relation": "SAME_ENTITY",
-   "evidence_url": "https://en.wikipedia.org/wiki/Boeing", "evidence_check": ["Boeing", "BA"]},
-  {"names": ["Embraer S.A.", "Embraer"], "legal_entity": "Embraer S.A.",
-   "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)", "ticker": "ERJ", "exchange": "NYSE",
-   "relation": "SAME_ENTITY", "evidence_url": "https://en.wikipedia.org/wiki/Embraer", "evidence_check": ["Embraer", "ERJ"]},
-  {"names": ["LiveRamp", "LiveRamp Holdings, Inc."], "legal_entity": "LiveRamp Holdings, Inc.",
-   "listed_company": "LiveRamp Holdings, Inc.", "ticker": "RAMP", "exchange": "NYSE", "relation": "SAME_ENTITY",
-   "evidence_url": "https://en.wikipedia.org/wiki/LiveRamp", "evidence_check": ["LiveRamp", "RAMP"]},
-  {"names": ["FleetCor Technologies", "FLEETCOR Technologies, Inc."], "legal_entity": "FleetCor Technologies, Inc.",
-   "listed_company": "Corpay, Inc.", "ticker": "CPAY", "exchange": "NYSE", "relation": "RENAMED_SAME_ENTITY",
+  {
+   "names": [
+    "The Boeing Company",
+    "Boeing Company",
+    "Boeing"
+   ],
+   "legal_entity": "The Boeing Company",
+   "listed_company": "The Boeing Company",
+   "ticker": "BA",
+   "exchange": "NYSE",
+   "relation": "SAME_ENTITY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Boeing",
+   "evidence_check": [
+    "Boeing",
+    "BA"
+   ]
+  },
+  {
+   "names": [
+    "Embraer S.A.",
+    "Embraer"
+   ],
+   "legal_entity": "Embraer S.A.",
+   "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)",
+   "ticker": "ERJ",
+   "exchange": "NYSE",
+   "relation": "SAME_ENTITY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Embraer",
+   "evidence_check": [
+    "Embraer",
+    "ERJ"
+   ]
+  },
+  {
+   "names": [
+    "LiveRamp",
+    "LiveRamp Holdings, Inc."
+   ],
+   "legal_entity": "LiveRamp Holdings, Inc.",
+   "listed_company": "LiveRamp Holdings, Inc.",
+   "ticker": "RAMP",
+   "exchange": "NYSE",
+   "relation": "SAME_ENTITY",
+   "evidence_url": "https://en.wikipedia.org/wiki/LiveRamp",
+   "evidence_check": [
+    "LiveRamp",
+    "RAMP"
+   ]
+  },
+  {
+   "names": [
+    "FleetCor Technologies",
+    "FLEETCOR Technologies, Inc."
+   ],
+   "legal_entity": "FleetCor Technologies, Inc.",
+   "listed_company": "Corpay, Inc.",
+   "ticker": "CPAY",
+   "exchange": "NYSE",
+   "relation": "RENAMED_SAME_ENTITY",
    "note": "FleetCor Technologies renamed itself Corpay in 2024; the FTC document uses the earlier name.",
-   "evidence_url": "https://en.wikipedia.org/wiki/Corpay", "evidence_check": ["FleetCor", "CPAY"]},
-  {"names": ["Ruger", "Sturm, Ruger & Co.", "Sturm, Ruger & Company"], "legal_entity": "Sturm, Ruger & Company, Inc.",
-   "listed_company": "Sturm, Ruger & Company, Inc.", "ticker": "RGR", "exchange": "NYSE", "relation": "SAME_ENTITY",
-   "evidence_url": "https://en.wikipedia.org/wiki/Sturm,_Ruger_%26_Co.", "evidence_check": ["Ruger", "RGR"]},
-  {"names": ["Virginia Electric and Power Company", "Dominion Energy Virginia"],
-   "legal_entity": "Virginia Electric and Power Company", "listed_company": "Dominion Energy, Inc.", "ticker": "D",
-   "exchange": "NYSE", "relation": "WHOLLY_OWNED_SUBSIDIARY",
-   "evidence_url": "https://en.wikipedia.org/wiki/Dominion_Energy", "evidence_check": ["Virginia", "Dominion"]},
-  {"names": ["Teva Pharmaceuticals USA, Inc."], "legal_entity": "Teva Pharmaceuticals USA, Inc.",
-   "listed_company": "Teva Pharmaceutical Industries Ltd. (American Depositary Shares on NYSE)", "ticker": "TEVA",
-   "exchange": "NYSE", "relation": "WHOLLY_OWNED_SUBSIDIARY",
-   "evidence_url": "https://en.wikipedia.org/wiki/Teva_Pharmaceuticals", "evidence_check": ["Teva", "TEVA"]}
+   "evidence_url": "https://en.wikipedia.org/wiki/Corpay",
+   "evidence_check": [
+    "FleetCor",
+    "CPAY"
+   ]
+  },
+  {
+   "names": [
+    "Ruger",
+    "Sturm, Ruger & Co.",
+    "Sturm, Ruger & Company"
+   ],
+   "legal_entity": "Sturm, Ruger & Company, Inc.",
+   "listed_company": "Sturm, Ruger & Company, Inc.",
+   "ticker": "RGR",
+   "exchange": "NYSE",
+   "relation": "SAME_ENTITY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Sturm,_Ruger_%26_Co.",
+   "evidence_check": [
+    "Ruger",
+    "RGR"
+   ]
+  },
+  {
+   "names": [
+    "Virginia Electric and Power Company",
+    "Dominion Energy Virginia"
+   ],
+   "legal_entity": "Virginia Electric and Power Company",
+   "listed_company": "Dominion Energy, Inc.",
+   "ticker": "D",
+   "exchange": "NYSE",
+   "relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Dominion_Energy",
+   "evidence_check": [
+    "Virginia",
+    "Dominion"
+   ]
+  },
+  {
+   "names": [
+    "Ionis Pharmaceuticals, Inc."
+   ],
+   "legal_entity": "Ionis Pharmaceuticals, Inc.",
+   "listed_company": "Ionis Pharmaceuticals, Inc.",
+   "ticker": "IONS",
+   "exchange": "NASDAQ",
+   "relation": "SAME_ENTITY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Ionis_Pharmaceuticals",
+   "evidence_check": [
+    "Ionis",
+    "IONS"
+   ]
+  },
+  {
+   "names": [
+    "Teva Pharmaceuticals USA, Inc."
+   ],
+   "legal_entity": "Teva Pharmaceuticals USA, Inc.",
+   "listed_company": "Teva Pharmaceutical Industries Ltd. (American Depositary Shares on NYSE)",
+   "ticker": "TEVA",
+   "exchange": "NYSE",
+   "relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Teva_Pharmaceuticals",
+   "evidence_check": [
+    "Teva",
+    "TEVA"
+   ]
+  },
+  {
+   "names": [
+    "General Electric Company"
+   ],
+   "legal_entity": "General Electric Company",
+   "listed_company": "GE Aerospace (legal name General Electric Company)",
+   "ticker": "GE",
+   "exchange": "NYSE",
+   "relation": "SAME_ENTITY",
+   "note": "General Electric Company operates as GE Aerospace since the 2024 separations; the legal entity named by the FAA is the listed company.",
+   "evidence_url": "https://en.wikipedia.org/wiki/GE_Aerospace",
+   "evidence_check": [
+    "General Electric Company",
+    "GE"
+   ]
+  },
+  {
+   "names": [
+    "Pratt & Whitney Division",
+    "Pratt & Whitney"
+   ],
+   "legal_entity": "Pratt & Whitney (a business of RTX Corporation)",
+   "listed_company": "RTX Corporation",
+   "ticker": "RTX",
+   "exchange": "NYSE",
+   "relation": "DIVISION_OF_LISTED_COMPANY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Pratt_%26_Whitney",
+   "evidence_check": [
+    "RTX",
+    "Pratt"
+   ]
+  },
+  {
+   "names": [
+    "Honda Aircraft Company LLC",
+    "Honda Aircraft Company"
+   ],
+   "legal_entity": "Honda Aircraft Company, LLC",
+   "listed_company": "Honda Motor Co., Ltd. (American Depositary Shares on NYSE)",
+   "ticker": "HMC",
+   "exchange": "NYSE",
+   "relation": "WHOLLY_OWNED_SUBSIDIARY",
+   "evidence_url": "https://en.wikipedia.org/wiki/Honda_Aircraft_Company",
+   "evidence_check": [
+    "Honda Motor",
+    "subsidiary"
+   ]
+  }
  ],
  "excluded": [
-  {"names": ["CFM International, S.A.", "CFM International"], "reason": "JOINT_VENTURE",
-   "note": "50/50 joint venture of GE Aerospace and Safran; an event cannot be assigned to one listed parent."},
-  {"names": ["Airbus SAS", "Airbus Helicopters", "Airbus Helicopters Deutschland GmbH", "Airbus Canada Limited Partnership"],
-   "reason": "LISTED_OUTSIDE_US", "note": "Airbus SE is listed in Europe; no U.S. exchange listing is used here."},
-  {"names": ["Florida Gas Transmission Company, LLC"], "reason": "JOINT_VENTURE",
-   "note": "Owned through a joint venture; not a wholly owned subsidiary of one listed company."},
-  {"names": ["Ontic Engineering and Manufacturing, Inc."], "reason": "PRIVATE"},
-  {"names": ["MD Helicopters, LLC"], "reason": "PRIVATE"},
-  {"names": ["Publicis"], "reason": "LISTED_OUTSIDE_US"},
-  {"names": ["Beretta"], "reason": "PRIVATE"},
-  {"names": ["Palisades Energy, LLC", "SMR, LLC", "Palisades SMR, LLC"], "reason": "PRIVATE"},
-  {"names": ["Par Health USA LLC"], "reason": "OWNERSHIP_NOT_VERIFIED",
-   "note": "Parent ownership changed recently; not linked until a filing confirms it."}
+  {
+   "names": [
+    "CFM International, S.A.",
+    "CFM International"
+   ],
+   "reason": "JOINT_VENTURE",
+   "note": "50/50 joint venture of GE Aerospace and Safran; an event cannot be assigned to one listed parent."
+  },
+  {
+   "names": [
+    "Airbus SAS",
+    "Airbus Helicopters",
+    "Airbus Helicopters Deutschland GmbH",
+    "Airbus Canada Limited Partnership"
+   ],
+   "reason": "LISTED_OUTSIDE_US",
+   "note": "Airbus SE is listed in Europe; no U.S. exchange listing is used here."
+  },
+  {
+   "names": [
+    "Florida Gas Transmission Company, LLC"
+   ],
+   "reason": "JOINT_VENTURE",
+   "note": "Owned through a joint venture; not a wholly owned subsidiary of one listed company."
+  },
+  {
+   "names": [
+    "Ontic Engineering and Manufacturing, Inc."
+   ],
+   "reason": "PRIVATE"
+  },
+  {
+   "names": [
+    "MD Helicopters, LLC"
+   ],
+   "reason": "PRIVATE"
+  },
+  {
+   "names": [
+    "Publicis"
+   ],
+   "reason": "LISTED_OUTSIDE_US"
+  },
+  {
+   "names": [
+    "Beretta"
+   ],
+   "reason": "PRIVATE"
+  },
+  {
+   "names": [
+    "Palisades Energy, LLC",
+    "SMR, LLC",
+    "Palisades SMR, LLC"
+   ],
+   "reason": "PRIVATE"
+  },
+  {
+   "names": [
+    "Par Health USA LLC"
+   ],
+   "reason": "OWNERSHIP_NOT_VERIFIED",
+   "note": "Parent ownership changed recently; not linked until a filing confirms it."
+  },
+  {
+   "names": [
+    "Engine Alliance",
+    "Engine Alliance, LLC"
+   ],
+   "reason": "JOINT_VENTURE",
+   "note": "Joint venture of GE Aerospace and Pratt & Whitney."
+  },
+  {
+   "names": [
+    "Rolls-Royce Deutschland Ltd & Co KG",
+    "Rolls-Royce Corporation",
+    "Rolls-Royce plc"
+   ],
+   "reason": "LISTED_OUTSIDE_US"
+  },
+  {
+   "names": [
+    "Leonardo S.p.A.",
+    "Leonardo S.p.a."
+   ],
+   "reason": "LISTED_OUTSIDE_US"
+  },
+  {
+   "names": [
+    "Bombardier, Inc.",
+    "Bombardier Inc."
+   ],
+   "reason": "LISTED_OUTSIDE_US"
+  },
+  {
+   "names": [
+    "Baykar Piaggio Aerospace S.p.A."
+   ],
+   "reason": "PRIVATE"
+  },
+  {
+   "names": [
+    "DG Aviation GmbH"
+   ],
+   "reason": "PRIVATE"
+  },
+  {
+   "names": [
+    "Elite Laboratories, Inc."
+   ],
+   "reason": "NOT_EXCHANGE_LISTED",
+   "note": "Parent trades over the counter, not on a U.S. exchange."
+  },
+  {
+   "names": [
+    "Various"
+   ],
+   "reason": "NOT_A_COMPANY"
+  }
  ]
 }
