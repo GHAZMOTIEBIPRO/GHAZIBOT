@@ -11,6 +11,10 @@ on:
       - "scripts/probe_terms.py"
       - "scripts/probe_free_sources.py"
       - "scripts/probe_round3.py"
+      - "scripts/verify_round3.py"
+      - "scripts/build_nasdaq_listed.py"
+      - "scripts/build_federal_register_feed.py"
+      - "data/issuer_links.json"
       - ".github/workflows/sec-access-probe.yml"
 
 permissions:
@@ -48,8 +52,9 @@ jobs:
         env:
           PROBE_TERMS_ONLY: nasdaqtrader_copyright
         run: python scripts/probe_terms.py
-      - name: Product terms and candidate official sources (one request per URL)
-        run: python scripts/probe_round3.py
+      # Real-data check of the new builders before merge; writes only to /tmp on the runner.
+      - name: New builders on real data and link evidence
+        run: python scripts/verify_round3.py
       - name: SEC status codes and refusal titles only
         run: python scripts/probe_sec_access.py
       # Presence booleans only (true/false); no secret value is ever read here.
