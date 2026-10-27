@@ -140,7 +140,9 @@ GATES: dict[str, dict[str, str]] = {
     },
     "nasdaqtrader": {
         "variable": NASDAQTRADER_VARIABLE,
-        "source": "NasdaqTrader.com (Symbol Directory files, trade-halt RSS)",
+        # Nasdaq Listed (nasdaqlisted.txt) is opened by its own product notice (PRODUCT_GRANTS);
+        # this gate covers the files no product notice settles (PRODUCT_UNRESOLVED) and the halt RSS.
+        "source": "NasdaqTrader.com (files not covered by a product notice, trade-halt RSS)",
         "reason": ("NasdaqTrader.com content and reports may not be copied, displayed, distributed, stored for "
                    "subsequent use or otherwise used without Nasdaq's prior written consent; automated reads "
                    "stay off until Nasdaq grants permission"),
@@ -238,6 +240,62 @@ def blocked_report(source: str, *, schema: str, generated_at: str) -> dict[str, 
         "coverage": {"symbols": 0},
         "execution_authority": False,
     }
+
+
+# Product-level grants: a provider's own notice for one product, quoted verbatim.
+# They open only the named product; every other file of the same site keeps its gate.
+# Read in full on the runner, probe run 40562010708 (2026-10-27).
+NASDAQ_EVENTS_DATA_NOTICE = (
+    "Nasdaq Events Data: The data related to Nasdaq Security Status Updates, Nasdaq Ex-Date, When "
+    "Distributed/When Issued, and Nasdaq Listed has been created, collected, validated, processed, generated "
+    "and/or recorded by Nasdaq. The data made available herein is provided as it exists in Nasdaq's records "
+    "without restriction or any further licensing requirement, notwithstanding Nasdaq Terms of Services "
+    "( https://www.nasdaq.com/legal ).")
+PRODUCT_GRANTS: dict[str, dict[str, str]] = {
+    "nasdaqtrader_nasdaq_listed": {
+        "url": "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",
+        "product": "Nasdaq Listed (Symbol Directory nasdaqlisted.txt, incl. its Financial Status field)",
+        "notice_url": "https://www.nasdaqtrader.com/trader.aspx?id=symbollookup",
+        "evidence": NASDAQ_EVENTS_DATA_NOTICE,
+        "evidence_run": "40562010708",
+    },
+}
+# Products of the same site whose terms are not settled by a product notice. Not a
+# confirmed ban: the exact open question is recorded and the gate stays closed.
+PRODUCT_UNRESOLVED: dict[str, dict[str, str]] = {
+    "nasdaqtrader_other_listed": {
+        "url": "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt",
+        "question": ("Does the Events Data notice's 'Nasdaq Listed' cover the Other-Exchange Listed file "
+                     "(securities listed on NYSE and other exchanges), or does the site copyright notice "
+                     "(CopyDisclaimMain: no copying or storage without written consent) govern it?"),
+        "question_ar": ("هل تشمل عبارة «Nasdaq Listed» في إشعار Events Data ملف الأوراق المدرجة في بورصات أخرى، "
+                        "أم يحكمه إشعار حقوق النشر العام للموقع؟"),
+    },
+    "nasdaqtrader_market_participants": {
+        "url": "ftp://ftp.nasdaqtrader.com/symboldirectory/mpidlist.txt",
+        "question": "Neither product notice names the Market Participants file.",
+        "question_ar": "لا يذكر أي إشعار منتج ملف المشاركين في السوق.",
+    },
+    "nasdaqtrader_options_files": {
+        "url": "ftp://ftp.nasdaqtrader.com/SymbolDirectory/phlxoptions.csv",
+        "question": "Neither product notice names the PHLX options / strikes / PBOT files.",
+        "question_ar": "لا يذكر أي إشعار منتج ملفات خيارات PHLX وأسعار التنفيذ وPBOT.",
+    },
+}
+# Restricted by its own product notice (not by another product's text).
+PRODUCT_RESTRICTED: dict[str, dict[str, str]] = {
+    "nasdaqtrader_fund_network": {
+        "url": "ftp://ftp.nasdaqtrader.com/symboldirectory/mfundslist.txt",
+        "evidence": ("Nasdaq Fund Network - ... Nasdaq and its licensors retain all right, title and interest "
+                     "information including, but not limited to the symbols. The data and information made "
+                     "available for internal non-commercial usage only unless separately licensed from Nasdaq."),
+    },
+}
+
+
+def product_allowed(product: str) -> bool:
+    """True only for a product opened by its own provider notice (PRODUCT_GRANTS)."""
+    return product in PRODUCT_GRANTS
 
 
 def gate_status() -> dict[str, dict[str, object]]:

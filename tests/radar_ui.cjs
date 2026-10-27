@@ -94,6 +94,55 @@ assert.strictEqual(R.suggest(index, "nv")[0].symbol, "NVDA");
 assert.strictEqual(R.suggest(index, "amgen")[0].symbol, "AMGN");
 assert.strictEqual(R.suggest(index, "SPY")[0].symbol, "SPY");
 assert.deepStrictEqual(R.suggest(index, ""), []);
+// Arabic: folded letters (أ/ا, ة/ه, ى/ي) match a known Arabic name; sectors are searchable in Arabic.
+assert.strictEqual(R.suggest(index, "انفيديا")[0].symbol, "NVDA");
+assert.strictEqual(R.suggest(index, "إنفيديا")[0].symbol, "NVDA");
+assert.strictEqual(R.foldAr("مُفلسة"), "مفلسه");
+// The Nasdaq Listed file widens search with its own names; nothing is invented for a symbol outside it.
+const nl = { schema: "ghazi.nasdaq_listed.v1", file_created_at: "2026-10-27T18:01:00+00:00",
+  rows: [["SOUN", "SoundHound AI, Inc.", "Class A Common Stock", "G", "N", 0, 1],
+    ["AACG", "ATA Creativity Global", "American Depositary Shares", "G", "D", 0, 1],
+    ["QQQ", "Invesco QQQ Trust, Series 1", "", "G", "N", 1, 0], ["bad", "x", "", "Q", "N", 0, 1]] };
+const nm = R.nasdaqMap(nl);
+assert.strictEqual(nm.size, 3, "invalid symbols dropped");
+assert.strictEqual(nm.get("SOUN").tier, "ناسداك Global Market");
+const wide = R.searchIndex(dir, events, nm);
+assert.strictEqual(R.suggest(wide, "soundhound")[0].symbol, "SOUN");
+assert.ok(!wide.some((it) => it.symbol === "ZZZZ"));
+assert.strictEqual(R.nasdaqMap({ schema: "other", rows: nl.rows }).size, 0);
+// Listing flags are risks, never catalysts.
+const flags = R.flagRows(nl);
+assert.deepStrictEqual(flags.map((r) => r.symbol), ["AACG"]);
+assert.ok(flags[0].tags[0].kind === "risk" && /تنبيه ناسداك/.test(flags[0].why));
+
+// --- companies vs securities: share classes are one company ---
+assert.deepStrictEqual(R.companyCounts({ symbols: [{ symbol: "GOOGL", cik: "1652044" }, { symbol: "GOOG", cik: "1652044" },
+  { symbol: "NVDA", cik: "1045810" }] }), { securities: 3, companies: 2 });
+
+// --- Federal Register general notices and the news distribution ---
+const fr = { schema: "ghazi.federal_register_feed.v1",
+  company_unlinked: [{ date: "2026-10-27", agency: "FAA", kind: "FR_AIRWORTHINESS_DIRECTIVE", title: "Airworthiness Directives; Airbus SAS Airplanes",
+    source_url: "https://www.federalregister.gov/documents/2026/10/27/x/y", unmatched: [{ name: "Airbus SAS", reason: "LISTED_OUTSIDE_US" }] }],
+  general: [{ date: "2026-10-26", agency: "FDA", title: "Guidance", source_url: "https://www.federalregister.gov/d/2" },
+    { date: "2026-10-26", agency: "FDA", title: "bad link", source_url: "http://evil.example" }] };
+const gen = R.generalRows(fr);
+assert.strictEqual(gen.length, 2, "unsafe links dropped");
+assert.ok(gen[0].why.includes("مدرجة خارج أمريكا") && gen[0].label.includes("⚠"));
+assert.deepStrictEqual(R.generalRows({ schema: "x" }), []);
+assert.deepStrictEqual(R.filterEvents(events, "general"), [], "general notices are not ticker events");
+for (const k of ["FR_AIRWORTHINESS_DIRECTIVE", "FR_FTC_CONSENT_ORDER"]) assert.strictEqual(R.kindInfo(k).group, "risk", "safety and enforcement notices are risks");
+assert.ok(!/إيجابي/.test(R.kindInfo("FR_PRIORITY_REVIEW_VOUCHER").label));
+const dist = R.newsDistribution(events, (s) => (s === "AMGN" ? "الرعاية الصحية" : null), Date.parse("2026-10-27T12:00:00Z"));
+assert.strictEqual(dist.total, events.length);
+assert.strictEqual(dist.source.reduce((a, [, v]) => a + v, 0), events.length);
+assert.strictEqual(dist.age.reduce((a, [, v]) => a + v, 0), events.length);
+
+// --- wording: a gap is scoped to the use and the sources tested; options data split by kind ---
+assert.ok(!/لا يوجد مصدر مجاني/.test(js), "no blanket 'no free source' verdict");
+assert.ok(R.GAP_AR.includes("ضمن المصادر التي اختبرناها"));
+assert.strictEqual(R.OPTION_DATA_KINDS.length, 6);
+// A source being added is not shown as a detection.
+assert.ok(/أُضيف مع إدخال المصدر/.test(R.timesLine({ date: "2026-10-20", first_seen_at: "2026-10-27T10:00:00Z", first_seen_basis: "SOURCE_ADDED" })));
 
 // --- options calculator: arithmetic only ---
 assert.deepStrictEqual(R.optionMath({ type: "CALL", strike: 200, premium: 3.5, contracts: 2, spot: 195 }),

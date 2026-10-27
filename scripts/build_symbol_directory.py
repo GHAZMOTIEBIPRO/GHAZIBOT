@@ -85,6 +85,8 @@ def build(text: str, commit: dict[str, str], now: datetime) -> dict[str, Any]:
         "universe": "S&P 500 current members",
         "point_in_time": False,
         "count": len(rows),
+        # Rows are securities; several share classes of one company (e.g. GOOGL/GOOG) share a CIK.
+        "counts": {"securities": len(rows), "companies": len({r["cik"] for r in rows})},
         "sectors": dict(sorted(sectors.items(), key=lambda kv: -kv[1])),
         "source": {
             "dataset": f"https://github.com/{REPO}",

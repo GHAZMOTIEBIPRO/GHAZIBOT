@@ -1,6 +1,6 @@
 name: GHAZI Leaders Symbol Directory
 
-# Only writer of runtime/public/data/symbol_directory.json on bot-state:
+# Only writer of runtime/public/data/symbol_directory.json and nasdaq_listed.json on bot-state:
 # current S&P 500 members (name, sector, SEC CIK) from the
 # datasets/s-and-p-500-companies package (upstream Wikipedia, CC BY-SA).
 # The upstream package refreshes a few times a week around 02:00 UTC.
@@ -10,9 +10,11 @@ on:
     branches: [main]
     paths:
       - "scripts/build_symbol_directory.py"
+      - "scripts/build_nasdaq_listed.py"
       - ".github/workflows/symbol-directory.yml"
   schedule:
-    - cron: "17 4 * * 1,4"
+    # Weekdays: Nasdaq's directory (incl. financial status) changes daily.
+    - cron: "17 11 * * 1-5"
 
 permissions:
   contents: write
@@ -39,9 +41,16 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "requests>=2.32,<3.0"
-      # A rejected or unreachable source leaves the previous file in place and fails the job.
+      # A rejected or unreachable source leaves the previous file in place; the last step fails the job.
       - name: Build the leaders directory
+        id: sp500
+        continue-on-error: true
         run: python app/scripts/build_symbol_directory.py --output state/runtime/public/data/symbol_directory.json
+      # Nasdaq Listed only (product notice: "without restriction or any further licensing requirement").
+      - name: Build the Nasdaq-listed directory
+        id: nasdaq
+        continue-on-error: true
+        run: python app/scripts/build_nasdaq_listed.py --output state/runtime/public/data/nasdaq_listed.json
       - name: Publish the leaders directory
         shell: bash
         run: |
@@ -49,12 +58,14 @@ jobs:
           cd state
           git config user.name "GHAZI Symbol Directory"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/symbol_directory.json
+          for f in symbol_directory.json nasdaq_listed.json; do
+            if [[ -f runtime/public/data/$f ]]; then git add runtime/public/data/$f; fi
+          done
           if git diff --cached --quiet; then
             echo "Directory unchanged."
             exit 0
           fi
-          git commit -m "state: leaders symbol directory [skip ci]"
+          git commit -m "state: symbol directories [skip ci]"
           for attempt in 1 2 3 4 5 6 7 8; do
             if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
               exit 0
@@ -63,4 +74,9 @@ jobs:
             sleep $((attempt * 2 + RANDOM % 5))
           done
           echo "Failed to publish the directory after retries." >&2
+          exit 1
+      - name: Fail visibly when a source was rejected
+        if: steps.sp500.outcome == 'failure' || steps.nasdaq.outcome == 'failure'
+        run: |
+          echo "sp500=${{ steps.sp500.outcome }} nasdaq=${{ steps.nasdaq.outcome }} (previous files kept)" >&2
           exit 1

@@ -55,6 +55,8 @@ PAGES = {
     # Pages the first probe missed (wrong paths); located 2026-10-21 for the
     # sources still running with UNKNOWN rights.
     "nasdaqtrader_copyright": "https://www.nasdaqtrader.com/Trader.aspx?id=CopyDisclaimMain",
+    "federal_register_policy": "https://www.federalregister.gov/reader-aids/using-federalregister-gov/legal-status",
+    "federal_register_api": "https://www.federalregister.gov/developers/documentation/api/v1",
     "nasdaqtrader_halt_rss": "https://www.nasdaqtrader.com/Trader.aspx?id=TradeHaltRSS",
     "nasdaqtrader_halt_rss_terms":
         "https://www.nasdaqtrader.com/content/administrationsupport/agreementstrading/THRSSFeedTermsCond.pdf",
@@ -142,7 +144,7 @@ MAX_LINES_PAGE = {"alpaca_market_data_agreement": 140, "fda_website_policies": 6
 KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|non-?commercial|"
                       r"commercial|display|derived|extract|reproduc|permission|licen[cs]e|"
                       r"internal|store|storage|retain|cache|third[- ]part|public|website|disallow|"
-                      r"user-agent|rate limit|attribution|public domain)", re.IGNORECASE)
+                      r"user-agent|rate limit|attribution|public domain|copyright|api key)", re.IGNORECASE)
 UA = {"User-Agent": "Mozilla/5.0 (compatible; GHAZI-terms-review/1.1; research)"}
 BLS_UA = {"User-Agent": "GHAZI-RADAR-public-macro/1.0 (github.com/GHAZMOTIEBIPRO/GHAZIBOT)"}
 MAX_LINES = 45

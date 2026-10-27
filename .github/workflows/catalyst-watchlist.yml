@@ -70,6 +70,11 @@ jobs:
           python -m scripts.build_issuer_sizes \
             --watchlist ../state/runtime/public/data/catalyst_watchlist.json \
             --output ../state/runtime/public/data/issuer_sizes.json
+      # Federal Register (public domain, no key): company notices linked only through the
+      # reviewed table data/issuer_links.json. On failure the previous file is kept.
+      - name: Federal Register company notices
+        continue-on-error: true
+        run: python app/scripts/build_federal_register_feed.py --output state/runtime/public/data/federal_register.json
       - name: Build the catalyst watchlist from published official events
         run: >-
           python app/scripts/build_catalyst_watchlist.py
@@ -77,6 +82,8 @@ jobs:
           --sec state/runtime/public/data/sec_filing_pulse.json
           --clinical state/runtime/public/data/clinical_registry.json
           --sizes state/runtime/public/data/issuer_sizes.json
+          --federal-register state/runtime/public/data/federal_register.json
+          --source-history state
           --output state/runtime/public/data/catalyst_watchlist.json
       - name: Install shared Telegram transport dependency
         run: pip install "requests>=2.32,<3.0"
@@ -126,9 +133,11 @@ jobs:
           git config user.name "GHAZI RADAR Catalyst Watchlist"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
           git add runtime/public/data/catalyst_watchlist.json runtime/public/data/clinical_registry.json
-          if [[ -f runtime/public/data/issuer_sizes.json ]]; then
-            git add runtime/public/data/issuer_sizes.json
-          fi
+          for f in issuer_sizes.json federal_register.json; do
+            if [[ -f "runtime/public/data/$f" ]]; then
+              git add "runtime/public/data/$f"
+            fi
+          done
           if [[ -f state/catalyst/catalyst_alert_state.json ]]; then
             git add state/catalyst/catalyst_alert_state.json
           fi
