@@ -76,5 +76,5 @@ jobs:
           HAS_OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY != '' }}
           HAS_BENZINGA_TOKEN: ${{ secrets.BENZINGA_TOKEN != '' }}
           HAS_INTRINIO_API_KEY: ${{ secrets.INTRINIO_API_KEY != '' }}
-          ALPACA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
-        run: env | grep -E '^(HAS_|ALPACA_USE_AUTHORIZED=)' | sort
+          ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+        run: env | grep -E "^(HAS_|ALPACA_INTERNAL_DATA_USE_AUTHORIZED=)" | sort

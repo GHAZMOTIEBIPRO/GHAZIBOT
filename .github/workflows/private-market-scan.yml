@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ghazi-private-market-scan
@@ -29,6 +30,7 @@ jobs:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
       ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
       NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -49,6 +51,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r app/requirements.txt
+      # The owner chat must differ from the broadcast chat; resolve the broadcast
+      # destination first so output_policy.deliver_private can compare (no send here).
+      - name: Resolve the broadcast destination for the private-chat check
+        if: env.ALPACA_PRIVATE_ALERTS_AUTHORIZED == 'true'
+        uses: ./app/.github/actions/resolve-telegram-broadcast
       - name: Scan (status only in the log)
         run: |
           cd app

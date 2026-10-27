@@ -110,7 +110,14 @@ def deliver_private(text: str, *, sources: list[str], env: Mapping[str, str],
     chat_id = (env.get("TELEGRAM_OWNER_CHAT_ID") or "").strip()
     if not chat_id:
         return "OWNER_CHAT_NOT_CONFIGURED"
-    if chat_id == (env.get("TELEGRAM_CHAT_ID") or "").strip():
+    # The broadcast chat can come from the secret, the encrypted connection artifact
+    # or Telegram updates (scripts/telegram_connection_bootstrap.py). The comparison
+    # below is meaningful only after that resolution ran: TELEGRAM_CHAT_ID set, or
+    # TELEGRAM_READY=false (it ran and found no broadcast chat). Otherwise no send.
+    broadcast = (env.get("TELEGRAM_CHAT_ID") or "").strip()
+    if not broadcast and (env.get("TELEGRAM_READY") or "").strip().lower() != "false":
+        return "BROADCAST_NOT_RESOLVED"
+    if chat_id == broadcast:
         return "OWNER_CHAT_EQUALS_BROADCAST"
     try:
         chat = get_chat(chat_id)

@@ -278,11 +278,15 @@ def owner_send(env: Mapping[str, str]) -> Callable[[str], Any]:
 
     output_policy.deliver_private checks the policy, that TELEGRAM_OWNER_CHAT_ID
     differs from TELEGRAM_CHAT_ID and that Telegram reports a private chat.
+    The imports run only when a send happens: the blocked (no-permission) run
+    installs the minimum dependencies, and importing the options_radar package
+    there pulls in modules it does not have.
     """
-    from options_radar.output_policy import deliver_private
-    from scripts.telegram_transport import get_chat
 
     def send(text: str) -> Any:
+        from options_radar.output_policy import deliver_private
+        from scripts.telegram_transport import get_chat
+
         receipt: dict[str, Any] = {}
 
         def _send(body: str, chat: str) -> Any:

@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: ghazi-radar-daily-plan
@@ -31,6 +32,7 @@ jobs:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
       # Private delivery: owner's personal chat only (output_policy.deliver_private
       # checks it differs from the broadcast chat and that Telegram calls it private).
       ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
@@ -55,6 +57,11 @@ jobs:
       # This workflow is the only writer of daily_plan.json and state/daily_plan/.
       # Owner-private plans (Alpaca, no redistribution) go to the runner's temp
       # directory only and are never committed.
+      # The owner chat must differ from the broadcast chat; resolve the broadcast
+      # destination first so output_policy.deliver_private can compare (no send here).
+      - name: Resolve the broadcast destination for the private-chat check
+        if: env.ALPACA_PRIVATE_ALERTS_AUTHORIZED == 'true'
+        uses: ./app/.github/actions/resolve-telegram-broadcast
       - name: Build the pre-open sheet
         run: |
           cd app
