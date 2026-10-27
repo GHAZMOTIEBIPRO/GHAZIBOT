@@ -144,7 +144,7 @@ MAX_LINES_PAGE = {"alpaca_market_data_agreement": 140, "fda_website_policies": 6
 KEYWORDS = re.compile(r"(automat|scrap|robot|spider|crawl|redistribut|personal|non-?commercial|"
                       r"commercial|display|derived|extract|reproduc|permission|licen[cs]e|"
                       r"internal|store|storage|retain|cache|third[- ]part|public|website|disallow|"
-                      r"user-agent|rate limit|attribution|public domain)", re.IGNORECASE)
+                      r"user-agent|rate limit|attribution|public domain|copyright|api key)", re.IGNORECASE)
 UA = {"User-Agent": "Mozilla/5.0 (compatible; GHAZI-terms-review/1.1; research)"}
 BLS_UA = {"User-Agent": "GHAZI-RADAR-public-macro/1.0 (github.com/GHAZMOTIEBIPRO/GHAZIBOT)"}
 MAX_LINES = 45
