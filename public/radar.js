@@ -9,7 +9,8 @@
 (function (root) {
   const DATA = "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/";
   const FILES = { plan: "daily_plan.json", macro: "public_macro.json", catalysts: "catalyst_watchlist.json",
-    directory: "symbol_directory.json", options: "options_analytics.json" };
+    directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json" };
+  const NASDAQ_FILE = "nasdaq_listed.json";   // ~5,600 rows: loaded only when search or a view needs it
   const SYMBOL_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
   const WATCH_KEY = "ghazi.watchlist.v1";      // same key as the previous page, so saved lists carry over
   const CHART_TIMEOUT_MS = 15000;
@@ -107,6 +108,15 @@
     DILUTION_RISK: { label: "⚠ طرح أو تخفيف محتمل (SEC)", tag: "risk", group: "risk" },
     CHARTER_OR_REVERSE_SPLIT_REVIEW: { label: "⚠ تعديل نظام أو تقسيم عكسي (SEC)", tag: "risk", group: "risk" },
     LISTING_NOTICE: { label: "⚠ إشعار إدراج (SEC)", tag: "risk", group: "risk" },
+    // Federal Register notices: neutral labels; safety and enforcement actions are risks, never positive.
+    FR_PRIORITY_REVIEW_VOUCHER: { label: "منح قسيمة مراجعة أولوية (FDA)", tag: "decision", group: "decision" },
+    FR_APPROVAL_WITHDRAWN: { label: "سحب موافقة دواء جنيس (FDA)", tag: "status", group: "regulatory" },
+    FR_AIRWORTHINESS_DIRECTIVE: { label: "⚠ توجيه صلاحية طيران إلزامي (FAA)", tag: "risk", group: "risk" },
+    FR_PROPOSED_AIRWORTHINESS_DIRECTIVE: { label: "مقترح توجيه صلاحية طيران (FAA)", tag: "status", group: "regulatory" },
+    FR_SPECIAL_CONDITIONS: { label: "شروط خاصة لاعتماد طراز طائرة (FAA)", tag: "status", group: "regulatory" },
+    FR_FTC_CONSENT_ORDER: { label: "⚠ تسوية مقترحة مع FTC", tag: "risk", group: "risk" },
+    FR_ENERGY_REGULATORY_FILING: { label: "إجراء لدى لجنة تنظيم الطاقة (FERC)", tag: "status", group: "regulatory" },
+    FR_NUCLEAR_LICENSE_ACTION: { label: "إجراء ترخيص نووي (NRC)", tag: "status", group: "regulatory" },
   };
   const kindInfo = (k) => KIND[k] || { label: "حدث رسمي", tag: "results", group: "results" };
   const RANK = { HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -130,10 +140,12 @@
   }
   const FILTERS = [
     ["important", "المهم (دون الإداري)"], ["decision", "قرارات تنظيمية"], ["results", "نتائج دراسات"],
-    ["risk", "مخاطر"], ["admin", "تحديثات إدارية"], ["all", "الكل"],
+    ["risk", "مخاطر"], ["regulatory", "إشعارات حكومية"], ["admin", "تحديثات إدارية"], ["all", "الكل"],
+    ["general", "إشعارات غير مرتبطة بسهم"],
   ];
   function filterEvents(events, filter) {
     if (filter === "all") return events;
+    if (filter === "general") return [];
     if (filter === "important") return events.filter((e) => e.info.group !== "admin");
     return events.filter((e) => e.info.group === filter);
   }
@@ -148,11 +160,75 @@
     return text.length > 140 ? text.slice(0, 137) + "…" : text || e.info.label;
   }
   const kindTag = (e) => ({ text: e.info.label.replace(/ ·.*$/, ""), kind: e.info.tag });
+  // Event date, source publication and our first detection are separate times;
+  // a source being added is not a detection, and an unproven time is not shown.
   function timesLine(e) {
     const parts = [`تاريخ الحدث ${day(e.date) || e.date}`];
     if (e.source_updated && e.source_updated !== String(e.date).slice(0, 10)) parts.push(`تحديث المصدر ${day(e.source_updated)}`);
-    if (e.first_seen_at) parts.push(`رصدناه ${day(e.first_seen_at)}`);
+    if (e.first_seen_at && e.first_seen_basis === "SOURCE_ADDED") parts.push(`أُضيف مع إدخال المصدر ${day(e.first_seen_at)}`);
+    else if (e.first_seen_at) parts.push(`رصدناه ${day(e.first_seen_at)}`);
     return parts.join(" · ");
+  }
+
+  // Federal Register documents with no reviewed link: general notices, with the company
+  // named and why it is not tied to a ticker (private, joint venture, listed abroad, ...).
+  const UNLINKED_AR = { PRIVATE: "شركة خاصة", JOINT_VENTURE: "مشروع مشترك", LISTED_OUTSIDE_US: "مدرجة خارج أمريكا",
+    PARTLY_OWNED: "مملوكة جزئيًا", OWNERSHIP_NOT_VERIFIED: "الملكية غير متحقق منها", NOT_EXCHANGE_LISTED: "غير مدرجة في بورصة",
+    NOT_A_COMPANY: "ليست شركة", NOT_IN_REVIEWED_TABLE: "لم نراجع ارتباطها بسهم" };
+  function generalRows(fr) {
+    if (!fr || fr.schema !== "ghazi.federal_register_feed.v1") return [];
+    const rows = [];
+    for (const e of [...(fr.company_unlinked || []), ...(fr.general || [])]) {
+      if (!e || !safeUrl(e.source_url) || !/^\d{4}-\d{2}-\d{2}/.test(String(e.date || ""))) continue;
+      const why = (e.unmatched || []).map((u) => `${u.name}: ${UNLINKED_AR[u.reason] || "غير مرتبط"}`).join(" · ");
+      rows.push({ date: e.date, agency: e.agency || "", title: String(e.title || ""), url: e.source_url,
+        label: e.kind ? kindInfo(e.kind).label : "إشعار عام", why });
+    }
+    return rows.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
+
+  // How the shown news is spread: by source, by type group, by age and by sector.
+  const GROUP_AR = { decision: "قرارات", results: "نتائج", risk: "مخاطر", regulatory: "إشعارات حكومية", admin: "إدارية" };
+  function newsDistribution(events, sectorOf, now) {
+    const count = (key) => { const m = new Map(); for (const e of events) { const k = key(e); m.set(k, (m.get(k) || 0) + 1); }
+      return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+    const age = (e) => { const d = (now - Date.parse(String(e.date).slice(0, 10) + "T00:00:00Z")) / 864e5;
+      return d <= 1 ? "آخر يوم" : d <= 7 ? "آخر أسبوع" : d <= 14 ? "آخر أسبوعين" : "أقدم"; };
+    return { total: events.length, source: count((e) => e.source || "غير معروف"),
+      group: count((e) => GROUP_AR[e.info.group] || "أخرى"), age: count(age),
+      sector: count((e) => sectorOf(e.symbol) || "قطاع غير محمّل") };
+  }
+
+  // Arabic search: letters folded so that أ/إ/آ/ا, ة/ه and ى/ي match, diacritics ignored.
+  const foldAr = (s) => String(s || "").toLowerCase().replace(/[ً-ْـ]/g, "").replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ").trim();
+  // Arabic names for the symbols the page lists by default; other companies are found by symbol, English name or sector.
+  const AR_NAMES = { NVDA: "إنفيديا", AAPL: "أبل", MSFT: "مايكروسوفت", AMZN: "أمازون", GOOGL: "ألفابت جوجل", GOOG: "ألفابت جوجل",
+    META: "ميتا فيسبوك", AVGO: "برودكوم", TSLA: "تسلا", "BRK.B": "بيركشاير هاثاواي", JPM: "جي بي مورغان", LLY: "إيلي ليلي",
+    XOM: "إكسون موبيل", SPY: "إس آند بي 500", QQQ: "ناسداك 100", DIA: "داو جونز", IWM: "راسل 2000", BA: "بوينغ",
+    NFLX: "نتفليكس", AMD: "إيه إم دي", INTC: "إنتل", PFE: "فايزر", MRNA: "موديرنا", KO: "كوكا كولا", WMT: "وول مارت",
+    DIS: "ديزني", ORCL: "أوراكل", PLTR: "بالانتير", COST: "كوستكو", V: "فيزا", MA: "ماستركارد", UNH: "يونايتد هيلث" };
+
+  // NasdaqTrader "Nasdaq Listed" file (the product its Events Data notice covers).
+  const TIER_AR = { Q: "ناسداك Global Select", G: "ناسداك Global Market", S: "ناسداك Capital Market" };
+  const STATUS_AR = { D: "دون متطلبات الإدراج المستمر", E: "متأخرة في تقديم التقارير الدورية", Q: "مُفلسة",
+    G: "دون متطلبات الإدراج ومُفلسة", H: "دون متطلبات الإدراج ومتأخرة في التقارير", J: "متأخرة في التقارير ومُفلسة",
+    K: "دون متطلبات الإدراج ومتأخرة ومُفلسة" };
+  function nasdaqMap(nl) {
+    const m = new Map();
+    if (!nl || nl.schema !== "ghazi.nasdaq_listed.v1" || !Array.isArray(nl.rows)) return m;
+    for (const r of nl.rows) {
+      if (!Array.isArray(r) || !SYMBOL_RE.test(String(r[0]))) continue;
+      m.set(r[0], { symbol: r[0], name: r[1] || "", security: r[2] || "", tier: TIER_AR[r[3]] || "",
+        status: r[4] && r[4] !== "N" ? r[4] : null, etf: r[5] === 1, equity: r[6] === 1 });
+    }
+    return m;
+  }
+  function flagRows(nl) {
+    return [...nasdaqMap(nl).values()].filter((r) => r.status && r.equity).map((r) => ({
+      symbol: r.symbol, name: r.name, why: `تنبيه ناسداك: ${STATUS_AR[r.status] || r.status}`, time: "",
+      tags: [{ text: "⚠ تنبيه إدراج", kind: "risk" }, { text: r.tier, kind: "admin" }].filter((t) => t.text) }))
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
 
   // ---------- tab rows ----------
@@ -230,28 +306,37 @@
   }
 
   // ---------- search ----------
-  function searchIndex(dir, events) {
+  // S&P 500 directory, events, the default leaders and, once loaded, every Nasdaq-listed security.
+  function searchIndex(dir, events, nasdaq) {
     const items = new Map();
-    for (const r of INDEX_ROWS) items.set(r.symbol, { symbol: r.symbol, name: r.name });
-    for (const r of directoryMap(dir).values()) items.set(r.symbol, { symbol: r.symbol, name: r.name, sector: r.sector_ar });
-    for (const e of events) if (!items.has(e.symbol)) items.set(e.symbol, { symbol: e.symbol, name: e.issuer || "" });
-    for (const s of CORE_LEADERS) if (!items.has(s)) items.set(s, { symbol: s, name: FALLBACK_NAMES[s] || "" });
+    const add = (symbol, fields) => items.set(symbol, { symbol, ...(items.get(symbol) || {}), ...fields });
+    for (const r of nasdaq ? nasdaq.values() : []) add(r.symbol, { name: r.name, sector: r.tier });
+    for (const r of INDEX_ROWS) add(r.symbol, { name: r.name });
+    for (const r of directoryMap(dir).values()) add(r.symbol, { name: r.name, sector: r.sector_ar });
+    for (const e of events) if (!items.has(e.symbol)) add(e.symbol, { name: e.issuer || "" });
+    for (const s of CORE_LEADERS) if (!items.has(s)) add(s, { name: FALLBACK_NAMES[s] || "" });
+    for (const [s, ar] of Object.entries(AR_NAMES)) if (items.has(s)) add(s, { ar });
+    for (const it of items.values()) it.fold = foldAr([it.ar, it.sector].filter(Boolean).join(" "));
     return [...items.values()];
   }
   function suggest(index, query, limit = 8) {
     const q = String(query || "").trim();
     if (!q) return [];
-    const up = q.toUpperCase(), low = q.toLowerCase();
+    const up = q.toUpperCase(), low = q.toLowerCase(), ar = foldAr(q);
+    const arabic = /[؀-ۿ]/.test(q);
     const scored = [];
     for (const it of index) {
       let score = -1;
       if (it.symbol === up) score = 0;
-      else if (it.symbol.startsWith(up)) score = 1;
+      else if (!arabic && it.symbol.startsWith(up)) score = 1;
       else if (it.name && it.name.toLowerCase().startsWith(low)) score = 2;
+      else if (arabic && it.fold && it.fold.split(" ").some((w) => w.startsWith(ar))) score = 2;
       else if (it.name && it.name.toLowerCase().includes(low)) score = 3;
-      if (score >= 0) scored.push([score, it]);
+      else if (arabic && it.fold && it.fold.includes(ar)) score = 3;
+      if (score >= 0) scored.push([score + (it.ar ? 0 : 0.5), it]);
     }
-    return scored.sort((a, b) => a[0] - b[0] || a[1].symbol.localeCompare(b[1].symbol)).slice(0, limit).map((x) => x[1]);
+    return scored.sort((a, b) => a[0] - b[0] || a[1].symbol.length - b[1].symbol.length || a[1].symbol.localeCompare(b[1].symbol))
+      .slice(0, limit).map((x) => x[1]);
   }
 
   // ---------- options calculator (no market data) ----------
@@ -265,8 +350,26 @@
     return out;
   }
 
+  // Share classes make securities and companies different counts (GOOGL and GOOG are one company).
+  function companyCounts(dir) {
+    const rows = dir && Array.isArray(dir.symbols) ? dir.symbols : [];
+    return { securities: rows.length, companies: new Set(rows.map((r) => r && (r.cik || r.symbol))).size };
+  }
+  // A gap is stated for the use in question and the sources tested, never as "no source exists".
+  const GAP_AR = "لم نجد حتى الآن مصدرًا مناسبًا للاستخدام المحدد ضمن المصادر التي اختبرناها";
+  // Options data by kind: each kind has its own rights and use; a subscription is not a redistribution right.
+  const OPTION_DATA_KINDS = [
+    ["أسعار تاريخية للعقود", GAP_AR + " للنشر على الموقع."],
+    ["أسعار مؤجلة", "جداول Cboe المؤجلة تمنع الجمع الآلي؛ الجمع متوقف ولن يُعاد دون تصريح."],
+    ["أسعار حية (OPRA)", "تصل عبر مزود مرخّص من OPRA؛ إعادة نشرها للعموم تحتاج اتفاقية توزيع ورسومًا منفصلة عن الاشتراك."],
+    ["إحصاءات مجمّعة (حجم وعقود مفتوحة يومية)", "منشورة يوميًا، والعقود المفتوحة ليست لحظية؛ الجلب الآلي متوقف حتى مراجعة شروط الناشر."],
+    ["أسعار العقود للتنفيذ (عرض/طلب)", "الخطة المجانية في Alpaca إرشادية وليست OPRA، فلا تُعد دليل تنفيذ."],
+    ["نتائج مشتقة (Greeks وGamma)", "تُحسب فقط من بيانات مسموح بها، ولا تُعرض قبل توفرها."],
+  ];
+
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
-    searchIndex, suggest, optionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS };
+    searchIndex, suggest, optionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
+    foldAr, nasdaqMap, flagRows, companyCounts, OPTION_DATA_KINDS, GAP_AR };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -274,17 +377,42 @@
   const doc = root.document;
   const $ = (id) => doc.getElementById(id);
   const el = (tag, cls, text) => { const x = doc.createElement(tag); if (cls) x.className = cls; if (text != null) x.textContent = text; return x; };
-  const state = { tab: "indices", data: {}, events: [], symbol: null, newsFilter: "important", sector: "core", sort: "latest" };
+  const state = { tab: "indices", data: {}, events: [], symbol: null, newsFilter: "important", sector: "core", sort: "latest",
+    smallView: "catalysts", nasdaq: null, scroll: {} };
   const wide = () => root.matchMedia("(min-width: 1024px)").matches;
 
-  async function load(name) {
+  async function load(name, file) {
     const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
     const timer = setTimeout(() => ctrl && ctrl.abort(), 10000);
     try {
-      const r = await fetch(DATA + FILES[name], { cache: "no-store", signal: ctrl ? ctrl.signal : undefined });
+      const r = await fetch(DATA + (file || FILES[name]), { cache: "no-store", signal: ctrl ? ctrl.signal : undefined });
       if (!r.ok) throw new Error("HTTP " + r.status);
       return await r.json();
     } catch { return null; } finally { clearTimeout(timer); }
+  }
+  // The Nasdaq Listed directory, once; search, the catalysts tab and the detail view use it.
+  let nasdaqPromise = null;
+  function ensureNasdaq() {
+    if (!nasdaqPromise) nasdaqPromise = load("nasdaq", NASDAQ_FILE).then((d) => {
+      state.data.nasdaq = d; state.nasdaq = nasdaqMap(d);
+      index = searchIndex(state.data.directory, state.events, state.nasdaq);
+      return state.nasdaq;
+    });
+    return nasdaqPromise;
+  }
+  // TradingView widgets mounted only when their section is opened (they render their own data).
+  function lazyEmbed(title, kind, cfg, note) {
+    const d = el("details", "gr-card gr-embed"); d.append(el("summary", null, title));
+    d.addEventListener("toggle", () => {
+      if (!d.open || d.dataset.mounted) return;
+      d.dataset.mounted = "1";
+      const holder = el("div", "tradingview-widget-container"); holder.append(el("div", "tradingview-widget-container__widget"));
+      const s = doc.createElement("script"); s.async = true; s.src = "https://s3.tradingview.com/external-embedding/embed-widget-" + kind + ".js";
+      s.textContent = JSON.stringify(cfg);
+      s.onerror = () => { holder.replaceChildren(el("p", "gr-muted", "تعذّر تحميل أداة TradingView.")); };
+      holder.append(s); d.append(holder, el("p", "gr-muted", note));
+    });
+    return d;
   }
 
   // ----- watchlist (this browser only) -----
@@ -392,7 +520,7 @@
     return card;
   }
 
-  const TAB_TITLES = { indices: "المؤشرات", leaders: "القياديات", small: "الأسهم الصغيرة", options: "الخيارات", news: "الأخبار" };
+  const TAB_TITLES = { indices: "المؤشرات", leaders: "القياديات", small: "أسهم ذات محفزات", options: "الخيارات", news: "الأخبار" };
   function renderTab() {
     const list = $("gr-list"), tools = $("gr-list-tools"), note = $("gr-list-note"), extra = $("gr-extra");
     $("gr-list-title").textContent = TAB_TITLES[state.tab];
@@ -417,23 +545,42 @@
         (v) => { state.sector = v; renderTab(); }));
       tools.append(select([["latest", "الأحدث حدثًا"], ["symbol", "حسب الرمز"]], state.sort, "الترتيب", (v) => { state.sort = v; renderTab(); }));
       rows = leaderRows(directory, state.events, state.sector, state.sort, catalysts);
-      note.textContent = directory
-        ? `من قائمة أعضاء S&P 500 الحالية (${n(directory.count)} شركة، تحديث ${day(directory.source && directory.source.data_commit_date) || "—"}). الأحداث من FDA وClinicalTrials فقط؛ إفصاحات SEC متوقفة حاليًا.`
-        : "قائمة مختصرة؛ دليل أعضاء S&P 500 لم يُنشر بعد. الأحداث من FDA وClinicalTrials فقط؛ إفصاحات SEC متوقفة حاليًا.";
+      const c = companyCounts(directory);
+      note.textContent = (directory
+        ? `من قائمة أعضاء S&P 500 الحالية: ${n(c.companies)} شركة و${n(c.securities)} ورقة مالية (بعض الشركات لها أكثر من فئة أسهم)، تحديث ${day(directory.source && directory.source.data_commit_date) || "—"}.`
+        : "قائمة مختصرة؛ دليل أعضاء S&P 500 لم يُنشر بعد.") +
+        " S&P 500 قائمة الشركات الكبرى، وليس رادار أسهم صغيرة. الأحداث من FDA وClinicalTrials وFederal Register؛ إفصاحات SEC متوقفة حاليًا.";
+      extra.append(lazyEmbed("خريطة قطاعات S&P 500 (TradingView)", "stock-heatmap", { dataSource: "SPX500", grouping: "sector",
+        blockSize: "market_cap_basic", blockColor: "change", locale: "ar_AE", colorTheme: "dark", hasTopBar: false,
+        isZoomEnabled: true, hasSymbolTooltip: true, isTransparent: false, width: "100%", height: 420 },
+      "عرض من TradingView في متصفحك؛ لا يدخل في أي حساب لدينا."));
     } else if (state.tab === "small") {
-      rows = smallRows(catalysts, directory, state.events);
-      note.textContent = (directory ? "شركات خارج S&P 500" : "شركات خارج قائمة الشركات الكبرى المعروفة") +
-        " لديها حدث رسمي حديث. حجمها غير موثق: القيمة السوقية تحتاج سعرًا من مصدر يسمح بالنشر.";
-      if (!rows.length) list.append(el("p", "gr-empty", catalysts ? "لا شركات صغيرة بأحداث رسمية في آخر 30 يومًا." : "تعذّر تحميل قائمة الأحداث الرسمية."));
+      tools.append(select([["catalysts", "أحداث رسمية حديثة"], ["flags", "تنبيهات إدراج ناسداك"]], state.smallView, "العرض",
+        (v) => { state.smallView = v; renderTab(); }));
+      if (state.smallView === "flags") {
+        if (!state.nasdaq) { list.append(el("p", "gr-empty", "جارٍ تحميل ملف ناسداك…")); ensureNasdaq().then(() => state.tab === "small" && renderTab()); return; }
+        rows = flagRows(state.data.nasdaq);
+        const nl = state.data.nasdaq;
+        note.textContent = nl
+          ? `من ملف «Nasdaq Listed» في NasdaqTrader (أُنشئ ${day(nl.file_created_at) || "—"}): ${n(rows.length)} سهمًا عليها تنبيه إدراج. التنبيه خطر وليس محفزًا إيجابيًا.`
+          : "تعذّر تحميل ملف ناسداك.";
+      } else {
+        rows = smallRows(catalysts, directory, state.events);
+        if (state.nasdaq) for (const r of rows) {
+          const m = state.nasdaq.get(r.symbol);
+          if (m && m.tier) r.tags.push({ text: m.tier, kind: "admin" });
+          if (m && m.status) r.tags.unshift({ text: "⚠ تنبيه إدراج", kind: "risk" });
+        } else ensureNasdaq().then(() => state.tab === "small" && state.smallView === "catalysts" && renderTab());
+        note.textContent = (directory ? "شركات خارج S&P 500" : "شركات خارج قائمة الشركات الكبرى المعروفة") +
+          " لديها حدث رسمي حديث. نسميها «أسهم ذات محفزات» لأن قيمتها السوقية غير موثقة (تحتاج سعرًا من مصدر يسمح بالنشر)، وليس كل حدث إيجابيًا.";
+        if (!rows.length) list.append(el("p", "gr-empty", catalysts ? "لا شركات بأحداث رسمية في آخر 30 يومًا." : "تعذّر تحميل قائمة الأحداث الرسمية."));
+      }
     } else if (state.tab === "options") {
       list.hidden = true;
       const reason = options && options.reason_ar ? options.reason_ar : null;
-      extra.append(compactState("سلاسل الخيارات غير متاحة حاليًا",
-        "لا يوجد مصدر مجاني يسمح بجلب أسعار العقود آليًا ونشرها، لذلك لا نعرض نشاط العقود أو مستويات Gamma.",
-        [reason || "Cboe يمنع الاستخراج الآلي لجداول الأسعار المؤجلة.",
-          "Tradier للاستخدام الشخصي فقط، وعقود Alpaca المجانية إرشادية وليست OPRA.",
-          "مستودعات Gamma المجتمعية بلا ترخيص واضح لمصدر بياناتها.",
-          "التفاصيل الكاملة في مركز البيانات."]));
+      extra.append(compactState("سلاسل الخيارات غير معروضة حاليًا",
+        GAP_AR + ": جلب أسعار العقود آليًا ونشرها للعموم. لذلك لا نعرض نشاط العقود أو مستويات Gamma.",
+        [...OPTION_DATA_KINDS.map(([k, v]) => `${k}: ${v}`), ...(reason ? [reason] : []), "التفاصيل الكاملة في مركز البيانات."]));
       extra.append(calculatorCard());
     } else if (state.tab === "news") {
       // Chips where they fit on one line; one dropdown on narrow screens.
@@ -445,11 +592,41 @@
         }
         tools.classList.add("gr-chips");
       } else tools.append(select(FILTERS, state.newsFilter, "نوع الخبر", (v) => { state.newsFilter = v; renderTab(); }));
-      const shown = filterEvents(state.events, state.newsFilter);
       const src = catalysts && catalysts.sources ? catalysts.sources : {};
-      note.textContent = `أحداث رسمية مرتبطة برموز: FDA${src.clinicaltrials ? " وClinicalTrials" : ""}. ` +
-        "تحديث السجل الإداري لا يعني نتيجة إيجابية. إفصاحات SEC وأخبار GDELT متوقفة حاليًا." +
+      if (state.newsFilter === "general") {
+        const general = generalRows(state.data.fr);
+        note.textContent = "إشعارات من Federal Register (الجريدة الرسمية الأمريكية) لم نربطها بسهم: الشركة خاصة أو مشروع مشترك أو مدرجة خارج أمريكا أو لم نراجع ملكيتها. لا نربط بتشابه الأسماء.";
+        for (const g of general.slice(0, 80)) {
+          const row = el("div", "gr-row"); row.setAttribute("role", "listitem");
+          const box = el("div", "gr-row-open");
+          box.append(el("span", "gr-row-id", g.agency), el("span", "gr-time", day(g.date) || ""), el("span", "gr-why", g.title));
+          const meta = el("span", "gr-meta"); const tag = el("span", "gr-tag", g.label); tag.dataset.kind = "admin"; meta.append(tag);
+          if (g.why) meta.append(el("span", null, g.why));
+          box.append(meta); row.append(box);
+          const a = el("a", "gr-row-link", "Federal Register ↗"); a.href = g.url; a.target = "_blank"; a.rel = "noopener"; row.append(a);
+          list.append(row);
+        }
+        if (!general.length) list.append(el("p", "gr-empty", state.data.fr ? "لا إشعارات عامة في آخر 30 يومًا." : "ملف Federal Register لم يُنشر بعد."));
+        return autoSelect();
+      }
+      const shown = filterEvents(state.events, state.newsFilter);
+      note.textContent = `أحداث رسمية مرتبطة برموز: FDA${src.clinicaltrials ? " وClinicalTrials" : ""}${src.federal_register ? " وFederal Register" : ""}. ` +
+        "ليس كل حدث إيجابيًا؛ تحديث السجل الإداري لا يعني نتيجة. إفصاحات SEC وأخبار علاقات المستثمرين متوقفة حتى يتوفر مصدر مسموح." +
         (catalysts ? ` آخر تحديث ${ago(catalysts.generated_at, Date.now())}.` : "");
+      if (shown.length) {
+        const members = directoryMap(directory);
+        const dist = newsDistribution(shown, (s) => (members.get(s) || {}).sector_ar, Date.now());
+        const fmt = (pairs) => pairs.slice(0, 5).map(([k, v]) => `${k} ${n(v)}`).join(" · ");
+        const d = el("details", "gr-more gr-dist");
+        d.append(el("summary", null, `توزيع ${n(dist.total)} خبرًا حسب المصدر: ${fmt(dist.source)}`));
+        const ul = el("ul");
+        ul.append(el("li", null, "النوع: " + fmt(dist.group)), el("li", null, "العمر: " + fmt(dist.age)),
+          el("li", null, "القطاع (لأعضاء S&P 500): " + fmt(dist.sector)));
+        d.append(ul); extra.append(d);
+      }
+      extra.append(lazyEmbed("التقويم الاقتصادي الأمريكي (TradingView)", "events", { colorTheme: "dark", isTransparent: false,
+        width: "100%", height: 420, locale: "ar_AE", importanceFilter: "0,1", countryFilter: "us" },
+      "مواعيد البيانات الاقتصادية من TradingView في متصفحك؛ لا تدخل في أي حساب لدينا."));
       for (const e of shown.slice(0, 120)) {
         list.append(rowEl({ symbol: e.symbol, name: e.issuer || "", why: eventText(e), quiet: e.info.group === "admin",
           time: day(e.date), tags: [kindTag(e)], times: timesLine(e) },
@@ -562,7 +739,10 @@
     const index = INDEX_ROWS.find((r) => r.symbol === symbol);
     const mine = state.events.filter((e) => e.symbol === symbol);
     const top = headline(mine);
-    $("gr-d-name").textContent = (member && member.name) || (index && index.name) || (top && top.issuer) || FALLBACK_NAMES[symbol] || "";
+    const listed = state.nasdaq ? state.nasdaq.get(symbol) : null;
+    // A name is shown only from a list that holds the symbol; never guessed.
+    $("gr-d-name").textContent = (member && member.name) || (index && index.name) || (listed && listed.name) ||
+      (top && top.issuer) || FALLBACK_NAMES[symbol] || "";
 
     // Why it is here
     const why = section("لماذا يظهر");
@@ -570,9 +750,17 @@
     if (index) reasons.append(el("li", null, index.name + "؛ يُعرض بدل المؤشر النقدي غير المتاح في الأدوات المجانية."));
     if (member) reasons.append(el("li", null, `عضو في S&P 500 · ${member.sector_ar}${member.sub_industry ? " · " + member.sub_industry : ""}`));
     else if (CORE_LEADERS.includes(symbol)) reasons.append(el("li", null, "ضمن قائمة القياديات المختصرة في الموقع."));
+    if (listed) reasons.append(el("li", null, `مدرج في ناسداك · ${listed.tier || "فئة غير محددة"}${listed.security ? " · " + listed.security : ""}${listed.etf ? " · صندوق متداول" : ""} (ملف NasdaqTrader)`));
+    if (listed && listed.status) {
+      const li = el("li"); const tag = el("span", "gr-tag", "⚠ تنبيه إدراج"); tag.dataset.kind = "risk";
+      li.append(tag, doc.createTextNode(" " + (STATUS_AR[listed.status] || listed.status) + " — حسب ملف ناسداك؛ خطر وليس محفزًا.")); reasons.append(li);
+    }
     if (top) reasons.append(el("li", null, `${top.info.label}: ${eventText(top)} (${day(top.date)})`));
-    if (!reasons.children.length) reasons.append(el("li", null, "رمز من بحثك؛ لا يظهر في قوائمنا الحالية."));
+    if (!reasons.children.length) reasons.append(el("li", null, state.nasdaq
+      ? "رمز من بحثك غير موجود في قوائمنا (S&P 500 وملف ناسداك)؛ قد يكون مدرجًا في بورصة أخرى. لم نتحقق من اسم الشركة أو بورصتها."
+      : "رمز من بحثك؛ لم نتحقق بعد من اسم الشركة أو بورصتها."));
     why.append(reasons); body.append(why);
+    if (!member && !index && !state.nasdaq) ensureNasdaq().then(() => state.symbol === symbol && state.nasdaq.size && renderDetailBody(symbol));
 
     // Index context: published CFTC positions
     if (index) {
@@ -606,7 +794,7 @@
       }
       news.append(ul);
     } else news.append(el("p", null, !state.loaded ? "جارٍ التحميل…" : catalysts
-      ? "لا أحداث رسمية لهذا الرمز في مصادرنا خلال 30 يومًا (FDA وClinicalTrials)." : "تعذّر تحميل الأحداث الرسمية."));
+      ? "لا أحداث رسمية لهذا الرمز في مصادرنا خلال 30 يومًا (FDA وClinicalTrials وFederal Register)." : "تعذّر تحميل الأحداث الرسمية."));
     if (!index) {
       const sec = el("p", "gr-muted");
       const a = el("a", null, "إفصاحات الشركة على SEC EDGAR ↗");
@@ -620,13 +808,16 @@
 
     // Price analysis: one honest line, no empty level boxes
     const price = section("التحليل السعري");
-    price.append(el("p", null, "غير متاح: لا نملك مصدر شموع يسمح بحساب المستويات ونشرها. الشارت أعلاه عرض من TradingView ولا يدخل في أي حساب."));
+    price.append(el("p", null, `غير متاح: ${GAP_AR} (شموع أسعار تسمح بحساب المستويات ونشرها). الشارت أعلاه عرض من TradingView ولا يدخل في أي حساب.`));
     body.append(price);
   }
+  let returnFocus = null;
   function openSymbol(symbol, opts = {}) {
     const s = String(symbol || "").trim().toUpperCase();
     if (!SYMBOL_RE.test(s)) return;
     state.symbol = s;
+    const from = doc.activeElement;
+    if (from && from !== doc.body && !$("gr-detail").contains(from)) returnFocus = from;
     const panel = $("gr-detail");
     $("gr-d-symbol").textContent = s;
     for (const r of doc.querySelectorAll("#gr-list .gr-row")) {
@@ -640,8 +831,11 @@
       root.history.pushState({ s, tab: state.tab }, "", url);
     }
   }
+  // Closing returns to the same place in the list: the page scroll is untouched and
+  // focus goes back to the row or search box that opened the stock.
   function closeDetail() {
     $("gr-detail").classList.remove("is-open"); doc.body.style.overflow = "";
+    if (returnFocus && doc.contains(returnFocus)) returnFocus.focus({ preventScroll: true });
   }
 
   // ----- search -----
@@ -662,7 +856,10 @@
       if (active >= 0) input.setAttribute("aria-activedescendant", "gr-sg-" + active); else input.removeAttribute("aria-activedescendant");
     };
     const choose = (s) => { input.value = ""; close(); openSymbol(s); };
-    input.addEventListener("input", () => { items = suggest(index, input.value); active = -1; paint(); });
+    const refresh = () => { items = suggest(index, input.value); active = -1; paint(); };
+    // The Nasdaq directory joins the search on first use; suggestions refresh when it arrives.
+    input.addEventListener("focus", () => { if (!state.nasdaq) ensureNasdaq().then(() => { if (doc.activeElement === input && input.value) refresh(); }); });
+    input.addEventListener("input", refresh);
     input.addEventListener("keydown", (e) => {
       if (e.key === "ArrowDown" && items.length) { active = (active + 1) % items.length; paint(); e.preventDefault(); }
       else if (e.key === "ArrowUp" && items.length) { active = (active - 1 + items.length) % items.length; paint(); e.preventDefault(); }
@@ -673,17 +870,24 @@
       e.preventDefault();
       const pick = active >= 0 ? items[active] : suggest(index, input.value, 1)[0];
       const typed = String(input.value || "").trim().toUpperCase();
-      if (pick) choose(pick.symbol); else if (SYMBOL_RE.test(typed)) choose(typed);
+      // An exact symbol opens as typed; a valid symbol outside every list still opens, marked unverified.
+      if (SYMBOL_RE.test(typed) && (!pick || pick.symbol !== typed) && index.every((it) => it.symbol !== typed)) choose(typed);
+      else if (pick) choose(pick.symbol); else if (SYMBOL_RE.test(typed)) choose(typed);
     });
   }
 
+  // Each tab keeps its own scroll position.
   function setTab(tab, push) {
     if (!TAB_TITLES[tab]) return;
+    state.scroll[state.tab] = root.scrollY;
     state.tab = tab; renderTab();
+    root.scrollTo(0, state.scroll[tab] || 0);
     if (push) { const url = new URL(root.location.href); url.searchParams.set("tab", tab); root.history.replaceState(root.history.state, "", url); }
   }
 
   async function start() {
+    // Back/forward only open or close the stock view; the browser must not move the list.
+    if ("scrollRestoration" in root.history) root.history.scrollRestoration = "manual";
     renderWatch();
     const params = new URLSearchParams(root.location.search);
     const linked = String(params.get("s") || params.get("chart") || "").toUpperCase();

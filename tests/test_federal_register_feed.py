@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -116,6 +117,23 @@ def test_faa_title_end_word_and_prv_manufactured_by_sponsor():
     index, excluded = fr.load_links()
     assert index[fr.norm("General Electric Company")]["ticker"] == "GE"
     assert excluded[fr.norm("Engine Alliance")]["reason"] == "JOINT_VENTURE"
+    # Scholar Rock: no evidence page passed, so the subsidiary is not linked to SRRK.
+    assert fr.norm("Scholar Rock, Inc.") not in index
+    assert excluded[fr.norm("Scholar Rock, Inc.")]["reason"] == "OWNERSHIP_NOT_VERIFIED"
+
+
+def test_a_reviewed_row_is_used_only_after_its_evidence_check_passed(tmp_path):
+    table = {"links": [
+        {"names": ["Alpha Corp"], "ticker": "ALP", "relation": "SAME_ENTITY", "evidence_verified_run": 1},
+        {"names": ["Beta Corp"], "ticker": "BET", "relation": "SAME_ENTITY"}], "excluded": []}
+    path = tmp_path / "links.json"
+    path.write_text(json.dumps(table), encoding="utf-8")
+    index, excluded = fr.load_links(path)
+    assert index[fr.norm("Alpha Corp")]["ticker"] == "ALP"
+    assert fr.norm("Beta Corp") not in index and excluded[fr.norm("Beta Corp")]["reason"] == "EVIDENCE_PENDING"
+    shipped = json.loads((ROOT / "data" / "issuer_links.json").read_text(encoding="utf-8"))
+    assert all(isinstance(x.get("evidence_verified_run"), int) or x["names"][0] == "Dominion Energy South Carolina, Inc."
+               for x in shipped["links"])
 
 
 def test_bad_urls_and_unknown_kinds_are_dropped():

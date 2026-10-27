@@ -121,15 +121,18 @@ def load_links(path: Path | None = None) -> tuple[dict[str, dict[str, Any]], dic
     path = path or ROOT / "data" / "issuer_links.json"
     table = json.loads(path.read_text(encoding="utf-8"))
     index: dict[str, dict[str, Any]] = {}
+    pending: dict[str, dict[str, Any]] = {}
     for link in table.get("links", []):
+        # Fail closed: a reviewed row is used only once its evidence page passed the runner check.
+        target = index if isinstance(link.get("evidence_verified_run"), int) else pending
         for name in link.get("names", []):
-            index[norm(name)] = link
+            target[norm(name)] = link if target is index else {"reason": "EVIDENCE_PENDING"}
     aliases = json.loads((ROOT / "data" / "fda_sponsor_aliases.json").read_text(encoding="utf-8"))
     for ticker, names in (aliases.get("aliases") or {}).items():
         for name in names:
             index.setdefault(norm(name), {"ticker": ticker, "legal_entity": name, "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
                                           "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)"})
-    excluded = {norm(n): x for x in table.get("excluded", []) for n in x.get("names", [])}
+    excluded = {**pending, **{norm(n): x for x in table.get("excluded", []) for n in x.get("names", [])}}
     return index, excluded
 
 

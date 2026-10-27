@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.issuer_links.v1",
- "policy": "Reviewed links from a company named in an official document to a U.S.-listed ticker: sponsor or named entity -> legal entity -> listed company (itself or its parent) -> ticker -> evidence. A row is added only for the listed company itself, a division of it, a wholly owned subsidiary, or a renamed company; joint ventures, partly owned, private and non-U.S.-listed companies go to 'excluded' with the reason. Matching is exact on the normalised name (case, punctuation and a trailing legal suffix such as Inc/LLC/Corp removed); there is no similarity matching. Each row's evidence page is fetched on a runner and checked for the listed text before the row is marked verified.",
+ "policy": "Reviewed links from a company named in an official document to a U.S.-listed ticker: sponsor or named entity -> legal entity -> listed company (itself or its parent) -> ticker -> evidence. A row is added only for the listed company itself, a division of it, a wholly owned subsidiary, or a renamed company; joint ventures, partly owned, private and non-U.S.-listed companies go to 'excluded' with the reason. Matching is exact on the normalised name (case, punctuation and a trailing legal suffix such as Inc/LLC/Corp removed); there is no similarity matching. Each row's evidence page is fetched on a runner and checked for the listed text before the row is marked verified. A row is used only after its evidence check passed on a runner (evidence_verified_run); a row without it is listed as EVIDENCE_PENDING and not linked.",
  "reviewed_at": "2026-10-27",
  "links": [
   {
@@ -18,7 +18,8 @@
    "evidence_check": [
     "Boeing",
     "BA"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -34,7 +35,8 @@
    "evidence_check": [
     "Embraer",
     "ERJ"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -50,7 +52,8 @@
    "evidence_check": [
     "LiveRamp",
     "RAMP"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -67,7 +70,8 @@
    "evidence_check": [
     "FleetCor",
     "CPAY"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -84,7 +88,8 @@
    "evidence_check": [
     "Ruger",
     "RGR"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -100,7 +105,8 @@
    "evidence_check": [
     "Virginia",
     "Dominion"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -115,7 +121,8 @@
    "evidence_check": [
     "Ionis",
     "IONS"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -130,7 +137,8 @@
    "evidence_check": [
     "Teva",
     "TEVA"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -146,12 +154,14 @@
    "evidence_check": [
     "General Electric Company",
     "GE"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
     "Pratt & Whitney Division",
-    "Pratt & Whitney"
+    "Pratt & Whitney",
+    "Pratt & Whitney RTX Corporation"
    ],
    "legal_entity": "Pratt & Whitney (a business of RTX Corporation)",
    "listed_company": "RTX Corporation",
@@ -162,7 +172,8 @@
    "evidence_check": [
     "RTX",
     "Pratt"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -178,7 +189,8 @@
    "evidence_check": [
     "Honda Motor",
     "subsidiary"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -193,23 +205,8 @@
    "evidence_check": [
     "Ultragenyx",
     "RARE"
-   ]
-  },
-  {
-   "names": [
-    "Scholar Rock, Inc."
    ],
-   "legal_entity": "Scholar Rock, Inc.",
-   "listed_company": "Scholar Rock Holding Corporation",
-   "ticker": "SRRK",
-   "exchange": "NASDAQ",
-   "relation": "WHOLLY_OWNED_SUBSIDIARY",
-   "note": "Operating company of the listed holding company.",
-   "evidence_url": "https://en.wikipedia.org/wiki/Scholar_Rock",
-   "evidence_check": [
-    "Scholar Rock",
-    "SRRK"
-   ]
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -220,10 +217,10 @@
    "ticker": "D",
    "exchange": "NYSE",
    "relation": "WHOLLY_OWNED_SUBSIDIARY",
-   "evidence_url": "https://en.wikipedia.org/wiki/Dominion_Energy_South_Carolina",
+   "evidence_url": "https://en.wikipedia.org/wiki/SCANA",
    "evidence_check": [
-    "Dominion Energy",
-    "SCANA"
+    "Dominion Energy South Carolina",
+    "Dominion"
    ]
   },
   {
@@ -239,7 +236,8 @@
    "evidence_check": [
     "Public Service Company of Colorado",
     "XEL"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -253,7 +251,8 @@
    "evidence_url": "https://en.wikipedia.org/wiki/Transcontinental_Pipeline",
    "evidence_check": [
     "Williams"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -268,7 +267,8 @@
    "evidence_url": "https://en.wikipedia.org/wiki/Tennessee_Gas_Pipeline",
    "evidence_check": [
     "Kinder Morgan"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   },
   {
    "names": [
@@ -283,7 +283,8 @@
    "evidence_check": [
     "Eastern Shore",
     "CPK"
-   ]
+   ],
+   "evidence_verified_run": 40564806235
   }
  ],
  "excluded": [
@@ -451,6 +452,13 @@
    ],
    "reason": "OWNERSHIP_NOT_VERIFIED",
    "note": "Textron subsidiary in Canada; not linked until the relation is checked."
+  },
+  {
+   "names": [
+    "Scholar Rock, Inc."
+   ],
+   "reason": "OWNERSHIP_NOT_VERIFIED",
+   "note": "Candidate parent SRRK (Scholar Rock Holding Corporation in nasdaqlisted.txt); the subsidiary relation needs a filing (e.g. 10-K Exhibit 21) before linking."
   }
  ]
 }
