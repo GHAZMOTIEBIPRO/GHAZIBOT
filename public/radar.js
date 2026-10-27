@@ -156,7 +156,8 @@
   // What the event is about: the study title for registry events (their label
   // repeats the event type), the product for FDA events. The type itself is the tag.
   function eventText(e) {
-    const text = String(/^TRIAL_/.test(e.kind) ? e.reason || e.label || "" : e.label || e.reason || "").trim();
+    // Registry and Federal Register events: the study or document title says what happened.
+    const text = String(/^(TRIAL_|FR_)/.test(e.kind) ? e.reason || e.label || "" : e.label || e.reason || "").trim();
     return text.length > 140 ? text.slice(0, 137) + "…" : text || e.info.label;
   }
   const kindTag = (e) => ({ text: e.info.label.replace(/ ·.*$/, ""), kind: e.info.tag });
@@ -196,7 +197,7 @@
       return d <= 1 ? "آخر يوم" : d <= 7 ? "آخر أسبوع" : d <= 14 ? "آخر أسبوعين" : "أقدم"; };
     return { total: events.length, source: count((e) => e.source || "غير معروف"),
       group: count((e) => GROUP_AR[e.info.group] || "أخرى"), age: count(age),
-      sector: count((e) => sectorOf(e.symbol) || "قطاع غير محمّل") };
+      sector: count((e) => sectorOf(e.symbol) || "خارج S&P 500") };
   }
 
   // Arabic search: letters folded so that أ/إ/آ/ا, ة/ه and ى/ي match, diacritics ignored.
@@ -621,7 +622,7 @@
         d.append(el("summary", null, `توزيع ${n(dist.total)} خبرًا حسب المصدر: ${fmt(dist.source)}`));
         const ul = el("ul");
         ul.append(el("li", null, "النوع: " + fmt(dist.group)), el("li", null, "العمر: " + fmt(dist.age)),
-          el("li", null, "القطاع (لأعضاء S&P 500): " + fmt(dist.sector)));
+          el("li", null, "القطاع: " + fmt(dist.sector)));
         d.append(ul); extra.append(d);
       }
       extra.append(lazyEmbed("التقويم الاقتصادي الأمريكي (TradingView)", "events", { colorTheme: "dark", isTransparent: false,

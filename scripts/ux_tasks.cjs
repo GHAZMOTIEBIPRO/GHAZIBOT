@@ -108,6 +108,7 @@ async function run(device) {
     await page.waitForFunction(() => /مدرج في ناسداك/.test(document.getElementById("gr-d-body").textContent), null, { timeout: 15000 });
     const name = await page.$eval("#gr-d-name", (e) => e.textContent);
     must(/SoundHound/.test(name), "name " + name);
+    await page.waitForTimeout(500);
     await shot(page, `ux-${device}-soun.png`);
     return { name };
   });
@@ -164,6 +165,7 @@ async function run(device) {
     const news = await page.$eval("#gr-d-body", (e) => e.textContent);
     must(/صلاحية طيران/.test(news), "no FAA directive on BA");
     const href = await page.$eval('#gr-d-body a[href*="federalregister.gov"]', (a) => a.href);
+    await page.waitForTimeout(500);   // the phone panel slides in; capture after it settles
     await shot(page, `ux-${device}-ba.png`);
     return { link: href };
   });
