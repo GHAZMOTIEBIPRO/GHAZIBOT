@@ -44,6 +44,9 @@ class FeedLinks(HTMLParser):
         a = {k: (v or "") for k, v in attrs}
         if tag == "link" and "alternate" in a.get("rel", "").lower() and a.get("type", "").lower() in FEED_TYPES:
             self.feeds.append((a.get("href", ""), a.get("title", "")))
+        # Links the page itself shows (IR platforms often put "RSS" in the body or footer); never guessed paths.
+        elif tag == "a" and re.search(r"(^|[/._-])rss([/._?-]|$)", a.get("href", ""), re.IGNORECASE):
+            self.feeds.append((a.get("href", ""), a.get("title", "") or "page link"))
 
 
 def allowed(url: str) -> tuple[bool | None, str]:
@@ -78,8 +81,8 @@ def probe(symbol: str, url: str) -> dict:
     row: dict = {"symbol": symbol, "page": url}
     ok, why = allowed(url)
     row["robots"] = why
-    if ok is False:
-        return {**row, "status": "ROBOTS_DISALLOWED"}
+    if ok is not True:      # unknown (robots.txt unreadable) fails closed, like disallowed
+        return {**row, "status": "ROBOTS_DISALLOWED" if ok is False else "ROBOTS_UNKNOWN"}
     time.sleep(1)
     try:
         r = requests.get(url, timeout=25, headers={"User-Agent": UA, "Accept": "text/html"})
@@ -92,22 +95,39 @@ def probe(symbol: str, url: str) -> dict:
     parser.feed(r.text)
     row["terms_link_on_page"] = bool(re.search(r"href=[\"'][^\"']*(terms|legal|disclaimer)", r.text, re.IGNORECASE))
     feeds = []
-    for href, title in parser.feeds[:4]:
-        feed_url = urljoin(r.url, href)
+    seen: set[str] = set()
+    queue = [(urljoin(r.url, href), title, 0) for href, title in parser.feeds]
+    while queue and len(seen) < 6:
+        feed_url, title, depth = queue.pop(0)
+        if feed_url in seen or not feed_url.startswith("https://"):
+            continue
+        seen.add(feed_url)
         entry: dict = {"url": feed_url, "title": title[:80]}
         ok, why = allowed(feed_url)
-        if ok is False:
-            feeds.append({**entry, "status": "ROBOTS_DISALLOWED"})
+        if ok is not True:
+            feeds.append({**entry, "status": "ROBOTS_DISALLOWED" if ok is False else "ROBOTS_UNKNOWN"})
             continue
         time.sleep(1)
         try:
             f = requests.get(feed_url, timeout=25, headers={"User-Agent": UA})
+        except requests.RequestException as exc:
+            feeds.append({**entry, "status": "FEED_ERROR", "error": type(exc).__name__})
+            continue
+        kind = f.headers.get("content-type", "").lower()
+        if f.status_code == 200 and "html" in kind and depth == 0:
+            # An "RSS" page that lists the company's feeds: follow only what it lists, one level.
+            sub = FeedLinks()
+            sub.feed(f.text)
+            queue += [(urljoin(f.url, h), t, 1) for h, t in sub.feeds]
+            feeds.append({**entry, "http": f.status_code, "status": "FEED_INDEX_PAGE", "listed": len(sub.feeds)})
+            continue
+        try:
             got = items(f.text) if f.status_code == 200 else []
             feeds.append({**entry, "http": f.status_code, "items": len(got), "latest": got[0] if got else None})
-        except (requests.RequestException, ElementTree.ParseError) as exc:
-            feeds.append({**entry, "status": "FEED_ERROR", "error": type(exc).__name__})
+        except ElementTree.ParseError:
+            feeds.append({**entry, "http": f.status_code, "status": "NOT_XML", "content_type": kind[:40]})
     row["feeds"] = feeds
-    row["status"] = "FEED_ADVERTISED" if feeds else "NO_FEED_ADVERTISED"
+    row["status"] = "FEED_FOUND" if any(x.get("items") for x in feeds) else ("FEED_LINKS_NO_ITEMS" if feeds else "NO_FEED_LINK")
     return row
 
 
