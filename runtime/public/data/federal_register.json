@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-10-28T19:01:26.978885+00:00",
+ "generated_at": "2026-10-28T21:47:31.535642+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
@@ -40,7 +40,11 @@
    "status": "LINKED",
    "kind": "FR_PRIORITY_REVIEW_VOUCHER",
    "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
    "companies": [
     "Incyte Corporation"
@@ -52,7 +56,10 @@
      "legal_entity": "Incyte Corp",
      "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
      "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)",
-     "listed_company": null
+     "listed_company": null,
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
     }
    ],
    "unmatched": []
@@ -67,7 +74,11 @@
    "status": "LINKED",
    "kind": "FR_PRIORITY_REVIEW_VOUCHER",
    "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
    "companies": [
     "Ionis Pharmaceuticals, Inc."
@@ -78,7 +89,10 @@
      "ticker": "IONS",
      "legal_entity": "Ionis Pharmaceuticals, Inc.",
      "relation": "SAME_ENTITY",
-     "listed_company": "Ionis Pharmaceuticals, Inc."
+     "listed_company": "Ionis Pharmaceuticals, Inc.",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "company read from the document body, linked through a runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -93,7 +107,11 @@
    "status": "LINKED",
    "kind": "FR_APPROVAL_WITHDRAWN",
    "label_ar": "سحب موافقة تطبيق دوائي (FDA)",
+   "document_type": "FR_APPROVAL_WITHDRAWN",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Amneal Pharmaceuticals of New York, LLC"
@@ -105,7 +123,10 @@
      "legal_entity": "Amneal Pharmaceuticals of New York",
      "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
      "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)",
-     "listed_company": null
+     "listed_company": null,
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
     }
    ],
    "unmatched": []
@@ -120,7 +141,11 @@
    "status": "LINKED",
    "kind": "FR_APPROVAL_WITHDRAWN",
    "label_ar": "سحب موافقة تطبيق دوائي (FDA)",
+   "document_type": "FR_APPROVAL_WITHDRAWN",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Teva Pharmaceuticals USA, Inc."
@@ -131,7 +156,10 @@
      "ticker": "TEVA",
      "legal_entity": "Teva Pharmaceuticals USA, Inc.",
      "relation": "WHOLLY_OWNED_SUBSIDIARY",
-     "listed_company": "Teva Pharmaceutical Industries Ltd. (American Depositary Shares on NYSE)"
+     "listed_company": "Teva Pharmaceutical Industries Ltd. (American Depositary Shares on NYSE)",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -146,7 +174,11 @@
    "status": "LINKED",
    "kind": "FR_PRIORITY_REVIEW_VOUCHER",
    "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
    "companies": [
     "Ultragenyx Pharmaceutical Inc."
@@ -157,7 +189,10 @@
      "ticker": "RARE",
      "legal_entity": "Ultragenyx Pharmaceutical Inc.",
      "relation": "SAME_ENTITY",
-     "listed_company": "Ultragenyx Pharmaceutical Inc."
+     "listed_company": "Ultragenyx Pharmaceutical Inc.",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "company read from the document body, linked through a runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -172,7 +207,11 @@
    "status": "LINKED",
    "kind": "FR_SPECIAL_CONDITIONS",
    "label_ar": "شروط خاصة لاعتماد طراز طائرة (FAA)",
+   "document_type": "FR_SPECIAL_CONDITIONS",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Embraer S.A."
@@ -183,7 +222,10 @@
      "ticker": "ERJ",
      "legal_entity": "Embraer S.A.",
      "relation": "SAME_ENTITY",
-     "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)"
+     "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -198,7 +240,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -209,7 +255,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -224,7 +273,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -235,7 +288,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -250,7 +306,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -261,7 +321,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -276,7 +339,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -287,7 +354,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -302,7 +372,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "General Electric Company"
@@ -313,7 +387,10 @@
      "ticker": "GE",
      "legal_entity": "General Electric Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "GE Aerospace (legal name General Electric Company)"
+     "listed_company": "GE Aerospace (legal name General Electric Company)",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -328,7 +405,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -339,7 +420,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -354,7 +438,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -365,7 +453,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -380,7 +471,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -391,7 +486,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -406,7 +504,11 @@
    "status": "LINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Pratt & Whitney RTX Corporation"
@@ -417,7 +519,10 @@
      "ticker": "RTX",
      "legal_entity": "Pratt & Whitney (a business of RTX Corporation)",
      "relation": "DIVISION_OF_LISTED_COMPANY",
-     "listed_company": "RTX Corporation"
+     "listed_company": "RTX Corporation",
+     "name_basis": "OTHER_REVIEWED_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -432,7 +537,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Pratt & Whitney Division"
@@ -443,7 +552,10 @@
      "ticker": "RTX",
      "legal_entity": "Pratt & Whitney (a business of RTX Corporation)",
      "relation": "DIVISION_OF_LISTED_COMPANY",
-     "listed_company": "RTX Corporation"
+     "listed_company": "RTX Corporation",
+     "name_basis": "OTHER_REVIEWED_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -458,7 +570,11 @@
    "status": "LINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "The Boeing Company"
@@ -469,7 +585,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -484,7 +603,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -495,7 +618,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -510,7 +636,11 @@
    "status": "LINKED",
    "kind": "FR_SPECIAL_CONDITIONS",
    "label_ar": "شروط خاصة لاعتماد طراز طائرة (FAA)",
+   "document_type": "FR_SPECIAL_CONDITIONS",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Honda Aircraft Company LLC"
@@ -521,7 +651,10 @@
      "ticker": "HMC",
      "legal_entity": "Honda Aircraft Company, LLC",
      "relation": "WHOLLY_OWNED_SUBSIDIARY",
-     "listed_company": "Honda Motor Co., Ltd. (American Depositary Shares on NYSE)"
+     "listed_company": "Honda Motor Co., Ltd. (American Depositary Shares on NYSE)",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -536,7 +669,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -547,7 +684,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -562,7 +702,11 @@
    "status": "LINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Embraer S.A."
@@ -573,7 +717,10 @@
      "ticker": "ERJ",
      "legal_entity": "Embraer S.A.",
      "relation": "SAME_ENTITY",
-     "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)"
+     "listed_company": "Embraer S.A. (American Depositary Shares on NYSE)",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -588,7 +735,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -599,7 +750,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -614,7 +768,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -625,7 +783,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -640,7 +801,11 @@
    "status": "LINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "The Boeing Company"
@@ -651,7 +816,10 @@
      "ticker": "BA",
      "legal_entity": "The Boeing Company",
      "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company"
+     "listed_company": "The Boeing Company",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -666,7 +834,11 @@
    "status": "LINKED",
    "kind": "FR_FTC_CONSENT_ORDER",
    "label_ar": "⚠ تسوية مقترحة مع لجنة التجارة الفيدرالية (FTC)",
+   "document_type": "FR_FTC_CONSENT_ORDER",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Publicis",
@@ -678,7 +850,10 @@
      "ticker": "RAMP",
      "legal_entity": "LiveRamp Holdings, Inc.",
      "relation": "SAME_ENTITY",
-     "listed_company": "LiveRamp Holdings, Inc."
+     "listed_company": "LiveRamp Holdings, Inc.",
+     "name_basis": "OTHER_REVIEWED_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": [
@@ -698,7 +873,11 @@
    "status": "LINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Virginia Electric and Power Company"
@@ -709,7 +888,10 @@
      "ticker": "D",
      "legal_entity": "Virginia Electric and Power Company",
      "relation": "WHOLLY_OWNED_SUBSIDIARY",
-     "listed_company": "Dominion Energy, Inc."
+     "listed_company": "Dominion Energy, Inc.",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -724,7 +906,11 @@
    "status": "LINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Tennessee Gas Pipeline Company, L.L.C."
@@ -735,7 +921,10 @@
      "ticker": "KMI",
      "legal_entity": "Tennessee Gas Pipeline Company, L.L.C.",
      "relation": "WHOLLY_OWNED_SUBSIDIARY",
-     "listed_company": "Kinder Morgan, Inc."
+     "listed_company": "Kinder Morgan, Inc.",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -750,7 +939,11 @@
    "status": "LINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Public Service Company of Colorado"
@@ -761,7 +954,10 @@
      "ticker": "XEL",
      "legal_entity": "Public Service Company of Colorado",
      "relation": "WHOLLY_OWNED_SUBSIDIARY",
-     "listed_company": "Xcel Energy Inc."
+     "listed_company": "Xcel Energy Inc.",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -776,7 +972,11 @@
    "status": "LINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Eastern Shore Natural Gas Company"
@@ -787,7 +987,10 @@
      "ticker": "CPK",
      "legal_entity": "Eastern Shore Natural Gas Company",
      "relation": "WHOLLY_OWNED_SUBSIDIARY",
-     "listed_company": "Chesapeake Utilities Corporation"
+     "listed_company": "Chesapeake Utilities Corporation",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -802,7 +1005,11 @@
    "status": "LINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Transcontinental Gas Pipe Line Company, LLC"
@@ -813,7 +1020,10 @@
      "ticker": "WMB",
      "legal_entity": "Transcontinental Gas Pipe Line Company, LLC",
      "relation": "WHOLLY_OWNED_SUBSIDIARY",
-     "listed_company": "The Williams Companies, Inc."
+     "listed_company": "The Williams Companies, Inc.",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -830,7 +1040,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PRIORITY_REVIEW_VOUCHER",
    "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
    "companies": [],
    "links": [],
@@ -846,7 +1060,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PRIORITY_REVIEW_VOUCHER",
    "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
    "companies": [
     "Scholar Rock, Inc."
@@ -869,7 +1087,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_APPROVAL_WITHDRAWN",
    "label_ar": "سحب موافقة تطبيق دوائي (FDA)",
+   "document_type": "FR_APPROVAL_WITHDRAWN",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Par Health USA LLC"
@@ -892,7 +1114,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_APPROVAL_WITHDRAWN",
    "label_ar": "سحب موافقة تطبيق دوائي (FDA)",
+   "document_type": "FR_APPROVAL_WITHDRAWN",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Elite Laboratories, Inc."
@@ -915,7 +1141,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_APPROVAL_WITHDRAWN",
    "label_ar": "سحب موافقة تطبيق دوائي (FDA)",
+   "document_type": "FR_APPROVAL_WITHDRAWN",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "FHTA LLC"
@@ -938,7 +1168,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus"
@@ -961,7 +1195,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Ontic Engineering and Manufacturing, Inc."
@@ -984,7 +1222,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus SAS"
@@ -1007,7 +1249,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus"
@@ -1030,7 +1276,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus Helicopters Deutschland GmbH"
@@ -1053,7 +1303,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus"
@@ -1076,7 +1330,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "CFM International, S.A."
@@ -1099,7 +1357,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "MD Helicopters, LLC"
@@ -1122,7 +1384,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus"
@@ -1145,7 +1411,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus SAS"
@@ -1168,7 +1438,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus SAS"
@@ -1191,7 +1465,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus SAS"
@@ -1214,7 +1492,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Rolls-Royce Deutschland Ltd & Co KG"
@@ -1237,7 +1519,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus Helicopters Deutschland GmbH"
@@ -1260,7 +1546,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus SAS"
@@ -1283,7 +1573,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Leonardo S.p.a."
@@ -1306,7 +1600,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Bombardier, Inc."
@@ -1329,7 +1627,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Baykar Piaggio Aerospace S.p.A."
@@ -1352,7 +1654,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Leonardo S.p.A."
@@ -1375,7 +1681,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus"
@@ -1398,7 +1708,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Rolls-Royce Deutschland Ltd & Co KG"
@@ -1421,7 +1735,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus Helicopters Deutschland GmbH"
@@ -1444,7 +1762,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus SAS"
@@ -1467,7 +1789,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus SAS"
@@ -1490,7 +1816,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Various"
@@ -1513,7 +1843,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Engine Alliance"
@@ -1536,7 +1870,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus SAS"
@@ -1559,7 +1897,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus"
@@ -1582,7 +1924,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "DG Aviation GmbH"
@@ -1605,7 +1951,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus SAS"
@@ -1628,7 +1978,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus"
@@ -1651,7 +2005,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Leonardo S.p.a."
@@ -1674,7 +2032,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus"
@@ -1697,7 +2059,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus"
@@ -1720,7 +2086,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Vulcanair S.p.A."
@@ -1743,7 +2113,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus Helicopters Deutschland GmbH"
@@ -1766,7 +2140,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Bell Textron Canada Limited"
@@ -1789,7 +2167,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus SAS"
@@ -1812,7 +2194,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Leonardo S.p.a."
@@ -1835,7 +2221,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "MD Helicopters, LLC"
@@ -1858,7 +2248,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus Helicopters Deutschland GmbH"
@@ -1881,7 +2275,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Safran Helicopter Engines, S.A."
@@ -1904,7 +2302,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Hélicoptères Guimbal"
@@ -1927,7 +2329,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Costruzioni Aeronautiche Tecnam S.P.A."
@@ -1950,7 +2356,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus"
@@ -1973,7 +2383,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
    "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "risk",
    "companies": [
     "Airbus Helicopters Deutschland GmbH"
@@ -1996,7 +2410,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Airbus"
@@ -2019,7 +2437,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Northern States Power Company"
@@ -2042,7 +2464,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "ETC Tiger Pipeline, LLC"
@@ -2065,7 +2491,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "MountainWest Overthrust Pipeline, LLC"
@@ -2088,7 +2518,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Northern States Power Company"
@@ -2111,7 +2545,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "North American Electric Reliability Corporation"
@@ -2134,7 +2572,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Florida Gas Transmission Company, LLC"
@@ -2157,7 +2599,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Fall River Electric Cooperative, Inc."
@@ -2180,7 +2626,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Nightfall Renewable Inc."
@@ -2203,7 +2653,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Sandy Hollow Power Company, Inc."
@@ -2226,7 +2680,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Double E Pipeline, LLC"
@@ -2249,7 +2707,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Zushi Renewables, LLC"
@@ -2272,7 +2734,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Uma Lagne Energy Holdings, LLC"
@@ -2295,7 +2761,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Moraga Storage, LLC",
@@ -2338,7 +2808,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Gulf South Pipeline Company, LLC"
@@ -2361,7 +2835,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Southern Star Central Gas Pipeline, Inc."
@@ -2384,7 +2862,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Columbia Gas Transmission, LLC"
@@ -2407,7 +2889,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "ECOsponsible, LLC"
@@ -2430,7 +2916,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Badger Mountain Hydro, LLC"
@@ -2453,7 +2943,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Great Lakes Hydro America, LLC"
@@ -2476,7 +2970,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Dominion Energy South Carolina, Inc."
@@ -2499,7 +2997,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Ampersand Ogdensburg Hydro, LLC"
@@ -2522,7 +3024,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Ampersand Ogdensburg Hydro, LLC"
@@ -2545,7 +3051,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Rockies Express Pipeline LLC",
@@ -2578,7 +3088,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Northern Natural Gas Company"
@@ -2601,7 +3115,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "AP Solar 4, LLC"
@@ -2624,7 +3142,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Brown Bear II Hydro, Inc."
@@ -2647,7 +3169,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Southern Star Central Gas Pipeline, Inc."
@@ -2670,7 +3196,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Natural Gas Pipeline Company of America LLC"
@@ -2693,7 +3223,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "BIF III Holtwood LLC"
@@ -2716,7 +3250,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Green Mountain Power Company"
@@ -2739,7 +3277,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Green Mountain Power Corporation"
@@ -2762,7 +3304,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "RamaFlux Sierra PSH, LLC"
@@ -2785,7 +3331,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Florida Gas Transmission Company, LLC"
@@ -2808,7 +3358,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Ohio Power and Light, LLC"
@@ -2831,7 +3385,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Hawks Nest Hydro, LLC"
@@ -2854,7 +3412,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Florida Gas Transmission Company, LLC"
@@ -2877,7 +3439,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Sabine Pass Liquefaction, LLC",
@@ -2910,7 +3476,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Breaker Water & Energy Park, LLC"
@@ -2933,7 +3503,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Guardian Pipeline, LLC"
@@ -2956,7 +3530,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Florida Gas Transmission Company, LLC"
@@ -2979,7 +3557,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Copper Valley Electric Association, Inc."
@@ -3002,7 +3584,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "French Broad Electric Membership Corporation"
@@ -3025,7 +3611,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_ENERGY_REGULATORY_FILING",
    "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Bay Gas Storage Company, LLC"
@@ -3048,7 +3638,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Global Laser Enrichment, LLC"
@@ -3071,7 +3665,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Palisades Energy, LLC"
@@ -3094,7 +3692,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "SMR, LLC"
@@ -3117,7 +3719,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "SMR, LLC"
@@ -3140,7 +3746,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Fermi America LLC (dba Fermi America)"
@@ -3163,7 +3773,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "Blue Energy Global, Inc."
@@ -3186,7 +3800,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "SMR, LLC"
@@ -3209,7 +3827,11 @@
    "status": "COMPANY_UNLINKED",
    "kind": "FR_NUCLEAR_LICENSE_ACTION",
    "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
    "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "status",
    "companies": [
     "SMR, LLC"
