@@ -20,12 +20,13 @@ const DEVICES = {
   phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
   desktop: { viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 },
 };
+const { URL: NodeURL } = require("url");   // URL below is the page address
 const GOV = /^https:\/\/(www\.accessdata\.fda\.gov|clinicaltrials\.gov|www\.federalregister\.gov|www\.fda\.gov|www\.sec\.gov)\//;
 // Company IR links count as official only on the reviewed company sites (data/ir_feeds.json).
 const IR_HOSTS = JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "..", "data", "ir_feeds.json"), "utf8"))
-  .feeds.map((f) => new URL(f.page).hostname.split(".").slice(-2).join("."));
+  .feeds.map((f) => new NodeURL(f.page).hostname.split(".").slice(-2).join("."));
 const OFFICIAL = { test: (href) => GOV.test(href) || (href.startsWith("https://") &&
-  IR_HOSTS.includes(new URL(href).hostname.split(".").slice(-2).join("."))) };
+  IR_HOSTS.includes(new NodeURL(href).hostname.split(".").slice(-2).join("."))) };
 fs.mkdirSync(OUT, { recursive: true });
 const report = { data_sha: SHA, local_files: Object.keys(LOCAL), run_at_utc: new Date().toISOString(), tasks: [] };
 
