@@ -175,6 +175,8 @@ assert.ok(R.FILTERS.some(([k]) => k === "company"));
 const irEvents = R.eventRows({ events: [{ symbol: "XOM", kind: "IR_EARNINGS", date: "2026-10-30", reason: "ExxonMobil Announces Third Quarter 2026 Results", label: "نتائج مالية" }] });
 assert.strictEqual(R.eventText(irEvents[0]), "ExxonMobil Announces Third Quarter 2026 Results", "the company's headline, not our label");
 assert.strictEqual(R.filterEvents(irEvents, "company").length, 1);
+assert.ok(/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28", scheduled_for: "2026-11-17" })));
+assert.ok(!/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28" })));
 // --- position size from the user's own risk: arithmetic only ---
 assert.deepStrictEqual(R.positionMath({ capital: "10000", risk_pct: "1", entry: "50", stop: "47.5", target: "56" }),
   { side: "LONG", shares: 40, capped_by_cash: false, risk_per_share: 2.5, stop_pct: 5, max_loss: 100, position_value: 2000,

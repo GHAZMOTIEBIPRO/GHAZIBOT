@@ -114,6 +114,11 @@ def test_ir_items_enter_the_catalyst_list_with_company_source_and_unassessed_imp
     assert "تسجيل أوراق مالية (تمويل محتمل)" in nv["risk_flags"]           # registration is flagged, not praised
     assert all(c["impact"] in ("RISK", "COMPANY_NEWS_IMPACT_UNASSESSED") for c in nv["catalysts"])
     assert cw.ir_catalysts({"schema": "other"}) == []
+    # a scheduled date ahead of today stays in the list: the list date is the announcement
+    ev = ir.build([NVDA_EVENT], {NVDA_EVENT["feed_url"]: ("OK", EVENT_XML)}, NOW)
+    listed = cw.build(None, None, None, NOW, ir=ev)
+    row = next(c for e in listed["watchlist"] for c in e["catalysts"] if c["kind"] == "IR_SCHEDULE")
+    assert row["date"] == "2026-10-28" and row["scheduled_for"] == "2026-11-17"
 
 
 def test_shipped_feed_table_rows_carry_their_probe_run():

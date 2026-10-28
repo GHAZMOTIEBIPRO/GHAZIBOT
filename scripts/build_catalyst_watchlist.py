@@ -234,14 +234,15 @@ def ir_catalysts(ir: Any) -> list[dict[str, Any]]:
     for e in ir.get("items") or []:
         url, cat = str(e.get("url") or ""), str(e.get("category") or "")
         symbol = str(e.get("symbol") or "")
-        day = _day(e.get("event_at") or e.get("source_published_at"))
+        # The list date is when the company announced it; a scheduled date (event_at) is kept apart and may be ahead.
+        day = _day(e.get("source_published_at"))
         if not url.startswith("https://") or cat not in IR_IMPORTANCE or day is None \
                 or not re.fullmatch(r"[A-Z][A-Z0-9.-]{0,7}", symbol):
             continue
         out.append({"symbol": symbol, "kind": "IR_" + cat, "date": day, "importance": IR_IMPORTANCE[cat],
                     "label": str(e.get("category_ar") or "")[:120], "reason": str(e.get("title") or "")[:200],
-                    "source": "Company IR", "source_url": url,
-                    "source_updated": _day(e.get("source_published_at")) or day,
+                    "source": "Company IR", "source_url": url, "scheduled_for": _day(e.get("event_at")),
+                    "source_updated": day,
                     "issuer": str(e.get("company") or "")[:80] or None, "match_method": "official_ir_feed",
                     "category_basis": e.get("category_basis"),
                     "potential_impact": e.get("potential_impact") or "NEEDS_IMPACT_ASSESSMENT"})

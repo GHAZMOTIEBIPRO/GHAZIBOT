@@ -181,6 +181,8 @@
   // a source being added is not a detection, and an unproven time is not shown.
   function timesLine(e) {
     const parts = [`تاريخ الحدث ${day(e.date) || e.date}`];
+    // A date the company scheduled (results, a call), apart from when it announced it.
+    if (e.scheduled_for && e.scheduled_for !== String(e.date).slice(0, 10)) parts.push(`الموعد المعلن ${day(e.scheduled_for)}`);
     if (e.source_updated && e.source_updated !== String(e.date).slice(0, 10)) parts.push(`تحديث المصدر ${day(e.source_updated)}`);
     // Our observation time only with evidence from the fetch itself (the feed's generated_at);
     // a commit time alone is a publication time, and a source's first fetch is not early detection.
