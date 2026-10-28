@@ -157,9 +157,15 @@ async function run(device) {
     const flags = await page.$$eval("#gr-list [data-gr-symbol]", (els) => els.length);
     const sample = await page.$eval("#gr-list .gr-why", (e) => e.textContent);
     must(/تنبيه ناسداك/.test(sample), "flag wording " + sample);
+    // The shown count is traceable to the file, and a flag is not presented as a delisting decision.
+    const note = await page.$eval("#gr-list-note", (e) => e.textContent);
+    must(note.includes(`المعروض ${flags.toLocaleString("en-US")} سهمًا`) && /ليس قرار شطب/.test(note), "flag note " + note);
+    await page.click(".gr-note-more summary");
+    const codes = await page.$$eval(".gr-note-more dt", (els) => els.length);
+    must(codes >= 3, "code meanings " + codes);
     await shot(page, `ux-${device}-flags.png`);
     await page.selectOption("#gr-list-tools select", "catalysts");
-    return { catalyst_rows: catalysts, flag_rows: flags, sample };
+    return { catalyst_rows: catalysts, flag_rows: flags, sample, note: note.slice(0, 220), code_meanings: codes };
   });
   await task(device, "a Federal Register risk event on the stock page", async () => {
     await search("BA"); await page.keyboard.press("Enter");

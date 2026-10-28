@@ -234,6 +234,22 @@
       tags: [{ text: "⚠ تنبيه إدراج", kind: "risk" }, { text: r.tier, kind: "admin" }].filter((t) => t.text) }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
+  // Every flagged security, split so the shown count can be traced: shares by code, then warrants/rights/units.
+  function flagSummary(nl) {
+    const out = { all: 0, equity: 0, other: 0, by_status: {} };
+    for (const r of nasdaqMap(nl).values()) {
+      if (!r.status) continue;
+      out.all += 1;
+      if (r.equity) { out.equity += 1; out.by_status[r.status] = (out.by_status[r.status] || 0) + 1; } else out.other += 1;
+    }
+    return out;
+  }
+  // What each code in the file means. A flag is a status in Nasdaq's file, not a delisting decision.
+  const STATUS_MEANING_AR = {
+    D: "لا تستوفي حاليًا شرطًا من شروط الإدراج المستمر (مثل الحد الأدنى للسعر أو حقوق المساهمين). تُمنح عادةً مهلة للتصحيح؛ ليس قرار شطب.",
+    E: "تأخرت في تقديم تقرير دوري مطلوب (مثل ⁦10-K⁩ أو ⁦10-Q⁩).",
+    Q: "في إجراءات إفلاس.",
+  };
 
   // ---------- tab rows ----------
   function directoryMap(dir) {
@@ -420,7 +436,7 @@
 
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
-    foldAr, nasdaqMap, flagRows, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
+    foldAr, nasdaqMap, flagRows, flagSummary, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -655,6 +671,7 @@
     for (const b of doc.querySelectorAll("[data-gr-tab]")) b.setAttribute("aria-selected", String(b.dataset.grTab === state.tab));
     $("gr-main").setAttribute("aria-labelledby", MARKET_TABS.includes(state.tab) ? "gr-tab-" + state.tab : "gr-list-title");
     list.replaceChildren(); tools.replaceChildren(); extra.replaceChildren(); note.textContent = "";
+    for (const x of doc.querySelectorAll(".gr-note-more")) x.remove();
     tools.className = "gr-list-tools";
     list.hidden = false;
     if (state.tab === "more") return renderMore(list, extra);
@@ -692,9 +709,20 @@
         if (!state.nasdaq) { list.append(el("p", "gr-empty", "جارٍ تحميل ملف ناسداك…")); ensureNasdaq().then(() => state.tab === "small" && renderTab()); return; }
         rows = flagRows(state.data.nasdaq);
         const nl = state.data.nasdaq;
+        const fs = flagSummary(nl);
+        const parts = Object.entries(fs.by_status).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${n(v)} «${STATUS_AR[k] || k}» (${k})`).join("، ");
         note.textContent = nl
-          ? `من ملف «Nasdaq Listed» في NasdaqTrader (أُنشئ ${day(nl.file_created_at) || "—"}): ${n(rows.length)} سهمًا عليها تنبيه إدراج. التنبيه خطر وليس محفزًا إيجابيًا.`
+          ? `من ملف «Nasdaq Listed» في NasdaqTrader (أُنشئ ${day(nl.file_created_at) || "—"}): ${n(fs.all)} ورقة عليها رمز حالة مالية؛ ` +
+            `المعروض ${n(rows.length)} سهمًا: ${parts}. والباقي ${n(fs.other)} ورقة ليست أسهمًا (حقوق اكتتاب أو وحدات أو ضمانات) لا تُعرض هنا. ` +
+            "التنبيه خطر وليس محفزًا، وليس قرار شطب."
           : "تعذّر تحميل ملف ناسداك.";
+        const meanings = el("details", "gr-card gr-note-more");
+        meanings.append(el("summary", null, "ماذا تعني الرموز؟"));
+        const dl = el("dl", "gr-glossary");
+        for (const [k, v] of Object.entries(STATUS_MEANING_AR)) dl.append(el("dt", null, `${k} · ${STATUS_AR[k]}`), el("dd", null, v));
+        dl.append(el("dt", null, "H وG وJ وK"), el("dd", null, "تجمع أكثر من حالة من الحالات أعلاه، كما يصفها ملف ناسداك."));
+        meanings.append(dl, el("p", null, "المصدر: الحقل Financial Status في ملف Nasdaq Listed، بتاريخ إنشاء الملف أعلاه. لا نعرف من الملف تاريخ بدء الحالة."));
+        note.after(meanings);   // above the rows, not after 300 of them
       } else {
         rows = smallRows(catalysts, directory, state.events);
         if (state.nasdaq) for (const r of rows) {

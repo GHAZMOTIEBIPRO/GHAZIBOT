@@ -122,6 +122,10 @@ assert.strictEqual(R.nasdaqMap({ schema: "other", rows: nl.rows }).size, 0);
 const flags = R.flagRows(nl);
 assert.deepStrictEqual(flags.map((r) => r.symbol), ["AACG"]);
 assert.ok(flags[0].tags[0].kind === "risk" && /تنبيه ناسداك/.test(flags[0].why));
+// The count is traceable: shares by code, other flagged securities (warrants, rights, units) apart.
+const nl2 = { ...nl, rows: [...nl.rows, ["ABCDW", "Abcd Corp", "Warrant", "S", "D", 0, 0], ["EFGH", "Efgh Inc", "Common Stock", "S", "E", 0, 1]] };
+assert.deepStrictEqual(R.flagSummary(nl2), { all: 3, equity: 2, other: 1, by_status: { D: 1, E: 1 } });
+assert.strictEqual(R.flagRows(nl2).length, R.flagSummary(nl2).equity);
 
 // --- companies vs securities: share classes are one company ---
 assert.deepStrictEqual(R.companyCounts({ symbols: [{ symbol: "GOOGL", cik: "1652044" }, { symbol: "GOOG", cik: "1652044" },
