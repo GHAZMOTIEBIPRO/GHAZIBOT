@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   acceptance:
@@ -39,6 +40,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r app/requirements.txt
+      # The owner chat must differ from the broadcast chat; resolve the broadcast
+      # destination first so output_policy.deliver_private can compare (no send here).
+      - name: Resolve the broadcast destination for the private-chat check
+        if: env.ALPACA_PRIVATE_ALERTS_AUTHORIZED == 'true'
+        uses: ./app/.github/actions/resolve-telegram-broadcast
       - name: End-to-end check on the last completed session
         run: |
           cd app

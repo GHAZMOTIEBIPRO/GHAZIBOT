@@ -74,10 +74,12 @@ jobs:
           mkdir -p ../ux-data
           python scripts/build_nasdaq_listed.py --output ../ux-data/nasdaq_listed.json
           python scripts/build_federal_register_feed.py --output ../ux-data/federal_register.json
+          python scripts/build_ir_news.py --output ../ux-data/ir_news.json || true
           D=../state/runtime/public/data
           python scripts/build_catalyst_watchlist.py --fda $D/fda_events.json --sec $D/sec_filing_pulse.json \
             --clinical $D/clinical_registry.json --sizes $D/issuer_sizes.json \
-            --federal-register ../ux-data/federal_register.json --source-history ../state \
+            --federal-register ../ux-data/federal_register.json --ir-news ../ux-data/ir_news.json \
+            --source-history ../state \
             --previous $D/catalyst_watchlist.json \
             --output ../ux-data/preview_catalysts.json
       - name: User tasks (search, reason, source link, chart frame, back, Escape, scroll)
@@ -89,7 +91,7 @@ jobs:
           sleep 1
           U=../ux-data
           export UX_LOCAL_DATA="nasdaq_listed.json=$U/nasdaq_listed.json,federal_register.json=$U/federal_register.json,catalyst_watchlist.json=$U/preview_catalysts.json"
-          OUT=../ui-shots node scripts/ux_tasks.cjs
+          SW_FILE="$PWD/public/sw.js" OUT=../ui-shots node scripts/ux_tasks.cjs
       - name: Store the images on the ui-review branch
         working-directory: after
         run: |

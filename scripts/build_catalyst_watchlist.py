@@ -21,6 +21,7 @@ import argparse
 import json
 import math
 import re
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -57,9 +58,11 @@ FDA_KIND = {"APPROVAL_ORIGINAL": "FDA_APPROVAL", "APPROVAL_SUPPLEMENT": "FDA_SUP
 POINTS = {"HIGH": 35, "MEDIUM": 22, "LOW": 8}
 NEW_MOLECULE_BONUS = 10
 RELIABILITY = {"exact_normalised_name": 1.0, "issuer_cik": 1.0, "reviewed_sponsor_alias": 0.9,
-               "reviewed_issuer_link": 0.9}
+               "reviewed_issuer_link": 0.9, "official_ir_feed": 1.0}
 RISK_KINDS = {"DILUTION_RISK": "خطر تخفيف", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "تقسيم عكسي/تعديل نظام محتمل",
               "LISTING_NOTICE": "إشعار إدراج (خطر شطب)",
+              "IR_FINANCING_DILUTION": "تمويل قد يخفف الملكية (بيان الشركة)",
+              "IR_FILING_REGISTRATION": "تسجيل أوراق مالية (تمويل محتمل)",
               "FR_AIRWORTHINESS_DIRECTIVE": "توجيه صلاحية طيران إلزامي (FAA)",
               "FR_FTC_CONSENT_ORDER": "تسوية مقترحة مع FTC"}
 # Reference list of issuers known to be large. It is NOT a measurement: an
@@ -209,7 +212,40 @@ def fr_catalysts(fr: Any) -> list[dict[str, Any]]:
                         "label": f"{e.get('agency')}: {link.get('name')}"[:120], "reason": str(e.get("title") or "")[:200],
                         "source": "Federal Register", "source_url": url, "source_updated": day,
                         "issuer": str(link.get("name") or "")[:80] or None, "match_method": "reviewed_issuer_link",
-                        "link_relation": link.get("relation"), "listed_company": link.get("listed_company")})
+                        "link_relation": link.get("relation"), "listed_company": link.get("listed_company"),
+                        # what it might mean stays unassessed; how sure we are of the link is separate
+                        "potential_impact": e.get("potential_impact") or "NEEDS_IMPACT_ASSESSMENT",
+                        "interpretation_confidence": link.get("interpretation_confidence")})
+    return out
+
+
+# Company news from official IR feeds (scripts/build_ir_news.py): how high to read it, by our headline category.
+IR_IMPORTANCE = {"EARNINGS": "MEDIUM", "GUIDANCE": "MEDIUM", "M_AND_A": "MEDIUM", "FINANCING_DILUTION": "MEDIUM",
+                 "FILING_8K": "MEDIUM", "FILING_REGISTRATION": "MEDIUM", "SCHEDULE": "LOW", "FINANCING": "LOW",
+                 "CONTRACT": "LOW", "MANAGEMENT": "LOW", "BUSINESS_CHANGE": "LOW", "FILING_PERIODIC": "LOW",
+                 "FILING_PROXY": "LOW", "OTHER": "LOW"}
+
+
+def ir_catalysts(ir: Any) -> list[dict[str, Any]]:
+    """Official IR items: the company's headline and link; our category and an unassessed impact kept apart."""
+    out: list[dict[str, Any]] = []
+    if not isinstance(ir, dict) or ir.get("schema") != "ghazi.ir_news.v1":
+        return out
+    for e in ir.get("items") or []:
+        url, cat = str(e.get("url") or ""), str(e.get("category") or "")
+        symbol = str(e.get("symbol") or "")
+        # The list date is when the company announced it; a scheduled date (event_at) is kept apart and may be ahead.
+        day = _day(e.get("source_published_at"))
+        if not url.startswith("https://") or cat not in IR_IMPORTANCE or day is None \
+                or not re.fullmatch(r"[A-Z][A-Z0-9.-]{0,7}", symbol):
+            continue
+        out.append({"symbol": symbol, "kind": "IR_" + cat, "date": day, "importance": IR_IMPORTANCE[cat],
+                    "label": str(e.get("category_ar") or "")[:120], "reason": str(e.get("title") or "")[:200],
+                    "source": "Company IR", "source_url": url, "scheduled_for": _day(e.get("event_at")),
+                    "source_updated": day,
+                    "issuer": str(e.get("company") or "")[:80] or None, "match_method": "official_ir_feed",
+                    "category_basis": e.get("category_basis"),
+                    "potential_impact": e.get("potential_impact") or "NEEDS_IMPACT_ASSESSMENT"})
     return out
 
 
@@ -219,14 +255,16 @@ def event_key(item: dict[str, Any]) -> str:
 
 FIRST_SEEN_VERSION = 2
 SOURCE_FLAG = {"openFDA": "openfda", "SEC EDGAR": "sec_edgar", "ClinicalTrials.gov": "clinicaltrials",
-               "Federal Register": "federal_register"}
+               "Federal Register": "federal_register", "Company IR": "company_ir"}
 # Published source feeds on bot-state whose commit history proves when our pipeline first held an event.
-HISTORY_FILES = {"runtime/public/data/fda_events.json": "fda", "runtime/public/data/clinical_registry.json": "clinical"}
+HISTORY_FILES = {"runtime/public/data/fda_events.json": "fda", "runtime/public/data/clinical_registry.json": "clinical",
+                 "runtime/public/data/federal_register.json": "fr", "runtime/public/data/ir_news.json": "ir"}
 HISTORY_DAYS = 45
 # Each source's own published feed; its first commit on bot-state is when the source was added.
 SOURCE_FILES = {"openFDA": "runtime/public/data/fda_events.json",
                 "ClinicalTrials.gov": "runtime/public/data/clinical_registry.json",
-                "Federal Register": "runtime/public/data/federal_register.json"}
+                "Federal Register": "runtime/public/data/federal_register.json",
+                "Company IR": "runtime/public/data/ir_news.json"}
 
 
 def source_added_at(repo: Path, rev: str = "HEAD") -> dict[str, str]:
@@ -277,7 +315,7 @@ def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime,
                 item["first_seen_basis"] = "SOURCE_ADDED"
             if old.get("first_seen_evidence"):
                 item["first_seen_evidence"] = old["first_seen_evidence"]
-        elif key in history:
+        elif key in history and not history[key].get("baseline"):
             item["first_seen_at"] = history[key]["at"]
             item["first_seen_basis"] = "SOURCE_HISTORY"
             item["first_seen_evidence"] = {"file": history[key]["file"], "commit": history[key]["commit"]}
@@ -288,7 +326,48 @@ def first_seen(items: list[dict[str, Any]], previous: Any, now: datetime,
             item["first_seen_at"] = now.isoformat()
             flag = SOURCE_FLAG.get(str(item.get("source")))
             item["first_seen_basis"] = "SOURCE_ADDED" if flag and prev_sources.get(flag) is not True else "THIS_RUN"
+        observation_times(item, old, history.get(key), now)
     return str(previous.get("first_seen_tracking_since") or now.isoformat()) if tracking else now.isoformat()
+
+
+TIME_FIELDS = ("first_observed_at", "first_observed_basis", "first_published_at", "first_published_basis",
+               "timestamp_basis")
+
+
+def observation_times(item: dict[str, Any], old: dict[str, Any] | None, hit: dict[str, Any] | None,
+                      now: datetime) -> None:
+    """Our two times for an event, each with its evidence; never invented, never rewritten.
+
+    first_observed_at: when a fetch of ours held the event, from the generated_at the
+      fetching run wrote into the source feed version that first contained it
+      (SOURCE_FEED_FETCH), or the feed's first fetch ever (FIRST_FETCH_OF_SOURCE:
+      observed then, but possibly older than the source being added).
+    first_published_at: when our published data first held it: that feed version's
+      bot-state commit (SOURCE_FEED_COMMIT / SOURCE_FEED_FIRST_COMMIT), else the first
+      run of this list that showed it (THIS_LIST_RUN).
+    A commit time alone is a publication time, not an observation. Once set, both
+    are carried unchanged by later runs and by history reprocessing.
+    """
+    item["event_at"] = item.get("date")
+    item["source_published_at"] = item.get("source_updated")
+    if old and old.get("timestamp_basis"):
+        item.update({k: old.get(k) for k in TIME_FIELDS})
+        return
+    if hit:
+        baseline = bool(hit.get("baseline"))
+        observed = hit.get("observed_at")
+        item["first_observed_at"] = observed
+        item["first_observed_basis"] = ("FIRST_FETCH_OF_SOURCE" if baseline else "SOURCE_FEED_FETCH") if observed \
+            else "NOT_RECORDED"
+        item["first_published_at"] = hit["at"]
+        item["first_published_basis"] = "SOURCE_FEED_FIRST_COMMIT" if baseline else "SOURCE_FEED_COMMIT"
+    else:
+        item["first_observed_at"], item["first_observed_basis"] = None, "UNKNOWN"
+        shown = item.get("first_seen_at") if item.get("first_seen_basis") in {"THIS_RUN", "SOURCE_ADDED", "CARRIED"} \
+            else None
+        item["first_published_at"] = shown
+        item["first_published_basis"] = "THIS_LIST_RUN" if shown else "UNKNOWN"
+    item["timestamp_basis"] = f"observed:{item['first_observed_basis']};published:{item['first_published_basis']}"
 
 
 def source_history(repo: Path, now: datetime, rev: str = "HEAD") -> dict[str, dict[str, str]]:
@@ -300,11 +379,13 @@ def source_history(repo: Path, now: datetime, rev: str = "HEAD") -> dict[str, di
     """
     import subprocess
 
-    found: dict[str, dict[str, str]] = {}
+    found: dict[str, dict[str, Any]] = {}
     since = (now - timedelta(days=HISTORY_DAYS)).isoformat()
     for path, kind in HISTORY_FILES.items():
         log = subprocess.run(["git", "-C", str(repo), "log", rev, "--reverse", f"--since={since}", "--format=%H %cI",
                               "--", path], capture_output=True, text=True, timeout=120, check=False)
+        created = subprocess.run(["git", "-C", str(repo), "log", rev, "--diff-filter=A", "--format=%H", "--", path],
+                                 capture_output=True, text=True, timeout=120, check=False).stdout.split()
         seen: set[str] | None = None
         for line in log.stdout.splitlines():
             parts = line.split()
@@ -318,20 +399,33 @@ def source_history(repo: Path, now: datetime, rev: str = "HEAD") -> dict[str, di
                 data = json.loads(show.stdout)
             except ValueError:
                 continue
+            produced = _parse(data.get("generated_at")) if isinstance(data, dict) else None
             if kind == "fda":
                 items = fda_catalysts(data)
+            elif kind == "fr":
+                items = fr_catalysts(data)
+            elif kind == "ir":
+                items = ir_catalysts(data)
             else:
-                produced = _parse(data.get("generated_at")) if isinstance(data, dict) else None
                 items = clinical_catalysts(data, produced) if produced else []
+            # The feed file records the time of the run that fetched it (generated_at):
+            # that ties this commit to an actual fetch, unlike the commit time alone.
+            fetched = produced.astimezone(timezone.utc).isoformat() if produced else None
             keys = {event_key(x) for x in items}
             new = keys - seen if seen is not None else keys
+            if seen is None and sha in created:
+                # The feed's first version ever: its first fetch did observe these events,
+                # but they may be older than the source being added (no detection claim).
+                for key in keys:
+                    found.setdefault(key, {"at": stamp, "commit": sha, "file": path, "observed_at": fetched,
+                                           "baseline": True})
             # The oldest version, or one where most keys change at once (a format change
             # of the feed, not a burst of detections), is a baseline: no time for its keys.
             if seen is None or (len(new) > 10 and len(new) * 2 > len(keys)):
                 seen = (seen or set()) | keys
                 continue
             for key in new:
-                found.setdefault(key, {"at": stamp, "commit": sha, "file": path})
+                found.setdefault(key, {"at": stamp, "commit": sha, "file": path, "observed_at": fetched})
             seen |= keys
     return found
 
@@ -429,6 +523,9 @@ IMPACT = {"FDA_APPROVAL": "REGULATORY_DECISION", "FDA_SUPPLEMENT": "REGULATORY_D
           "FR_AIRWORTHINESS_DIRECTIVE": "RISK", "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": "STATUS_CHANGE",
           "FR_SPECIAL_CONDITIONS": "STATUS_CHANGE", "FR_FTC_CONSENT_ORDER": "RISK",
           "FR_ENERGY_REGULATORY_FILING": "STATUS_CHANGE", "FR_NUCLEAR_LICENSE_ACTION": "STATUS_CHANGE"}
+# Company IR news: the company says it; what it means for the price is not assessed.
+IMPACT.update({"IR_" + k: "RISK" if k in ("FINANCING_DILUTION", "FILING_REGISTRATION") else "COMPANY_NEWS_IMPACT_UNASSESSED"
+               for k in IR_IMPORTANCE})
 
 
 def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -443,12 +540,13 @@ def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
           sizes: Any = None, previous: Any = None, fr: Any = None,
-          history: dict[str, dict[str, str]] | None = None, added: dict[str, str] | None = None) -> dict[str, Any]:
+          history: dict[str, dict[str, str]] | None = None, added: dict[str, str] | None = None,
+          ir: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
     events: list[dict[str, Any]] = []
     for item in dedupe(fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now)
-                       + fr_catalysts(fr)):
+                       + fr_catalysts(fr) + ir_catalysts(ir)):
         if cutoff <= item["date"] <= now.date().isoformat():
             events.append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
     tracking_since = first_seen(events, previous, now, history, added)
@@ -488,7 +586,8 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
                     "sec_status": sec.get("status") if isinstance(sec, dict) else "MISSING",
                     "clinicaltrials": clinical_available(clinical, now),
                     "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING",
-                    "federal_register": isinstance(fr, dict) and fr.get("schema") == "ghazi.federal_register_feed.v1"},
+                    "federal_register": isinstance(fr, dict) and fr.get("schema") == "ghazi.federal_register_feed.v1",
+                    "company_ir": isinstance(ir, dict) and ir.get("schema") == "ghazi.ir_news.v1"},
         "watchlist": entries[:MAX_TICKERS],
         # Every matched event in the window (the watchlist keeps MAX_CATALYSTS per
         # ticker), newest first, with three separate times: the event date, the
@@ -497,7 +596,11 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
         "first_seen_version": FIRST_SEEN_VERSION,
         "first_seen_tracking_since": tracking_since,
         "first_seen_history": {"examined": history is not None, "window_days": HISTORY_DAYS,
-                               "events_dated": sum(e.get("first_seen_basis") == "SOURCE_HISTORY" for e in events)},
+                               "events_dated": sum(e.get("first_seen_basis") == "SOURCE_HISTORY" for e in events),
+                               "observed_basis": dict(sorted(Counter(e.get("first_observed_basis")
+                                                                     for e in events).items())),
+                               "published_basis": dict(sorted(Counter(e.get("first_published_basis")
+                                                                      for e in events).items()))},
         "event_time_fields": {
             "date": "event date (FDA action date; registry update date for ClinicalTrials.gov)",
             "source_updated": "openFDA dataset update date, or the registry record's update date; not a per-event"
@@ -507,6 +610,15 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
             "first_seen_basis": "THIS_RUN | CARRIED | SOURCE_HISTORY (commit in first_seen_evidence) |"
                                 " SOURCE_ADDED (source new or returning in this run; not a detection) |"
                                 " BEFORE_TRACKING",
+            "event_at": "same as date: when the event happened per the source",
+            "source_published_at": "same as source_updated: when the source published or updated it",
+            "first_observed_at": "when a fetch of ours held it: generated_at written by the fetching run into the"
+                                 " first source-feed version that contained it; null = not provable",
+            "first_observed_basis": "SOURCE_FEED_FETCH | FIRST_FETCH_OF_SOURCE (observed at the source's first fetch;"
+                                    " may be older than the source being added) | NOT_RECORDED | UNKNOWN",
+            "first_published_at": "when our published data first held it (feed commit on bot-state, or this list)",
+            "first_published_basis": "SOURCE_FEED_COMMIT | SOURCE_FEED_FIRST_COMMIT | THIS_LIST_RUN | UNKNOWN",
+            "timestamp_basis": "observed:<basis>;published:<basis>; set once, carried unchanged",
         },
         # Market cap needs a permitted price; until then nothing is called small or
         # large from SEC data. Low price (price_band) is a separate test.
@@ -566,6 +678,7 @@ def main() -> int:
     parser.add_argument("--prices", type=Path)
     parser.add_argument("--sizes", type=Path, help="SEC public-float file; absent until SEC access works")
     parser.add_argument("--federal-register", type=Path, help="scripts/build_federal_register_feed.py output")
+    parser.add_argument("--ir-news", type=Path, help="scripts/build_ir_news.py output")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--previous", type=Path, help="previous published watchlist (default: --output before it is"
                                                          " replaced); carries each event's first_seen_at")
@@ -578,7 +691,7 @@ def main() -> int:
     added = source_added_at(args.source_history) if args.source_history else None
     report = build(_load(args.fda), _load(args.sec), _load(args.prices), now,
                    _load(args.clinical), _load(args.sizes), previous, _load(args.federal_register), history,
-                   added)
+                   added, _load(args.ir_news))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Catalyst watchlist:", json.dumps({"status": report["status"], "tickers": len(report["watchlist"]),

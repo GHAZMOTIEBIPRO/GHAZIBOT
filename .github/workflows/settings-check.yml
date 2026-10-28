@@ -1,0 +1,46 @@
+name: GHAZI Settings Check (no values)
+
+# Which repository secrets and variables reach a job, and whether they work,
+# without printing any value: presence, value class, Telegram chat types,
+# an Alpaca HTTP status only when the owner attestation is recorded.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "scripts/check_settings.py"
+      - ".github/workflows/settings-check.yml"
+      - ".github/actions/resolve-telegram-broadcast/**"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_CHAT_ID_SECRET_SET: ${{ secrets.TELEGRAM_CHAT_ID != '' }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED }}
+      ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED: ${{ vars.ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: app
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - name: Resolve the broadcast destination as the notifiers do
+        uses: ./app/.github/actions/resolve-telegram-broadcast
+      - name: Check (presence, types and HTTP statuses only)
+        run: python app/scripts/check_settings.py telegram_runtime/connection.json

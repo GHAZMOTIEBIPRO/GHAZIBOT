@@ -4,16 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="GHAZI RADAR — رادار عربي للأسهم الأمريكية: المؤشرات والقياديات والأسهم ذات المحفزات والأخبار الرسمية، مع وقت كل معلومة ومصدرها.">
-  <meta name="theme-color" content="#0f141b">
+  <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f6fa" media="(prefers-color-scheme: light)">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="GHAZI RADAR">
+  <!-- Saved theme before first paint (no flash); "auto" follows the device. -->
+  <script>try{var t=localStorage.getItem("ghazi.theme.v1");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}</script>
   <meta property="og:title" content="GHAZI RADAR">
   <meta property="og:description" content="الأسهم الأمريكية والأخبار الرسمية مع وقت كل معلومة ومصدرها.">
-  <meta name="ghazi-ui-build" content="2026-10-26.radar">
+  <meta name="ghazi-ui-build" content="2026-10-28.app">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>GHAZI RADAR | رادار السوق الأمريكي</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="./radar.css?v=20261027-1">
+  <link rel="stylesheet" href="./radar.css?v=20261028-2">
 </head>
 <body>
   <a class="gr-skip" href="#gr-main">تجاوز إلى المحتوى</a>
@@ -22,8 +30,6 @@
     <div class="gr-top-row">
       <a class="gr-brand" href="./" aria-label="GHAZI RADAR — الصفحة الرئيسية">GHAZI <b>RADAR</b></a>
       <p id="gr-session" class="gr-session" role="status"><i aria-hidden="true"></i><span>حالة الجلسة…</span></p>
-      <button id="gr-watch-btn" class="gr-watch-btn" type="button" aria-controls="gr-watch-panel" aria-expanded="false">
-        <span aria-hidden="true">★</span> متابعتي <b id="gr-watch-count">0</b></button>
     </div>
     <form id="gr-search" class="gr-search" role="search" autocomplete="off">
       <label for="gr-q" class="gr-sr">ابحث عن سهم بالرمز أو اسم الشركة</label>
@@ -31,23 +37,27 @@
         role="combobox" aria-controls="gr-suggest" aria-expanded="false" aria-autocomplete="list">
       <ul id="gr-suggest" class="gr-suggest" role="listbox" aria-label="نتائج البحث" hidden></ul>
     </form>
-    <section id="gr-watch-panel" class="gr-watch-panel" aria-label="قائمة متابعتي" hidden>
-      <p class="gr-muted">قائمتك محفوظة في هذا المتصفح فقط.</p>
-      <div id="gr-watch-list" class="gr-chips"></div>
-    </section>
   </header>
+
+  <nav id="gr-bnav" class="gr-bnav" aria-label="أقسام التطبيق">
+    <button type="button" data-gr-section="market" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>السوق</span></button>
+    <button type="button" data-gr-section="radar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></svg><span>الرادار</span></button>
+    <button type="button" data-gr-section="news"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg><span>الأخبار</span></button>
+    <button type="button" data-gr-section="watch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg><span>متابعتي</span><b id="gr-watch-count" data-n="0"></b></button>
+    <button type="button" data-gr-section="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>المزيد</span></button>
+  </nav>
+  <p id="gr-offline" class="gr-offline" role="status" hidden></p>
 
   <section class="gr-summary" aria-label="ملخص السوق">
     <div id="gr-tape" class="gr-tape" aria-label="أسعار صناديق المؤشرات داخل أداة TradingView"></div>
     <ul id="gr-facts" class="gr-facts" aria-live="polite"><li class="gr-fact gr-muted">جارٍ تحميل ملخص السوق…</li></ul>
   </section>
 
-  <nav class="gr-tabs" role="tablist" aria-label="أقسام السوق">
+  <nav id="gr-tabs" class="gr-tabs" role="tablist" aria-label="أقسام السوق">
     <button type="button" role="tab" id="gr-tab-indices" data-gr-tab="indices" aria-controls="gr-main" aria-selected="true">المؤشرات</button>
     <button type="button" role="tab" id="gr-tab-leaders" data-gr-tab="leaders" aria-controls="gr-main" aria-selected="false">القياديات</button>
     <button type="button" role="tab" id="gr-tab-small" data-gr-tab="small" aria-controls="gr-main" aria-selected="false"><span class="gr-long">أسهم ذات </span>محفزات</button>
     <button type="button" role="tab" id="gr-tab-options" data-gr-tab="options" aria-controls="gr-main" aria-selected="false">الخيارات</button>
-    <button type="button" role="tab" id="gr-tab-news" data-gr-tab="news" aria-controls="gr-main" aria-selected="false">الأخبار</button>
   </nav>
 
   <main id="gr-main" class="gr-main" role="tabpanel" aria-labelledby="gr-tab-indices">
@@ -93,6 +103,6 @@
   </footer>
 
   <script src="./tv-intelligence.js?v=20261026-3" defer></script>
-  <script src="./radar.js?v=20261027-1" defer></script>
+  <script src="./radar.js?v=20261028-7" defer></script>
 </body>
 </html>

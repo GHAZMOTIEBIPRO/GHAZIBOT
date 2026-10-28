@@ -83,7 +83,8 @@ def test_no_inputs_is_an_explicit_empty_report():
     report = cw.build(None, None, None, NOW)
     assert report["status"] == "NO_RECENT_CATALYSTS" and report["watchlist"] == []
     assert report["sources"] == {"openfda": False, "sec_edgar": False, "sec_status": "MISSING", "clinicaltrials": False,
-                                 "clinicaltrials_status": "MISSING", "federal_register": False}
+                                 "clinicaltrials_status": "MISSING", "federal_register": False,
+                                 "company_ir": False}
 
 
 def test_workflow_is_single_writer_without_a_price_input():
@@ -320,3 +321,45 @@ def test_events_list_is_complete_beyond_the_per_ticker_cap():
     assert len([e for e in report["events"] if e["symbol"] == "MANY"]) == 15
     assert [e["date"] for e in report["events"]] == sorted((e["date"] for e in report["events"]), reverse=True)
 
+
+def test_observed_and_published_times_have_their_own_evidence_and_never_move(tmp_path):
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    first = {"approvals": FDA["approvals"][:1], "recalls": [], "generated_at": (NOW - timedelta(days=3, minutes=5)).isoformat()}
+    _commit(tmp_path, first, NOW - timedelta(days=3))                      # the feed's first version ever
+    second = {**FDA, "generated_at": (NOW - timedelta(days=2, minutes=4)).isoformat()}
+    _commit(tmp_path, second, NOW - timedelta(days=2))
+    history = cw.source_history(tmp_path, NOW)
+    report = cw.build(FDA, None, None, NOW, history=history)
+    ev = {e["symbol"]: e for e in report["events"]}
+    # Appeared in a later version: observed at that version's own fetch time, published at its commit.
+    assert ev["ACAD"]["first_observed_at"] == (NOW - timedelta(days=2, minutes=4)).isoformat()
+    assert ev["ACAD"]["first_observed_basis"] == "SOURCE_FEED_FETCH"
+    assert ev["ACAD"]["first_published_at"] == (NOW - timedelta(days=2)).isoformat()
+    assert ev["ACAD"]["timestamp_basis"] == "observed:SOURCE_FEED_FETCH;published:SOURCE_FEED_COMMIT"
+    # In the feed's first version: observed at that first fetch, but no detection claim.
+    assert ev["ABCD"]["first_observed_basis"] == "FIRST_FETCH_OF_SOURCE"
+    assert ev["ABCD"]["first_seen_at"] is None and ev["ABCD"]["first_seen_basis"] == "BEFORE_TRACKING"
+    assert ev["ABCD"]["event_at"] == "2026-10-16" and "source_published_at" in ev["ABCD"]
+    # Later runs and a history reprocessed with other times change nothing already set.
+    shifted = {k: {**v, "at": "2001-01-01T00:00:00+00:00", "observed_at": "2001-01-01T00:00:00+00:00"}
+               for k, v in history.items()}
+    later = cw.build(FDA, None, None, NOW + timedelta(hours=5), previous=report, history=shifted)
+    again = cw.build(FDA, None, None, NOW + timedelta(hours=9), previous=later, history=history)
+    for run in (later, again):
+        for e in run["events"]:
+            old = ev[e["symbol"]]
+            assert all(e[k] == old[k] for k in cw.TIME_FIELDS), e["symbol"]
+            assert e["first_seen_at"] == old["first_seen_at"]
+
+
+def test_without_history_a_new_event_is_published_by_this_list_but_not_claimed_as_observed():
+    first = cw.build(FDA, None, None, NOW)
+    newer = {**FDA, "approvals": FDA["approvals"] + [
+        {"event_type": "APPROVAL_ORIGINAL", "date": "2026-10-21", "ticker": "NEWX", "importance": "HIGH",
+         "products": ["LATER"]}]}
+    later = cw.build(newer, None, None, NOW + timedelta(hours=1), previous=first)
+    e = next(x for x in later["events"] if x["symbol"] == "NEWX")
+    assert e["first_published_basis"] == "THIS_LIST_RUN" and e["first_published_at"] == (NOW + timedelta(hours=1)).isoformat()
+    assert e["first_observed_at"] is None and e["first_observed_basis"] == "UNKNOWN"
+    old = next(x for x in later["events"] if x["symbol"] == "ABCD")
+    assert old["timestamp_basis"] == "observed:UNKNOWN;published:UNKNOWN"

@@ -117,6 +117,21 @@
     FR_FTC_CONSENT_ORDER: { label: "⚠ تسوية مقترحة مع FTC", tag: "risk", group: "risk" },
     FR_ENERGY_REGULATORY_FILING: { label: "إجراء لدى لجنة تنظيم الطاقة (FERC)", tag: "status", group: "regulatory" },
     FR_NUCLEAR_LICENSE_ACTION: { label: "إجراء ترخيص نووي (NRC)", tag: "status", group: "regulatory" },
+    // Official company IR feeds: the company's own headline; the label is our category, not a direction.
+    IR_SCHEDULE: { label: "موعد معلن من الشركة", tag: "status", group: "company" },
+    IR_EARNINGS: { label: "نتائج مالية (بيان الشركة)", tag: "results", group: "company" },
+    IR_GUIDANCE: { label: "توقعات الشركة", tag: "results", group: "company" },
+    IR_M_AND_A: { label: "استحواذ أو اندماج أو بيع أصول", tag: "decision", group: "company" },
+    IR_FINANCING_DILUTION: { label: "⚠ تمويل قد يخفف الملكية", tag: "risk", group: "risk" },
+    IR_FINANCING: { label: "تمويل أو ديون أو توزيعات", tag: "status", group: "company" },
+    IR_CONTRACT: { label: "عقد أو اتفاقية أو شراكة", tag: "status", group: "company" },
+    IR_MANAGEMENT: { label: "تغيير في الإدارة أو المجلس", tag: "status", group: "company" },
+    IR_BUSINESS_CHANGE: { label: "تغيير في النشاط", tag: "status", group: "company" },
+    IR_FILING_8K: { label: "إفصاح 8-K (من موقع الشركة)", tag: "decision", group: "company" },
+    IR_FILING_PERIODIC: { label: "تقرير دوري (10-Q أو 10-K)", tag: "admin", group: "company" },
+    IR_FILING_REGISTRATION: { label: "⚠ تسجيل أوراق مالية (تمويل محتمل)", tag: "risk", group: "risk" },
+    IR_FILING_PROXY: { label: "دعوة جمعية عمومية", tag: "admin", group: "admin" },
+    IR_OTHER: { label: "خبر من الشركة", tag: "status", group: "company" },
   };
   const kindInfo = (k) => KIND[k] || { label: "حدث رسمي", tag: "results", group: "results" };
   const RANK = { HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -140,6 +155,7 @@
   }
   const FILTERS = [
     ["important", "المهم (دون الإداري)"], ["decision", "قرارات تنظيمية"], ["results", "نتائج دراسات"],
+    ["company", "أخبار الشركات (مواقعها الرسمية)"],
     ["risk", "مخاطر"], ["regulatory", "إشعارات حكومية"], ["admin", "تحديثات إدارية"], ["all", "الكل"],
     ["general", "إشعارات غير مرتبطة بسهم"],
   ];
@@ -157,7 +173,7 @@
   // repeats the event type), the product for FDA events. The type itself is the tag.
   function eventText(e) {
     // Registry and Federal Register events: the study or document title says what happened.
-    const text = String(/^(TRIAL_|FR_)/.test(e.kind) ? e.reason || e.label || "" : e.label || e.reason || "").trim();
+    const text = String(/^(TRIAL_|FR_|IR_)/.test(e.kind) ? e.reason || e.label || "" : e.label || e.reason || "").trim();
     return text.length > 140 ? text.slice(0, 137) + "…" : text || e.info.label;
   }
   const kindTag = (e) => ({ text: e.info.label.replace(/ ·.*$/, ""), kind: e.info.tag });
@@ -165,9 +181,30 @@
   // a source being added is not a detection, and an unproven time is not shown.
   function timesLine(e) {
     const parts = [`تاريخ الحدث ${day(e.date) || e.date}`];
+    // A date the company scheduled (results, a call), apart from when it announced it.
+    if (e.scheduled_for && e.scheduled_for !== String(e.date).slice(0, 10)) parts.push(`الموعد المعلن ${day(e.scheduled_for)}`);
     if (e.source_updated && e.source_updated !== String(e.date).slice(0, 10)) parts.push(`تحديث المصدر ${day(e.source_updated)}`);
-    if (e.first_seen_at && e.first_seen_basis === "SOURCE_ADDED") parts.push(`أُضيف مع إدخال المصدر ${day(e.first_seen_at)}`);
-    else if (e.first_seen_at) parts.push(`رصدناه ${day(e.first_seen_at)}`);
+    // Our observation time only with evidence from the fetch itself (the feed's generated_at);
+    // a commit time alone is a publication time, and a source's first fetch is not early detection.
+    if (e.first_observed_at && e.first_observed_basis === "SOURCE_FEED_FETCH") parts.push(`أول جلب لدينا ${day(e.first_observed_at)}`);
+    else if (e.first_observed_at && e.first_observed_basis === "FIRST_FETCH_OF_SOURCE") parts.push(`جُلب مع أول تشغيل للمصدر ${day(e.first_observed_at)}`);
+    else if (!e.timestamp_basis && e.first_seen_at && e.first_seen_basis === "SOURCE_ADDED") parts.push(`أُضيف مع إدخال المصدر ${day(e.first_seen_at)}`);
+    return parts.join(" · ");
+  }
+
+  // A linked official document, read in separate parts: whom it names (and how that entity relates to the
+  // listed company), how sure we are of that link, and its impact, which stays unassessed without evidence.
+  const RELATION_AR = { SAME_ENTITY: "الشركة نفسها", RENAMED_SAME_ENTITY: "الشركة نفسها باسمها السابق",
+    DIVISION_OF_LISTED_COMPANY: "قسم تابع للشركة المدرجة", WHOLLY_OWNED_SUBSIDIARY: "شركة تابعة مملوكة بالكامل للشركة المدرجة",
+    REVIEWED_FDA_SPONSOR_ALIAS: "اسم راعٍ في جدول مُراجَع" };
+  const CONFIDENCE_AR = { HIGH: "عالية", MEDIUM: "متوسطة", LOW: "منخفضة" };
+  function readingLine(e) {
+    if (!e || !(e.potential_impact || e.link_relation)) return "";
+    const parts = [];
+    if (e.issuer && e.link_relation) parts.push(`الجهة في الوثيقة: ${e.issuer} (${RELATION_AR[e.link_relation] || e.link_relation})`);
+    if (CONFIDENCE_AR[e.interpretation_confidence]) parts.push(`ثقة الربط: ${CONFIDENCE_AR[e.interpretation_confidence]}`);
+    if (e.category_basis === "HEADLINE_KEYWORDS") parts.push("العنوان من الشركة؛ التصنيف آلي من كلماته");
+    parts.push(e.potential_impact && e.potential_impact !== "NEEDS_IMPACT_ASSESSMENT" ? `الأثر: ${e.potential_impact}` : "الأثر: يحتاج تقييم الأثر");
     return parts.join(" · ");
   }
 
@@ -231,6 +268,22 @@
       tags: [{ text: "⚠ تنبيه إدراج", kind: "risk" }, { text: r.tier, kind: "admin" }].filter((t) => t.text) }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
+  // Every flagged security, split so the shown count can be traced: shares by code, then warrants/rights/units.
+  function flagSummary(nl) {
+    const out = { all: 0, equity: 0, other: 0, by_status: {} };
+    for (const r of nasdaqMap(nl).values()) {
+      if (!r.status) continue;
+      out.all += 1;
+      if (r.equity) { out.equity += 1; out.by_status[r.status] = (out.by_status[r.status] || 0) + 1; } else out.other += 1;
+    }
+    return out;
+  }
+  // What each code in the file means. A flag is a status in Nasdaq's file, not a delisting decision.
+  const STATUS_MEANING_AR = {
+    D: "لا تستوفي حاليًا شرطًا من شروط الإدراج المستمر (مثل الحد الأدنى للسعر أو حقوق المساهمين). تُمنح عادةً مهلة للتصحيح؛ ليس قرار شطب.",
+    E: "تأخرت في تقديم تقرير دوري مطلوب (مثل ⁦10-K⁩ أو ⁦10-Q⁩).",
+    Q: "في إجراءات إفلاس.",
+  };
 
   // ---------- tab rows ----------
   function directoryMap(dir) {
@@ -350,12 +403,59 @@
     if (s > 0) out.move_pct = +(((breakeven - s) / s) * 100).toFixed(2);
     return out;
   }
+  // Position size from the user's own numbers: the loss at the stop stays within the chosen share of capital.
+  // No market data; gaps, slippage and commissions can make the real loss larger.
+  function positionMath({ capital, risk_pct, entry, stop, target }) {
+    const cap = Number(capital), rp = Number(risk_pct), e = Number(entry), s = Number(stop);
+    if (!(cap > 0) || !(rp > 0 && rp <= 100) || !(e > 0) || !(s > 0) || s === e) return null;
+    const side = s < e ? "LONG" : "SHORT";
+    const perShare = Math.abs(e - s);
+    const byRisk = Math.floor((cap * rp) / 100 / perShare);
+    const byCash = Math.floor(cap / e);
+    const shares = Math.min(byRisk, byCash);
+    const out = { side, shares, capped_by_cash: byCash < byRisk, risk_per_share: +perShare.toFixed(4),
+      stop_pct: +((perShare / e) * 100).toFixed(2), max_loss: +(shares * perShare).toFixed(2),
+      position_value: +(shares * e).toFixed(2) };
+    const t = Number(target);
+    if (target !== "" && target != null && t > 0) {
+      const ok = side === "LONG" ? t > e : t < e;
+      if (!ok) out.target_invalid = true;
+      else { const reward = Math.abs(t - e); out.r_multiple = +(reward / perShare).toFixed(2); out.gain_at_target = +(shares * reward).toFixed(2); }
+    }
+    return out;
+  }
+
+  // known -> with official news -> bars fetched -> analysed -> qualified, each with its own count or reason.
+  const FUNNEL_REASON = { DATA_USE_PERMISSION_REQUIRED: "بانتظار إعداد مسار البيانات الخاص",
+    ACCOUNT_CREDENTIALS_NOT_CONFIGURED: "مفاتيح الحساب غير مضبوطة", NO_CLOSED_SESSION: "لا جلسة مكتملة بعد" };
+  function funnelLine(fn) {
+    const c = (k) => (fn[k] && Number.isFinite(fn[k].count) ? n(fn[k].count) : "—");
+    const bars = fn.bars_fetched || {};
+    const why = bars.count ? "" : ` (${FUNNEL_REASON[bars.status] || "لم تُجلب"})`;
+    return `معروفة ${c("known_symbols")} · لها أخبار ${c("with_official_news")} · جُلبت شموعها ${c("bars_fetched")}${why}` +
+      " · المؤهلة: تُقيَّم في المسح الخاص";
+  }
 
   // Share classes make securities and companies different counts (GOOGL and GOOG are one company).
   function companyCounts(dir) {
     const rows = dir && Array.isArray(dir.symbols) ? dir.symbols : [];
     return { securities: rows.length, companies: new Set(rows.map((r) => r && (r.cik || r.symbol))).size };
   }
+  // Short original explanations of the terms the site uses.
+  const GLOSSARY = [
+    ["CALL / PUT", "عقد خيار: الكول حق شراء السهم بسعر محدد حتى تاريخ الانتهاء، والبوت حق بيعه. شراء العقد يحدّ الخسارة بثمنه."],
+    ["Strike", "سعر التنفيذ المتفق عليه في العقد."],
+    ["Expiration", "تاريخ انتهاء العقد؛ بعده لا قيمة زمنية له."],
+    ["Premium", "ثمن العقد للسهم الواحد؛ العقد يغطي عادة 100 سهم."],
+    ["Breakeven", "سعر السهم الذي تتساوى عنده القيمة عند الانتهاء مع ما دُفع في العقد."],
+    ["IV", "التقلب الضمني: ما يتوقعه السوق لتحرك السهم مستقبلًا، مستنتج من أسعار العقود، وليس اتجاهًا."],
+    ["Open Interest", "عدد العقود المفتوحة؛ يُنشر يوميًا وليس لحظيًا، ولا يكشف وحده من اشترى أو باع."],
+    ["Delta · Gamma · Theta · Vega", "حساسيات سعر العقد: للسعر، ولتغير الدلتا، وللوقت، وللتقلب. تُحسب بنموذج وافتراضات."],
+    ["CFTC COT", "تقرير أسبوعي رسمي لمراكز العقود الآجلة حسب فئة المتداول؛ المراكز بتاريخ الثلاثاء وتُنشر الجمعة."],
+    ["8-K", "إفصاح رسمي لدى SEC عن حدث جوهري في الشركة، مثل عقد أو استحواذ أو تغيير في الإدارة."],
+    ["Airworthiness Directive", "توجيه إلزامي من FAA لإصلاح أو فحص في طراز طائرة أو محرك؛ أثره على السهم يحتاج تقييمًا."],
+  ];
+
   // A gap is stated for the use in question and the sources tested, never as "no source exists".
   const GAP_AR = "لم نجد حتى الآن مصدرًا مناسبًا للاستخدام المحدد ضمن المصادر التي اختبرناها";
   // Options data by kind: each kind has its own rights and use; a subscription is not a redistribution right.
@@ -369,8 +469,8 @@
   ];
 
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
-    searchIndex, suggest, optionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
-    foldAr, nasdaqMap, flagRows, companyCounts, OPTION_DATA_KINDS, GAP_AR };
+    searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
+    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -388,6 +488,10 @@
     try {
       const r = await fetch(DATA + (file || FILES[name]), { cache: "no-store", signal: ctrl ? ctrl.signal : undefined });
       if (!r.ok) throw new Error("HTTP " + r.status);
+      // Set by sw.js only when the network failed and the last saved copy was served.
+      const mark = /^ghazi-cached (\S+)$/.exec(r.statusText || "");
+      const cached = r.headers.get("x-ghazi-cached-at") || (mark && mark[1]);
+      if (cached && (!state.cachedAt || cached < state.cachedAt)) state.cachedAt = cached;
       return await r.json();
     } catch { return null; } finally { clearTimeout(timer); }
   }
@@ -422,19 +526,25 @@
     catch { return []; }
   }
   function saveWatch(list) { try { root.localStorage.setItem(WATCH_KEY, JSON.stringify(list.slice(0, 30))); } catch { /* storage blocked */ } }
+  // The badge on «متابعتي»; the list itself is the watch section.
   function renderWatch() {
-    const list = watchList();
-    $("gr-watch-count").textContent = n(list.length);
-    const box = $("gr-watch-list");
-    box.replaceChildren();
-    if (!list.length) { box.append(el("p", "gr-muted", "لا رموز بعد. افتح سهمًا واضغط «متابعة».")); return; }
-    for (const s of list) {
-      const b = el("button", "gr-chip", s); b.type = "button"; b.dir = "ltr";
-      b.addEventListener("click", () => openSymbol(s));
-      const x = el("button", "gr-chip", "×"); x.type = "button"; x.setAttribute("aria-label", "إزالة " + s);
-      x.addEventListener("click", () => { saveWatch(watchList().filter((v) => v !== s)); renderWatch(); syncWatchButton(); });
-      box.append(b, x);
-    }
+    const count = watchList().length;
+    const b = $("gr-watch-count");
+    if (b) { b.textContent = count ? n(count) : ""; b.dataset.n = String(count); }
+    if (state.tab === "watch") renderTab();
+  }
+
+  // ----- theme (this browser only): auto follows the device -----
+  const THEME_KEY = "ghazi.theme.v1";
+  function themeChoice() { try { return root.localStorage.getItem(THEME_KEY) || "auto"; } catch { return "auto"; } }
+  function currentTheme() { return doc.documentElement.dataset.theme === "light" ? "light" : "dark"; }
+  function applyTheme(choice) {
+    try { root.localStorage.setItem(THEME_KEY, choice); } catch { /* storage blocked */ }
+    const light = choice === "light" || (choice === "auto" && root.matchMedia("(prefers-color-scheme: light)").matches);
+    if (light) doc.documentElement.dataset.theme = "light"; else delete doc.documentElement.dataset.theme;
+    // TradingView frames carry their own theme: remount what is on screen.
+    const tape = $("gr-tape"); if (tape) { delete tape.dataset.mounted; tape.replaceChildren(); renderTape(); }
+    if (state.symbol) mountChart(state.symbol, (doc.querySelector('[data-gr-chart] .gr-chart-bar [aria-pressed="true"]') || {}).dataset?.interval || "D");
   }
   function syncWatchButton() {
     const b = $("gr-d-watch"); if (!b || !state.symbol) return;
@@ -463,6 +573,9 @@
       const week = state.events.filter((e) => e.info.group !== "admin" && Date.now() - Date.parse(e.date + "T00:00:00Z") <= 7 * 864e5);
       add("أحداث رسمية مهمة خلال 7 أيام", n(week.length), "حُدّثت " + (ago(catalysts.generated_at, Date.now()) || "—"));
     }
+    // Price-analysis path, stage by stage: a symbol directory is not a price scan.
+    const fn = plan && plan.analysis_funnel;
+    if (fn) add("رموز حُللت سعريًا", n((fn.analysed || {}).count || 0), funnelLine(fn));
     if (!facts.children.length) facts.append(el("li", "gr-fact gr-muted", "ملخص السوق غير متاح الآن؛ تعذّر تحميل الملفات المنشورة."));
   }
   function renderTape() {
@@ -474,7 +587,7 @@
     const s = doc.createElement("script"); s.async = true; s.src = TAPE_SRC;
     s.textContent = JSON.stringify({ symbols: INDEX_ROWS.map((r) => ({ proName: `${r.symbol === "QQQ" ? "NASDAQ" : "AMEX"}:${r.symbol}`, title: r.symbol })),
       // Opaque dark theme: a transparent frame on a dark-scheme page is painted white by the browser.
-      showSymbolLogo: false, colorTheme: "dark", isTransparent: false, displayMode: "compact", locale: "ar_AE" });
+      showSymbolLogo: false, colorTheme: currentTheme(), isTransparent: false, displayMode: "compact", locale: "ar_AE" });
     s.onerror = () => { box.replaceChildren(); };
     holder.append(s); box.append(holder);
   }
@@ -521,18 +634,86 @@
     return card;
   }
 
-  const TAB_TITLES = { indices: "المؤشرات", leaders: "القياديات", small: "أسهم ذات محفزات", options: "الخيارات", news: "الأخبار" };
+  const TAB_TITLES = { indices: "المؤشرات", leaders: "القياديات", small: "أسهم ذات محفزات", options: "الخيارات", news: "الأخبار",
+    radar: "الرادار", watch: "متابعتي", more: "المزيد" };
+  // Rows for the radar (review priority across every list) and the watchlist.
+  function nameOf(symbol, top) {
+    const m = directoryMap(state.data.directory).get(symbol);
+    const listed = state.nasdaq ? state.nasdaq.get(symbol) : null;
+    const idx = INDEX_ROWS.find((r) => r.symbol === symbol);
+    return (m && m.name) || (idx && idx.name) || (listed && listed.name) || (top && top.issuer) || FALLBACK_NAMES[symbol] || "";
+  }
+  function renderRadar(list, note) {
+    const { catalysts, plan } = state.data;
+    const entries = (catalysts && Array.isArray(catalysts.watchlist) ? catalysts.watchlist : []).filter((e) => e && SYMBOL_RE.test(String(e.symbol)));
+    const evs = bySymbol(state.events);
+    note.textContent = "ترتيب للمراجعة حسب قوة الحدث الرسمي وحداثته وموثوقية ربطه بالسهم، مع المخاطر بجانبه. ليس توصية ولا احتمال نجاح." +
+      (plan && plan.analysis_funnel ? " · " + funnelLine(plan.analysis_funnel) : "");
+    for (const e of entries.slice(0, 40)) {
+      const top = headline(evs.get(e.symbol) || []);
+      const tags = [{ text: `أولوية ${n(Math.round(e.catalyst_score || 0))}/100`, kind: "admin" },
+        ...(e.risk_flags || []).slice(0, 2).map((r) => ({ text: "⚠ " + r, kind: "risk" })), top ? kindTag(top) : null].filter(Boolean);
+      list.append(rowEl({ symbol: e.symbol, name: nameOf(e.symbol, top), why: top ? eventText(top) : "حدث رسمي", time: top ? day(top.date) : "",
+        tags, quiet: !top || top.info.group === "admin" }));
+    }
+    if (!entries.length) list.append(el("p", "gr-empty", catalysts ? "لا أحداث رسمية في آخر 30 يومًا." : "تعذّر تحميل قائمة الأحداث الرسمية."));
+  }
+  function renderWatchView(list, note) {
+    const saved = watchList();
+    note.textContent = "قائمتك محفوظة في هذا المتصفح فقط. أضف رمزًا بزر «متابعة» في صفحة السهم.";
+    const evs = bySymbol(state.events);
+    for (const s of saved) {
+      const top = headline(evs.get(s) || []);
+      list.append(rowEl({ symbol: s, name: nameOf(s, top), why: top ? eventText(top) : "لا حدث رسمي حديث في مصادرنا", quiet: !top,
+        time: top ? day(top.date) : "", tags: top ? [kindTag(top)] : [] }));
+    }
+    if (!saved.length) list.append(el("p", "gr-empty", "لا رموز بعد."));
+  }
+  function renderMore(list, extra) {
+    list.hidden = true;
+    const theme = section("المظهر");
+    const box = el("div", "gr-theme"); box.setAttribute("role", "group"); box.setAttribute("aria-label", "المظهر");
+    for (const [v, t] of [["auto", "تلقائي (حسب الجهاز)"], ["dark", "داكن"], ["light", "فاتح"]]) {
+      const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(themeChoice() === v));
+      b.addEventListener("click", () => { applyTheme(v); renderTab(); });
+      box.append(b);
+    }
+    theme.append(box); extra.append(theme);
+    extra.append(positionCard());
+    const app = section("التطبيق");
+    if (installPrompt) {
+      const b = el("button", "gr-chip", "ثبّت غازي رادار على هذا الجهاز"); b.type = "button";
+      b.addEventListener("click", async () => { installPrompt.prompt(); await installPrompt.userChoice.catch(() => null); installPrompt = null; renderTab(); });
+      app.append(b);
+    } else app.append(el("p", null, "للتثبيت على الجوال: من قائمة المتصفح اختر «إضافة إلى الشاشة الرئيسية». يعمل الموقع دون اتصال بآخر بيانات محفوظة، دون أسعار."));
+    extra.append(app);
+    const links = section("صفحات أخرى");
+    const ul = el("ul", "gr-links");
+    for (const [href, t] of [["./classic.html?panel=trust", "مركز البيانات: المصادر والحقوق والتشغيل"], ["./catalyst-desk.html", "المحفزات الرسمية بالتفصيل"],
+      ["./trading-readiness.html", "النتائج والموثوقية"], ["./classic.html", "الواجهة السابقة والأدوات المتقدمة"]]) {
+      const li = el("li"); const a = el("a", null, t); a.href = href; li.append(a); ul.append(li);
+    }
+    links.append(ul); extra.append(links);
+    const gl = section("مصطلحات");
+    const dl = el("dl", "gr-glossary");
+    for (const [term, text] of GLOSSARY) dl.append(el("dt", null, term), el("dd", null, text));
+    gl.append(dl); extra.append(gl);
+  }
   function renderTab() {
     const list = $("gr-list"), tools = $("gr-list-tools"), note = $("gr-list-note"), extra = $("gr-extra");
     $("gr-list-title").textContent = TAB_TITLES[state.tab];
     for (const b of doc.querySelectorAll("[data-gr-tab]")) b.setAttribute("aria-selected", String(b.dataset.grTab === state.tab));
-    $("gr-main").setAttribute("aria-labelledby", "gr-tab-" + state.tab);
+    $("gr-main").setAttribute("aria-labelledby", MARKET_TABS.includes(state.tab) ? "gr-tab-" + state.tab : "gr-list-title");
     list.replaceChildren(); tools.replaceChildren(); extra.replaceChildren(); note.textContent = "";
+    for (const x of doc.querySelectorAll(".gr-note-more")) x.remove();
     tools.className = "gr-list-tools";
     list.hidden = false;
-    if (!state.loaded && state.tab !== "options") { list.append(el("p", "gr-empty", "جارٍ تحميل البيانات المنشورة…")); return; }
+    if (state.tab === "more") return renderMore(list, extra);
+    if (!state.loaded && !["options", "watch"].includes(state.tab)) { list.append(el("p", "gr-empty", "جارٍ تحميل البيانات المنشورة…")); return; }
     const { catalysts, directory, macro, options } = state.data;
     let rows = [];
+    if (state.tab === "radar") { renderRadar(list, note); return autoSelect(); }
+    if (state.tab === "watch") { renderWatchView(list, note); return autoSelect(); }
     if (state.tab === "indices") {
       rows = indexRows(macro);
       note.textContent = "صناديق متداولة تتتبع المؤشرات؛ المؤشر النقدي نفسه لا يظهر في أدوات TradingView المجانية.";
@@ -552,7 +733,7 @@
         : "قائمة مختصرة؛ دليل أعضاء S&P 500 لم يُنشر بعد.") +
         " S&P 500 قائمة الشركات الكبرى، وليس رادار أسهم صغيرة. الأحداث من FDA وClinicalTrials وFederal Register؛ إفصاحات SEC متوقفة حاليًا.";
       extra.append(lazyEmbed("خريطة قطاعات S&P 500 (TradingView)", "stock-heatmap", { dataSource: "SPX500", grouping: "sector",
-        blockSize: "market_cap_basic", blockColor: "change", locale: "ar_AE", colorTheme: "dark", hasTopBar: false,
+        blockSize: "market_cap_basic", blockColor: "change", locale: "ar_AE", colorTheme: currentTheme(), hasTopBar: false,
         isZoomEnabled: true, hasSymbolTooltip: true, isTransparent: false, width: "100%", height: 420 },
       "عرض من TradingView في متصفحك؛ لا يدخل في أي حساب لدينا."));
     } else if (state.tab === "small") {
@@ -562,9 +743,20 @@
         if (!state.nasdaq) { list.append(el("p", "gr-empty", "جارٍ تحميل ملف ناسداك…")); ensureNasdaq().then(() => state.tab === "small" && renderTab()); return; }
         rows = flagRows(state.data.nasdaq);
         const nl = state.data.nasdaq;
+        const fs = flagSummary(nl);
+        const parts = Object.entries(fs.by_status).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${n(v)} «${STATUS_AR[k] || k}» (${k})`).join("، ");
         note.textContent = nl
-          ? `من ملف «Nasdaq Listed» في NasdaqTrader (أُنشئ ${day(nl.file_created_at) || "—"}): ${n(rows.length)} سهمًا عليها تنبيه إدراج. التنبيه خطر وليس محفزًا إيجابيًا.`
+          ? `من ملف «Nasdaq Listed» في NasdaqTrader (أُنشئ ${day(nl.file_created_at) || "—"}): ${n(fs.all)} ورقة عليها رمز حالة مالية؛ ` +
+            `المعروض ${n(rows.length)} سهمًا: ${parts}. والباقي ${n(fs.other)} ورقة ليست أسهمًا (حقوق اكتتاب أو وحدات أو ضمانات) لا تُعرض هنا. ` +
+            "التنبيه خطر وليس محفزًا، وليس قرار شطب."
           : "تعذّر تحميل ملف ناسداك.";
+        const meanings = el("details", "gr-card gr-note-more");
+        meanings.append(el("summary", null, "ماذا تعني الرموز؟"));
+        const dl = el("dl", "gr-glossary");
+        for (const [k, v] of Object.entries(STATUS_MEANING_AR)) dl.append(el("dt", null, `${k} · ${STATUS_AR[k]}`), el("dd", null, v));
+        dl.append(el("dt", null, "H وG وJ وK"), el("dd", null, "تجمع أكثر من حالة من الحالات أعلاه، كما يصفها ملف ناسداك."));
+        meanings.append(dl, el("p", null, "المصدر: الحقل Financial Status في ملف Nasdaq Listed، بتاريخ إنشاء الملف أعلاه. لا نعرف من الملف تاريخ بدء الحالة."));
+        note.after(meanings);   // above the rows, not after 300 of them
       } else {
         rows = smallRows(catalysts, directory, state.events);
         if (state.nasdaq) for (const r of rows) {
@@ -625,7 +817,7 @@
           el("li", null, "القطاع: " + fmt(dist.sector)));
         d.append(ul); extra.append(d);
       }
-      extra.append(lazyEmbed("التقويم الاقتصادي الأمريكي (TradingView)", "events", { colorTheme: "dark", isTransparent: false,
+      extra.append(lazyEmbed("التقويم الاقتصادي الأمريكي (TradingView)", "events", { colorTheme: currentTheme(), isTransparent: false,
         width: "100%", height: 420, locale: "ar_AE", importanceFilter: "0,1", countryFilter: "us" },
       "مواعيد البيانات الاقتصادية من TradingView في متصفحك؛ لا تدخل في أي حساب لدينا."));
       for (const e of shown.slice(0, 120)) {
@@ -681,6 +873,35 @@
     return card;
   }
 
+  function positionCard() {
+    const card = el("section", "gr-card");
+    card.append(el("h2", null, "حجم المركز من مخاطرتك"),
+      el("p", null, "حساب من أرقامك فقط، دون بيانات سوق: كم سهمًا تبقى خسارتها عند الوقف ضمن النسبة التي تختارها من رأس المال. " +
+        "الفجوات السعرية والانزلاق والعمولات قد تجعل الخسارة الفعلية أكبر. ليست توصية بالشراء أو البيع."));
+    const form = el("form", "gr-form");
+    const field = (label, ph) => { const l = el("label", null, label); const i = el("input"); i.type = "number"; i.step = "any"; i.min = "0";
+      i.inputMode = "decimal"; i.placeholder = ph; i.dir = "ltr"; l.append(i); form.append(l); return i; };
+    const capital = field("رأس المال (دولار)", "مثال 10000"), risk = field("أقصى مخاطرة من رأس المال (%)", "مثال 1");
+    const entry = field("سعر الدخول", "مثال 50"), stop = field("سعر الوقف", "مثال 47.5"), target = field("الهدف (اختياري)", "مثال 56");
+    const out = el("p", "gr-result", "النتيجة تظهر هنا."); out.setAttribute("role", "status");
+    function calc() {
+      const r = positionMath({ capital: capital.value, risk_pct: risk.value, entry: entry.value, stop: stop.value, target: target.value });
+      if (!r) { out.textContent = "أدخل رأس المال والنسبة (حتى 100%) وسعري الدخول والوقف، على أن يختلف الوقف عن الدخول."; return; }
+      if (!r.shares) { out.textContent = "لا يتسع رأس المال أو المخاطرة المسموحة لسهم واحد بهذه الأرقام."; return; }
+      const side = r.side === "LONG" ? "شراء (الوقف تحت الدخول)" : "بيع على المكشوف (الوقف فوق الدخول)";
+      let text = `${side} · عدد الأسهم: ${n(r.shares)} · قيمة المركز: ${n(r.position_value)} دولار · الخسارة عند الوقف: ${n(r.max_loss)} دولار ` +
+        `(الوقف يبعد ${n(r.stop_pct)}%)`;
+      if (r.capped_by_cash) text += " · العدد محدود برأس المال لا بالمخاطرة";
+      if (r.target_invalid) text += " · الهدف في الجهة الخطأ من سعر الدخول";
+      else if (r.r_multiple != null) text += ` · عند الهدف: ${n(r.gain_at_target)} دولار، أي ${n(r.r_multiple)} ضعف المخاطرة`;
+      out.textContent = text;
+    }
+    for (const i of [capital, risk, entry, stop, target]) i.addEventListener("input", calc);
+    form.addEventListener("submit", (e) => { e.preventDefault(); calc(); });
+    card.append(form, out);
+    return card;
+  }
+
   // ----- detail -----
   function tvLink(info, symbol) {
     if (info && info.cash_url && info.kind === "UNAVAILABLE") return info.cash_url;
@@ -708,6 +929,7 @@
     if (!TV || !info) { setState("failed", "أداة الشارت لم تُحمّل."); return; }
     if (info.kind === "UNAVAILABLE") { setState("unavailable", info.note_ar); return; }
     const cfg = TV.config("advanced-chart", symbol, interval);
+    if (cfg) cfg.theme = currentTheme();
     if (!cfg) { setState("failed", "تعذّر تجهيز الشارت لهذا الرمز."); return; }
     setState("loading", "جارٍ تحميل الشارت…");
     const holder = el("div", "tradingview-widget-container"); holder.style.height = "100%";
@@ -787,6 +1009,8 @@
       const ul = el("ul", "gr-d-list");
       for (const e of mine.slice(0, 12)) {
         const li = el("li"); li.append(el("p", null, eventText(e)));
+        const reading = readingLine(e);
+        if (reading) li.append(el("p", "gr-muted", reading));
         const meta = el("span", "gr-meta"); const kt = kindTag(e); const tag = el("span", "gr-tag", kt.text); tag.dataset.kind = kt.kind;
         meta.append(tag, el("span", null, timesLine(e)));
         const url = safeUrl(e.source_url);
@@ -812,13 +1036,16 @@
     price.append(el("p", null, `غير متاح: ${GAP_AR} (شموع أسعار تسمح بحساب المستويات ونشرها). الشارت أعلاه عرض من TradingView ولا يدخل في أي حساب.`));
     body.append(price);
   }
-  let returnFocus = null;
+  let returnFocus = null, anchor = null;
   function openSymbol(symbol, opts = {}) {
     const s = String(symbol || "").trim().toUpperCase();
     if (!SYMBOL_RE.test(s)) return;
     state.symbol = s;
     const from = doc.activeElement;
     if (from && from !== doc.body && !$("gr-detail").contains(from)) returnFocus = from;
+    // Where the opening row sits on screen, so closing can put it back there even if content above it grew meanwhile.
+    const row = doc.querySelector(`#gr-list [data-gr-symbol="${s}"]`);
+    anchor = row && !$("gr-detail").classList.contains("is-open") ? { symbol: s, top: row.getBoundingClientRect().top } : anchor;
     const panel = $("gr-detail");
     $("gr-d-symbol").textContent = s;
     for (const r of doc.querySelectorAll("#gr-list .gr-row")) {
@@ -836,6 +1063,9 @@
   // focus goes back to the row or search box that opened the stock.
   function closeDetail() {
     $("gr-detail").classList.remove("is-open"); doc.body.style.overflow = "";
+    const row = anchor && doc.querySelector(`#gr-list [data-gr-symbol="${anchor.symbol}"]`);
+    if (row && !wide()) root.scrollBy(0, row.getBoundingClientRect().top - anchor.top);
+    anchor = null;
     if (returnFocus && doc.contains(returnFocus)) returnFocus.focus({ preventScroll: true });
   }
 
@@ -879,13 +1109,49 @@
     });
   }
 
-  // Each tab keeps its own scroll position.
+  // Each tab keeps its own scroll position. App sections: السوق (four sub-tabs), الرادار, الأخبار, متابعتي, المزيد.
+  const MARKET_TABS = ["indices", "leaders", "small", "options"];
+  const sectionOf = (tab) => (MARKET_TABS.includes(tab) ? "market" : tab);
+  function syncSection() {
+    const section = sectionOf(state.tab);
+    for (const b of doc.querySelectorAll("[data-gr-section]")) {
+      if (b.dataset.grSection === section) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    }
+    $("gr-tabs").hidden = section !== "market";
+    const summary = doc.querySelector(".gr-summary"); if (summary) summary.hidden = section !== "market";
+  }
   function setTab(tab, push) {
+    if (tab === "market") tab = state.marketTab || "indices";
     if (!TAB_TITLES[tab]) return;
     state.scroll[state.tab] = root.scrollY;
-    state.tab = tab; renderTab();
+    state.tab = tab;
+    if (MARKET_TABS.includes(tab)) state.marketTab = tab;
+    syncSection(); renderTab();
     root.scrollTo(0, state.scroll[tab] || 0);
     if (push) { const url = new URL(root.location.href); url.searchParams.set("tab", tab); root.history.replaceState(root.history.state, "", url); }
+  }
+
+  // ----- offline: the service worker serves the last saved copy and says when it was saved -----
+  function renderOffline() {
+    const box = $("gr-offline"); if (!box) return;
+    const saved = state.cachedAt;
+    if (root.navigator.onLine !== false && !saved) { box.hidden = true; return; }
+    box.hidden = false;
+    box.textContent = (root.navigator.onLine === false ? "غير متصل · " : "تعذّر التحديث · ") +
+      (saved ? `تُعرض آخر بيانات محفوظة (حُفظت ${ago(saved, Date.now()) || day(saved)}). الأسعار لا تُخزَّن ولا تُعرض دون اتصال.`
+        : "لا توجد بيانات محفوظة بعد.");
+  }
+  let installPrompt = null;
+  function registerWorker() {
+    // Secure contexts only (https, or the local test server).
+    if (!("serviceWorker" in root.navigator) || !root.isSecureContext) return;
+    root.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; if (state.tab === "more") renderTab(); });
+    // A new version takes over once and the page reloads once, so nobody stays on an old copy.
+    // Only an update replaces a controller; the first install (no controller yet) must not reload the page.
+    let reloaded = false;
+    const hadController = !!root.navigator.serviceWorker.controller;
+    root.navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadController && !reloaded) { reloaded = true; root.location.reload(); } });
+    root.navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((reg) => reg.update()).catch(() => { /* site works without it */ });
   }
 
   async function start() {
@@ -897,10 +1163,15 @@
     const tab = params.get("tab");
     if (TAB_TITLES[tab]) state.tab = tab;
     else if (linked && !INDEX_ROWS.some((r) => r.symbol === linked)) state.tab = "leaders";
+    if (MARKET_TABS.includes(state.tab)) state.marketTab = state.tab;
     for (const b of doc.querySelectorAll("[data-gr-tab]")) b.addEventListener("click", () => setTab(b.dataset.grTab, true));
-    $("gr-watch-btn").addEventListener("click", () => {
-      const p = $("gr-watch-panel"); p.hidden = !p.hidden; $("gr-watch-btn").setAttribute("aria-expanded", String(!p.hidden));
+    for (const b of doc.querySelectorAll("[data-gr-section]")) b.addEventListener("click", () => {
+      if (!wide() && $("gr-detail").classList.contains("is-open")) closeDetail();
+      setTab(b.dataset.grSection, true);
     });
+    syncSection();
+    root.addEventListener("online", renderOffline); root.addEventListener("offline", renderOffline);
+    registerWorker();
     $("gr-d-watch").addEventListener("click", () => {
       const list = watchList(); const s = state.symbol; if (!s) return;
       saveWatch(list.includes(s) ? list.filter((v) => v !== s) : [...list, s]); renderWatch(); syncWatchButton();
@@ -922,7 +1193,7 @@
     state.events = eventRows(state.data.catalysts);
     index = searchIndex(state.data.directory, state.events);
     if (linked && SYMBOL_RE.test(linked) && !TAB_TITLES[tab]) state.tab = tabFor(linked);
-    renderSession(); renderFacts(); renderTab(); renderTape();
+    syncSection(); renderSession(); renderFacts(); renderTab(); renderTape(); renderOffline();
     if (state.symbol) renderDetailBody(state.symbol);
   }
   if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", start); else start();

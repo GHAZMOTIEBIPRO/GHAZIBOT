@@ -126,3 +126,21 @@ def test_workflow_publishes_sheet_and_morning_copy_but_never_private_output():
     publish = next(s for s in wf["jobs"]["daily-plan"]["steps"] if s.get("name", "").startswith("Publish"))
     assert "runtime/public/data/daily_plan.json" in publish["run"] and "state/daily_plan" in publish["run"]
     assert "private_plan" not in publish["run"] and "--private-output" in text
+
+
+def test_analysis_funnel_separates_known_news_fetched_analysed_and_qualified():
+    nasdaq = {"rows": [["AAPL", "Apple"], ["SOUN", "SoundHound"], ["QQQ", "Invesco"]]}
+    directory = {"symbols": [{"symbol": "AAPL"}, {"symbol": "XOM"}]}
+    watch = {"events": [{"symbol": "AAPL"}, {"symbol": "AAPL"}, {"symbol": "IONS"}]}
+    blocked = {"enabled": False, "reason": "DATA_USE_PERMISSION_REQUIRED", "plans": {}}
+    f = bdp.funnel(nasdaq, directory, watch, blocked)
+    assert f["known_symbols"]["count"] == 4 and f["known_symbols"]["nasdaq_listed"] == 3
+    assert f["with_official_news"]["count"] == 2
+    assert f["bars_fetched"] == {**f["bars_fetched"], "count": 0, "attempted": 0, "status": "DATA_USE_PERMISSION_REQUIRED"}
+    assert f["analysed"]["count"] == 0 and f["qualified"]["count"] is None
+    ran = {"enabled": True, "reason": "OWNER_AUTHORIZED_INTERNAL_USE",
+           "fetch_status": {"SPY": {"daily": "OK"}, "AAPL": {"daily": "HTTP_403"}},
+           "plans": {"SPY": {"available": True}, "AAPL": {"available": False}}}
+    g = bdp.funnel(nasdaq, directory, watch, ran)
+    assert (g["bars_fetched"]["count"], g["bars_fetched"]["attempted"], g["analysed"]["count"]) == (1, 2, 1)
+    assert "SPY" not in json.dumps(g)            # counts only in the public sheet

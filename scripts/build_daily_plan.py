@@ -214,7 +214,33 @@ def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
     return "\n".join(lines)[:3900]
 
 
-def build(now: datetime, watch: Any, macro: Any, regimes: Any, private: dict[str, Any]) -> dict[str, Any]:
+def funnel(nasdaq: Any, directory: Any, watch: Any, private: dict[str, Any]) -> dict[str, Any]:
+    """Counts per stage of the price-analysis path; a directory of symbols is not a price scan.
+
+    known -> with official news -> bars fetched -> analysed (frames + levels) -> qualified.
+    Counts only (no symbols, no prices): the private stages come from Alpaca data
+    that is not redistributed.
+    """
+    listed = {r[0] for r in (nasdaq or {}).get("rows") or [] if isinstance(r, list) and r}
+    members = {r.get("symbol") for r in (directory or {}).get("symbols") or [] if isinstance(r, dict)}
+    news = {e.get("symbol") for e in (watch or {}).get("events") or [] if isinstance(e, dict) and e.get("symbol")}
+    statuses = private.get("fetch_status") or {}
+    fetched = sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK")
+    analysed = sum(1 for p in (private.get("plans") or {}).values() if p.get("available"))
+    return {
+        "known_symbols": {"count": len(listed | members), "nasdaq_listed": len(listed), "sp500_directory": len(members),
+                          "basis": "NasdaqTrader Nasdaq Listed file and the S&P 500 directory (no prices)"},
+        "with_official_news": {"count": len(news), "basis": "catalyst_watchlist.json events (30 days)"},
+        "bars_fetched": {"count": fetched, "attempted": len(statuses), "status": private.get("reason"),
+                         "basis": "completed daily bars from the owner-private Alpaca path"},
+        "analysed": {"count": analysed, "basis": "frames, levels and conditional scenarios computed"},
+        "qualified": {"count": None, "status": "NOT_EVALUATED_IN_THIS_PATH",
+                      "basis": "setup conditions are evaluated by the private market scan, not the daily plan"},
+    }
+
+
+def build(now: datetime, watch: Any, macro: Any, regimes: Any, private: dict[str, Any],
+          universe: tuple[Any, Any] = (None, None)) -> dict[str, Any]:
     facts = calendar_facts(now)
     catalysts = catalysts_today(watch, now)
     macro_ctx = macro_context(macro, regimes)
@@ -225,6 +251,7 @@ def build(now: datetime, watch: Any, macro: Any, regimes: Any, private: dict[str
         # without public frames this is a session brief, not a technical plan
         "title_ar": "خطة اليوم" if full_public else "موجز الجلسة والمحركات",
         "readiness": ready,
+        "analysis_funnel": funnel(universe[0], universe[1], watch, private),
         "session": facts, "frames": frames_status(private),
         "catalysts": catalysts, "macro": macro_ctx,
         "private_mode": {"enabled": private.get("enabled", False), "reason": private.get("reason"),
@@ -249,7 +276,8 @@ def main() -> int:
     facts = calendar_facts(now)
     private = private_plans(facts, now)
     sheet = build(now, _load(args.data_dir / "catalyst_watchlist.json"), _load(args.data_dir / "public_macro.json"),
-                  _load(args.data_dir / "macro_regimes.json"), private)
+                  _load(args.data_dir / "macro_regimes.json"), private,
+                  (_load(args.data_dir / "nasdaq_listed.json"), _load(args.data_dir / "symbol_directory.json")))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
     session_date = (facts.get("today") or {}).get("date")

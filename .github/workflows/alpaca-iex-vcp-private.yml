@@ -58,32 +58,12 @@ jobs:
       - name: Install minimum parser dependencies when source blocked
         if: env.ALPACA_INTERNAL_DATA_USE_AUTHORIZED != 'true' || env.ALPACA_API_KEY == '' || env.ALPACA_SECRET_KEY == ''
         run: pip install "pandas>=2,<3" "requests>=2.32,<3" 
-      # Bootstrap the private bot only when separate derived-alert permission
-      # is recorded, and never store the destination or credentials in bot-state.
-      - name: Restore optional encrypted Telegram destination
-        if: env.ALPACA_PRIVATE_ALERTS_AUTHORIZED == 'true' && env.TELEGRAM_CHAT_ID == ''
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p telegram_runtime
-          for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml; do
-            for run_id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
-              rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
-              if gh run download -R "$GITHUB_REPOSITORY" "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
-                [[ -s telegram_runtime/connection.enc ]] && break 2
-              fi
-            done
-          done
-          if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
-            openssl enc -d -aes-256-cbc -pbkdf2 \
-              -in telegram_runtime/connection.enc \
-              -out telegram_runtime/connection.json \
-              -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
-          fi
-      - name: Resolve optional private Telegram destination
+      # The owner chat must differ from the broadcast chat; resolve the broadcast
+      # destination first so output_policy.deliver_private can compare. Nothing
+      # about the destination is stored in bot-state.
+      - name: Resolve the broadcast destination for the private-chat check
         if: env.ALPACA_PRIVATE_ALERTS_AUTHORIZED == 'true'
-        run: PYTHONPATH=app python app/scripts/telegram_connection_bootstrap.py --connection-path telegram_runtime/connection.json
+        uses: ./app/.github/actions/resolve-telegram-broadcast
       - name: Analyze only Alpaca IEX daily bars under explicit internal license
         env:
           PYTHONPATH: app

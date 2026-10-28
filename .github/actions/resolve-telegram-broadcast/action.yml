@@ -1,0 +1,40 @@
+name: Resolve the Telegram broadcast destination
+description: >-
+  Finds the broadcast (public) chat the same way the notifiers do: the
+  TELEGRAM_CHAT_ID secret, else the encrypted telegram-connection artifact of a
+  recent run, else Telegram updates. Exports TELEGRAM_CHAT_ID (masked) and
+  TELEGRAM_READY for later steps. Owner-private senders need this so
+  output_policy.deliver_private can refuse an owner chat that is the broadcast
+  chat; it never sends anything and never chooses the private destination.
+  The calling job needs `actions: read` and TELEGRAM_BOT_TOKEN in its env.
+inputs:
+  app-path:
+    description: Checkout path of the application code.
+    default: app
+runs:
+  using: composite
+  steps:
+    - name: Restore the encrypted broadcast connection when the secret is empty
+      if: env.TELEGRAM_CHAT_ID == ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p telegram_runtime
+        for workflow in telegram-connection-keeper.yml options-contract-radar.yml stock-radar.yml; do
+          for run_id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --status success --branch main --limit 8 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            rm -f telegram_runtime/connection.enc telegram_runtime/connection.json
+            if gh run download -R "$GITHUB_REPOSITORY" "$run_id" -n telegram-connection -D telegram_runtime >/dev/null 2>&1; then
+              [[ -s telegram_runtime/connection.enc ]] && break 2
+            fi
+          done
+        done
+        if [[ -s telegram_runtime/connection.enc && -n "$TELEGRAM_BOT_TOKEN" ]]; then
+          openssl enc -d -aes-256-cbc -pbkdf2 \
+            -in telegram_runtime/connection.enc \
+            -out telegram_runtime/connection.json \
+            -pass env:TELEGRAM_BOT_TOKEN || rm -f telegram_runtime/connection.json
+        fi
+    - name: Resolve (exports TELEGRAM_CHAT_ID masked, TELEGRAM_READY)
+      shell: bash
+      run: PYTHONPATH="${{ inputs.app-path }}" python "${{ inputs.app-path }}/scripts/telegram_connection_bootstrap.py" --connection-path telegram_runtime/connection.json

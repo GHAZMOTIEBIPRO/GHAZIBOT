@@ -1,6 +1,8 @@
 """Alpaca Basic IEX authorized internal research: no data publication or false alerts."""
 from __future__ import annotations
 
+import subprocess
+import sys
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
@@ -312,3 +314,12 @@ def test_sip_endpoint_never_uses_unapproved_feed_or_current_session():
         fetch_daily_bars("AAPL", now=NOW, api_key="not-a-secret",
                          api_secret="fake", session=client, feed="opra")
     assert len(client.calls) == 1
+
+
+def test_blocked_run_starts_without_the_full_project_dependencies():
+    # The no-permission run installs only pandas and requests; building the sender
+    # must not import the options_radar package (it imports yfinance).
+    code = ("import sys; sys.modules['yfinance'] = None; "
+            "from scripts.alpaca_vcp_private import owner_send; owner_send({}); print('ok')")
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60, check=False)
+    assert done.stdout.strip() == "ok", done.stderr[-400:]

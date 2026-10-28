@@ -39,6 +39,14 @@ def test_private_delivery_only_to_a_confirmed_private_chat():
     assert deliver({k: v for k, v in OWNER.items() if k != "TELEGRAM_OWNER_CHAT_ID"}) == "OWNER_CHAT_NOT_CONFIGURED"
     assert deliver({**OWNER, "TELEGRAM_OWNER_CHAT_ID": "-100999"}) == "OWNER_CHAT_EQUALS_BROADCAST"
     assert deliver(OWNER, get_chat=group) == "DESTINATION_NOT_PRIVATE"
+    # The broadcast chat must have been resolved (secret, artifact or updates) before
+    # the comparison means anything; an empty secret alone is not "no broadcast chat".
+    unresolved = {k: v for k, v in OWNER.items() if k != "TELEGRAM_CHAT_ID"}
+    assert deliver(unresolved) == "BROADCAST_NOT_RESOLVED"
+    assert deliver({**unresolved, "TELEGRAM_READY": "true"}) == "BROADCAST_NOT_RESOLVED"
+    assert not sent
+    assert deliver({**unresolved, "TELEGRAM_READY": "false"}) == "DELIVERED"   # resolution ran, none exists
+    sent.clear()
 
     def broken(chat):
         raise RuntimeError("down")

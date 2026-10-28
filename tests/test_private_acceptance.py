@@ -84,13 +84,16 @@ def test_workflows_with_alpaca_secrets_never_publish_private_data():
             if "git add" in line:  # a delivery receipt (date + message id) may be kept; private results never
                 assert not any(x in line for x in ("private_plan", "private_scan", "private_acceptance", "RUNNER_TEMP")), \
                     (path.name, line)
-        if path.name in ("private-market-scan.yml", "private-acceptance.yml"):
+        if path.name in ("private-market-scan.yml", "private-acceptance.yml", "settings-check.yml"):
             wf = yaml.safe_load(text)
-            assert wf["permissions"] == {"contents": "read"}  # cannot push to any branch
-            assert "RUNNER_TEMP" in text
+            # read-only: cannot push to any branch; actions:read only downloads the encrypted Telegram connection
+            assert wf["permissions"] == {"contents": "read", "actions": "read"}
+            if path.name != "settings-check.yml":   # writes no private output at all, only names and booleans
+                assert "RUNNER_TEMP" in text
     # only owner-private workflows receive the keys; public publishers never do
     assert sorted(with_keys) == ["alpaca-iex-vcp-private.yml", "alpaca-private-probe.yml", "daily-plan.yml",
-                                 "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml"]
+                                 "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
+                                 "settings-check.yml"]
 
 
 def test_legacy_settings_never_load_alpaca_keys_outside_private_scope(monkeypatch):

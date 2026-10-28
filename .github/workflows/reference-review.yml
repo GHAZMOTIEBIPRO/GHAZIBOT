@@ -1,0 +1,32 @@
+name: GHAZI Reference Sites Review (UX only)
+
+# One-time structural look at public reference sites (navigation, headings,
+# layout counts, colours, fonts) for information-organisation ideas. robots.txt
+# is checked first; nothing is stored or republished; output is the log only.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "scripts/reference_outline.cjs"
+      - ".github/workflows/reference-review.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  outline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install a pinned Playwright with Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Outline each site
+        run: node scripts/reference_outline.cjs

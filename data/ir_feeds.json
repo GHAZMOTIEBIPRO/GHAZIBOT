@@ -1,0 +1,19 @@
+{
+ "schema": "ghazi.ir_feeds.v1",
+ "policy": "Feeds that the company's own investor-relations page links to, found by scripts/probe_ir_sources.py on a GitHub runner (probe_run). A row is read only while its host's robots.txt is readable and allows us (checked every run). Not tested here and not to be generalised: a page without a feed link, or whose robots.txt refused us, is listed under 'not_available' with the probe's result for that page only.",
+ "reviewed_at": "2026-10-28",
+ "feeds": [
+  {"symbol": "XOM", "company": "Exxon Mobil Corporation", "company_ar": "إكسون موبيل", "page": "https://investor.exxonmobil.com/",
+   "feed_url": "https://investor.exxonmobil.com/company-information/press-releases/rss", "kind": "press_release", "probe_run": 40770962704},
+  {"symbol": "NVDA", "company": "NVIDIA Corporation", "company_ar": "إنفيديا", "page": "https://investor.nvidia.com/",
+   "feed_url": "https://investor.nvidia.com/rss/event.aspx", "kind": "event", "probe_run": 40770962704},
+  {"symbol": "NVDA", "company": "NVIDIA Corporation", "company_ar": "إنفيديا", "page": "https://investor.nvidia.com/",
+   "feed_url": "https://investor.nvidia.com/rss/SECFiling.aspx?Exchange=CIK&Symbol=0001045810", "kind": "sec_filing", "probe_run": 40770962704}
+ ],
+ "not_available": [
+  {"symbols": ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "JPM", "BA", "IONQ", "ASTS", "BRK.B"], "result": "NO_FEED_LINK",
+   "note": "The IR page was read (robots allowed or no robots.txt) and links no RSS feed; platform paths are not guessed.", "probe_run": 40770962704},
+  {"symbols": ["AVGO", "TSLA", "RKLB", "SOUN"], "result": "ROBOTS_HTTP_403",
+   "note": "robots.txt answered 403 to our user agent; treated as disallowed and the page was not read.", "probe_run": 40770962704}
+ ]
+}

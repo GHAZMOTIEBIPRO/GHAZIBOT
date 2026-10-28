@@ -1,0 +1,29 @@
+name: GHAZI IR Sources Probe
+
+# One-time check of official investor-relations pages: robots.txt first, one
+# request per page, only feeds the page advertises. Output is the log only;
+# nothing is stored, published or sent.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "scripts/probe_ir_sources.py"
+      - ".github/workflows/ir-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - name: Probe each IR page
+        run: python scripts/probe_ir_sources.py

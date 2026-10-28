@@ -391,11 +391,11 @@
         "لا يوجد تقرير حديث صالح. لا نستنتج درجة من بيانات قديمة أو مفقودة.");
       return;
     }
-    score.textContent=String(data.strength_score)+" / 100";
+    score.textContent=String(data.strength_score)+" من 100";
     put("terminal-strength-summary",
-      "مؤشر جاهزية البيانات والتحقق البحثي · التقرير: "+
+      "تقييم هندسي لاكتمال الأدلة: كم من الأدلة المطلوبة متوفر وحديث · التقرير: "+
       stamp(data.generated_at)+
-      " · ليس نسبة نجاح تداول ولا تقييمًا لجمال الواجهة.");
+      " · ليس ثقة في أي توصية ولا نسبة نجاح تداول ولا أداءً مُقاسًا.");
     const labels={
       charts:"الشارتات والفريمات",
       independent_prices:"استقلالية الأسعار",

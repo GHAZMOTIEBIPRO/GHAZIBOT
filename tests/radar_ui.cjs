@@ -12,7 +12,9 @@ const css = fs.readFileSync(path.join(__dirname, "../public/radar.css"), "utf8")
 // --- page contract: order and the five tabs ---
 const order = ["gr-top", "gr-summary", "gr-tabs", "gr-main"].map((c) => html.indexOf(`class="${c}`));
 assert.ok(order.every((i, k) => i > 0 && (k === 0 || i > order[k - 1])), "top bar, summary, tabs, content in that order");
-for (const t of ["indices", "leaders", "small", "options", "news"]) assert.ok(html.includes(`data-gr-tab="${t}"`), t);
+for (const t of ["indices", "leaders", "small", "options"]) assert.ok(html.includes(`data-gr-tab="${t}"`), t);
+for (const t of ["market", "radar", "news", "watch", "more"]) assert.ok(html.includes(`data-gr-section="${t}"`), t);
+assert.ok(html.includes('rel="manifest"') && html.includes("apple-touch-icon"), "installable");
 assert.ok(!/class="hero"|eyebrow|terminal-intro/.test(html), "no long intro block before the data");
 assert.ok(html.includes('href="./classic.html?panel=trust"'), "data center link (rights, logs, operations)");
 assert.ok(html.includes('href="./trading-readiness.html"'));
@@ -63,10 +65,16 @@ assert.ok(R.kindInfo("TRIAL_RESULTS_POSTED").label.includes("الاتجاه غي
 assert.ok(R.filterEvents(events, "important").every((e) => e.info.group !== "admin"));
 assert.strictEqual(R.headline(events.filter((e) => e.symbol === "AMGN")).kind, "TRIAL_RESULTS_POSTED", "admin never the headline");
 assert.strictEqual(R.eventText(events[1]), "Study of AMG 256", "registry rows show the study, not a repeated type");
-// Three separate times: event, source update, our first detection.
+// Separate times: event, source update, and our fetch only when the fetch itself is the evidence.
 const gsk = events.find((e) => e.symbol === "GSK");
-assert.ok(/تاريخ الحدث .*تحديث المصدر .*رصدناه /.test(R.timesLine(gsk)), R.timesLine(gsk));
-assert.ok(!R.timesLine(events.find((e) => e.symbol === "ACAD")).includes("رصدناه"), "no detection time when unknown");
+assert.ok(!/رصدناه|أول جلب/.test(R.timesLine(gsk)), "a list or commit time alone is not shown as an observation");
+const fetched = { ...gsk, first_observed_at: "2026-10-27T15:04:13Z", first_observed_basis: "SOURCE_FEED_FETCH",
+  timestamp_basis: "observed:SOURCE_FEED_FETCH;published:SOURCE_FEED_COMMIT" };
+assert.ok(/تاريخ الحدث .*تحديث المصدر .*أول جلب لدينا /.test(R.timesLine(fetched)), R.timesLine(fetched));
+const firstFetch = { ...gsk, first_observed_at: "2026-10-27T19:36:00Z", first_observed_basis: "FIRST_FETCH_OF_SOURCE",
+  timestamp_basis: "observed:FIRST_FETCH_OF_SOURCE;published:SOURCE_FEED_FIRST_COMMIT" };
+assert.ok(/جُلب مع أول تشغيل للمصدر/.test(R.timesLine(firstFetch)) && !/أول جلب لدينا/.test(R.timesLine(firstFetch)));
+assert.ok(!R.timesLine(events.find((e) => e.symbol === "ACAD")).includes("جلب"), "no fetch time when unknown");
 // The builder's flat events list wins over per-ticker catalysts.
 assert.strictEqual(R.eventRows({ events: [{ symbol: "ZZZ", kind: "FDA_APPROVAL", date: "2026-10-01" }], watchlist: doc.watchlist }).length, 1);
 
@@ -114,6 +122,10 @@ assert.strictEqual(R.nasdaqMap({ schema: "other", rows: nl.rows }).size, 0);
 const flags = R.flagRows(nl);
 assert.deepStrictEqual(flags.map((r) => r.symbol), ["AACG"]);
 assert.ok(flags[0].tags[0].kind === "risk" && /تنبيه ناسداك/.test(flags[0].why));
+// The count is traceable: shares by code, other flagged securities (warrants, rights, units) apart.
+const nl2 = { ...nl, rows: [...nl.rows, ["ABCDW", "Abcd Corp", "Warrant", "S", "D", 0, 0], ["EFGH", "Efgh Inc", "Common Stock", "S", "E", 0, 1]] };
+assert.deepStrictEqual(R.flagSummary(nl2), { all: 3, equity: 2, other: 1, by_status: { D: 1, E: 1 } });
+assert.strictEqual(R.flagRows(nl2).length, R.flagSummary(nl2).equity);
 
 // --- companies vs securities: share classes are one company ---
 assert.deepStrictEqual(R.companyCounts({ symbols: [{ symbol: "GOOGL", cik: "1652044" }, { symbol: "GOOG", cik: "1652044" },
@@ -149,5 +161,55 @@ assert.deepStrictEqual(R.optionMath({ type: "CALL", strike: 200, premium: 3.5, c
   { breakeven: 203.5, max_loss: 700, move_pct: 4.36 });
 assert.strictEqual(R.optionMath({ type: "PUT", strike: 200, premium: 3.5, contracts: 1 }).breakeven, 196.5);
 assert.strictEqual(R.optionMath({ type: "CALL", strike: 0, premium: 1 }), null);
+// --- linked official document: entity/relation, link confidence and impact are separate; impact unassessed ---
+const ad = { kind: "FR_AIRWORTHINESS_DIRECTIVE", issuer: "The Boeing Company", link_relation: "SAME_ENTITY",
+  interpretation_confidence: "HIGH", potential_impact: "NEEDS_IMPACT_ASSESSMENT" };
+assert.strictEqual(R.readingLine(ad), "الجهة في الوثيقة: The Boeing Company (الشركة نفسها) · ثقة الربط: عالية · الأثر: يحتاج تقييم الأثر");
+assert.ok(/الأثر: يحتاج تقييم الأثر$/.test(R.readingLine({ kind: "FR_FTC_CONSENT_ORDER", link_relation: "WHOLLY_OWNED_SUBSIDIARY" })));
+assert.strictEqual(R.readingLine({ kind: "FDA_APPROVAL" }), "", "events without a reviewed link carry no reading line");
+// official IR news: the headline is the company's, the category is ours, the impact unassessed
+const irItem = { kind: "IR_EARNINGS", category_basis: "HEADLINE_KEYWORDS", potential_impact: "NEEDS_IMPACT_ASSESSMENT" };
+assert.strictEqual(R.readingLine(irItem), "العنوان من الشركة؛ التصنيف آلي من كلماته · الأثر: يحتاج تقييم الأثر");
+assert.strictEqual(R.kindInfo("IR_FILING_REGISTRATION").group, "risk");
+assert.ok(R.FILTERS.some(([k]) => k === "company"));
+const irEvents = R.eventRows({ events: [{ symbol: "XOM", kind: "IR_EARNINGS", date: "2026-10-30", reason: "ExxonMobil Announces Third Quarter 2026 Results", label: "نتائج مالية" }] });
+assert.strictEqual(R.eventText(irEvents[0]), "ExxonMobil Announces Third Quarter 2026 Results", "the company's headline, not our label");
+assert.strictEqual(R.filterEvents(irEvents, "company").length, 1);
+assert.ok(/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28", scheduled_for: "2026-11-17" })));
+assert.ok(!/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28" })));
+// --- position size from the user's own risk: arithmetic only ---
+assert.deepStrictEqual(R.positionMath({ capital: "10000", risk_pct: "1", entry: "50", stop: "47.5", target: "56" }),
+  { side: "LONG", shares: 40, capped_by_cash: false, risk_per_share: 2.5, stop_pct: 5, max_loss: 100, position_value: 2000,
+    r_multiple: 2.4, gain_at_target: 240 });
+const short = R.positionMath({ capital: 10000, risk_pct: 1, entry: 50, stop: 52, target: 55 });
+assert.strictEqual(short.side, "SHORT"); assert.strictEqual(short.shares, 50); assert.strictEqual(short.target_invalid, true);
+assert.strictEqual(short.r_multiple, undefined);
+const capped = R.positionMath({ capital: 1000, risk_pct: 50, entry: 100, stop: 99 });
+assert.strictEqual(capped.shares, 10); assert.strictEqual(capped.capped_by_cash, true); assert.strictEqual(capped.max_loss, 10);
+for (const bad of [{ entry: 50, stop: 50 }, { entry: 50, stop: 49, risk_pct: 0 }, { entry: 50, stop: 49, risk_pct: 150 }, { entry: 0, stop: 1 }])
+  assert.strictEqual(R.positionMath({ capital: 1000, risk_pct: 1, ...bad }), null, JSON.stringify(bad));
+
+// --- price-analysis funnel: counts per stage, reason when bars are not fetched ---
+const fl = R.funnelLine({ known_symbols: { count: 5615 }, with_official_news: { count: 120 },
+  bars_fetched: { count: 0, status: "DATA_USE_PERMISSION_REQUIRED" }, analysed: { count: 0 }, qualified: { count: null } });
+assert.ok(/معروفة .*لها أخبار .*جُلبت شموعها 0 \(بانتظار إعداد مسار البيانات الخاص\)/.test(fl), fl);
+
+// --- contrast: every text colour on bg / surface / surface-2 clears WCAG AA in both themes ---
+const tokens = (block) => Object.fromEntries([...block.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]));
+const darkTokens = tokens(css.slice(css.indexOf(":root {"), css.indexOf("}", css.indexOf(":root {"))));
+const lightStart = css.indexOf(':root[data-theme="light"]');
+const lightTokens = { ...darkTokens, ...tokens(css.slice(lightStart, css.indexOf("}", lightStart))) };
+const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+  .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+for (const [theme, t] of [["dark", darkTokens], ["light", lightTokens]]) {
+  for (const fg of ["text", "text-2", "text-3", "accent", "ok", "warn", "risk"]) {
+    for (const bg of ["bg", "surface", "surface-2"]) {
+      const r = contrast(t[fg], t[bg]);
+      assert.ok(r >= 4.5, `${theme} ${fg} on ${bg}: ${r.toFixed(2)}`);
+    }
+  }
+}
+assert.ok(lightStart > 0 && darkTokens.bg === "#0b1220", "two themes from tokens");
 
 console.log("radar_ui ok");
