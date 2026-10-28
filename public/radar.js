@@ -166,8 +166,11 @@
   function timesLine(e) {
     const parts = [`تاريخ الحدث ${day(e.date) || e.date}`];
     if (e.source_updated && e.source_updated !== String(e.date).slice(0, 10)) parts.push(`تحديث المصدر ${day(e.source_updated)}`);
-    if (e.first_seen_at && e.first_seen_basis === "SOURCE_ADDED") parts.push(`أُضيف مع إدخال المصدر ${day(e.first_seen_at)}`);
-    else if (e.first_seen_at) parts.push(`رصدناه ${day(e.first_seen_at)}`);
+    // Our observation time only with evidence from the fetch itself (the feed's generated_at);
+    // a commit time alone is a publication time, and a source's first fetch is not early detection.
+    if (e.first_observed_at && e.first_observed_basis === "SOURCE_FEED_FETCH") parts.push(`أول جلب لدينا ${day(e.first_observed_at)}`);
+    else if (e.first_observed_at && e.first_observed_basis === "FIRST_FETCH_OF_SOURCE") parts.push(`جُلب مع أول تشغيل للمصدر ${day(e.first_observed_at)}`);
+    else if (!e.timestamp_basis && e.first_seen_at && e.first_seen_basis === "SOURCE_ADDED") parts.push(`أُضيف مع إدخال المصدر ${day(e.first_seen_at)}`);
     return parts.join(" · ");
   }
 

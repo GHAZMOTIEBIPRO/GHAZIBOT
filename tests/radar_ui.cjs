@@ -63,10 +63,16 @@ assert.ok(R.kindInfo("TRIAL_RESULTS_POSTED").label.includes("الاتجاه غي
 assert.ok(R.filterEvents(events, "important").every((e) => e.info.group !== "admin"));
 assert.strictEqual(R.headline(events.filter((e) => e.symbol === "AMGN")).kind, "TRIAL_RESULTS_POSTED", "admin never the headline");
 assert.strictEqual(R.eventText(events[1]), "Study of AMG 256", "registry rows show the study, not a repeated type");
-// Three separate times: event, source update, our first detection.
+// Separate times: event, source update, and our fetch only when the fetch itself is the evidence.
 const gsk = events.find((e) => e.symbol === "GSK");
-assert.ok(/تاريخ الحدث .*تحديث المصدر .*رصدناه /.test(R.timesLine(gsk)), R.timesLine(gsk));
-assert.ok(!R.timesLine(events.find((e) => e.symbol === "ACAD")).includes("رصدناه"), "no detection time when unknown");
+assert.ok(!/رصدناه|أول جلب/.test(R.timesLine(gsk)), "a list or commit time alone is not shown as an observation");
+const fetched = { ...gsk, first_observed_at: "2026-10-27T15:04:13Z", first_observed_basis: "SOURCE_FEED_FETCH",
+  timestamp_basis: "observed:SOURCE_FEED_FETCH;published:SOURCE_FEED_COMMIT" };
+assert.ok(/تاريخ الحدث .*تحديث المصدر .*أول جلب لدينا /.test(R.timesLine(fetched)), R.timesLine(fetched));
+const firstFetch = { ...gsk, first_observed_at: "2026-10-27T19:36:00Z", first_observed_basis: "FIRST_FETCH_OF_SOURCE",
+  timestamp_basis: "observed:FIRST_FETCH_OF_SOURCE;published:SOURCE_FEED_FIRST_COMMIT" };
+assert.ok(/جُلب مع أول تشغيل للمصدر/.test(R.timesLine(firstFetch)) && !/أول جلب لدينا/.test(R.timesLine(firstFetch)));
+assert.ok(!R.timesLine(events.find((e) => e.symbol === "ACAD")).includes("جلب"), "no fetch time when unknown");
 // The builder's flat events list wins over per-ticker catalysts.
 assert.strictEqual(R.eventRows({ events: [{ symbol: "ZZZ", kind: "FDA_APPROVAL", date: "2026-10-01" }], watchlist: doc.watchlist }).length, 1);
 
