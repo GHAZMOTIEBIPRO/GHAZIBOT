@@ -105,7 +105,7 @@
       String(h.qualified_option_closed_samples)+" حالة مؤهلة مغلقة":"غير متوفر";
     const score=document.getElementById("trust-score");
     score.textContent=fin(h.research_data_strength_score)?
-      h.research_data_strength_score.toFixed(0)+" / 100 · قوة أدلة فقط":"غير متاح";
+      h.research_data_strength_score.toFixed(0)+" من 100 · اكتمال أدلة، ليس ثقة في التوصيات":"غير متاح";
     const stages=document.getElementById("trust-stages");
     stages.replaceChildren();
     for(const row of Array.isArray(h.stage_cost_model_expectancy)?

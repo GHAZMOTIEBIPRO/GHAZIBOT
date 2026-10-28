@@ -26,6 +26,39 @@ Caveats:
 - No outside model can automatically improve a score: **ProsusAI/finbert** carries a `cc-by-nc-sa-4.0` license and QuantConnect CLI local backtests are a paid-tier feature per current product docs. Kaggle datasets are separately licensed. Do not download them into the public/commercial site without explicit authorization.
 - This report uses Python standard library only, zero provider requests, zero secrets, no paid dependencies, no look-ahead outcome fabrication, and no changes to live-trade gates.
 
+## What the number is, and is not (2026-10-28)
+
+**What it is:**
+- An **engineering rating of evidence completeness**: how much of the evidence the rubric asks for is present and recent.
+- Fixed weights, recomputed by `GHAZI Evidence Strength Score` from published files. It changes only when those files change.
+
+**What it is not:**
+- It is uncalibrated. It is **not** confidence in a recommendation, a win rate, accuracy or measured performance.
+- The site labels it «اكتمال الأدلة (تقييم هندسي)» ("evidence completeness (engineering rating)").
+
+The five questions it is often confused with, kept apart:
+
+| Question | Covered by this score? | Where it is answered |
+|---|---|---|
+| Did the runs succeed (run health)? | No. `feed_operations` measures publication recency, not job success | Workflow runs; status taxonomy on the site |
+| Is there data for the use (coverage)? | Partly: charts, prices, filings, options components | `source_rights.json`, analysis funnel in `daily_plan.json` |
+| Is the data fresh? | Partly: 48h/72h windows inside components | Each file's own `generated_at` / source times |
+| Was the analysis computed (completeness)? | No | `daily_plan.json` `analysis_funnel` (known → news → bars → analysed → qualified) |
+| How did it perform (measured performance)? | **No.** `walk_forward` counts research sample coverage only | `trading-readiness.html`: matured outcomes only, with their sample sizes |
+
+### History: 48 → 19 → 14 (from bot-state `runtime/public/data/site_strength.json`)
+
+| From (UTC) | Score | charts | prices | filings | options | walk-forward | freshness | What changed |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 2026-10-19 09:51 | 41 | 25 | 0 | 0 | 0 | 6.28 | 10 | first version |
+| 2026-10-19 12:05 | 46 | 25 | 0 | 0 | 5 | 6.28 | 10 | historical OCC OI became valid |
+| 2026-10-19 17:26 | **48** | 25 | 0 | 0 | 5 | 7.68 | 10 | more research samples |
+| 2026-10-20 11:31 | 19 | 0 | 0 | 0 | 5 | 8 | 6 | two minutes after #325 (automated Yahoo/Nasdaq.com access stopped, 11:29 UTC): no source-dated chart report any more |
+| 2026-10-21 00:44 | **14** | 0 | 0 | 0 | 0 | 8 | 6 | two minutes after #336 (OCC gated per its terms, 00:42 UTC): no valid OCC OI any more |
+
+- The drop follows the rubric's original conditions: the evidence it rewards stopped being produced, for rights reasons.
+- The weights were not changed, and the number will rise only when those conditions are met again. Example: a licensed, source-dated chart report restores the 25 chart points.
+
 ## Reproducibility
 
 The report is generated from `bot-state` files with:
