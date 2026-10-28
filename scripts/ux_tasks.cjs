@@ -192,16 +192,24 @@ async function run(device) {
       const sym = await row[6].evaluate((b) => b.closest("[data-gr-symbol]").dataset.grSymbol);
       const topOf = () => page.evaluate((s) => Math.round(document.querySelector(`#gr-list [data-gr-symbol="${s}"]`).getBoundingClientRect().top), sym);
       const rowBefore = await topOf();
+      // Heights of what sits above the list, to name the source of any shift.
+      const blocks = () => page.evaluate(() => Object.fromEntries(["gr-tape", "gr-facts", "gr-tabs", "gr-list-note", "gr-offline"]
+        .map((id) => [id, document.getElementById(id) ? Math.round(document.getElementById(id).getBoundingClientRect().height) : null])));
+      const blocksBefore = await blocks();
       await row[6].click(); await page.waitForTimeout(500);
       must(await panelOpen(), "panel did not open");
       // Late data grows the content above the list while the stock is open (as on the runner: +21px).
       await page.evaluate(() => { const d = document.createElement("div"); d.id = "ux-shift"; d.style.height = "50px"; document.getElementById("gr-list").before(d); });
-      await page.goBack(); await page.waitForTimeout(600);
+      await page.goBack(); await page.waitForTimeout(50);
+      const rowAtClose = await topOf();
+      await page.waitForTimeout(550);
       must(!(await panelOpen()), "back did not close the panel");
       const after = await page.evaluate(() => Math.round(window.scrollY));
       const rowAfter = await topOf();
+      const blocksAfter = await blocks();
       await page.evaluate(() => document.getElementById("ux-shift").remove());
-      must(Math.abs(rowAfter - rowBefore) <= 4, `row ${sym} moved on screen ${rowBefore} -> ${rowAfter} (scroll ${before} -> ${after})`);
+      must(Math.abs(rowAfter - rowBefore) <= 4, `row ${sym} moved on screen ${rowBefore} -> ${rowAtClose} (at close) -> ${rowAfter} ` +
+        `(scroll ${before} -> ${after}); blocks ${JSON.stringify(blocksBefore)} -> ${JSON.stringify(blocksAfter)}`);
       const focused = await page.evaluate(() => document.activeElement && document.activeElement.className);
       return { row: sym, row_top_before: rowBefore, row_top_after: rowAfter, scroll_before: before, scroll_after: after, focus: focused };
     });
