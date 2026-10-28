@@ -174,6 +174,21 @@
     return parts.join(" · ");
   }
 
+  // A linked official document, read in separate parts: whom it names (and how that entity relates to the
+  // listed company), how sure we are of that link, and its impact, which stays unassessed without evidence.
+  const RELATION_AR = { SAME_ENTITY: "الشركة نفسها", RENAMED_SAME_ENTITY: "الشركة نفسها باسمها السابق",
+    DIVISION_OF_LISTED_COMPANY: "قسم تابع للشركة المدرجة", WHOLLY_OWNED_SUBSIDIARY: "شركة تابعة مملوكة بالكامل للشركة المدرجة",
+    REVIEWED_FDA_SPONSOR_ALIAS: "اسم راعٍ في جدول مُراجَع" };
+  const CONFIDENCE_AR = { HIGH: "عالية", MEDIUM: "متوسطة", LOW: "منخفضة" };
+  function readingLine(e) {
+    if (!e || !(e.potential_impact || e.link_relation)) return "";
+    const parts = [];
+    if (e.issuer && e.link_relation) parts.push(`الجهة في الوثيقة: ${e.issuer} (${RELATION_AR[e.link_relation] || e.link_relation})`);
+    if (CONFIDENCE_AR[e.interpretation_confidence]) parts.push(`ثقة الربط: ${CONFIDENCE_AR[e.interpretation_confidence]}`);
+    parts.push(e.potential_impact && e.potential_impact !== "NEEDS_IMPACT_ASSESSMENT" ? `الأثر: ${e.potential_impact}` : "الأثر: يحتاج تقييم الأثر");
+    return parts.join(" · ");
+  }
+
   // Federal Register documents with no reviewed link: general notices, with the company
   // named and why it is not tied to a ticker (private, joint venture, listed abroad, ...).
   const UNLINKED_AR = { PRIVATE: "شركة خاصة", JOINT_VENTURE: "مشروع مشترك", LISTED_OUTSIDE_US: "مدرجة خارج أمريكا",
@@ -436,7 +451,7 @@
 
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
-    foldAr, nasdaqMap, flagRows, flagSummary, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
+    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -975,6 +990,8 @@
       const ul = el("ul", "gr-d-list");
       for (const e of mine.slice(0, 12)) {
         const li = el("li"); li.append(el("p", null, eventText(e)));
+        const reading = readingLine(e);
+        if (reading) li.append(el("p", "gr-muted", reading));
         const meta = el("span", "gr-meta"); const kt = kindTag(e); const tag = el("span", "gr-tag", kt.text); tag.dataset.kind = kt.kind;
         meta.append(tag, el("span", null, timesLine(e)));
         const url = safeUrl(e.source_url);

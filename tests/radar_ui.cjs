@@ -161,6 +161,12 @@ assert.deepStrictEqual(R.optionMath({ type: "CALL", strike: 200, premium: 3.5, c
   { breakeven: 203.5, max_loss: 700, move_pct: 4.36 });
 assert.strictEqual(R.optionMath({ type: "PUT", strike: 200, premium: 3.5, contracts: 1 }).breakeven, 196.5);
 assert.strictEqual(R.optionMath({ type: "CALL", strike: 0, premium: 1 }), null);
+// --- linked official document: entity/relation, link confidence and impact are separate; impact unassessed ---
+const ad = { kind: "FR_AIRWORTHINESS_DIRECTIVE", issuer: "The Boeing Company", link_relation: "SAME_ENTITY",
+  interpretation_confidence: "HIGH", potential_impact: "NEEDS_IMPACT_ASSESSMENT" };
+assert.strictEqual(R.readingLine(ad), "الجهة في الوثيقة: The Boeing Company (الشركة نفسها) · ثقة الربط: عالية · الأثر: يحتاج تقييم الأثر");
+assert.ok(/الأثر: يحتاج تقييم الأثر$/.test(R.readingLine({ kind: "FR_FTC_CONSENT_ORDER", link_relation: "WHOLLY_OWNED_SUBSIDIARY" })));
+assert.strictEqual(R.readingLine({ kind: "FDA_APPROVAL" }), "", "events without a reviewed link carry no reading line");
 // --- position size from the user's own risk: arithmetic only ---
 assert.deepStrictEqual(R.positionMath({ capital: "10000", risk_pct: "1", entry: "50", stop: "47.5", target: "56" }),
   { side: "LONG", shares: 40, capped_by_cash: false, risk_per_share: 2.5, stop_pct: 5, max_loss: 100, position_value: 2000,

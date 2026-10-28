@@ -172,10 +172,13 @@ async function run(device) {
     await page.waitForFunction(() => document.getElementById("gr-d-symbol").textContent === "BA");
     const news = await page.$eval("#gr-d-body", (e) => e.textContent);
     must(/صلاحية طيران/.test(news), "no FAA directive on BA");
+    // Impact kept apart from the document type: required on data rebuilt by this change (UX_LOCAL_DATA).
+    const unassessed = /الأثر: يحتاج تقييم الأثر/.test(news);
+    if (process.env.UX_LOCAL_DATA) must(unassessed && /ثقة الربط/.test(news), "impact/confidence line missing");
     const href = await page.$eval('#gr-d-body a[href*="federalregister.gov"]', (a) => a.href);
     await page.waitForTimeout(500);   // the phone panel slides in; capture after it settles
     await shot(page, `ux-${device}-ba.png`);
-    return { link: href };
+    return { link: href, impact_shown_as_unassessed: unassessed };
   });
   await closeIfPhone();
   if (phone) {

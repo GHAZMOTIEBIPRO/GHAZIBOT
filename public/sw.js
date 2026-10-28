@@ -6,7 +6,7 @@
 // network fails, marked with x-ghazi-cached-at so the page says "offline · saved
 // at …". TradingView widgets, fonts and any other host pass straight through:
 // no price or chart is stored. Bump VERSION with every shell change.
-const VERSION = "2026-10-28-5";
+const VERSION = "2026-10-28-6";
 const SHELL = "ghazi-shell-" + VERSION;
 const DATA = "ghazi-data-v1";
 const SHELL_FILES = ["./", "./radar.js", "./radar.css", "./tv-intelligence.js", "./manifest.webmanifest",

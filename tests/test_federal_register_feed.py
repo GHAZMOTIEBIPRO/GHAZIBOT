@@ -115,7 +115,7 @@ def test_faa_title_end_word_and_prv_manufactured_by_sponsor():
     assert fr.entities(prv, body) == ("FR_PRIORITY_REVIEW_VOUCHER", ["Scholar Rock, Inc."])
     assert fr.entities(prv, "no sponsor sentence here") == ("FR_PRIORITY_REVIEW_VOUCHER", [])
     index, excluded = fr.load_links()
-    assert index[fr.norm("General Electric Company")]["ticker"] == "GE"
+    assert index[fr.norm("General Electric Company")][0]["ticker"] == "GE"
     assert excluded[fr.norm("Engine Alliance")]["reason"] == "JOINT_VENTURE"
     # Scholar Rock: no evidence page passed, so the subsidiary is not linked to SRRK.
     assert fr.norm("Scholar Rock, Inc.") not in index
@@ -129,7 +129,7 @@ def test_a_reviewed_row_is_used_only_after_its_evidence_check_passed(tmp_path):
     path = tmp_path / "links.json"
     path.write_text(json.dumps(table), encoding="utf-8")
     index, excluded = fr.load_links(path)
-    assert index[fr.norm("Alpha Corp")]["ticker"] == "ALP"
+    assert index[fr.norm("Alpha Corp")][0]["ticker"] == "ALP"
     assert fr.norm("Beta Corp") not in index and excluded[fr.norm("Beta Corp")]["reason"] == "EVIDENCE_PENDING"
     shipped = json.loads((ROOT / "data" / "issuer_links.json").read_text(encoding="utf-8"))
     assert all(isinstance(x.get("evidence_verified_run"), int) or x["names"][0] == "Dominion Energy South Carolina, Inc."
@@ -141,3 +141,59 @@ def test_bad_urls_and_unknown_kinds_are_dropped():
     bad["linked"][0] = {**bad["linked"][0], "source_url": "https://evil.example/x"}
     assert len(cw.fr_catalysts(bad)) == len(cw.fr_catalysts(report())) - len(report()["linked"][0]["links"])
     assert cw.fr_catalysts({"schema": "other"}) == []
+
+
+def _links(tmp_path, links, excluded=()):
+    path = tmp_path / "links.json"
+    path.write_text(json.dumps({"links": links, "excluded": list(excluded)}), encoding="utf-8")
+    return fr.load_links(path)
+
+
+def test_ownership_changes_over_time_link_only_inside_the_validity_window(tmp_path):
+    src = "https://example.gov/sale"
+    row = {"legal_entity": "Gamma Aero LLC", "relation": "WHOLLY_OWNED_SUBSIDIARY", "validity_source": src,
+           "evidence_url": src, "evidence_verified_run": 1}
+    index, excluded = _links(tmp_path, [
+        {**row, "names": ["Gamma Aero"], "ticker": "OLDP", "valid_to": "2026-06-30"},
+        {**row, "names": ["Gamma Aero"], "ticker": "NEWP", "valid_from": "2026-07-01"},
+        {**row, "names": ["Delta Systems"], "legal_entity": "Delta Systems Inc", "ticker": "DLT", "valid_from": "2026-11-01"}])
+    title = "Airworthiness Directives; {} Airplanes"
+    before = fr.classify(doc(title.format("Gamma Aero"), FAA, day="2026-05-01"), index, excluded)
+    after = fr.classify(doc(title.format("Gamma Aero"), FAA, day="2026-10-27"), index, excluded)
+    early = fr.classify(doc(title.format("Delta Systems"), FAA, day="2026-10-27"), index, excluded)
+    assert [x["ticker"] for x in before["links"]] == ["OLDP"]       # the owner at the document's date
+    assert [x["ticker"] for x in after["links"]] == ["NEWP"]
+    assert early["status"] == "COMPANY_UNLINKED" and early["unmatched"][0]["reason"] == "OUTSIDE_RELATION_VALIDITY"
+
+
+def test_a_parent_is_never_linked_and_bad_rows_fail_validation(tmp_path):
+    url = "https://x.example"
+    table = {"links": [
+        {"names": ["Omega Holdings"], "legal_entity": "Omega Holdings", "ticker": "OMG",
+         "relation": "PARENT_OF_LISTED_COMPANY", "evidence_url": url, "evidence_verified_run": 1},
+        {"names": ["Kappa"], "legal_entity": "Kappa Inc", "ticker": "KAP", "relation": "SAME_ENTITY",
+         "valid_from": "2026-13", "evidence_url": url},
+        {"names": ["Lambda"], "legal_entity": "Lambda Inc", "ticker": "LAM", "relation": "SAME_ENTITY",
+         "valid_from": "2026-09-01", "valid_to": "2026-01-01", "validity_source": url, "evidence_url": url}],
+        "excluded": [{"names": ["Sigma JV"], "reason": "JOINT_VENTURE"}, {"names": ["Tau"], "reason": "LOOKS_SIMILAR"}]}
+    errors = fr.validate_links(table)
+    assert any("PARENT_OF_LISTED_COMPANY" in e and "does not link" in e for e in errors)
+    assert any("valid_from must be" in e for e in errors) and any("needs validity_source" in e for e in errors)
+    assert any("after valid_to" in e for e in errors) and any("LOOKS_SIMILAR" in e for e in errors)
+    index, _ = _links(tmp_path, table["links"], table["excluded"])
+    assert fr.norm("Omega Holdings") not in index                   # a non-linking relation never links
+    shipped = json.loads((ROOT / "data" / "issuer_links.json").read_text(encoding="utf-8"))
+    assert fr.validate_links(shipped) == []
+
+
+def test_document_type_entity_impact_importance_and_confidence_are_separate():
+    r = {x["document_number"]: x for x in report()["linked"]}
+    ad = r["a1"]
+    assert ad["document_type"] == "FR_AIRWORTHINESS_DIRECTIVE" and ad["importance_basis"] == "DOCUMENT_TYPE"
+    # an FAA directive is not by itself materially negative: the impact stays unassessed
+    assert ad["potential_impact"] == "NEEDS_IMPACT_ASSESSMENT" and ad["potential_impact_ar"] == "يحتاج تقييم الأثر"
+    link = ad["links"][0]
+    assert link["name_basis"] == "LEGAL_NAME" and link["interpretation_confidence"] == "HIGH"
+    assert r["f3"]["links"][0]["interpretation_confidence"] == "MEDIUM"      # sponsor read from the body
+    ba = next(x for x in cw.fr_catalysts(report()) if x["symbol"] == "BA")
+    assert ba["potential_impact"] == "NEEDS_IMPACT_ASSESSMENT" and ba["interpretation_confidence"] == "HIGH"

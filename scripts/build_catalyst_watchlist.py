@@ -210,7 +210,10 @@ def fr_catalysts(fr: Any) -> list[dict[str, Any]]:
                         "label": f"{e.get('agency')}: {link.get('name')}"[:120], "reason": str(e.get("title") or "")[:200],
                         "source": "Federal Register", "source_url": url, "source_updated": day,
                         "issuer": str(link.get("name") or "")[:80] or None, "match_method": "reviewed_issuer_link",
-                        "link_relation": link.get("relation"), "listed_company": link.get("listed_company")})
+                        "link_relation": link.get("relation"), "listed_company": link.get("listed_company"),
+                        # what it might mean stays unassessed; how sure we are of the link is separate
+                        "potential_impact": e.get("potential_impact") or "NEEDS_IMPACT_ASSESSMENT",
+                        "interpretation_confidence": link.get("interpretation_confidence")})
     return out
 
 

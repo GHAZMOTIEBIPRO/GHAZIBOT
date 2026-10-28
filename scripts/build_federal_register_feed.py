@@ -116,45 +116,116 @@ def entities(doc: dict[str, Any], body: str | None = None) -> tuple[str | None, 
     return None, []
 
 
-def load_links(path: Path | None = None) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
-    """Exact-name index of reviewed links, and of reviewed exclusions."""
+# How the named entity relates to the listed company. Only these link a document to a ticker.
+LINK_RELATIONS = {"SAME_ENTITY", "RENAMED_SAME_ENTITY", "DIVISION_OF_LISTED_COMPANY", "WHOLLY_OWNED_SUBSIDIARY"}
+# Reviewed reasons a named entity is NOT linked. A parent named for its listed subsidiary is not linked either:
+# the document concerns the parent, not the listed security.
+EXCLUSION_REASONS = {"JOINT_VENTURE", "PARTLY_OWNED", "PRIVATE", "LISTED_OUTSIDE_US", "NOT_A_COMPANY",
+                     "NOT_EXCHANGE_LISTED", "OWNERSHIP_NOT_VERIFIED", "PARENT_OF_LISTED_COMPANY"}
+DAY_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def validate_links(table: dict[str, Any]) -> list[str]:
+    """Problems in the reviewed table; an empty list means every row can be used as written."""
+    errors: list[str] = []
+    for i, link in enumerate(table.get("links", [])):
+        where = f"links[{i}] {link.get('ticker')}"
+        if link.get("relation") not in LINK_RELATIONS:
+            errors.append(f"{where}: relation {link.get('relation')!r} does not link")
+        if not str(link.get("evidence_url") or "").startswith("https://"):
+            errors.append(f"{where}: no evidence_url")
+        if not link.get("names") or not link.get("legal_entity"):
+            errors.append(f"{where}: names and legal_entity are required")
+        start, end = link.get("valid_from"), link.get("valid_to")
+        for key, value in (("valid_from", start), ("valid_to", end)):
+            if value is not None and not (isinstance(value, str) and DAY_RE.fullmatch(value)):
+                errors.append(f"{where}: {key} must be YYYY-MM-DD")
+        if (start or end) and not str(link.get("validity_source") or "").startswith("https://"):
+            errors.append(f"{where}: a validity window needs validity_source")
+        if isinstance(start, str) and isinstance(end, str) and start > end:
+            errors.append(f"{where}: valid_from after valid_to")
+    for i, ex in enumerate(table.get("excluded", [])):
+        if ex.get("reason") not in EXCLUSION_REASONS:
+            errors.append(f"excluded[{i}]: reason {ex.get('reason')!r} unknown")
+    return errors
+
+
+def load_links(path: Path | None = None) -> tuple[dict[str, list[dict[str, Any]]], dict[str, dict[str, Any]]]:
+    """Exact-name index of reviewed links (each name may have rows for different validity windows), and exclusions."""
     path = path or ROOT / "data" / "issuer_links.json"
     table = json.loads(path.read_text(encoding="utf-8"))
-    index: dict[str, dict[str, Any]] = {}
+    index: dict[str, list[dict[str, Any]]] = {}
     pending: dict[str, dict[str, Any]] = {}
     for link in table.get("links", []):
-        # Fail closed: a reviewed row is used only once its evidence page passed the runner check.
-        target = index if isinstance(link.get("evidence_verified_run"), int) else pending
+        # Fail closed: a reviewed row is used only once its evidence page passed the runner check,
+        # and only with a relation that links.
+        if not isinstance(link.get("evidence_verified_run"), int) or link.get("relation") not in LINK_RELATIONS:
+            for name in link.get("names", []):
+                pending.setdefault(norm(name), {"reason": "EVIDENCE_PENDING"})
+            continue
         for name in link.get("names", []):
-            target[norm(name)] = link if target is index else {"reason": "EVIDENCE_PENDING"}
+            index.setdefault(norm(name), []).append(link)
     aliases = json.loads((ROOT / "data" / "fda_sponsor_aliases.json").read_text(encoding="utf-8"))
     for ticker, names in (aliases.get("aliases") or {}).items():
         for name in names:
-            index.setdefault(norm(name), {"ticker": ticker, "legal_entity": name, "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
-                                          "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)"})
+            index.setdefault(norm(name), [{"ticker": ticker, "legal_entity": name, "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
+                                           "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)"}])
     excluded = {**pending, **{norm(n): x for x in table.get("excluded", []) for n in x.get("names", [])}}
     return index, excluded
 
 
+def valid_on(link: dict[str, Any], day: str | None) -> bool:
+    """A relation applies to a document dated inside its window (open ends allowed); undated documents only to open rows."""
+    start, end = link.get("valid_from"), link.get("valid_to")
+    if not start and not end:
+        return True
+    if not day:
+        return False
+    return (not start or day >= start) and (not end or day <= end)
+
+
+def link_confidence(link: dict[str, Any], from_body: bool) -> tuple[str, str]:
+    """How sure we are that this document concerns this listed company: the name reading and the link both count."""
+    if link.get("relation") == "REVIEWED_FDA_SPONSOR_ALIAS":
+        return "MEDIUM", "reviewed sponsor alias table; no runner evidence check of the alias"
+    if from_body:
+        return "MEDIUM", "company read from the document body, linked through a runner-verified reviewed row"
+    return "HIGH", "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
+
+
 def classify(doc: dict[str, Any], index: dict, excluded: dict, body: str | None = None) -> dict[str, Any]:
     kind, names = entities(doc, body)
+    day = str(doc.get("publication_date") or "")[:10] or None
     base = {"document_number": doc.get("document_number"), "date": doc.get("publication_date"),
             "agency": AGENCY_AR.get(doc.get("agency"), doc.get("agency")), "type": doc.get("type"),
             "title": str(doc.get("title") or "")[:300], "source_url": doc.get("html_url")}
     if not kind:
         return {**base, "status": "GENERAL"}
     label, importance, group = KINDS[kind]
+    from_body = kind == "FR_PRIORITY_REVIEW_VOUCHER"
     links, unmatched = [], []
     for name in names:
-        hit = index.get(norm(name))
+        rows = index.get(norm(name)) or []
+        hit = next((r for r in rows if valid_on(r, day)), None)
         if hit:
-            links.append({"name": name, **{k: hit[k] for k in ("ticker", "legal_entity", "relation", "evidence")
-                                           if k in hit}, "listed_company": hit.get("listed_company")})
+            confidence, basis = link_confidence(hit, from_body)
+            links.append({"name": name, **{k: hit[k] for k in ("ticker", "legal_entity", "relation", "evidence",
+                                                               "valid_from", "valid_to", "validity_source") if k in hit},
+                          "listed_company": hit.get("listed_company"),
+                          "name_basis": "LEGAL_NAME" if norm(name) == norm(hit.get("legal_entity") or "") else "OTHER_REVIEWED_NAME",
+                          "interpretation_confidence": confidence, "confidence_basis": basis})
+        elif rows:
+            unmatched.append({"name": name, "reason": "OUTSIDE_RELATION_VALIDITY"})
         else:
             ex = excluded.get(norm(name))
             unmatched.append({"name": name, "reason": ex["reason"] if ex else "NOT_IN_REVIEWED_TABLE"})
+    # Kept apart: what the document is, whom it names, what it might mean, how high to read it, and how sure we are.
+    # Nothing in a notice measures materiality, so the impact stays unassessed (an FAA directive is not by
+    # itself materially negative).
     return {**base, "status": "LINKED" if links else "COMPANY_UNLINKED", "kind": kind, "label_ar": label,
-            "importance": importance, "group": group, "companies": names, "links": links, "unmatched": unmatched}
+            "document_type": kind, "importance": importance, "importance_basis": "DOCUMENT_TYPE",
+            "potential_impact": "NEEDS_IMPACT_ASSESSMENT", "potential_impact_ar": "يحتاج تقييم الأثر",
+            "group": group, "companies": names, "links": links, "unmatched": unmatched}
 
 
 def fetch_documents(session: Any, now: datetime) -> tuple[list[dict[str, Any]], dict[str, Any]]:
