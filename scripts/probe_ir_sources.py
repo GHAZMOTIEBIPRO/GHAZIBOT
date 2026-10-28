@@ -97,7 +97,7 @@ def probe(symbol: str, url: str) -> dict:
     feeds = []
     seen: set[str] = set()
     queue = [(urljoin(r.url, href), title, 0) for href, title in parser.feeds]
-    while queue and len(seen) < 6:
+    while queue and len(seen) < 10:
         feed_url, title, depth = queue.pop(0)
         if feed_url in seen or not feed_url.startswith("https://"):
             continue
@@ -118,7 +118,10 @@ def probe(symbol: str, url: str) -> dict:
             # An "RSS" page that lists the company's feeds: follow only what it lists, one level.
             sub = FeedLinks()
             sub.feed(f.text)
-            queue += [(urljoin(f.url, h), t, 1) for h, t in sub.feeds]
+            listed = [(urljoin(f.url, h), t, 1) for h, t in sub.feeds]
+            # Company news first: press releases and news feeds before events, filings and presentations.
+            listed.sort(key=lambda x: 0 if re.search(r"press|news", x[0], re.IGNORECASE) else 1)
+            queue += listed
             feeds.append({**entry, "http": f.status_code, "status": "FEED_INDEX_PAGE", "listed": len(sub.feeds)})
             continue
         try:
