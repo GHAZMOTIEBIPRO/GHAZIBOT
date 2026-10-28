@@ -3,24 +3,38 @@
    one border colour, no glow. Every colour pair used for text clears WCAG AA
    (4.5:1) on the surface it sits on. Direction and status are always written
    in words or symbols, never shown by colour alone. */
+/* Contrast of every text colour on bg / surface / surface-2 is checked by
+   tests/radar_ui.cjs (WCAG AA 4.5:1) in both themes. */
 :root {
-  --bg: #10151c;
-  --surface: #171e28;
-  --surface-2: #1e2834;
-  --line: #2a3646;
-  --text: #ecf1f6;
-  --text-2: #bdc8d5;
-  --text-3: #98a6b8;
-  --accent: #62adff;
-  --accent-bg: rgba(98, 173, 255, 0.14);
-  --ok: #56c993;
-  --warn: #f1bd55;
-  --risk: #ff8478;
+  --bg: #0b1220;
+  --surface: #142033;
+  --surface-2: #1b2a40;
+  --line: #26364d;
+  --text: #e8eef7;
+  --text-2: #a8b6ca;
+  --text-3: #93a3b8;
+  --accent: #38bdf8;
+  --accent-bg: rgba(56, 189, 248, 0.14);
+  --on-accent: #06131f;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --risk: #fb7185;
+  --shadow: 0 12px 28px rgba(0, 0, 0, .35);
+  --bnav-h: 60px;
   --radius: 12px;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
   --t-sm: 0.875rem; --t-md: 1rem; --t-lg: 1.125rem; --t-xl: 1.375rem;
   --font: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
   color-scheme: dark;
+}
+/* Light theme: chosen in «المزيد» (saved in this browser) or by the device when set to automatic. */
+:root[data-theme="light"] {
+  --bg: #f4f6fa; --surface: #ffffff; --surface-2: #eef2f7; --line: #d5dce6;
+  --text: #0f172a; --text-2: #334155; --text-3: #526072;
+  --accent: #0369a1; --accent-bg: rgba(3, 105, 161, 0.10); --on-accent: #ffffff;
+  --ok: #047857; --warn: #92400e; --risk: #be123c;
+  --shadow: 0 10px 24px rgba(15, 23, 42, .12);
+  color-scheme: light;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -37,7 +51,7 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 .gr-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .gr-muted { color: var(--text-3); }
 .gr-skip { position: absolute; inset-inline-start: var(--s4); top: -60px; z-index: 100; padding: var(--s2) var(--s3);
-  background: var(--accent); color: #08111c; border-radius: 8px; }
+  background: var(--accent); color: var(--on-accent); border-radius: 8px; }
 .gr-skip:focus { top: var(--s2); }
 
 /* Top bar: name, session, watchlist, search */
@@ -62,7 +76,7 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 .gr-search input::placeholder { color: var(--text-3); }
 .gr-suggest { position: absolute; inset-inline: 0; top: calc(100% + var(--s1)); z-index: 40; margin: 0; padding: var(--s1) 0;
   list-style: none; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
-  max-height: 60vh; overflow: auto; box-shadow: 0 12px 28px rgba(0, 0, 0, .35); }
+  max-height: 60vh; overflow: auto; box-shadow: var(--shadow); }
 .gr-suggest li { display: flex; justify-content: space-between; gap: var(--s3); padding: var(--s2) var(--s4); cursor: pointer; }
 .gr-suggest li[aria-selected="true"], .gr-suggest li:hover { background: var(--accent-bg); }
 .gr-suggest b { direction: ltr; }
@@ -82,7 +96,7 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 .gr-fact strong { display: block; color: var(--text); font-size: var(--t-md); font-weight: 600; }
 
 /* Tabs */
-.gr-tabs { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+.gr-tabs { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   max-width: 1400px; margin: 0 auto; padding: 0 var(--s4); background: var(--bg); border-bottom: 1px solid var(--line); }
 .gr-tabs button { min-height: 48px; padding: 0 var(--s1); border: 0; border-bottom: 3px solid transparent;
   background: none; color: var(--text-2); font-size: var(--t-md); font-weight: 500; white-space: nowrap; }
@@ -122,10 +136,10 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 /* Tags: always text, colour only supports the word */
 .gr-tag { display: inline-flex; align-items: center; gap: var(--s1); padding: 0 var(--s2); border-radius: 6px;
   font-size: var(--t-sm); line-height: 1.7; border: 1px solid var(--line); color: var(--text-2); background: var(--surface-2); }
-.gr-tag[data-kind="decision"] { color: var(--accent); border-color: rgba(98, 173, 255, .45); }
+.gr-tag[data-kind="decision"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .gr-tag[data-kind="results"] { color: var(--text); }
-.gr-tag[data-kind="risk"] { color: var(--risk); border-color: rgba(255, 132, 120, .45); }
-.gr-tag[data-kind="status"] { color: var(--warn); border-color: rgba(241, 189, 85, .45); }
+.gr-tag[data-kind="risk"] { color: var(--risk); border-color: color-mix(in srgb, var(--risk) 45%, transparent); }
+.gr-tag[data-kind="status"] { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
 .gr-tag[data-kind="admin"] { color: var(--text-3); }
 .gr-chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .gr-chip { min-height: 36px; padding: 0 var(--s3); border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
@@ -192,6 +206,34 @@ details.gr-embed .tradingview-widget-container { min-height: 420px; }
   border: 1px solid var(--line); background: var(--surface-2); font-size: var(--t-sm); }
 .gr-chart-note { margin: var(--s2) 0 0; font-size: var(--t-sm); }
 
+/* App sections: bottom bar on phones (thumb reach, safe area), a row under the top bar on wide screens */
+.gr-bnav { position: fixed; inset-inline: 0; bottom: 0; z-index: 50; display: grid; grid-template-columns: repeat(5, 1fr);
+  padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid var(--line); }
+.gr-bnav button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-height: var(--bnav-h); padding: 0; border: 0; background: none; color: var(--text-2); font-size: var(--t-sm); }
+.gr-bnav svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round;
+  stroke-linejoin: round; }
+.gr-bnav button[aria-current="page"] { color: var(--accent); font-weight: 700; }
+.gr-bnav b { position: absolute; top: 6px; inset-inline-start: calc(50% + 6px); min-width: 18px; padding: 0 4px;
+  border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 11px; line-height: 18px; text-align: center; }
+.gr-bnav b:empty, .gr-bnav b[data-n="0"] { display: none; }
+body { padding-bottom: calc(var(--bnav-h) + env(safe-area-inset-bottom)); }
+.gr-tabs[hidden] { display: none; }
+/* Offline: the last saved data is shown with its time, never as live */
+.gr-offline { max-width: 1400px; margin: 0 auto var(--s2); padding: var(--s2) var(--s4); border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--warn); color: var(--text); font-size: var(--t-sm); }
+.gr-offline[hidden] { display: none; }
+.gr-theme { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.gr-theme button { min-height: 44px; padding: 0 var(--s4); border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--text-2); }
+.gr-theme button[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: var(--accent-bg); font-weight: 600; }
+.gr-links { display: grid; gap: var(--s2); margin: 0; padding: 0; list-style: none; }
+.gr-links a { display: flex; align-items: center; min-height: 44px; padding: 0 var(--s3); border-radius: 10px;
+  background: var(--surface-2); text-decoration: none; color: var(--text); }
+.gr-glossary dt { font-weight: 600; margin-top: var(--s3); direction: ltr; text-align: start; unicode-bidi: plaintext; }
+.gr-glossary dd { margin: var(--s1) 0 0; color: var(--text-2); }
+.gr-score { direction: ltr; unicode-bidi: isolate; font-weight: 700; color: var(--text); }
+
 /* Footer */
 .gr-foot { max-width: 1400px; margin: var(--s5) auto 0; padding: var(--s4); border-top: 1px solid var(--line);
   color: var(--text-3); font-size: var(--t-sm); }
@@ -222,6 +264,14 @@ details.gr-embed .tradingview-widget-container { min-height: 420px; }
   .gr-d-back { display: none; }
   .gr-chart-slot { height: 420px; }
   .gr-d-list li { background: var(--bg); }
+  body { padding-bottom: 0; }
+  .gr-bnav { position: static; display: flex; gap: var(--s1); max-width: 1400px; margin: 0 auto; padding: 0 var(--s4);
+    background: none; border-top: 0; border-bottom: 1px solid var(--line); }
+  .gr-bnav button { flex-direction: row; gap: var(--s2); min-height: 48px; padding: 0 var(--s4); font-size: var(--t-md);
+    border-bottom: 3px solid transparent; }
+  .gr-bnav button[aria-current="page"] { border-bottom-color: var(--accent); }
+  .gr-bnav svg { width: 18px; height: 18px; }
+  .gr-bnav b { position: static; }
 }
 @media (prefers-reduced-motion: reduce) {
   .gr-detail, .gr-detail.is-open { transition: none; }

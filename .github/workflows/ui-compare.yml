@@ -89,7 +89,7 @@ jobs:
           sleep 1
           U=../ux-data
           export UX_LOCAL_DATA="nasdaq_listed.json=$U/nasdaq_listed.json,federal_register.json=$U/federal_register.json,catalyst_watchlist.json=$U/preview_catalysts.json"
-          OUT=../ui-shots node scripts/ux_tasks.cjs
+          SW_FILE="$PWD/public/sw.js" OUT=../ui-shots node scripts/ux_tasks.cjs
       - name: Store the images on the ui-review branch
         working-directory: after
         run: |

@@ -12,7 +12,9 @@ const css = fs.readFileSync(path.join(__dirname, "../public/radar.css"), "utf8")
 // --- page contract: order and the five tabs ---
 const order = ["gr-top", "gr-summary", "gr-tabs", "gr-main"].map((c) => html.indexOf(`class="${c}`));
 assert.ok(order.every((i, k) => i > 0 && (k === 0 || i > order[k - 1])), "top bar, summary, tabs, content in that order");
-for (const t of ["indices", "leaders", "small", "options", "news"]) assert.ok(html.includes(`data-gr-tab="${t}"`), t);
+for (const t of ["indices", "leaders", "small", "options"]) assert.ok(html.includes(`data-gr-tab="${t}"`), t);
+for (const t of ["market", "radar", "news", "watch", "more"]) assert.ok(html.includes(`data-gr-section="${t}"`), t);
+assert.ok(html.includes('rel="manifest"') && html.includes("apple-touch-icon"), "installable");
 assert.ok(!/class="hero"|eyebrow|terminal-intro/.test(html), "no long intro block before the data");
 assert.ok(html.includes('href="./classic.html?panel=trust"'), "data center link (rights, logs, operations)");
 assert.ok(html.includes('href="./trading-readiness.html"'));
@@ -160,5 +162,23 @@ assert.strictEqual(R.optionMath({ type: "CALL", strike: 0, premium: 1 }), null);
 const fl = R.funnelLine({ known_symbols: { count: 5615 }, with_official_news: { count: 120 },
   bars_fetched: { count: 0, status: "DATA_USE_PERMISSION_REQUIRED" }, analysed: { count: 0 }, qualified: { count: null } });
 assert.ok(/معروفة .*لها أخبار .*جُلبت شموعها 0 \(بانتظار إعداد مسار البيانات الخاص\)/.test(fl), fl);
+
+// --- contrast: every text colour on bg / surface / surface-2 clears WCAG AA in both themes ---
+const tokens = (block) => Object.fromEntries([...block.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]));
+const darkTokens = tokens(css.slice(css.indexOf(":root {"), css.indexOf("}", css.indexOf(":root {"))));
+const lightStart = css.indexOf(':root[data-theme="light"]');
+const lightTokens = { ...darkTokens, ...tokens(css.slice(lightStart, css.indexOf("}", lightStart))) };
+const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+  .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+for (const [theme, t] of [["dark", darkTokens], ["light", lightTokens]]) {
+  for (const fg of ["text", "text-2", "text-3", "accent", "ok", "warn", "risk"]) {
+    for (const bg of ["bg", "surface", "surface-2"]) {
+      const r = contrast(t[fg], t[bg]);
+      assert.ok(r >= 4.5, `${theme} ${fg} on ${bg}: ${r.toFixed(2)}`);
+    }
+  }
+}
+assert.ok(lightStart > 0 && darkTokens.bg === "#0b1220", "two themes from tokens");
 
 console.log("radar_ui ok");

@@ -106,6 +106,7 @@ async function shoot(page, name, screens = 1) {
 async function open(browser, kind, video) {
   const context = await browser.newContext({
     ...VIEWPORTS[kind], locale: "ar", timezoneId: "Asia/Riyadh",
+    serviceWorkers: "block",   // a worker's own fetches would bypass the pinned-data route
     ...(video ? { recordVideo: { dir: OUT, size: VIEWPORTS[kind].viewport } } : {}),
   });
   await pin(context);
@@ -136,7 +137,7 @@ async function after(browser, kind) {
   metrics.pages[`after-${kind}-home`] = { ...(await page.evaluate(measure)), page_errors: errors.length };
   await shoot(page, `after-${kind}-home`, 2);
   for (const tab of ["indices", "leaders", "small", "options", "news"]) {
-    const button = page.locator(`[data-gr-tab="${tab}"]`).first();
+    const button = page.locator(`[data-gr-tab="${tab}"], [data-gr-section="${tab}"]`).first();
     if (!(await button.count())) continue;
     await button.click();
     await page.waitForTimeout(1200);
@@ -165,7 +166,7 @@ async function after(browser, kind) {
       await page.screenshot({ path: path.join(OUT, `after-${kind}-stock-2.png`) });
       await page.goBack();
       await page.waitForTimeout(800);
-      await page.locator('[data-gr-tab="news"]').first().click();
+      await page.locator('[data-gr-tab="news"], [data-gr-section="news"]').first().click();
       await page.waitForTimeout(1000);
       await page.mouse.wheel(0, 900);
       await page.waitForTimeout(1200);
