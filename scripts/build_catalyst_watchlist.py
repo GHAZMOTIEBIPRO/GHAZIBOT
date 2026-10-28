@@ -58,9 +58,11 @@ FDA_KIND = {"APPROVAL_ORIGINAL": "FDA_APPROVAL", "APPROVAL_SUPPLEMENT": "FDA_SUP
 POINTS = {"HIGH": 35, "MEDIUM": 22, "LOW": 8}
 NEW_MOLECULE_BONUS = 10
 RELIABILITY = {"exact_normalised_name": 1.0, "issuer_cik": 1.0, "reviewed_sponsor_alias": 0.9,
-               "reviewed_issuer_link": 0.9}
+               "reviewed_issuer_link": 0.9, "official_ir_feed": 1.0}
 RISK_KINDS = {"DILUTION_RISK": "خطر تخفيف", "CHARTER_OR_REVERSE_SPLIT_REVIEW": "تقسيم عكسي/تعديل نظام محتمل",
               "LISTING_NOTICE": "إشعار إدراج (خطر شطب)",
+              "IR_FINANCING_DILUTION": "تمويل قد يخفف الملكية (بيان الشركة)",
+              "IR_FILING_REGISTRATION": "تسجيل أوراق مالية (تمويل محتمل)",
               "FR_AIRWORTHINESS_DIRECTIVE": "توجيه صلاحية طيران إلزامي (FAA)",
               "FR_FTC_CONSENT_ORDER": "تسوية مقترحة مع FTC"}
 # Reference list of issuers known to be large. It is NOT a measurement: an
@@ -217,21 +219,51 @@ def fr_catalysts(fr: Any) -> list[dict[str, Any]]:
     return out
 
 
+# Company news from official IR feeds (scripts/build_ir_news.py): how high to read it, by our headline category.
+IR_IMPORTANCE = {"EARNINGS": "MEDIUM", "GUIDANCE": "MEDIUM", "M_AND_A": "MEDIUM", "FINANCING_DILUTION": "MEDIUM",
+                 "FILING_8K": "MEDIUM", "FILING_REGISTRATION": "MEDIUM", "SCHEDULE": "LOW", "FINANCING": "LOW",
+                 "CONTRACT": "LOW", "MANAGEMENT": "LOW", "BUSINESS_CHANGE": "LOW", "FILING_PERIODIC": "LOW",
+                 "FILING_PROXY": "LOW", "OTHER": "LOW"}
+
+
+def ir_catalysts(ir: Any) -> list[dict[str, Any]]:
+    """Official IR items: the company's headline and link; our category and an unassessed impact kept apart."""
+    out: list[dict[str, Any]] = []
+    if not isinstance(ir, dict) or ir.get("schema") != "ghazi.ir_news.v1":
+        return out
+    for e in ir.get("items") or []:
+        url, cat = str(e.get("url") or ""), str(e.get("category") or "")
+        symbol = str(e.get("symbol") or "")
+        day = _day(e.get("event_at") or e.get("source_published_at"))
+        if not url.startswith("https://") or cat not in IR_IMPORTANCE or day is None \
+                or not re.fullmatch(r"[A-Z][A-Z0-9.-]{0,7}", symbol):
+            continue
+        out.append({"symbol": symbol, "kind": "IR_" + cat, "date": day, "importance": IR_IMPORTANCE[cat],
+                    "label": str(e.get("category_ar") or "")[:120], "reason": str(e.get("title") or "")[:200],
+                    "source": "Company IR", "source_url": url,
+                    "source_updated": _day(e.get("source_published_at")) or day,
+                    "issuer": str(e.get("company") or "")[:80] or None, "match_method": "official_ir_feed",
+                    "category_basis": e.get("category_basis"),
+                    "potential_impact": e.get("potential_impact") or "NEEDS_IMPACT_ASSESSMENT"})
+    return out
+
+
 def event_key(item: dict[str, Any]) -> str:
     return "|".join(str(item.get(k) or "") for k in ("symbol", "kind", "date", "source_url", "label"))
 
 
 FIRST_SEEN_VERSION = 2
 SOURCE_FLAG = {"openFDA": "openfda", "SEC EDGAR": "sec_edgar", "ClinicalTrials.gov": "clinicaltrials",
-               "Federal Register": "federal_register"}
+               "Federal Register": "federal_register", "Company IR": "company_ir"}
 # Published source feeds on bot-state whose commit history proves when our pipeline first held an event.
 HISTORY_FILES = {"runtime/public/data/fda_events.json": "fda", "runtime/public/data/clinical_registry.json": "clinical",
-                 "runtime/public/data/federal_register.json": "fr"}
+                 "runtime/public/data/federal_register.json": "fr", "runtime/public/data/ir_news.json": "ir"}
 HISTORY_DAYS = 45
 # Each source's own published feed; its first commit on bot-state is when the source was added.
 SOURCE_FILES = {"openFDA": "runtime/public/data/fda_events.json",
                 "ClinicalTrials.gov": "runtime/public/data/clinical_registry.json",
-                "Federal Register": "runtime/public/data/federal_register.json"}
+                "Federal Register": "runtime/public/data/federal_register.json",
+                "Company IR": "runtime/public/data/ir_news.json"}
 
 
 def source_added_at(repo: Path, rev: str = "HEAD") -> dict[str, str]:
@@ -371,6 +403,8 @@ def source_history(repo: Path, now: datetime, rev: str = "HEAD") -> dict[str, di
                 items = fda_catalysts(data)
             elif kind == "fr":
                 items = fr_catalysts(data)
+            elif kind == "ir":
+                items = ir_catalysts(data)
             else:
                 items = clinical_catalysts(data, produced) if produced else []
             # The feed file records the time of the run that fetched it (generated_at):
@@ -488,6 +522,9 @@ IMPACT = {"FDA_APPROVAL": "REGULATORY_DECISION", "FDA_SUPPLEMENT": "REGULATORY_D
           "FR_AIRWORTHINESS_DIRECTIVE": "RISK", "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": "STATUS_CHANGE",
           "FR_SPECIAL_CONDITIONS": "STATUS_CHANGE", "FR_FTC_CONSENT_ORDER": "RISK",
           "FR_ENERGY_REGULATORY_FILING": "STATUS_CHANGE", "FR_NUCLEAR_LICENSE_ACTION": "STATUS_CHANGE"}
+# Company IR news: the company says it; what it means for the price is not assessed.
+IMPACT.update({"IR_" + k: "RISK" if k in ("FINANCING_DILUTION", "FILING_REGISTRATION") else "COMPANY_NEWS_IMPACT_UNASSESSED"
+               for k in IR_IMPORTANCE})
 
 
 def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -502,12 +539,13 @@ def dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
           sizes: Any = None, previous: Any = None, fr: Any = None,
-          history: dict[str, dict[str, str]] | None = None, added: dict[str, str] | None = None) -> dict[str, Any]:
+          history: dict[str, dict[str, str]] | None = None, added: dict[str, str] | None = None,
+          ir: Any = None) -> dict[str, Any]:
     cutoff = (now - timedelta(days=MAX_EVENT_AGE_DAYS)).date().isoformat()
     by_symbol: dict[str, list[dict[str, Any]]] = {}
     events: list[dict[str, Any]] = []
     for item in dedupe(fda_catalysts(fda) + sec_catalysts(sec) + clinical_catalysts(clinical, now)
-                       + fr_catalysts(fr)):
+                       + fr_catalysts(fr) + ir_catalysts(ir)):
         if cutoff <= item["date"] <= now.date().isoformat():
             events.append({**item, "impact": IMPACT.get(item["kind"], "OTHER")})
     tracking_since = first_seen(events, previous, now, history, added)
@@ -547,7 +585,8 @@ def build(fda: Any, sec: Any, prices: Any, now: datetime, clinical: Any = None,
                     "sec_status": sec.get("status") if isinstance(sec, dict) else "MISSING",
                     "clinicaltrials": clinical_available(clinical, now),
                     "clinicaltrials_status": clinical.get("status") if isinstance(clinical, dict) else "MISSING",
-                    "federal_register": isinstance(fr, dict) and fr.get("schema") == "ghazi.federal_register_feed.v1"},
+                    "federal_register": isinstance(fr, dict) and fr.get("schema") == "ghazi.federal_register_feed.v1",
+                    "company_ir": isinstance(ir, dict) and ir.get("schema") == "ghazi.ir_news.v1"},
         "watchlist": entries[:MAX_TICKERS],
         # Every matched event in the window (the watchlist keeps MAX_CATALYSTS per
         # ticker), newest first, with three separate times: the event date, the
@@ -638,6 +677,7 @@ def main() -> int:
     parser.add_argument("--prices", type=Path)
     parser.add_argument("--sizes", type=Path, help="SEC public-float file; absent until SEC access works")
     parser.add_argument("--federal-register", type=Path, help="scripts/build_federal_register_feed.py output")
+    parser.add_argument("--ir-news", type=Path, help="scripts/build_ir_news.py output")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--previous", type=Path, help="previous published watchlist (default: --output before it is"
                                                          " replaced); carries each event's first_seen_at")
@@ -650,7 +690,7 @@ def main() -> int:
     added = source_added_at(args.source_history) if args.source_history else None
     report = build(_load(args.fda), _load(args.sec), _load(args.prices), now,
                    _load(args.clinical), _load(args.sizes), previous, _load(args.federal_register), history,
-                   added)
+                   added, _load(args.ir_news))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Catalyst watchlist:", json.dumps({"status": report["status"], "tickers": len(report["watchlist"]),

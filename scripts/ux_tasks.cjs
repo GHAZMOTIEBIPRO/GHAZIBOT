@@ -146,6 +146,20 @@ async function run(device) {
     await shot(page, `ux-${device}-general.png`);
     return { rows };
   });
+  await task(device, "official company news (IR feeds) with links to the company's own site", async () => {
+    if (phone) await page.selectOption("#gr-list-tools select", "company");
+    else await page.click('#gr-list-tools button:has-text("أخبار الشركات")');
+    await page.waitForTimeout(500);
+    const rows = await page.$$eval("#gr-list .gr-row", (els) => els.map((e) => ({ symbol: e.dataset.grSymbol,
+      text: e.textContent.slice(0, 120), link: (e.querySelector("a[href]") || {}).href || "" })));
+    // Required on data rebuilt by this change (UX_LOCAL_DATA); the published file may predate it.
+    if (process.env.UX_LOCAL_DATA) {
+      must(rows.length > 0, "no IR rows");
+      must(rows.every((r) => /^https:\/\/[^/]*(exxonmobil|nvidia)\.com\//.test(r.link)), "a link leaves the company site " + JSON.stringify(rows[0]));
+    }
+    await shot(page, `ux-${device}-company-news.png`);
+    return { rows: rows.length, sample: rows.slice(0, 3) };
+  });
   await task(device, "catalysts tab and Nasdaq listing flags", async () => {
     await page.click('[data-gr-section="market"]'); await page.click("#gr-tab-small"); await page.waitForTimeout(800);
     const title = await page.$eval("#gr-list-title", (e) => e.textContent);

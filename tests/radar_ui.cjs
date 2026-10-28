@@ -167,6 +167,14 @@ const ad = { kind: "FR_AIRWORTHINESS_DIRECTIVE", issuer: "The Boeing Company", l
 assert.strictEqual(R.readingLine(ad), "الجهة في الوثيقة: The Boeing Company (الشركة نفسها) · ثقة الربط: عالية · الأثر: يحتاج تقييم الأثر");
 assert.ok(/الأثر: يحتاج تقييم الأثر$/.test(R.readingLine({ kind: "FR_FTC_CONSENT_ORDER", link_relation: "WHOLLY_OWNED_SUBSIDIARY" })));
 assert.strictEqual(R.readingLine({ kind: "FDA_APPROVAL" }), "", "events without a reviewed link carry no reading line");
+// official IR news: the headline is the company's, the category is ours, the impact unassessed
+const irItem = { kind: "IR_EARNINGS", category_basis: "HEADLINE_KEYWORDS", potential_impact: "NEEDS_IMPACT_ASSESSMENT" };
+assert.strictEqual(R.readingLine(irItem), "العنوان من الشركة؛ التصنيف آلي من كلماته · الأثر: يحتاج تقييم الأثر");
+assert.strictEqual(R.kindInfo("IR_FILING_REGISTRATION").group, "risk");
+assert.ok(R.FILTERS.some(([k]) => k === "company"));
+const irEvents = R.eventRows({ events: [{ symbol: "XOM", kind: "IR_EARNINGS", date: "2026-10-30", reason: "ExxonMobil Announces Third Quarter 2026 Results", label: "نتائج مالية" }] });
+assert.strictEqual(R.eventText(irEvents[0]), "ExxonMobil Announces Third Quarter 2026 Results", "the company's headline, not our label");
+assert.strictEqual(R.filterEvents(irEvents, "company").length, 1);
 // --- position size from the user's own risk: arithmetic only ---
 assert.deepStrictEqual(R.positionMath({ capital: "10000", risk_pct: "1", entry: "50", stop: "47.5", target: "56" }),
   { side: "LONG", shares: 40, capped_by_cash: false, risk_per_share: 2.5, stop_pct: 5, max_loss: 100, position_value: 2000,

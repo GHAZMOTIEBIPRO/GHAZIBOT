@@ -117,6 +117,21 @@
     FR_FTC_CONSENT_ORDER: { label: "⚠ تسوية مقترحة مع FTC", tag: "risk", group: "risk" },
     FR_ENERGY_REGULATORY_FILING: { label: "إجراء لدى لجنة تنظيم الطاقة (FERC)", tag: "status", group: "regulatory" },
     FR_NUCLEAR_LICENSE_ACTION: { label: "إجراء ترخيص نووي (NRC)", tag: "status", group: "regulatory" },
+    // Official company IR feeds: the company's own headline; the label is our category, not a direction.
+    IR_SCHEDULE: { label: "موعد معلن من الشركة", tag: "status", group: "company" },
+    IR_EARNINGS: { label: "نتائج مالية (بيان الشركة)", tag: "results", group: "company" },
+    IR_GUIDANCE: { label: "توقعات الشركة", tag: "results", group: "company" },
+    IR_M_AND_A: { label: "استحواذ أو اندماج أو بيع أصول", tag: "decision", group: "company" },
+    IR_FINANCING_DILUTION: { label: "⚠ تمويل قد يخفف الملكية", tag: "risk", group: "risk" },
+    IR_FINANCING: { label: "تمويل أو ديون أو توزيعات", tag: "status", group: "company" },
+    IR_CONTRACT: { label: "عقد أو اتفاقية أو شراكة", tag: "status", group: "company" },
+    IR_MANAGEMENT: { label: "تغيير في الإدارة أو المجلس", tag: "status", group: "company" },
+    IR_BUSINESS_CHANGE: { label: "تغيير في النشاط", tag: "status", group: "company" },
+    IR_FILING_8K: { label: "إفصاح 8-K (من موقع الشركة)", tag: "decision", group: "company" },
+    IR_FILING_PERIODIC: { label: "تقرير دوري (10-Q أو 10-K)", tag: "admin", group: "company" },
+    IR_FILING_REGISTRATION: { label: "⚠ تسجيل أوراق مالية (تمويل محتمل)", tag: "risk", group: "risk" },
+    IR_FILING_PROXY: { label: "دعوة جمعية عمومية", tag: "admin", group: "admin" },
+    IR_OTHER: { label: "خبر من الشركة", tag: "status", group: "company" },
   };
   const kindInfo = (k) => KIND[k] || { label: "حدث رسمي", tag: "results", group: "results" };
   const RANK = { HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -140,6 +155,7 @@
   }
   const FILTERS = [
     ["important", "المهم (دون الإداري)"], ["decision", "قرارات تنظيمية"], ["results", "نتائج دراسات"],
+    ["company", "أخبار الشركات (مواقعها الرسمية)"],
     ["risk", "مخاطر"], ["regulatory", "إشعارات حكومية"], ["admin", "تحديثات إدارية"], ["all", "الكل"],
     ["general", "إشعارات غير مرتبطة بسهم"],
   ];
@@ -157,7 +173,7 @@
   // repeats the event type), the product for FDA events. The type itself is the tag.
   function eventText(e) {
     // Registry and Federal Register events: the study or document title says what happened.
-    const text = String(/^(TRIAL_|FR_)/.test(e.kind) ? e.reason || e.label || "" : e.label || e.reason || "").trim();
+    const text = String(/^(TRIAL_|FR_|IR_)/.test(e.kind) ? e.reason || e.label || "" : e.label || e.reason || "").trim();
     return text.length > 140 ? text.slice(0, 137) + "…" : text || e.info.label;
   }
   const kindTag = (e) => ({ text: e.info.label.replace(/ ·.*$/, ""), kind: e.info.tag });
@@ -185,6 +201,7 @@
     const parts = [];
     if (e.issuer && e.link_relation) parts.push(`الجهة في الوثيقة: ${e.issuer} (${RELATION_AR[e.link_relation] || e.link_relation})`);
     if (CONFIDENCE_AR[e.interpretation_confidence]) parts.push(`ثقة الربط: ${CONFIDENCE_AR[e.interpretation_confidence]}`);
+    if (e.category_basis === "HEADLINE_KEYWORDS") parts.push("العنوان من الشركة؛ التصنيف آلي من كلماته");
     parts.push(e.potential_impact && e.potential_impact !== "NEEDS_IMPACT_ASSESSMENT" ? `الأثر: ${e.potential_impact}` : "الأثر: يحتاج تقييم الأثر");
     return parts.join(" · ");
   }
