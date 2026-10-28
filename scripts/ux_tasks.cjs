@@ -182,17 +182,25 @@ async function run(device) {
     await task(device, "phone back button closes the stock and keeps the list position", async () => {
       await page.click('[data-gr-section="market"]'); await page.click("#gr-tab-leaders"); await page.waitForTimeout(500);
       await page.evaluate(() => window.scrollTo(0, 700)); await page.waitForTimeout(300);
+      // What the user sees: the opened row is where it was on screen (page scroll may shift if content above grew).
       const before = await page.evaluate(() => Math.round(window.scrollY));
       const row = await page.$$("#gr-list .gr-row-open");
       must(row.length > 6, "too few rows");
+      const sym = await row[6].evaluate((b) => b.closest("[data-gr-symbol]").dataset.grSymbol);
+      const topOf = () => page.evaluate((s) => Math.round(document.querySelector(`#gr-list [data-gr-symbol="${s}"]`).getBoundingClientRect().top), sym);
+      const rowBefore = await topOf();
       await row[6].click(); await page.waitForTimeout(500);
       must(await panelOpen(), "panel did not open");
+      // Late data grows the content above the list while the stock is open (as on the runner: +21px).
+      await page.evaluate(() => { const d = document.createElement("div"); d.id = "ux-shift"; d.style.height = "50px"; document.getElementById("gr-list").before(d); });
       await page.goBack(); await page.waitForTimeout(600);
       must(!(await panelOpen()), "back did not close the panel");
       const after = await page.evaluate(() => Math.round(window.scrollY));
-      must(Math.abs(after - before) <= 4, `list moved ${before} -> ${after}`);
+      const rowAfter = await topOf();
+      await page.evaluate(() => document.getElementById("ux-shift").remove());
+      must(Math.abs(rowAfter - rowBefore) <= 4, `row ${sym} moved on screen ${rowBefore} -> ${rowAfter} (scroll ${before} -> ${after})`);
       const focused = await page.evaluate(() => document.activeElement && document.activeElement.className);
-      return { scroll_before: before, scroll_after: after, focus: focused };
+      return { row: sym, row_top_before: rowBefore, row_top_after: rowAfter, scroll_before: before, scroll_after: after, focus: focused };
     });
     await task(device, "Escape closes the stock panel", async () => {
       const row = await page.$$("#gr-list .gr-row-open");

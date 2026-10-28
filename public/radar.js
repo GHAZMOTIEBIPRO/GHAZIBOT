@@ -1000,13 +1000,16 @@
     price.append(el("p", null, `غير متاح: ${GAP_AR} (شموع أسعار تسمح بحساب المستويات ونشرها). الشارت أعلاه عرض من TradingView ولا يدخل في أي حساب.`));
     body.append(price);
   }
-  let returnFocus = null;
+  let returnFocus = null, anchor = null;
   function openSymbol(symbol, opts = {}) {
     const s = String(symbol || "").trim().toUpperCase();
     if (!SYMBOL_RE.test(s)) return;
     state.symbol = s;
     const from = doc.activeElement;
     if (from && from !== doc.body && !$("gr-detail").contains(from)) returnFocus = from;
+    // Where the opening row sits on screen, so closing can put it back there even if content above it grew meanwhile.
+    const row = doc.querySelector(`#gr-list [data-gr-symbol="${s}"]`);
+    anchor = row && !$("gr-detail").classList.contains("is-open") ? { symbol: s, top: row.getBoundingClientRect().top } : anchor;
     const panel = $("gr-detail");
     $("gr-d-symbol").textContent = s;
     for (const r of doc.querySelectorAll("#gr-list .gr-row")) {
@@ -1024,6 +1027,9 @@
   // focus goes back to the row or search box that opened the stock.
   function closeDetail() {
     $("gr-detail").classList.remove("is-open"); doc.body.style.overflow = "";
+    const row = anchor && doc.querySelector(`#gr-list [data-gr-symbol="${anchor.symbol}"]`);
+    if (row && !wide()) root.scrollBy(0, row.getBoundingClientRect().top - anchor.top);
+    anchor = null;
     if (returnFocus && doc.contains(returnFocus)) returnFocus.focus({ preventScroll: true });
   }
 

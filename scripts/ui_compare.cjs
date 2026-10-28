@@ -145,6 +145,8 @@ async function after(browser, kind) {
     await page.screenshot({ path: path.join(OUT, `after-${kind}-tab-${tab}.png`) });
   }
   // Same stock as the "before" flow: NVDA from the leaders tab.
+  const market = page.locator('[data-gr-section="market"]').first();   // market sub-tabs are hidden in other sections
+  if (await market.count()) await market.click();
   const leaders = page.locator('[data-gr-tab="leaders"]').first();
   if (await leaders.count()) {
     await leaders.click();
