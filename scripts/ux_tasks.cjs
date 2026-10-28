@@ -191,6 +191,9 @@ async function run(device) {
       must(row.length > 6, "too few rows");
       const sym = await row[6].evaluate((b) => b.closest("[data-gr-symbol]").dataset.grSymbol);
       const topOf = () => page.evaluate((s) => Math.round(document.querySelector(`#gr-list [data-gr-symbol="${s}"]`).getBoundingClientRect().top), sym);
+      // A click first scrolls a partly hidden row into view; do that before measuring, so the
+      // reference is where the row was when tapped.
+      await row[6].scrollIntoViewIfNeeded(); await page.waitForTimeout(200);
       const rowBefore = await topOf();
       // Heights of what sits above the list, to name the source of any shift.
       const blocks = () => page.evaluate(() => Object.fromEntries(["gr-tape", "gr-facts", "gr-tabs", "gr-list-note", "gr-offline"]
