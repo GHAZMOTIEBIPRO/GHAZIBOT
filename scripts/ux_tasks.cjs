@@ -238,6 +238,16 @@ async function run(device) {
     await page.click('[data-gr-section="more"]'); await page.click('.gr-theme button:has-text("داكن")');
     return { theme_after_reload: kept, body_bg: bg };
   });
+  await task(device, "position-size calculator from the user's own numbers", async () => {
+    await page.click('[data-gr-section="more"]'); await page.waitForTimeout(300);
+    const card = page.locator(".gr-card", { hasText: "حجم المركز من مخاطرتك" });
+    const inputs = card.locator("input");
+    for (const [i, v] of [[0, "10000"], [1, "1"], [2, "50"], [3, "47.5"], [4, "56"]]) await inputs.nth(i).fill(v);
+    const out = await card.locator(".gr-result").textContent();
+    must(/40/.test(out) && /2[.,٫]4/.test(out) && /شراء/.test(out), out);
+    await shot(page, `ux-${device}-calculator.png`);
+    return { result: out };
+  });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.click('[data-gr-section="market"]'); await page.click("#gr-tab-leaders"); await page.waitForTimeout(400);
   await shot(page, `ux-${device}-leaders.png`);

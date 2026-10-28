@@ -157,6 +157,17 @@ assert.deepStrictEqual(R.optionMath({ type: "CALL", strike: 200, premium: 3.5, c
   { breakeven: 203.5, max_loss: 700, move_pct: 4.36 });
 assert.strictEqual(R.optionMath({ type: "PUT", strike: 200, premium: 3.5, contracts: 1 }).breakeven, 196.5);
 assert.strictEqual(R.optionMath({ type: "CALL", strike: 0, premium: 1 }), null);
+// --- position size from the user's own risk: arithmetic only ---
+assert.deepStrictEqual(R.positionMath({ capital: "10000", risk_pct: "1", entry: "50", stop: "47.5", target: "56" }),
+  { side: "LONG", shares: 40, capped_by_cash: false, risk_per_share: 2.5, stop_pct: 5, max_loss: 100, position_value: 2000,
+    r_multiple: 2.4, gain_at_target: 240 });
+const short = R.positionMath({ capital: 10000, risk_pct: 1, entry: 50, stop: 52, target: 55 });
+assert.strictEqual(short.side, "SHORT"); assert.strictEqual(short.shares, 50); assert.strictEqual(short.target_invalid, true);
+assert.strictEqual(short.r_multiple, undefined);
+const capped = R.positionMath({ capital: 1000, risk_pct: 50, entry: 100, stop: 99 });
+assert.strictEqual(capped.shares, 10); assert.strictEqual(capped.capped_by_cash, true); assert.strictEqual(capped.max_loss, 10);
+for (const bad of [{ entry: 50, stop: 50 }, { entry: 50, stop: 49, risk_pct: 0 }, { entry: 50, stop: 49, risk_pct: 150 }, { entry: 0, stop: 1 }])
+  assert.strictEqual(R.positionMath({ capital: 1000, risk_pct: 1, ...bad }), null, JSON.stringify(bad));
 
 // --- price-analysis funnel: counts per stage, reason when bars are not fetched ---
 const fl = R.funnelLine({ known_symbols: { count: 5615 }, with_official_news: { count: 120 },

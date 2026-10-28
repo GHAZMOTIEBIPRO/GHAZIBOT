@@ -353,6 +353,27 @@
     if (s > 0) out.move_pct = +(((breakeven - s) / s) * 100).toFixed(2);
     return out;
   }
+  // Position size from the user's own numbers: the loss at the stop stays within the chosen share of capital.
+  // No market data; gaps, slippage and commissions can make the real loss larger.
+  function positionMath({ capital, risk_pct, entry, stop, target }) {
+    const cap = Number(capital), rp = Number(risk_pct), e = Number(entry), s = Number(stop);
+    if (!(cap > 0) || !(rp > 0 && rp <= 100) || !(e > 0) || !(s > 0) || s === e) return null;
+    const side = s < e ? "LONG" : "SHORT";
+    const perShare = Math.abs(e - s);
+    const byRisk = Math.floor((cap * rp) / 100 / perShare);
+    const byCash = Math.floor(cap / e);
+    const shares = Math.min(byRisk, byCash);
+    const out = { side, shares, capped_by_cash: byCash < byRisk, risk_per_share: +perShare.toFixed(4),
+      stop_pct: +((perShare / e) * 100).toFixed(2), max_loss: +(shares * perShare).toFixed(2),
+      position_value: +(shares * e).toFixed(2) };
+    const t = Number(target);
+    if (target !== "" && target != null && t > 0) {
+      const ok = side === "LONG" ? t > e : t < e;
+      if (!ok) out.target_invalid = true;
+      else { const reward = Math.abs(t - e); out.r_multiple = +(reward / perShare).toFixed(2); out.gain_at_target = +(shares * reward).toFixed(2); }
+    }
+    return out;
+  }
 
   // known -> with official news -> bars fetched -> analysed -> qualified, each with its own count or reason.
   const FUNNEL_REASON = { DATA_USE_PERMISSION_REQUIRED: "بانتظار إعداد مسار البيانات الخاص",
@@ -398,7 +419,7 @@
   ];
 
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
-    searchIndex, suggest, optionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
+    searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
     foldAr, nasdaqMap, flagRows, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
@@ -608,6 +629,7 @@
       box.append(b);
     }
     theme.append(box); extra.append(theme);
+    extra.append(positionCard());
     const app = section("التطبيق");
     if (installPrompt) {
       const b = el("button", "gr-chip", "ثبّت غازي رادار على هذا الجهاز"); b.type = "button";
@@ -784,6 +806,35 @@
         (r.move_pct != null ? ` · يحتاج السهم حركة ${r.move_pct >= 0 ? "▲" : "▼"} ${signed(r.move_pct, n(Math.abs(r.move_pct)) + "%")} حتى التعادل` : "");
     }
     for (const i of [strike, premium, contracts, spot]) i.addEventListener("input", calc);
+    form.addEventListener("submit", (e) => { e.preventDefault(); calc(); });
+    card.append(form, out);
+    return card;
+  }
+
+  function positionCard() {
+    const card = el("section", "gr-card");
+    card.append(el("h2", null, "حجم المركز من مخاطرتك"),
+      el("p", null, "حساب من أرقامك فقط، دون بيانات سوق: كم سهمًا تبقى خسارتها عند الوقف ضمن النسبة التي تختارها من رأس المال. " +
+        "الفجوات السعرية والانزلاق والعمولات قد تجعل الخسارة الفعلية أكبر. ليست توصية بالشراء أو البيع."));
+    const form = el("form", "gr-form");
+    const field = (label, ph) => { const l = el("label", null, label); const i = el("input"); i.type = "number"; i.step = "any"; i.min = "0";
+      i.inputMode = "decimal"; i.placeholder = ph; i.dir = "ltr"; l.append(i); form.append(l); return i; };
+    const capital = field("رأس المال (دولار)", "مثال 10000"), risk = field("أقصى مخاطرة من رأس المال (%)", "مثال 1");
+    const entry = field("سعر الدخول", "مثال 50"), stop = field("سعر الوقف", "مثال 47.5"), target = field("الهدف (اختياري)", "مثال 56");
+    const out = el("p", "gr-result", "النتيجة تظهر هنا."); out.setAttribute("role", "status");
+    function calc() {
+      const r = positionMath({ capital: capital.value, risk_pct: risk.value, entry: entry.value, stop: stop.value, target: target.value });
+      if (!r) { out.textContent = "أدخل رأس المال والنسبة (حتى 100%) وسعري الدخول والوقف، على أن يختلف الوقف عن الدخول."; return; }
+      if (!r.shares) { out.textContent = "لا يتسع رأس المال أو المخاطرة المسموحة لسهم واحد بهذه الأرقام."; return; }
+      const side = r.side === "LONG" ? "شراء (الوقف تحت الدخول)" : "بيع على المكشوف (الوقف فوق الدخول)";
+      let text = `${side} · عدد الأسهم: ${n(r.shares)} · قيمة المركز: ${n(r.position_value)} دولار · الخسارة عند الوقف: ${n(r.max_loss)} دولار ` +
+        `(الوقف يبعد ${n(r.stop_pct)}%)`;
+      if (r.capped_by_cash) text += " · العدد محدود برأس المال لا بالمخاطرة";
+      if (r.target_invalid) text += " · الهدف في الجهة الخطأ من سعر الدخول";
+      else if (r.r_multiple != null) text += ` · عند الهدف: ${n(r.gain_at_target)} دولار، أي ${n(r.r_multiple)} ضعف المخاطرة`;
+      out.textContent = text;
+    }
+    for (const i of [capital, risk, entry, stop, target]) i.addEventListener("input", calc);
     form.addEventListener("submit", (e) => { e.preventDefault(); calc(); });
     card.append(form, out);
     return card;
