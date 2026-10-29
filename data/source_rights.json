@@ -1788,6 +1788,173 @@
    "cost_note": "Each company's site terms were not read per site; only the company's headline, its time and a link are published, with our own category; no release text is copied.",
    "summary_ar": "مصادر RSS رسمية من مواقع الشركات نفسها؛ لم نقرأ شروط كل موقع، فننشر العنوان والوقت والرابط فقط مع تصنيفنا، دون نسخ نص البيان.",
    "evidence_run": "40770962704"
+  },
+  "ofr_stfm": {
+   "name": "Office of Financial Research - Short-term Funding Monitor API (data.financialresearch.gov)",
+   "category": "government",
+   "official_url": "https://www.financialresearch.gov/legal-notices/",
+   "fetch_status": "200",
+   "rights": {
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "No copyright may be claimed for any work on this website that was created by a federal employee in the course of his or her duties. However, credit is requested if you reproduce or copy any such work."
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "evidence": "No copyright may be claimed for any work on this website that was created by a federal employee in the course of his or her duties. However, credit is requested if you reproduce or copy any such work."
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "No copyright may be claimed for any work on this website that was created by a federal employee in the course of his or her duties. However, credit is requested if you reproduce or copy any such work."
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "No copyright may be claimed for any work on this website that was created by a federal employee in the course of his or her duties. However, credit is requested if you reproduce or copy any such work."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "evidence": "No copyright may be claimed for any work on this website that was created by a federal employee in the course of his or her duties. However, credit is requested if you reproduce or copy any such work."
+    },
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "We have provided this open interface for public use. This API does not require tokens or registration, so feel free to use it immediately."
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "We have provided this open interface for public use. This API does not require tokens or registration, so feel free to use it immediately."
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "No copyright may be claimed for any work on this website that was created by a federal employee in the course of his or her duties. However, credit is requested if you reproduce or copy any such work."
+    }
+   },
+   "api_key_required": false,
+   "conditions": [
+    "Credit the OFR as the source.",
+    "FNYR-* series (SOFR, BGCR, TGCR) are New York Fed reference rates: their notes say users are subject to the New York Fed terms, so they are taken from nyfed_reference_rates, not from OFR.",
+    "Tri-party repo series are context only (not for contract reference)."
+   ],
+   "evidence_runs": [
+    "40854791782",
+    "40855108486",
+    "40855269611"
+   ],
+   "checked_at": "2026-10-29",
+   "summary_ar": "شبكة مكتب البحوث المالية الأمريكي (OFR) مفتوحة للاستخدام العام بلا مفتاح، وأعمال الموظفين الفيدراليين بلا حقوق نشر مع طلب ذكر المصدر.",
+   "cost_note": "Free, no key. Series metadata carries per-series notes; tri-party repo rates are 'provided for informational purposes only' and 'not intended to be referenced in contracts'.",
+   "rate_limit_note": "Not stated; the builder spaces requests by 1 s."
+  },
+  "nyfed_reference_rates": {
+   "name": "Federal Reserve Bank of New York - reference rates API (markets.newyorkfed.org)",
+   "category": "government",
+   "official_url": "https://www.newyorkfed.org/privacy/termsofuse",
+   "fetch_status": "200",
+   "rights": {
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "The New York Fed grants you a non-exclusive license, subject to the Terms, to use, copy, and distribute Content for your personal or business purposes. You may: ... Download, store, and use Content in any format or media"
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "evidence": "The New York Fed grants you a non-exclusive license, subject to the Terms, to use, copy, and distribute Content for your personal or business purposes. You may: ... Download, store, and use Content in any format or media"
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "The New York Fed grants you a non-exclusive license, subject to the Terms, to use, copy, and distribute Content for your personal or business purposes. You may: ... Download, store, and use Content in any format or media"
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "The New York Fed grants you a non-exclusive license, subject to the Terms, to use, copy, and distribute Content for your personal or business purposes. You may: ... Download, store, and use Content in any format or media"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "evidence": "The New York Fed grants you a non-exclusive license, subject to the Terms, to use, copy, and distribute Content for your personal or business purposes. You may: ... Download, store, and use Content in any format or media"
+    },
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "Access the Content, manually or through an automated process or device, provided your access does not have the effect of disabling, damaging, or interfering with the function of the Website"
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "Access the Content, manually or through an automated process or device, provided your access does not have the effect of disabling, damaging, or interfering with the function of the Website"
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "The New York Fed grants you a non-exclusive license, subject to the Terms, to use, copy, and distribute Content for your personal or business purposes. You may: ... Download, store, and use Content in any format or media"
+    }
+   },
+   "api_key_required": false,
+   "conditions": [
+    "Every presentation of a reference rate carries required_notice (and dtcc_note for SOFR/BGCR).",
+    "Never state or imply that the New York Fed endorses the site, the bot or any reading."
+   ],
+   "evidence_runs": [
+    "40854791782",
+    "40855108486",
+    "40855269611"
+   ],
+   "checked_at": "2026-10-29",
+   "summary_ar": "ترخيص بنك الاحتياطي الفيدرالي في نيويورك يسمح بالجلب الآلي والتخزين وإعادة النشر، بشرط إرفاق نص الإشعار المطلوب وعدم الإيحاء بالتأييد.",
+   "required_notice": "The {DATA} is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the {DATA} by GHAZI RADAR, does not sanction or endorse any particular republication, and has no liability for your use.",
+   "dtcc_note": "The Secured Overnight Financing Rate (SOFR) Data and Broad General Collateral Rate (BGCR) Data are calculated using data provided under a license granted to the New York Fed by DTCC Solutions LLC (\"Solutions\"), an affiliate of The Depository Trust & Clearing Corporation. Solutions, its affiliates, and third parties from which they obtained data have no liability for the content of this material.",
+   "cost_note": "Free, no key.",
+   "rate_limit_note": "Not stated; one call per rate per run."
+  },
+  "dol_eta539": {
+   "name": "U.S. Department of Labor - ETA 539 weekly claims data (oui.doleta.gov)",
+   "category": "government",
+   "official_url": "https://www.dol.gov/general/disclaim",
+   "fetch_status": "200",
+   "rights": {
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "evidence": "The U.S. Department of Labor is providing this information as a public service. (U.S. government work; the disclaimer page states no reuse restriction.)"
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "evidence": "The U.S. Department of Labor is providing this information as a public service. (U.S. government work; the disclaimer page states no reuse restriction.)"
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "evidence": "The U.S. Department of Labor is providing this information as a public service. (U.S. government work; the disclaimer page states no reuse restriction.)"
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "evidence": "The U.S. Department of Labor is providing this information as a public service. (U.S. government work; the disclaimer page states no reuse restriction.)"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "evidence": "The U.S. Department of Labor is providing this information as a public service. (U.S. government work; the disclaimer page states no reuse restriction.)"
+    },
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "The U.S. Department of Labor maintains this website to enhance public access to the department's information. (robots.txt at oui.doleta.gov is empty: no path is disallowed.)"
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "The U.S. Department of Labor maintains this website to enhance public access to the department's information. (robots.txt at oui.doleta.gov is empty: no path is disallowed.)"
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "A Telegram group or channel message is provision of the content to third parties; it follows the provider's public-display right for the same content.",
+     "evidence": "The U.S. Department of Labor is providing this information as a public service. (U.S. government work; the disclaimer page states no reuse restriction.)"
+    }
+   },
+   "api_key_required": false,
+   "conditions": [
+    "Values are not seasonally adjusted: compare with the same week a year earlier, never with the seasonally adjusted headline."
+   ],
+   "evidence_runs": [
+    "40854791782",
+    "40855108486",
+    "40855269611"
+   ],
+   "checked_at": "2026-10-29",
+   "summary_ar": "بيانات وزارة العمل الأمريكية (ETA 539) خدمة عامة حكومية بلا قيود معلنة على إعادة الاستخدام.",
+   "cost_note": "Free, no key. ETA 539 is not seasonally adjusted; DOL's seasonally adjusted headline is in the weekly release (https://www.dol.gov/ui/data.pdf), not in this file.",
+   "rate_limit_note": "Not stated; the 13 MB file is fetched with If-Modified-Since."
   }
  },
  "full_text_run": "39529567535"

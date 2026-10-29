@@ -10,6 +10,9 @@ on:
       - "ccr-**"
     paths:
       - "scripts/probe_macro_sources.py"
+      - "scripts/build_liquidity_monitor.py"
+      - "options_radar/liquidity_monitor.py"
+      - "options_radar/http_fetch.py"
       - ".github/workflows/macro-sources-probe.yml"
 
 permissions:
@@ -27,3 +30,9 @@ jobs:
       - run: pip install "requests>=2.32,<3" "pypdf>=4,<6"
       # Steps by name (see STEPS in the script); no argument runs them all.
       - run: python scripts/probe_macro_sources.py eta539_map
+      - name: Liquidity builder dry run against the live sources (runner temp only, nothing published)
+        run: |
+          python scripts/build_liquidity_monitor.py --output "$RUNNER_TEMP/liquidity_monitor.json"
+          # second run exercises If-Modified-Since on the DOL file
+          python scripts/build_liquidity_monitor.py --output "$RUNNER_TEMP/liquidity_monitor.json"
+          python -c "import json,sys; d=json.load(open(sys.argv[1])); print(json.dumps({k: d[k] for k in ('claims','funding_rates','repo')}, indent=1)[:6000])" "$RUNNER_TEMP/liquidity_monitor.json"
