@@ -4,6 +4,7 @@ of a passing check is then recorded by review as evidence_verified_run. Nothing 
 """
 from __future__ import annotations
 
+import html
 import json
 import sys
 import time
@@ -30,6 +31,7 @@ def main() -> int:
             except requests.RequestException as exc:
                 pages[url] = (0, type(exc).__name__)
         status, text = pages[url]
+        text = html.unescape(text)          # "Pratt &amp; Whitney" in the page source is "Pratt & Whitney"
         found = {t: t in text for t in link.get("evidence_check", [])}
         print("LINK", json.dumps({"ticker": link["ticker"], "name": link["names"][0], "relation": link["relation"],
                                   "http": status, "found": found, "passed": status == 200 and all(found.values())},

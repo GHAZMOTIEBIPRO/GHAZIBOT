@@ -196,12 +196,18 @@
   // listed company), how sure we are of that link, and its impact, which stays unassessed without evidence.
   const RELATION_AR = { SAME_ENTITY: "الشركة نفسها", RENAMED_SAME_ENTITY: "الشركة نفسها باسمها السابق",
     DIVISION_OF_LISTED_COMPANY: "قسم تابع للشركة المدرجة", WHOLLY_OWNED_SUBSIDIARY: "شركة تابعة مملوكة بالكامل للشركة المدرجة",
-    REVIEWED_FDA_SPONSOR_ALIAS: "اسم راعٍ في جدول مُراجَع" };
+    REVIEWED_FDA_SPONSOR_ALIAS: "اسم راعٍ في جدول مُراجَع",
+    JOINT_VENTURE_PARTNER: "مشروع مشترك تملك فيه الشركة المدرجة حصة", MAJORITY_OWNED_SUBSIDIARY: "شركة تملك الشركة المدرجة أغلبيتها",
+    MINORITY_STAKE: "شركة تملك فيها الشركة المدرجة حصة أقلية", PARENT_OF_LISTED_COMPANY: "الشركة الأم للشركة المدرجة" };
   const CONFIDENCE_AR = { HIGH: "عالية", MEDIUM: "متوسطة", LOW: "منخفضة" };
   function readingLine(e) {
     if (!e || !(e.potential_impact || e.link_relation)) return "";
     const parts = [];
     if (e.issuer && e.link_relation) parts.push(`الجهة في الوثيقة: ${e.issuer} (${RELATION_AR[e.link_relation] || e.link_relation})`);
+    // An indirect link says who is concerned and through what holding, never how much the listed company is affected.
+    if (e.exposure === "INDIRECT")
+      parts.push("ارتباط غير مباشر" + (Number.isFinite(e.ownership_share) ? ` (الحصة ${n(Math.round(e.ownership_share * 100))}%)` : "") +
+        (e.relation_as_of ? ` · العلاقة كما في ${day(e.relation_as_of)}` : ""));
     if (CONFIDENCE_AR[e.interpretation_confidence]) parts.push(`ثقة الربط: ${CONFIDENCE_AR[e.interpretation_confidence]}`);
     if (e.category_basis === "HEADLINE_KEYWORDS") parts.push("العنوان من الشركة؛ التصنيف آلي من كلماته");
     parts.push(e.potential_impact && e.potential_impact !== "NEEDS_IMPACT_ASSESSMENT" ? `الأثر: ${e.potential_impact}` : "الأثر: يحتاج تقييم الأثر");

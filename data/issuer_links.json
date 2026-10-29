@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.issuer_links.v1",
- "policy": "Reviewed links from a company named in an official document to a U.S.-listed ticker: sponsor or named entity -> legal entity -> listed company (itself or its parent) -> ticker -> evidence. A row is added only for the listed company itself, a division of it, a wholly owned subsidiary, or a renamed company; joint ventures, partly owned, private and non-U.S.-listed companies go to 'excluded' with the reason. Matching is exact on the normalised name (case, punctuation and a trailing legal suffix such as Inc/LLC/Corp removed); there is no similarity matching. Each row's evidence page is fetched on a runner and checked for the listed text before the row is marked verified. A row is used only after its evidence check passed on a runner (evidence_verified_run); a row without it is listed as EVIDENCE_PENDING and not linked. Ownership changes over time: a row may carry valid_from/valid_to (YYYY-MM-DD) with validity_source, and links only documents dated inside that window (OUTSIDE_RELATION_VALIDITY otherwise); a name may have several rows for different windows. A parent named in a document is not linked to a listed subsidiary (PARENT_OF_LISTED_COMPANY). 'names' holds the legal name and other reviewed names (trade, short or former names); each link records which one matched (name_basis). scripts/build_federal_register_feed.py validate_links() checks every row.",
+ "policy": "Reviewed links from a company named in an official document to a U.S.-listed ticker. Matching is exact on the normalised name (case, punctuation and a trailing legal suffix removed); there is no similarity matching. Direct relations: SAME_ENTITY, RENAMED_SAME_ENTITY, DIVISION_OF_LISTED_COMPANY, WHOLLY_OWNED_SUBSIDIARY. Indirect relations (exposure INDIRECT): JOINT_VENTURE_PARTNER, MAJORITY_OWNED_SUBSIDIARY, MINORITY_STAKE, PARENT_OF_LISTED_COMPANY; each needs ownership_band, relation_as_of (the date the relation was checked), validity_source, and ownership_share only where the source states it; a joint venture has one row per U.S.-listed partner. A link says who is concerned, never how much the listed company is affected: the financial impact stays NEEDS_IMPACT_ASSESSMENT. Rows may carry valid_from/valid_to and link only documents dated inside the window (OUTSIDE_RELATION_VALIDITY otherwise). Each row's evidence page is fetched on a runner (scripts/verify_issuer_links.py) and checked for its evidence_check texts; a row links only once that passed (evidence_verified_run), otherwise it is EVIDENCE_PENDING. Private, non-U.S.-listed and unverified entities stay in 'excluded' with the reason. scripts/build_federal_register_feed.py validate_links() checks every row.",
  "reviewed_at": "2026-10-29",
  "links": [
   {
@@ -305,7 +305,8 @@
     "Safran"
    ],
    "note": "50/50 joint venture of GE Aerospace and Safran; Safran is listed in Europe only, so only GE is linked.",
-   "ownership_share": 0.5
+   "ownership_share": 0.5,
+   "evidence_verified_run": 40793016227
   },
   {
    "names": [
@@ -368,7 +369,8 @@
     "Kinder Morgan"
    ],
    "note": "Held through Citrus, a joint venture of Energy Transfer and Kinder Morgan.",
-   "ownership_share": 0.5
+   "ownership_share": 0.5,
+   "evidence_verified_run": 40793016227
   },
   {
    "names": [
@@ -389,7 +391,8 @@
     "Kinder Morgan"
    ],
    "note": "Held through Citrus, a joint venture of Energy Transfer and Kinder Morgan.",
-   "ownership_share": 0.5
+   "ownership_share": 0.5,
+   "evidence_verified_run": 40793016227
   },
   {
    "names": [
@@ -408,7 +411,8 @@
    "evidence_check": [
     "Phillips 66"
    ],
-   "note": "Phillips 66 holds a minority interest; the share is recorded only if the source states it."
+   "note": "Phillips 66 holds a minority interest; the share is recorded only if the source states it.",
+   "evidence_verified_run": 40793016227
   },
   {
    "names": [
@@ -427,7 +431,8 @@
    "evidence_check": [
     "Berkshire Hathaway"
    ],
-   "note": "Owned by Berkshire Hathaway Energy, which Berkshire Hathaway owns in majority, not wholly."
+   "note": "Owned by Berkshire Hathaway Energy, which Berkshire Hathaway owns in majority, not wholly.",
+   "evidence_verified_run": 40793016227
   },
   {
    "names": [

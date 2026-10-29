@@ -167,6 +167,10 @@ const ad = { kind: "FR_AIRWORTHINESS_DIRECTIVE", issuer: "The Boeing Company", l
 assert.strictEqual(R.readingLine(ad), "الجهة في الوثيقة: The Boeing Company (الشركة نفسها) · ثقة الربط: عالية · الأثر: يحتاج تقييم الأثر");
 assert.ok(/الأثر: يحتاج تقييم الأثر$/.test(R.readingLine({ kind: "FR_FTC_CONSENT_ORDER", link_relation: "WHOLLY_OWNED_SUBSIDIARY" })));
 assert.strictEqual(R.readingLine({ kind: "FDA_APPROVAL" }), "", "events without a reviewed link carry no reading line");
+// a joint venture: linked as indirect exposure with its share; the impact still unassessed
+const jvLine = R.readingLine({ kind: "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE", issuer: "CFM International, S.A.", link_relation: "JOINT_VENTURE_PARTNER",
+  exposure: "INDIRECT", ownership_share: 0.5, relation_as_of: "2026-10-29", interpretation_confidence: "MEDIUM", potential_impact: "NEEDS_IMPACT_ASSESSMENT" });
+assert.ok(/مشروع مشترك/.test(jvLine) && /ارتباط غير مباشر \(الحصة 50%\)/.test(jvLine) && /ثقة الربط: متوسطة/.test(jvLine) && /يحتاج تقييم الأثر/.test(jvLine), jvLine);
 // official IR news: the headline is the company's, the category is ours, the impact unassessed
 const irItem = { kind: "IR_EARNINGS", category_basis: "HEADLINE_KEYWORDS", potential_impact: "NEEDS_IMPACT_ASSESSMENT" };
 assert.strictEqual(R.readingLine(irItem), "العنوان من الشركة؛ التصنيف آلي من كلماته · الأثر: يحتاج تقييم الأثر");

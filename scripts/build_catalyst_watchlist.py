@@ -213,6 +213,8 @@ def fr_catalysts(fr: Any) -> list[dict[str, Any]]:
                         "source": "Federal Register", "source_url": url, "source_updated": day,
                         "issuer": str(link.get("name") or "")[:80] or None, "match_method": "reviewed_issuer_link",
                         "link_relation": link.get("relation"), "listed_company": link.get("listed_company"),
+                        "exposure": link.get("exposure") or "DIRECT", "ownership_share": link.get("ownership_share"),
+                        "relation_as_of": link.get("relation_as_of"),
                         # what it might mean stays unassessed; how sure we are of the link is separate
                         "potential_impact": e.get("potential_impact") or "NEEDS_IMPACT_ASSESSMENT",
                         "interpretation_confidence": link.get("interpretation_confidence")})
