@@ -172,7 +172,7 @@ def followup() -> None:
     links("dol_claims_page_links", "https://oui.doleta.gov/unemploy/claims.asp", r"539|csv|map|definition|pdf")
 
 
-def section(name: str, url: str, start: str, chars: int = 6000) -> None:
+def section(name: str, url: str, start: str, chars: int = 6000, occurrence: int = 1) -> None:
     """Print the page text from the first occurrence of `start` (whole restriction lists, not keyword lines)."""
     r, sec, err = get(url)
     text = ""
@@ -183,7 +183,11 @@ def section(name: str, url: str, start: str, chars: int = 6000) -> None:
         else:
             body = text_of(r.text)
         body = re.sub(r"\s*\n\s*", "\n", body)
-        i = body.find(start)
+        i = -1
+        for _ in range(occurrence):
+            i = body.find(start, i + 1)
+            if i < 0:
+                break
         text = body[i:i + chars] if i >= 0 else f"START_NOT_FOUND; first chars: {body[:800]}"
     report(name, url, r, sec, err, text=text)
 
@@ -195,8 +199,10 @@ def restrictions() -> None:
 
 
 def eta539_map() -> None:
-    # The DOL data map is a long handbook PDF; print the ETA 539 section only.
-    section("dol_eta539_map", "https://oui.doleta.gov/dmstree/handbooks/402/402_4/4024c6/4024c6.pdf", "ETA 539", 7000)
+    # The DOL data map is a long handbook PDF; the first match is its table of contents, the
+    # second is the ETA 539 field list (page 41).
+    section("dol_eta539_map", "https://oui.doleta.gov/dmstree/handbooks/402/402_4/4024c6/4024c6.pdf",
+            "ETA 539 - CLAIMS AND EXTENDED BENEFITS DATA", 5000, occurrence=2)
 
 
 STEPS = {"terms": terms, "ofr": ofr, "nyfed": nyfed, "fed_ddp": fed_ddp, "dol": dol, "followup": followup,
