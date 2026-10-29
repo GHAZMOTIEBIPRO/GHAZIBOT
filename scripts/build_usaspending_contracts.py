@@ -73,14 +73,17 @@ def actions_for(company: dict[str, Any], txns: list[dict[str, Any]], awards: dic
 
 
 def fetch_company(company: dict[str, Any], session: Any, start: str, end: str) -> tuple[str, list[dict[str, Any]]]:
-    body = {"filters": {"award_type_codes": ["A", "B", "C", "D"], "time_period": [{"start_date": start, "end_date": end}],
-                        "recipient_search_text": [company["search"]]},
-            "fields": FIELDS, "sort": "Transaction Amount", "order": "desc", "limit": MAX_TXN, "page": 1}
-    time.sleep(1)
-    r = session.post(API + "search/spending_by_transaction/", json=body, timeout=60, headers=UA)
-    if r.status_code != 200:
-        return f"HTTP_{r.status_code}", []
-    txns = r.json().get("results") or []
+    txns: list[dict[str, Any]] = []
+    # Largest obligations first, then largest deobligations (negative amounts), so neither end is cut off.
+    for order, limit in (("desc", MAX_TXN), ("asc", MAX_TXN // 2)):
+        body = {"filters": {"award_type_codes": ["A", "B", "C", "D"], "time_period": [{"start_date": start, "end_date": end}],
+                            "recipient_search_text": [company["search"]]},
+                "fields": FIELDS, "sort": "Transaction Amount", "order": order, "limit": limit, "page": 1}
+        time.sleep(1)
+        r = session.post(API + "search/spending_by_transaction/", json=body, timeout=60, headers=UA)
+        if r.status_code != 200:
+            return f"HTTP_{r.status_code}", []
+        txns += r.json().get("results") or []
     awards: dict[str, dict[str, Any]] = {}
     for gid in list(dict.fromkeys(t.get("generated_internal_id") for t in txns if t.get("generated_internal_id")))[:MAX_AWARDS]:
         time.sleep(1)
@@ -113,6 +116,8 @@ def build(table: dict[str, Any], fetched: dict[str, tuple[str, list[dict[str, An
             "amounts_note_ar": ("التزام الإجراء: ما التزمت به الجهة في هذا الإجراء (سالب = إلغاء التزام). إجمالي الالتزام: كل ما التُزم به على العقد حتى الآن. "
                                 "السقف: الحد الأعلى مع كل الخيارات وليس مالًا ملتزمًا. المدفوع: ما صُرف فعلًا. لا تُجمع هذه الأرقام معًا، "
                                 "وقد تتأخر الجهات في النشر، والرقم لا يعني أثرًا على الأرباح أو السعر."),
+            "coverage_note_ar": ("عقود وزارة الدفاع تُنشر عادةً بتأخير نحو 90 يومًا، فنادرًا ما تظهر في نافذة الأيام الأخيرة؛ "
+                                 "في تشغيل التحقق 40794573730 جاءت الإجراءات المعروضة من وزارات الأمن الداخلي والنقل وناسا."),
             "companies": companies, "actions": actions,
             "counts": {"companies": len(companies), "companies_ok": sum(c["status"] == "OK" for c in companies),
                        "actions": len(actions)},
