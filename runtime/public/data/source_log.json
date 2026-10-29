@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-10-29T18:23:34.688478+00:00",
+ "generated_at": "2026-10-29T18:29:48.428154+00:00",
  "window_days": 14,
- "window_start": "2026-10-15T18:23:34.688478+00:00",
+ "window_start": "2026-10-15T18:29:48.428154+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -94,16 +94,16 @@
     ]
    },
    "rights_key": "cboe_delayed",
-   "runs_seen": 242,
+   "runs_seen": 243,
    "attempted": 2,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-10-29T18:06:06.273884+00:00",
+   "last_run_at": "2026-10-29T18:29:23.632575+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "002dca5b89"
+   "last_commit": "51e9f45e69"
   },
   {
    "key": "sec_edgar",
@@ -126,16 +126,16 @@
     ]
    },
    "rights_key": "sec_edgar",
-   "runs_seen": 65,
-   "attempted": 65,
+   "runs_seen": 66,
+   "attempted": 66,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-10-29T16:05:39.120146+00:00",
+   "last_run_at": "2026-10-29T18:29:18.457421+00:00",
    "last_outcome": "FAILED",
    "last_detail": "UNAVAILABLE",
-   "last_commit": "d9a4b3492e"
+   "last_commit": "422be12530"
   },
   {
    "key": "company_ir_feeds",
