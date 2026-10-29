@@ -136,9 +136,45 @@ def dol() -> None:
     report("dol_weekly_release_pdf", url, r, sec, err, bytes=len(r.content) if r is not None else 0)
 
 
+LINK = re.compile(r'href="([^"]+)"[^>]*>([^<]{0,120})<', re.IGNORECASE)
+
+
+def links(name: str, url: str, pattern: str) -> None:
+    r, sec, err = get(url)
+    found = []
+    if r is not None and r.status_code == 200:
+        found = [(h, t.strip()) for h, t in LINK.findall(r.text) if re.search(pattern, h + " " + t, re.IGNORECASE)]
+    report(name, url, r, sec, err, links=list(dict.fromkeys(found))[:40])
+
+
+def followup() -> None:
+    # Where each publisher states its terms, and the definitions of the series a builder would use.
+    links("ofr_policy_links", "https://www.financialresearch.gov/short-term-funding-monitor/api/",
+          r"polic|terms|disclaim|legal|copyright|privacy")
+    links("ofr_home_policy_links", "https://www.financialresearch.gov/", r"polic|terms|disclaim|legal|copyright")
+    links("nyfed_policy_links", "https://www.newyorkfed.org/markets/reference-rates/sofr", r"terms|legal|disclaim|use")
+    for cand in ("https://www.newyorkfed.org/markets/reference-rates/terms-of-use",
+                 "https://www.newyorkfed.org/privacy/termsofuse", "https://www.newyorkfed.org/terms-of-use"):
+        r, sec, err = get(cand)
+        lines = []
+        if r is not None and r.status_code == 200 and "errors/404" not in r.url:
+            body = [ln.strip() for ln in re.split(r"\n|(?<=[.;])\s{2,}", text_of(r.text)) if len(ln.strip()) > 40]
+            lines = [ln[:600] for ln in body if KEYWORDS.search(ln)][:25]
+        report("nyfed_terms_candidate", cand, r, sec, err, final_url=r.url if r is not None else None, lines=lines)
+    for mnemonic in ("REPO-TRI_AR_OO-P", "REPO-TRI_TV_OO-P", "MMF-MMF_RP_OO-M"):
+        r, sec, err = get(f"https://data.financialresearch.gov/v1/metadata/query?mnemonic={mnemonic}")
+        report(f"ofr_full_meta_{mnemonic}", r.url if r is not None else "", r, sec, err,
+               metadata=(r.text[:4000] if r is not None else None))
+    for rel in ("H41", "H8"):
+        links(f"fed_ddp_choose_{rel}", f"https://www.federalreserve.gov/datadownload/Choose.aspx?rel={rel}",
+              r"Output\.aspx|series=|Build\.aspx|Preview")
+    links("dol_downloads", "https://oui.doleta.gov/unemploy/DataDownloads.asp", r"539|claims|map|csv|pdf")
+    links("dol_claims_page_links", "https://oui.doleta.gov/unemploy/claims.asp", r"539|csv|map|definition|pdf")
+
+
 def main() -> int:
     terms()
-    for step in (ofr, nyfed, fed_ddp, dol):
+    for step in (ofr, nyfed, fed_ddp, dol, followup):
         try:
             step()
         except (ValueError, KeyError, TypeError) as exc:

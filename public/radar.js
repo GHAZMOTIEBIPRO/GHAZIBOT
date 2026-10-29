@@ -699,7 +699,8 @@
   function rowEl(r, link) {
     const row = el("div", "gr-row"); row.setAttribute("role", "listitem"); row.dataset.grSymbol = r.symbol;
     const open = el("button", "gr-row-open"); open.type = "button";
-    const id = el("span", "gr-row-id"); id.append(el("span", "gr-sym", r.symbol)); if (r.name) id.append(el("span", "gr-name", r.name));
+    const sym = el("span", "gr-sym", r.symbol); sym.translate = false; // tickers must not be auto-translated
+    const id = el("span", "gr-row-id"); id.append(sym); if (r.name) id.append(el("span", "gr-name", r.name));
     open.append(id, el("span", "gr-time", r.time || ""), el("span", "gr-why" + (r.quiet ? " gr-muted" : ""), r.why));
     const meta = el("span", "gr-meta");
     for (const t of r.tags || []) { const tag = el("span", "gr-tag", t.text); tag.dataset.kind = t.kind; meta.append(tag); }

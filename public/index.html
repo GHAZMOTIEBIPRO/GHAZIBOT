@@ -21,19 +21,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="./radar.css?v=20261029-3">
+  <link rel="stylesheet" href="./radar.css?v=20261029-4">
 </head>
 <body>
   <a class="gr-skip" href="#gr-main">تجاوز إلى المحتوى</a>
 
   <header class="gr-top">
     <div class="gr-top-row">
-      <a class="gr-brand" href="./" aria-label="GHAZI RADAR — الصفحة الرئيسية">GHAZI <b>RADAR</b></a>
+      <a class="gr-brand" href="./" translate="no" aria-label="GHAZI RADAR — الصفحة الرئيسية">GHAZI <b>RADAR</b></a>
       <p id="gr-session" class="gr-session" role="status"><i aria-hidden="true"></i><span>حالة الجلسة…</span></p>
     </div>
     <form id="gr-search" class="gr-search" role="search" autocomplete="off">
       <label for="gr-q" class="gr-sr">ابحث عن سهم بالرمز أو اسم الشركة</label>
-      <input id="gr-q" type="search" inputmode="search" placeholder="ابحث بالرمز أو اسم الشركة" dir="auto" maxlength="40"
+      <input id="gr-q" name="q" type="search" inputmode="search" placeholder="ابحث بالرمز أو اسم الشركة، مثل NVDA…" dir="auto"
+        maxlength="40" spellcheck="false" autocapitalize="off" autocorrect="off"
         role="combobox" aria-controls="gr-suggest" aria-expanded="false" aria-autocomplete="list">
       <ul id="gr-suggest" class="gr-suggest" role="listbox" aria-label="نتائج البحث" hidden></ul>
     </form>
@@ -75,7 +76,7 @@
       <header class="gr-d-head">
         <button id="gr-d-back" class="gr-d-back" type="button" aria-label="رجوع إلى القائمة">→ رجوع</button>
         <div class="gr-d-title">
-          <h2 id="gr-d-symbol">—</h2>
+          <h2 id="gr-d-symbol" translate="no">—</h2>
           <p id="gr-d-name" class="gr-muted"></p>
         </div>
         <button id="gr-d-watch" class="gr-d-watch" type="button" aria-pressed="false">☆ متابعة</button>
@@ -103,6 +104,6 @@
   </footer>
 
   <script src="./tv-intelligence.js?v=20261026-3" defer></script>
-  <script src="./radar.js?v=20261029-3" defer></script>
+  <script src="./radar.js?v=20261029-4" defer></script>
 </body>
 </html>
