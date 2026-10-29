@@ -9,19 +9,22 @@
 
 **Cross-origin charts:**
 - A chart frame that loaded proves only that TradingView's frame loaded.
-- The browser does not let the page read the frame's content. Symbol, interval and "symbol not found" messages inside it are TradingView's and are **not verified**.
+- The browser does not let the page read the frame's content. What is drawn inside it, and TradingView's own "symbol not found" message, are **not verified**.
+- What the page asked the frame for is checked: the interval and symbol in the frame's address.
 
 | Task | Level checked | Not checked |
 |---|---|---|
 | find a stock by company name (keyboard only) | 1–2: suggestion list, Enter opens the right symbol | — |
 | understand why it appears | 1: at least one reason line, 16px | 2: reason correct for the data (covered only by unit tests of the row builders); 3: understood |
 | analysis availability is stated | 1: the price-analysis state sentence is present | Whether the stated state is current (the data files decide) |
-| change the chart frame | 1: the 1H button is pressed and a chart state (ready / timeout / failed) is shown | That the chart loaded (**passes on "failed"**), that it shows 1H, or that its content is right |
+| change the chart frame | 2: after pressing 1H the chart state is **ready** (timeout or failed fails the task) and the frame address asks for interval 60 (its symbol is recorded in the report). Reported NOT RUN, never passed, where TradingView is unreachable (`UX_NO_TRADINGVIEW`) | That what TradingView draws inside the frame is the right chart |
 | Arabic search | 2: «انفيديا» finds NVDA | — |
 | valid symbol outside S&P 500 | 2: opens with the listing from Nasdaq's file | — |
 | unknown valid symbol | 2: marked unverified, no company name invented | — |
 | open the original news | 1: the first news link points to its official source | That the link resolves (HEAD often blocked from the runner; status recorded, not required) |
 | Federal Register notices not tied to a stock | 1: rows shown | Relevance to a stock (none is claimed) |
+| week agenda (radar section) | 1–2: the «أجندة الأسبوع» card is shown with dated rows from the rebuilt data (required under `UX_LOCAL_DATA`) | That a listed date will not move (company and agency dates can change) |
+| official company news | 2: each row's link stays on **that company's own** reviewed site (`data/ir_feeds.json`) | That the headline's category is right (it is read from the headline's words) |
 | catalysts tab and Nasdaq listing flags | 1–2: flag rows and wording | That the user reads a flag as "not a delisting decision" |
 | Federal Register risk event on the stock page | 1: the official link is shown | Impact (shown as needing assessment) |
 | phone back button / Escape / scroll per tab | 2: behaviour (panel closes, position kept) | — |
