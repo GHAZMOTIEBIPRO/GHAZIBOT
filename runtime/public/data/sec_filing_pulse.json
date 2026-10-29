@@ -1,8 +1,8 @@
 {
   "schema": "ghazi.sec_issuer_pulse.v1",
-  "generated_at": "2026-10-28T22:23:28.920926+00:00",
+  "generated_at": "2026-10-29T01:48:41.126913+00:00",
   "status": "UNAVAILABLE",
-  "source_retry_after": "2026-10-29T00:21:42.811797+00:00",
+  "source_retry_after": "2026-10-29T07:48:41.126913+00:00",
   "refusal_reason": "HTTP_403",
   "source": "US SEC EDGAR submissions and official ticker-CIK map",
   "coverage": {
@@ -10,12 +10,16 @@
     "issuers_inspected": 0,
     "filings_verified": 0,
     "errors": {
-      "sec_api": "COOLDOWN_ACTIVE"
+      "ticker_map": 403,
+      "RGC": "HTTP_403"
     },
-    "error_kinds": {}
+    "error_kinds": {
+      "ticker_map": "www.sec.gov:RATE_LIMITED",
+      "RGC": "data.sec.gov:IDENTITY_REFUSED"
+    }
   },
-  "ticker_mapping_source": "OFFICIAL_SEC_ACCESS_COOLDOWN",
-  "ticker_mapping_mirror_snapshot_date": null,
+  "ticker_mapping_source": "UNVERIFIED_2025_MIRROR_REQUIRES_SEC_TICKER_CONFIRMATION",
+  "ticker_mapping_mirror_snapshot_date": "2025-02-28",
   "filings": [],
   "policy": {
     "free_no_api_key": true,
