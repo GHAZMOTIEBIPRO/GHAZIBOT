@@ -48,6 +48,18 @@ CANON: dict[str, tuple[str, str, str, str]] = {
                                       "optional: FINRA (owner record of a FINRA developer account; not FINRA's permission)"),
 }
 TG = "https://api.telegram.org/bot{token}/{method}"
+# Price, options and data keys referenced by existing workflows (names only).
+PROVIDER_KEYS = ("ALPHA_VANTAGE_API_KEY", "TIINGO_API_KEY", "TWELVE_DATA_API_KEY", "FINNHUB_API_KEY", "POLYGON_API_KEY",
+                 "TRADIER_TOKEN", "MARKETDATA_TOKEN", "INTRINIO_API_KEY", "FRED_API_KEY", "SEC_USER_AGENT",
+                 "OPENFDA_API_KEY", "BENZINGA_TOKEN", "FILINGPULSE_API_KEY")
+PROVIDER_VARIABLES = ("ALPHA_VANTAGE_NON_DISPLAY_USE_AUTHORIZED", "TIINGO_NON_DISPLAY_USE_AUTHORIZED",
+                      "TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED", "POLYGON_NON_DISPLAY_USE_AUTHORIZED",
+                      "TRADIER_INTERNAL_DATA_USE_AUTHORIZED", "FRED_AUTOMATION_APPROVED", "DATA_TERMS_CONFIRMED")
+
+
+def value_class_var(raw: Any) -> str:
+    raw = str(raw or "").strip().lower()
+    return "UNSET" if not raw else raw if raw in ("true", "false") else "OTHER_VALUE"
 
 
 def value_class(name: str, env: dict[str, str]) -> str:
@@ -134,6 +146,11 @@ def check(env: dict[str, str], connection: Path, session: Any = requests) -> dic
                            and checks["owner_username_matches"] in (True, "NOT_CHECKED")),
     }
     out["ready"] = ready
+    # Other providers the workflows already reference: presence only (the workflow passes
+    # `secrets.X != ''`, never the value). A present key is not permission to use it.
+    out["provider_keys"] = {name: ("PRESENT" if (env.get(f"{name}_SECRET_SET") or "").lower() == "true" else
+                                   "ABSENT_OR_NOT_PASSED") for name in PROVIDER_KEYS}
+    out["provider_attestations"] = {name: value_class_var(env.get(name)) for name in PROVIDER_VARIABLES}
     return out
 
 
