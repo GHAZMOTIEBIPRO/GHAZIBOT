@@ -27,6 +27,12 @@ that verify work. Progress of the current mission: `docs/PROGRESS.md`.
   - backtesting.py: AGPL, not integrated.
   - Playwright: in use.
 - **State.** One writer per state file on `bot-state`; probes print to the log only.
+  - `liquidity-monitor.yml` is the only writer of `liquidity_monitor.json`.
+- **Fetching.** New public-data builders use `options_radar/http_fetch.py`.
+  - A refusal (401/403/451) is never retried or worked around.
+  - The last good copy is kept and labelled `kept_previous_copy`.
+- **NY Fed reference rates.** Every display carries the required notice: `funding_rates.notice`.
+- **DOL claims.** The data is not seasonally adjusted, so a week is only compared with the same week a year earlier.
 
 ## Verify (what CI runs)
 ```
@@ -43,7 +49,10 @@ python scripts/bot_acceptance.py # offline bot acceptance on real outputs
 
 ## Runner checks (log-only, branch push)
 - `settings-check.yml` reports which secrets and variables reach a job: booleans and value classes only.
-- `macro-sources-probe.yml` covers OFR, NY Fed, Fed DDP and DOL: terms and data structure.
+- `macro-sources-probe.yml` covers OFR, NY Fed, Fed DDP and DOL.
+  - It probes terms and data structure.
+  - It also dry-runs the liquidity builder into `$RUNNER_TEMP`.
+  - Steps are chosen by name: `python scripts/probe_macro_sources.py restrictions eta539_map`.
 - `live-platform-probe.yml` checks that the live sites serve the platform card.
 - `sec-access-probe.yml` runs `scripts/probe_terms.py` for terms pages.
 
