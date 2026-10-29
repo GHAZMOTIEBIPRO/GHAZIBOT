@@ -29,7 +29,7 @@ jobs:
           python-version: "3.12"
       - run: pip install "requests>=2.32,<3" "pypdf>=4,<6"
       # Steps by name (see STEPS in the script); no argument runs them all.
-      - run: python scripts/probe_macro_sources.py eta539_map
+      - run: python scripts/probe_macro_sources.py discover
       - name: Liquidity builder dry run against the live sources (runner temp only, nothing published)
         run: |
           python scripts/build_liquidity_monitor.py --output "$RUNNER_TEMP/liquidity_monitor.json"

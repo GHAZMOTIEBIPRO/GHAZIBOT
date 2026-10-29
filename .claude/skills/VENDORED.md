@@ -30,6 +30,23 @@ Claude Code loads project skills from `.claude/skills/<name>/SKILL.md`.
 2. Update the commit in the table above.
 3. Review the diff of its scripts before running any of them.
 
+## Vendored from obra/superpowers (unchanged copies)
+
+| Skills | Source | Commit | Licence |
+|---|---|---|---|
+| `writing-plans`, `executing-plans`, `subagent-driven-development`, `requesting-code-review`, `receiving-code-review`, `verification-before-completion`, `systematic-debugging` | [obra/superpowers](https://github.com/obra/superpowers/tree/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills) | `2ce8aa15d05bd57213e6f746f953aafb7ded7a8b` (2026-10-21) | MIT (`LICENSE.superpowers` in each folder) |
+
+- **What is used.**
+  - Plans for multi-step work.
+  - Execution against the plan.
+  - Review by a reviewer independent of the writer.
+  - Evidence before any "done" claim.
+  - Root-cause debugging.
+- **Scripts.** `subagent-driven-development` ships scripts that `executing-plans` calls. They were reviewed: local files and git only, no network, no push.
+- **Not taken.**
+  - The plugin's SessionStart hook, because it forces brainstorming before every task.
+  - `brainstorming`, `using-superpowers`, `writing-skills` (skill-creator covers it) and `using-git-worktrees`.
+
 ## Plugins enabled at project scope (`.claude/settings.json`)
 
 | Plugin | Marketplace | Commit | Licence | Note |

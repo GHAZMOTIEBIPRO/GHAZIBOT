@@ -98,6 +98,20 @@ h1, h2, h3 { margin: 0; line-height: 1.35; text-wrap: balance; }
 .gr-fact { padding: var(--s2) var(--s3); border-radius: 10px; background: var(--surface); border: 1px solid var(--line);
   font-size: var(--t-sm); color: var(--text-2); }
 .gr-fact strong { display: block; color: var(--text); font-size: var(--t-md); font-weight: 600; }
+/* Liquidity card: reading first, then charts; legends carry line style too (not colour alone). */
+.gr-liq h2 { font-size: var(--t-lg, 1.125rem); margin-bottom: var(--s2); }
+.gr-liq h3 { font-size: var(--t-md); margin: var(--s4) 0 var(--s1); }
+.gr-liq-lines { margin: 0; padding-inline-start: var(--s4); display: grid; gap: var(--s1); }
+.gr-liq-chart { height: 220px; width: 100%; min-width: 0; }
+.gr-legend { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s3); margin: 0 0 var(--s1); padding: 0;
+  font-size: var(--t-sm); color: var(--text-2); }
+.gr-legend i { display: inline-block; width: 18px; height: 0; margin-inline-end: 6px; vertical-align: middle;
+  border-top: 2px solid var(--accent); }
+.gr-legend .gr-lg-ago i { border-top: 1px dashed var(--text-3); }
+.gr-legend .gr-lg-top i { border-top: 1px solid var(--warn); }
+.gr-values { margin-top: var(--s2); font-size: var(--t-sm); }
+.gr-values table { border-collapse: collapse; width: 100%; margin-top: var(--s1); font-variant-numeric: tabular-nums; }
+.gr-values th, .gr-values td { padding: 4px var(--s2); border-bottom: 1px solid var(--line); text-align: start; }
 /* Publisher notices that must accompany a value (e.g. the New York Fed's reference-rate notice). */
 .gr-fact-note { grid-column: 1 / -1; padding: var(--s1) var(--s3); font-size: .875rem; line-height: 1.5;
   color: var(--text-3); text-align: left; overflow-wrap: anywhere; }

@@ -26,6 +26,7 @@ HISTORY_WEEKS = 104
 COVERAGE_LOOKBACK = 8
 CLAIMS_STALE_DAYS = 20      # ETA 539 lands about 11 days after the week it covers
 RATES_STALE_DAYS = 6
+BAND_PCT = 5.0              # claims band: ±5% on the 4-week average vs a year earlier
 NYFED_NOTICE = ("The {name} is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not "
                 "responsible for publication of the {name} by GHAZI RADAR, does not sanction or endorse any "
                 "particular republication, and has no liability for your use.")
@@ -107,6 +108,11 @@ def claims(rows: list[dict[str, Any]], *, today: date, source_last_modified: str
     cw_full = cur["cw_states"] >= expected
     age = (today - latest).days
     a4, a4_ago = avg4(latest), avg4(year_ago)
+    yoy4 = _pct(a4, a4_ago)
+    # 52 weeks with the same week a year earlier beside each one (None when that week is incomplete)
+    chart = [[w.isoformat(), weeks[w]["ic"],
+              weeks[w - timedelta(days=364)]["ic"] if complete(w - timedelta(days=364)) else None]
+             for w in full[-52:]]
     return {
         "available": True, "stale": age > CLAIMS_STALE_DAYS, "age_days": age,
         "week_ending": latest.isoformat(), "jurisdictions": len(cur["states"]), "expected_jurisdictions": expected,
@@ -115,7 +121,12 @@ def claims(rows: list[dict[str, Any]], *, today: date, source_last_modified: str
         "initial_claims_year_ago": ago["ic"] if ago else None,
         "initial_claims_yoy_pct": _pct(cur["ic"], ago["ic"] if ago else None),
         "initial_claims_4wk_avg": a4, "initial_claims_4wk_avg_year_ago": a4_ago,
-        "initial_claims_4wk_yoy_pct": _pct(a4, a4_ago),
+        "initial_claims_4wk_yoy_pct": yoy4,
+        # descriptive band, stated rule; a comparison, not a forecast
+        "band_4wk_vs_year_ago": None if yoy4 is None else
+        "LOWER" if yoy4 <= -BAND_PCT else "HIGHER" if yoy4 >= BAND_PCT else "SIMILAR",
+        "band_rule": f"4-week average vs the same 4 weeks a year earlier: within ±{BAND_PCT:g}% is SIMILAR",
+        "chart_52w": chart,
         "continued_weeks_claimed": cur["cw"] if cw_full else None,
         "continued_reflect_week": cur["reflect"].isoformat() if cur["reflect"] else None,
         "continued_weeks_claimed_year_ago": (ago["cw"] if ago and ago["cw_states"] >= expected else None),
@@ -153,13 +164,19 @@ def funding_rates(sofr: list[dict[str, Any]], effr: list[dict[str, Any]], *, tod
     # the target range is published with EFFR; use the one for SOFR's own date only
     target = next((x for x in reversed(effr) if x["date"] == s["date"]), None)
     age = (today - date.fromisoformat(s["date"])).days
+    top_by_date = {x["date"]: x["target_to"] for x in effr if isinstance(x.get("target_to"), int | float)}
+    history = [[x["date"], x["rate"], x["p99"], top_by_date.get(x["date"])] for x in sofr]
+    above = [h for h in history if isinstance(h[2], int | float) and isinstance(h[3], int | float) and h[2] > h[3]]
     return {
         "available": True, "stale": age > RATES_STALE_DAYS, "age_days": age,
         "sofr": s, "effr": e, "sofr_minus_effr_bp": _bp(s["rate"], e["rate"]) if s["date"] == e["date"] else None,
         "target_range": [target["target_from"], target["target_to"]] if target else None,
         "sofr_minus_target_top_bp": _bp(s["rate"], target["target_to"]) if target else None,
         "sofr_p99_minus_target_top_bp": _bp(s["p99"], target["target_to"]) if target else None,
-        "sofr_history": [[x["date"], x["rate"]] for x in sofr],
+        # [date, SOFR, SOFR 99th percentile, target-range top that day]
+        "sofr_history": history,
+        "window_days": len(history),
+        "days_p99_above_target_top": len(above),
         "notice": {"SOFR": NYFED_NOTICE.format(name="SOFR"), "EFFR": NYFED_NOTICE.format(name="EFFR"),
                    "dtcc": DTCC_NOTE},
         "publication_rule": "Published about 08:00 ET on the business day after the effective date; "
@@ -193,6 +210,7 @@ def repo(series: dict[str, list[tuple[str, float]]], meta: dict[str, dict[str, A
         ago = _value_ago(s, 30 if not monthly else 28)
         age = (today - date.fromisoformat(s[-1][0])).days
         block = {"available": True, "mnemonic": mnemonic, "date": s[-1][0], "value": s[-1][1],
+                 "history": [list(x) for x in s[-(24 if monthly else 60):]],
                  "stale": age > (75 if monthly else RATES_STALE_DAYS), "age_days": age,
                  "vintage": m.get("vintage") or m.get("vintage_approach"), "source_last_update": m.get("last_update"),
                  "unit": m.get("unit")}

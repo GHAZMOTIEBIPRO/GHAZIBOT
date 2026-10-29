@@ -31,7 +31,7 @@ hf = _load("ghazi_http_fetch", "options_radar/http_fetch.py")
 lm = _load("ghazi_liquidity_monitor", "options_radar/liquidity_monitor.py")
 
 AR539 = "https://oui.doleta.gov/unemploy/csv/ar539.csv"
-NYFED = "https://markets.newyorkfed.org/api/rates/{kind}/{rate}/last/30.json"
+NYFED = "https://markets.newyorkfed.org/api/rates/{kind}/{rate}/last/60.json"
 OFR = "https://data.financialresearch.gov/v1/{path}"
 
 

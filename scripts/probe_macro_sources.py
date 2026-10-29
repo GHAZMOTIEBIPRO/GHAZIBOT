@@ -213,8 +213,29 @@ def eta539_map() -> None:
     report("dol_eta539_map", url, r, sec, err, pages=pages[:3])
 
 
+def discover() -> None:
+    """Discovery outside GitHub: model licences on Hugging Face (weights licence, not the code's) and
+    federal datasets in the data.gov catalog (publisher and licence as the catalog states them)."""
+    for model in ("ProsusAI/finbert", "yiyanghkust/finbert-tone"):
+        url = f"https://huggingface.co/api/models/{model}"
+        r, sec, err = get(url)
+        d = r.json() if r is not None and r.status_code == 200 else {}
+        report(f"hf_{model}", url, r, sec, err, license=(d.get("cardData") or {}).get("license"),
+               license_tags=[t for t in d.get("tags", []) if str(t).startswith("license")],
+               last_modified=d.get("lastModified"), downloads=d.get("downloads"))
+    for q in ("unemployment insurance weekly claims", "fails to deliver", "short sale volume", "money market funds"):
+        url = "https://catalog.data.gov/api/3/action/package_search"
+        r, sec, err = get(url, params={"q": q, "rows": 5})
+        res = (r.json() or {}).get("result", {}) if r is not None and r.status_code == 200 else {}
+        report("datagov_search", url, r, sec, err, query=q, count=res.get("count"),
+               results=[{"title": x.get("title", "")[:90], "publisher": (x.get("organization") or {}).get("title"),
+                         "license": x.get("license_title"), "modified": x.get("metadata_modified"),
+                         "resources": [str(y.get("url"))[:120] for y in (x.get("resources") or [])[:2]]}
+                        for x in res.get("results", [])])
+
+
 STEPS = {"terms": terms, "ofr": ofr, "nyfed": nyfed, "fed_ddp": fed_ddp, "dol": dol, "followup": followup,
-         "restrictions": restrictions, "eta539_map": eta539_map}
+         "restrictions": restrictions, "eta539_map": eta539_map, "discover": discover}
 
 
 def main() -> int:

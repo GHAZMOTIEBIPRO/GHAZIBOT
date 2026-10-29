@@ -589,7 +589,52 @@
     return out;
   }
 
-  const api = { sessionState, eventRows, liquidityFacts, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
+  // Reading + chart series for the liquidity card, from computed fields only (no new numbers here).
+  // Observation dates and publication times are kept apart in the captions.
+  const BAND_AR = { LOWER: "أقل من الفترة نفسها قبل عام", SIMILAR: "قريبة من الفترة نفسها قبل عام", HIGHER: "أعلى من الفترة نفسها قبل عام" };
+  function liquidityReading(liq) {
+    const out = { lines: [], claims: null, sofr: null, captions: {} };
+    if (!liq) return out;
+    const fmt = (v) => (NUM ? NUM.format(v) : String(v));
+    const pct = (v) => `⁦${v >= 0 ? "+" : "−"}${fmt(Math.abs(v))}%⁩`;
+    const ok = (b) => b && b.available && !b.kept_previous_copy;
+    const c = liq.claims;
+    if (ok(c) && Number.isFinite(c.initial_claims_4wk_avg) && Number.isFinite(c.initial_claims_4wk_avg_year_ago)) {
+      out.lines.push(`متوسط طلبات إعانة البطالة الأولية لأربعة أسابيع ${fmt(c.initial_claims_4wk_avg)} مقابل ${fmt(c.initial_claims_4wk_avg_year_ago)} في الفترة نفسها قبل عام (${pct(c.initial_claims_4wk_yoy_pct)})` +
+        (BAND_AR[c.band_4wk_vs_year_ago] ? ` — ${BAND_AR[c.band_4wk_vs_year_ago]}.` : "."));
+    }
+    if (ok(c) && Number.isFinite(c.continued_weeks_claimed) && Number.isFinite(c.continued_yoy_pct)) {
+      out.lines.push(`الطلبات المستمرة ${fmt(c.continued_weeks_claimed)} لأسبوع ${day(c.continued_reflect_week) || c.continued_reflect_week} (${pct(c.continued_yoy_pct)} على أساس سنوي).`);
+    }
+    if (ok(c) && Array.isArray(c.chart_52w) && c.chart_52w.length) {
+      out.claims = { current: c.chart_52w.filter((r) => Number.isFinite(r[1])).map((r) => ({ time: r[0], value: r[1] })),
+        yearAgo: c.chart_52w.filter((r) => Number.isFinite(r[2])).map((r) => ({ time: r[0], value: r[2] })) };
+      const pub = Date.parse(c.source_last_modified || "");
+      out.captions.claims = `أسبوع الملاحظة الأخير حتى ${day(c.week_ending) || c.week_ending} · نشرت وزارة العمل الملف ${Number.isFinite(pub) ? day(new Date(pub).toISOString()) : "—"} · غير معدّلة موسميًا` +
+        (c.stale ? " · قديمة" : "");
+    }
+    const f = liq.funding_rates;
+    if (ok(f) && f.sofr && Number.isFinite(f.sofr.rate)) {
+      const r = Array.isArray(f.target_range) && f.target_range.every(Number.isFinite) ? f.target_range : null;
+      out.lines.push(`SOFR ${f.sofr.rate.toFixed(2)}%` + (r ? ` ضمن النطاق المستهدف ${r[0].toFixed(2)}–${r[1].toFixed(2)}%` : "") +
+        (Number.isFinite(f.days_p99_above_target_top) && f.window_days ? `؛ تجاوز المئين 99 سقف النطاق في ${fmt(f.days_p99_above_target_top)} من آخر ${fmt(f.window_days)} يوم عمل.` : "."));
+      const h = (f.sofr_history || []).filter((x) => Array.isArray(x) && Number.isFinite(x[1]));
+      out.sofr = { rate: h.map((x) => ({ time: x[0], value: x[1] })), p99: h.filter((x) => Number.isFinite(x[2])).map((x) => ({ time: x[0], value: x[2] })),
+        top: h.filter((x) => Number.isFinite(x[3])).map((x) => ({ time: x[0], value: x[3] })) };
+      out.captions.sofr = `آخر تاريخ سريان ${day(f.sofr.date) || f.sofr.date} · يُنشر نحو الثامنة صباحًا بتوقيت نيويورك في يوم العمل التالي` + (f.stale ? " · قديمة" : "");
+      if (f.notice) out.notice = [f.notice.SOFR, f.notice.dtcc].filter(Boolean).join(" ");
+    }
+    const tri = liq.repo && liq.repo.tri_party_rate, vol = liq.repo && liq.repo.tri_party_volume;
+    if (ok(liq.repo) && tri && tri.available && Number.isFinite(tri.value)) {
+      let line = `فائدة الريبو الثلاثي لليلة ${tri.value.toFixed(2)}%` + (Number.isFinite(tri.change_bp) ? ` (${tri.change_bp >= 0 ? "+" : "−"}${fmt(Math.abs(tri.change_bp))} نقطة أساس عن شهر)` : "");
+      if (vol && vol.available && Number.isFinite(vol.value)) line += `، وحجمه ${fmt(Math.round(vol.value / 1e9))} مليار دولار` + (Number.isFinite(vol.change_pct) ? ` (${pct(vol.change_pct)} عن شهر)` : "");
+      out.lines.push(line + ` — بيانات OFR أولية بتاريخ ${day(tri.date) || tri.date}.`);
+    }
+    if (out.lines.length) out.lines.push("مؤشرات للاقتصاد والتمويل عمومًا؛ لا تقيس تدفقًا إلى سهم بعينه ولا تحدد اتجاه صفقة.");
+    return out;
+  }
+
+  const api = { sessionState, eventRows, liquidityFacts, liquidityReading, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
     foldAr, nasdaqMap, flagRows, flagSummary, readingLine, agendaGroups, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY,
     platformState, sourceState };
@@ -640,6 +685,85 @@
       holder.append(s); d.append(holder, el("p", "gr-muted", note));
     });
     return d;
+  }
+
+  // ----- liquidity card: computed reading + two charts (lightweight-charts, already used by classic.html) -----
+  const LWC_SRC = "https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js";
+  let lwcPromise = null;
+  function loadLwc() {
+    if (root.LightweightCharts) return Promise.resolve(root.LightweightCharts);
+    if (!lwcPromise) {
+      lwcPromise = new Promise((ok, fail) => {
+        const s = doc.createElement("script"); s.src = LWC_SRC; s.async = true; s.crossOrigin = "anonymous";
+        s.onload = () => (root.LightweightCharts ? ok(root.LightweightCharts) : fail(new Error("no LightweightCharts")));
+        s.onerror = () => { lwcPromise = null; fail(new Error("load")); };
+        doc.head.append(s);
+      });
+    }
+    return lwcPromise;
+  }
+  function lineChart(box, lines, format) {
+    loadLwc().then((L) => {
+      const css = root.getComputedStyle(doc.documentElement);
+      const v = (name, fb) => css.getPropertyValue(name).trim() || fb;
+      const chart = L.createChart(box, { autoSize: true, height: 220,
+        layout: { background: { color: "transparent" }, textColor: v("--text-2", "#8a94a6"), fontFamily: v("--font", "sans-serif") },
+        grid: { vertLines: { visible: false }, horzLines: { color: v("--line", "#2a3344") } },
+        rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false },
+        localization: { locale: "ar-u-nu-latn", priceFormatter: format }, handleScroll: false, handleScale: false });
+      for (const ln of lines) {
+        const s = chart.addSeries(L.LineSeries, { color: v(ln.color, "#5a8ce6"), lineWidth: ln.width || 2, lineStyle: ln.dashed ? 2 : 0,
+          priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: true });
+        s.setData(ln.data);
+      }
+      chart.timeScale().fitContent();
+      box.dataset.ready = "1";
+    }).catch(() => { box.replaceChildren(el("p", "gr-muted", "تعذّر تحميل مكتبة الرسم؛ القيم في الجدول أدناه.")); box.dataset.ready = "fallback"; });
+  }
+  function legend(items) {
+    const ul = el("ul", "gr-legend");
+    for (const [label, cls] of items) { const li = el("li", cls); li.append(el("i", null)); li.append(doc.createTextNode(label)); ul.append(li); }
+    return ul;
+  }
+  function valuesTable(caption, head, rows) {
+    const d = el("details", "gr-values"); d.append(el("summary", null, caption));
+    const t = el("table"); const tr = el("tr"); for (const h of head) tr.append(el("th", null, h)); t.append(tr);
+    for (const r of rows) { const row = el("tr"); for (const c of r) row.append(el("td", null, c)); t.append(row); }
+    d.append(t); return d;
+  }
+  function liquidityCard() {
+    const rd = liquidityReading(state.data.liquidity);
+    if (!rd.lines.length) return null;
+    const card = el("section", "gr-card gr-liq"); card.setAttribute("aria-labelledby", "gr-liq-title");
+    const h = el("h2", null, "السيولة وسوق العمل الأمريكي"); h.id = "gr-liq-title"; card.append(h);
+    const ul = el("ul", "gr-liq-lines"); for (const line of rd.lines) ul.append(el("li", null, line)); card.append(ul);
+    const fmtN = (x) => n(Math.round(x));
+    if (rd.claims && rd.claims.current.length) {
+      card.append(el("h3", null, "طلبات الإعانة الأولية أسبوعيًا مقابل الأسبوع نفسه قبل عام"));
+      card.append(legend([["هذا العام", "gr-lg-now"], ["قبل عام", "gr-lg-ago"]]));
+      const box = el("div", "gr-liq-chart"); box.dir = "ltr"; box.dataset.chart = "claims";
+      box.setAttribute("role", "img"); box.setAttribute("aria-label", "رسم طلبات الإعانة الأولية لآخر 52 أسبوعًا مع الأسبوع نفسه قبل عام");
+      card.append(box, el("p", "gr-muted", rd.captions.claims));
+      lineChart(box, [{ data: rd.claims.current, color: "--accent" }, { data: rd.claims.yearAgo, color: "--text-3", dashed: true, width: 1 }], fmtN);
+      const byWeek = new Map(rd.claims.yearAgo.map((p) => [p.time, p.value]));
+      card.append(valuesTable("القيم (آخر 8 أسابيع)", ["الأسبوع", "هذا العام", "قبل عام"],
+        rd.claims.current.slice(-8).reverse().map((p) => [day(p.time) || p.time, n(p.value), byWeek.has(p.time) ? n(byWeek.get(p.time)) : "—"])));
+    }
+    if (rd.sofr && rd.sofr.rate.length) {
+      card.append(el("h3", null, "SOFR يوميًا مع المئين 99 وسقف النطاق المستهدف"));
+      card.append(legend([["SOFR", "gr-lg-now"], ["المئين 99", "gr-lg-ago"], ["سقف النطاق", "gr-lg-top"]]));
+      const box = el("div", "gr-liq-chart"); box.dir = "ltr"; box.dataset.chart = "sofr";
+      box.setAttribute("role", "img"); box.setAttribute("aria-label", "رسم SOFR اليومي مع المئين 99 وسقف النطاق المستهدف");
+      card.append(box, el("p", "gr-muted", rd.captions.sofr));
+      lineChart(box, [{ data: rd.sofr.rate, color: "--accent" }, { data: rd.sofr.p99, color: "--text-3", dashed: true, width: 1 },
+        { data: rd.sofr.top, color: "--warn", width: 1 }], (x) => x.toFixed(2) + "%");
+      card.append(valuesTable("القيم (آخر 8 أيام)", ["التاريخ", "SOFR", "المئين 99"],
+        rd.sofr.rate.slice(-8).reverse().map((p) => { const q = rd.sofr.p99.find((x) => x.time === p.time);
+          return [day(p.time) || p.time, p.value.toFixed(2) + "%", q ? q.value.toFixed(2) + "%" : "—"]; })));
+      if (rd.notice) { const p = el("p", "gr-fact-note", rd.notice); p.lang = "en"; p.dir = "ltr"; card.append(p); }
+    }
+    card.append(el("p", "gr-muted", "المصادر: وزارة العمل الأمريكية (ETA 539)، بنك الاحتياطي الفيدرالي في نيويورك، مكتب البحوث المالية (OFR)."));
+    return card;
   }
 
   // ----- watchlist (this browser only) -----
@@ -900,6 +1024,7 @@
       const vix = el("p", "gr-muted"); vix.textContent = "VIX النقدي غير متاح في الأدوات المجانية · ";
       const a = el("a", null, "افتحه على TradingView ↗"); a.href = "https://www.tradingview.com/symbols/CBOE-VIX/"; a.target = "_blank"; a.rel = "noopener";
       vix.append(a); extra.append(vix);
+      const liq = liquidityCard(); if (liq) extra.prepend(liq);
     } else if (state.tab === "leaders") {
       const sectors = directory && directory.sectors ? Object.keys(directory.sectors) : [];
       const sectorAr = new Map(((directory && directory.symbols) || []).map((r) => [r.sector, r.sector_ar]));

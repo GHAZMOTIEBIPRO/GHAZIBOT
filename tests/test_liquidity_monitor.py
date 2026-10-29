@@ -53,6 +53,35 @@ def test_partial_latest_week_is_not_summed_and_year_ago_comparison_uses_same_wee
     assert c["seasonally_adjusted"] is False and c["source_last_modified"].startswith("Wed")
 
 
+def test_chart_pairs_each_week_with_the_same_week_a_year_earlier_and_band_rule():
+    end = date(2026, 10, 17)
+    weeks = _weeks(end, 110)
+    lines = [HEADER]
+    for i, w in enumerate(weeks):  # the last 40 weeks run 10% above the same weeks a year before
+        ic = 110 if i >= 70 else 100
+        lines += [f'"{st}","{w}",1,{w - timedelta(days=7)},{ic},0,0,0,0,1000' for st in ("AK", "AL")]
+    rows, _ = lm.parse_ar539("\n".join(lines) + "\n")
+    c = lm.claims(rows, today=end + timedelta(days=11), source_last_modified=None)
+    assert len(c["chart_52w"]) == 52 and c["chart_52w"][-1] == ["2026-10-17", 220, 200]
+    assert c["initial_claims_4wk_yoy_pct"] == 10.0 and c["band_4wk_vs_year_ago"] == "HIGHER"
+    assert "±5%" in c["band_rule"]
+    # a year-ago week missing from the file stays None in the chart
+    short, _ = lm.parse_ar539(_csv(_weeks(end, 10)))
+    assert lm.claims(short, today=end, source_last_modified=None)["chart_52w"][-1][2] is None
+
+
+def test_sofr_history_counts_days_with_the_99th_percentile_above_the_range_top():
+    sofr = lm.reference_rates({"refRates": [
+        {"effectiveDate": "2026-10-26", "percentRate": 3.93, "percentPercentile99": 4.01},
+        {"effectiveDate": "2026-10-27", "percentRate": 3.95, "percentPercentile99": 3.99}]})
+    effr = lm.reference_rates({"refRates": [
+        {"effectiveDate": d, "percentRate": 3.88, "targetRateFrom": 3.75, "targetRateTo": 4.0}
+        for d in ("2026-10-26", "2026-10-27")]})
+    f = lm.funding_rates(sofr, effr, today=date(2026, 10, 29))
+    assert f["sofr_history"][-1] == ["2026-10-27", 3.95, 3.99, 4.0]
+    assert f["window_days"] == 2 and f["days_p99_above_target_top"] == 1
+
+
 def test_duplicate_and_malformed_rows():
     end = date(2026, 10, 17)
     text = _csv(_weeks(end, 3)) + f'"AK","{end}",1,{end},100,0,0,0,0,1000\n"ZZ","not-a-date",1,,5\n'

@@ -8,6 +8,7 @@ on:
       - "options_radar/liquidity_monitor.py"
       - "options_radar/http_fetch.py"
       - "scripts/build_liquidity_monitor.py"
+      - "scripts/send_liquidity_brief.py"
       - ".github/workflows/liquidity-monitor.yml"
   # NY Fed rates post about 08:00 ET and OFR tri-party about 10:15 ET; DOL refreshed ETA 539 on a
   # Wednesday afternoon ET. A late-morning ET run and an evening ET run cover all three.
@@ -17,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  actions: read   # the broadcast-destination action reads the encrypted connection artifact
 
 concurrency:
   group: ghazi-radar-liquidity-monitor
@@ -26,6 +28,9 @@ jobs:
   update-liquidity-monitor:
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,8 +46,26 @@ jobs:
       # This workflow is the only writer of liquidity_monitor.json. The builder keeps the last good
       # copy of any block whose source fails, labelled with the failure.
       - name: Fetch and compute (standard library only)
+        id: build
         run: python app/scripts/build_liquidity_monitor.py --output state/runtime/public/data/liquidity_monitor.json
+      - run: pip install "requests>=2.32,<3"
+      - name: Resolve the broadcast destination as the other notifiers do
+        uses: ./app/.github/actions/resolve-telegram-broadcast
+      # One message per new DOL claims week; nothing on stale, kept or old data. This workflow is
+      # the only writer of state/liquidity/liquidity_alert_state.json (the dedupe record).
+      - name: Weekly liquidity brief to the broadcast destination
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          PYTHONPATH=app python -m scripts.send_liquidity_brief
+          --liquidity state/runtime/public/data/liquidity_monitor.json
+          --state state/state/liquidity/liquidity_alert_state.json
+          --rights app/data/source_rights.json
+      - name: Report a missing destination (nothing sent)
+        if: env.TELEGRAM_READY != 'true'
+        run: echo "Liquidity Telegram - broadcast destination not resolved, nothing sent."
       - name: Publish only the liquidity document to durable state
+        # the data is published even when the Telegram step failed; the dedupe state is unchanged then
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -50,6 +73,9 @@ jobs:
           git config user.name "GHAZI RADAR Liquidity Monitor"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
           git add runtime/public/data/liquidity_monitor.json
+          if [[ -f state/liquidity/liquidity_alert_state.json ]]; then
+            git add state/liquidity/liquidity_alert_state.json
+          fi
           if git diff --cached --quiet; then
             echo "Liquidity monitor unchanged."
             exit 0

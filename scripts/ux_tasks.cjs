@@ -70,6 +70,24 @@ async function run(device) {
     return page.$$eval("#gr-suggest li b", (els) => els.map((e) => e.textContent));
   };
 
+  // Liquidity card on the indices tab: computed reading first, two charts that really draw, a values
+  // table for each, the New York Fed notice next to SOFR, and the observation/publication captions.
+  await task(device, "liquidity reading and charts (DOL claims, SOFR) with dates and notice", async () => {
+    await page.waitForSelector(".gr-liq", { timeout: 15000 });
+    const lines = await page.$$eval(".gr-liq-lines li", (els) => els.map((e) => e.textContent.trim()));
+    must(lines.length >= 3 && lines.some((l) => /طلبات إعانة البطالة/.test(l)) && lines.some((l) => /SOFR/.test(l)), "reading " + lines);
+    await page.waitForFunction(() => [...document.querySelectorAll(".gr-liq-chart")].every((b) => b.dataset.ready), null, { timeout: 20000 });
+    const charts = await page.$$eval(".gr-liq-chart", (els) => els.map((b) => ({ chart: b.dataset.chart, ready: b.dataset.ready,
+      canvas: b.querySelectorAll("canvas").length, width: Math.round(b.getBoundingClientRect().width) })));
+    must(charts.length === 2 && charts.every((c) => c.ready === "1" && c.canvas > 0 && c.width > 200), JSON.stringify(charts));
+    const captions = await page.$$eval(".gr-liq > p.gr-muted", (els) => els.map((e) => e.textContent));
+    must(captions.some((t) => /أسبوع الملاحظة الأخير حتى/.test(t) && /نشرت وزارة العمل الملف/.test(t)), "claims dates " + captions);
+    const notice = await page.$eval(".gr-liq .gr-fact-note", (e) => e.textContent);
+    must(/newyorkfed\.org/.test(notice), "NY Fed notice");
+    await page.$eval(".gr-liq", (e) => e.scrollIntoView());
+    await shot(page, `${device}-liquidity.png`);
+    return { lines: lines.slice(0, 4), charts };
+  });
   await task(device, "find a stock by company name (keyboard only)", async () => {
     // By name: with the Nasdaq directory loaded, a partial symbol such as "NVD" is itself a listed symbol.
     const list = await search("nvidia");

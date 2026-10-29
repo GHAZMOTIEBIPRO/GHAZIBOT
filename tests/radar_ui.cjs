@@ -26,7 +26,10 @@ const sizes = [...css.matchAll(/font-size:\s*([0-9.]+)rem/g)].map((m) => Number(
 assert.ok(sizes.every((s) => s >= 0.875), "no text below 14px: " + sizes);
 // The page reads published bot-state files only; prices come only from TradingView embeds.
 const urls = [...js.matchAll(/https:\/\/[a-z0-9.-]+/g)].map((m) => m[0]);
-for (const u of new Set(urls)) assert.ok(/raw\.githubusercontent\.com|tradingview\.com|sec\.gov/.test(u), "unexpected host " + u);
+for (const u of new Set(urls)) assert.ok(/raw\.githubusercontent\.com|tradingview\.com|sec\.gov|cdn\.jsdelivr\.net/.test(u), "unexpected host " + u);
+// the CDN serves one pinned chart library (code, not data) and nothing else
+const cdn = [...js.matchAll(/https:\/\/cdn\.jsdelivr\.net\/[^"'\s]+/g)].map((m) => m[0]);
+assert.ok(cdn.length && cdn.every((u) => u === "https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"), cdn);
 assert.ok(!/yahoo|nasdaq\.com|cboe\.com|stooq/i.test(js), "no restricted price source");
 
 // --- session state from the published XNYS calendar ---
@@ -278,6 +281,25 @@ assert.ok(lightStart > 0 && darkTokens.bg === "#0b1220", "two themes from tokens
   assert.ok(/آخر قيمة منشورة/.test(old[1].sub));
   assert.deepStrictEqual(R.liquidityFacts({ claims: { available: false }, funding_rates: { available: false } }), []);
   assert.deepStrictEqual(R.liquidityFacts(null), []);
+  // reading + chart series: computed fields only, observation vs publication dates apart
+  const rd = R.liquidityReading({
+    claims: { available: true, initial_claims_4wk_avg: 173074, initial_claims_4wk_avg_year_ago: 199974, initial_claims_4wk_yoy_pct: -13.5,
+      band_4wk_vs_year_ago: "LOWER", continued_weeks_claimed: 1472151, continued_reflect_week: "2026-10-10", continued_yoy_pct: -11.7,
+      week_ending: "2026-10-17", source_last_modified: "Wed, 28 Oct 2026 19:50:59 GMT",
+      chart_52w: [["2026-10-10", 191099, 210105], ["2026-10-17", 172640, null]] },
+    funding_rates: { available: true, sofr: { rate: 3.95, date: "2026-10-27" }, target_range: [3.75, 4.0], days_p99_above_target_top: 2, window_days: 60,
+      sofr_history: [["2026-10-26", 3.93, 4.01, 4.0], ["2026-10-27", 3.95, 4.04, 4.0]], notice: { SOFR: "The SOFR is subject to the Terms of Use posted at newyorkfed.org." } },
+    repo: { available: true, tri_party_rate: { available: true, value: 3.92, change_bp: 2, date: "2026-10-26" },
+      tri_party_volume: { available: true, value: 2.1e12, change_pct: 4.2 } } });
+  assert.ok(/173,074 مقابل 199,974/.test(rd.lines[0]) && /أقل من الفترة نفسها قبل عام/.test(rd.lines[0]), rd.lines[0]);
+  assert.ok(rd.lines.some((l) => /تجاوز المئين 99 سقف النطاق في 2 من آخر 60/.test(l)));
+  assert.ok(rd.lines.some((l) => /الريبو الثلاثي لليلة 3.92%/.test(l) && /2,100 مليار دولار/.test(l)));
+  assert.ok(/لا تقيس تدفقًا إلى سهم بعينه/.test(rd.lines[rd.lines.length - 1]));
+  assert.deepStrictEqual(rd.claims.yearAgo, [{ time: "2026-10-10", value: 210105 }]); // a missing year-ago week is skipped, not 0
+  assert.ok(/أسبوع الملاحظة الأخير حتى/.test(rd.captions.claims) && /نشرت وزارة العمل الملف/.test(rd.captions.claims));
+  assert.ok(rd.sofr.top.length === 2 && /newyorkfed/.test(rd.notice));
+  // a kept copy is not read as current
+  assert.deepStrictEqual(R.liquidityReading({ claims: { available: true, kept_previous_copy: true, initial_claims_4wk_avg: 1, initial_claims_4wk_avg_year_ago: 1 } }).lines, []);
 }
 
 console.log("radar_ui ok");
