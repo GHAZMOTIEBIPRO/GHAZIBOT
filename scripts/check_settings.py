@@ -42,6 +42,10 @@ CANON: dict[str, tuple[str, str, str, str]] = {
     "ALPACA_BARS_FEED": ("variable", "private", "bar_providers.AlpacaBars", "optional: sip (default) or iex"),
     "ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": ("variable", "private", "alpaca_vcp_private",
                                                  "optional: SIP history in the VCP research"),
+    "FINRA_API_CLIENT_ID": ("secret", "private", "finra_short_volume_private", "optional: FINRA short-sale volume"),
+    "FINRA_API_CLIENT_SECRET": ("secret", "private", "finra_short_volume_private", "optional: FINRA short-sale volume"),
+    "FINRA_API_AUTOMATION_APPROVED": ("variable", "private", "finra_short_volume_private, source_permissions",
+                                      "optional: FINRA (owner record of a FINRA developer account; not FINRA's permission)"),
 }
 TG = "https://api.telegram.org/bot{token}/{method}"
 
