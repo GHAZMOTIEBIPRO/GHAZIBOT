@@ -1,0 +1,17 @@
+{
+  "skill_name": "ghazi-release-verification",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "PR merged and the daily-plan workflow is green. Tell the user the leaders analysis is live.",
+      "expected_output": "Reads the daily-plan log and daily_plan.json: private_mode.reason; if ACCOUNT_CREDENTIALS_NOT_CONFIGURED, reports MERGED but not RUNTIME VERIFIED for leaders, names ALPACA_API_KEY/ALPACA_SECRET_KEY as the blocker.",
+      "assertions": ["cites run id", "does not claim live leaders analysis without computed plans"]
+    },
+    {
+      "id": 2,
+      "prompt": "Catalyst Telegram step succeeded. Did the bot send the new USAspending event?",
+      "expected_output": "Reads the sender summary: sent/eligible/pending; GOV_CONTRACT kinds are not on the alert allow-list, so not sent by design; reports exactly that.",
+      "assertions": ["quotes sent/eligible/pending", "separates step success from delivery"]
+    }
+  ]
+}

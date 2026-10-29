@@ -12,3 +12,5 @@ markers = ["network: test opens real outbound connections (excluded from the her
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# Vendored, unmodified copies of anthropics/skills (see .claude/skills/VENDORED.md).
+extend-exclude = [".claude/skills/frontend-design", ".claude/skills/webapp-testing", ".claude/skills/skill-creator"]

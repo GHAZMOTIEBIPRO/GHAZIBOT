@@ -1,0 +1,23 @@
+{
+  "skill_name": "ghazi-market-analysis",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "اكتب قراءة عربية لـ SPY من خطة اليوم المرفقة؛ الفريم 1H غير متاح.",
+      "expected_output": "Card-based reading: source + as-of + delay, frames present and the missing 1H with its impact, levels with bar ids, scenarios with invalidation; no number outside the card; no probability.",
+      "assertions": ["numbers_supported returns true", "mentions missing 1h impact", "no percentage probability"]
+    },
+    {
+      "id": 2,
+      "prompt": "The LLM rewrite of the NVDA card says the target is 215. The card has no target above the prior-week high of 208.",
+      "expected_output": "Rejects the rewrite: 215 is unsupported; keeps the deterministic template or the prior-week high with its basis.",
+      "assertions": ["flags 215 as unsupported"]
+    },
+    {
+      "id": 3,
+      "prompt": "Options chain fetch failed for AAPL. Should the AAPL analysis card be withheld?",
+      "expected_output": "No: the stock card is independent; the options section says unavailable with its reason.",
+      "assertions": ["keeps stock reading", "states options unavailable separately"]
+    }
+  ]
+}

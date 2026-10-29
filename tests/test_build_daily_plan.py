@@ -95,6 +95,17 @@ def test_private_plans_need_policy_and_keys_and_build_intraday_frames(monkeypatc
     assert plan["frames"]["4h"]["last_bar_end"] <= "2026-10-26T17:30:00+00:00"
     assert all(level["source"] == "alpaca_sip" and level["bar"] for level in plan["levels"])
     assert result["fetch_status"]["SPY"]["feeds"] == ["sip"]
+    # both series passed the quality checks; the in-progress session's daily bar is not completed
+    qc = plan["quality_checks"]
+    assert qc["daily"]["status"] == "OK" and qc["5m"]["status"] == "OK" and "clean" not in qc["daily"]
+    assert qc["daily"]["forming"] >= 1 and qc["daily"]["adjustment"] == "split" and qc["daily"]["feed"] == "sip"
+    # the private message is the cards' template text; options failing does not remove the stock reading
+    result["cards"] = bdp.cards_for(result, None, now, "SOURCE_TERMS_BLOCKED")
+    spy = result["cards"]["SPY"]
+    assert spy["asset_type"] == "ETF" and spy["data_quality"]["daily"]["status"] == "OK"
+    assert any(m["item"] == "options" for m in spy["missing"])
+    msg = bdp.private_message(result, facts)
+    assert "SPY (الشريط المجمع SIP" in msg and "ليس احتمالًا" in msg and "بلا احتمال نجاح" in msg
     # a provider whose history stops weeks ago yields no plan, not an old one
     stale = dict(result["plans"]["SPY"])
     old = bdp.dp.plan_for_symbol("OLD", [{"date": "2026-09-04", "open": 1, "high": 2, "low": 0.5, "close": 1.5},

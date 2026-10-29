@@ -292,6 +292,28 @@ async function run(device) {
     must(terms >= 8, "glossary " + terms);
     return { radar_rows: radar, first_tag: tag, agenda: agenda.slice(0, 200), watch_before: before, watch_after: after, glossary_terms: terms };
   });
+  await task(device, "platform state: run health, data quality and signal performance apart", async () => {
+    await page.click('[data-gr-section="more"]'); await page.waitForTimeout(300);
+    const blocks = await page.$$eval(".gr-platform .gr-state", (els) => els.map((e) => ({ state: e.dataset.state,
+      title: e.querySelector("h3").textContent.trim(), mark: e.querySelector(".gr-state-mark").textContent, line: e.querySelector("p").textContent })));
+    must(blocks.length === 3, "blocks " + blocks.length);
+    must(blocks.map((b) => b.title.replace(/^\S+\s+/, "")).join("|") === "سلامة التشغيل|جودة البيانات وتغطيتها|أداء الإشارات المقاس", "titles " + blocks.map((b) => b.title));
+    // a word and a shape carry each state, so it never relies on colour alone
+    must(blocks.every((b) => b.mark.trim() && b.line.trim()), "a state without its mark or sentence");
+    must(!blocks.some((b) => /ثقة\s*\d|\d+\s*%\s*ثقة/.test(b.line)), "a combined trust figure");
+    if (process.env.UX_LOCAL_DATA) {
+      // rebuilt from bot-state history: per-source rows, and the price-bars gap said in words
+      must(blocks[1].state !== "none" && /مصادر/.test(blocks[1].line), "data block " + blocks[1].line);
+      const rows = await page.$$eval(".gr-platform li[data-state]", (els) => els.length);
+      must(rows >= 5, "source rows " + rows);
+    }
+    await shot(page, `ux-${device}-platform-state.png`);
+    await page.click('[data-gr-section="market"]'); await page.waitForTimeout(500);
+    const fact = await page.$$eval("#gr-facts .gr-fact", (els) => els.map((e) => e.textContent).find((t) => /حالة البيانات/.test(t)) || "");
+    if (process.env.UX_LOCAL_DATA) must(/مصادر/.test(fact), "summary fact " + fact);
+    await page.click('[data-gr-section="more"]'); await page.waitForTimeout(300);   // the next task starts in «المزيد»
+    return { blocks, summary_fact: fact.slice(0, 160) };
+  });
   await task(device, "light theme is saved across a reload", async () => {
     await page.click('.gr-theme button:has-text("فاتح")'); await page.waitForTimeout(300);
     must((await page.getAttribute("html", "data-theme")) === "light", "not applied");

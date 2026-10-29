@@ -10,7 +10,7 @@
   const DATA = "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/";
   const FILES = { plan: "daily_plan.json", macro: "public_macro.json", catalysts: "catalyst_watchlist.json",
     directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json",
-    agenda: "week_agenda.json" };
+    agenda: "week_agenda.json", scorecards: "platform_scorecards.json", sources: "source_log.json" };
   const NASDAQ_FILE = "nasdaq_listed.json";   // ~5,600 rows: loaded only when search or a view needs it
   const SYMBOL_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
   const WATCH_KEY = "ghazi.watchlist.v1";      // same key as the previous page, so saved lists carry over
@@ -500,9 +500,71 @@
     }
     return [...groups.entries()].map(([date, items]) => ({ date, items }));
   }
+
+  // Platform state as three separate answers, never one "trust" figure:
+  // (a) are the runs healthy, (b) is the data there and current, (c) do the signals have a measured edge.
+  // Each state carries a word and a shape, so it never depends on colour alone.
+  const STATE_MARK = { good: "✓", partial: "◐", stopped: "⏸", bad: "✕", none: "—" };
+  function sourceState(s) {
+    const o = s && s.last_outcome;
+    if (o === "OK") return "good";
+    if (o === "PARTIAL") return "partial";
+    if (o === "FAILED") return "bad";
+    if (o === "NOT_ATTEMPTED" || o === "NOT_CONFIGURED") return "stopped";
+    return "none";
+  }
+  const STOP_AR = { DATA_USE_PERMISSION_REQUIRED: "ينتظر إقرار الاستخدام الداخلي", ACCOUNT_CREDENTIALS_NOT_CONFIGURED: "ينتظر مفاتيح الحساب",
+    SOURCE_TERMS_BLOCKED: "موقوف: شروط المزود تمنع الجلب الآلي", NO_API_KEY_HEALTH_ONLY: "بلا مفتاح",
+    ACCOUNT_ENTITLEMENT_NOT_ASSERTED: "ينتظر صلاحية حساب", SEC_IDENTITY_MISSING: "ينتظر هوية SEC" };
+  function platformState(cards, log, now) {
+    const sc = (cards && cards.scorecards) || {};
+    const rel = sc.SYSTEM_RELIABILITY || {}, site = sc.WEBSITE_FUNCTIONALITY || {}, tg = sc.TELEGRAM_DELIVERY || {};
+    const sig = sc.SIGNAL_PERFORMANCE || {};
+    const run = { title: "سلامة التشغيل", details: [] };
+    if (Number.isFinite(rel.value)) {
+      run.state = rel.value >= 95 ? "good" : rel.value >= 80 ? "partial" : "bad";
+      run.line = `نجح ${n(Math.round(rel.value))}% من التشغيلات المكتملة خلال 24 ساعة.`;
+    } else { run.state = "none"; run.line = "لم يُقَس نجاح التشغيل بعد."; }
+    if (Number.isFinite(site.value)) run.details.push(`صفحات الموقع العاملة في آخر فحص: ${n(Math.round(site.value))}%.`);
+    if (tg.evidence && tg.evidence.last_sent_at) run.details.push(`آخر رسالة قبلها تيليجرام ${ago(tg.evidence.last_sent_at, now) || ""} (رقم ${n(tg.evidence.message_id)}).`);
+    run.details.push("نجاح التشغيل لا يعني أن البيانات كاملة أو أن الإشارات صحيحة.");
+    const data = { title: "جودة البيانات وتغطيتها", details: [] };
+    const rows = (log && log.schema === "ghazi.source_log.v1" && Array.isArray(log.sources)) ? log.sources : [];
+    if (!rows.length) { data.state = "none"; data.line = "سجل المصادر غير متاح الآن."; }
+    else {
+      const by = { good: [], partial: [], stopped: [], bad: [], none: [] };
+      for (const s of rows) by[sourceState(s)].push(s);
+      const prices = rows.find((s) => s.key === "alpaca_bars");
+      data.state = by.bad.length ? "bad" : by.partial.length || by.stopped.length ? "partial" : "good";
+      data.line = `تعمل ${n(by.good.length + by.partial.length)} مصادر` + (by.partial.length ? ` (${n(by.partial.length)} جزئيًا)` : "") +
+        (by.stopped.length ? `، و${n(by.stopped.length)} موقوفة بشرط أو مفتاح` : "") +
+        (by.bad.length ? `، ويفشل الجلب من: ${by.bad.map((s) => s.name_ar).join("، ")}` : "") + "." +
+        (prices && sourceState(prices) !== "good" ? " شموع الأسعار لتحليلنا غير متاحة بعد، فلا مستويات سعرية منشورة." : "");
+      for (const s of rows) {
+        const st = sourceState(s);
+        const ratio = s.attempted ? ` · ${n(s.succeeded)}/${n(s.attempted)} جلب ناجح خلال ${n(log.window_days)} يومًا` : "";
+        const last = s.last_success_at ? ` · آخر جلب ناجح ${ago(s.last_success_at, now)}` : "";
+        const why = st === "stopped" ? (STOP_AR[s.last_detail] || (s.last_outcome === "NOT_CONFIGURED" ? "غير مُعد" : "موقوف")) :
+          st === "bad" ? "يفشل الجلب" : st === "partial" ? "يعمل جزئيًا" : st === "good" ? "يعمل" : "لا تشغيل مسجل";
+        data.details.push({ mark: STATE_MARK[st], state: st, text: `${s.name_ar}: ${why}${last}${ratio}`, type: s.data_type });
+      }
+    }
+    const signal = { title: "أداء الإشارات المقاس", details: [] };
+    if (sig.status === "PROVEN_EDGE") { signal.state = "good"; signal.line = "أفضلية مقاسة خارج العينة مقابل خط الأساس."; }
+    else if (sig.status === "NO_PROVEN_EDGE") {
+      signal.state = "partial";
+      signal.line = "لا أفضلية مثبتة للإشارات حتى الآن، فلا تُعرض كتوصيات.";
+    } else { signal.state = "none"; signal.line = "لم يُقَس أداء الإشارات بعد."; }
+    const ev = sig.evidence || {};
+    if (ev.walk_forward) signal.details.push(`الاختبار المتتابع خارج العينة: ${ev.walk_forward.research_passed ? "تجاوز البوابة" : "لم يتجاوز بوابة البحث"}.`);
+    if (ev.spa && Number.isFinite(ev.spa.pvalue_consistent)) signal.details.push(`مقارنة بخط أساس بسيط (كل الأيام): p = ${ev.spa.pvalue_consistent}؛ المطلوب أقل من 0.05.`);
+    signal.details.push("زيادة المؤشرات ليست دليل تحسن؛ الإشارة تُحفظ وقت إصدارها ولا يُعدّل تاريخها.");
+    return [run, data, signal].map((b) => ({ ...b, mark: STATE_MARK[b.state] }));
+  }
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
-    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, agendaGroups, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
+    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, agendaGroups, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY,
+    platformState, sourceState };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -608,6 +670,9 @@
     // Price-analysis path, stage by stage: a symbol directory is not a price scan.
     const fn = plan && plan.analysis_funnel;
     if (fn) add("رموز حُللت سعريًا", n((fn.analysed || {}).count || 0), funnelLine(fn));
+    // one practical sentence on data, its details under «المزيد ← حالة المنصة»
+    const dataState = platformState(state.data.scorecards, state.data.sources, Date.now())[1];
+    if (dataState.state !== "none") add("حالة البيانات", dataState.mark, dataState.line);
     if (!facts.children.length) facts.append(el("li", "gr-fact gr-muted", "ملخص السوق غير متاح الآن؛ تعذّر تحميل الملفات المنشورة."));
   }
   function renderTape() {
@@ -723,8 +788,32 @@
     }
     if (!saved.length) list.append(el("p", "gr-empty", "لا رموز بعد."));
   }
+  function stateCard() {
+    const card = section("حالة المنصة");
+    card.classList.add("gr-platform");
+    card.append(el("p", "gr-muted", "ثلاثة أسئلة منفصلة، بلا نسبة «ثقة» مجمّعة: هل يعمل التشغيل؟ هل البيانات موجودة وحديثة؟ هل للإشارات أفضلية مقاسة؟"));
+    for (const b of platformState(state.data.scorecards, state.data.sources, Date.now())) {
+      const box = el("div", "gr-state"); box.dataset.state = b.state;
+      const h = el("h3"); h.append(el("span", "gr-state-mark", b.mark), doc.createTextNode(" " + b.title));
+      box.append(h, el("p", null, b.line));
+      if (b.details.length) {
+        const d = el("details", "gr-more"); d.append(el("summary", null, "التفاصيل"));
+        const ul = el("ul", "gr-d-list");
+        for (const it of b.details) {
+          if (typeof it === "string") { ul.append(el("li", null, it)); continue; }
+          const li = el("li"); li.dataset.state = it.state;
+          li.append(el("span", "gr-state-mark", it.mark), doc.createTextNode(" " + it.text));
+          ul.append(li);
+        }
+        d.append(ul); box.append(d);
+      }
+      card.append(box);
+    }
+    return card;
+  }
   function renderMore(list, extra) {
     list.hidden = true;
+    extra.append(stateCard());
     const theme = section("المظهر");
     const box = el("div", "gr-theme"); box.setAttribute("role", "group"); box.setAttribute("aria-label", "المظهر");
     for (const [v, t] of [["auto", "تلقائي (حسب الجهاز)"], ["dark", "داكن"], ["light", "فاتح"]]) {
