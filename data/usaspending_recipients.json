@@ -1,0 +1,25 @@
+{
+ "schema": "ghazi.usaspending_recipients.v1",
+ "policy": "A contract action links to a ticker only when its award's parent recipient UEI (USAspending's own parent linkage) is in this reviewed list. The search name only finds candidates; it never links (run 40793479577: a 'The Boeing Company' search also returned Jeppesen ForeFlight, a former Boeing business). UEIs are the ones USAspending reported for each parent in that run.",
+ "reviewed_at": "2026-10-29",
+ "probe_run": 40793479577,
+ "companies": [
+  {"ticker": "BA", "company": "The Boeing Company", "search": "The Boeing Company", "parents": {"NU2UC8MX6NK1": "THE BOEING COMPANY"}},
+  {"ticker": "LMT", "company": "Lockheed Martin Corporation", "search": "Lockheed Martin", "parents": {"ZFN2JJXBLZT3": "LOCKHEED MARTIN CORP"}},
+  {"ticker": "RTX", "company": "RTX Corporation", "search": "RTX Corporation", "parents": {"PPLZG8J3N9D4": "RTX CORPORATION"}},
+  {"ticker": "NOC", "company": "Northrop Grumman Corporation", "search": "Northrop Grumman", "parents": {"NKVZLJL93QT6": "NORTHROP GRUMMAN CORPORATION"}},
+  {"ticker": "GD", "company": "General Dynamics Corporation", "search": "General Dynamics",
+   "parents": {"VF58HFRNGEL8": "GENERAL DYNAMICS CORP", "FAZSFFE6CST9": "GENERAL DYNAMICS CORP"}},
+  {"ticker": "LHX", "company": "L3Harris Technologies, Inc.", "search": "L3Harris", "parents": {"SJULQDJ8NZU7": "L3HARRIS TECHNOLOGIES, INC"}},
+  {"ticker": "PLTR", "company": "Palantir Technologies Inc.", "search": "Palantir", "parents": {"FSY4LVSBGWB7": "PALANTIR TECHNOLOGIES INC."}},
+  {"ticker": "LDOS", "company": "Leidos Holdings, Inc.", "search": "Leidos",
+   "parents": {"ZL41ERXMPAR3": "LEIDOS HOLDINGS, INC.", "JSTDGZNFP4A3": "LEIDOS, INC.", "MDSWM6MB1BH7": "LEIDOS, INC."}},
+  {"ticker": "BAH", "company": "Booz Allen Hamilton Holding Corporation", "search": "Booz Allen Hamilton",
+   "parents": {"MBPHTU7Y9S65": "BOOZ ALLEN HAMILTON HOLDING CORPORATION"}},
+  {"ticker": "TXT", "company": "Textron Inc.", "search": "Textron", "parents": {"HKUMGJBEMKN3": "TEXTRON INC"}}
+ ],
+ "not_linked": [
+  {"ticker": "GE", "reason": "PARENT_DATA_PREDATES_SPIN_OFF", "note": "USAspending lists Datex-Ohmeda (a GE HealthCare business since the 2023 spin-off) under the 'GENERAL ELECTRIC COMPANY' parent; linking by that parent would attribute GE HealthCare awards to GE."},
+  {"ticker": "HII", "reason": "NO_TRANSACTIONS_IN_PROBE", "note": "No contract transaction in the probe window; parent UEI not yet observed."}
+ ]
+}
