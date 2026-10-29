@@ -7,6 +7,7 @@ on:
     paths:
       - "scripts/build_site_strength.py"
       - "scripts/build_data_hub.py"
+      - "scripts/build_source_log.py"
       - "scripts/build_platform_scorecards.py"
       - "scripts/build_trading_readiness.py"
       - "data/source_rights.json"
@@ -76,6 +77,8 @@ jobs:
           python app/scripts/build_data_hub.py
           --data-dir state/runtime/public/data
           --output state/runtime/public/data/data_hub.json
+      - name: Operational source log (fetch outcomes from bot-state history, no requests)
+        run: python app/scripts/build_source_log.py --repo state --output state/runtime/public/data/source_log.json
       - name: Independent platform scorecards (no combined score)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -106,7 +109,7 @@ jobs:
           cd state
           git config user.name "GHAZI Evidence Audit"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json runtime/public/data/platform_scorecards.json runtime/public/data/trading_readiness.json
+          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json runtime/public/data/platform_scorecards.json runtime/public/data/trading_readiness.json runtime/public/data/source_log.json
           if git diff --cached --quiet; then
             echo "Evidence report unchanged"
             exit 0
