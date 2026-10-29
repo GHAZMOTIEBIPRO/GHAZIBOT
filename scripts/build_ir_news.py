@@ -29,6 +29,11 @@ from xml.etree import ElementTree
 
 import requests
 
+# Company feeds are untrusted XML: defusedxml (PSF licence, used as a library) refuses entity
+# expansion and DTDs, which the stdlib parser would process.
+from defusedxml import DefusedXmlException
+from defusedxml import ElementTree as SafeElementTree
+
 SCHEMA = "ghazi.ir_news.v1"
 ROOT = Path(__file__).resolve().parents[1]
 UA = "GHAZI-RADAR-ir-news/1.0 (github.com/GHAZMOTIEBIPRO/GHAZIBOT)"
@@ -117,7 +122,7 @@ def parse_time(text: str) -> str | None:
 
 
 def parse_feed(xml: str) -> list[dict[str, str | None]]:
-    root = ElementTree.fromstring(xml)
+    root = SafeElementTree.fromstring(xml)
 
     def child(node: ElementTree.Element, name: str) -> ElementTree.Element | None:
         return next((c for c in node if c.tag.split("}")[-1] == name), None)
@@ -155,11 +160,16 @@ def build(feeds: list[dict[str, Any]], fetched: dict[str, tuple[str, Any]], now:
         status, text = fetched.get(feed["feed_url"], ("NOT_FETCHED", None))
         src = {k: feed[k] for k in ("symbol", "company", "page", "feed_url", "kind", "probe_run")}
         got: list[dict[str, Any]] = []
+        raw: list[dict[str, Any]] | None = None
         if status == "OK" and text is not None:
             try:
                 raw = parse_feed(text)
             except ElementTree.ParseError:
-                raw, status = [], "NOT_XML"
+                status = "NOT_XML"
+            except DefusedXmlException:
+                status = "XML_REFUSED_UNSAFE"
+        # A feed that did not parse is a failure like any other: last good items kept, no new success time.
+        if raw is not None:
             for r in raw:
                 if not r["title"] or not same_site(r["url"], feed) or not r["published_at"]:
                     continue
@@ -187,7 +197,7 @@ def build(feeds: list[dict[str, Any]], fetched: dict[str, tuple[str, Any]], now:
                     "summary_ar": f"{feed['company_ar']}: {label}",
                 })
             got = sorted(got, key=lambda x: x["source_published_at"], reverse=True)[:MAX_ITEMS_PER_SOURCE]
-            src.update(status="OK" if status == "OK" else status, items=len(got), last_success_at=now.isoformat())
+            src.update(status="OK", items=len(got), last_success_at=now.isoformat())
         else:
             # This source only: keep its last good items, marked with when they were fetched.
             old = prev_sources.get(feed["feed_url"]) or {}

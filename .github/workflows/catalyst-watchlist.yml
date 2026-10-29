@@ -70,7 +70,7 @@ jobs:
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
         run: |
-          pip install "requests>=2.32,<3.0"
+          pip install "requests>=2.32,<3.0" "defusedxml>=0.7.1,<0.8"
           cd app
           python -m scripts.build_issuer_sizes \
             --watchlist ../state/runtime/public/data/catalyst_watchlist.json \

@@ -31,5 +31,5 @@ jobs:
         run: |
           python scripts/build_usaspending_contracts.py --output "$RUNNER_TEMP/usaspending_contracts.json"
           python scripts/build_catalyst_watchlist.py --fda /dev/null --usaspending "$RUNNER_TEMP/usaspending_contracts.json" \
-            --output "$RUNNER_TEMP/catalyst_watchlist.json"
-          python scripts/show_usaspending_dryrun.py "$RUNNER_TEMP/usaspending_contracts.json" "$RUNNER_TEMP/catalyst_watchlist.json"
+            --output "$RUNNER_TEMP/dryrun_catalysts.json"
+          python scripts/show_usaspending_dryrun.py "$RUNNER_TEMP/usaspending_contracts.json" "$RUNNER_TEMP/dryrun_catalysts.json"

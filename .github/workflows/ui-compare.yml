@@ -70,7 +70,7 @@ jobs:
         working-directory: after
         continue-on-error: true
         run: |
-          pip install "requests>=2.32,<3" "exchange-calendars>=4.5,<5.0"
+          pip install "requests>=2.32,<3" "exchange-calendars>=4.5,<5.0" "defusedxml>=0.7.1,<0.8"
           mkdir -p ../ux-data
           python scripts/build_nasdaq_listed.py --output ../ux-data/nasdaq_listed.json
           python scripts/build_federal_register_feed.py --output ../ux-data/federal_register.json
