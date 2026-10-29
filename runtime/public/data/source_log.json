@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-10-29T09:45:19.298275+00:00",
+ "generated_at": "2026-10-29T10:22:05.046923+00:00",
  "window_days": 14,
- "window_start": "2026-10-15T09:45:19.298275+00:00",
+ "window_start": "2026-10-15T10:22:05.046923+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -28,16 +28,16 @@
     ]
    },
    "rights_key": "alpaca",
-   "runs_seen": 18,
+   "runs_seen": 19,
    "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-10-29T00:43:01.552484+00:00",
+   "last_run_at": "2026-10-29T09:45:26.706791+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "DATA_USE_PERMISSION_REQUIRED",
-   "last_commit": "b20f2e1647"
+   "last_commit": "5cd2938749"
   },
   {
    "key": "tradier_options",
@@ -232,6 +232,102 @@
    "last_outcome": "OK",
    "last_detail": "5/5 markets, positions 2026-10-20",
    "last_commit": "8721e23983"
+  },
+  {
+   "key": "dol_claims",
+   "priority": 5,
+   "name_ar": "طلبات إعانة البطالة (وزارة العمل)",
+   "data_type": "طلبات الإعانة الأسبوعية حسب الولاية (غير معدّلة موسميًا)",
+   "coverage": "الولايات الأمريكية",
+   "delay": "نحو 11 يومًا بعد نهاية الأسبوع",
+   "key_required": "لا",
+   "file": "liquidity_monitor.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "dol_eta539",
+   "runs_seen": 0,
+   "attempted": 0,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": null,
+   "last_success_at": null,
+   "last_run_at": null,
+   "last_outcome": "NO_RUN_RECORDED",
+   "last_detail": null,
+   "last_commit": null
+  },
+  {
+   "key": "nyfed_rates",
+   "priority": 5,
+   "name_ar": "فوائد الاحتياطي الفيدرالي في نيويورك",
+   "data_type": "SOFR وEFFR والنطاق المستهدف",
+   "coverage": "أسواق التمويل لليلة واحدة",
+   "delay": "يوم العمل التالي نحو 08:00 بتوقيت نيويورك",
+   "key_required": "لا",
+   "file": "liquidity_monitor.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "nyfed_reference_rates",
+   "runs_seen": 0,
+   "attempted": 0,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": null,
+   "last_success_at": null,
+   "last_run_at": null,
+   "last_outcome": "NO_RUN_RECORDED",
+   "last_detail": null,
+   "last_commit": null
+  },
+  {
+   "key": "ofr_repo",
+   "priority": 5,
+   "name_ar": "مراقب التمويل قصير الأجل (OFR)",
+   "data_type": "فائدة وحجم الريبو الثلاثي، واستثمار صناديق النقد في الريبو",
+   "coverage": "سوق الريبو الأمريكية",
+   "delay": "يومي أولي (الريبو) وشهري معدّل (الصناديق)",
+   "key_required": "لا",
+   "file": "liquidity_monitor.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "ofr_stfm",
+   "runs_seen": 0,
+   "attempted": 0,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": null,
+   "last_success_at": null,
+   "last_run_at": null,
+   "last_outcome": "NO_RUN_RECORDED",
+   "last_detail": null,
+   "last_commit": null
   },
   {
    "key": "usaspending",
