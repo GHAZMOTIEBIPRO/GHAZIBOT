@@ -1,0 +1,30 @@
+name: GHAZI Issuer Links Evidence Check
+
+# Fetches each not-yet-verified evidence page of data/issuer_links.json once and
+# checks its evidence text. Output is the log only; a passing run id is recorded
+# in the table by review.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "data/issuer_links.json"
+      - "scripts/verify_issuer_links.py"
+      - ".github/workflows/issuer-links-verify.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - name: Check evidence pages
+        run: python scripts/verify_issuer_links.py

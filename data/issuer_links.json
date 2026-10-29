@@ -1,7 +1,7 @@
 {
  "schema": "ghazi.issuer_links.v1",
  "policy": "Reviewed links from a company named in an official document to a U.S.-listed ticker: sponsor or named entity -> legal entity -> listed company (itself or its parent) -> ticker -> evidence. A row is added only for the listed company itself, a division of it, a wholly owned subsidiary, or a renamed company; joint ventures, partly owned, private and non-U.S.-listed companies go to 'excluded' with the reason. Matching is exact on the normalised name (case, punctuation and a trailing legal suffix such as Inc/LLC/Corp removed); there is no similarity matching. Each row's evidence page is fetched on a runner and checked for the listed text before the row is marked verified. A row is used only after its evidence check passed on a runner (evidence_verified_run); a row without it is listed as EVIDENCE_PENDING and not linked. Ownership changes over time: a row may carry valid_from/valid_to (YYYY-MM-DD) with validity_source, and links only documents dated inside that window (OUTSIDE_RELATION_VALIDITY otherwise); a name may have several rows for different windows. A parent named in a document is not linked to a listed subsidiary (PARENT_OF_LISTED_COMPANY). 'names' holds the legal name and other reviewed names (trade, short or former names); each link records which one matched (name_basis). scripts/build_federal_register_feed.py validate_links() checks every row.",
- "reviewed_at": "2026-10-27",
+ "reviewed_at": "2026-10-29",
  "links": [
   {
    "names": [
@@ -285,17 +285,171 @@
     "CPK"
    ],
    "evidence_verified_run": 40564806235
-  }
- ],
- "excluded": [
+  },
   {
    "names": [
     "CFM International, S.A.",
     "CFM International"
    ],
-   "reason": "JOINT_VENTURE",
-   "note": "50/50 joint venture of GE Aerospace and Safran; an event cannot be assigned to one listed parent."
+   "legal_entity": "CFM International, S.A.",
+   "listed_company": "General Electric Company (GE Aerospace)",
+   "ticker": "GE",
+   "exchange": "NYSE",
+   "relation": "JOINT_VENTURE_PARTNER",
+   "ownership_band": "EQUAL_JOINT_VENTURE",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/CFM_International",
+   "evidence_url": "https://en.wikipedia.org/wiki/CFM_International",
+   "evidence_check": [
+    "GE Aerospace",
+    "Safran"
+   ],
+   "note": "50/50 joint venture of GE Aerospace and Safran; Safran is listed in Europe only, so only GE is linked.",
+   "ownership_share": 0.5
   },
+  {
+   "names": [
+    "Engine Alliance",
+    "Engine Alliance, LLC"
+   ],
+   "legal_entity": "Engine Alliance, LLC",
+   "listed_company": "General Electric Company (GE Aerospace)",
+   "ticker": "GE",
+   "exchange": "NYSE",
+   "relation": "JOINT_VENTURE_PARTNER",
+   "ownership_band": "EQUAL_JOINT_VENTURE",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/Engine_Alliance",
+   "evidence_url": "https://en.wikipedia.org/wiki/Engine_Alliance",
+   "evidence_check": [
+    "General Electric",
+    "Pratt & Whitney"
+   ],
+   "note": "Joint venture of GE Aerospace and Pratt & Whitney.",
+   "ownership_share": 0.5
+  },
+  {
+   "names": [
+    "Engine Alliance",
+    "Engine Alliance, LLC"
+   ],
+   "legal_entity": "Engine Alliance, LLC",
+   "listed_company": "RTX Corporation (parent of Pratt & Whitney)",
+   "ticker": "RTX",
+   "exchange": "NYSE",
+   "relation": "JOINT_VENTURE_PARTNER",
+   "ownership_band": "EQUAL_JOINT_VENTURE",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/Engine_Alliance",
+   "evidence_url": "https://en.wikipedia.org/wiki/Engine_Alliance",
+   "evidence_check": [
+    "General Electric",
+    "Pratt & Whitney"
+   ],
+   "note": "Joint venture of GE Aerospace and Pratt & Whitney (an RTX business).",
+   "ownership_share": 0.5
+  },
+  {
+   "names": [
+    "Florida Gas Transmission Company, LLC",
+    "Florida Gas Transmission"
+   ],
+   "legal_entity": "Florida Gas Transmission Company, LLC",
+   "listed_company": "Energy Transfer LP",
+   "ticker": "ET",
+   "exchange": "NYSE",
+   "relation": "JOINT_VENTURE_PARTNER",
+   "ownership_band": "EQUAL_JOINT_VENTURE",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/Florida_Gas_Transmission",
+   "evidence_url": "https://en.wikipedia.org/wiki/Florida_Gas_Transmission",
+   "evidence_check": [
+    "Energy Transfer",
+    "Kinder Morgan"
+   ],
+   "note": "Held through Citrus, a joint venture of Energy Transfer and Kinder Morgan.",
+   "ownership_share": 0.5
+  },
+  {
+   "names": [
+    "Florida Gas Transmission Company, LLC",
+    "Florida Gas Transmission"
+   ],
+   "legal_entity": "Florida Gas Transmission Company, LLC",
+   "listed_company": "Kinder Morgan, Inc.",
+   "ticker": "KMI",
+   "exchange": "NYSE",
+   "relation": "JOINT_VENTURE_PARTNER",
+   "ownership_band": "EQUAL_JOINT_VENTURE",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/Florida_Gas_Transmission",
+   "evidence_url": "https://en.wikipedia.org/wiki/Florida_Gas_Transmission",
+   "evidence_check": [
+    "Energy Transfer",
+    "Kinder Morgan"
+   ],
+   "note": "Held through Citrus, a joint venture of Energy Transfer and Kinder Morgan.",
+   "ownership_share": 0.5
+  },
+  {
+   "names": [
+    "Rockies Express Pipeline LLC",
+    "Rockies Express Pipeline"
+   ],
+   "legal_entity": "Rockies Express Pipeline LLC",
+   "listed_company": "Phillips 66",
+   "ticker": "PSX",
+   "exchange": "NYSE",
+   "relation": "MINORITY_STAKE",
+   "ownership_band": "MINORITY",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/Rockies_Express_Pipeline",
+   "evidence_url": "https://en.wikipedia.org/wiki/Rockies_Express_Pipeline",
+   "evidence_check": [
+    "Phillips 66"
+   ],
+   "note": "Phillips 66 holds a minority interest; the share is recorded only if the source states it."
+  },
+  {
+   "names": [
+    "Northern Natural Gas Company",
+    "Northern Natural Gas"
+   ],
+   "legal_entity": "Northern Natural Gas Company",
+   "listed_company": "Berkshire Hathaway Inc. (Class B)",
+   "ticker": "BRK.B",
+   "exchange": "NYSE",
+   "relation": "MAJORITY_OWNED_SUBSIDIARY",
+   "ownership_band": "MAJORITY",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/Northern_Natural_Gas",
+   "evidence_url": "https://en.wikipedia.org/wiki/Northern_Natural_Gas",
+   "evidence_check": [
+    "Berkshire Hathaway"
+   ],
+   "note": "Owned by Berkshire Hathaway Energy, which Berkshire Hathaway owns in majority, not wholly."
+  },
+  {
+   "names": [
+    "Columbia Gas Transmission, LLC",
+    "Columbia Gas Transmission"
+   ],
+   "legal_entity": "Columbia Gas Transmission, LLC",
+   "listed_company": "TC Energy Corporation",
+   "ticker": "TRP",
+   "exchange": "NYSE",
+   "relation": "MAJORITY_OWNED_SUBSIDIARY",
+   "ownership_band": "MAJORITY",
+   "relation_as_of": "2026-10-29",
+   "validity_source": "https://en.wikipedia.org/wiki/Columbia_Gas_Transmission",
+   "evidence_url": "https://en.wikipedia.org/wiki/Columbia_Gas_Transmission",
+   "evidence_check": [
+    "TC Energy"
+   ],
+   "note": "Part of the Columbia pipeline group, majority owned by TC Energy after a minority sale."
+  }
+ ],
+ "excluded": [
   {
    "names": [
     "Airbus SAS",
@@ -305,13 +459,6 @@
    ],
    "reason": "LISTED_OUTSIDE_US",
    "note": "Airbus SE is listed in Europe; no U.S. exchange listing is used here."
-  },
-  {
-   "names": [
-    "Florida Gas Transmission Company, LLC"
-   ],
-   "reason": "JOINT_VENTURE",
-   "note": "Owned through a joint venture; not a wholly owned subsidiary of one listed company."
   },
   {
    "names": [
@@ -351,14 +498,6 @@
    ],
    "reason": "OWNERSHIP_NOT_VERIFIED",
    "note": "Parent ownership changed recently; not linked until a filing confirms it."
-  },
-  {
-   "names": [
-    "Engine Alliance",
-    "Engine Alliance, LLC"
-   ],
-   "reason": "JOINT_VENTURE",
-   "note": "Joint venture of GE Aerospace and Pratt & Whitney."
   },
   {
    "names": [
@@ -409,29 +548,9 @@
   },
   {
    "names": [
-    "Rockies Express Pipeline LLC"
-   ],
-   "reason": "JOINT_VENTURE"
-  },
-  {
-   "names": [
     "Natural Gas Pipeline Company of America LLC"
    ],
    "reason": "JOINT_VENTURE"
-  },
-  {
-   "names": [
-    "Columbia Gas Transmission, LLC"
-   ],
-   "reason": "PARTLY_OWNED",
-   "note": "Parent pipeline group is partly owned by a listed company; not wholly owned."
-  },
-  {
-   "names": [
-    "Northern Natural Gas Company"
-   ],
-   "reason": "PARTLY_OWNED",
-   "note": "Owned through Berkshire Hathaway Energy, which the listed parent does not wholly own."
   },
   {
    "names": [
