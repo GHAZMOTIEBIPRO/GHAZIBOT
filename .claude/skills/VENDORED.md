@@ -30,6 +30,25 @@ Claude Code loads project skills from `.claude/skills/<name>/SKILL.md`.
 2. Update the commit in the table above.
 3. Review the diff of its scripts before running any of them.
 
+## Plugins enabled at project scope (`.claude/settings.json`)
+
+| Plugin | Marketplace | Commit | Licence | Note |
+|---|---|---|---|---|
+| `financial-analysis`, `equity-research`, `market-researcher` | [anthropics/financial-services](https://github.com/anthropics/financial-services) | `60565064557ca77b12f62aa7877f365d111c129d` | Apache-2.0 | Hooks are empty. |
+
+- `financial-analysis` declares MCP servers that need paid accounts: Daloopa, Morningstar, S&P Global, FactSet, Moody's, MT Newswires, Aiera, LSEG, PitchBook, Chronograph and others.
+- None of those accounts exist here. Installing the plugin gives no data access, and GitHub Actions never has these connectors.
+- Only the skills' methods are used: report structure, and checks on comparables and earnings reviews.
+
+## Reviewed, not vendored
+
+| Skill | Source | Commit | Licence | Use |
+|---|---|---|---|---|
+| `web-design-guidelines` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62` | MIT | Its rules file (`vercel-labs/web-interface-guidelines` `command.md`) is applied by hand to `public/`. |
+
+- The skill fetches its rules at run time, so it is not copied here.
+- The React skills from the same repo do not apply: the site is plain JavaScript.
+
 ## Project skills (written here with skill-creator)
 
 | Skill | Job |

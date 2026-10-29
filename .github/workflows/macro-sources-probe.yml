@@ -1,0 +1,28 @@
+name: GHAZI Macro Sources Probe
+
+# Branch check of keyless liquidity / macro sources (OFR, NY Fed, Fed Data Download, DOL claims):
+# terms clauses, robots.txt and the data structure. Output is the log only; nothing is stored,
+# published or sent.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "scripts/probe_macro_sources.py"
+      - ".github/workflows/macro-sources-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - run: python scripts/probe_macro_sources.py
