@@ -167,6 +167,16 @@ const ad = { kind: "FR_AIRWORTHINESS_DIRECTIVE", issuer: "The Boeing Company", l
 assert.strictEqual(R.readingLine(ad), "الجهة في الوثيقة: The Boeing Company (الشركة نفسها) · ثقة الربط: عالية · الأثر: يحتاج تقييم الأثر");
 assert.ok(/الأثر: يحتاج تقييم الأثر$/.test(R.readingLine({ kind: "FR_FTC_CONSENT_ORDER", link_relation: "WHOLLY_OWNED_SUBSIDIARY" })));
 assert.strictEqual(R.readingLine({ kind: "FDA_APPROVAL" }), "", "events without a reviewed link carry no reading line");
+// a joint venture: linked as indirect exposure with its share; the impact still unassessed
+const jvLine = R.readingLine({ kind: "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE", issuer: "CFM International, S.A.", link_relation: "JOINT_VENTURE_PARTNER",
+  exposure: "INDIRECT", ownership_share: 0.5, relation_as_of: "2026-10-29", interpretation_confidence: "MEDIUM", potential_impact: "NEEDS_IMPACT_ASSESSMENT" });
+assert.ok(/مشروع مشترك/.test(jvLine) && /ارتباط غير مباشر \(الحصة 50%\)/.test(jvLine) && /ثقة الربط: متوسطة/.test(jvLine) && /يحتاج تقييم الأثر/.test(jvLine), jvLine);
+// a federal contract action: this action, the award so far and its ceiling side by side, never one summed figure
+const govLine = R.readingLine({ kind: "GOV_CONTRACT_ACTION", action_obligation: 250e6, award_total_obligation: 9.1e9,
+  award_ceiling: 2e10, potential_impact: "NEEDS_IMPACT_ASSESSMENT" });
+assert.ok(/هذا الإجراء: 250 مليون\$/.test(govLine) && /إجمالي الملتزم على العقد: 9,100 مليون\$/.test(govLine.replace(/٬/g, ","))
+  && /ليس مالًا ملتزمًا/.test(govLine) && /يحتاج تقييم الأثر$/.test(govLine), govLine);
+assert.strictEqual(R.kindInfo("GOV_CONTRACT_DEOBLIGATION").group, "regulatory");
 // official IR news: the headline is the company's, the category is ours, the impact unassessed
 const irItem = { kind: "IR_EARNINGS", category_basis: "HEADLINE_KEYWORDS", potential_impact: "NEEDS_IMPACT_ASSESSMENT" };
 assert.strictEqual(R.readingLine(irItem), "العنوان من الشركة؛ التصنيف آلي من كلماته · الأثر: يحتاج تقييم الأثر");
@@ -177,6 +187,17 @@ assert.strictEqual(R.eventText(irEvents[0]), "ExxonMobil Announces Third Quarter
 assert.strictEqual(R.filterEvents(irEvents, "company").length, 1);
 assert.ok(/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28", scheduled_for: "2026-11-17" })));
 assert.ok(!/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28" })));
+// --- week agenda: grouped by date, each item with where its date comes from ---
+const ag = R.agendaGroups({ schema: "ghazi.week_agenda.v1", items: [
+  { date: "2026-11-03", kind: "COMPANY_SCHEDULE", symbol: "NVDA", basis: "COMPANY_ANNOUNCED", title_ar: "موعد أعلنته الشركة",
+    title: "11/03/2026 : Example call", source_url: "https://investor.nvidia.com/e/1" },
+  { date: "2026-11-02", kind: "RULE_EFFECTIVE", symbols: ["BA"], basis: "FEDERAL_REGISTER_EFFECTIVE_ON", title_ar: "يسري مفعول وثيقة رسمية" },
+  { date: "2026-11-26", kind: "MARKET_CLOSED", basis: "EXCHANGE_CALENDAR", title_ar: "السوق الأمريكي مغلق (عطلة رسمية)" },
+  { date: "bad", basis: "EXCHANGE_CALENDAR", title_ar: "x" }] });
+assert.deepStrictEqual(ag.map((g) => g.date), ["2026-11-03", "2026-11-02", "2026-11-26"]);
+assert.ok(/NVDA · موعد أعلنته الشركة · «11\/03\/2026 : Example call»/.test(ag[0].items[0].text) && ag[0].items[0].basis === "أعلنته الشركة");
+assert.strictEqual(ag[2].items[0].text, "السوق الأمريكي مغلق (عطلة رسمية)");
+assert.deepStrictEqual(R.agendaGroups({ schema: "other", items: [] }), []);
 // --- position size from the user's own risk: arithmetic only ---
 assert.deepStrictEqual(R.positionMath({ capital: "10000", risk_pct: "1", entry: "50", stop: "47.5", target: "56" }),
   { side: "LONG", shares: 40, capped_by_cash: false, risk_per_share: 2.5, stop_pct: 5, max_loss: 100, position_value: 2000,

@@ -1,0 +1,35 @@
+name: GHAZI USAspending Probe
+
+# Branch check of the USAspending API and of the contract-action builder against the live API.
+# Output is the log only; nothing is stored, published or sent (the builder writes to the runner's
+# temp directory, never to bot-state).
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "scripts/probe_usaspending.py"
+      - "scripts/build_usaspending_contracts.py"
+      - "data/usaspending_recipients.json"
+      - ".github/workflows/usaspending-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - name: Build contract actions (dry run, live API)
+        run: |
+          python scripts/build_usaspending_contracts.py --output "$RUNNER_TEMP/usaspending_contracts.json"
+          python scripts/build_catalyst_watchlist.py --fda /dev/null --usaspending "$RUNNER_TEMP/usaspending_contracts.json" \
+            --output "$RUNNER_TEMP/dryrun_catalysts.json"
+          python scripts/show_usaspending_dryrun.py "$RUNNER_TEMP/usaspending_contracts.json" "$RUNNER_TEMP/dryrun_catalysts.json"

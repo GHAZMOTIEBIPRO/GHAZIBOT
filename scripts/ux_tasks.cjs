@@ -25,6 +25,9 @@ const GOV = /^https:\/\/(www\.accessdata\.fda\.gov|clinicaltrials\.gov|www\.fede
 // Company IR links count as official only on the reviewed company sites (data/ir_feeds.json).
 const IR_HOSTS = JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "..", "data", "ir_feeds.json"), "utf8"))
   .feeds.map((f) => new NodeURL(f.page).hostname.split(".").slice(-2).join("."));
+const IR_BY_SYMBOL = {};
+for (const f of JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "ir_feeds.json"), "utf8")).feeds)
+  (IR_BY_SYMBOL[f.symbol] = IR_BY_SYMBOL[f.symbol] || []).push(new NodeURL(f.page).hostname.split(".").slice(-2).join("."));
 const OFFICIAL = { test: (href) => GOV.test(href) || (href.startsWith("https://") &&
   IR_HOSTS.includes(new NodeURL(href).hostname.split(".").slice(-2).join("."))) };
 fs.mkdirSync(OUT, { recursive: true });
@@ -91,15 +94,24 @@ async function run(device) {
     const fresh = await page.$eval("#gr-facts", (e) => e.textContent);
     return { facts: fresh.replace(/\s+/g, " ").slice(0, 200) };
   });
-  await task(device, "change the chart frame", async () => {
+  // The chart must actually load, and the frame TradingView loads must carry the 1H interval we asked for.
+  // (Its content is cross-origin and not readable; the frame's own src is.) Where TradingView is unreachable
+  // (UX_NO_TRADINGVIEW=1, e.g. a sandbox), the task is reported NOT RUN, never passed.
+  if (process.env.UX_NO_TRADINGVIEW) console.log(`NOT RUN ${device} | change the chart frame (TradingView unreachable here)`);
+  else await task(device, "change the chart frame", async () => {
     await page.click('[data-gr-chart] .gr-chart-bar button[data-interval="60"]');
     const pressed = await page.$eval('[data-gr-chart] .gr-chart-bar button[data-interval="60"]', (b) => b.getAttribute("aria-pressed"));
     must(pressed === "true", "frame button not pressed");
-    await page.waitForFunction(() => document.querySelector("[data-gr-chart]").dataset.state !== "loading", null, { timeout: 20000 }).catch(() => {});
+    await page.waitForFunction(() => document.querySelector("[data-gr-chart]").dataset.state !== "loading", null, { timeout: 25000 }).catch(() => {});
     const state = await page.$eval("[data-gr-chart]", (b) => b.dataset.state);
-    must(["ready", "timeout", "failed"].includes(state), "chart state " + state);
+    must(state === "ready", "chart did not load: " + state);
+    const src = await page.$eval("[data-gr-chart] .gr-chart-slot iframe", (f) => f.src).catch(() => "");
+    const cfg = (() => { try { return JSON.parse(decodeURIComponent(src.split("#")[1] || "")); } catch { return null; } })();
+    const interval = cfg ? String(cfg.interval) : (/[?&#"]interval["=:%2C3A]*"?(\w+)/.exec(decodeURIComponent(src)) || [])[1];
+    const symbol = cfg ? String(cfg.symbol || "") : "";
+    must(interval === "60", `frame interval ${interval} (src ${src.slice(0, 160)})`);
     await shot(page, `ux-${device}-chart-1h.png`);
-    return { chart_state: state };
+    return { chart_state: state, frame_interval: interval, frame_symbol: symbol };
   });
   await closeIfPhone();
   await task(device, "Arabic search", async () => {
@@ -161,7 +173,11 @@ async function run(device) {
     // Required on data rebuilt by this change (UX_LOCAL_DATA); the published file may predate it.
     if (process.env.UX_LOCAL_DATA) {
       must(rows.length > 0, "no IR rows");
-      must(rows.every((r) => /^https:\/\/[^/]*(exxonmobil|nvidia)\.com\//.test(r.link)), "a link leaves the company site " + JSON.stringify(rows[0]));
+      // each row's link stays on that company's own reviewed site, not just any reviewed company
+      const own = (r) => { try { return r.link.startsWith("https://") && (IR_BY_SYMBOL[r.symbol] || [])
+        .includes(new NodeURL(r.link).hostname.split(".").slice(-2).join(".")); } catch { return false; } };
+      const off = rows.filter((r) => !own(r));
+      must(!off.length, "a link leaves the company's own site " + JSON.stringify(off[0]));
     }
     await shot(page, `ux-${device}-company-news.png`);
     return { rows: rows.length, sample: rows.slice(0, 3) };
@@ -257,6 +273,9 @@ async function run(device) {
     const radar = await page.$$eval("#gr-list [data-gr-symbol]", (els) => els.length);
     const tag = await page.$eval("#gr-list .gr-tag", (e) => e.textContent).catch(() => "");
     must(radar > 0 && /أولوية/.test(tag), "radar rows " + radar);
+    // The week agenda sits above the radar list; on rebuilt data it must exist and carry source labels.
+    const agenda = await page.$eval(".gr-agenda", (e) => e.textContent).catch(() => "");
+    if (process.env.UX_LOCAL_DATA) must(/أجندة الأسبوع/.test(agenda) && /(تقويم بورصة نيويورك|أعلنته الشركة|Federal Register|لا مواعيد معلنة)/.test(agenda), "agenda " + agenda.slice(0, 120));
     await shot(page, `ux-${device}-radar.png`);
     await page.click('[data-gr-section="watch"]'); await page.waitForTimeout(300);
     const before = await page.$$eval("#gr-list [data-gr-symbol]", (els) => els.length);
@@ -271,7 +290,7 @@ async function run(device) {
     await page.click('[data-gr-section="more"]'); await page.waitForTimeout(300);
     const terms = await page.$$eval(".gr-glossary dt", (els) => els.length);
     must(terms >= 8, "glossary " + terms);
-    return { radar_rows: radar, first_tag: tag, watch_before: before, watch_after: after, glossary_terms: terms };
+    return { radar_rows: radar, first_tag: tag, agenda: agenda.slice(0, 200), watch_before: before, watch_after: after, glossary_terms: terms };
   });
   await task(device, "light theme is saved across a reload", async () => {
     await page.click('.gr-theme button:has-text("فاتح")'); await page.waitForTimeout(300);

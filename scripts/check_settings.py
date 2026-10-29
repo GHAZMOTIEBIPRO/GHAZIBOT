@@ -6,8 +6,9 @@ value, whether it works:
 - TELEGRAM_BOT_TOKEN: Telegram getMe answers ok.
 - the broadcast destination (resolved by .github/actions/resolve-telegram-broadcast):
   how it was found and Telegram's chat type for it.
-- TELEGRAM_OWNER_CHAT_ID: Telegram's chat type (must be "private") and whether it
-  equals the broadcast destination.
+- the owner chat (TELEGRAM_OWNER_CHAT_ID, or the resolved broadcast chat when
+  TELEGRAM_OWNER_USERNAME is set): Telegram's chat type (must be "private") and,
+  when a username is set, whether Telegram's username for that chat matches.
 - Alpaca keys: an HTTP status from the market-data API, only when the owner's
   ALPACA_INTERNAL_DATA_USE_AUTHORIZED is "true" (otherwise not called).
 Never prints a value, a chat id, a price or a response body.
@@ -28,7 +29,9 @@ CANON: dict[str, tuple[str, str, str, str]] = {
     "TELEGRAM_CHAT_ID": ("secret", "public", "public notifiers via telegram_connection_bootstrap",
                          "optional: else the encrypted artifact or Telegram updates"),
     "TELEGRAM_OWNER_CHAT_ID": ("secret", "private", "output_policy.deliver_private",
-                               "private alerts (one-to-one chat with the owner)"),
+                               "private alerts: either this, or TELEGRAM_OWNER_USERNAME"),
+    "TELEGRAM_OWNER_USERNAME": ("variable", "private", "output_policy.deliver_private",
+                                "private alerts to the already-resolved one-to-one chat, verified by username"),
     "ALPACA_API_KEY": ("secret", "private", "bar_providers.AlpacaBars, alpaca_vcp_private, stream/options",
                        "any Alpaca data"),
     "ALPACA_SECRET_KEY": ("secret", "private", "same as ALPACA_API_KEY", "any Alpaca data"),
@@ -39,6 +42,10 @@ CANON: dict[str, tuple[str, str, str, str]] = {
     "ALPACA_BARS_FEED": ("variable", "private", "bar_providers.AlpacaBars", "optional: sip (default) or iex"),
     "ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": ("variable", "private", "alpaca_vcp_private",
                                                  "optional: SIP history in the VCP research"),
+    "FINRA_API_CLIENT_ID": ("secret", "private", "finra_short_volume_private", "optional: FINRA short-sale volume"),
+    "FINRA_API_CLIENT_SECRET": ("secret", "private", "finra_short_volume_private", "optional: FINRA short-sale volume"),
+    "FINRA_API_AUTOMATION_APPROVED": ("variable", "private", "finra_short_volume_private, source_permissions",
+                                      "optional: FINRA (owner record of a FINRA developer account; not FINRA's permission)"),
 }
 TG = "https://api.telegram.org/bot{token}/{method}"
 
@@ -54,17 +61,24 @@ def value_class(name: str, env: dict[str, str]) -> str:
         return "PRESENT" if raw else "ABSENT_OR_NOT_PASSED"
     if not raw:
         return "UNSET"
+    if name == "TELEGRAM_OWNER_USERNAME":
+        return "SET"
     return raw.lower() if raw.lower() in ("true", "false", "sip", "iex") else "OTHER_VALUE"
 
 
-def chat_type(token: str, chat_id: str, session: Any = requests) -> str:
+def chat_info(token: str, chat_id: str, session: Any = requests) -> dict[str, Any] | str:
     try:
         r = session.get(TG.format(token=token, method="getChat"), params={"chat_id": chat_id}, timeout=15)
         body = r.json() if r.status_code == 200 else {}
     except (requests.RequestException, ValueError):
         return "UNREACHABLE"
     result = body.get("result") if isinstance(body, dict) and body.get("ok") is True else None
-    return str(result.get("type")) if isinstance(result, dict) else f"NOT_FOUND_HTTP_{r.status_code}"
+    return result if isinstance(result, dict) else f"NOT_FOUND_HTTP_{r.status_code}"
+
+
+def chat_type(token: str, chat_id: str, session: Any = requests) -> str:
+    info = chat_info(token, chat_id, session)
+    return str(info.get("type")) if isinstance(info, dict) else info
 
 
 def check(env: dict[str, str], connection: Path, session: Any = requests) -> dict[str, Any]:
@@ -88,8 +102,16 @@ def check(env: dict[str, str], connection: Path, session: Any = requests) -> dic
     checks["broadcast_source"] = source or ("github_secret" if broadcast else "NONE")
     checks["broadcast_chat_type"] = chat_type(token, broadcast, session) if token and broadcast else "NOT_CHECKED"
     owner = (env.get("TELEGRAM_OWNER_CHAT_ID") or "").strip()
-    checks["owner_chat_type"] = chat_type(token, owner, session) if token and owner else "NOT_CHECKED"
-    checks["owner_equals_broadcast"] = bool(owner and broadcast and owner == broadcast)
+    username = (env.get("TELEGRAM_OWNER_USERNAME") or "").strip().lstrip("@").lower()
+    checks["owner_source"] = ("TELEGRAM_OWNER_CHAT_ID" if owner else
+                              "BROADCAST_CHAT_VERIFIED_BY_USERNAME" if username and broadcast else "NONE")
+    owner = owner or (broadcast if username else "")
+    info = chat_info(token, owner, session) if token and owner else "NOT_CHECKED"
+    checks["owner_chat_type"] = str(info.get("type")) if isinstance(info, dict) else info
+    # the username itself is never printed, only whether it matches
+    checks["owner_username_matches"] = ((str(info.get("username") or "").lower() == username)
+                                        if username and isinstance(info, dict) else "NOT_CHECKED")
+    checks["owner_is_broadcast_chat"] = bool(owner and broadcast and owner == broadcast)
     key, secret = (env.get("ALPACA_API_KEY") or "").strip(), (env.get("ALPACA_SECRET_KEY") or "").strip()
     if (env.get("ALPACA_INTERNAL_DATA_USE_AUTHORIZED") or "").strip().lower() != "true":
         checks["alpaca_keys"] = "NOT_TESTED_OWNER_ATTESTATION_NOT_RECORDED"
@@ -108,7 +130,8 @@ def check(env: dict[str, str], connection: Path, session: Any = requests) -> dic
         "private_price_analysis": checks["alpaca_keys"] == "VALID",
         "private_alerts": (checks["alpaca_keys"] == "VALID"
                            and out["settings"]["ALPACA_PRIVATE_ALERTS_AUTHORIZED"]["received"] == "true"
-                           and checks["owner_chat_type"] == "private" and not checks["owner_equals_broadcast"]),
+                           and checks["owner_chat_type"] == "private"
+                           and checks["owner_username_matches"] in (True, "NOT_CHECKED")),
     }
     out["ready"] = ready
     return out

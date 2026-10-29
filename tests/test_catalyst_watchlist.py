@@ -84,7 +84,7 @@ def test_no_inputs_is_an_explicit_empty_report():
     assert report["status"] == "NO_RECENT_CATALYSTS" and report["watchlist"] == []
     assert report["sources"] == {"openfda": False, "sec_edgar": False, "sec_status": "MISSING", "clinicaltrials": False,
                                  "clinicaltrials_status": "MISSING", "federal_register": False,
-                                 "company_ir": False}
+                                 "company_ir": False, "usaspending": False}
 
 
 def test_workflow_is_single_writer_without_a_price_input():
@@ -363,3 +363,19 @@ def test_without_history_a_new_event_is_published_by_this_list_but_not_claimed_a
     assert e["first_observed_at"] is None and e["first_observed_basis"] == "UNKNOWN"
     old = next(x for x in later["events"] if x["symbol"] == "ABCD")
     assert old["timestamp_basis"] == "observed:UNKNOWN;published:UNKNOWN"
+
+
+def test_gov_contract_actions_use_the_action_obligation_only_and_skip_small_or_unreviewed():
+    def act(amount, **kw):
+        return {"symbol": "LMT", "action_date": "2026-10-16", "award_url": "https://www.usaspending.gov/award/CONT_AWD_X",
+                "action_obligation": amount, "award_total_obligation": 9e9, "award_ceiling": 2e10, "agency": "DOD",
+                "link_basis": "PARENT_UEI_REVIEWED", "parent_recipient": "LOCKHEED MARTIN CORP", **kw}
+    gov = {"schema": "ghazi.usaspending_contracts.v1",
+           "actions": [act(250e6), act(-40e6), act(2e6), act(500e6, link_basis="NAME_MATCH")]}
+    got = cw.gov_catalysts(gov)
+    assert [(g["kind"], g["importance"], g["action_obligation"]) for g in got] == [
+        ("GOV_CONTRACT_ACTION", "MEDIUM", 250e6), ("GOV_CONTRACT_DEOBLIGATION", "LOW", -40e6)]
+    assert all(g["potential_impact"] == "NEEDS_IMPACT_ASSESSMENT" for g in got)
+    report = cw.build(None, None, None, NOW, gov=gov)
+    assert report["sources"]["usaspending"] is True
+    assert {e["kind"] for e in report["events"]} == {"GOV_CONTRACT_ACTION", "GOV_CONTRACT_DEOBLIGATION"}

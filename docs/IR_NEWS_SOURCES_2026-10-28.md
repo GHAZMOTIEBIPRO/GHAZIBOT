@@ -40,7 +40,21 @@
 
 **Telegram:** these kinds are not on the alert sender's allow-lists, so no Telegram message changes.
 
+## Round 2 (2026-10-29, run 40793143955): 30 more non-medical leaders
+
+The probe also read up to two of the IR page's own news pages for RSS links (same host, robots checked).
+
+| Result | Companies |
+|---|---|
+| Press-release feed linked by the company, items with absolute times → **added** | AMD, INTC, NFLX, QCOM, KO, GD (+ GD events feed) |
+| Page read, no RSS link (page or its news pages) | ORCL, CRM, MU, IBM, PLTR, UBER, PEP, WMT, COST, MA, GS, CAT, GE, F |
+| robots.txt HTTP 403 → treated as disallowed, not read | TXN, HD, CVX, LMT, RTX, NOC, GM |
+| Linked feed answered 403 | V |
+| Only feed on a CDN host whose robots.txt disallows us | COIN |
+| Linked feed address is an empty index page | BAC |
+
 ## Remaining
-- Coverage is 2 of 16 companies.
-- The other pages need a feed they link to themselves, or a reviewed alternative.
+- Coverage is 8 of 46 probed companies (XOM, NVDA, AMD, INTC, NFLX, QCOM, KO, GD).
+- The other pages need a feed they link to themselves, or a reviewed alternative; platform paths are not guessed.
+- Site terms were not read per company (rights entry `company_ir_feeds`: automated access VERIFIED by robots, other rights UNKNOWN), so only headline, time and link are published.
 - Any source added needs its own probe row in `data/ir_feeds.json`.

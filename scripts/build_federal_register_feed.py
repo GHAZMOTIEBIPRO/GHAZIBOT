@@ -116,10 +116,17 @@ def entities(doc: dict[str, Any], body: str | None = None) -> tuple[str | None, 
     return None, []
 
 
-# How the named entity relates to the listed company. Only these link a document to a ticker.
-LINK_RELATIONS = {"SAME_ENTITY", "RENAMED_SAME_ENTITY", "DIVISION_OF_LISTED_COMPANY", "WHOLLY_OWNED_SUBSIDIARY"}
-# Reviewed reasons a named entity is NOT linked. A parent named for its listed subsidiary is not linked either:
-# the document concerns the parent, not the listed security.
+# How the named entity relates to the listed company.
+# Direct: the document is about the listed company itself (or a part it wholly owns).
+DIRECT_RELATIONS = {"SAME_ENTITY", "RENAMED_SAME_ENTITY", "DIVISION_OF_LISTED_COMPANY", "WHOLLY_OWNED_SUBSIDIARY"}
+# Indirect: the listed company holds a documented share of the named entity (a joint venture it is a partner in,
+# a majority-owned or minority holding), or the named entity controls the listed company (its parent). These
+# link too, as INDIRECT exposure, only with an ownership band, the date the relation was checked and its source.
+# A link says who is concerned; how much the listed company is affected is never inferred from it.
+INDIRECT_RELATIONS = {"JOINT_VENTURE_PARTNER", "MAJORITY_OWNED_SUBSIDIARY", "MINORITY_STAKE", "PARENT_OF_LISTED_COMPANY"}
+LINK_RELATIONS = DIRECT_RELATIONS | INDIRECT_RELATIONS
+OWNERSHIP_BANDS = {"MAJORITY", "EQUAL_JOINT_VENTURE", "MINORITY", "CONTROLLING_PARENT"}
+# Reviewed reasons a named entity is NOT linked (yet).
 EXCLUSION_REASONS = {"JOINT_VENTURE", "PARTLY_OWNED", "PRIVATE", "LISTED_OUTSIDE_US", "NOT_A_COMPANY",
                      "NOT_EXCHANGE_LISTED", "OWNERSHIP_NOT_VERIFIED", "PARENT_OF_LISTED_COMPANY"}
 DAY_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -144,6 +151,17 @@ def validate_links(table: dict[str, Any]) -> list[str]:
             errors.append(f"{where}: a validity window needs validity_source")
         if isinstance(start, str) and isinstance(end, str) and start > end:
             errors.append(f"{where}: valid_from after valid_to")
+        if link.get("relation") in INDIRECT_RELATIONS:
+            if link.get("ownership_band") not in OWNERSHIP_BANDS:
+                errors.append(f"{where}: an indirect relation needs ownership_band")
+            share = link.get("ownership_share")
+            if share is not None and not (isinstance(share, (int, float)) and 0 < share < 1):
+                errors.append(f"{where}: ownership_share must be a fraction between 0 and 1")
+            as_of = link.get("relation_as_of")
+            if not (isinstance(as_of, str) and DAY_RE.fullmatch(as_of)):
+                errors.append(f"{where}: an indirect relation needs relation_as_of (YYYY-MM-DD)")
+            if not str(link.get("validity_source") or "").startswith("https://"):
+                errors.append(f"{where}: an indirect relation needs validity_source")
     for i, ex in enumerate(table.get("excluded", [])):
         if ex.get("reason") not in EXCLUSION_REASONS:
             errors.append(f"excluded[{i}]: reason {ex.get('reason')!r} unknown")
@@ -164,7 +182,9 @@ def load_links(path: Path | None = None) -> tuple[dict[str, list[dict[str, Any]]
                 pending.setdefault(norm(name), {"reason": "EVIDENCE_PENDING"})
             continue
         for name in link.get("names", []):
-            index.setdefault(norm(name), []).append(link)
+            rows = index.setdefault(norm(name), [])
+            if not any(r is link for r in rows):     # two names of one row can normalise alike
+                rows.append(link)
     aliases = json.loads((ROOT / "data" / "fda_sponsor_aliases.json").read_text(encoding="utf-8"))
     for ticker, names in (aliases.get("aliases") or {}).items():
         for name in names:
@@ -188,6 +208,9 @@ def link_confidence(link: dict[str, Any], from_body: bool) -> tuple[str, str]:
     """How sure we are that this document concerns this listed company: the name reading and the link both count."""
     if link.get("relation") == "REVIEWED_FDA_SPONSOR_ALIAS":
         return "MEDIUM", "reviewed sponsor alias table; no runner evidence check of the alias"
+    if link.get("relation") in INDIRECT_RELATIONS:
+        return "MEDIUM", ("the named entity is linked through a documented ownership relation, not the listed "
+                          "company itself; its share of any effect is not assessed")
     if from_body:
         return "MEDIUM", "company read from the document body, linked through a runner-verified reviewed row"
     return "HIGH", "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
@@ -198,7 +221,9 @@ def classify(doc: dict[str, Any], index: dict, excluded: dict, body: str | None 
     day = str(doc.get("publication_date") or "")[:10] or None
     base = {"document_number": doc.get("document_number"), "date": doc.get("publication_date"),
             "agency": AGENCY_AR.get(doc.get("agency"), doc.get("agency")), "type": doc.get("type"),
-            "title": str(doc.get("title") or "")[:300], "source_url": doc.get("html_url")}
+            "title": str(doc.get("title") or "")[:300], "source_url": doc.get("html_url"),
+            # dates the document itself sets (when a rule takes effect, when comments close): agenda dates
+            "effective_on": doc.get("effective_on"), "comments_close_on": doc.get("comments_close_on")}
     if not kind:
         return {**base, "status": "GENERAL"}
     label, importance, group = KINDS[kind]
@@ -206,15 +231,21 @@ def classify(doc: dict[str, Any], index: dict, excluded: dict, body: str | None 
     links, unmatched = [], []
     for name in names:
         rows = index.get(norm(name)) or []
-        hit = next((r for r in rows if valid_on(r, day)), None)
-        if hit:
+        # A joint venture has one row per listed partner: each valid row is its own link.
+        hits = [r for r in rows if valid_on(r, day)]
+        for hit in hits:
             confidence, basis = link_confidence(hit, from_body)
             links.append({"name": name, **{k: hit[k] for k in ("ticker", "legal_entity", "relation", "evidence",
-                                                               "valid_from", "valid_to", "validity_source") if k in hit},
+                                                               "valid_from", "valid_to", "validity_source",
+                                                               "ownership_band", "ownership_share", "relation_as_of")
+                                           if k in hit},
                           "listed_company": hit.get("listed_company"),
+                          "exposure": "INDIRECT" if hit.get("relation") in INDIRECT_RELATIONS else "DIRECT",
                           "name_basis": "LEGAL_NAME" if norm(name) == norm(hit.get("legal_entity") or "") else "OTHER_REVIEWED_NAME",
                           "interpretation_confidence": confidence, "confidence_basis": basis})
-        elif rows:
+        if hits:
+            continue
+        if rows:
             unmatched.append({"name": name, "reason": "OUTSIDE_RELATION_VALIDITY"})
         else:
             ex = excluded.get(norm(name))
@@ -239,7 +270,7 @@ def fetch_documents(session: Any, now: datetime) -> tuple[list[dict[str, Any]], 
                 "per_page": 100, "page": page, "order": "newest", "conditions[agencies][]": agency,
                 "conditions[publication_date][gte]": start,
                 "fields[]": ["title", "type", "abstract", "document_number", "publication_date", "html_url",
-                             "raw_text_url"]})
+                             "raw_text_url", "effective_on", "comments_close_on"]})
             r.raise_for_status()
             d = r.json()
             for doc in d.get("results") or []:

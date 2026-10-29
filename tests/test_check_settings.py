@@ -10,7 +10,8 @@ from scripts import check_settings as cs
 ROOT = Path(__file__).resolve().parents[1]
 PRIVATE_WORKFLOWS = ("daily-plan.yml", "private-market-scan.yml", "private-acceptance.yml", "alpaca-iex-vcp-private.yml")
 PRIVATE_NAMES = ("ALPACA_API_KEY", "ALPACA_SECRET_KEY", "ALPACA_INTERNAL_DATA_USE_AUTHORIZED",
-                 "ALPACA_PRIVATE_ALERTS_AUTHORIZED", "TELEGRAM_BOT_TOKEN", "TELEGRAM_OWNER_CHAT_ID", "TELEGRAM_CHAT_ID")
+                 "ALPACA_PRIVATE_ALERTS_AUTHORIZED", "TELEGRAM_BOT_TOKEN", "TELEGRAM_OWNER_CHAT_ID", "TELEGRAM_CHAT_ID",
+                 "TELEGRAM_OWNER_USERNAME")
 
 
 class FakeSession:
@@ -22,7 +23,8 @@ class FakeSession:
             return SimpleNamespace(status_code=200, json=lambda: {"ok": True, "result": {"id": 1}})
         if url.endswith("/getChat"):
             kind = self.chats.get(params["chat_id"])
-            body = {"ok": True, "result": {"type": kind, "id": params["chat_id"]}} if kind else {"ok": False}
+            kind, name = kind if isinstance(kind, tuple) else (kind, None)
+            body = {"ok": True, "result": {"type": kind, "id": params["chat_id"], "username": name}} if kind else {"ok": False}
             return SimpleNamespace(status_code=200 if kind else 400, json=lambda: body)
         return SimpleNamespace(status_code=200, json=lambda: {"bars": {"SPY": {"c": 1}}})
 
@@ -40,9 +42,18 @@ def test_output_carries_no_values_and_readiness_is_per_path(tmp_path):
     assert report["checks"]["broadcast_source"] == "private_workflow_artifact"
     assert report["checks"]["broadcast_chat_type"] == "channel" and report["checks"]["owner_chat_type"] == "private"
     assert report["ready"] == {"public_telegram": True, "private_price_analysis": True, "private_alerts": True}
-    # Same chat for both, or a group as the owner chat: private alerts are not ready.
+    # A channel or group is never the owner's chat.
     same = cs.check({**env, "TELEGRAM_OWNER_CHAT_ID": "-100555"}, conn, FakeSession({"-100555": "channel"}))
-    assert same["checks"]["owner_equals_broadcast"] is True and same["ready"]["private_alerts"] is False
+    assert same["checks"]["owner_is_broadcast_chat"] is True and same["ready"]["private_alerts"] is False
+    # No public channel needed: the resolved one-to-one chat is the owner's, verified by username.
+    solo = {k: v for k, v in env.items() if k != "TELEGRAM_OWNER_CHAT_ID"}
+    solo.update(TELEGRAM_CHAT_ID="777", TELEGRAM_OWNER_USERNAME="@Ghazi_Owner")
+    ok = cs.check(solo, conn, FakeSession({"777": ("private", "ghazi_owner")}))
+    assert ok["checks"]["owner_source"] == "BROADCAST_CHAT_VERIFIED_BY_USERNAME"
+    assert ok["checks"]["owner_username_matches"] is True and ok["ready"]["private_alerts"] is True
+    assert "ghazi_owner" not in json.dumps(ok).lower()
+    wrong = cs.check(solo, conn, FakeSession({"777": ("private", "someone")}))
+    assert wrong["checks"]["owner_username_matches"] is False and wrong["ready"]["private_alerts"] is False
 
 
 def test_alpaca_keys_are_not_called_without_the_owner_attestation(tmp_path):

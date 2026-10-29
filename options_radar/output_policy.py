@@ -99,32 +99,35 @@ def private_chat_ok(chat: Any) -> bool:
 
 def deliver_private(text: str, *, sources: list[str], env: Mapping[str, str],
                     get_chat: Callable[[str], Any], send: Callable[[str, str], Any]) -> str:
-    """Send to the owner's personal chat only; never fall back to a shared chat.
+    """Send to the owner's own one-to-one chat only; never to a group or channel.
 
-    The destination is TELEGRAM_OWNER_CHAT_ID, never the broadcast chat, and it
-    must be confirmed by Telegram as a private (one-to-one) chat.
+    The destination is the owner's chat, identified one of two ways:
+    - TELEGRAM_OWNER_CHAT_ID (secret), or
+    - the chat the notifiers already resolved (TELEGRAM_CHAT_ID, from the secret, the
+      encrypted connection artifact or Telegram updates), when TELEGRAM_OWNER_USERNAME
+      is set: that chat is used only if Telegram confirms it is the owner's account.
+    Identity is checked with Telegram every time (getChat): the chat must be type
+    "private" (a person, not a group or channel), and when TELEGRAM_OWNER_USERNAME is
+    set its username must match. The same private chat may also receive the bot's
+    general messages: both go only to the owner, so no public channel is required.
     """
     decision = decide_all(sources, "telegram_private", env)
     if not decision.allowed:
         return "DENIED_BY_POLICY"
     chat_id = (env.get("TELEGRAM_OWNER_CHAT_ID") or "").strip()
+    username = (env.get("TELEGRAM_OWNER_USERNAME") or "").strip().lstrip("@").lower()
+    if not chat_id and username:
+        chat_id = (env.get("TELEGRAM_CHAT_ID") or "").strip()
     if not chat_id:
         return "OWNER_CHAT_NOT_CONFIGURED"
-    # The broadcast chat can come from the secret, the encrypted connection artifact
-    # or Telegram updates (scripts/telegram_connection_bootstrap.py). The comparison
-    # below is meaningful only after that resolution ran: TELEGRAM_CHAT_ID set, or
-    # TELEGRAM_READY=false (it ran and found no broadcast chat). Otherwise no send.
-    broadcast = (env.get("TELEGRAM_CHAT_ID") or "").strip()
-    if not broadcast and (env.get("TELEGRAM_READY") or "").strip().lower() != "false":
-        return "BROADCAST_NOT_RESOLVED"
-    if chat_id == broadcast:
-        return "OWNER_CHAT_EQUALS_BROADCAST"
     try:
         chat = get_chat(chat_id)
     except Exception:  # noqa: BLE001 - destination unverified means no send
         return "DESTINATION_UNVERIFIED"
     if not private_chat_ok(chat):
         return "DESTINATION_NOT_PRIVATE"
+    if username and str(chat.get("username") or "").lower() != username:
+        return "OWNER_IDENTITY_MISMATCH"
     try:
         receipt = send(text, chat_id)
     except Exception:  # noqa: BLE001 - reported as status only (no URL/token in logs)

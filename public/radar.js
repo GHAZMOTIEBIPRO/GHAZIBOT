@@ -9,7 +9,8 @@
 (function (root) {
   const DATA = "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/";
   const FILES = { plan: "daily_plan.json", macro: "public_macro.json", catalysts: "catalyst_watchlist.json",
-    directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json" };
+    directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json",
+    agenda: "week_agenda.json" };
   const NASDAQ_FILE = "nasdaq_listed.json";   // ~5,600 rows: loaded only when search or a view needs it
   const SYMBOL_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
   const WATCH_KEY = "ghazi.watchlist.v1";      // same key as the previous page, so saved lists carry over
@@ -132,6 +133,9 @@
     IR_FILING_REGISTRATION: { label: "⚠ تسجيل أوراق مالية (تمويل محتمل)", tag: "risk", group: "risk" },
     IR_FILING_PROXY: { label: "دعوة جمعية عمومية", tag: "admin", group: "admin" },
     IR_OTHER: { label: "خبر من الشركة", tag: "status", group: "company" },
+    // USAspending: this action's own obligation only; the award total and ceiling are shown apart, never added.
+    GOV_CONTRACT_ACTION: { label: "التزام عقد حكومي (USAspending)", tag: "status", group: "regulatory" },
+    GOV_CONTRACT_DEOBLIGATION: { label: "إلغاء التزام عقد حكومي (USAspending)", tag: "status", group: "regulatory" },
   };
   const kindInfo = (k) => KIND[k] || { label: "حدث رسمي", tag: "results", group: "results" };
   const RANK = { HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -196,14 +200,27 @@
   // listed company), how sure we are of that link, and its impact, which stays unassessed without evidence.
   const RELATION_AR = { SAME_ENTITY: "الشركة نفسها", RENAMED_SAME_ENTITY: "الشركة نفسها باسمها السابق",
     DIVISION_OF_LISTED_COMPANY: "قسم تابع للشركة المدرجة", WHOLLY_OWNED_SUBSIDIARY: "شركة تابعة مملوكة بالكامل للشركة المدرجة",
-    REVIEWED_FDA_SPONSOR_ALIAS: "اسم راعٍ في جدول مُراجَع" };
+    REVIEWED_FDA_SPONSOR_ALIAS: "اسم راعٍ في جدول مُراجَع",
+    JOINT_VENTURE_PARTNER: "مشروع مشترك تملك فيه الشركة المدرجة حصة", MAJORITY_OWNED_SUBSIDIARY: "شركة تملك الشركة المدرجة أغلبيتها",
+    MINORITY_STAKE: "شركة تملك فيها الشركة المدرجة حصة أقلية", PARENT_OF_LISTED_COMPANY: "الشركة الأم للشركة المدرجة" };
   const CONFIDENCE_AR = { HIGH: "عالية", MEDIUM: "متوسطة", LOW: "منخفضة" };
   function readingLine(e) {
     if (!e || !(e.potential_impact || e.link_relation)) return "";
     const parts = [];
     if (e.issuer && e.link_relation) parts.push(`الجهة في الوثيقة: ${e.issuer} (${RELATION_AR[e.link_relation] || e.link_relation})`);
+    // An indirect link says who is concerned and through what holding, never how much the listed company is affected.
+    if (e.exposure === "INDIRECT")
+      parts.push("ارتباط غير مباشر" + (Number.isFinite(e.ownership_share) ? ` (الحصة ${n(Math.round(e.ownership_share * 100))}%)` : "") +
+        (e.relation_as_of ? ` · العلاقة كما في ${day(e.relation_as_of)}` : ""));
     if (CONFIDENCE_AR[e.interpretation_confidence]) parts.push(`ثقة الربط: ${CONFIDENCE_AR[e.interpretation_confidence]}`);
     if (e.category_basis === "HEADLINE_KEYWORDS") parts.push("العنوان من الشركة؛ التصنيف آلي من كلماته");
+    // Contract amounts of different kinds side by side, never added: this action, the award so far, its maximum.
+    if (Number.isFinite(e.action_obligation)) {
+      const m = (v) => `${n(Math.round(v / 1e5) / 10)} مليون$`;
+      parts.push(`هذا الإجراء: ${m(e.action_obligation)}` +
+        (Number.isFinite(e.award_total_obligation) ? ` · إجمالي الملتزم على العقد: ${m(e.award_total_obligation)}` : "") +
+        (Number.isFinite(e.award_ceiling) ? ` · السقف مع الخيارات (ليس مالًا ملتزمًا): ${m(e.award_ceiling)}` : ""));
+    }
     parts.push(e.potential_impact && e.potential_impact !== "NEEDS_IMPACT_ASSESSMENT" ? `الأثر: ${e.potential_impact}` : "الأثر: يحتاج تقييم الأثر");
     return parts.join(" · ");
   }
@@ -468,9 +485,24 @@
     ["نتائج مشتقة (Greeks وGamma)", "تُحسب فقط من بيانات مسموح بها، ولا تُعرض قبل توفرها."],
   ];
 
+  // Week agenda: only dates a source set (exchange calendar, a company, a Federal Register document).
+  const AGENDA_BASIS_AR = { EXCHANGE_CALENDAR: "تقويم بورصة نيويورك", COMPANY_ANNOUNCED: "أعلنته الشركة",
+    FEDERAL_REGISTER_EFFECTIVE_ON: "تاريخ في وثيقة Federal Register", FEDERAL_REGISTER_COMMENTS_CLOSE_ON: "تاريخ في وثيقة Federal Register" };
+  function agendaGroups(agenda) {
+    if (!agenda || agenda.schema !== "ghazi.week_agenda.v1" || !Array.isArray(agenda.items)) return [];
+    const groups = new Map();
+    for (const it of agenda.items) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(it.date || ""))) continue;
+      const who = it.symbol || (Array.isArray(it.symbols) ? it.symbols.join("، ") : "");
+      const text = [who, it.title_ar, it.title && it.basis !== "EXCHANGE_CALENDAR" ? `«${it.title}»` : ""].filter(Boolean).join(" · ");
+      if (!groups.has(it.date)) groups.set(it.date, []);
+      groups.get(it.date).push({ text, basis: AGENDA_BASIS_AR[it.basis] || it.basis, url: safeUrl(it.source_url) });
+    }
+    return [...groups.entries()].map(([date, items]) => ({ date, items }));
+  }
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
-    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
+    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, agendaGroups, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -644,7 +676,9 @@
     return (m && m.name) || (idx && idx.name) || (listed && listed.name) || (top && top.issuer) || FALLBACK_NAMES[symbol] || "";
   }
   function renderRadar(list, note) {
-    const { catalysts, plan } = state.data;
+    const { catalysts, plan, agenda } = state.data;
+    const card = agendaCard(agenda);
+    if (card) note.after(card);
     const entries = (catalysts && Array.isArray(catalysts.watchlist) ? catalysts.watchlist : []).filter((e) => e && SYMBOL_RE.test(String(e.symbol)));
     const evs = bySymbol(state.events);
     note.textContent = "ترتيب للمراجعة حسب قوة الحدث الرسمي وحداثته وموثوقية ربطه بالسهم، مع المخاطر بجانبه. ليس توصية ولا احتمال نجاح." +
@@ -657,6 +691,26 @@
         tags, quiet: !top || top.info.group === "admin" }));
     }
     if (!entries.length) list.append(el("p", "gr-empty", catalysts ? "لا أحداث رسمية في آخر 30 يومًا." : "تعذّر تحميل قائمة الأحداث الرسمية."));
+  }
+  function agendaCard(agenda) {
+    const groups = agendaGroups(agenda);
+    if (!agenda) return null;
+    const card = el("section", "gr-card gr-note-more gr-agenda");
+    card.append(el("h2", null, "أجندة الأسبوع"));
+    if (!groups.length) card.append(el("p", null, "لا مواعيد معلنة من مصادرنا للأيام السبعة القادمة."));
+    for (const g of groups) {
+      card.append(el("h3", null, day(g.date) || g.date));
+      const ul = el("ul", "gr-d-list");
+      for (const it of g.items) {
+        const li = el("li", null, it.text + " ");
+        li.append(el("span", "gr-muted", `(${it.basis})`));
+        if (it.url) { const a = el("a", null, " المصدر ↗"); a.href = it.url; a.target = "_blank"; a.rel = "noopener"; li.append(a); }
+        ul.append(li);
+      }
+      card.append(ul);
+    }
+    card.append(el("p", "gr-muted", agenda.policy_ar || "مواعيد من مصادرها فقط؛ الموعد لا يعني اتجاهًا للسعر."));
+    return card;
   }
   function renderWatchView(list, note) {
     const saved = watchList();

@@ -31,6 +31,19 @@ IR = {
     "XOM": "https://investor.exxonmobil.com/", "BA": "https://investors.boeing.com/",
     "RKLB": "https://investors.rocketlabusa.com/", "IONQ": "https://investors.ionq.com/",
     "SOUN": "https://investors.soundhound.com/", "ASTS": "https://investors.ast-science.com/",
+    # second round: more non-medical leaders (chips, software, consumer, banks, energy, industry, defence)
+    "AMD": "https://ir.amd.com/", "INTC": "https://www.intc.com/", "ORCL": "https://investor.oracle.com/",
+    "CRM": "https://investor.salesforce.com/", "NFLX": "https://ir.netflix.net/", "MU": "https://investors.micron.com/",
+    "QCOM": "https://investor.qualcomm.com/", "TXN": "https://investor.ti.com/", "IBM": "https://www.ibm.com/investor",
+    "PLTR": "https://investors.palantir.com/", "UBER": "https://investor.uber.com/", "COIN": "https://investor.coinbase.com/",
+    "KO": "https://investors.coca-colacompany.com/", "PEP": "https://www.pepsico.com/investors",
+    "WMT": "https://stock.walmart.com/", "COST": "https://investor.costco.com/", "HD": "https://ir.homedepot.com/",
+    "V": "https://investor.visa.com/", "MA": "https://investor.mastercard.com/", "BAC": "https://investor.bankofamerica.com/",
+    "GS": "https://www.goldmansachs.com/investor-relations/", "CVX": "https://www.chevron.com/investors",
+    "CAT": "https://investors.caterpillar.com/", "GE": "https://www.geaerospace.com/investor-relations",
+    "LMT": "https://investors.lockheedmartin.com/", "RTX": "https://investors.rtx.com/",
+    "NOC": "https://investor.northropgrumman.com/", "GD": "https://investorrelations.gd.com/",
+    "F": "https://shareholder.ford.com/", "GM": "https://investor.gm.com/",
 }
 FEED_TYPES = ("application/rss+xml", "application/atom+xml")
 
@@ -39,6 +52,7 @@ class FeedLinks(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
         self.feeds: list[tuple[str, str]] = []
+        self.news_pages: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = {k: (v or "") for k, v in attrs}
@@ -47,6 +61,9 @@ class FeedLinks(HTMLParser):
         # Links the page itself shows (IR platforms often put "RSS" in the body or footer); never guessed paths.
         elif tag == "a" and re.search(r"(^|[/._-])rss([/._?-]|$)", a.get("href", ""), re.IGNORECASE):
             self.feeds.append((a.get("href", ""), a.get("title", "") or "page link"))
+        # The page's own "press releases / news" links: the feed list often sits there.
+        elif tag == "a" and re.search(r"press-releases?|news-releases?|/news(/|$|\?)", a.get("href", ""), re.IGNORECASE):
+            self.news_pages.append(a.get("href", ""))
 
 
 def allowed(url: str) -> tuple[bool | None, str]:
@@ -97,6 +114,25 @@ def probe(symbol: str, url: str) -> dict:
     feeds = []
     seen: set[str] = set()
     queue = [(urljoin(r.url, href), title, 0) for href, title in parser.feeds]
+    if not queue:
+        # No feed link on the IR home page: read up to two of its own news pages (same site) once.
+        host = urlparse(r.url).netloc
+        news = [u for u in dict.fromkeys(urljoin(r.url, h) for h in parser.news_pages) if urlparse(u).netloc == host][:2]
+        row["news_pages_read"] = []
+        for page in news:
+            ok, _ = allowed(page)
+            if ok is not True:
+                continue
+            time.sleep(1)
+            try:
+                n = requests.get(page, timeout=25, headers={"User-Agent": UA, "Accept": "text/html"})
+            except requests.RequestException:
+                continue
+            row["news_pages_read"].append([page, n.status_code])
+            if n.status_code == 200:
+                sub = FeedLinks()
+                sub.feed(n.text)
+                queue += [(urljoin(n.url, h), t, 0) for h, t in sub.feeds]
     while queue and len(seen) < 10:
         feed_url, title, depth = queue.pop(0)
         if feed_url in seen or not feed_url.startswith("https://"):

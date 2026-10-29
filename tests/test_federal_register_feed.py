@@ -72,7 +72,12 @@ def test_links_are_exact_reviewed_names_with_relation_and_exclusions_are_explain
     assert tick("f1") == ["AMRX"]                     # reviewed FDA sponsor alias, legal suffix removed
     assert tick("f2") == ["TEVA"] and tick("f3") == ["IONS"]
     assert r["e1"]["links"][0]["ticker"] == "D" and r["e1"]["links"][0]["relation"] == "WHOLLY_OWNED_SUBSIDIARY"
-    assert r["a2"]["status"] == "COMPANY_UNLINKED" and r["a2"]["unmatched"][0]["reason"] == "JOINT_VENTURE"
+    # A joint venture links to its U.S.-listed partner as INDIRECT exposure, with its documented share;
+    # the effect on that partner is not inferred from the link.
+    jv = r["a2"]["links"]
+    assert [x["ticker"] for x in jv] == ["GE"] and jv[0]["relation"] == "JOINT_VENTURE_PARTNER"
+    assert jv[0]["exposure"] == "INDIRECT" and jv[0]["ownership_share"] == 0.5 and jv[0]["interpretation_confidence"] == "MEDIUM"
+    assert r["a2"]["potential_impact"] == "NEEDS_IMPACT_ASSESSMENT"
     assert r["a3"]["unmatched"][0]["reason"] == "PRIVATE"
     assert {u["reason"] for u in r["t1"]["unmatched"]} == {"LISTED_OUTSIDE_US"}
 
@@ -116,7 +121,11 @@ def test_faa_title_end_word_and_prv_manufactured_by_sponsor():
     assert fr.entities(prv, "no sponsor sentence here") == ("FR_PRIORITY_REVIEW_VOUCHER", [])
     index, excluded = fr.load_links()
     assert index[fr.norm("General Electric Company")][0]["ticker"] == "GE"
-    assert excluded[fr.norm("Engine Alliance")]["reason"] == "JOINT_VENTURE"
+    # Engine Alliance (GE + Pratt & Whitney): a documented joint venture, linked only once its evidence passed.
+    if fr.norm("Engine Alliance") in index:
+        assert sorted(x["ticker"] for x in index[fr.norm("Engine Alliance")]) == ["GE", "RTX"]
+    else:
+        assert excluded[fr.norm("Engine Alliance")]["reason"] == "EVIDENCE_PENDING"
     # Scholar Rock: no evidence page passed, so the subsidiary is not linked to SRRK.
     assert fr.norm("Scholar Rock, Inc.") not in index
     assert excluded[fr.norm("Scholar Rock, Inc.")]["reason"] == "OWNERSHIP_NOT_VERIFIED"
@@ -131,9 +140,13 @@ def test_a_reviewed_row_is_used_only_after_its_evidence_check_passed(tmp_path):
     index, excluded = fr.load_links(path)
     assert index[fr.norm("Alpha Corp")][0]["ticker"] == "ALP"
     assert fr.norm("Beta Corp") not in index and excluded[fr.norm("Beta Corp")]["reason"] == "EVIDENCE_PENDING"
+    # Shipped rows still awaiting their evidence check are never in the index.
     shipped = json.loads((ROOT / "data" / "issuer_links.json").read_text(encoding="utf-8"))
-    assert all(isinstance(x.get("evidence_verified_run"), int) or x["names"][0] == "Dominion Energy South Carolina, Inc."
-               for x in shipped["links"])
+    live, _ = fr.load_links()
+    for row in shipped["links"]:
+        if not isinstance(row.get("evidence_verified_run"), int):
+            assert not any(r is row or r.get("ticker") == row["ticker"] and r.get("legal_entity") == row["legal_entity"]
+                           for r in live.get(fr.norm(row["names"][0]), [])), row["names"][0]
 
 
 def test_bad_urls_and_unknown_kinds_are_dropped():
@@ -166,22 +179,32 @@ def test_ownership_changes_over_time_link_only_inside_the_validity_window(tmp_pa
     assert early["status"] == "COMPANY_UNLINKED" and early["unmatched"][0]["reason"] == "OUTSIDE_RELATION_VALIDITY"
 
 
-def test_a_parent_is_never_linked_and_bad_rows_fail_validation(tmp_path):
+def test_a_parent_or_partner_links_only_with_a_documented_dated_relation_and_bad_rows_fail(tmp_path):
     url = "https://x.example"
     table = {"links": [
-        {"names": ["Omega Holdings"], "legal_entity": "Omega Holdings", "ticker": "OMG",
-         "relation": "PARENT_OF_LISTED_COMPANY", "evidence_url": url, "evidence_verified_run": 1},
+        # documented parent: band, check date and source -> links, as indirect exposure
+        {"names": ["Omega Holdings"], "legal_entity": "Omega Holdings", "ticker": "OMG", "relation": "PARENT_OF_LISTED_COMPANY",
+         "ownership_band": "CONTROLLING_PARENT", "relation_as_of": "2026-10-29", "validity_source": url,
+         "evidence_url": url, "evidence_verified_run": 1},
+        # undocumented joint venture: no band, no date -> validation errors, and never linked
+        {"names": ["Sigma JV"], "legal_entity": "Sigma JV LLC", "ticker": "SIG", "relation": "JOINT_VENTURE_PARTNER",
+         "ownership_share": 1.5, "evidence_url": url},
         {"names": ["Kappa"], "legal_entity": "Kappa Inc", "ticker": "KAP", "relation": "SAME_ENTITY",
          "valid_from": "2026-13", "evidence_url": url},
         {"names": ["Lambda"], "legal_entity": "Lambda Inc", "ticker": "LAM", "relation": "SAME_ENTITY",
          "valid_from": "2026-09-01", "valid_to": "2026-01-01", "validity_source": url, "evidence_url": url}],
-        "excluded": [{"names": ["Sigma JV"], "reason": "JOINT_VENTURE"}, {"names": ["Tau"], "reason": "LOOKS_SIMILAR"}]}
+        "excluded": [{"names": ["Tau"], "reason": "LOOKS_SIMILAR"}]}
     errors = fr.validate_links(table)
-    assert any("PARENT_OF_LISTED_COMPANY" in e and "does not link" in e for e in errors)
+    assert not any("OMG" in e for e in errors)
+    assert any("SIG" in e and "ownership_band" in e for e in errors) and any("SIG" in e and "relation_as_of" in e for e in errors)
+    assert any("SIG" in e and "fraction" in e for e in errors)
     assert any("valid_from must be" in e for e in errors) and any("needs validity_source" in e for e in errors)
     assert any("after valid_to" in e for e in errors) and any("LOOKS_SIMILAR" in e for e in errors)
-    index, _ = _links(tmp_path, table["links"], table["excluded"])
-    assert fr.norm("Omega Holdings") not in index                   # a non-linking relation never links
+    index, excluded = _links(tmp_path, table["links"], table["excluded"])
+    title = "Airworthiness Directives; Omega Holdings Airplanes"
+    parent = fr.classify(doc(title, FAA), index, excluded)["links"][0]
+    assert parent["ticker"] == "OMG" and parent["exposure"] == "INDIRECT" and parent["interpretation_confidence"] == "MEDIUM"
+    assert fr.norm("Sigma JV") not in index                       # no evidence run: pending, never linked
     shipped = json.loads((ROOT / "data" / "issuer_links.json").read_text(encoding="utf-8"))
     assert fr.validate_links(shipped) == []
 

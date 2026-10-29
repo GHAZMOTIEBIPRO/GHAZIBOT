@@ -1,19 +1,186 @@
 {
  "schema": "ghazi.ir_feeds.v1",
  "policy": "Feeds that the company's own investor-relations page links to, found by scripts/probe_ir_sources.py on a GitHub runner (probe_run). A row is read only while its host's robots.txt is readable and allows us (checked every run). Not tested here and not to be generalised: a page without a feed link, or whose robots.txt refused us, is listed under 'not_available' with the probe's result for that page only.",
- "reviewed_at": "2026-10-28",
+ "reviewed_at": "2026-10-29",
  "feeds": [
-  {"symbol": "XOM", "company": "Exxon Mobil Corporation", "company_ar": "إكسون موبيل", "page": "https://investor.exxonmobil.com/",
-   "feed_url": "https://investor.exxonmobil.com/company-information/press-releases/rss", "kind": "press_release", "probe_run": 40770962704},
-  {"symbol": "NVDA", "company": "NVIDIA Corporation", "company_ar": "إنفيديا", "page": "https://investor.nvidia.com/",
-   "feed_url": "https://investor.nvidia.com/rss/event.aspx", "kind": "event", "probe_run": 40770962704},
-  {"symbol": "NVDA", "company": "NVIDIA Corporation", "company_ar": "إنفيديا", "page": "https://investor.nvidia.com/",
-   "feed_url": "https://investor.nvidia.com/rss/SECFiling.aspx?Exchange=CIK&Symbol=0001045810", "kind": "sec_filing", "probe_run": 40770962704}
+  {
+   "symbol": "XOM",
+   "company": "Exxon Mobil Corporation",
+   "company_ar": "إكسون موبيل",
+   "page": "https://investor.exxonmobil.com/",
+   "feed_url": "https://investor.exxonmobil.com/company-information/press-releases/rss",
+   "kind": "press_release",
+   "probe_run": 40770962704
+  },
+  {
+   "symbol": "NVDA",
+   "company": "NVIDIA Corporation",
+   "company_ar": "إنفيديا",
+   "page": "https://investor.nvidia.com/",
+   "feed_url": "https://investor.nvidia.com/rss/event.aspx",
+   "kind": "event",
+   "probe_run": 40770962704
+  },
+  {
+   "symbol": "NVDA",
+   "company": "NVIDIA Corporation",
+   "company_ar": "إنفيديا",
+   "page": "https://investor.nvidia.com/",
+   "feed_url": "https://investor.nvidia.com/rss/SECFiling.aspx?Exchange=CIK&Symbol=0001045810",
+   "kind": "sec_filing",
+   "probe_run": 40770962704
+  },
+  {
+   "symbol": "AMD",
+   "company": "Advanced Micro Devices, Inc.",
+   "company_ar": "إيه إم دي",
+   "page": "https://ir.amd.com/",
+   "feed_url": "https://ir.amd.com/news-events/press-releases/rss",
+   "kind": "press_release",
+   "probe_run": 40793143955
+  },
+  {
+   "symbol": "INTC",
+   "company": "Intel Corporation",
+   "company_ar": "إنتل",
+   "page": "https://www.intc.com/",
+   "feed_url": "https://www.intc.com/news-events/press-releases/rss",
+   "kind": "press_release",
+   "probe_run": 40793143955
+  },
+  {
+   "symbol": "NFLX",
+   "company": "Netflix, Inc.",
+   "company_ar": "نتفليكس",
+   "page": "https://ir.netflix.net/",
+   "feed_url": "https://ir.netflix.net/rss/PressRelease.aspx",
+   "kind": "press_release",
+   "probe_run": 40793143955
+  },
+  {
+   "symbol": "QCOM",
+   "company": "Qualcomm Incorporated",
+   "company_ar": "كوالكوم",
+   "page": "https://investor.qualcomm.com/",
+   "feed_url": "https://investor.qualcomm.com/rss/pressrelease.aspx",
+   "kind": "press_release",
+   "probe_run": 40793143955
+  },
+  {
+   "symbol": "KO",
+   "company": "The Coca-Cola Company",
+   "company_ar": "كوكاكولا",
+   "page": "https://investors.coca-colacompany.com/",
+   "feed_url": "https://investors.coca-colacompany.com/news-events/press-releases/rss",
+   "kind": "press_release",
+   "probe_run": 40793143955
+  },
+  {
+   "symbol": "GD",
+   "company": "General Dynamics Corporation",
+   "company_ar": "جنرال دايناميكس",
+   "page": "https://investorrelations.gd.com/",
+   "feed_url": "https://investorrelations.gd.com/rss/pressrelease.aspx",
+   "kind": "press_release",
+   "probe_run": 40793143955
+  },
+  {
+   "symbol": "GD",
+   "company": "General Dynamics Corporation",
+   "company_ar": "جنرال دايناميكس",
+   "page": "https://investorrelations.gd.com/",
+   "feed_url": "https://investorrelations.gd.com/rss/event.aspx",
+   "kind": "event",
+   "probe_run": 40793143955
+  }
  ],
  "not_available": [
-  {"symbols": ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "JPM", "BA", "IONQ", "ASTS", "BRK.B"], "result": "NO_FEED_LINK",
-   "note": "The IR page was read (robots allowed or no robots.txt) and links no RSS feed; platform paths are not guessed.", "probe_run": 40770962704},
-  {"symbols": ["AVGO", "TSLA", "RKLB", "SOUN"], "result": "ROBOTS_HTTP_403",
-   "note": "robots.txt answered 403 to our user agent; treated as disallowed and the page was not read.", "probe_run": 40770962704}
+  {
+   "symbols": [
+    "AAPL",
+    "MSFT",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "JPM",
+    "BA",
+    "IONQ",
+    "ASTS",
+    "BRK.B"
+   ],
+   "result": "NO_FEED_LINK",
+   "note": "The IR page was read (robots allowed or no robots.txt) and links no RSS feed; platform paths are not guessed.",
+   "probe_run": 40770962704
+  },
+  {
+   "symbols": [
+    "AVGO",
+    "TSLA",
+    "RKLB",
+    "SOUN"
+   ],
+   "result": "ROBOTS_HTTP_403",
+   "note": "robots.txt answered 403 to our user agent; treated as disallowed and the page was not read.",
+   "probe_run": 40770962704
+  },
+  {
+   "symbols": [
+    "ORCL",
+    "CRM",
+    "MU",
+    "IBM",
+    "PLTR",
+    "UBER",
+    "PEP",
+    "WMT",
+    "COST",
+    "MA",
+    "GS",
+    "CAT",
+    "GE",
+    "F"
+   ],
+   "result": "NO_FEED_LINK",
+   "note": "The IR page (and up to two of its own news pages) was read and links no RSS feed; platform paths are not guessed.",
+   "probe_run": 40793143955
+  },
+  {
+   "symbols": [
+    "TXN",
+    "HD",
+    "CVX",
+    "LMT",
+    "RTX",
+    "NOC",
+    "GM"
+   ],
+   "result": "ROBOTS_HTTP_403",
+   "note": "robots.txt answered 403 to our user agent; treated as disallowed and the page was not read.",
+   "probe_run": 40793143955
+  },
+  {
+   "symbols": [
+    "V"
+   ],
+   "result": "FEED_HTTP_403",
+   "note": "The page links a press-release feed that answered 403; not read.",
+   "probe_run": 40793143955
+  },
+  {
+   "symbols": [
+    "COIN"
+   ],
+   "result": "FEED_ROBOTS_DISALLOWED",
+   "note": "The only linked feed is on a CDN host whose robots.txt disallows us.",
+   "probe_run": 40793143955
+  },
+  {
+   "symbols": [
+    "BAC"
+   ],
+   "result": "FEED_INDEX_EMPTY",
+   "note": "The linked feed address is an index page listing no feed.",
+   "probe_run": 40793143955
+  }
  ]
 }

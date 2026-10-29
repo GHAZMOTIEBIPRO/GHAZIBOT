@@ -77,6 +77,17 @@ def test_each_source_fails_alone_keeps_its_last_good_items_and_first_observed_is
     assert "https://investor.nvidia.com/e/1" in items                                                  # kept from last good
 
 
+def test_a_feed_with_entity_expansion_is_refused_and_keeps_its_last_good_items():
+    first = ir.build([XOM], {XOM["feed_url"]: ("OK", XOM_XML)}, NOW)
+    bomb = ('<?xml version="1.0"?><!DOCTYPE r [<!ENTITY a "aaaaaaaaaa"><!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;">]>'
+            "<rss><channel><item><title>&b;</title><link>https://investor.exxonmobil.com/n/x</link>"
+            "<pubDate>Wed, 28 Oct 2026 08:00:00 -0400</pubDate></item></channel></rss>")
+    later = ir.build([XOM], {XOM["feed_url"]: ("OK", bomb)}, NOW, first)
+    src = later["sources"][0]
+    assert src["status"] == "XML_REFUSED_UNSAFE" and src["kept_previous"]
+    assert "https://investor.exxonmobil.com/n/x" not in {i["url"] for i in later["items"]}
+
+
 class FakeSession:
     def __init__(self, robots):
         self.robots, self.calls = robots, []

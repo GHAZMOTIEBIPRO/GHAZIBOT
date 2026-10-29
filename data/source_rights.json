@@ -1708,6 +1708,86 @@
    "rate_limit_note": "Not stated in log; the builder waits 0.5 s between requests and reads at most 3 pages per agency.",
    "summary_ar": "وثائق Federal Register أعمال حكومية أمريكية لا تخضع لحقوق النسخ (17 U.S.C. 105)، والـ API بلا مفتاح. نسخة الموقع ليست النسخة القانونية الرسمية. نربط الشركات بالرموز عبر جدول مراجَع فقط.",
    "evidence_run": "40566784620"
+  },
+  "usaspending": {
+   "name": "USAspending API (api.usaspending.gov)",
+   "category": "government",
+   "official_url": "https://api.usaspending.gov/docs/endpoints",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "Run 40793088411: api.usaspending.gov/robots.txt returned 404 (no restriction for the API); www.usaspending.gov/robots.txt disallows only /*.php* and /*?* paths, which the API does not use."
+    },
+    "internal_analysis": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. USAspending.gov is run by the U.S. Department of the Treasury; its API needs no key."
+    },
+    "persistent_storage": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. USAspending.gov is run by the U.S. Department of the Treasury; its API needs no key."
+    },
+    "public_display_raw": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. USAspending.gov is run by the U.S. Department of the Treasury; its API needs no key."
+    },
+    "public_display_derived": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. USAspending.gov is run by the U.S. Department of the Treasury; its API needs no key."
+    },
+    "github_actions_automation": {
+     "status": "VERIFIED",
+     "evidence": "Run 40793088411: api.usaspending.gov/robots.txt returned 404 (no restriction for the API); www.usaspending.gov/robots.txt disallows only /*.php* and /*?* paths, which the API does not use."
+    },
+    "commercial_use_on_free_tier": {
+     "status": "VERIFIED",
+     "basis": "U.S. government works are not subject to copyright: 17 U.S.C. 105. USAspending.gov is run by the U.S. Department of the Treasury; its API needs no key."
+    },
+    "telegram_sharing": {
+     "status": "VERIFIED",
+     "basis": "Follows the public-display right for the same content.",
+     "evidence": "U.S. government works are not subject to copyright: 17 U.S.C. 105. USAspending.gov is run by the U.S. Department of the Treasury; its API needs no key."
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "No key. Contract actions are published with agency reporting delays (some agencies publish later), so an action date can be weeks older than its appearance.",
+   "rate_limit_note": "The builder waits 1 s between requests and reads at most 20 awards per company.",
+   "summary_ar": "بيانات USAspending أعمال حكومية أمريكية لا تخضع لحقوق النسخ، والواجهة بلا مفتاح. نربط بالشركة عبر المعرّف الأم (UEI) من جدول مراجَع فقط، ونفصل التزام الإجراء عن إجمالي العقد وسقفه والمدفوع.",
+   "evidence_run": "40793088411"
+  },
+  "company_ir_feeds": {
+   "name": "Official company IR RSS feeds (data/ir_feeds.json)",
+   "category": "company",
+   "official_url": "https://investor.exxonmobil.com/",
+   "fetch_status": "200",
+   "rights": {
+    "automated_access": {
+     "status": "VERIFIED",
+     "evidence": "Each feed is linked from the company's own IR page and robots.txt allows our user agent; checked every run (runs 40770962704 and later)."
+    },
+    "internal_analysis": {
+     "status": "UNKNOWN"
+    },
+    "persistent_storage": {
+     "status": "UNKNOWN"
+    },
+    "public_display_raw": {
+     "status": "UNKNOWN"
+    },
+    "public_display_derived": {
+     "status": "UNKNOWN"
+    },
+    "github_actions_automation": {
+     "status": "UNKNOWN"
+    },
+    "commercial_use_on_free_tier": {
+     "status": "UNKNOWN"
+    }
+   },
+   "api_key_required": false,
+   "cost_note": "Each company's site terms were not read per site; only the company's headline, its time and a link are published, with our own category; no release text is copied.",
+   "summary_ar": "مصادر RSS رسمية من مواقع الشركات نفسها؛ لم نقرأ شروط كل موقع، فننشر العنوان والوقت والرابط فقط مع تصنيفنا، دون نسخ نص البيان.",
+   "evidence_run": "40770962704"
   }
  },
  "full_text_run": "39529567535"
