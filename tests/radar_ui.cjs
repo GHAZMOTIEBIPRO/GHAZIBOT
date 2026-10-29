@@ -171,6 +171,12 @@ assert.strictEqual(R.readingLine({ kind: "FDA_APPROVAL" }), "", "events without 
 const jvLine = R.readingLine({ kind: "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE", issuer: "CFM International, S.A.", link_relation: "JOINT_VENTURE_PARTNER",
   exposure: "INDIRECT", ownership_share: 0.5, relation_as_of: "2026-10-29", interpretation_confidence: "MEDIUM", potential_impact: "NEEDS_IMPACT_ASSESSMENT" });
 assert.ok(/مشروع مشترك/.test(jvLine) && /ارتباط غير مباشر \(الحصة 50%\)/.test(jvLine) && /ثقة الربط: متوسطة/.test(jvLine) && /يحتاج تقييم الأثر/.test(jvLine), jvLine);
+// a federal contract action: this action, the award so far and its ceiling side by side, never one summed figure
+const govLine = R.readingLine({ kind: "GOV_CONTRACT_ACTION", action_obligation: 250e6, award_total_obligation: 9.1e9,
+  award_ceiling: 2e10, potential_impact: "NEEDS_IMPACT_ASSESSMENT" });
+assert.ok(/هذا الإجراء: 250 مليون\$/.test(govLine) && /إجمالي الملتزم على العقد: 9,100 مليون\$/.test(govLine.replace(/٬/g, ","))
+  && /ليس مالًا ملتزمًا/.test(govLine) && /يحتاج تقييم الأثر$/.test(govLine), govLine);
+assert.strictEqual(R.kindInfo("GOV_CONTRACT_DEOBLIGATION").group, "regulatory");
 // official IR news: the headline is the company's, the category is ours, the impact unassessed
 const irItem = { kind: "IR_EARNINGS", category_basis: "HEADLINE_KEYWORDS", potential_impact: "NEEDS_IMPACT_ASSESSMENT" };
 assert.strictEqual(R.readingLine(irItem), "العنوان من الشركة؛ التصنيف آلي من كلماته · الأثر: يحتاج تقييم الأثر");

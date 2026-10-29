@@ -133,6 +133,9 @@
     IR_FILING_REGISTRATION: { label: "⚠ تسجيل أوراق مالية (تمويل محتمل)", tag: "risk", group: "risk" },
     IR_FILING_PROXY: { label: "دعوة جمعية عمومية", tag: "admin", group: "admin" },
     IR_OTHER: { label: "خبر من الشركة", tag: "status", group: "company" },
+    // USAspending: this action's own obligation only; the award total and ceiling are shown apart, never added.
+    GOV_CONTRACT_ACTION: { label: "التزام عقد حكومي (USAspending)", tag: "status", group: "regulatory" },
+    GOV_CONTRACT_DEOBLIGATION: { label: "إلغاء التزام عقد حكومي (USAspending)", tag: "status", group: "regulatory" },
   };
   const kindInfo = (k) => KIND[k] || { label: "حدث رسمي", tag: "results", group: "results" };
   const RANK = { HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -211,6 +214,13 @@
         (e.relation_as_of ? ` · العلاقة كما في ${day(e.relation_as_of)}` : ""));
     if (CONFIDENCE_AR[e.interpretation_confidence]) parts.push(`ثقة الربط: ${CONFIDENCE_AR[e.interpretation_confidence]}`);
     if (e.category_basis === "HEADLINE_KEYWORDS") parts.push("العنوان من الشركة؛ التصنيف آلي من كلماته");
+    // Contract amounts of different kinds side by side, never added: this action, the award so far, its maximum.
+    if (Number.isFinite(e.action_obligation)) {
+      const m = (v) => `${n(Math.round(v / 1e5) / 10)} مليون$`;
+      parts.push(`هذا الإجراء: ${m(e.action_obligation)}` +
+        (Number.isFinite(e.award_total_obligation) ? ` · إجمالي الملتزم على العقد: ${m(e.award_total_obligation)}` : "") +
+        (Number.isFinite(e.award_ceiling) ? ` · السقف مع الخيارات (ليس مالًا ملتزمًا): ${m(e.award_ceiling)}` : ""));
+    }
     parts.push(e.potential_impact && e.potential_impact !== "NEEDS_IMPACT_ASSESSMENT" ? `الأثر: ${e.potential_impact}` : "الأثر: يحتاج تقييم الأثر");
     return parts.join(" · ");
   }
