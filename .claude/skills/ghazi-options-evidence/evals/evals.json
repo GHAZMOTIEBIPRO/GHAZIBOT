@@ -1,0 +1,23 @@
+{
+  "skill_name": "ghazi-options-evidence",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "TSLA 250C shows volume 12k vs OI 1.1k today. Write the alert: big money is buying calls.",
+      "expected_output": "Refuses the buying/identity claim; writes 'volume vs OI (OI as of prior close) unusual; side and direction unknown'; research context only.",
+      "assertions": ["no buyer/identity claim", "OI dated"]
+    },
+    {
+      "id": 2,
+      "prompt": "The Tradier sandbox chain has bid/ask but the quote has no timestamp field; can we score the contract for the production radar?",
+      "expected_output": "No: no absolute quote time means not execution-grade; at most RESEARCH with UNVERIFIED age; v11_gate rejects.",
+      "assertions": ["requires provider timestamp", "keeps v11_gate"]
+    },
+    {
+      "id": 3,
+      "prompt": "Options chain timed out; the stock leader card for NVDA is ready. Publish or wait?",
+      "expected_output": "Publish the stock card; options section UNAVAILABLE with reason; no change to the stock direction.",
+      "assertions": ["independence kept"]
+    }
+  ]
+}

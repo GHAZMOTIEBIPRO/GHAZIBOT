@@ -1,0 +1,23 @@
+{
+  "skill_name": "ghazi-data-quality",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The NVDA daily plan says prior-day high 202.4 but TradingView shows 199.8 for 2026-10-27. Find out if it's our data, our code, or the provider.",
+      "expected_output": "Runs check_bars on the plan's input bars, reports the source/feed/adjustment, identifies whether the bar breaks a row rule (DATA_ERROR), whether IEX vs SIP scope explains a high inside/outside the consolidated range (expected, not an error), or whether the level code read the wrong bar (COMPUTE_ERROR). Names the bar id.",
+      "assertions": ["names feed scope (iex/sip)", "classifies into one of the four codes", "does not call an IEX/SIP difference an error by itself"]
+    },
+    {
+      "id": 2,
+      "prompt": "Alpaca returned 20 daily bars for a new listing; the plan shows EMA50 trend DOWN. Is that right?",
+      "expected_output": "INSUFFICIENT_HISTORY for EMA50 (has 20, needs 50); the daily frame may report EMA20-based trend only if 22 bars exist, otherwise INSUFFICIENT; the DOWN label must not be published.",
+      "assertions": ["states have/need counts", "refuses the EMA50 trend"]
+    },
+    {
+      "id": 3,
+      "prompt": "Ticker XYZ shows a -50% gap on 2026-10-20 in our unadjusted intraday bars and nothing in the daily bars.",
+      "expected_output": "Flags SPLIT_SUSPECT on the unadjusted series (ratio near 2:1), checks the adjustment mode of each series, refuses to mix adjusted daily with unadjusted intraday in one level.",
+      "assertions": ["mentions adjustment mode per series", "flags split suspect rather than a crash"]
+    }
+  ]
+}
