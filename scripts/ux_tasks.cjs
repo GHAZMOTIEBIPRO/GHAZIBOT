@@ -91,15 +91,24 @@ async function run(device) {
     const fresh = await page.$eval("#gr-facts", (e) => e.textContent);
     return { facts: fresh.replace(/\s+/g, " ").slice(0, 200) };
   });
-  await task(device, "change the chart frame", async () => {
+  // The chart must actually load, and the frame TradingView loads must carry the 1H interval we asked for.
+  // (Its content is cross-origin and not readable; the frame's own src is.) Where TradingView is unreachable
+  // (UX_NO_TRADINGVIEW=1, e.g. a sandbox), the task is reported NOT RUN, never passed.
+  if (process.env.UX_NO_TRADINGVIEW) console.log(`NOT RUN ${device} | change the chart frame (TradingView unreachable here)`);
+  else await task(device, "change the chart frame", async () => {
     await page.click('[data-gr-chart] .gr-chart-bar button[data-interval="60"]');
     const pressed = await page.$eval('[data-gr-chart] .gr-chart-bar button[data-interval="60"]', (b) => b.getAttribute("aria-pressed"));
     must(pressed === "true", "frame button not pressed");
-    await page.waitForFunction(() => document.querySelector("[data-gr-chart]").dataset.state !== "loading", null, { timeout: 20000 }).catch(() => {});
+    await page.waitForFunction(() => document.querySelector("[data-gr-chart]").dataset.state !== "loading", null, { timeout: 25000 }).catch(() => {});
     const state = await page.$eval("[data-gr-chart]", (b) => b.dataset.state);
-    must(["ready", "timeout", "failed"].includes(state), "chart state " + state);
+    must(state === "ready", "chart did not load: " + state);
+    const src = await page.$eval("[data-gr-chart] .gr-chart-slot iframe", (f) => f.src).catch(() => "");
+    const cfg = (() => { try { return JSON.parse(decodeURIComponent(src.split("#")[1] || "")); } catch { return null; } })();
+    const interval = cfg ? String(cfg.interval) : (/[?&#"]interval["=:%2C3A]*"?(\w+)/.exec(decodeURIComponent(src)) || [])[1];
+    const symbol = cfg ? String(cfg.symbol || "") : "";
+    must(interval === "60", `frame interval ${interval} (src ${src.slice(0, 160)})`);
     await shot(page, `ux-${device}-chart-1h.png`);
-    return { chart_state: state };
+    return { chart_state: state, frame_interval: interval, frame_symbol: symbol };
   });
   await closeIfPhone();
   await task(device, "Arabic search", async () => {

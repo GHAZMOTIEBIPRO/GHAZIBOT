@@ -37,15 +37,10 @@ def test_private_delivery_only_to_a_confirmed_private_chat():
                                                                  get_chat=get_chat, send=send)
     assert deliver({**OWNER, "ALPACA_PRIVATE_ALERTS_AUTHORIZED": "false"}) == "DENIED_BY_POLICY"
     assert deliver({k: v for k, v in OWNER.items() if k != "TELEGRAM_OWNER_CHAT_ID"}) == "OWNER_CHAT_NOT_CONFIGURED"
-    assert deliver({**OWNER, "TELEGRAM_OWNER_CHAT_ID": "-100999"}) == "OWNER_CHAT_EQUALS_BROADCAST"
+    # a group or channel is never the owner's chat, even when it is the configured id or the broadcast chat
+    assert deliver({**OWNER, "TELEGRAM_OWNER_CHAT_ID": "-100999"}, get_chat=group) == "DESTINATION_NOT_PRIVATE"
     assert deliver(OWNER, get_chat=group) == "DESTINATION_NOT_PRIVATE"
-    # The broadcast chat must have been resolved (secret, artifact or updates) before
-    # the comparison means anything; an empty secret alone is not "no broadcast chat".
-    unresolved = {k: v for k, v in OWNER.items() if k != "TELEGRAM_CHAT_ID"}
-    assert deliver(unresolved) == "BROADCAST_NOT_RESOLVED"
-    assert deliver({**unresolved, "TELEGRAM_READY": "true"}) == "BROADCAST_NOT_RESOLVED"
     assert not sent
-    assert deliver({**unresolved, "TELEGRAM_READY": "false"}) == "DELIVERED"   # resolution ran, none exists
     sent.clear()
 
     def broken(chat):
@@ -54,3 +49,30 @@ def test_private_delivery_only_to_a_confirmed_private_chat():
     assert deliver(OWNER, get_chat=broken) == "DESTINATION_UNVERIFIED"
     assert sent == []
     assert deliver(OWNER) == "DELIVERED" and sent == ["123456"]
+
+
+def test_owner_private_chat_without_a_public_channel_after_identity_check():
+    """The resolved one-to-one chat is the owner's: allowed once Telegram confirms the username."""
+    sent = []
+
+    def send(text, chat):
+        sent.append(chat)
+        return SimpleNamespace(message_id=7)
+
+    env = {"ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true", "ALPACA_PRIVATE_ALERTS_AUTHORIZED": "true",
+           "TELEGRAM_CHAT_ID": "555", "TELEGRAM_OWNER_USERNAME": "@GhaziOwner"}
+    me = lambda chat: {"type": "private", "id": 555, "username": "ghaziowner"}
+    other = lambda chat: {"type": "private", "id": 555, "username": "someone_else"}
+    no_name = lambda chat: {"type": "private", "id": 555}
+    channel = lambda chat: {"type": "channel", "username": "ghaziowner"}
+    go = lambda e, g: op.deliver_private("x", sources=["alpaca_iex"], env=e, get_chat=g, send=send)
+    assert go(env, other) == "OWNER_IDENTITY_MISMATCH"
+    assert go(env, no_name) == "OWNER_IDENTITY_MISMATCH"
+    assert go(env, channel) == "DESTINATION_NOT_PRIVATE"
+    assert not sent
+    assert go(env, me) == "DELIVERED" and sent == ["555"]
+    # an explicit owner id wins over the broadcast chat; the username, when set, is still checked
+    sent.clear()
+    assert go({**env, "TELEGRAM_OWNER_CHAT_ID": "777"}, me) == "DELIVERED" and sent == ["777"]
+    # without a username, the broadcast chat is never assumed to be the owner's
+    assert go({k: v for k, v in env.items() if k != "TELEGRAM_OWNER_USERNAME"}, me) == "OWNER_CHAT_NOT_CONFIGURED"
