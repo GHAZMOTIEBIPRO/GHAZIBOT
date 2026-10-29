@@ -55,8 +55,10 @@ def test_ratio_counts_attempts_only_and_last_success_is_the_last_good_run(tmp_pa
 
 
 def test_the_evidence_workflow_is_the_only_writer():
+    # writers commit it to bot-state; a preview copy in a temp folder is not a writer
     writers = [p.name for p in (ROOT / ".github/workflows").glob("*.yml")
-               if "source_log.json" in p.read_text(encoding="utf-8")]
+               if any("source_log.json" in line and ("git add" in line or "--output state/" in line)
+                      for line in p.read_text(encoding="utf-8").splitlines())]
     assert writers == ["site-evidence-strength.yml"]
     wf = yaml.safe_load((ROOT / ".github/workflows/site-evidence-strength.yml").read_text(encoding="utf-8"))
     state = next(s for s in wf["jobs"]["evidence-readiness"]["steps"] if (s.get("with") or {}).get("ref") == "bot-state")

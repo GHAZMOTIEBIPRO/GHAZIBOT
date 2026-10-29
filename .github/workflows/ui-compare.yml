@@ -84,6 +84,7 @@ jobs:
             --output ../ux-data/preview_catalysts.json
           python scripts/build_week_agenda.py --catalysts ../ux-data/preview_catalysts.json \
             --federal-register ../ux-data/federal_register.json --output ../ux-data/week_agenda.json
+          python scripts/build_source_log.py --repo ../state --output ../ux-data/preview_source_log.json
       - name: User tasks (search, reason, source link, chart frame, back, Escape, scroll)
         id: ux
         working-directory: after
@@ -92,7 +93,7 @@ jobs:
           python3 -m http.server 8002 --bind 127.0.0.1 --directory public >/dev/null 2>&1 &
           sleep 1
           U=../ux-data
-          export UX_LOCAL_DATA="nasdaq_listed.json=$U/nasdaq_listed.json,federal_register.json=$U/federal_register.json,catalyst_watchlist.json=$U/preview_catalysts.json,week_agenda.json=$U/week_agenda.json"
+          export UX_LOCAL_DATA="nasdaq_listed.json=$U/nasdaq_listed.json,federal_register.json=$U/federal_register.json,catalyst_watchlist.json=$U/preview_catalysts.json,week_agenda.json=$U/week_agenda.json,source_log.json=$U/preview_source_log.json"
           SW_FILE="$PWD/public/sw.js" OUT=../ui-shots node scripts/ux_tasks.cjs
       - name: Store the images on the ui-review branch
         working-directory: after
