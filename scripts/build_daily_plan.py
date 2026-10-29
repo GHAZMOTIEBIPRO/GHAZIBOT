@@ -39,6 +39,7 @@ import exchange_calendars as xcals
 import pandas as pd
 
 from options_radar import daily_plan as dp
+from options_radar import ohlcv_quality as quality
 from options_radar.bar_aggregation import frames_from_5m
 from options_radar.bar_providers import COVERAGE, AlpacaBars
 from options_radar.output_policy import decide, deliver_private
@@ -125,12 +126,41 @@ def _daily_rows(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
              "close": b["c"], "volume": b["v"]} for b in bars]
 
 
+def session_closes(now: datetime, days: int = 760) -> dict[str, datetime]:
+    """XNYS session date -> its close (early closes included)."""
+    cal = xcals.get_calendar("XNYS")
+    sched = cal.schedule.loc[str((now - timedelta(days=days)).date()):str(now.date())]
+    return {label.date().isoformat(): pd.Timestamp(r["close"]).to_pydatetime() for label, r in sched.iterrows()}
+
+
+def _alpaca_rows(clean: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{"t": b["t"], "o": b["open"], "h": b["high"], "l": b["low"], "c": b["close"], "v": b["volume"] or 0.0}
+            for b in clean]
+
+
+def checked(result: dict[str, Any], interval: str, as_of: datetime, need: int,
+            closes: dict[str, datetime] | None = None) -> dict[str, Any]:
+    """Quality report for one fetched series; downstream uses only its clean completed rows."""
+    return quality.check_bars(result.get("bars") if result.get("status") == "OK" else None, interval=interval,
+                              as_of=as_of, fetch_status=result.get("status", "UNAVAILABLE"), feed=result.get("feed"),
+                              adjustment="split", need=need, session_close=(closes or {}).get)
+
+
 def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessions: list[tuple[datetime, datetime]],
-                       now: datetime) -> tuple[dict[str, Any], dict[str, Any]]:
-    """One symbol: ~2 years of daily bars (a real weekly frame) and 30 sessions of 5-minute bars."""
-    daily = provider.bars(symbol, "1d", now - timedelta(days=740), now)
+                       now: datetime, closes: dict[str, datetime] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+    """One symbol: ~2 years of daily bars (a real weekly frame) and 30 sessions of 5-minute bars.
+
+    Both series pass options_radar.ohlcv_quality first: bad rows are dropped with a code,
+    forming bars never enter a frame, and the report travels with the plan.
+    """
+    closes = closes if closes is not None else session_closes(now)
+    raw_daily = provider.bars(symbol, "1d", now - timedelta(days=740), now)
     intraday_start = sessions[-30][0] if len(sessions) >= 30 else (sessions[0][0] if sessions else now)
-    minute = provider.bars(symbol, "5m", intraday_start, now)
+    raw_minute = provider.bars(symbol, "5m", intraday_start, now)
+    daily_q = checked(raw_daily, "1d", now, dp.REQUIREMENTS["daily"]["trend_bars"], closes)
+    minute_q = checked(raw_minute, "5m", now - timedelta(minutes=16), 1)
+    daily = {**raw_daily, "bars": _alpaca_rows(daily_q["clean"])}
+    minute = {**raw_minute, "bars": _alpaca_rows(minute_q["clean"])}
     feeds = {daily.get("feed"), minute.get("feed")} - {None}
     status = {"daily": daily["status"], "5m": minute["status"], "feeds": sorted(feeds)}
     feed = daily.get("feed") or minute.get("feed") or "unknown"
@@ -144,6 +174,8 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
     plan = dp.plan_for_symbol(symbol, _daily_rows(daily["bars"]), last_closed_session=facts["last_closed_session"],
                               last_closed_week_end=facts["last_closed_week_end"] or "", provider=meta,
                               intraday=intraday)
+    plan["quality_checks"] = {"daily": quality.summary(daily_q), "5m": quality.summary(minute_q)}
+    status["quality"] = {"daily": daily_q["status"], "5m": minute_q["status"]}
     return plan, status
 
 
@@ -157,9 +189,10 @@ def private_plans(facts: dict[str, Any], now: datetime, *, session: Any = None,
                   "ACCOUNT_CREDENTIALS_NOT_CONFIGURED" if status == "CREDENTIALS_MISSING" else "NO_CLOSED_SESSION")
         return {"enabled": False, "reason": reason, "plans": {}}
     sessions = _sessions(now, 60)
+    closes = session_closes(now)
     plans, statuses = {}, {}
     for symbol in symbols or PLAN_SYMBOLS:
-        plans[symbol], statuses[symbol] = plan_from_provider(provider, symbol, facts, sessions, now)
+        plans[symbol], statuses[symbol] = plan_from_provider(provider, symbol, facts, sessions, now, closes)
     return {"enabled": True, "reason": "OWNER_AUTHORIZED_INTERNAL_USE", "plans": plans, "fetch_status": statuses}
 
 
