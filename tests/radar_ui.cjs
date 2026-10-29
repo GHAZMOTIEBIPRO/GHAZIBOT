@@ -233,4 +233,31 @@ for (const [theme, t] of [["dark", darkTokens], ["light", lightTokens]]) {
 }
 assert.ok(lightStart > 0 && darkTokens.bg === "#0b1220", "two themes from tokens");
 
+// platform state: three separate answers, a word and a shape per state, never one "trust" number
+{
+  const now = Date.parse("2026-10-29T03:00:00Z");
+  const cards = { scorecards: {
+    SYSTEM_RELIABILITY: { status: "MEASURED", value: 100 }, WEBSITE_FUNCTIONALITY: { value: 100 },
+    TELEGRAM_DELIVERY: { evidence: { last_sent_at: "2026-10-28T18:23:39Z", message_id: 1316 } },
+    SIGNAL_PERFORMANCE: { status: "NO_PROVEN_EDGE", evidence: { walk_forward: { research_passed: false }, spa: { pvalue_consistent: 0.498 } } } } };
+  const log = { schema: "ghazi.source_log.v1", window_days: 14, sources: [
+    { key: "alpaca_bars", name_ar: "شموع Alpaca", last_outcome: "NOT_ATTEMPTED", last_detail: "ACCOUNT_CREDENTIALS_NOT_CONFIGURED", attempted: 0 },
+    { key: "sec_edgar", name_ar: "SEC EDGAR", last_outcome: "FAILED", attempted: 8, succeeded: 0 },
+    { key: "treasury", name_ar: "الخزانة", last_outcome: "OK", attempted: 4, succeeded: 4, last_success_at: "2026-10-29T01:57:01Z" },
+    { key: "clinicaltrials", name_ar: "ClinicalTrials.gov", last_outcome: "PARTIAL", attempted: 12, succeeded: 12 }] };
+  const [run, data, sig] = R.platformState(cards, log, now);
+  assert.deepStrictEqual([run.title, data.title, sig.title], ["سلامة التشغيل", "جودة البيانات وتغطيتها", "أداء الإشارات المقاس"]);
+  assert.ok(run.state === "good" && run.mark === "✓" && /100%/.test(run.line));
+  assert.ok(data.state === "bad" && /تعمل 2 مصادر \(1 جزئيًا\)، و1 موقوفة بشرط أو مفتاح، ويفشل الجلب من: SEC EDGAR\./.test(data.line), data.line);
+  assert.ok(/شموع الأسعار لتحليلنا غير متاحة بعد/.test(data.line));
+  const alp = data.details.find((d) => /Alpaca/.test(d.text));
+  assert.ok(alp.mark === "⏸" && /ينتظر مفاتيح الحساب/.test(alp.text) && !/0\/0/.test(alp.text), alp.text);
+  assert.ok(/4\/4 جلب ناجح خلال 14 يومًا/.test(data.details.find((d) => /الخزانة/.test(d.text)).text));
+  assert.ok(sig.state === "partial" && /لا أفضلية مثبتة/.test(sig.line) && sig.details.some((t) => /p = 0.498/.test(t)));
+  for (const b of [run, data, sig]) assert.ok(!/ثقة \d|trust/i.test(b.line), "no combined trust figure");
+  // missing files: each answer says so on its own
+  const empty = R.platformState(null, null, now);
+  assert.deepStrictEqual(empty.map((b) => b.state), ["none", "none", "none"]);
+}
+
 console.log("radar_ui ok");

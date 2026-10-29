@@ -278,3 +278,14 @@ body { padding-bottom: calc(var(--bnav-h) + env(safe-area-inset-bottom)); }
 @media (prefers-reduced-motion: reduce) {
   .gr-detail, .gr-detail.is-open { transition: none; }
 }
+
+/* Platform state: three separate answers. The state is carried by a word and a shape (✓ ◐ ⏸ ✕),
+   the side rule only repeats it, so nothing depends on colour alone. */
+.gr-platform .gr-state { border-inline-start: 3px solid var(--line); padding: var(--s2) var(--s3); margin: var(--s3) 0 0;
+  background: var(--surface-2); border-start-end-radius: 10px; border-end-end-radius: 10px; }
+.gr-platform .gr-state h3 { margin: 0 0 var(--s1); font-size: var(--t-md); }
+.gr-platform .gr-state p { margin: 0; }
+.gr-state[data-state="good"] { border-inline-start-color: var(--ok); }
+.gr-state[data-state="partial"], .gr-state[data-state="stopped"] { border-inline-start-color: var(--warn); }
+.gr-state[data-state="bad"] { border-inline-start-color: var(--risk); }
+.gr-state-mark { display: inline-block; min-width: 1.25em; text-align: center; font-weight: 700; }
