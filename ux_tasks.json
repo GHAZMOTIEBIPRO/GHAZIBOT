@@ -1,0 +1,556 @@
+{
+ "data_sha": "6be59caea3ff2948753d7a2a8cd401aab0f82945",
+ "local_files": [
+  "nasdaq_listed.json",
+  "federal_register.json",
+  "catalyst_watchlist.json",
+  "week_agenda.json",
+  "source_log.json",
+  "liquidity_monitor.json"
+ ],
+ "run_at_utc": "2026-10-29T14:49:28.636Z",
+ "tasks": [
+  {
+   "device": "phone",
+   "name": "liquidity reading and charts (DOL claims, SOFR) with dates and notice",
+   "ok": true,
+   "ms": 154,
+   "evidence": {
+    "lines": [
+     "متوسط طلبات إعانة البطالة الأولية لأربعة أسابيع 173,074 مقابل 199,974 في الفترة نفسها قبل عام (⁦−13.5%⁩) — أقل من الفترة نفسها قبل عام.",
+     "الطلبات المستمرة 1,472,165 لأسبوع 10 أكتوبر (⁦−11.7%⁩ على أساس سنوي).",
+     "SOFR 3.94% ضمن النطاق المستهدف 3.75–4.00%؛ تجاوز المئين 99 سقف النطاق في 4 من آخر 60 يوم عمل.",
+     "فائدة الريبو الثلاثي لليلة 3.92% (+2 نقطة أساس عن شهر)، وحجمه 1,771 مليار دولار (⁦−0.1%⁩ عن شهر) — بيانات OFR أولية بتاريخ 26 أكتوبر."
+    ],
+    "charts": [
+     {
+      "chart": "claims",
+      "ready": "1",
+      "canvas": 7,
+      "width": 324
+     },
+     {
+      "chart": "sofr",
+      "ready": "1",
+      "canvas": 7,
+      "width": 324
+     }
+    ]
+   }
+  },
+  {
+   "device": "phone",
+   "name": "find a stock by company name (keyboard only)",
+   "ok": true,
+   "ms": 2787,
+   "evidence": {
+    "suggestions": [
+     "NVDA",
+     "NVPS"
+    ]
+   }
+  },
+  {
+   "device": "phone",
+   "name": "understand why it appears",
+   "ok": true,
+   "ms": 5,
+   "evidence": {
+    "reasons": [
+     "عضو في S&P 500 · تقنية المعلومات · Semiconductors",
+     "مدرج في ناسداك · ناسداك Global Select · Common Stock (ملف NasdaqTrader)",
+     "موعد معلن من الشركة: 11/17/2026 : NVIDIA 3rd Quarter FY27 Financial Results (28 أكتوبر)"
+    ],
+    "font": "16px"
+   }
+  },
+  {
+   "device": "phone",
+   "name": "analysis availability is stated",
+   "ok": true,
+   "ms": 7,
+   "evidence": {
+    "facts": "28 أكتوبرآخر جلسة مكتملة5.05%عائد سندات 10 سنوات · الفارق مع سنتين ⁦+38⁩ نقطة · 28 أكتوبر172,640طلبات إعانة البطالة الأولية (غير معدّلة موسميًا) · أسبوع 17 أكتوبر · مقارنة بالأسبوع نفسه قبل عام ⁦−15.7"
+   }
+  },
+  {
+   "device": "phone",
+   "name": "change the chart frame",
+   "ok": true,
+   "ms": 1560,
+   "evidence": {
+    "chart_state": "ready",
+    "frame_interval": "60",
+    "frame_symbol": "NASDAQ:NVDA"
+   }
+  },
+  {
+   "device": "phone",
+   "name": "Arabic search",
+   "ok": true,
+   "ms": 1969,
+   "evidence": {
+    "name": "NVDA",
+    "sector_hits": [
+     "LLY",
+     "PFE",
+     "UNH",
+     "MRNA"
+    ]
+   }
+  },
+  {
+   "device": "phone",
+   "name": "a valid symbol outside S&P 500 opens with verified listing",
+   "ok": true,
+   "ms": 1756,
+   "evidence": {
+    "name": "SoundHound AI, Inc."
+   }
+  },
+  {
+   "device": "phone",
+   "name": "an unknown valid symbol is marked unverified, not named",
+   "ok": true,
+   "ms": 892,
+   "evidence": {
+    "reason": "لماذا يظهررمز من بحثك غير موجود في قوائمنا (S&P 500 وملف ناسداك)؛ قد يكون مدرجًا في بورصة أخرى. لم نتحقق من اسم الشركة أو بورصتها."
+   }
+  },
+  {
+   "device": "phone",
+   "name": "open the original news",
+   "ok": true,
+   "ms": 1264,
+   "evidence": {
+    "first_link": "https://clinicaltrials.gov/study/NCT05613088",
+    "http_status": 200,
+    "distribution": "توزيع 132 خبرًا حسب المصدر: openFDA 69 · Federal Register 36 · Company IR 19 · ClinicalTrials.gov 8"
+   }
+  },
+  {
+   "device": "phone",
+   "name": "Federal Register notices not tied to a stock",
+   "ok": true,
+   "ms": 599,
+   "evidence": {
+    "rows": 80
+   }
+  },
+  {
+   "device": "phone",
+   "name": "official company news (IR feeds) with links to the company's own site",
+   "ok": true,
+   "ms": 599,
+   "evidence": {
+    "rows": 19,
+    "sample": [
+     {
+      "symbol": "NVDA",
+      "text": "NVDANVIDIA Corporation28 أكتوبر11/17/2026 : NVIDIA 3rd Quarter FY27 Financial Resultsموعد معلن من الشركةتاريخ الحدث 28 أ",
+      "link": "https://investor.nvidia.com/events-and-presentations/events-and-presentations/event-details/2026/NVIDIA-3rd-Quarter-FY27-Financial-Results/default.aspx"
+     },
+     {
+      "symbol": "KO",
+      "text": "KOThe Coca-Cola Company27 أكتوبرCoca-Cola Reports Third Quarter 2026 Results and Raises Full Year Guidanceنتائج مالية (ب",
+      "link": "https://investors.coca-colacompany.com/news-events/press-releases/detail/1176/coca-cola-reports-third-quarter-2026-results-and-raises-full-year-guidance"
+     },
+     {
+      "symbol": "INTC",
+      "text": "INTCIntel Corporation27 أكتوبرIntel and Oracle Plan Expanded Collaboration to Support Enterprise and Agentic AI on Oracl",
+      "link": "https://www.intc.com/news-events/press-releases/detail/1785/intel-and-oracle-plan-expanded-collaboration-to-support"
+     }
+    ]
+   }
+  },
+  {
+   "device": "phone",
+   "name": "catalysts tab and Nasdaq listing flags",
+   "ok": true,
+   "ms": 1278,
+   "evidence": {
+    "catalyst_rows": 9,
+    "flag_rows": 305,
+    "sample": "تنبيه ناسداك: دون متطلبات الإدراج المستمر",
+    "note": "من ملف «Nasdaq Listed» في NasdaqTrader (أُنشئ 29 أكتوبر): 349 ورقة عليها رمز حالة مالية؛ المعروض 305 سهمًا: 290 «دون متطلبات الإدراج المستمر» (D)، 11 «متأخرة في تقديم التقارير الدورية» (E)، 4 «دون متطلبات الإدراج ومتأخرة",
+    "code_meanings": 4
+   }
+  },
+  {
+   "device": "phone",
+   "name": "a Federal Register risk event on the stock page",
+   "ok": true,
+   "ms": 1874,
+   "evidence": {
+    "link": "https://www.federalregister.gov/documents/2026/10/27/2026-21864/airworthiness-directives-the-boeing-company-airplanes",
+    "impact_shown_as_unassessed": true
+   }
+  },
+  {
+   "device": "phone",
+   "name": "phone back button closes the stock and keeps the list position",
+   "ok": true,
+   "ms": 2550,
+   "evidence": {
+    "row": "GSK",
+    "row_top_before": 357,
+    "row_top_after": 357,
+    "scroll_before": 700,
+    "scroll_after": 1772,
+    "focus": "gr-row-open"
+   }
+  },
+  {
+   "device": "phone",
+   "name": "Escape closes the stock panel",
+   "ok": true,
+   "ms": 871,
+   "evidence": {
+    "closed": true
+   }
+  },
+  {
+   "device": "phone",
+   "name": "each tab keeps its scroll position",
+   "ok": true,
+   "ms": 963,
+   "evidence": {
+    "restored": 500
+   }
+  },
+  {
+   "device": "phone",
+   "name": "app sections: radar, watchlist, more",
+   "ok": true,
+   "ms": 3359,
+   "evidence": {
+    "radar_rows": 40,
+    "first_tag": "أولوية 71/100",
+    "agenda": "أجندة الأسبوع30 أكتوبرGD · موعد أعلنته الشركة · «10/30/2026 : General Dynamics Q3 2026 Earnings Call» (أعلنته الشركة) المصدر ↗5 نوفمبرBA · يسري مفعول وثيقة رسمية: ⚠ توجيه صلاحية طيران إلزامي (FAA) · «",
+    "watch_before": 0,
+    "watch_after": [
+     "NVDA"
+    ],
+    "glossary_terms": 11
+   }
+  },
+  {
+   "device": "phone",
+   "name": "platform state: run health, data quality and signal performance apart",
+   "ok": true,
+   "ms": 1345,
+   "evidence": {
+    "blocks": [
+     {
+      "state": "good",
+      "title": "✓ سلامة التشغيل",
+      "mark": "✓",
+      "line": "نجح 100% من التشغيلات المكتملة خلال 24 ساعة."
+     },
+     {
+      "state": "bad",
+      "title": "✕ جودة البيانات وتغطيتها",
+      "mark": "✕",
+      "line": "تعمل 10 مصادر (1 جزئيًا)، و5 موقوفة بشرط أو مفتاح، ويفشل الجلب من: SEC EDGAR. شموع الأسعار لتحليلنا غير متاحة بعد، فلا مستويات سعرية منشورة."
+     },
+     {
+      "state": "partial",
+      "title": "◐ أداء الإشارات المقاس",
+      "mark": "◐",
+      "line": "لا أفضلية مثبتة للإشارات حتى الآن، فلا تُعرض كتوصيات."
+     }
+    ],
+    "summary_fact": "✕حالة البيانات · تعمل 10 مصادر (1 جزئيًا)، و5 موقوفة بشرط أو مفتاح، ويفشل الجلب من: SEC EDGAR. شموع الأسعار لتحليلنا غير متاحة بعد، فلا مستويات سعرية منشورة."
+   }
+  },
+  {
+   "device": "phone",
+   "name": "light theme is saved across a reload",
+   "ok": true,
+   "ms": 2985,
+   "evidence": {
+    "theme_after_reload": "light",
+    "body_bg": "rgb(244, 246, 250)"
+   }
+  },
+  {
+   "device": "phone",
+   "name": "position-size calculator from the user's own numbers",
+   "ok": true,
+   "ms": 523,
+   "evidence": {
+    "result": "شراء (الوقف تحت الدخول) · عدد الأسهم: 40 · قيمة المركز: 2,000 دولار · الخسارة عند الوقف: 100 دولار (الوقف يبعد 5%) · عند الهدف: 240 دولار، أي 2.4 ضعف المخاطرة"
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "liquidity reading and charts (DOL claims, SOFR) with dates and notice",
+   "ok": true,
+   "ms": 222,
+   "evidence": {
+    "lines": [
+     "متوسط طلبات إعانة البطالة الأولية لأربعة أسابيع 173,074 مقابل 199,974 في الفترة نفسها قبل عام (⁦−13.5%⁩) — أقل من الفترة نفسها قبل عام.",
+     "الطلبات المستمرة 1,472,165 لأسبوع 10 أكتوبر (⁦−11.7%⁩ على أساس سنوي).",
+     "SOFR 3.94% ضمن النطاق المستهدف 3.75–4.00%؛ تجاوز المئين 99 سقف النطاق في 4 من آخر 60 يوم عمل.",
+     "فائدة الريبو الثلاثي لليلة 3.92% (+2 نقطة أساس عن شهر)، وحجمه 1,771 مليار دولار (⁦−0.1%⁩ عن شهر) — بيانات OFR أولية بتاريخ 26 أكتوبر."
+    ],
+    "charts": [
+     {
+      "chart": "claims",
+      "ready": "1",
+      "canvas": 7,
+      "width": 406
+     },
+     {
+      "chart": "sofr",
+      "ready": "1",
+      "canvas": 7,
+      "width": 406
+     }
+    ]
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "find a stock by company name (keyboard only)",
+   "ok": true,
+   "ms": 2812,
+   "evidence": {
+    "suggestions": [
+     "NVDA",
+     "NVPS"
+    ]
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "understand why it appears",
+   "ok": true,
+   "ms": 9,
+   "evidence": {
+    "reasons": [
+     "عضو في S&P 500 · تقنية المعلومات · Semiconductors",
+     "مدرج في ناسداك · ناسداك Global Select · Common Stock (ملف NasdaqTrader)",
+     "موعد معلن من الشركة: 11/17/2026 : NVIDIA 3rd Quarter FY27 Financial Results (28 أكتوبر)"
+    ],
+    "font": "16px"
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "analysis availability is stated",
+   "ok": true,
+   "ms": 5,
+   "evidence": {
+    "facts": "28 أكتوبرآخر جلسة مكتملة5.05%عائد سندات 10 سنوات · الفارق مع سنتين ⁦+38⁩ نقطة · 28 أكتوبر172,640طلبات إعانة البطالة الأولية (غير معدّلة موسميًا) · أسبوع 17 أكتوبر · مقارنة بالأسبوع نفسه قبل عام ⁦−15.7"
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "change the chart frame",
+   "ok": true,
+   "ms": 1019,
+   "evidence": {
+    "chart_state": "ready",
+    "frame_interval": "60",
+    "frame_symbol": "NASDAQ:NVDA"
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "Arabic search",
+   "ok": true,
+   "ms": 1996,
+   "evidence": {
+    "name": "NVDA",
+    "sector_hits": [
+     "LLY",
+     "PFE",
+     "UNH",
+     "MRNA"
+    ]
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "a valid symbol outside S&P 500 opens with verified listing",
+   "ok": true,
+   "ms": 1803,
+   "evidence": {
+    "name": "SoundHound AI, Inc."
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "an unknown valid symbol is marked unverified, not named",
+   "ok": true,
+   "ms": 944,
+   "evidence": {
+    "reason": "لماذا يظهررمز من بحثك غير موجود في قوائمنا (S&P 500 وملف ناسداك)؛ قد يكون مدرجًا في بورصة أخرى. لم نتحقق من اسم الشركة أو بورصتها."
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "open the original news",
+   "ok": true,
+   "ms": 929,
+   "evidence": {
+    "first_link": "https://clinicaltrials.gov/study/NCT05613088",
+    "http_status": 200,
+    "distribution": "توزيع 132 خبرًا حسب المصدر: openFDA 69 · Federal Register 36 · Company IR 19 · ClinicalTrials.gov 8"
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "Federal Register notices not tied to a stock",
+   "ok": true,
+   "ms": 646,
+   "evidence": {
+    "rows": 80
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "official company news (IR feeds) with links to the company's own site",
+   "ok": true,
+   "ms": 634,
+   "evidence": {
+    "rows": 19,
+    "sample": [
+     {
+      "symbol": "NVDA",
+      "text": "NVDANVIDIA Corporation28 أكتوبر11/17/2026 : NVIDIA 3rd Quarter FY27 Financial Resultsموعد معلن من الشركةتاريخ الحدث 28 أ",
+      "link": "https://investor.nvidia.com/events-and-presentations/events-and-presentations/event-details/2026/NVIDIA-3rd-Quarter-FY27-Financial-Results/default.aspx"
+     },
+     {
+      "symbol": "KO",
+      "text": "KOThe Coca-Cola Company27 أكتوبرCoca-Cola Reports Third Quarter 2026 Results and Raises Full Year Guidanceنتائج مالية (ب",
+      "link": "https://investors.coca-colacompany.com/news-events/press-releases/detail/1176/coca-cola-reports-third-quarter-2026-results-and-raises-full-year-guidance"
+     },
+     {
+      "symbol": "INTC",
+      "text": "INTCIntel Corporation27 أكتوبرIntel and Oracle Plan Expanded Collaboration to Support Enterprise and Agentic AI on Oracl",
+      "link": "https://www.intc.com/news-events/press-releases/detail/1785/intel-and-oracle-plan-expanded-collaboration-to-support"
+     }
+    ]
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "catalysts tab and Nasdaq listing flags",
+   "ok": true,
+   "ms": 1246,
+   "evidence": {
+    "catalyst_rows": 9,
+    "flag_rows": 305,
+    "sample": "تنبيه ناسداك: دون متطلبات الإدراج المستمر",
+    "note": "من ملف «Nasdaq Listed» في NasdaqTrader (أُنشئ 29 أكتوبر): 349 ورقة عليها رمز حالة مالية؛ المعروض 305 سهمًا: 290 «دون متطلبات الإدراج المستمر» (D)، 11 «متأخرة في تقديم التقارير الدورية» (E)، 4 «دون متطلبات الإدراج ومتأخرة",
+    "code_meanings": 4
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "a Federal Register risk event on the stock page",
+   "ok": true,
+   "ms": 1708,
+   "evidence": {
+    "link": "https://www.federalregister.gov/documents/2026/10/27/2026-21864/airworthiness-directives-the-boeing-company-airplanes",
+    "impact_shown_as_unassessed": true
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "app sections: radar, watchlist, more",
+   "ok": true,
+   "ms": 3006,
+   "evidence": {
+    "radar_rows": 40,
+    "first_tag": "أولوية 71/100",
+    "agenda": "أجندة الأسبوع30 أكتوبرGD · موعد أعلنته الشركة · «10/30/2026 : General Dynamics Q3 2026 Earnings Call» (أعلنته الشركة) المصدر ↗5 نوفمبرBA · يسري مفعول وثيقة رسمية: ⚠ توجيه صلاحية طيران إلزامي (FAA) · «",
+    "watch_before": 0,
+    "watch_after": [
+     "NVDA"
+    ],
+    "glossary_terms": 11
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "platform state: run health, data quality and signal performance apart",
+   "ok": true,
+   "ms": 1350,
+   "evidence": {
+    "blocks": [
+     {
+      "state": "good",
+      "title": "✓ سلامة التشغيل",
+      "mark": "✓",
+      "line": "نجح 100% من التشغيلات المكتملة خلال 24 ساعة."
+     },
+     {
+      "state": "bad",
+      "title": "✕ جودة البيانات وتغطيتها",
+      "mark": "✕",
+      "line": "تعمل 10 مصادر (1 جزئيًا)، و5 موقوفة بشرط أو مفتاح، ويفشل الجلب من: SEC EDGAR. شموع الأسعار لتحليلنا غير متاحة بعد، فلا مستويات سعرية منشورة."
+     },
+     {
+      "state": "partial",
+      "title": "◐ أداء الإشارات المقاس",
+      "mark": "◐",
+      "line": "لا أفضلية مثبتة للإشارات حتى الآن، فلا تُعرض كتوصيات."
+     }
+    ],
+    "summary_fact": "✕حالة البيانات · تعمل 10 مصادر (1 جزئيًا)، و5 موقوفة بشرط أو مفتاح، ويفشل الجلب من: SEC EDGAR. شموع الأسعار لتحليلنا غير متاحة بعد، فلا مستويات سعرية منشورة."
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "light theme is saved across a reload",
+   "ok": true,
+   "ms": 3280,
+   "evidence": {
+    "theme_after_reload": "light",
+    "body_bg": "rgb(244, 246, 250)"
+   }
+  },
+  {
+   "device": "desktop",
+   "name": "position-size calculator from the user's own numbers",
+   "ok": true,
+   "ms": 610,
+   "evidence": {
+    "result": "شراء (الوقف تحت الدخول) · عدد الأسهم: 40 · قيمة المركز: 2,000 دولار · الخسارة عند الوقف: 100 دولار (الوقف يبعد 5%) · عند الهدف: 240 دولار، أي 2.4 ضعف المخاطرة"
+   }
+  },
+  {
+   "device": "phone",
+   "name": "offline: last saved data with its time, no live prices",
+   "ok": true,
+   "ms": 2119,
+   "evidence": {
+    "banner": "غير متصل · تُعرض آخر بيانات محفوظة (حُفظت هذه الدقيقة). الأسعار لا تُخزَّن ولا تُعرض دون اتصال.",
+    "rows": 4,
+    "manifest": {
+     "name": "غازي رادار",
+     "display": "standalone",
+     "icons": 4
+    }
+   }
+  },
+  {
+   "device": "phone",
+   "name": "a new service worker version takes over and the page reloads once",
+   "ok": true,
+   "ms": 3906,
+   "evidence": {
+    "shell_before": [
+     "ghazi-shell-2026-10-29-5"
+    ],
+    "shell_after": [
+     "ghazi-shell-ux-update-test"
+    ],
+    "reloads": 1
+   }
+  }
+ ]
+}
