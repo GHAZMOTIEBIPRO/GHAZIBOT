@@ -1,0 +1,31 @@
+name: GHAZI Live Platform Probe
+
+# Branch-only, log-only check that production serves the platform-state card.
+# Nothing is stored, published or sent.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "ccr-**"
+    paths:
+      - "scripts/probe_live_platform.cjs"
+      - ".github/workflows/live-platform-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install a pinned Playwright with Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Read the live pages
+        run: node scripts/probe_live_platform.cjs
