@@ -1,0 +1,66 @@
+name: GHAZI RADAR Liquidity Monitor (DOL claims + NY Fed rates + OFR repo)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "options_radar/liquidity_monitor.py"
+      - "options_radar/http_fetch.py"
+      - "scripts/build_liquidity_monitor.py"
+      - ".github/workflows/liquidity-monitor.yml"
+  # NY Fed rates post about 08:00 ET and OFR tri-party about 10:15 ET; DOL refreshed ETA 539 on a
+  # Wednesday afternoon ET. A late-morning ET run and an evening ET run cover all three.
+  schedule:
+    - cron: "17 15 * * 1-5"
+    - cron: "37 23 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-radar-liquidity-monitor
+  cancel-in-progress: false
+
+jobs:
+  update-liquidity-monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # This workflow is the only writer of liquidity_monitor.json. The builder keeps the last good
+      # copy of any block whose source fails, labelled with the failure.
+      - name: Fetch and compute (standard library only)
+        run: python app/scripts/build_liquidity_monitor.py --output state/runtime/public/data/liquidity_monitor.json
+      - name: Publish only the liquidity document to durable state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Liquidity Monitor"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/liquidity_monitor.json
+          if git diff --cached --quiet; then
+            echo "Liquidity monitor unchanged."
+            exit 0
+          fi
+          git commit -m "state: DOL claims, NY Fed rates, OFR repo [skip ci]"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2 + RANDOM % 5))
+          done
+          echo "Failed to publish the liquidity monitor after retries." >&2
+          exit 1

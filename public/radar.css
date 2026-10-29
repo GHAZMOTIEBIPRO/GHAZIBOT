@@ -46,8 +46,12 @@ body {
 a { color: var(--accent); text-underline-offset: 3px; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
+/* No double-tap zoom delay on controls; the tap flash is a faint accent, not the browser grey. */
+a, button, select, summary { touch-action: manipulation; -webkit-tap-highlight-color: rgba(90, 140, 230, .18); }
+/* Native selects in Windows dark mode need explicit colours. */
+select { background-color: var(--surface); color: var(--text); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-h1, h2, h3 { margin: 0; line-height: 1.35; }
+h1, h2, h3 { margin: 0; line-height: 1.35; text-wrap: balance; }
 .gr-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .gr-muted { color: var(--text-3); }
 .gr-skip { position: absolute; inset-inline-start: var(--s4); top: -60px; z-index: 100; padding: var(--s2) var(--s3);
@@ -94,6 +98,9 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 .gr-fact { padding: var(--s2) var(--s3); border-radius: 10px; background: var(--surface); border: 1px solid var(--line);
   font-size: var(--t-sm); color: var(--text-2); }
 .gr-fact strong { display: block; color: var(--text); font-size: var(--t-md); font-weight: 600; }
+/* Publisher notices that must accompany a value (e.g. the New York Fed's reference-rate notice). */
+.gr-fact-note { grid-column: 1 / -1; padding: var(--s1) var(--s3); font-size: .875rem; line-height: 1.5;
+  color: var(--text-3); text-align: left; overflow-wrap: anywhere; }
 
 /* Tabs */
 .gr-tabs { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -170,7 +177,8 @@ details.gr-embed .tradingview-widget-container { min-height: 420px; }
 .gr-result { margin-top: var(--s3); font-size: var(--t-md); }
 
 /* Detail: full-screen sheet on phones, side panel on wide screens */
-.gr-detail { position: fixed; inset: 0; z-index: 60; overflow-y: auto; background: var(--bg);
+.gr-detail { position: fixed; inset: 0; z-index: 60; overflow-y: auto; overscroll-behavior: contain;
+  scroll-padding-top: 72px; /* the sticky head must not cover a focused control */ background: var(--bg);
   padding: 0 var(--s4) var(--s6); visibility: hidden; transform: translateX(-100%);
   transition: transform .2s ease, visibility 0s linear .2s; }
 .gr-detail.is-open { visibility: visible; transform: none; transition: transform .2s ease; }
