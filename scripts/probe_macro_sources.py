@@ -172,9 +172,41 @@ def followup() -> None:
     links("dol_claims_page_links", "https://oui.doleta.gov/unemploy/claims.asp", r"539|csv|map|definition|pdf")
 
 
+def section(name: str, url: str, start: str, chars: int = 6000) -> None:
+    """Print the page text from the first occurrence of `start` (whole restriction lists, not keyword lines)."""
+    r, sec, err = get(url)
+    text = ""
+    if r is not None and r.status_code == 200:
+        if "pdf" in r.headers.get("Content-Type", "") or url.split("#")[0].endswith(".pdf"):
+            from probe_terms import pdf_text
+            body = pdf_text(r.content)
+        else:
+            body = text_of(r.text)
+        body = re.sub(r"\s*\n\s*", "\n", body)
+        i = body.find(start)
+        text = body[i:i + chars] if i >= 0 else f"START_NOT_FOUND; first chars: {body[:800]}"
+    report(name, url, r, sec, err, text=text)
+
+
+def restrictions() -> None:
+    section("nyfed_use_restrictions", "https://www.newyorkfed.org/privacy/termsofuse", "subject to Use Restrictions", 9000)
+    section("ofr_policies", "https://www.financialresearch.gov/about/policies/", "Policies", 5000)
+    section("ofr_legal_notices", "https://www.financialresearch.gov/legal-notices/", "Legal", 6000)
+
+
+def eta539_map() -> None:
+    # The DOL data map is a long handbook PDF; print the ETA 539 section only.
+    section("dol_eta539_map", "https://oui.doleta.gov/dmstree/handbooks/402/402_4/4024c6/4024c6.pdf", "ETA 539", 7000)
+
+
+STEPS = {"terms": terms, "ofr": ofr, "nyfed": nyfed, "fed_ddp": fed_ddp, "dol": dol, "followup": followup,
+         "restrictions": restrictions, "eta539_map": eta539_map}
+
+
 def main() -> int:
-    terms()
-    for step in (ofr, nyfed, fed_ddp, dol, followup):
+    import sys
+    chosen = sys.argv[1:] or list(STEPS)
+    for step in (STEPS[name] for name in chosen):
         try:
             step()
         except (ValueError, KeyError, TypeError) as exc:
