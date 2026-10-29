@@ -1,0 +1,430 @@
+{
+ "schema": "ghazi.source_log.v1",
+ "generated_at": "2026-10-29T09:45:19.298275+00:00",
+ "window_days": 14,
+ "window_start": "2026-10-15T09:45:19.298275+00:00",
+ "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
+ "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
+ "sources": [
+  {
+   "key": "alpaca_bars",
+   "priority": 1,
+   "name_ar": "شموع Alpaca (IEX/SIP)",
+   "data_type": "شموع أسعار الأسهم والصناديق (يومي و5 دقائق، تُبنى منها 15د/1س/4س)",
+   "coverage": "الأسهم الأمريكية والصناديق المتداولة",
+   "delay": "شموع مكتملة فقط؛ لا شيء من آخر 16 دقيقة",
+   "key_required": "ALPACA_API_KEY, ALPACA_SECRET_KEY + ALPACA_INTERNAL_DATA_USE_AUTHORIZED",
+   "file": "daily_plan.json",
+   "uses": {
+    "verified": [],
+    "restricted": [
+     "عرض البيانات الخام",
+     "مشاركة في تيليجرام"
+    ],
+    "unknown": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض النتائج المشتقة"
+    ]
+   },
+   "rights_key": "alpaca",
+   "runs_seen": 18,
+   "attempted": 0,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": null,
+   "last_success_at": null,
+   "last_run_at": "2026-10-29T00:43:01.552484+00:00",
+   "last_outcome": "NOT_ATTEMPTED",
+   "last_detail": "DATA_USE_PERMISSION_REQUIRED",
+   "last_commit": "b20f2e1647"
+  },
+  {
+   "key": "tradier_options",
+   "priority": 2,
+   "name_ar": "سلاسل خيارات Tradier",
+   "data_type": "سلاسل خيارات واقتباسات",
+   "coverage": "خيارات الأسهم الأمريكية (حساب Tradier)",
+   "delay": "بيئة الاختبار متأخرة 15 دقيقة",
+   "key_required": "حساب Tradier ورمز وصول",
+   "file": "free_options_sources.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي"
+    ],
+    "restricted": [
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "unknown": [
+     "تخزين"
+    ]
+   },
+   "rights_key": "tradier",
+   "runs_seen": 46,
+   "attempted": 0,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": null,
+   "last_success_at": null,
+   "last_run_at": "2026-10-29T01:11:51.526619+00:00",
+   "last_outcome": "NOT_ATTEMPTED",
+   "last_detail": "ACCOUNT_ENTITLEMENT_NOT_ASSERTED",
+   "last_commit": "6242f3771b"
+  },
+  {
+   "key": "cboe_delayed",
+   "priority": 2,
+   "name_ar": "اقتباسات Cboe المتأخرة",
+   "data_type": "اقتباسات خيارات متأخرة",
+   "coverage": "خيارات مدرجة",
+   "delay": "15 دقيقة",
+   "key_required": "لا",
+   "file": "options_analytics.json",
+   "uses": {
+    "verified": [],
+    "restricted": [],
+    "unknown": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ]
+   },
+   "rights_key": "cboe_delayed",
+   "runs_seen": 225,
+   "attempted": 2,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": 0.0,
+   "last_success_at": null,
+   "last_run_at": "2026-10-28T22:41:17.533729+00:00",
+   "last_outcome": "NOT_ATTEMPTED",
+   "last_detail": "SOURCE_TERMS_BLOCKED",
+   "last_commit": "5e42e85033"
+  },
+  {
+   "key": "sec_edgar",
+   "priority": 3,
+   "name_ar": "SEC EDGAR",
+   "data_type": "الإفصاحات والقوائم المالية (XBRL)",
+   "coverage": "الشركات المسجلة لدى SEC",
+   "delay": "دقائق من الإيداع",
+   "key_required": "هوية SEC_USER_AGENT (ليست مفتاحًا)",
+   "file": "sec_filing_pulse.json",
+   "uses": {
+    "verified": [],
+    "restricted": [],
+    "unknown": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ]
+   },
+   "rights_key": "sec_edgar",
+   "runs_seen": 63,
+   "attempted": 63,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": 0.0,
+   "last_success_at": null,
+   "last_run_at": "2026-10-29T01:48:41.126913+00:00",
+   "last_outcome": "FAILED",
+   "last_detail": "UNAVAILABLE",
+   "last_commit": "fa23cfd273"
+  },
+  {
+   "key": "company_ir_feeds",
+   "priority": 4,
+   "name_ar": "خلاصات علاقات المستثمرين الرسمية",
+   "data_type": "بيانات الشركات ومواعيد النتائج",
+   "coverage": "الشركات في data/ir_feeds.json",
+   "delay": "عند نشر الشركة",
+   "key_required": "لا",
+   "file": "ir_news.json",
+   "uses": {
+    "verified": [],
+    "restricted": [],
+    "unknown": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ]
+   },
+   "rights_key": "company_ir_feeds",
+   "runs_seen": 5,
+   "attempted": 5,
+   "succeeded": 5,
+   "fully_ok": 5,
+   "success_ratio": 1.0,
+   "last_success_at": "2026-10-29T01:49:21.225356+00:00",
+   "last_run_at": "2026-10-29T01:49:21.225356+00:00",
+   "last_outcome": "OK",
+   "last_detail": "10/10",
+   "last_commit": "94b1a96f36"
+  },
+  {
+   "key": "treasury",
+   "priority": 5,
+   "name_ar": "منحنى عوائد الخزانة",
+   "data_type": "عوائد السندات اليومية",
+   "coverage": "منحنى العائد الاسمي",
+   "delay": "يوم عمل",
+   "key_required": "لا",
+   "file": "public_macro.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "treasury_fiscaldata",
+   "runs_seen": 22,
+   "attempted": 22,
+   "succeeded": 22,
+   "fully_ok": 22,
+   "success_ratio": 1.0,
+   "last_success_at": "2026-10-29T01:57:01.703739+00:00",
+   "last_run_at": "2026-10-29T01:57:01.703739+00:00",
+   "last_outcome": "OK",
+   "last_detail": "curve 2026-10-28",
+   "last_commit": "8721e23983"
+  },
+  {
+   "key": "cftc",
+   "priority": 5,
+   "name_ar": "تقارير CFTC للمراكز",
+   "data_type": "مراكز العقود الآجلة الأسبوعية",
+   "coverage": "عقود مؤشرات مختارة",
+   "delay": "أسبوعي (مراكز الثلاثاء)",
+   "key_required": "لا",
+   "file": "public_macro.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "cftc",
+   "runs_seen": 22,
+   "attempted": 22,
+   "succeeded": 22,
+   "fully_ok": 22,
+   "success_ratio": 1.0,
+   "last_success_at": "2026-10-29T01:57:01.703739+00:00",
+   "last_run_at": "2026-10-29T01:57:01.703739+00:00",
+   "last_outcome": "OK",
+   "last_detail": "5/5 markets, positions 2026-10-20",
+   "last_commit": "8721e23983"
+  },
+  {
+   "key": "usaspending",
+   "priority": 5,
+   "name_ar": "عقود USAspending الحكومية",
+   "data_type": "إجراءات العقود الفيدرالية",
+   "coverage": "الشركات في data/usaspending_recipients.json",
+   "delay": "تأخر نشر الجهات (الدفاع نحو 90 يومًا)",
+   "key_required": "لا",
+   "file": "usaspending_contracts.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "usaspending",
+   "runs_seen": 3,
+   "attempted": 3,
+   "succeeded": 3,
+   "fully_ok": 3,
+   "success_ratio": 1.0,
+   "last_success_at": "2026-10-29T01:49:34.261231+00:00",
+   "last_run_at": "2026-10-29T01:49:34.261231+00:00",
+   "last_outcome": "OK",
+   "last_detail": "10/10",
+   "last_commit": "94b1a96f36"
+  },
+  {
+   "key": "openfda",
+   "priority": 5,
+   "name_ar": "openFDA",
+   "data_type": "موافقات الأدوية والاستدعاءات",
+   "coverage": "FDA",
+   "delay": "تحديث مجموعة البيانات (أسبوعي تقريبًا)",
+   "key_required": "لا",
+   "file": "fda_events.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "openfda",
+   "runs_seen": 18,
+   "attempted": 18,
+   "succeeded": 18,
+   "fully_ok": 18,
+   "success_ratio": 1.0,
+   "last_success_at": "2026-10-29T01:04:42.575192+00:00",
+   "last_run_at": "2026-10-29T01:04:42.575192+00:00",
+   "last_outcome": "OK",
+   "last_detail": "no errors",
+   "last_commit": "c62e46bd41"
+  },
+  {
+   "key": "clinicaltrials",
+   "priority": 5,
+   "name_ar": "ClinicalTrials.gov",
+   "data_type": "سجل الدراسات السريرية",
+   "coverage": "دراسات مرتبطة بالجهات المراجعة",
+   "delay": "عند تحديث السجل",
+   "key_required": "لا",
+   "file": "clinical_registry.json",
+   "uses": {
+    "verified": [],
+    "restricted": [],
+    "unknown": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ]
+   },
+   "rights_key": null,
+   "runs_seen": 45,
+   "attempted": 45,
+   "succeeded": 45,
+   "fully_ok": 0,
+   "success_ratio": 1.0,
+   "last_success_at": "2026-10-29T01:49:09.539607+00:00",
+   "last_run_at": "2026-10-29T01:49:09.539607+00:00",
+   "last_outcome": "PARTIAL",
+   "last_detail": "PARTIAL",
+   "last_commit": "94b1a96f36"
+  },
+  {
+   "key": "federal_register",
+   "priority": 5,
+   "name_ar": "السجل الفيدرالي",
+   "data_type": "إشعارات الجهات التنظيمية",
+   "coverage": "وثائق الجهات المختارة",
+   "delay": "يوم النشر",
+   "key_required": "لا",
+   "file": "federal_register.json",
+   "uses": {
+    "verified": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "restricted": [],
+    "unknown": []
+   },
+   "rights_key": "federal_register",
+   "runs_seen": 14,
+   "attempted": 14,
+   "succeeded": 14,
+   "fully_ok": 14,
+   "success_ratio": 1.0,
+   "last_success_at": "2026-10-29T01:49:13.528149+00:00",
+   "last_run_at": "2026-10-29T01:49:13.528149+00:00",
+   "last_outcome": "OK",
+   "last_detail": "254 documents",
+   "last_commit": "94b1a96f36"
+  },
+  {
+   "key": "fred",
+   "priority": 6,
+   "name_ar": "FRED (اختياري)",
+   "data_type": "سلاسل اقتصادية",
+   "coverage": "اقتصاد أمريكي",
+   "delay": "حسب السلسلة",
+   "key_required": "FRED_API_KEY + FRED_AUTOMATION_APPROVED",
+   "file": null,
+   "uses": {
+    "verified": [],
+    "restricted": [],
+    "unknown": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ]
+   },
+   "rights_key": "fred",
+   "runs_seen": 0,
+   "attempted": 0,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": null,
+   "last_success_at": null,
+   "last_run_at": null,
+   "last_outcome": "NOT_CONFIGURED",
+   "last_detail": null,
+   "last_commit": null
+  },
+  {
+   "key": "yahoo",
+   "priority": 9,
+   "name_ar": "Yahoo (موقوف)",
+   "data_type": "أسعار ومؤشرات",
+   "coverage": "واسعة",
+   "delay": "متأخرة",
+   "key_required": "لا (الشروط تمنع الجلب الآلي)",
+   "file": "index_radar.json",
+   "uses": {
+    "verified": [],
+    "restricted": [
+     "تحليل داخلي",
+     "تخزين",
+     "عرض البيانات الخام",
+     "عرض النتائج المشتقة",
+     "مشاركة في تيليجرام"
+    ],
+    "unknown": []
+   },
+   "rights_key": "yahoo",
+   "runs_seen": 65,
+   "attempted": 9,
+   "succeeded": 0,
+   "fully_ok": 0,
+   "success_ratio": 0.0,
+   "last_success_at": null,
+   "last_run_at": "2026-10-28T21:39:03.595156+00:00",
+   "last_outcome": "NOT_ATTEMPTED",
+   "last_detail": "SOURCE_TERMS_BLOCKED",
+   "last_commit": "7e263c9dcb"
+  }
+ ],
+ "research_only": true
+}
