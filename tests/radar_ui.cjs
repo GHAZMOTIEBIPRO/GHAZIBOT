@@ -260,4 +260,24 @@ assert.ok(lightStart > 0 && darkTokens.bg === "#0b1220", "two themes from tokens
   assert.deepStrictEqual(empty.map((b) => b.state), ["none", "none", "none"]);
 }
 
+{
+  // liquidity facts: own dates, freshness words, and the New York Fed notice with SOFR
+  const liq = {
+    claims: { available: true, initial_claims: 199871, initial_claims_yoy_pct: -3.2, week_ending: "2026-10-17", stale: false },
+    funding_rates: { available: true, sofr: { rate: 3.95, date: "2026-10-27" }, target_range: [3.75, 4.0],
+      notice: { SOFR: "The SOFR is subject to the Terms of Use posted at newyorkfed.org.", dtcc: "DTCC Solutions LLC note." } } };
+  const facts = R.liquidityFacts(liq, Date.parse("2026-10-29T15:00:00Z"));
+  assert.deepStrictEqual(facts.map((f) => f.key), ["claims", "sofr"]);
+  assert.ok(/غير معدّلة موسميًا/.test(facts[0].label) && /قبل عام/.test(facts[0].sub) && /−3.2%/.test(facts[0].sub), facts[0].sub);
+  assert.ok(facts[1].value === "3.95%" && /3.75–4.00%/.test(facts[1].sub));
+  assert.ok(/newyorkfed.org/.test(facts[1].notice) && /DTCC/.test(facts[1].notice));
+  // old or kept copies say so; missing comparisons are not shown as zero
+  const old = R.liquidityFacts({ claims: { ...liq.claims, stale: true, age_days: 40, initial_claims_yoy_pct: null },
+    funding_rates: { ...liq.funding_rates, kept_previous_copy: true } }, Date.now());
+  assert.ok(/قديمة \(عمرها 40 يومًا\)/.test(old[0].sub) && /لا مقارنة سنوية/.test(old[0].sub));
+  assert.ok(/آخر قيمة منشورة/.test(old[1].sub));
+  assert.deepStrictEqual(R.liquidityFacts({ claims: { available: false }, funding_rates: { available: false } }), []);
+  assert.deepStrictEqual(R.liquidityFacts(null), []);
+}
+
 console.log("radar_ui ok");

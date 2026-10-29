@@ -80,6 +80,18 @@ def _cftc(d: dict[str, Any]) -> tuple[str, str]:
         f"{len(ok)}/{len(rows)} markets, positions {max((v.get('positions_as_of') or '') for v in ok) if ok else '-'}"
 
 
+def _liquidity(block: str, date_field: str) -> Any:
+    def read(d: dict[str, Any]) -> tuple[str, str]:
+        b = d.get(block) or {}
+        if not b.get("available"):
+            return "FAILED", str(b.get("reason") or "unavailable")[:80]
+        if b.get("kept_previous_copy"):
+            return "FAILED", f"kept previous copy: {str(b.get('kept_reason'))[:60]}"
+        value = b.get(date_field) or (b.get("sofr") or {}).get("date") or (b.get("tri_party_rate") or {}).get("date")
+        return ("PARTIAL" if b.get("stale") else "OK"), f"as of {value}"
+    return read
+
+
 def _federal_register(d: dict[str, Any]) -> tuple[str, str]:
     c = d.get("counts") or {}
     return ("OK", f"{c.get('after_noise_filter')} documents") if isinstance(c.get("after_noise_filter"), int) \
@@ -118,6 +130,18 @@ SOURCES: list[dict[str, Any]] = [
     {"key": "cftc", "rights": "cftc", "priority": 5, "name_ar": "تقارير CFTC للمراكز",
      "data_type": "مراكز العقود الآجلة الأسبوعية", "coverage": "عقود مؤشرات مختارة", "delay": "أسبوعي (مراكز الثلاثاء)",
      "key_required": "لا", "file": "public_macro.json", "read": _cftc},
+    {"key": "dol_claims", "rights": "dol_eta539", "priority": 5, "name_ar": "طلبات إعانة البطالة (وزارة العمل)",
+     "data_type": "طلبات الإعانة الأسبوعية حسب الولاية (غير معدّلة موسميًا)", "coverage": "الولايات الأمريكية",
+     "delay": "نحو 11 يومًا بعد نهاية الأسبوع", "key_required": "لا",
+     "file": "liquidity_monitor.json", "read": _liquidity("claims", "week_ending")},
+    {"key": "nyfed_rates", "rights": "nyfed_reference_rates", "priority": 5, "name_ar": "فوائد الاحتياطي الفيدرالي في نيويورك",
+     "data_type": "SOFR وEFFR والنطاق المستهدف", "coverage": "أسواق التمويل لليلة واحدة",
+     "delay": "يوم العمل التالي نحو 08:00 بتوقيت نيويورك", "key_required": "لا",
+     "file": "liquidity_monitor.json", "read": _liquidity("funding_rates", "")},
+    {"key": "ofr_repo", "rights": "ofr_stfm", "priority": 5, "name_ar": "مراقب التمويل قصير الأجل (OFR)",
+     "data_type": "فائدة وحجم الريبو الثلاثي، واستثمار صناديق النقد في الريبو", "coverage": "سوق الريبو الأمريكية",
+     "delay": "يومي أولي (الريبو) وشهري معدّل (الصناديق)", "key_required": "لا",
+     "file": "liquidity_monitor.json", "read": _liquidity("repo", "")},
     {"key": "usaspending", "rights": "usaspending", "priority": 5, "name_ar": "عقود USAspending الحكومية",
      "data_type": "إجراءات العقود الفيدرالية", "coverage": "الشركات في data/usaspending_recipients.json",
      "delay": "تأخر نشر الجهات (الدفاع نحو 90 يومًا)", "key_required": "لا",

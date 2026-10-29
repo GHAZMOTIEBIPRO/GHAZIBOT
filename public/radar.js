@@ -10,7 +10,8 @@
   const DATA = "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/";
   const FILES = { plan: "daily_plan.json", macro: "public_macro.json", catalysts: "catalyst_watchlist.json",
     directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json",
-    agenda: "week_agenda.json", scorecards: "platform_scorecards.json", sources: "source_log.json" };
+    agenda: "week_agenda.json", scorecards: "platform_scorecards.json", sources: "source_log.json",
+    liquidity: "liquidity_monitor.json" };
   const NASDAQ_FILE = "nasdaq_listed.json";   // ~5,600 rows: loaded only when search or a view needs it
   const SYMBOL_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
   const WATCH_KEY = "ghazi.watchlist.v1";      // same key as the previous page, so saved lists carry over
@@ -561,7 +562,34 @@
     signal.details.push("زيادة المؤشرات ليست دليل تحسن؛ الإشارة تُحفظ وقت إصدارها ولا يُعدّل تاريخها.");
     return [run, data, signal].map((b) => ({ ...b, mark: STATE_MARK[b.state] }));
   }
-  const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
+  // Liquidity / labour context (liquidity_monitor.json). Each fact keeps its own date and says when it
+  // is old or a kept copy; the New York Fed's required notice travels with SOFR (verbatim, English).
+  function liquidityFacts(liq, now) {
+    const out = [];
+    if (!liq) return out;
+    const fmt = (v) => (NUM ? NUM.format(v) : String(v));
+    const pct = (v) => `⁦${v >= 0 ? "+" : "−"}${fmt(Math.abs(v))}%⁩`;
+    const freshness = (b) => (b.kept_previous_copy ? " · تعذّر التحديث، هذه آخر قيمة منشورة"
+      : b.stale ? ` · قديمة (عمرها ${fmt(b.age_days)} يومًا)` : "");
+    const c = liq.claims;
+    if (c && c.available && Number.isFinite(c.initial_claims)) {
+      const yoy = Number.isFinite(c.initial_claims_yoy_pct)
+        ? `مقارنة بالأسبوع نفسه قبل عام ${pct(c.initial_claims_yoy_pct)}` : "لا مقارنة سنوية متاحة";
+      out.push({ key: "claims", label: "طلبات إعانة البطالة الأولية (غير معدّلة موسميًا)", value: fmt(c.initial_claims),
+        sub: `أسبوع ${day(c.week_ending) || c.week_ending} · ${yoy}${freshness(c)}`, source: "وزارة العمل الأمريكية (ETA 539)" });
+    }
+    const f = liq.funding_rates;
+    if (f && f.available && f.sofr && Number.isFinite(f.sofr.rate)) {
+      const range = Array.isArray(f.target_range) && f.target_range.every(Number.isFinite)
+        ? `النطاق المستهدف للفائدة ${f.target_range[0].toFixed(2)}–${f.target_range[1].toFixed(2)}% · ` : "";
+      out.push({ key: "sofr", label: "SOFR (فائدة التمويل لليلة واحدة بضمان سندات الخزانة)", value: f.sofr.rate.toFixed(2) + "%",
+        sub: `${range}${day(f.sofr.date) || f.sofr.date}${freshness(f)}`, source: "بنك الاحتياطي الفيدرالي في نيويورك",
+        notice: f.notice ? [f.notice.SOFR, f.notice.dtcc].filter(Boolean).join(" ") : null });
+    }
+    return out;
+  }
+
+  const api = { sessionState, eventRows, liquidityFacts, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
     foldAr, nasdaqMap, flagRows, flagSummary, readingLine, agendaGroups, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY,
     platformState, sourceState };
@@ -663,6 +691,11 @@
       add("عائد سندات 10 سنوات", curve.yields_pct["10Y"].toFixed(2) + "%",
         (Number.isFinite(sp) ? `الفارق مع سنتين ${signed(sp, n(Math.abs(sp)))} نقطة · ` : "") + day(curve.curve_date));
     }
+    const notices = [];
+    for (const f of liquidityFacts(state.data.liquidity, Date.now())) {
+      add(f.label, f.value, f.sub + " · المصدر: " + f.source);
+      if (f.notice) notices.push(f.notice);
+    }
     if (catalysts) {
       const week = state.events.filter((e) => e.info.group !== "admin" && Date.now() - Date.parse(e.date + "T00:00:00Z") <= 7 * 864e5);
       add("أحداث رسمية مهمة خلال 7 أيام", n(week.length), "حُدّثت " + (ago(catalysts.generated_at, Date.now()) || "—"));
@@ -674,6 +707,9 @@
     const dataState = platformState(state.data.scorecards, state.data.sources, Date.now())[1];
     if (dataState.state !== "none") add("حالة البيانات", dataState.mark, dataState.line);
     if (!facts.children.length) facts.append(el("li", "gr-fact gr-muted", "ملخص السوق غير متاح الآن؛ تعذّر تحميل الملفات المنشورة."));
+    for (const text of notices) {
+      const li = el("li", "gr-fact-note", text); li.lang = "en"; li.dir = "ltr"; facts.append(li);
+    }
   }
   function renderTape() {
     const box = $("gr-tape");

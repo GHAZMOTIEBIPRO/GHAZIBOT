@@ -98,6 +98,9 @@ h1, h2, h3 { margin: 0; line-height: 1.35; text-wrap: balance; }
 .gr-fact { padding: var(--s2) var(--s3); border-radius: 10px; background: var(--surface); border: 1px solid var(--line);
   font-size: var(--t-sm); color: var(--text-2); }
 .gr-fact strong { display: block; color: var(--text); font-size: var(--t-md); font-weight: 600; }
+/* Publisher notices that must accompany a value (e.g. the New York Fed's reference-rate notice). */
+.gr-fact-note { grid-column: 1 / -1; padding: var(--s1) var(--s3); font-size: .875rem; line-height: 1.5;
+  color: var(--text-3); text-align: left; overflow-wrap: anywhere; }
 
 /* Tabs */
 .gr-tabs { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
