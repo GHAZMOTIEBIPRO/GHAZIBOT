@@ -25,6 +25,9 @@ const GOV = /^https:\/\/(www\.accessdata\.fda\.gov|clinicaltrials\.gov|www\.fede
 // Company IR links count as official only on the reviewed company sites (data/ir_feeds.json).
 const IR_HOSTS = JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "..", "data", "ir_feeds.json"), "utf8"))
   .feeds.map((f) => new NodeURL(f.page).hostname.split(".").slice(-2).join("."));
+const IR_BY_SYMBOL = {};
+for (const f of JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "ir_feeds.json"), "utf8")).feeds)
+  (IR_BY_SYMBOL[f.symbol] = IR_BY_SYMBOL[f.symbol] || []).push(new NodeURL(f.page).hostname.split(".").slice(-2).join("."));
 const OFFICIAL = { test: (href) => GOV.test(href) || (href.startsWith("https://") &&
   IR_HOSTS.includes(new NodeURL(href).hostname.split(".").slice(-2).join("."))) };
 fs.mkdirSync(OUT, { recursive: true });
@@ -170,7 +173,11 @@ async function run(device) {
     // Required on data rebuilt by this change (UX_LOCAL_DATA); the published file may predate it.
     if (process.env.UX_LOCAL_DATA) {
       must(rows.length > 0, "no IR rows");
-      must(rows.every((r) => /^https:\/\/[^/]*(exxonmobil|nvidia)\.com\//.test(r.link)), "a link leaves the company site " + JSON.stringify(rows[0]));
+      // each row's link stays on that company's own reviewed site, not just any reviewed company
+      const own = (r) => { try { return r.link.startsWith("https://") && (IR_BY_SYMBOL[r.symbol] || [])
+        .includes(new NodeURL(r.link).hostname.split(".").slice(-2).join(".")); } catch { return false; } };
+      const off = rows.filter((r) => !own(r));
+      must(!off.length, "a link leaves the company's own site " + JSON.stringify(off[0]));
     }
     await shot(page, `ux-${device}-company-news.png`);
     return { rows: rows.length, sample: rows.slice(0, 3) };
