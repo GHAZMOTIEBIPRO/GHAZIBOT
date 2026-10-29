@@ -181,6 +181,17 @@ assert.strictEqual(R.eventText(irEvents[0]), "ExxonMobil Announces Third Quarter
 assert.strictEqual(R.filterEvents(irEvents, "company").length, 1);
 assert.ok(/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28", scheduled_for: "2026-11-17" })));
 assert.ok(!/الموعد المعلن/.test(R.timesLine({ date: "2026-10-28" })));
+// --- week agenda: grouped by date, each item with where its date comes from ---
+const ag = R.agendaGroups({ schema: "ghazi.week_agenda.v1", items: [
+  { date: "2026-11-03", kind: "COMPANY_SCHEDULE", symbol: "NVDA", basis: "COMPANY_ANNOUNCED", title_ar: "موعد أعلنته الشركة",
+    title: "11/03/2026 : Example call", source_url: "https://investor.nvidia.com/e/1" },
+  { date: "2026-11-02", kind: "RULE_EFFECTIVE", symbols: ["BA"], basis: "FEDERAL_REGISTER_EFFECTIVE_ON", title_ar: "يسري مفعول وثيقة رسمية" },
+  { date: "2026-11-26", kind: "MARKET_CLOSED", basis: "EXCHANGE_CALENDAR", title_ar: "السوق الأمريكي مغلق (عطلة رسمية)" },
+  { date: "bad", basis: "EXCHANGE_CALENDAR", title_ar: "x" }] });
+assert.deepStrictEqual(ag.map((g) => g.date), ["2026-11-03", "2026-11-02", "2026-11-26"]);
+assert.ok(/NVDA · موعد أعلنته الشركة · «11\/03\/2026 : Example call»/.test(ag[0].items[0].text) && ag[0].items[0].basis === "أعلنته الشركة");
+assert.strictEqual(ag[2].items[0].text, "السوق الأمريكي مغلق (عطلة رسمية)");
+assert.deepStrictEqual(R.agendaGroups({ schema: "other", items: [] }), []);
 // --- position size from the user's own risk: arithmetic only ---
 assert.deepStrictEqual(R.positionMath({ capital: "10000", risk_pct: "1", entry: "50", stop: "47.5", target: "56" }),
   { side: "LONG", shares: 40, capped_by_cash: false, risk_per_share: 2.5, stop_pct: 5, max_loss: 100, position_value: 2000,

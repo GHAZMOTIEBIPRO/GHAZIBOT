@@ -221,7 +221,9 @@ def classify(doc: dict[str, Any], index: dict, excluded: dict, body: str | None 
     day = str(doc.get("publication_date") or "")[:10] or None
     base = {"document_number": doc.get("document_number"), "date": doc.get("publication_date"),
             "agency": AGENCY_AR.get(doc.get("agency"), doc.get("agency")), "type": doc.get("type"),
-            "title": str(doc.get("title") or "")[:300], "source_url": doc.get("html_url")}
+            "title": str(doc.get("title") or "")[:300], "source_url": doc.get("html_url"),
+            # dates the document itself sets (when a rule takes effect, when comments close): agenda dates
+            "effective_on": doc.get("effective_on"), "comments_close_on": doc.get("comments_close_on")}
     if not kind:
         return {**base, "status": "GENERAL"}
     label, importance, group = KINDS[kind]
@@ -268,7 +270,7 @@ def fetch_documents(session: Any, now: datetime) -> tuple[list[dict[str, Any]], 
                 "per_page": 100, "page": page, "order": "newest", "conditions[agencies][]": agency,
                 "conditions[publication_date][gte]": start,
                 "fields[]": ["title", "type", "abstract", "document_number", "publication_date", "html_url",
-                             "raw_text_url"]})
+                             "raw_text_url", "effective_on", "comments_close_on"]})
             r.raise_for_status()
             d = r.json()
             for doc in d.get("results") or []:

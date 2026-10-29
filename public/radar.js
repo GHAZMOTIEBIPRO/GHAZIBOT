@@ -9,7 +9,8 @@
 (function (root) {
   const DATA = "https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/";
   const FILES = { plan: "daily_plan.json", macro: "public_macro.json", catalysts: "catalyst_watchlist.json",
-    directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json" };
+    directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json",
+    agenda: "week_agenda.json" };
   const NASDAQ_FILE = "nasdaq_listed.json";   // ~5,600 rows: loaded only when search or a view needs it
   const SYMBOL_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
   const WATCH_KEY = "ghazi.watchlist.v1";      // same key as the previous page, so saved lists carry over
@@ -474,9 +475,24 @@
     ["نتائج مشتقة (Greeks وGamma)", "تُحسب فقط من بيانات مسموح بها، ولا تُعرض قبل توفرها."],
   ];
 
+  // Week agenda: only dates a source set (exchange calendar, a company, a Federal Register document).
+  const AGENDA_BASIS_AR = { EXCHANGE_CALENDAR: "تقويم بورصة نيويورك", COMPANY_ANNOUNCED: "أعلنته الشركة",
+    FEDERAL_REGISTER_EFFECTIVE_ON: "تاريخ في وثيقة Federal Register", FEDERAL_REGISTER_COMMENTS_CLOSE_ON: "تاريخ في وثيقة Federal Register" };
+  function agendaGroups(agenda) {
+    if (!agenda || agenda.schema !== "ghazi.week_agenda.v1" || !Array.isArray(agenda.items)) return [];
+    const groups = new Map();
+    for (const it of agenda.items) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(it.date || ""))) continue;
+      const who = it.symbol || (Array.isArray(it.symbols) ? it.symbols.join("، ") : "");
+      const text = [who, it.title_ar, it.title && it.basis !== "EXCHANGE_CALENDAR" ? `«${it.title}»` : ""].filter(Boolean).join(" · ");
+      if (!groups.has(it.date)) groups.set(it.date, []);
+      groups.get(it.date).push({ text, basis: AGENDA_BASIS_AR[it.basis] || it.basis, url: safeUrl(it.source_url) });
+    }
+    return [...groups.entries()].map(([date, items]) => ({ date, items }));
+  }
   const api = { sessionState, eventRows, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
-    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
+    foldAr, nasdaqMap, flagRows, flagSummary, readingLine, agendaGroups, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || !root.document) return;
 
@@ -650,7 +666,9 @@
     return (m && m.name) || (idx && idx.name) || (listed && listed.name) || (top && top.issuer) || FALLBACK_NAMES[symbol] || "";
   }
   function renderRadar(list, note) {
-    const { catalysts, plan } = state.data;
+    const { catalysts, plan, agenda } = state.data;
+    const card = agendaCard(agenda);
+    if (card) note.after(card);
     const entries = (catalysts && Array.isArray(catalysts.watchlist) ? catalysts.watchlist : []).filter((e) => e && SYMBOL_RE.test(String(e.symbol)));
     const evs = bySymbol(state.events);
     note.textContent = "ترتيب للمراجعة حسب قوة الحدث الرسمي وحداثته وموثوقية ربطه بالسهم، مع المخاطر بجانبه. ليس توصية ولا احتمال نجاح." +
@@ -663,6 +681,26 @@
         tags, quiet: !top || top.info.group === "admin" }));
     }
     if (!entries.length) list.append(el("p", "gr-empty", catalysts ? "لا أحداث رسمية في آخر 30 يومًا." : "تعذّر تحميل قائمة الأحداث الرسمية."));
+  }
+  function agendaCard(agenda) {
+    const groups = agendaGroups(agenda);
+    if (!agenda) return null;
+    const card = el("section", "gr-card gr-note-more gr-agenda");
+    card.append(el("h2", null, "أجندة الأسبوع"));
+    if (!groups.length) card.append(el("p", null, "لا مواعيد معلنة من مصادرنا للأيام السبعة القادمة."));
+    for (const g of groups) {
+      card.append(el("h3", null, day(g.date) || g.date));
+      const ul = el("ul", "gr-d-list");
+      for (const it of g.items) {
+        const li = el("li", null, it.text + " ");
+        li.append(el("span", "gr-muted", `(${it.basis})`));
+        if (it.url) { const a = el("a", null, " المصدر ↗"); a.href = it.url; a.target = "_blank"; a.rel = "noopener"; li.append(a); }
+        ul.append(li);
+      }
+      card.append(ul);
+    }
+    card.append(el("p", "gr-muted", agenda.policy_ar || "مواعيد من مصادرها فقط؛ الموعد لا يعني اتجاهًا للسعر."));
+    return card;
   }
   function renderWatchView(list, note) {
     const saved = watchList();

@@ -266,6 +266,9 @@ async function run(device) {
     const radar = await page.$$eval("#gr-list [data-gr-symbol]", (els) => els.length);
     const tag = await page.$eval("#gr-list .gr-tag", (e) => e.textContent).catch(() => "");
     must(radar > 0 && /أولوية/.test(tag), "radar rows " + radar);
+    // The week agenda sits above the radar list; on rebuilt data it must exist and carry source labels.
+    const agenda = await page.$eval(".gr-agenda", (e) => e.textContent).catch(() => "");
+    if (process.env.UX_LOCAL_DATA) must(/أجندة الأسبوع/.test(agenda) && /(تقويم بورصة نيويورك|أعلنته الشركة|Federal Register|لا مواعيد معلنة)/.test(agenda), "agenda " + agenda.slice(0, 120));
     await shot(page, `ux-${device}-radar.png`);
     await page.click('[data-gr-section="watch"]'); await page.waitForTimeout(300);
     const before = await page.$$eval("#gr-list [data-gr-symbol]", (els) => els.length);
@@ -280,7 +283,7 @@ async function run(device) {
     await page.click('[data-gr-section="more"]'); await page.waitForTimeout(300);
     const terms = await page.$$eval(".gr-glossary dt", (els) => els.length);
     must(terms >= 8, "glossary " + terms);
-    return { radar_rows: radar, first_tag: tag, watch_before: before, watch_after: after, glossary_terms: terms };
+    return { radar_rows: radar, first_tag: tag, agenda: agenda.slice(0, 200), watch_before: before, watch_after: after, glossary_terms: terms };
   });
   await task(device, "light theme is saved across a reload", async () => {
     await page.click('.gr-theme button:has-text("فاتح")'); await page.waitForTimeout(300);
