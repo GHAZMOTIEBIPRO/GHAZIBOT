@@ -201,8 +201,16 @@ def restrictions() -> None:
 def eta539_map() -> None:
     # The DOL data map is a long handbook PDF; the first match is its table of contents, the
     # second is the ETA 539 field list (page 41).
-    section("dol_eta539_map", "https://oui.doleta.gov/dmstree/handbooks/402/402_4/4024c6/4024c6.pdf",
-            "ETA 539 - CLAIMS AND EXTENDED BENEFITS DATA", 5000, occurrence=2)
+    url = "https://oui.doleta.gov/dmstree/handbooks/402/402_4/4024c6/4024c6.pdf"
+    r, sec, err = get(url)
+    pages: list[str] = []
+    if r is not None and r.status_code == 200:
+        from pypdf import PdfReader
+        for number, page in enumerate(PdfReader(io.BytesIO(r.content)).pages, start=1):
+            text = page.extract_text() or ""
+            if "539" in text and re.search(r"\bc2[0-3]\b|rptdate", text):
+                pages.append(f"[page {number}] " + re.sub(r"\s*\n\s*", "\n", text)[:5000])
+    report("dol_eta539_map", url, r, sec, err, pages=pages[:3])
 
 
 STEPS = {"terms": terms, "ofr": ofr, "nyfed": nyfed, "fed_ddp": fed_ddp, "dol": dol, "followup": followup,
