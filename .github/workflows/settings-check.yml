@@ -6,12 +6,15 @@ name: GHAZI Settings Check (no values)
 on:
   workflow_dispatch:
   push:
-    branches:
-      - "ccr-**"
+    branches: [main, "ccr-**"]
     paths:
       - "scripts/check_settings.py"
+      - "scripts/verify_free_market_sources.py"
       - ".github/workflows/settings-check.yml"
       - ".github/actions/resolve-telegram-broadcast/**"
+  # One modest daily independent check, no source quote publication.
+  schedule:
+    - cron: "17 19 * * 1-5"
 
 permissions:
   contents: read
@@ -29,6 +32,14 @@ jobs:
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      # Independent owner-only provider probes (values stay within runner).
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
+      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
+      TRADIER_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.TRADIER_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      TRADIER_BASE_URL: ${{ vars.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED || '' }}
       ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED }}
       ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED }}
       ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED }}
@@ -53,11 +64,8 @@ jobs:
       FILINGPULSE_API_KEY_SECRET_SET: ${{ secrets.FILINGPULSE_API_KEY != '' }}
       ALPHA_VANTAGE_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.ALPHA_VANTAGE_NON_DISPLAY_USE_AUTHORIZED }}
       TIINGO_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TIINGO_NON_DISPLAY_USE_AUTHORIZED }}
-      TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED }}
       POLYGON_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.POLYGON_NON_DISPLAY_USE_AUTHORIZED }}
-      TRADIER_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.TRADIER_INTERNAL_DATA_USE_AUTHORIZED }}
       FRED_AUTOMATION_APPROVED: ${{ vars.FRED_AUTOMATION_APPROVED }}
-      DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,3 +78,9 @@ jobs:
         uses: ./app/.github/actions/resolve-telegram-broadcast
       - name: Check (presence, types and HTTP statuses only)
         run: python app/scripts/check_settings.py telegram_runtime/connection.json
+      - name: Verify independent source availability and free-tier evidence (owner only)
+        env:
+          PYTHONPATH: app
+        run: >-
+          python -m scripts.verify_free_market_sources
+          --output "$RUNNER_TEMP/ghazi_free_source_health.json"

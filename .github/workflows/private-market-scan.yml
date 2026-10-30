@@ -11,6 +11,7 @@ on:
     paths:
       - "options_radar/core_options_strategy.py"
       - "scripts/run_focus_options_private.py"
+      - "scripts/run_twelve_non_display_scan.py"
       - ".github/workflows/private-market-scan.yml"
   # 14:47 / 16:47 / 18:47 UTC on weekdays (mid-session in EDT and EST); the
   # script checks the XNYS session itself.
@@ -79,3 +80,30 @@ jobs:
           python -m scripts.private_market_scan \
             --catalysts ../state/runtime/public/data/catalyst_watchlist.json \
             --status-output "$RUNNER_TEMP/private_scan_status.json"
+
+  twelve-non-display:
+    # Runs independently of Alpaca's authorization and market feed.
+    # A free personal non-display plan does not permit public quote or
+    # derived-level publishing, so results stay in runner temporary storage.
+    if: vars.TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
+      DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - name: Independently compute non-display large-cap / ETF research
+        env:
+          PYTHONPATH: app
+        run: >-
+          python -m scripts.run_twelve_non_display_scan
+          --output "$RUNNER_TEMP/twelve_non_display_health.json"
