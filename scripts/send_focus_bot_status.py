@@ -62,6 +62,7 @@ def summarize(
     guardian: dict[str, Any],
     *,
     now: datetime,
+    private: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     health_ok = _fresh(health, now)
     data_ok = _fresh(data_status, now)
@@ -81,6 +82,9 @@ def summarize(
         except (TypeError, ValueError, OverflowError):
             return None
     index_blocked = not index_ok or index.get("status") == "SOURCE_TERMS_BLOCKED"
+    private = private if isinstance(private, dict) else {}
+    private_ok = _fresh(private, now)
+    private_status = str(private.get("status") or "NOT_RUN") if private_ok else "NOT_RUN_OR_STALE"
     production_quotes = (
         health_ok and data_ok
         and checks.get("option_quotes_production_ready") is True
@@ -113,6 +117,10 @@ def summarize(
         "blocked_sources": list(diagnostics.get("blocking_codes") or [])[:6]
             if data_ok else ["DATA_STATUS_STALE"],
         "health_state": str(health.get("status") or "unknown") if health_ok else "stale_or_missing",
+        "private_strategy_status": private_status,
+        "private_strategy_completed": (valid_count(private.get("completed")) if private_ok else None),
+        "private_strategy_research_watches": (
+            valid_count(private.get("research_watches")) if private_ok else None),
         "decision_authority": False,
     }
 
@@ -142,6 +150,9 @@ def message(summary: dict[str, Any], *, now: datetime) -> str:
         f"سجلات عقود الأوبشن المنشورة: {count(summary['public_option_rows'])}",
         f"عقود المتابعة الفعالة: {count(summary['active_guardian_contracts'])}",
         "صحة محرك البيانات: " + state,
+        "استراتيجية Alpaca الخاصة: " + html.escape(summary.get("private_strategy_status", "NOT_RUN")),
+        f"أسهم/صناديق اكتملت قراءتها داخليًا: {count(summary.get('private_strategy_completed'))}",
+        f"عقود متابعة بحثية: {count(summary.get('private_strategy_research_watches'))}",
     ]
     if blockers:
         lines.append("عوامل الحجب: " + blockers)
@@ -158,10 +169,11 @@ def run(
     health: dict[str, Any], data_status: dict[str, Any],
     index: dict[str, Any], guardian: dict[str, Any],
     state: dict[str, Any], *, now: datetime, send=send_html_message,
+    private: dict[str, Any] | None = None,
 ) -> str:
     if not due(now, state):
         return "NOT_DUE"
-    summary = summarize(health, data_status, index, guardian, now=now)
+    summary = summarize(health, data_status, index, guardian, now=now, private=private)
     receipt = send(message(summary, now=now))
     # Do not acknowledge a delivery without a Telegram Bot API receipt.
     identifier = getattr(receipt, "message_id", None)
@@ -185,11 +197,12 @@ def main() -> int:
     p.add_argument("--index", type=Path, default=Path(".bot-state/runtime/public/data/index_radar.json"))
     p.add_argument("--guardian", type=Path, default=Path("public/data/contract_guardian.json"))
     p.add_argument("--state", type=Path, default=Path("data/live/focus_bot_status_state.json"))
+    p.add_argument("--private", type=Path, default=Path("data/live/focus_private_strategy_health.json"))
     args = p.parse_args()
     state = _read(args.state)
     result = run(_read(args.health), _read(args.data_status),
                  _read(args.index), _read(args.guardian),
-                 state, now=datetime.now(timezone.utc))
+                 state, now=datetime.now(timezone.utc), private=_read(args.private))
     if result == "TELEGRAM_ACCEPTED":
         _save(args.state, state)
     print(f"GHAZI focus bot bulletin: {result}")
