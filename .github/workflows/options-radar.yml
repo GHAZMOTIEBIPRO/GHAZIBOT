@@ -121,6 +121,18 @@ jobs:
             echo "Durable runtime state unavailable; bootstrapping from checked-in research state."
           fi
 
+      # Internal-only Alpaca Basic research, never publish raw market prices.
+      # No authorized keys+terms => zero outbound Alpaca requests.
+      - name: Probe core US watchlist with private Alpaca IEX and indicative options
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+          DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED || '' }}
+        run: >-
+          python -m scripts.run_focus_options_private
+          --output data/live/focus_private_strategy_health.json
+
       - name: Probe SEC full-text evidence
         continue-on-error: true
         run: python scripts/prime_sec_efts.py
