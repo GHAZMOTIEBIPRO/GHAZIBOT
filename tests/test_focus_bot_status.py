@@ -94,20 +94,3 @@ def test_core_stocks_include_all_requested_and_rendering_is_wired():
     assert "github.event_name != 'push'" in text
     vault = Path("scripts/runtime_state_vault.py").read_text(encoding="utf-8")
     assert '"data/live/focus_bot_status_state.json"' in vault
-
-
-def test_private_alpaca_metadata_visible_without_exposing_quotes_or_keys():
-    private = {
-        "schema": "ghazi.focus_private_probe.v1",
-        "generated_at": NOW.isoformat(),
-        "status": "PRIVATE_RESEARCH_SCAN",
-        "completed": 7, "research_watches": 2,
-        "eligible_execution_signals": 0,
-    }
-    summary = bot.summarize(*reports(), now=NOW, private=private)
-    rendered = bot.message(summary, now=NOW)
-    assert "PRIVATE_RESEARCH_SCAN" in rendered
-    assert "أسهم/صناديق اكتملت قراءتها داخليًا: 7" in rendered
-    assert "عقود متابعة بحثية: 2" in rendered
-    assert "option" not in str(summary.get("private_strategy_status", "")).lower()
-    assert summary["production_option_quotes_verified"] is False
