@@ -5,6 +5,13 @@ name: GHAZI Private Market Scan (owner only)
 # Nothing is committed: no bot-state, no artifacts; logs carry statuses only.
 on:
   workflow_dispatch:
+  # Verify the newly installed private strategy on main, never on untrusted PRs.
+  push:
+    branches: [main]
+    paths:
+      - "options_radar/core_options_strategy.py"
+      - "scripts/run_focus_options_private.py"
+      - ".github/workflows/private-market-scan.yml"
   # 14:47 / 16:47 / 18:47 UTC on weekdays (mid-session in EDT and EST); the
   # script checks the XNYS session itself.
   schedule:
