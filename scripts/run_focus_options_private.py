@@ -180,7 +180,7 @@ def owner_report(report: dict[str, Any]) -> str:
         if side not in ("CALL", "PUT", "WAIT"):
             side = "WAIT"
         messages.append(f"{html.escape(str(symbol))}: {side} (بحثي فقط)")
-    return "\\n".join(messages)
+    return "\n".join(messages)
 
 
 def deliver_owner_status(report: dict[str, Any]) -> str:
