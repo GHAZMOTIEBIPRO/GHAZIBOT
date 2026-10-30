@@ -34,7 +34,7 @@ class TwelveFixture:
         rows = []
         for day in (28, 29, 30):
             start = datetime(2026, 10, day, 9, 30, tzinfo=NY)
-            for i in range(38):
+            for i in range(78):
                 # Realistic, complete RTH 5m candles in provider NY clock time.
                 val = 700 + .02 * i + (day - 28) * .5
                 rows.append({
@@ -115,3 +115,19 @@ def test_workflow_is_independent_of_alpaca_approval():
     assert "vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED" not in section
     assert "$RUNNER_TEMP/twelve_non_display_health.json" in section
     assert "upload-artifact" not in section and "git add" not in section
+
+
+def test_incomplete_previous_day_is_not_relabelled_as_full_day_high_low():
+    fixture = TwelveFixture()
+    raw = fixture.get("https://api.twelvedata.com/time_series",
+                      params={"symbol": "SPY", "interval": "5min",
+                              "outputsize": 600, "timezone": "America/New_York"},
+                      headers={}, timeout=12, allow_redirects=False).json()
+    # Remove every afternoon bar on Oct 29, so the source has only morning data.
+    raw["values"] = [r for r in raw["values"]
+                     if not (r["datetime"].startswith("2026-10-29")
+                             and r["datetime"][11:] >= "12:00:00")]
+    intraday = td._parse_bars(raw, "SPY", now=NOW)
+    daily = td._daily_from_intraday(intraday)
+    assert all(row["timestamp"][:10] != "2026-10-29" for row in daily)
+    assert any(row["timestamp"][:10] == "2026-10-28" for row in daily)
