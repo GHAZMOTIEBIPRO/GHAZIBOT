@@ -187,8 +187,8 @@ def _completed_option_history(
     if not bars:
         return {"status": "NO_VERIFIED_DELAYED_OPTION_BARS", "bar_count": 0}
     latest = bars[-1]
-    session = latest["time"].astimezone(NY).date()
-    same_session = [bar for bar in bars if bar["time"].astimezone(NY).date() == session]
+    session_day = latest["time"].astimezone(NY).date()
+    same_session = [bar for bar in bars if bar["time"].astimezone(NY).date() == session_day]
     return {
         "status": "VERIFIED_DELAYED_OPTION_OHLCV",
         "bar_count": len(bars),
@@ -224,9 +224,14 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
     for symbol in FOCUS:
         daily = _bars(session, symbol, minute=False, now=now, key=key, secret=secret)
         intraday = _bars(session, symbol, minute=True, now=now, key=key, secret=secret)
-        # Extract latest completed IEX spot only for bounded strike discovery.
-        # 5-min bar start is not an executable quote.
-        spot = (number(intraday[-1].get("c")) if intraday else None)
+        # Only use a source-validated NY-session, finished IEX candle as
+        # strike-search reference. Raw list tails can contain after-hours or
+        # incomplete candles and are not execution-price observations.
+        session_bars = ohlcv(intraday, now=now - timedelta(minutes=15), minutes=5)
+        session_day = now.astimezone(NY).date()
+        matching = [bar for bar in session_bars
+                    if bar["time"].astimezone(NY).date() == session_day]
+        spot = matching[-1]["close"] if matching else None
         chain = (_chain(session, symbol, spot=spot, now=now, key=key, secret=secret)
                  if spot is not None and spot > 0 else [])
         plan = evaluate(symbol, daily=daily, bars5=intraday,
