@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from options_radar.focus_universe import FOCUS_OPTIONABLE
 from options_radar.telegram_transport import send_html_message
 
 
@@ -88,6 +89,7 @@ def _rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
     rows.sort(
         key=lambda row: (
+            1 if str(row.get("_symbol") or "").upper() in FOCUS_OPTIONABLE else 0,
             _number((row.get("watch_decision") or {}).get("evidence_score")),
             _number((row.get("option_explosion") or {}).get("score")),
             _number(row.get("contract_rank")),

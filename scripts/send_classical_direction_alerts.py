@@ -13,6 +13,7 @@ from typing import Any
 import exchange_calendars as xcals
 import pandas as pd
 
+from options_radar.focus_universe import FOCUS_STOCKS, SECONDARY_STOCKS
 from options_radar.site_links import chart_link_html
 from options_radar.telegram_transport import send_html_message
 
@@ -197,6 +198,8 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
     state["blocked_invalid_or_stale"] = len(candidates) - len(signals)
     signals.sort(
         key=lambda row: (
+            2 if str(row.get("symbol") or "").upper() in FOCUS_STOCKS
+            else 1 if str(row.get("symbol") or "").upper() in SECONDARY_STOCKS else 0,
             1 if row.get("priority") == "HIGH" else 0,
             float(row.get("rank_score") or 0),
         ),

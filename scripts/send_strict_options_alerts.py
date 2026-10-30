@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from options_radar.telegram_transport import send_html_message
+from options_radar.focus_universe import FOCUS_OPTIONABLE
 from options_radar.v11_gate import evaluate_v11_signal
 
 
@@ -304,6 +305,7 @@ def send(payload: dict[str, Any], state: dict[str, Any]) -> int:
     maximum = len(rows) if configured_max <= 0 else max(1, min(25, configured_max))
     rows.sort(
         key=lambda row: (
+            1 if str(row.get("symbol") or "").upper() in FOCUS_OPTIONABLE else 0,
             _number(row.get("strict_score")),
             _number(row.get("side_consensus_score")),
             _number(row.get("flow_momentum_score")),

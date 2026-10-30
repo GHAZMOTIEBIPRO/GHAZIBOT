@@ -49,6 +49,7 @@ RUNTIME_PATHS = (
     "data/live/omega_target_calibration.json",
     "data/live/contract_guardian_state.json",
     "data/live/contract_guardian_telegram_state.json",
+    "data/live/focus_bot_status_state.json",
     "data/live/guardian_delivery_audit.json",
 )
 
