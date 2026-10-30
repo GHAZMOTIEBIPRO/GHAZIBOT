@@ -171,3 +171,10 @@ def test_guardian_card_refreshes_fingerprint_when_verified_impact_changes():
     assert sender._fingerprint(row) != first
     row["explosion_thesis"]["verification"] = "UNVERIFIED"
     assert sender._fingerprint(row) != first
+
+
+def test_contract_detail_link_escapes_contract_query():
+    from scripts.send_contract_guardian_updates import _message
+    message = _message({'contract_symbol': 'AMD&x=<bad>', 'side': 'PUT'})
+    assert 'contract?contract=AMD%26x%3D%3Cbad%3E' in message
+    assert '<bad>' not in message
