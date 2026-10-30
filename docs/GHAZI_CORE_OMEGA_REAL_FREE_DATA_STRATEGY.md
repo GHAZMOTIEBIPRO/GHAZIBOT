@@ -19,14 +19,14 @@
 
 ## Private automatic bot wiring
 - New module `options_radar/core_options_strategy.py` is offline/pure.
-- `scripts/run_focus_options_private.py` is scheduled by `.github/workflows/options-radar.yml` when Omega executes.
+- `scripts/run_focus_options_private.py` runs inside the existing owner-only `.github/workflows/private-market-scan.yml` (three session checkpoints on weekdays), never a public publishing workflow.
 - No account/network access unless ALL are set in GitHub:
   - secrets `ALPACA_API_KEY` and `ALPACA_SECRET_KEY`
   - repository variable `ALPACA_INTERNAL_DATA_USE_AUTHORIZED=true`, only if the account's terms genuinely permit this purpose
   - repository variable `DATA_TERMS_CONFIRMED` includes `alpaca` once terms are verified
 - Credential/rights setup requires owner action; no secrets or quote data are copied from a ChatGPT account connection into GitHub.
-- JSON in `data/live/focus_private_strategy_health.json` contains **only** allowed metadata: per-symbol data availability and watch counts, never source prices, contract identities, raw quote data, or keys. It is retained on `bot-state`.
-- One daily private Telegram operations bulletin reports safe data readiness counts. It is NOT an option alert.
+- JSON in `data/live/focus_private_strategy_health.json` contains **only** allowed metadata: per-symbol data availability and watch counts, never source prices, contract identities, raw quote data, or keys. It is written only under the GitHub runner's temporary directory; NOT committed, cached, uploaded, or published to bot-state.
+- An optional research-status message (at scheduled checkpoints) is delivered through `options_radar.output_policy.deliver_private` only to the authenticated owner's one-to-one Telegram chat after setting `ALPACA_PRIVATE_ALERTS_AUTHORIZED=true` and the existing owner-chat credentials. No public channel, OPRA claim or execution signal.
 - The module returns 0 execution-authorized signals on indicative quotes. A verified OPRA entitlement and legal redistribution permission would require separate review before changing this gate.
 
 ## Requirements for moving to real options alerts
