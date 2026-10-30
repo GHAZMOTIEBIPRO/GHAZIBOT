@@ -1,108 +1,35 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-10-29T19:08:42.253666+00:00",
+ "generated_at": "2026-10-30T01:10:51.519955+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 68,
-  "FAA": 111,
+  "FDA": 64,
+  "FAA": 105,
   "FTC": 8,
-  "FERC": 116,
-  "NRC": 40,
+  "FERC": 109,
+  "NRC": 39,
   "NHTSA": 19
  },
  "counts": {
-  "after_noise_filter": 257,
-  "linked": 36,
-  "company_unlinked": 89,
-  "general": 132,
+  "after_noise_filter": 243,
+  "linked": 31,
+  "company_unlinked": 84,
+  "general": 128,
   "by_kind": {
-   "FR_PRIORITY_REVIEW_VOUCHER": 5,
-   "FR_APPROVAL_WITHDRAWN": 5,
+   "FR_APPROVAL_WITHDRAWN": 4,
    "FR_SPECIAL_CONDITIONS": 2,
-   "FR_AIRWORTHINESS_DIRECTIVE": 30,
-   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 26,
+   "FR_AIRWORTHINESS_DIRECTIVE": 28,
+   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 24,
    "FR_FTC_CONSENT_ORDER": 1,
-   "FR_ENERGY_REGULATORY_FILING": 48,
+   "FR_ENERGY_REGULATORY_FILING": 43,
+   "FR_PRIORITY_REVIEW_VOUCHER": 5,
    "FR_NUCLEAR_LICENSE_ACTION": 8
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
  "linked": [
-  {
-   "document_number": "2026-21910",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [
-    "Incyte Corporation"
-   ],
-   "links": [
-    {
-     "name": "Incyte Corporation",
-     "ticker": "INCY",
-     "legal_entity": "Incyte Corp",
-     "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
-     "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)",
-     "listed_company": null,
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "MEDIUM",
-     "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
-    }
-   ],
-   "unmatched": []
-  },
-  {
-   "document_number": "2026-20769",
-   "date": "2026-10-09",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ZANVASTRO (Zilganersen)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20769/issuance-of-priority-review-voucher-rare-pediatric-disease-product-zanvastro-zilganersen",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [
-    "Ionis Pharmaceuticals, Inc."
-   ],
-   "links": [
-    {
-     "name": "Ionis Pharmaceuticals, Inc.",
-     "ticker": "IONS",
-     "legal_entity": "Ionis Pharmaceuticals, Inc.",
-     "relation": "SAME_ENTITY",
-     "listed_company": "Ionis Pharmaceuticals, Inc.",
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "MEDIUM",
-     "confidence_basis": "company read from the document body, linked through a runner-verified reviewed row"
-    }
-   ],
-   "unmatched": []
-  },
   {
    "document_number": "2026-20758",
    "date": "2026-10-09",
@@ -172,42 +99,6 @@
      "name_basis": "LEGAL_NAME",
      "interpretation_confidence": "HIGH",
      "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
-    }
-   ],
-   "unmatched": []
-  },
-  {
-   "document_number": "2026-20434",
-   "date": "2026-10-06",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; FAYUVI (rebisufligene etisparvovec-hopf)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20434/issuance-of-priority-review-voucher-rare-pediatric-disease-product-fayuvi-rebisufligene",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [
-    "Ultragenyx Pharmaceutical Inc."
-   ],
-   "links": [
-    {
-     "name": "Ultragenyx Pharmaceutical Inc.",
-     "ticker": "RARE",
-     "legal_entity": "Ultragenyx Pharmaceutical Inc.",
-     "relation": "SAME_ENTITY",
-     "listed_company": "Ultragenyx Pharmaceutical Inc.",
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "MEDIUM",
-     "confidence_basis": "company read from the document body, linked through a runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -884,42 +775,6 @@
    "unmatched": []
   },
   {
-   "document_number": "2026-19956",
-   "date": "2026-09-29",
-   "agency": "FAA",
-   "type": "Rule",
-   "title": "Airworthiness Directives; The Boeing Company Airplanes",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19956/airworthiness-directives-the-boeing-company-airplanes",
-   "effective_on": "2026-10-14",
-   "comments_close_on": "2026-11-13",
-   "status": "LINKED",
-   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
-   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "risk",
-   "companies": [
-    "The Boeing Company"
-   ],
-   "links": [
-    {
-     "name": "The Boeing Company",
-     "ticker": "BA",
-     "legal_entity": "The Boeing Company",
-     "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company",
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "HIGH",
-     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
-    }
-   ],
-   "unmatched": []
-  },
-  {
    "document_number": "2026-21659",
    "date": "2026-10-23",
    "agency": "FTC",
@@ -1394,61 +1249,6 @@
     }
    ],
    "unmatched": []
-  },
-  {
-   "document_number": "2026-19819",
-   "date": "2026-09-29",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Florida Gas Transmission Company, LLC; Notice of Application and Establishing Intervention Deadline",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19819/florida-gas-transmission-company-llc-notice-of-application-and-establishing-intervention-deadline",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Florida Gas Transmission Company, LLC"
-   ],
-   "links": [
-    {
-     "name": "Florida Gas Transmission Company, LLC",
-     "ticker": "ET",
-     "legal_entity": "Florida Gas Transmission Company, LLC",
-     "relation": "JOINT_VENTURE_PARTNER",
-     "validity_source": "https://en.wikipedia.org/wiki/Florida_Gas_Transmission",
-     "ownership_band": "EQUAL_JOINT_VENTURE",
-     "ownership_share": 0.5,
-     "relation_as_of": "2026-10-29",
-     "listed_company": "Energy Transfer LP",
-     "exposure": "INDIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "MEDIUM",
-     "confidence_basis": "the named entity is linked through a documented ownership relation, not the listed company itself; its share of any effect is not assessed"
-    },
-    {
-     "name": "Florida Gas Transmission Company, LLC",
-     "ticker": "KMI",
-     "legal_entity": "Florida Gas Transmission Company, LLC",
-     "relation": "JOINT_VENTURE_PARTNER",
-     "validity_source": "https://en.wikipedia.org/wiki/Florida_Gas_Transmission",
-     "ownership_band": "EQUAL_JOINT_VENTURE",
-     "ownership_share": 0.5,
-     "relation_as_of": "2026-10-29",
-     "listed_company": "Kinder Morgan, Inc.",
-     "exposure": "INDIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "MEDIUM",
-     "confidence_basis": "the named entity is linked through a documented ownership relation, not the listed company itself; its share of any effect is not assessed"
-    }
-   ],
-   "unmatched": []
   }
  ],
  "company_unlinked": [
@@ -1459,6 +1259,28 @@
    "type": "Notice",
    "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; EMCITATE (Tiratricol)",
    "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21911/issuance-of-priority-review-voucher-rare-pediatric-disease-product-emcitate-tiratricol",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "decision",
+   "companies": [],
+   "links": [],
+   "unmatched": []
+  },
+  {
+   "document_number": "2026-21910",
+   "date": "2026-10-28",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
    "effective_on": null,
    "comments_close_on": null,
    "status": "COMPANY_UNLINKED",
@@ -1492,16 +1314,31 @@
    "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
    "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
-   "companies": [
-    "Scholar Rock, Inc."
-   ],
+   "companies": [],
    "links": [],
-   "unmatched": [
-    {
-     "name": "Scholar Rock, Inc.",
-     "reason": "OWNERSHIP_NOT_VERIFIED"
-    }
-   ]
+   "unmatched": []
+  },
+  {
+   "document_number": "2026-20769",
+   "date": "2026-10-09",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ZANVASTRO (Zilganersen)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20769/issuance-of-priority-review-voucher-rare-pediatric-disease-product-zanvastro-zilganersen",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "decision",
+   "companies": [],
+   "links": [],
+   "unmatched": []
   },
   {
    "document_number": "2026-20762",
@@ -1562,33 +1399,26 @@
    ]
   },
   {
-   "document_number": "2026-19912",
-   "date": "2026-09-29",
+   "document_number": "2026-20434",
+   "date": "2026-10-06",
    "agency": "FDA",
    "type": "Notice",
-   "title": "FHTA LLC; Withdrawal of Approval of New Drug Application for MYSOLINE (Primidone) Suspension, 250 Milligrams/5 Milliliters",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19912/fhta-llc-withdrawal-of-approval-of-new-drug-application-for-mysoline-primidone-suspension-250",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; FAYUVI (rebisufligene etisparvovec-hopf)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20434/issuance-of-priority-review-voucher-rare-pediatric-disease-product-fayuvi-rebisufligene",
    "effective_on": null,
    "comments_close_on": null,
    "status": "COMPANY_UNLINKED",
-   "kind": "FR_APPROVAL_WITHDRAWN",
-   "label_ar": "سحب موافقة تطبيق دوائي (FDA)",
-   "document_type": "FR_APPROVAL_WITHDRAWN",
-   "importance": "LOW",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
    "importance_basis": "DOCUMENT_TYPE",
    "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
    "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "FHTA LLC"
-   ],
+   "group": "decision",
+   "companies": [],
    "links": [],
-   "unmatched": [
-    {
-     "name": "FHTA LLC",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
+   "unmatched": []
   },
   {
    "document_number": "2026-21932",
@@ -2635,93 +2465,6 @@
    ]
   },
   {
-   "document_number": "2026-19892",
-   "date": "2026-09-29",
-   "agency": "FAA",
-   "type": "Proposed Rule",
-   "title": "Airworthiness Directives; Leonardo S.p.a. Helicopters",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19892/airworthiness-directives-leonardo-spa-helicopters",
-   "effective_on": null,
-   "comments_close_on": "2026-11-13",
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
-   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Leonardo S.p.a."
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Leonardo S.p.a.",
-     "reason": "LISTED_OUTSIDE_US"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-19891",
-   "date": "2026-09-29",
-   "agency": "FAA",
-   "type": "Rule",
-   "title": "Airworthiness Directives; MD Helicopters, LLC Helicopters",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19891/airworthiness-directives-md-helicopters-llc-helicopters",
-   "effective_on": "2026-10-20",
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
-   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "risk",
-   "companies": [
-    "MD Helicopters, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "MD Helicopters, LLC",
-     "reason": "PRIVATE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-19890",
-   "date": "2026-09-29",
-   "agency": "FAA",
-   "type": "Proposed Rule",
-   "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19890/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
-   "effective_on": null,
-   "comments_close_on": "2026-11-13",
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
-   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Airbus Helicopters Deutschland GmbH"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Airbus Helicopters Deutschland GmbH",
-     "reason": "LISTED_OUTSIDE_US"
-    }
-   ]
-  },
-  {
    "document_number": "2026-21990",
    "date": "2026-10-28",
    "agency": "FERC",
@@ -3709,122 +3452,6 @@
    ]
   },
   {
-   "document_number": "2026-19907",
-   "date": "2026-09-29",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Guardian Pipeline, LLC; Notice of Schedule for the Preparation of an Environmental Assessment for the Guardian 3 Expansion Project",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19907/guardian-pipeline-llc-notice-of-schedule-for-the-preparation-of-an-environmental-assessment-for-the",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Guardian Pipeline, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Guardian Pipeline, LLC",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-19818",
-   "date": "2026-09-29",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Copper Valley Electric Association, Inc.; Notice of Application Accepted for Filing; and Soliciting Motions To Intervene and Protests; and Scoping Period Requesting Comments on Environmental Issues for the Proposed Solomon Gulch Hydroelectric Project",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19818/copper-valley-electric-association-inc-notice-of-application-accepted-for-filing-and-soliciting",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Copper Valley Electric Association, Inc."
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Copper Valley Electric Association, Inc.",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-19817",
-   "date": "2026-09-29",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "French Broad Electric Membership Corporation; Notice of Application for Surrender of Exemption Accepted for Filing, Soliciting Comments, Motions To Intervene, and Protests",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19817/french-broad-electric-membership-corporation-notice-of-application-for-surrender-of-exemption",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "French Broad Electric Membership Corporation"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "French Broad Electric Membership Corporation",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-19816",
-   "date": "2026-09-29",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Bay Gas Storage Company, LLC; Notice of Staff Protest",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19816/bay-gas-storage-company-llc-notice-of-staff-protest",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Bay Gas Storage Company, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Bay Gas Storage Company, LLC",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
    "document_number": "2026-21996",
    "date": "2026-10-28",
    "agency": "NRC",
@@ -4433,17 +4060,6 @@
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-19921",
-   "date": "2026-09-29",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Determination That SULFADIAZINE (Sulfadiazine) Tablet, 500 Milligrams, Was Not Withdrawn From Sale for Reasons of Safety or Effectiveness",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19921/determination-that-sulfadiazine-sulfadiazine-tablet-500-milligrams-was-not-withdrawn-from-sale-for",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
    "document_number": "2026-22098",
    "date": "2026-10-29",
    "agency": "FAA",
@@ -4807,28 +4423,6 @@
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-19897",
-   "date": "2026-09-29",
-   "agency": "FAA",
-   "type": "Notice",
-   "title": "Office of Commercial Space Transportation; Notice of Intent To Prepare a Supplemental Environmental Impact Statement (SEIS) and Open a Public Scoping Period for the SpaceX Starship-Super Heavy Operations at Space Launch Complex 37 at Cape Canaveral Space Force Station, Cape Canaveral, Florida",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19897/office-of-commercial-space-transportation-notice-of-intent-to-prepare-a-supplemental-environmental",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-19871",
-   "date": "2026-09-29",
-   "agency": "FAA",
-   "type": "Notice",
-   "title": "Notice of Availability, Notice of Public Comment Period, Notice of Virtual Public Meeting, and Request for Comment on the Draft Environmental Assessment for Blue Origin New Glenn Cadence Increase at Space Launch Complex 36A, Cape Canaveral Space Force Station, Florida",
-   "source_url": "https://www.federalregister.gov/documents/2026/09/29/2026-19871/notice-of-availability-notice-of-public-comment-period-notice-of-virtual-public-meeting-and-request",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
    "document_number": "2026-21630",
    "date": "2026-10-22",
    "agency": "FTC",
@@ -4934,6 +4528,39 @@
    "type": "Notice",
    "title": "Reliability Technical Conference; Third Supplemental Notice of Commissioner-Led Technical Conference",
    "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21435/reliability-technical-conference-third-supplemental-notice-of-commissioner-led-technical-conference",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-21434",
+   "date": "2026-10-20",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Notice of Joint Meeting of the Federal Energy Regulatory Commission and the Nuclear Regulatory Commission",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21434/notice-of-joint-meeting-of-the-federal-energy-regulatory-commission-and-the-nuclear-regulatory",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-21366",
+   "date": "2026-10-19",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Dunn, Keith M.; Notice of Filing",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21366/dunn-keith-m-notice-of-filing",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-21365",
+   "date": "2026-10-19",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Erie Boulevard Hydropower, L.P.; Notice of Reasonable Period of Time for Water Quality Certification Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21365/erie-boulevard-hydropower-lp-notice-of-reasonable-period-of-time-for-water-quality-certification",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
