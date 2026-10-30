@@ -1,6 +1,6 @@
 {
   "schema": "ghazi.sec_issuer_pulse.v1",
-  "generated_at": "2026-10-30T12:00:56.766854+00:00",
+  "generated_at": "2026-10-30T16:06:45.045206+00:00",
   "status": "UNAVAILABLE",
   "source_retry_after": "2026-10-30T18:00:56.766854+00:00",
   "refusal_reason": "HTTP_403",
@@ -10,16 +10,12 @@
     "issuers_inspected": 0,
     "filings_verified": 0,
     "errors": {
-      "ticker_map": 403,
-      "RGC": "HTTP_403"
+      "sec_api": "COOLDOWN_ACTIVE"
     },
-    "error_kinds": {
-      "ticker_map": "www.sec.gov:RATE_LIMITED",
-      "RGC": "data.sec.gov:IDENTITY_REFUSED"
-    }
+    "error_kinds": {}
   },
-  "ticker_mapping_source": "UNVERIFIED_2025_MIRROR_REQUIRES_SEC_TICKER_CONFIRMATION",
-  "ticker_mapping_mirror_snapshot_date": "2025-02-28",
+  "ticker_mapping_source": "OFFICIAL_SEC_ACCESS_COOLDOWN",
+  "ticker_mapping_mirror_snapshot_date": null,
   "filings": [],
   "policy": {
     "free_no_api_key": true,
