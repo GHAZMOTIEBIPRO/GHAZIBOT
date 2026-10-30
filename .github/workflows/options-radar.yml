@@ -212,6 +212,16 @@ jobs:
           --payload public/data/latest.json
           --state data/live/omega_watch_alert_state.json
 
+      - name: Send once-daily verified-status bulletin for primary US watchlist
+        if: github.event_name != 'push' && env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_focus_bot_status
+          --health public/data/health.json
+          --data-status public/data/data-status.json
+          --index .bot-state/runtime/public/data/index_radar.json
+          --guardian public/data/contract_guardian.json
+          --state data/live/focus_bot_status_state.json
+
       - name: Evaluate calibration review gate
         id: calibration_gate
         run: python scripts/calibration_gate.py
