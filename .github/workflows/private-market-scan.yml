@@ -31,6 +31,7 @@ jobs:
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
       ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
       ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
+      DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED || '' }}
       ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
       NASDAQ_WEB_AUTOMATION_APPROVED: ${{ vars.NASDAQ_WEB_AUTOMATION_APPROVED || 'false' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -57,6 +58,14 @@ jobs:
       - name: Resolve the broadcast destination for the private-chat check
         if: env.ALPACA_PRIVATE_ALERTS_AUTHORIZED == 'true'
         uses: ./app/.github/actions/resolve-telegram-broadcast
+      - name: Analyze priority SPY/QQQ and large-cap options privately
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd app
+          python -m scripts.run_focus_options_private \
+            --output "$RUNNER_TEMP/core_omega_private_health.json"
+
       - name: Scan (status only in the log)
         run: |
           cd app
