@@ -80,8 +80,14 @@ def _daily_from_intraday(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
     output = []
     for day in sorted(sessions):
         group = sorted(sessions[day], key=lambda row: row["time"])
-        # Reject sessions without sufficient traded bars as daily context.
-        if len(group) < 26:
+        # PDH/PDL must come from a fully observed prior RTH session.
+        # If the source delivered only morning candles, its maxima/minima
+        # are NOT yesterday's actual high/low. Early-close dates without an
+        # exchange calendar are conservatively excluded, not fabricated.
+        first = group[0]["time"].astimezone(NY)
+        last = group[-1]["time"].astimezone(NY)
+        if (len(group) < 70 or (first.hour, first.minute) != (9, 30)
+                or (last.hour, last.minute) < (15, 45)):
             continue
         output.append({
             "timestamp": group[0]["time"].isoformat(),
