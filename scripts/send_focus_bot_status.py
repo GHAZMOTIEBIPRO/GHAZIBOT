@@ -69,10 +69,21 @@ def summarize(
     index_ok = _fresh(index, now)
     diagnostics = data_status.get("coverage_diagnostics")
     diagnostics = diagnostics if isinstance(diagnostics, dict) else {}
+    checks = health.get("checks")
+    checks = checks if isinstance(checks, dict) else {}
+    row_counts = data_status.get("row_counts")
+    row_counts = row_counts if isinstance(row_counts, dict) else {}
+
+    def valid_count(value: Any) -> int | None:
+        try:
+            count = int(value)
+            return max(0, count)
+        except (TypeError, ValueError, OverflowError):
+            return None
     index_blocked = not index_ok or index.get("status") == "SOURCE_TERMS_BLOCKED"
     production_quotes = (
         health_ok and data_ok
-        and health.get("checks", {}).get("option_quotes_production_ready") is True
+        and checks.get("option_quotes_production_ready") is True
         and diagnostics.get("options_execution_quote_ready") is True
     )
     return {
@@ -88,15 +99,15 @@ def summarize(
             production_quotes and diagnostics.get("options_trade_flow_ready") is True
         ),
         "public_stock_rows": (
-            max(0, int(data_status.get("row_counts", {}).get("stocks") or 0))
+            valid_count(row_counts.get("stocks"))
             if data_ok else None
         ),
         "public_option_rows": (
-            max(0, int(data_status.get("row_counts", {}).get("options") or 0))
+            valid_count(row_counts.get("options"))
             if data_ok else None
         ),
         "active_guardian_contracts": (
-            max(0, int(guardian.get("active_count") or 0))
+            valid_count(guardian.get("active_count"))
             if guardian_ok else None
         ),
         "blocked_sources": list(diagnostics.get("blocking_codes") or [])[:6]
