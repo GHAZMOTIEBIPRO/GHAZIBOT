@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from options_radar.core_options_strategy import evaluate, number
+from options_radar.core_options_strategy import OCC, evaluate, number, ohlcv
 from options_radar.focus_universe import FOCUS_STOCKS
 
 NY = ZoneInfo("America/New_York")
@@ -159,6 +159,49 @@ def _chain(session: Any, symbol: str, *, spot: float, now: datetime,
     return combined
 
 
+def _completed_option_history(
+    session: Any, contract: str, *, now: datetime, key: str, secret: str,
+) -> dict[str, Any]:
+    """Only actual completed delayed OPRA-derived 5-minute bars, never indicative quotes.
+
+    This source does not measure all today's exchange sweeps, and observed
+    volume is a PARTIAL sum over returned completed bars, not official daily
+    contract volume. Nothing from here enters the public runtime vault.
+    """
+    if not OCC.fullmatch(contract) or now.tzinfo is None:
+        return {"status": "INVALID_OCC_IDENTITY", "bar_count": 0}
+    cutoff = now.astimezone(timezone.utc) - timedelta(minutes=20)
+    response = _request(
+        session, MARKET, "/v1beta1/options/bars",
+        query={"symbols": contract, "timeframe": "5Min",
+               "start": (cutoff - timedelta(days=3)).isoformat(),
+               "end": cutoff.isoformat(), "sort": "asc", "limit": 1000},
+        key=key, secret=secret,
+    )
+    raw = response.get("bars")
+    if not isinstance(raw, dict) or set(raw) != {contract}:
+        return {"status": "NO_VERIFIED_DELAYED_OPTION_BARS", "bar_count": 0}
+    # At least a 15-minute historical delay in the Basic entitlement,
+    # plus an independent 5-minute fully-completed-candle check.
+    bars = ohlcv(raw[contract], now=now - timedelta(minutes=15), minutes=5)
+    if not bars:
+        return {"status": "NO_VERIFIED_DELAYED_OPTION_BARS", "bar_count": 0}
+    latest = bars[-1]
+    session = latest["time"].astimezone(NY).date()
+    same_session = [bar for bar in bars if bar["time"].astimezone(NY).date() == session]
+    return {
+        "status": "VERIFIED_DELAYED_OPTION_OHLCV",
+        "bar_count": len(bars),
+        "latest_session_coverage_partial": True,
+        "last_completed_bar_end": (latest["time"] + timedelta(minutes=5)).isoformat(),
+        "last_delayed_close": latest["close"],
+        "latest_session_observed_bar_count": len(same_session),
+        "latest_session_observed_volume_partial": int(
+            sum(x["volume"] for x in same_session)),
+        "execution_eligible": False, "market_data_rights": "PRIVATE_INTERNAL_ONLY",
+    }
+
+
 def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     stamp = now.astimezone(timezone.utc).isoformat()
@@ -176,6 +219,8 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
         return result
     result["status"] = "PRIVATE_RESEARCH_SCAN"
     key, secret = os.getenv("ALPACA_API_KEY", ""), os.getenv("ALPACA_SECRET_KEY", "")
+    private_cards: list[dict[str, Any]] = []
+    option_history_requests = 0
     for symbol in FOCUS:
         daily = _bars(session, symbol, minute=False, now=now, key=key, secret=secret)
         intraday = _bars(session, symbol, minute=True, now=now, key=key, secret=secret)
@@ -200,6 +245,33 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
             plan["signal_type"] == "WATCH_RESEARCH_ONLY"
             and bool(plan["option"]["candidates"]))
         result["no_data"] += int(technical["status"] != "RESEARCH_ONLY_IEX")
+        if (plan["signal_type"] == "WATCH_RESEARCH_ONLY"
+                and plan["option"]["candidates"] and option_history_requests < 5):
+            candidate = plan["option"]["candidates"][0]
+            history = _completed_option_history(
+                session, candidate["contract_symbol"], now=now,
+                key=key, secret=secret)
+            option_history_requests += 1
+            entry["historical_option_bars_verified"] = (
+                history["status"] == "VERIFIED_DELAYED_OPTION_OHLCV")
+            entry["option_historical_bars_observed"] = history["bar_count"]
+            if history["status"] == "VERIFIED_DELAYED_OPTION_OHLCV":
+                private_cards.append({
+                    "symbol": symbol, "direction_research": plan["decision_research"],
+                    "levels": technical.get("levels") or {},
+                    "contract": candidate["contract_symbol"],
+                    "delta": candidate.get("delta"),
+                    "gamma": candidate.get("gamma"),
+                    "oi_date": next(
+                        (item.get("open_interest_date") for item in chain
+                         if item.get("symbol") == candidate["contract_symbol"]), None),
+                    "history": history,
+                })
+    # Private detail is for verified personal Telegram only. main() removes
+    # the complete list before any file write, log, artifact or public state.
+    result["_private_cards"] = private_cards[:5]
+    result["historical_option_candle_reads"] = option_history_requests
+    result["verified_historical_candle_contracts"] = len(private_cards)
     return result
 
 
@@ -216,6 +288,27 @@ def owner_report(report: dict[str, Any]) -> str:
         f"حالات متابعة بحثية: {int(report.get('research_watches') or 0)}",
         "<b>لا توجد توصيات تنفيذ أو أسعار OPRA في هذا التقرير.</b>",
     ]
+    for card in (report.get("_private_cards") or [])[:5]:
+        info = card.get("history") or {}
+        levels = card.get("levels") or {}
+        messages.extend([
+            "",
+            "<b>" + html.escape(str(card["symbol"])) + " "
+            + html.escape(str(card["direction_research"])) + " — دراسة فقط</b>",
+            "الحدود IEX: يوم سابق H/L " +
+            f"{levels.get('previous_day_high', '—')} / {levels.get('previous_day_low', '—')}",
+            "OR30 H/L: " + f"{levels.get('opening_range_30m_high', '—')} / "
+            f"{levels.get('opening_range_30m_low', '—')}",
+            "العقد (ليس توصية): " + html.escape(str(card["contract"])),
+            "إغلاق بريميوم تاريخي OPRA متأخر: "
+            + str(info.get("last_delayed_close", "—")) + " دولار",
+            "آخر شمعة مكتملة: "
+            + html.escape(str(info.get("last_completed_bar_end") or "—")),
+            "حجم الشموع المتاحة لنفس الجلسة (جزئي وليس حجم اليوم الكامل): "
+            + str(info.get("latest_session_observed_volume_partial", "—")),
+            "دلتا/قاما إرشادية: " + f"{card.get('delta')} / {card.get('gamma')}"
+            + " | تاريخ OI: " + html.escape(str(card.get("oi_date") or "غير متاح")),
+        ])
     for symbol, item in (report.get("by_symbol") or {}).items():
         if not isinstance(item, dict):
             continue
@@ -248,7 +341,9 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     # This is metadata only; never save raw OHLC, chain or option quote.
     temp = args.output.with_suffix(".tmp")
-    temp.write_text(json.dumps(result, ensure_ascii=False, allow_nan=False),
+    public_safe = dict(result)
+    public_safe.pop("_private_cards", None)
+    temp.write_text(json.dumps(public_safe, ensure_ascii=False, allow_nan=False),
                     encoding="utf-8")
     temp.replace(args.output)
     delivery = deliver_owner_status(result) if os.getenv(
