@@ -35,26 +35,67 @@ def _authorized() -> bool:
             and bool(os.getenv("ALPACA_SECRET_KEY")))
 
 
-def _request(session: Any, host: str, endpoint: str, *,
-             query: dict[str, Any], key: str, secret: str) -> dict:
-    """Strictly bounded single-page request; never print provider response."""
+def _request_page(session: Any, host: str, endpoint: str, *,
+                  query: dict[str, Any], key: str, secret: str) -> dict:
+    """Bounded provider request; never print URLs, credentials or quote data."""
     try:
         result = session.get(
             host + endpoint, params=query,
             headers={"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": secret},
-            timeout=15,
+            timeout=12,
         )
         if result.status_code != 200 or len(result.content) > 2_500_000:
             return {}
         payload = result.json()
-        if not isinstance(payload, dict):
-            return {}
-        # Incomplete pagination must never be treated as whole-chain evidence.
-        if payload.get("next_page_token") or payload.get("page_token"):
-            return {}
-        return payload
+        return payload if isinstance(payload, dict) else {}
     except (requests.RequestException, ValueError, TypeError):
         return {}
+
+
+def _request(session: Any, host: str, endpoint: str, *,
+             query: dict[str, Any], key: str, secret: str) -> dict:
+    """Require a complete single-page response for completed historical bars."""
+    payload = _request_page(session, host, endpoint, query=query, key=key, secret=secret)
+    return {} if payload.get("next_page_token") else payload
+
+
+def _collect_pages(session: Any, host: str, endpoint: str, *,
+                   query: dict[str, Any], key: str, secret: str,
+                   field: str, max_pages: int = 3) -> dict:
+    """Assemble a complete bounded snapshot/contract set or reject it entirely.
+
+    Providers paginate even when limit=1000. An incomplete chain must not
+    silently become a gamma wall or a missing-liquidity conclusion.
+    """
+    if field not in ("snapshots", "option_contracts") or max_pages < 1:
+        return {}
+    data: dict[str, Any] | list[Any] = {} if field == "snapshots" else []
+    seen_tokens: set[str] = set()
+    cursor = ""
+    for _ in range(max_pages):
+        params = dict(query)
+        if cursor:
+            params["page_token"] = cursor
+        page = _request_page(session, host, endpoint, query=params,
+                             key=key, secret=secret)
+        rows = page.get(field)
+        if not isinstance(rows, dict if field == "snapshots" else list):
+            return {}
+        if field == "snapshots":
+            if set(rows).intersection(data):
+                return {}
+            data.update(rows)
+        else:
+            data.extend(rows)
+        following = page.get("next_page_token")
+        if not following:
+            return {field: data, "pages": len(seen_tokens) + 1, "complete": True}
+        if not isinstance(following, str) or following in seen_tokens:
+            return {}
+        seen_tokens.add(following)
+        cursor = following
+    # A provider that still has pages after the cap is not full coverage.
+    return {}
 
 
 def _bars(session: Any, symbol: str, *, minute: bool, now: datetime,
@@ -79,17 +120,19 @@ def _chain(session: Any, symbol: str, *, spot: float, now: datetime,
     expiry_end = today + timedelta(days=7 if symbol in ("SPY", "QQQ") else 21)
     query = {"feed": "indicative", "expiration_date_gte": (today + timedelta(days=1)).isoformat(),
              "expiration_date_lte": expiry_end.isoformat(),
-             "strike_price_gte": round(spot * .88, 2),
-             "strike_price_lte": round(spot * 1.12, 2), "limit": 1000}
-    snapshots = _request(session, MARKET, f"/v1beta1/options/snapshots/{symbol}",
-                         query=query, key=key, secret=secret)
-    listings = _request(session, TRADING, "/v2/options/contracts",
-                        query={"underlying_symbols": symbol, "status": "active",
-                               "expiration_date_gte": query["expiration_date_gte"],
-                               "expiration_date_lte": query["expiration_date_lte"],
-                               "strike_price_gte": query["strike_price_gte"],
-                               "strike_price_lte": query["strike_price_lte"],
-                               "limit": 1000}, key=key, secret=secret)
+             "strike_price_gte": round(spot * .95, 2),
+             "strike_price_lte": round(spot * 1.05, 2), "limit": 1000}
+    snapshots = _collect_pages(
+        session, MARKET, f"/v1beta1/options/snapshots/{symbol}",
+        query=query, key=key, secret=secret, field="snapshots")
+    listings = _collect_pages(
+        session, TRADING, "/v2/options/contracts",
+        query={"underlying_symbols": symbol, "status": "active",
+               "expiration_date_gte": query["expiration_date_gte"],
+               "expiration_date_lte": query["expiration_date_lte"],
+               "strike_price_gte": query["strike_price_gte"],
+               "strike_price_lte": query["strike_price_lte"],
+               "limit": 1000}, key=key, secret=secret, field="option_contracts")
     snapshot_rows = snapshots.get("snapshots", {})
     contracts = listings.get("option_contracts", [])
     if not isinstance(snapshot_rows, dict) or not isinstance(contracts, list):
