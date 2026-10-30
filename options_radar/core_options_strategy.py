@@ -229,6 +229,13 @@ def rank_contracts(
             continue
         if oi is None or oi < 200 or quote["spread_pct_of_ask"] > .12:
             continue
+        try:
+            oi_date = date.fromisoformat(str(c["open_interest_date"]))
+            oi_age = (now.astimezone(NY).date() - oi_date).days
+        except (KeyError, TypeError, ValueError):
+            continue
+        if oi_age < 0 or oi_age > 4:
+            continue
         # Indicative prices and unknown contract volume are not execution
         # evidence even if open-interest / spread look attractive.
         volume = number(c.get("volume"))

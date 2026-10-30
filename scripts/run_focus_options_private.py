@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from options_radar.core_options_strategy import evaluate, number
+from options_radar.core_options_strategy import OCC, evaluate, number, ohlcv
 from options_radar.focus_universe import FOCUS_STOCKS
 
 NY = ZoneInfo("America/New_York")
@@ -35,26 +35,67 @@ def _authorized() -> bool:
             and bool(os.getenv("ALPACA_SECRET_KEY")))
 
 
-def _request(session: Any, host: str, endpoint: str, *,
-             query: dict[str, Any], key: str, secret: str) -> dict:
-    """Strictly bounded single-page request; never print provider response."""
+def _request_page(session: Any, host: str, endpoint: str, *,
+                  query: dict[str, Any], key: str, secret: str) -> dict:
+    """Bounded provider request; never print URLs, credentials or quote data."""
     try:
         result = session.get(
             host + endpoint, params=query,
             headers={"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": secret},
-            timeout=15,
+            timeout=12,
         )
         if result.status_code != 200 or len(result.content) > 2_500_000:
             return {}
         payload = result.json()
-        if not isinstance(payload, dict):
-            return {}
-        # Incomplete pagination must never be treated as whole-chain evidence.
-        if payload.get("next_page_token") or payload.get("page_token"):
-            return {}
-        return payload
+        return payload if isinstance(payload, dict) else {}
     except (requests.RequestException, ValueError, TypeError):
         return {}
+
+
+def _request(session: Any, host: str, endpoint: str, *,
+             query: dict[str, Any], key: str, secret: str) -> dict:
+    """Require a complete single-page response for completed historical bars."""
+    payload = _request_page(session, host, endpoint, query=query, key=key, secret=secret)
+    return {} if payload.get("next_page_token") else payload
+
+
+def _collect_pages(session: Any, host: str, endpoint: str, *,
+                   query: dict[str, Any], key: str, secret: str,
+                   field: str, max_pages: int = 3) -> dict:
+    """Assemble a complete bounded snapshot/contract set or reject it entirely.
+
+    Providers paginate even when limit=1000. An incomplete chain must not
+    silently become a gamma wall or a missing-liquidity conclusion.
+    """
+    if field not in ("snapshots", "option_contracts") or max_pages < 1:
+        return {}
+    data: dict[str, Any] | list[Any] = {} if field == "snapshots" else []
+    seen_tokens: set[str] = set()
+    cursor = ""
+    for _ in range(max_pages):
+        params = dict(query)
+        if cursor:
+            params["page_token"] = cursor
+        page = _request_page(session, host, endpoint, query=params,
+                             key=key, secret=secret)
+        rows = page.get(field)
+        if not isinstance(rows, dict if field == "snapshots" else list):
+            return {}
+        if field == "snapshots":
+            if set(rows).intersection(data):
+                return {}
+            data.update(rows)
+        else:
+            data.extend(rows)
+        following = page.get("next_page_token")
+        if not following:
+            return {field: data, "pages": len(seen_tokens) + 1, "complete": True}
+        if not isinstance(following, str) or following in seen_tokens:
+            return {}
+        seen_tokens.add(following)
+        cursor = following
+    # A provider that still has pages after the cap is not full coverage.
+    return {}
 
 
 def _bars(session: Any, symbol: str, *, minute: bool, now: datetime,
@@ -79,17 +120,19 @@ def _chain(session: Any, symbol: str, *, spot: float, now: datetime,
     expiry_end = today + timedelta(days=7 if symbol in ("SPY", "QQQ") else 21)
     query = {"feed": "indicative", "expiration_date_gte": (today + timedelta(days=1)).isoformat(),
              "expiration_date_lte": expiry_end.isoformat(),
-             "strike_price_gte": round(spot * .88, 2),
-             "strike_price_lte": round(spot * 1.12, 2), "limit": 1000}
-    snapshots = _request(session, MARKET, f"/v1beta1/options/snapshots/{symbol}",
-                         query=query, key=key, secret=secret)
-    listings = _request(session, TRADING, "/v2/options/contracts",
-                        query={"underlying_symbols": symbol, "status": "active",
-                               "expiration_date_gte": query["expiration_date_gte"],
-                               "expiration_date_lte": query["expiration_date_lte"],
-                               "strike_price_gte": query["strike_price_gte"],
-                               "strike_price_lte": query["strike_price_lte"],
-                               "limit": 1000}, key=key, secret=secret)
+             "strike_price_gte": round(spot * .95, 2),
+             "strike_price_lte": round(spot * 1.05, 2), "limit": 1000}
+    snapshots = _collect_pages(
+        session, MARKET, f"/v1beta1/options/snapshots/{symbol}",
+        query=query, key=key, secret=secret, field="snapshots")
+    listings = _collect_pages(
+        session, TRADING, "/v2/options/contracts",
+        query={"underlying_symbols": symbol, "status": "active",
+               "expiration_date_gte": query["expiration_date_gte"],
+               "expiration_date_lte": query["expiration_date_lte"],
+               "strike_price_gte": query["strike_price_gte"],
+               "strike_price_lte": query["strike_price_lte"],
+               "limit": 1000}, key=key, secret=secret, field="option_contracts")
     snapshot_rows = snapshots.get("snapshots", {})
     contracts = listings.get("option_contracts", [])
     if not isinstance(snapshot_rows, dict) or not isinstance(contracts, list):
@@ -116,6 +159,49 @@ def _chain(session: Any, symbol: str, *, spot: float, now: datetime,
     return combined
 
 
+def _completed_option_history(
+    session: Any, contract: str, *, now: datetime, key: str, secret: str,
+) -> dict[str, Any]:
+    """Only actual completed delayed OPRA-derived 5-minute bars, never indicative quotes.
+
+    This source does not measure all today's exchange sweeps, and observed
+    volume is a PARTIAL sum over returned completed bars, not official daily
+    contract volume. Nothing from here enters the public runtime vault.
+    """
+    if not OCC.fullmatch(contract) or now.tzinfo is None:
+        return {"status": "INVALID_OCC_IDENTITY", "bar_count": 0}
+    cutoff = now.astimezone(timezone.utc) - timedelta(minutes=20)
+    response = _request(
+        session, MARKET, "/v1beta1/options/bars",
+        query={"symbols": contract, "timeframe": "5Min",
+               "start": (cutoff - timedelta(days=3)).isoformat(),
+               "end": cutoff.isoformat(), "sort": "asc", "limit": 1000},
+        key=key, secret=secret,
+    )
+    raw = response.get("bars")
+    if not isinstance(raw, dict) or set(raw) != {contract}:
+        return {"status": "NO_VERIFIED_DELAYED_OPTION_BARS", "bar_count": 0}
+    # At least a 15-minute historical delay in the Basic entitlement,
+    # plus an independent 5-minute fully-completed-candle check.
+    bars = ohlcv(raw[contract], now=now - timedelta(minutes=15), minutes=5)
+    if not bars:
+        return {"status": "NO_VERIFIED_DELAYED_OPTION_BARS", "bar_count": 0}
+    latest = bars[-1]
+    session_day = latest["time"].astimezone(NY).date()
+    same_session = [bar for bar in bars if bar["time"].astimezone(NY).date() == session_day]
+    return {
+        "status": "VERIFIED_DELAYED_OPTION_OHLCV",
+        "bar_count": len(bars),
+        "latest_session_coverage_partial": True,
+        "last_completed_bar_end": (latest["time"] + timedelta(minutes=5)).isoformat(),
+        "last_delayed_close": latest["close"],
+        "latest_session_observed_bar_count": len(same_session),
+        "latest_session_observed_volume_partial": int(
+            sum(x["volume"] for x in same_session)),
+        "execution_eligible": False, "market_data_rights": "PRIVATE_INTERNAL_ONLY",
+    }
+
+
 def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     stamp = now.astimezone(timezone.utc).isoformat()
@@ -133,12 +219,19 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
         return result
     result["status"] = "PRIVATE_RESEARCH_SCAN"
     key, secret = os.getenv("ALPACA_API_KEY", ""), os.getenv("ALPACA_SECRET_KEY", "")
+    private_cards: list[dict[str, Any]] = []
+    option_history_requests = 0
     for symbol in FOCUS:
         daily = _bars(session, symbol, minute=False, now=now, key=key, secret=secret)
         intraday = _bars(session, symbol, minute=True, now=now, key=key, secret=secret)
-        # Extract latest completed IEX spot only for bounded strike discovery.
-        # 5-min bar start is not an executable quote.
-        spot = (number(intraday[-1].get("c")) if intraday else None)
+        # Only use a source-validated NY-session, finished IEX candle as
+        # strike-search reference. Raw list tails can contain after-hours or
+        # incomplete candles and are not execution-price observations.
+        session_bars = ohlcv(intraday, now=now - timedelta(minutes=15), minutes=5)
+        session_day = now.astimezone(NY).date()
+        matching = [bar for bar in session_bars
+                    if bar["time"].astimezone(NY).date() == session_day]
+        spot = matching[-1]["close"] if matching else None
         chain = (_chain(session, symbol, spot=spot, now=now, key=key, secret=secret)
                  if spot is not None and spot > 0 else [])
         plan = evaluate(symbol, daily=daily, bars5=intraday,
@@ -157,6 +250,33 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
             plan["signal_type"] == "WATCH_RESEARCH_ONLY"
             and bool(plan["option"]["candidates"]))
         result["no_data"] += int(technical["status"] != "RESEARCH_ONLY_IEX")
+        if (plan["signal_type"] == "WATCH_RESEARCH_ONLY"
+                and plan["option"]["candidates"] and option_history_requests < 5):
+            candidate = plan["option"]["candidates"][0]
+            history = _completed_option_history(
+                session, candidate["contract_symbol"], now=now,
+                key=key, secret=secret)
+            option_history_requests += 1
+            entry["historical_option_bars_verified"] = (
+                history["status"] == "VERIFIED_DELAYED_OPTION_OHLCV")
+            entry["option_historical_bars_observed"] = history["bar_count"]
+            if history["status"] == "VERIFIED_DELAYED_OPTION_OHLCV":
+                private_cards.append({
+                    "symbol": symbol, "direction_research": plan["decision_research"],
+                    "levels": technical.get("levels") or {},
+                    "contract": candidate["contract_symbol"],
+                    "delta": candidate.get("delta"),
+                    "gamma": candidate.get("gamma"),
+                    "oi_date": next(
+                        (item.get("open_interest_date") for item in chain
+                         if item.get("symbol") == candidate["contract_symbol"]), None),
+                    "history": history,
+                })
+    # Private detail is for verified personal Telegram only. main() removes
+    # the complete list before any file write, log, artifact or public state.
+    result["_private_cards"] = private_cards[:5]
+    result["historical_option_candle_reads"] = option_history_requests
+    result["verified_historical_candle_contracts"] = len(private_cards)
     return result
 
 
@@ -173,6 +293,27 @@ def owner_report(report: dict[str, Any]) -> str:
         f"حالات متابعة بحثية: {int(report.get('research_watches') or 0)}",
         "<b>لا توجد توصيات تنفيذ أو أسعار OPRA في هذا التقرير.</b>",
     ]
+    for card in (report.get("_private_cards") or [])[:5]:
+        info = card.get("history") or {}
+        levels = card.get("levels") or {}
+        messages.extend([
+            "",
+            "<b>" + html.escape(str(card["symbol"])) + " "
+            + html.escape(str(card["direction_research"])) + " — دراسة فقط</b>",
+            "الحدود IEX: يوم سابق H/L " +
+            f"{levels.get('previous_day_high', '—')} / {levels.get('previous_day_low', '—')}",
+            "OR30 H/L: " + f"{levels.get('opening_range_30m_high', '—')} / "
+            f"{levels.get('opening_range_30m_low', '—')}",
+            "العقد (ليس توصية): " + html.escape(str(card["contract"])),
+            "إغلاق بريميوم تاريخي OPRA متأخر: "
+            + str(info.get("last_delayed_close", "—")) + " دولار",
+            "آخر شمعة مكتملة: "
+            + html.escape(str(info.get("last_completed_bar_end") or "—")),
+            "حجم الشموع المتاحة لنفس الجلسة (جزئي وليس حجم اليوم الكامل): "
+            + str(info.get("latest_session_observed_volume_partial", "—")),
+            "دلتا/قاما إرشادية: " + f"{card.get('delta')} / {card.get('gamma')}"
+            + " | تاريخ OI: " + html.escape(str(card.get("oi_date") or "غير متاح")),
+        ])
     for symbol, item in (report.get("by_symbol") or {}).items():
         if not isinstance(item, dict):
             continue
@@ -205,7 +346,9 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     # This is metadata only; never save raw OHLC, chain or option quote.
     temp = args.output.with_suffix(".tmp")
-    temp.write_text(json.dumps(result, ensure_ascii=False, allow_nan=False),
+    public_safe = dict(result)
+    public_safe.pop("_private_cards", None)
+    temp.write_text(json.dumps(public_safe, ensure_ascii=False, allow_nan=False),
                     encoding="utf-8")
     temp.replace(args.output)
     delivery = deliver_owner_status(result) if os.getenv(

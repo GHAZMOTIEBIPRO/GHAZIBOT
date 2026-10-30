@@ -29,6 +29,14 @@
 - An optional research-status message (at scheduled checkpoints) is delivered through `options_radar.output_policy.deliver_private` only to the authenticated owner's one-to-one Telegram chat after setting `ALPACA_PRIVATE_ALERTS_AUTHORIZED=true` and the existing owner-chat credentials. No public channel, OPRA claim or execution signal.
 - The module returns 0 execution-authorized signals on indicative quotes. A verified OPRA entitlement and legal redistribution permission would require separate review before changing this gate.
 
+## Completed contract-premium candles added in this update
+- Free historical endpoint `GET https://data.alpaca.markets/v1beta1/options/bars`, `timeframe=5Min`, exact OCC contract identity, end at least 20 minutes behind current UTC. Derived from historical OPRA option transactions but always **delayed**; do NOT mix with indicative quote as a contemporaneous actual fill.
+- At most five internally shortlisted contracts per scan fetch completed contract bars; data stay in runner RAM and the owner-private chat only. Counts are safe research metadata. Cumulative volume is explicitly **the partial observed volume in returned bars**, NOT verified whole-session option volume, not buy-side/ask-side aggressor volume.
+- Option chain and contract-reference endpoints can paginate. The collector walks up to three pages of 1,000 rows per page, detects repeated tokens and returns no chain if it cannot prove that all pages within its requested strike/DTE window were consumed.
+- Dated contract OI must be within four NY-calendar days. Gamma walls require joint observed coverage; still only a **partial modeled GEX proxy** with assumed call/put signs and no dealer-position proof. As a safety condition the scanner does not report any trade-execution-ready option from free data.
+- Expected option-chain prices and greeks: indicative/modified, not official OPRA. True historical option candles are older than the delay horizon, separate from live execution.
+- Raw contract candles and prices must never be committed to `bot-state`, exposed on a public Vercel page, or forwarded to a Telegram group; the personal Telegram output has an independent identity-and-permission check.
+
 ## Requirements for moving to real options alerts
 - Confirm Alpaca API ownership and internal account entitlement; do not mislabel indicative as real-time OPRA.
 - For real option execution, obtain licensed execution-grade NBBO and order-side prints with timestamps, true contract OHLCV and today's volume/OI provenance; for gamma include full strike/expiry chain and documented assumptions.
