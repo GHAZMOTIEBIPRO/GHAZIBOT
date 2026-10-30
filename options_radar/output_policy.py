@@ -53,6 +53,23 @@ RIGHTS: dict[str, dict[str, tuple[str, str, tuple[str, ...]]]] = {
         "compute": (DENIED, "non-display use prohibited", ()),
     },
 }
+# The free indicative options chain is modified/delayed, not NBBO/OPRA.
+# It may be used for the owner's own private research under explicit terms
+# attestation, but never redistributed to shared Telegram chats or websites.
+RIGHTS["alpaca_indicative_options"] = {
+    "fetch": (OWNER_AUTHORIZED, "authenticated Alpaca account indicative feed; internal-only",
+              ("ALPACA_INTERNAL_DATA_USE_AUTHORIZED",)),
+    "compute": (OWNER_AUTHORIZED, "owner-only indicative option analytics; not execution data",
+                ("ALPACA_INTERNAL_DATA_USE_AUTHORIZED",)),
+    "store_private": (OWNER_AUTHORIZED, "transient runner only; no artifacts/state",
+                      ("ALPACA_INTERNAL_DATA_USE_AUTHORIZED",)),
+    "publish_raw": (DENIED, _ALPACA_TERMS, ()),
+    "publish_derived": (UNVERIFIED, _ALPACA_DERIVED, ()),
+    "telegram_private": (OWNER_AUTHORIZED, "account holder only; never a group",
+                         ("ALPACA_INTERNAL_DATA_USE_AUTHORIZED", "ALPACA_PRIVATE_ALERTS_AUTHORIZED")),
+    "telegram_public": (DENIED, _ALPACA_TERMS, ()),
+}
+
 for _official in ("treasury", "cftc", "openfda", "sec_edgar", "clinicaltrials"):
     RIGHTS[_official] = {use: (ALLOWED, _PUBLIC_DOMAIN if _official != "clinicaltrials" else
                                "NLM terms: attribution, no endorsement", ()) for use in USES}
