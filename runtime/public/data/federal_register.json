@@ -1,35 +1,108 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-10-30T01:58:30.971682+00:00",
+ "generated_at": "2026-10-30T11:25:14.053383+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 64,
-  "FAA": 105,
+  "FDA": 70,
+  "FAA": 109,
   "FTC": 8,
-  "FERC": 109,
+  "FERC": 121,
   "NRC": 39,
-  "NHTSA": 19
+  "NHTSA": 21
  },
  "counts": {
-  "after_noise_filter": 243,
-  "linked": 31,
-  "company_unlinked": 84,
-  "general": 128,
+  "after_noise_filter": 263,
+  "linked": 34,
+  "company_unlinked": 88,
+  "general": 141,
   "by_kind": {
+   "FR_PRIORITY_REVIEW_VOUCHER": 5,
    "FR_APPROVAL_WITHDRAWN": 4,
    "FR_SPECIAL_CONDITIONS": 2,
    "FR_AIRWORTHINESS_DIRECTIVE": 28,
    "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 24,
    "FR_FTC_CONSENT_ORDER": 1,
-   "FR_ENERGY_REGULATORY_FILING": 43,
-   "FR_PRIORITY_REVIEW_VOUCHER": 5,
+   "FR_ENERGY_REGULATORY_FILING": 50,
    "FR_NUCLEAR_LICENSE_ACTION": 8
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
  "linked": [
+  {
+   "document_number": "2026-21910",
+   "date": "2026-10-28",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "decision",
+   "companies": [
+    "Incyte Corporation"
+   ],
+   "links": [
+    {
+     "name": "Incyte Corporation",
+     "ticker": "INCY",
+     "legal_entity": "Incyte Corp",
+     "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
+     "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)",
+     "listed_company": null,
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
+    }
+   ],
+   "unmatched": []
+  },
+  {
+   "document_number": "2026-20769",
+   "date": "2026-10-09",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ZANVASTRO (Zilganersen)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20769/issuance-of-priority-review-voucher-rare-pediatric-disease-product-zanvastro-zilganersen",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "decision",
+   "companies": [
+    "Ionis Pharmaceuticals, Inc."
+   ],
+   "links": [
+    {
+     "name": "Ionis Pharmaceuticals, Inc.",
+     "ticker": "IONS",
+     "legal_entity": "Ionis Pharmaceuticals, Inc.",
+     "relation": "SAME_ENTITY",
+     "listed_company": "Ionis Pharmaceuticals, Inc.",
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "company read from the document body, linked through a runner-verified reviewed row"
+    }
+   ],
+   "unmatched": []
+  },
   {
    "document_number": "2026-20758",
    "date": "2026-10-09",
@@ -99,6 +172,42 @@
      "name_basis": "LEGAL_NAME",
      "interpretation_confidence": "HIGH",
      "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
+    }
+   ],
+   "unmatched": []
+  },
+  {
+   "document_number": "2026-20434",
+   "date": "2026-10-06",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; FAYUVI (rebisufligene etisparvovec-hopf)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20434/issuance-of-priority-review-voucher-rare-pediatric-disease-product-fayuvi-rebisufligene",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "decision",
+   "companies": [
+    "Ultragenyx Pharmaceutical Inc."
+   ],
+   "links": [
+    {
+     "name": "Ultragenyx Pharmaceutical Inc.",
+     "ticker": "RARE",
+     "legal_entity": "Ultragenyx Pharmaceutical Inc.",
+     "relation": "SAME_ENTITY",
+     "listed_company": "Ultragenyx Pharmaceutical Inc.",
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "company read from the document body, linked through a runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -1275,28 +1384,6 @@
    "unmatched": []
   },
   {
-   "document_number": "2026-21910",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [],
-   "links": [],
-   "unmatched": []
-  },
-  {
    "document_number": "2026-21718",
    "date": "2026-10-26",
    "agency": "FDA",
@@ -1314,31 +1401,16 @@
    "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
    "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
-   "companies": [],
+   "companies": [
+    "Scholar Rock, Inc."
+   ],
    "links": [],
-   "unmatched": []
-  },
-  {
-   "document_number": "2026-20769",
-   "date": "2026-10-09",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ZANVASTRO (Zilganersen)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20769/issuance-of-priority-review-voucher-rare-pediatric-disease-product-zanvastro-zilganersen",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [],
-   "links": [],
-   "unmatched": []
+   "unmatched": [
+    {
+     "name": "Scholar Rock, Inc.",
+     "reason": "OWNERSHIP_NOT_VERIFIED"
+    }
+   ]
   },
   {
    "document_number": "2026-20762",
@@ -1397,28 +1469,6 @@
      "reason": "NOT_EXCHANGE_LISTED"
     }
    ]
-  },
-  {
-   "document_number": "2026-20434",
-   "date": "2026-10-06",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; FAYUVI (rebisufligene etisparvovec-hopf)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20434/issuance-of-priority-review-voucher-rare-pediatric-disease-product-fayuvi-rebisufligene",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [],
-   "links": [],
-   "unmatched": []
   },
   {
    "document_number": "2026-21932",
@@ -2461,6 +2511,209 @@
     {
      "name": "Airbus SAS",
      "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22201",
+   "date": "2026-10-30",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Double E Pipeline, LLC; Notice of Scoping Period Requesting Comments on Environmental Issues for the Proposed Texas Mainline Compressor Station Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22201/double-e-pipeline-llc-notice-of-scoping-period-requesting-comments-on-environmental-issues-for-the",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Double E Pipeline, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Double E Pipeline, LLC",
+     "reason": "PARTLY_OWNED"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22200",
+   "date": "2026-10-30",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Great Lakes Hydro America, LLC; Notice of Authorization for Continued Project Operation",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22200/great-lakes-hydro-america-llc-notice-of-authorization-for-continued-project-operation",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Great Lakes Hydro America, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Great Lakes Hydro America, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22199",
+   "date": "2026-10-30",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Great Lakes Hydro America, LLC; Notice of Authorization for Continued Project Operation",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22199/great-lakes-hydro-america-llc-notice-of-authorization-for-continued-project-operation",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Great Lakes Hydro America, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Great Lakes Hydro America, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22163",
+   "date": "2026-10-30",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "GR Catalyst Two, LLC; Notice of Revised Procedural Schedule",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22163/gr-catalyst-two-llc-notice-of-revised-procedural-schedule",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "GR Catalyst Two, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "GR Catalyst Two, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22161",
+   "date": "2026-10-30",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Longboard TerminalCo, LLC; Notice of Scoping Period Requesting Comments on Environmental Issues for the Planned Longboard LNG Project, and Notice of Public Scoping Sessions",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22161/longboard-terminalco-llc-notice-of-scoping-period-requesting-comments-on-environmental-issues-for",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Longboard TerminalCo, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Longboard TerminalCo, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22141",
+   "date": "2026-10-30",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Enable Mississippi River Transmission, LLC; Notice of Request Under Blanket Authorization and Establishing Intervention and Protest Deadline",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22141/enable-mississippi-river-transmission-llc-notice-of-request-under-blanket-authorization-and",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Enable Mississippi River Transmission, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Enable Mississippi River Transmission, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22137",
+   "date": "2026-10-30",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Niagara Mohawk Power Corporation; Notice of Intent To File License Application, Filing of Pre-Application Document, Approving Use of the Traditional Licensing Process",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22137/niagara-mohawk-power-corporation-notice-of-intent-to-file-license-application-filing-of",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Niagara Mohawk Power Corporation"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Niagara Mohawk Power Corporation",
+     "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
   },
@@ -3686,6 +3939,72 @@
  ],
  "general": [
   {
+   "document_number": "2026-22203",
+   "date": "2026-10-30",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Essential Drug Delivery Performance Characteristics for Devices Intended To Deliver Drugs and Biological Products; Revised Draft Guidance for Industry; Availability",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22203/essential-drug-delivery-performance-characteristics-for-devices-intended-to-deliver-drugs-and",
+   "effective_on": null,
+   "comments_close_on": "2027-01-28",
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22182",
+   "date": "2026-10-30",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Medical Devices; Anesthesiology Devices; Classification of the Over-the-Counter Device To Assess Risk of Sleep Apnea",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22182/medical-devices-anesthesiology-devices-classification-of-the-over-the-counter-device-to-assess-risk",
+   "effective_on": "2026-10-30",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22181",
+   "date": "2026-10-30",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Medical Devices; Anesthesiology Devices; Classification of the Spinal Imaging System for Neuraxial Procedures",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22181/medical-devices-anesthesiology-devices-classification-of-the-spinal-imaging-system-for-neuraxial",
+   "effective_on": "2026-10-30",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22180",
+   "date": "2026-10-30",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Medical Devices; Radiology Devices; Classification of the Radiology Software for Referral of Findings Related to Fibrotic Lung Disease",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22180/medical-devices-radiology-devices-classification-of-the-radiology-software-for-referral-of-findings",
+   "effective_on": "2026-10-30",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22179",
+   "date": "2026-10-30",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Medical Devices; General and Plastic Surgery Devices; Classification of the Software-Aided Adjunctive Diagnostic Device for Use by Physicians on Lesions Suspicious for Skin Cancer",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22179/medical-devices-general-and-plastic-surgery-devices-classification-of-the-software-aided-adjunctive",
+   "effective_on": "2026-10-30",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22175",
+   "date": "2026-10-30",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Drugs for Human Use; Drug Efficacy Study Implementation: Estrogen-Androgen Fixed-Combination Drug Products; Third Extension of Effective Date of Final Resolution of Drug Efficacy Study Implementation 7661",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22175/drugs-for-human-use-drug-efficacy-study-implementation-estrogen-androgen-fixed-combination-drug",
+   "effective_on": "2026-05-27",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-21954",
    "date": "2026-10-28",
    "agency": "FDA",
@@ -4056,6 +4375,39 @@
    "title": "Determination That ISTURISA (Osilodrostat) Tablets, 10 Milligrams, Was Not Withdrawn From Sale for Reasons of Safety or Effectiveness",
    "source_url": "https://www.federalregister.gov/documents/2026/09/30/2026-19968/determination-that-isturisa-osilodrostat-tablets-10-milligrams-was-not-withdrawn-from-sale-for",
    "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22242",
+   "date": "2026-10-30",
+   "agency": "FAA",
+   "type": "Notice",
+   "title": "Notice of Meeting of the National Parks Overflights Advisory Group",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22242/notice-of-meeting-of-the-national-parks-overflights-advisory-group",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22223",
+   "date": "2026-10-30",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Standard Instrument Approach Procedures, and Takeoff Minimums and Obstacle Departure Procedures; Miscellaneous Amendments",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22223/standard-instrument-approach-procedures-and-takeoff-minimums-and-obstacle-departure-procedures",
+   "effective_on": "2026-10-30",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22222",
+   "date": "2026-10-30",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Standard Instrument Approach Procedures, and Takeoff Minimums and Obstacle Departure Procedures; Miscellaneous Amendments",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22222/standard-instrument-approach-procedures-and-takeoff-minimums-and-obstacle-departure-procedures",
+   "effective_on": "2026-10-30",
    "comments_close_on": null,
    "status": "GENERAL"
   },
@@ -4445,122 +4797,23 @@
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-21874",
-   "date": "2026-10-27",
+   "document_number": "2026-22198",
+   "date": "2026-10-30",
    "agency": "FERC",
    "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21874/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
+   "title": "City of Pelican, AK; Notice of Authorization for Continued Project Operation",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22198/city-of-pelican-ak-notice-of-authorization-for-continued-project-operation",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-21869",
-   "date": "2026-10-27",
+   "document_number": "2026-22140",
+   "date": "2026-10-30",
    "agency": "FERC",
    "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21869/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21866",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P. Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21866/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21716",
-   "date": "2026-10-26",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Records Governing Off-the-Record Communications; Public Notice",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/26/2026-21716/records-governing-off-the-record-communications-public-notice",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21443",
-   "date": "2026-10-20",
-   "agency": "FERC",
-   "type": "Proposed Rule",
-   "title": "Authorizations for Certain Activities at Liquefied Natural Gas Plants",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21443/authorizations-for-certain-activities-at-liquefied-natural-gas-plants",
-   "effective_on": null,
-   "comments_close_on": "2026-12-21",
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21442",
-   "date": "2026-10-20",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Environmental Review of Natural Gas Act Applications; Notice of Availability of Draft Policy Statement on Efficient Environmental Reviews of Natural Gas Project Applications",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21442/environmental-review-of-natural-gas-act-applications-notice-of-availability-of-draft-policy",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21441",
-   "date": "2026-10-20",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Equitrans, L.P.; Notice of Request Under Blanket Authorization and Establishing Intervention and Protest Deadline",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21441/equitrans-lp-notice-of-request-under-blanket-authorization-and-establishing-intervention-and-protest",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21435",
-   "date": "2026-10-20",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Reliability Technical Conference; Third Supplemental Notice of Commissioner-Led Technical Conference",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21435/reliability-technical-conference-third-supplemental-notice-of-commissioner-led-technical-conference",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21434",
-   "date": "2026-10-20",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Notice of Joint Meeting of the Federal Energy Regulatory Commission and the Nuclear Regulatory Commission",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21434/notice-of-joint-meeting-of-the-federal-energy-regulatory-commission-and-the-nuclear-regulatory",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21366",
-   "date": "2026-10-19",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Dunn, Keith M.; Notice of Filing",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21366/dunn-keith-m-notice-of-filing",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21365",
-   "date": "2026-10-19",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Reasonable Period of Time for Water Quality Certification Application",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/19/2026-21365/erie-boulevard-hydropower-lp-notice-of-reasonable-period-of-time-for-water-quality-certification",
+   "title": "Southeastern Power Administration; Notice of Filing",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22140/southeastern-power-administration-notice-of-filing",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
