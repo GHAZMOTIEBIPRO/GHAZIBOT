@@ -160,6 +160,42 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
     return result
 
 
+def owner_report(report: dict[str, Any]) -> str:
+    """Only owner-private diagnostic; no market prices or gamma wall values."""
+    import html
+    status = html.escape(str(report.get("status") or "UNKNOWN"))
+    messages = [
+        "<b>GHAZI CORE Ω — الاستراتيجية الخاصة</b>",
+        "النطاق: SPY / QQQ + TSLA AMD MU NVDA MSFT BABA GOOG GOOGL META",
+        "SPX وNDX: يحتاجان مصدر مؤشرات وعقود مستقل؛ صناديق ETF ليست عقودهما.",
+        f"حالة المصدر: {status}",
+        f"تغطية فنية مكتملة: {int(report.get('completed') or 0)} / {len(FOCUS)}",
+        f"حالات متابعة بحثية: {int(report.get('research_watches') or 0)}",
+        "<b>لا توجد توصيات تنفيذ أو أسعار OPRA في هذا التقرير.</b>",
+    ]
+    for symbol, item in (report.get("by_symbol") or {}).items():
+        if not isinstance(item, dict):
+            continue
+        side = str(item.get("technical_decision") or "WAIT")
+        if side not in ("CALL", "PUT", "WAIT"):
+            side = "WAIT"
+        messages.append(f"{html.escape(str(symbol))}: {side} (بحثي فقط)")
+    return "\\n".join(messages)
+
+
+def deliver_owner_status(report: dict[str, Any]) -> str:
+    """Send only through the repo's existing owner-chat identity/rights gate."""
+    if report.get("status") != "PRIVATE_RESEARCH_SCAN":
+        return "NOT_AUTHORIZED_OR_NOT_RUN"
+    from options_radar.output_policy import deliver_private
+    from scripts.telegram_transport import get_chat, send_html_message
+    return deliver_private(
+        owner_report(report), sources=["alpaca_iex", "alpaca_indicative_options"],
+        env=os.environ, get_chat=get_chat,
+        send=lambda body, chat: send_html_message(body, chat_id=chat),
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path,
@@ -172,6 +208,9 @@ def main() -> int:
     temp.write_text(json.dumps(result, ensure_ascii=False, allow_nan=False),
                     encoding="utf-8")
     temp.replace(args.output)
+    delivery = deliver_owner_status(result) if os.getenv(
+        "ALPACA_PRIVATE_ALERTS_AUTHORIZED") == "true" else "PRIVATE_SEND_NOT_AUTHORIZED"
+    print("GHAZI CORE Omega private owner delivery:", delivery)
     print("GHAZI CORE Omega private scan:", result["status"],
           "completed=", result["completed"],
           "research_watches=", result["research_watches"],
