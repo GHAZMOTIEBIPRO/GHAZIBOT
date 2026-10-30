@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pandas as pd
 
-from scripts.build_stock_watch_charts import collect, pack_symbol
+from scripts.build_stock_watch_charts import WATCH, collect, pack_symbol
 from scripts.stock_chart_retention import retain_valid_history
 
 NOW = datetime(2026, 10, 18, 16, 0, tzinfo=timezone.utc)
@@ -130,11 +130,11 @@ def test_collector_reports_historical_separate_from_fresh():
         delay=lambda _: None, dynamic_symbols=("NEWX",), previous=old,
     )
     coverage = report["coverage"]
-    assert coverage["requested"] == 17
-    assert coverage["with_valid_charts"] == 16
+    assert coverage["requested"] == len(WATCH) + 1
+    assert coverage["with_valid_charts"] == len(WATCH)
     assert coverage["retained_symbols"] == ["NEWX"]
     assert coverage["historical_only_symbols"] == ["NEWX"]
-    assert coverage["charts_including_historical"] == 17
+    assert coverage["charts_including_historical"] == len(WATCH) + 1
     assert report["symbols"]["NEWX"]["historical_cache_only"] is True
     assert report["quote_execution_eligible"] is False
 

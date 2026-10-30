@@ -22,6 +22,7 @@ from options_radar.free_gamma_engine import analyze_free_gamma, contract_gamma_m
 from options_radar.gamma_heatmap_research import build_gamma_heatmap_research
 from options_radar.occ_free_context import OccDailyVolumeClient, side_alignment
 from options_radar.official_event_scan import scan_official_events
+from options_radar.focus_universe import FOCUS_INDICES, FOCUS_OPTIONABLE, FOCUS_STOCKS
 from options_radar.optionable_universe import IndependentOptionableUniverse
 from options_radar.options_consensus import build_directional_signals
 from options_radar.omega_decision import apply_omega_gate
@@ -261,6 +262,7 @@ def run(
         max_symbols=min(max_symbols, settings.max_universe_size),
         include_cboe_attention=True,
         configured_priority=configured_priority,
+        focus_symbols=FOCUS_OPTIONABLE,
     )
     if not universe.symbols:
         raise RuntimeError("Independent options universe is empty")
@@ -335,6 +337,15 @@ def run(
         ),
         "configured_discovery_seeds_do_not_change_contract_scoring": True,
         "universe": universe.as_dict(),
+        "requested_focus": {
+            "indices": list(FOCUS_INDICES),
+            "stocks": list(FOCUS_STOCKS),
+            "options_scanner_priority": list(FOCUS_OPTIONABLE),
+            "selected_for_scan": [sym for sym in FOCUS_OPTIONABLE if sym in universe.symbols],
+            "not_selected": [sym for sym in FOCUS_OPTIONABLE if sym not in universe.symbols],
+            "spx_ndx_engine": "separate_index_direction_not_contract_execution",
+            "priority_does_not_bypass_data_gates": True,
+        },
         "summary": {
             "symbols_scanned": len(universe.symbols),
             "contracts_selected": len(contracts),

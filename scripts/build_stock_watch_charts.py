@@ -16,6 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from options_radar.daily_volume_breakout_shadow import daily_volume_breakout_shadow
+from options_radar.focus_universe import FOCUS_STOCKS
 from options_radar.pandas_ta_bollinger_shadow import bollinger_compression_shadow
 from options_radar.source_permissions import allowed, blocked_report, require
 from options_radar.stock_watch_confluence import price_confluence_shadow
@@ -36,7 +37,9 @@ from scripts.stock_chart_retention import retain_valid_history
 from scripts.stock_watch_news_attention import load_news_attention, news_candidates
 
 SMALL_WATCH = ("RGC", "BNAI", "RGTI", "SOUN", "IONQ", "RKLB", "ASTS", "SOFI", "PLTR")
-LARGE_WATCH = ("AAPL", "NVDA", "MSFT", "TSLA", "AMD", "MU", "AVGO")
+# Fixed watch explicitly covers all primary large-cap option underlyings.
+# Additional mega-caps retain existing coverage; no ticker is equated by name.
+LARGE_WATCH = tuple(dict.fromkeys((*FOCUS_STOCKS, "AAPL", "AMZN", "AVGO")))
 WATCH = SMALL_WATCH + LARGE_WATCH
 FIVE_MIN = frozenset(WATCH)  # Completed 5m Yahoo history on every fixed watch symbol
 MAX_BYTES = 700_000

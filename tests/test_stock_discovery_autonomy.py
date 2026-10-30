@@ -114,7 +114,7 @@ def test_new_symbols_use_same_single_state_file_without_fake_quotes():
 
     data = collect(now=NOW, provider=SimpleNamespace(Ticker=Ticker),
                    delay=lambda _: None, dynamic_symbols=("NEWX", "NEWY", "SPX"))
-    assert data["coverage"]["requested"] == 18
+    assert data["coverage"]["requested"] == len(WATCH) + 2
     assert data["coverage"]["discovered_symbols"] == ["NEWX", "NEWY"]
     assert data["coverage"]["discovered_with_charts"] == 1
     assert "NEWX" in data["symbols"]

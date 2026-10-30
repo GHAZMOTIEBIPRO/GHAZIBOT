@@ -315,23 +315,15 @@ class IndependentOptionableUniverse:
         include_cboe_attention: bool = True,
         configured_priority: bool = False,
         priority_symbols: Iterable[Any] = (
-            "SPX",
-            "SPY",
-            "QQQ",
-            "IWM",
-            "VIX",
-            "AAPL",
-            "NVDA",
-            "TSLA",
-            "AMD",
-            "META",
-            "AMZN",
-            "MSFT",
+            "SPX", "SPY", "QQQ", "IWM", "VIX",
+            "AAPL", "NVDA", "TSLA", "AMD", "META", "AMZN", "MSFT",
         ),
+        focus_symbols: Iterable[Any] = (),
     ) -> OptionableUniverseResult:
         max_symbols = max(10, int(max_symbols))
         configured = _unique(configured_symbols)
         priority = _unique(priority_symbols)
+        focus = _unique(focus_symbols)
         official, occ_rows, product_types, errors, cache_used = self.fetch_official()
         official_set = set(official)
 
@@ -346,10 +338,12 @@ class IndependentOptionableUniverse:
             # Normal radar remains options-native first. A dedicated same-cycle
             # cross-check may explicitly prioritize configured discovery seeds,
             # but OCC optionability remains mandatory when available.
+            # Explicitly requested tickers receive scanner slots first,
+            # but ONLY if the official optionable directory includes them.
             ordered = (
-                _unique([*configured, *attention, *priority])
+                _unique([*focus, *configured, *attention, *priority])
                 if configured_priority
-                else _unique([*attention, *priority, *configured])
+                else _unique([*focus, *attention, *priority, *configured])
             )
             selected = [symbol for symbol in ordered if symbol in official_set]
             official_verified = True
@@ -363,9 +357,9 @@ class IndependentOptionableUniverse:
             # a research-only cross-check, but every contract still faces normal
             # quote/liquidity/data-quality gates.
             selected = (
-                _unique([*configured, *attention, *priority])
+                _unique([*focus, *configured, *attention, *priority])
                 if configured_priority
-                else _unique([*attention, *configured, *priority])
+                else _unique([*focus, *attention, *configured, *priority])
             )
             official_verified = False
             source = (
@@ -377,6 +371,7 @@ class IndependentOptionableUniverse:
         limitations = [
             "Cboe Most Active is a partial-exchange attention source, not whole-market OPRA flow.",
             "Optionability does not imply liquidity; contract-level bid/ask, volume, OI and freshness guards still apply.",
+            "Configured focus only prioritizes discovery slots. It never bypasses source licence, price freshness, optionability or V11 gates.",
             (
                 "Configured symbols are discovery seeds from Fast Explosion only; options results cannot promote or alter the stock signal."
                 if configured_priority

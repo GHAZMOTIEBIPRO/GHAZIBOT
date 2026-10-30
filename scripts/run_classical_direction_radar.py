@@ -17,6 +17,7 @@ import pandas as pd
 import requests
 
 from options_radar.classical_stock_direction import build_direction
+from options_radar.focus_universe import FOCUS_STOCKS
 from options_radar.market_bars import fetch_bars
 from options_radar.optionable_universe import IndependentOptionableUniverse
 from options_radar.settings import Settings
@@ -26,7 +27,7 @@ CBOE_C1_UNDERLYINGS = "https://cdn.cboe.com/data/us/options/market_statistics/sy
 
 # Curated U.S. mega/large-cap operating companies with deep underlying liquidity.
 # OCC verification is mandatory at runtime. ETFs and indexes are intentionally excluded.
-DEFAULT_COMPANIES = (
+_ADDITIONAL_COMPANIES = (
     "AAPL",
     "MSFT",
     "NVDA",
@@ -84,6 +85,7 @@ DEFAULT_COMPANIES = (
     "UBER",
     "INTC",
 )
+DEFAULT_COMPANIES = tuple(dict.fromkeys((*FOCUS_STOCKS, *_ADDITIONAL_COMPANIES)))
 
 
 def _symbols_from_env() -> list[str]:
