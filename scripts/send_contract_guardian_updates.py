@@ -9,11 +9,11 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import requests
 
 from scripts.telegram_transport import edit_html_message, send_html_message
-
 
 STAGE_AR = {
     "WATCH": "مراقبة",
@@ -270,6 +270,9 @@ def _message(row: dict[str, Any]) -> str:
             "المتابعة لا تتجاوز بوابة V11 ولا تعدّل التوصية الأصلية بأثر رجعي.</i>",
         ]
     )
+    if contract:
+        url = "https://ghazir.vercel.app/contract?contract=" + quote(contract, safe="")
+        lines.append(f'<a href="{html.escape(url, quote=True)}">📊 فتح سجل وشارت العقد</a>')
     return "\n".join(lines)
 
 
