@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.daily_plan_sheet.v1",
- "generated_at": "2026-10-29T21:48:57.607520+00:00",
+ "generated_at": "2026-10-30T17:15:23.568025+00:00",
  "title_ar": "موجز الجلسة والمحركات",
  "readiness": {
   "session_and_catalysts": "AVAILABLE",
@@ -16,13 +16,13 @@
  },
  "analysis_funnel": {
   "known_symbols": {
-   "count": 5959,
-   "nasdaq_listed": 5613,
+   "count": 5954,
+   "nasdaq_listed": 5608,
    "sp500_directory": 503,
    "basis": "NasdaqTrader Nasdaq Listed file and the S&P 500 directory (no prices)"
   },
   "with_official_news": {
-   "count": 55,
+   "count": 53,
    "basis": "catalyst_watchlist.json events (30 days)"
   },
   "bars_fetched": {
@@ -44,7 +44,7 @@
  "session": {
   "today_is_session": true,
   "today": {
-   "date": "2026-10-29",
+   "date": "2026-10-30",
    "open_new_york": "09:30",
    "close_new_york": "16:00",
    "open_riyadh": "16:30",
@@ -53,13 +53,13 @@
    "utc_offset_new_york": "-0400"
   },
   "next_session": {
-   "date": "2026-10-30",
+   "date": "2026-11-02",
    "open_new_york": "09:30",
    "close_new_york": "16:00",
-   "open_riyadh": "16:30",
-   "close_riyadh": "23:00",
+   "open_riyadh": "17:30",
+   "close_riyadh": "00:00",
    "early_close": false,
-   "utc_offset_new_york": "-0400"
+   "utc_offset_new_york": "-0500"
   },
   "last_closed_session": "2026-10-29",
   "last_closed_week_end": "2026-10-23",
@@ -100,46 +100,26 @@
  },
  "catalysts": [
   {
-   "symbol": "GSK",
-   "kind": "TRIAL_RESULTS_POSTED",
-   "date": "2026-10-27",
-   "source": "ClinicalTrials.gov",
-   "source_url": "https://clinicaltrials.gov/study/NCT06104319",
-   "score": 68.1,
-   "risk_flags": [],
-   "size": "KNOWN_LARGE_ISSUER_LIST"
-  },
-  {
    "symbol": "BA",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "date": "2026-10-27",
    "source": "Federal Register",
    "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21864/airworthiness-directives-the-boeing-company-airplanes",
-   "score": 57.0,
+   "score": 55.8,
    "risk_flags": [
     "توجيه صلاحية طيران إلزامي (FAA)"
    ],
    "size": "MARKET_CAP_UNVERIFIED"
   },
   {
-   "symbol": "PFE",
-   "kind": "TRIAL_STATUS_REVIEW",
-   "date": "2026-10-27",
-   "source": "ClinicalTrials.gov",
-   "source_url": "https://clinicaltrials.gov/study/NCT05573555",
-   "score": 56.6,
+   "symbol": "INTC",
+   "kind": "IR_EARNINGS",
+   "date": "2026-10-29",
+   "source": "Company IR",
+   "source_url": "https://www.intc.com/news-events/press-releases/detail/1786/intel-reports-third-quarter-2026-financial-results",
+   "score": 49.3,
    "risk_flags": [],
-   "size": "KNOWN_LARGE_ISSUER_LIST"
-  },
-  {
-   "symbol": "AZN",
-   "kind": "TRIAL_RESULTS_POSTED",
-   "date": "2026-10-28",
-   "source": "ClinicalTrials.gov",
-   "source_url": "https://clinicaltrials.gov/study/NCT05809934",
-   "score": 49.9,
-   "risk_flags": [],
-   "size": "KNOWN_LARGE_ISSUER_LIST"
+   "size": "MARKET_CAP_UNVERIFIED"
   },
   {
    "symbol": "MRK",
@@ -147,7 +127,7 @@
    "date": "2026-10-29",
    "source": "ClinicalTrials.gov",
    "source_url": "https://clinicaltrials.gov/study/NCT04165083",
-   "score": 49.1,
+   "score": 47.9,
    "risk_flags": [],
    "size": "KNOWN_LARGE_ISSUER_LIST"
   },
@@ -157,23 +137,43 @@
    "date": "2026-10-28",
    "source": "ClinicalTrials.gov",
    "source_url": "https://clinicaltrials.gov/study/NCT03832998",
-   "score": 48.3,
+   "score": 47.1,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
+  },
+  {
+   "symbol": "NVS",
+   "kind": "TRIAL_RESULTS_POSTED",
+   "date": "2026-10-29",
+   "source": "ClinicalTrials.gov",
+   "source_url": "https://clinicaltrials.gov/study/NCT01742299",
+   "score": 43.6,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
+  },
+  {
+   "symbol": "AZN",
+   "kind": "TRIAL_RESULTS_POSTED",
+   "date": "2026-10-28",
+   "source": "ClinicalTrials.gov",
+   "source_url": "https://clinicaltrials.gov/study/NCT05809934",
+   "score": 37.3,
    "risk_flags": [],
    "size": "KNOWN_LARGE_ISSUER_LIST"
   }
  ],
  "macro": {
-  "curve_date": "2026-10-28",
+  "curve_date": "2026-10-29",
   "spreads_bp": {
-   "10Y_2Y": 38.0,
-   "10Y_3M": 87.0
+   "10Y_2Y": 37.0,
+   "10Y_3M": 80.0
   },
   "yields_pct": {
    "3M": 4.18,
-   "2Y": 4.67,
-   "5Y": 4.85,
-   "10Y": 5.05,
-   "30Y": 5.37
+   "2Y": 4.61,
+   "5Y": 4.78,
+   "10Y": 4.98,
+   "30Y": 5.32
   },
   "regime_series_with_breaks": 2,
   "regime_series": 12
