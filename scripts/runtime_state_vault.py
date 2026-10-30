@@ -51,7 +51,6 @@ RUNTIME_PATHS = (
     "data/live/contract_guardian_telegram_state.json",
     "data/live/focus_bot_status_state.json",
     "data/live/guardian_delivery_audit.json",
-    "data/live/focus_private_strategy_health.json",
 )
 
 SECRET_KEY_TOKENS = (
