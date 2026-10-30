@@ -16,6 +16,7 @@ on:
       - "data/company_aliases.json"
       - "data/fda_sponsor_aliases.json"
       - "scripts/send_catalyst_watchlist_alerts.py"
+      - "scripts/send_keyless_official_context.py"
       - ".github/workflows/catalyst-watchlist.yml"
   # Dedicated daily editorial digest, not an extra intraday market scanner.
   # 05:15 UTC = 08:15 Asia/Riyadh year-round; weekends excluded.
@@ -152,6 +153,13 @@ jobs:
       - name: Report no Telegram destination
         if: env.TELEGRAM_READY != 'true'
         run: echo "Official catalyst report updated; Telegram delivery not configured."
+      - name: Send keyless official macro and issuer news summary once each Riyadh trading weekday
+        if: env.TELEGRAM_READY == 'true'
+        run: >-
+          python -m scripts.send_keyless_official_context
+          --macro state/runtime/public/data/public_macro.json
+          --ir-news state/runtime/public/data/ir_news.json
+          --state state/state/catalyst/keyless_official_brief_state.json
       - name: Publish the catalyst watchlist
         if: always()
         shell: bash
@@ -168,6 +176,9 @@ jobs:
           done
           if [[ -f state/catalyst/catalyst_alert_state.json ]]; then
             git add state/catalyst/catalyst_alert_state.json
+          fi
+          if [[ -f state/catalyst/keyless_official_brief_state.json ]]; then
+            git add state/catalyst/keyless_official_brief_state.json
           fi
           if git diff --cached --quiet; then
             echo "Catalyst watchlist unchanged."
