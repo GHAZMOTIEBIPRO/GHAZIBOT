@@ -75,7 +75,7 @@ def test_realistic_five_minute_private_research_covers_all_core_symbols():
     assert report["public_display_allowed"] is False
     serialized = json.dumps(report)
     for data in ("SECRET_EXAMPLE_KEY", "700.02", "713.22", "opening_range",
-                 "CALL", "PUT", "vwap_5m_iex"):
+                 "vwap_5m_iex", '"decision":', '"last_completed_5m_close":'):
         assert data not in serialized
 
 
