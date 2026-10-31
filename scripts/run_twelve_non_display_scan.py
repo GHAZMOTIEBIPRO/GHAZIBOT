@@ -21,6 +21,7 @@ import requests
 
 from options_radar.core_options_strategy import technical_levels, ohlcv
 from options_radar.focus_universe import FOCUS_STOCKS
+from options_radar.structure_liquidity_shadow import analyze as market_structure_shadow
 from scripts.verify_free_market_sources import _http, _permitted, _positive
 
 NY = ZoneInfo("America/New_York")
@@ -111,6 +112,9 @@ def run(env: dict[str, str], *, session: Any = requests,
         "status": "NO_KEY", "source": "TWELVE_DATA_BASIC_NON_DISPLAY",
         "symbols_requested": len(CORE_SYMBOLS),
         "symbols_with_bars": 0, "symbols_with_computed_levels": 0,
+        "structure_sessions_analysed": 0, "structure_sweep_watch_count": 0,
+        "structure_reversal_pattern_count": 0,
+        "structure_mtf_aligned_count": 0,
         "requests": 0, "rate_limit_reserved_credits": 0,
         "public_display_allowed": False, "telegram_delivery_allowed": False,
         "execution_authority": False, "raw_prices_present": False,
@@ -148,6 +152,20 @@ def run(env: dict[str, str], *, session: Any = requests,
             statuses.append("INSUFFICIENT_COMPLETED_5M")
             continue
         result["symbols_with_bars"] += 1
+        structure = market_structure_shadow(
+            [{"timestamp": b["time"].isoformat(),
+              "open": b["open"], "high": b["high"], "low": b["low"],
+              "close": b["close"], "volume": b["volume"]}
+             for b in bars], now=now)
+        if structure["status"] == "RESEARCH_ONLY":
+            result["structure_sessions_analysed"] += 1
+            result["structure_sweep_watch_count"] += int(
+                structure["signal"] in ("HIGH_SWEEP_PRICE_PROXY", "LOW_SWEEP_PRICE_PROXY"))
+            result["structure_reversal_pattern_count"] += int(
+                structure["signal"] in ("HIGH_SWEEP_THEN_DOWN_STRUCTURAL_BREAK",
+                                        "LOW_SWEEP_THEN_UP_STRUCTURAL_BREAK"))
+            result["structure_mtf_aligned_count"] += int(
+                structure["direction"] in ("UP", "DOWN"))
         daily = _daily_from_intraday(bars)
         # Run the existing tested logic; no output fields depending on IEX
         # or underlying levels are serialized or published. Twelve's VWAP
