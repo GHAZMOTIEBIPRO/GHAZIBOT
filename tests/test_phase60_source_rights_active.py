@@ -43,3 +43,55 @@ def test_other_provider_success_remains_separate_without_yahoo(monkeypatch):
     assert result["summary"]["active_stock_sources"] == 1
     assert result["summary"]["active_option_sources"] == 0
     assert next(r for r in result["stocks"] if r["name"] == "twelve_data")["used_successfully"] is True
+
+
+def test_stale_success_without_current_account_key_never_counts(monkeypatch):
+    monkeypatch.delenv("YAHOO_AUTOMATED_ACCESS_APPROVED", raising=False)
+    audit = {
+        "stocks": {"SPY": {"attempts": [
+            {"provider": "twelve_data", "success": True},
+            {"provider": "alpaca", "success": True},
+        ]}},
+        "options": {"SPY": {"attempts": [
+            {"provider": "tradier", "success": True},
+            {"provider": "polygon_options", "success": True},
+        ]}},
+    }
+    result = build_source_network(fake_settings(), {}, audit)
+    assert result["summary"]["active_stock_sources"] == 0
+    assert result["summary"]["active_option_sources"] == 0
+    assert result["summary"]["configured_stock_sources"] >= 2  # official public endpoints
+
+
+def test_entitlement_not_inferred_from_historical_option_adapter_success(monkeypatch):
+    monkeypatch.delenv("YAHOO_AUTOMATED_ACCESS_APPROVED", raising=False)
+    audit = {"stocks": {}, "options": {"SPY": {"attempts": [
+        {"provider": "polygon_options", "success": True},
+        {"provider": "alpha_vantage_options", "success": True},
+    ]}}}
+    settings = fake_settings()
+    settings.polygon_api_key = "historical_config"
+    settings.alpha_vantage_api_key = "historical_config"
+    result = build_source_network(settings, {}, audit)
+    assert result["summary"]["active_option_sources"] == 0
+    polygon = next(x for x in result["options"] if x["name"] == "polygon_options")
+    alpha = next(x for x in result["options"] if x["name"] == "alpha_vantage_options")
+    assert polygon["status"] == "entitlement_required"
+    assert alpha["status"] == "premium_connector"
+    assert polygon["used_successfully"] is False and alpha["used_successfully"] is False
+
+
+def test_authorized_yahoo_success_stays_research_only_not_opra(monkeypatch):
+    monkeypatch.setenv("YAHOO_AUTOMATED_ACCESS_APPROVED", "true")
+    audit = {"stocks": {"SPY": {"attempts": [
+        {"provider": "yahoo", "success": True}]}},
+        "options": {"SPY": {"attempts": [
+            {"provider": "yahoo", "success": True}]}}}
+    result = build_source_network(fake_settings(), {}, audit)
+    assert result["summary"]["active_stock_sources"] == 1
+    assert result["summary"]["active_option_sources"] == 1
+    stock = next(r for r in result["stocks"] if r["name"] == "yahoo")
+    option = next(r for r in result["options"] if r["name"] == "yahoo")
+    assert stock["status"] == option["status"] == "active"
+    assert option["freshness"].startswith("قد يكون متأخرًا")
+    assert option["category"] == "options"
