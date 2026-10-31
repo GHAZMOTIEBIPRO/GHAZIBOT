@@ -130,3 +130,9 @@ def test_quality_panel_accepts_valid_data_status_with_null_options_readiness():
     classic = Path("public/app.js").read_text(encoding="utf-8")
     assert "حد عدد عينات المراجعة البحثية" in classic
     assert "ليست نسبة نجاح عقود منفذة" in classic
+    for filename in ("phase60.js", "phase62.js"):
+        ui = Path("public", filename).read_text(encoding="utf-8")
+        assert "ترتيب بحثي" in ui
+        assert 'ثقة النموذج ${' not in ui
+        assert "100" in ui
+
