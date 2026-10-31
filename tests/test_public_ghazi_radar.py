@@ -33,6 +33,9 @@ def test_fail_closed_and_no_invented_source_numbers():
     assert '"—"' in JS
     assert "Promise.allSettled" in JS
     assert "clearData()" in JS
-    assert "active_option_sources" in JS
+    # The previous generic count reported Yahoo active even with zero licensed chains.
+    assert "option_chain_source_families" in JS
+    assert "stock_primary_non_yahoo_families_reported" in JS
+    assert "active_option_sources" not in JS
     assert "usable_chains" in JS
     assert "getElementById" in JS
