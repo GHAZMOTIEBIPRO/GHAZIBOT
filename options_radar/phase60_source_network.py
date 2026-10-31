@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .settings import Settings
+from .source_permissions import allowed
 
 
 def _attempt_sets(
@@ -44,7 +45,9 @@ def _entry(
     fixed_status: str | None = None,
 ) -> dict[str, Any]:
     keys = {name.lower(), *(alias.lower() for alias in aliases)}
-    used = any(key in success for key in keys)
+    # A historical provider success does not override the current data-rights
+    # gate. Never count disabled Yahoo adapters as active market feeds.
+    used = any(key in success for key in keys) and fixed_status != "SOURCE_TERMS_BLOCKED"
     error = next((failures[key] for key in keys if key in failures), None)
     if fixed_status:
         status = fixed_status
@@ -78,6 +81,7 @@ def build_source_network(
     audit: dict[str, Any],
 ) -> dict[str, Any]:
     stock_success, stock_failures = _attempt_sets(audit, "stocks")
+    yahoo_permitted = allowed("yahoo")
     option_success, option_failures = _attempt_sets(audit, "options")
     operational = payload.get("operational_status", {}) or {}
     sec_status = operational.get("sec_fulltext_status", {}) or {}
@@ -125,9 +129,10 @@ def build_source_network(
         ),
         _entry(
             "yahoo", "stocks", "احتياط مجاني غير رسمي للأسعار والشموع",
-            True, stock_success, stock_failures, aliases=("yfinance",),
+            yahoo_permitted, stock_success, stock_failures, aliases=("yfinance",),
             freshness="قد يكون متأخرًا أو ناقصًا",
-            note="لا يسمح وحده برفع توصية إلى درجة قوية.",
+            note="يلزم إذن صريح للاستخدام الآلي؛ لا يثبت سعرًا تنفيذيًا.",
+            fixed_status=None if yahoo_permitted else "SOURCE_TERMS_BLOCKED",
         ),
     ]
 
@@ -157,9 +162,10 @@ def build_source_network(
         ),
         _entry(
             "yahoo", "options", "احتياط غير رسمي لسلسلة العقود",
-            True, option_success, option_failures, aliases=("yfinance",),
+            yahoo_permitted, option_success, option_failures, aliases=("yfinance",),
             freshness="قد يكون متأخرًا؛ لا يثبت Sweep أو Buy-to-Open",
-            note="لا يسمح وحده بتوصية عقد قوية.",
+            note="يلزم إذن صريح للاستخدام الآلي؛ لا يثبت OPRA أو التدفق الفعلي.",
+            fixed_status=None if yahoo_permitted else "SOURCE_TERMS_BLOCKED",
         ),
         _entry(
             "polygon_options", "options",
