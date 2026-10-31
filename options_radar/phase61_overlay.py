@@ -27,7 +27,9 @@ def _network_entry(
     note: str = "",
 ) -> dict[str, Any]:
     configured = bool(audit.get("configured"))
-    success = bool(audit.get("success"))
+    # A stale success cannot claim an active account connector without a
+    # currently configured provider; only explicit boolean success counts.
+    success = configured and audit.get("success") is True
     if success:
         status = "active"
     elif configured and audit.get("error"):
@@ -113,10 +115,15 @@ def _extend_network(payload: dict[str, Any], intelligence: dict[str, Any]) -> No
     stocks.extend(item for item in additions_stock if item["name"] not in existing_stock)
     options.extend(item for item in additions_options if item["name"] not in existing_option)
     summary = network.setdefault("summary", {})
-    summary["active_stock_sources"] = sum(bool(item.get("used_successfully")) for item in stocks if isinstance(item, dict))
-    summary["active_option_sources"] = sum(bool(item.get("used_successfully")) for item in options if isinstance(item, dict))
-    summary["configured_stock_sources"] = sum(bool(item.get("configured")) for item in stocks if isinstance(item, dict))
-    summary["configured_option_sources"] = sum(bool(item.get("configured")) for item in options if isinstance(item, dict))
+    # A government filing, Reddit post or short-volume report is not a stock
+    # market-price quote. Options flow context also cannot be counted as an
+    # executable contract-chain source.
+    summary["active_stock_sources"] = sum(item.get("used_successfully") is True for item in stocks if isinstance(item, dict) and item.get("category") == "stocks")
+    summary["active_option_sources"] = sum(item.get("used_successfully") is True for item in options if isinstance(item, dict) and item.get("category") == "options")
+    summary["configured_stock_sources"] = sum(item.get("configured") is True for item in stocks if isinstance(item, dict) and item.get("category") == "stocks")
+    summary["configured_option_sources"] = sum(item.get("configured") is True for item in options if isinstance(item, dict) and item.get("category") == "options")
+    summary["active_official_event_sources"] = sum(item.get("used_successfully") is True for item in stocks if isinstance(item, dict) and item.get("category") in ("official_events", "official_short_data"))
+    summary["active_option_flow_context_sources"] = sum(item.get("used_successfully") is True for item in options if isinstance(item, dict) and item.get("category") == "options_flow")
     policy = network.setdefault("policy", {})
     policy.update(
         {

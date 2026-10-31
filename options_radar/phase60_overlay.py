@@ -59,7 +59,9 @@ def _source_entry(
     keys = {name.lower(), *(alias.lower() for alias in aliases)}
     # Provider attempts count only for an actually integrated source, not
     # for a placeholder or a currently denied automated market-data source.
-    used = integration == "active_connector" and any(key in success for key in keys)
+    # Old success observations must not reactivate a connector when its current
+    # credential/terms gate is absent, or when integration still needs rights.
+    used = bool(configured) and integration == "active_connector" and any(key in success for key in keys)
     error = next((failures[key] for key in keys if key in failures), None)
     if integration != "active_connector":
         status = integration
@@ -292,8 +294,9 @@ def build_source_network(
         ),
     ]
 
-    active_stock = sum(item["used_successfully"] for item in stocks)
-    active_options = sum(item["used_successfully"] for item in options)
+    # Market price feed counts must not include official issuer/FDA events.
+    active_stock = sum(item["used_successfully"] for item in stocks if item["category"] == "stocks")
+    active_options = sum(item["used_successfully"] for item in options if item["category"] == "options")
     return {
         "policy": {
             "strong_recommendation_min_independent_sources": 2,
@@ -304,8 +307,10 @@ def build_source_network(
         "summary": {
             "active_stock_sources": active_stock,
             "active_option_sources": active_options,
-            "configured_stock_sources": sum(item["configured"] for item in stocks),
-            "configured_option_sources": sum(item["configured"] for item in options),
+            "configured_stock_sources": sum(item["configured"] for item in stocks if item["category"] == "stocks"),
+            "configured_option_sources": sum(item["configured"] for item in options if item["category"] == "options"),
+            "active_official_event_sources": sum(item["used_successfully"] for item in stocks if item["category"] == "official_events"),
+            "configured_official_event_sources": sum(item["configured"] for item in stocks if item["category"] == "official_events"),
         },
         "stocks": stocks,
         "options": options,
