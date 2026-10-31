@@ -165,8 +165,12 @@ function renderCalibration() {
   byId("calibration-sample").textContent = `${number(matured, 0)} / ${number(calibration.minimum_sample, 0)}`;
   byId("calibration-raw-sample").textContent = number(raw, 0);
   byId("calibration-five-day").textContent = number(calibration.five_day_sample, 0);
-  byId("calibration-decision").textContent = calibration.decision || "بانتظار البيانات";
-  byId("calibration-gate-status").textContent = gate.ready ? "جاهزة للمراجعة المستقلة" : `تجميع أدلة ناضجة (${escapeHtml(gate.maturity_checkpoint || "1d")})`;
+  byId("calibration-decision").textContent = calibration.calibration_ready ?
+    "اكتمل حد عدد عينات المراجعة البحثية فقط؛ لم تثبت دقة التوصيات أو الربحية" :
+    "لم تكتمل أدلة المراجعة البحثية؛ لا اعتماد للتداول";
+  byId("calibration-gate-status").textContent = gate.ready ?
+    "حد العينة مكتمل — ليست جاهزية تداول" :
+    `تجميع أدلة بحثية (${escapeHtml(gate.maturity_checkpoint || "1d")})`;
   byId("calibration-remaining").textContent = number(gate.remaining, 0);
   byId("average-mfe").textContent = plainPct(performance.average_mfe_pct, 2);
   byId("average-mae").textContent = plainPct(performance.average_mae_pct, 2);
@@ -174,7 +178,14 @@ function renderCalibration() {
   byId("path-target-first").textContent = number((Number(performance.path_target_1_first) || 0) + (Number(performance.path_target_2_first) || 0), 0);
   byId("path-stop-first").textContent = number(performance.path_stop_first, 0);
   byId("path-ambiguous").textContent = number(performance.path_ambiguous, 0);
-  byId("calibration-warning").textContent = calibration.warning || performance.measurement_note || "";
+  const basis = performance.option_contract_basis ?? 0;
+  const proxy = performance.underlying_proxy_basis ?? 0;
+  const truth = radarData?.trust_verdict || {};
+  byId("calibration-warning").textContent =
+    `العينة المقيمة على أسعار عقود الأوبشن: ${number(basis, 0)}؛ ` +
+    `العينة المقيمة باستخدام حركة السهم بدل العقد: ${number(proxy, 0)}. ` +
+    "هذه ليست نسبة نجاح عقود منفذة أو احتمال ربح. " +
+    (truth.scope_ar || performance.measurement_note || calibration.warning || "");
   const bands = calibration.score_bands || [];
   byId("calibration-body").innerHTML = bands.length ? bands.map((band) => `<tr><td>${escapeHtml(band.band)}</td><td>${number(band.signals, 0)}</td><td>${number(band.observed ?? band.priced, 0)}</td><td>${number(band.matured ?? band.priced, 0)}</td><td>${pct(band.target_1_rate)}</td><td>${pct(band.target_2_rate)}</td><td>${pct(band.stop_rate)}</td><td>${plainPct(band.average_mfe_pct, 2)}</td><td>${plainPct(band.average_mae_pct, 2)}</td></tr>`).join("") : '<tr><td colspan="9">لم تتكوّن عينة معايرة ناضجة بعد.</td></tr>';
 }
