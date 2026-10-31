@@ -155,3 +155,21 @@ def test_analysis_funnel_separates_known_news_fetched_analysed_and_qualified():
     g = bdp.funnel(nasdaq, directory, watch, ran)
     assert (g["bars_fetched"]["count"], g["bars_fetched"]["attempted"], g["analysed"]["count"]) == (1, 2, 1)
     assert "SPY" not in json.dumps(g)            # counts only in the public sheet
+
+
+def test_private_volume_context_never_treats_yesterdays_intraday_as_todays_breakout():
+    from datetime import timedelta
+    now = datetime(2026, 10, 30, 15, 30, tzinfo=timezone.utc)
+    prior = now - timedelta(days=1)
+    daily = {"status": "OK", "clean": [
+        {"t": prior, "open": 100.0, "high": 101.0, "low": 99.0, "close": 100.0, "volume": 900.0},
+    ]}
+    minute = {"status": "OK", "clean": [{"t": prior}]}
+    m15 = {"15m": [{"start": prior.isoformat(), "minutes": 15, "bars_5m": 3,
+                      "partial": False, "open": 100, "high": 101, "low": 99,
+                      "close": 100, "volume": 900}]}
+    result = bdp._private_volume_context(daily, minute, m15, now)
+    assert result["status"] == "NO_ACTIVE_INTRADAY_SESSION"
+    assert result["inference_only"] is True
+    minute["status"] = "DATA_ERROR"
+    assert bdp._private_volume_context(daily, minute, m15, now)["status"] == "QUALITY_GATE_BLOCKED"

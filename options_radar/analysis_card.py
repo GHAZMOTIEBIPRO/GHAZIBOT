@@ -74,7 +74,7 @@ def build_card(plan: dict[str, Any], *, news: list[dict[str, Any]] | None = None
                      "levels": [{**lv, "method": LEVEL_METHOD.get(lv["name"], lv["name"])} for lv in plan.get("levels") or []]},
         "interpretation": {"frames": {k: {"trend": f.get("trend"), "basis": f.get("basis"), "structure": f.get("structure"),
                                           "last_bar_end": f.get("last_bar_end")} for k, f in frames.items()},
-                           "agreement": plan.get("agreement")},
+                           "agreement": plan.get("agreement"), "liquidity": plan.get("liquidity_context")},
         "scenarios": plan.get("scenarios") or [],
         "news": linked[:5],
         "missing": missing,

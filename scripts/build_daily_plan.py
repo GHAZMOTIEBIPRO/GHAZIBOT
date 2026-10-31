@@ -41,6 +41,8 @@ import pandas as pd
 from options_radar import analysis_card as card
 from options_radar import daily_plan as dp
 from options_radar import ohlcv_quality as quality
+from options_radar import telegram_market_digest as digest
+from options_radar.volume_liquidity import liquidity_context
 from options_radar.bar_aggregation import frames_from_5m
 from options_radar.bar_providers import COVERAGE, AlpacaBars
 from options_radar.output_policy import decide, deliver_private
@@ -147,6 +149,42 @@ def checked(result: dict[str, Any], interval: str, as_of: datetime, need: int,
                               adjustment="split", need=need, session_close=(closes or {}).get)
 
 
+
+def _private_volume_context(daily_q: dict[str, Any], minute_q: dict[str, Any],
+                            intraday: dict[str, list[dict[str, Any]]], now: datetime) -> dict[str, Any]:
+    """Use only complete, gap-free 15m candles from the same validated feed.
+
+    Existing volume_liquidity handles RVOL, VWAP and prior-session breakouts.
+    No order book, options tape or institutional executions are available.
+    """
+    if daily_q.get("status") != "OK" or minute_q.get("status") != "OK":
+        return {"status": "QUALITY_GATE_BLOCKED", "inference_only": True}
+    rows = [r for r in (intraday.get("15m") or [])
+            if r.get("minutes") == 15 and r.get("bars_5m") == 3 and not r.get("partial")]
+    if not rows or not daily_q.get("clean"):
+        return {"status": "INSUFFICIENT_BARS", "inference_only": True}
+    latest_day = datetime.fromisoformat(rows[-1]["start"]).astimezone(NY).date()
+    last_daily_day = max(bar["t"].astimezone(NY).date() for bar in daily_q["clean"])
+    if latest_day != now.astimezone(NY).date() or latest_day <= last_daily_day:
+        # Before the next open and after the daily close, the most recent 15m
+        # session cannot be compared to the current plan's prior-day levels.
+        return {"status": "NO_ACTIVE_INTRADAY_SESSION", "inference_only": True}
+    daily = pd.DataFrame([{"Date": b["t"].astimezone(NY).date().isoformat(),
+                           "Open": b["open"], "High": b["high"], "Low": b["low"],
+                           "Close": b["close"], "Volume": b["volume"] or 0}
+                          for b in daily_q["clean"]])
+    daily.index = pd.DatetimeIndex(pd.to_datetime(daily.pop("Date"))).tz_localize(NY)
+    m15 = pd.DataFrame([{"Start": datetime.fromisoformat(b["start"]).astimezone(NY),
+                         "Open": b["open"], "High": b["high"], "Low": b["low"],
+                         "Close": b["close"], "Volume": b["volume"]}
+                        for b in rows])
+    m15.index = pd.DatetimeIndex(m15.pop("Start"))
+    context = liquidity_context(daily, m15)
+    context["inference_only"] = True
+    context["bars_15m_used"] = len(rows)
+    return context
+
+
 def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessions: list[tuple[datetime, datetime]],
                        now: datetime, closes: dict[str, datetime] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     """One symbol: ~2 years of daily bars (a real weekly frame) and 30 sessions of 5-minute bars.
@@ -176,6 +214,8 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
                               last_closed_week_end=facts["last_closed_week_end"] or "", provider=meta,
                               intraday=intraday)
     plan["quality_checks"] = {"daily": quality.summary(daily_q), "5m": quality.summary(minute_q)}
+    plan["liquidity_context"] = _private_volume_context(daily_q, minute_q, intraday, now)
+    plan["volume_scope"] = meta["volume_scope"]
     status["quality"] = {"daily": daily_q["status"], "5m": minute_q["status"]}
     return plan, status
 
@@ -244,17 +284,8 @@ def cards_for(private: dict[str, Any], watch: Any, now: datetime, opt_status: st
 
 
 def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
-    """Owner-private plan text: each symbol's card, written by the fixed template and checked number by number."""
-    lines = [f"<b>خطة اليوم الخاصة — {facts.get('last_closed_session')}</b>",
-             "مصدر: Alpaca (شموع مكتملة، لا شيء من آخر 16 دقيقة). استخدام شخصي فقط؛ لا يُعاد نشره."]
-    for c in (private.get("cards") or {}).values():
-        if not c.get("available"):
-            continue
-        text = card.explain_ar(c)
-        ok, _ = card.numbers_supported(text, c)
-        if ok:  # a reading with an unsupported number is withheld, never sent
-            lines.append(text)
-    return "\n\n".join(lines)[:3900]
+    """Ranked, compact private digest. Never cuts a Telegram message mid-level."""
+    return digest.render(private.get("cards") or {}, facts.get("last_closed_session"))
 
 
 def funnel(nasdaq: Any, directory: Any, watch: Any, private: dict[str, Any]) -> dict[str, Any]:
