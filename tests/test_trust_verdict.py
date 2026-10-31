@@ -95,6 +95,14 @@ def test_public_vault_updates_already_redacted_latest_and_status_without_prices(
     target = tmp_path / "bot-state"
     (source / "public/data").mkdir(parents=True)
     latest, status, health = sample()
+    latest["stock_recommendations"] = [
+        {"symbol": "AMD", "decision": "دخول مشروط بعد تحقق منطقة الدخول",
+         "confidence": 92}]
+    latest["contract_recommendations"] = [
+        {"symbol": "SPY", "decision": "عقد مرشح لدخول مشروط بعد تحقق السعر",
+         "confidence": 94}]
+    latest["summary"]["stock_recommendations"] = 1
+    latest["summary"]["contract_recommendations"] = 1
     (source / "public/data/latest.json").write_text(json.dumps(latest))
     (source / "public/data/data-status.json").write_text(json.dumps(status))
     (source / "public/data/health.json").write_text(json.dumps(health))
@@ -105,6 +113,12 @@ def test_public_vault_updates_already_redacted_latest_and_status_without_prices(
     assert a["trust_verdict"]["status"] == "NOT_TRADE_READY"
     assert a["trust_verdict"]["trade_recommendations_authorized"] is False
     assert "option_prices" not in json.dumps(a["trust_verdict"])
+    for row in a["stock_recommendations"] + a["contract_recommendations"]:
+        assert "دخول مشروط" not in row["decision"]
+        assert row["execution_authority"] is False
+        assert row["confidence_basis"] == "research_ranking_not_win_probability"
+    assert a["summary"]["stock_recommendations"] == 0
+    assert a["summary"]["contract_recommendations"] == 0
 
 
 def test_quality_panel_accepts_valid_data_status_with_null_options_readiness():
