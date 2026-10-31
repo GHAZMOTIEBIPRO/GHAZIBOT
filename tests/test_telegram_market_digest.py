@@ -50,6 +50,9 @@ def test_no_volume_no_verified_breakout_or_mixed_frames_means_wait():
     broken = card()
     broken["data_quality"]["5m"]["status"] = "DATA_ERROR"
     assert assess(broken)["state"] == "WAIT"
+    unknown = card()
+    unknown["data_quality"].pop("5m")
+    assert assess(unknown)["state"] == "WAIT"
     stale = card()
     stale["available"] = False
     assert assess(stale)["state"] == "WAIT"
