@@ -47,7 +47,7 @@ def _entry(
     keys = {name.lower(), *(alias.lower() for alias in aliases)}
     # A historical provider success does not override the current data-rights
     # gate. Never count disabled Yahoo adapters as active market feeds.
-    used = any(key in success for key in keys) and fixed_status != "SOURCE_TERMS_BLOCKED"
+    used = bool(configured) and not fixed_status and any(key in success for key in keys)
     error = next((failures[key] for key in keys if key in failures), None)
     if fixed_status:
         status = fixed_status
