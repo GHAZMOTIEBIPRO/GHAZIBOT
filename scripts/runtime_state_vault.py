@@ -205,6 +205,24 @@ def publish_runtime_state(*, repo_root: Path, vault_root: Path) -> dict[str, int
         verdict = trust_verdict.assess(
             latest_doc, status_doc, health_doc,
             now=datetime.now(timezone.utc))
+        # Overlays may have used different mixtures of news, Yahoo or
+        # indicative flow to mark a row "conditional entry". Their research
+        # score does NOT override an unqualified public execution feed.
+        if verdict["trade_recommendations_authorized"] is False:
+            for section in ("stock_recommendations", "contract_recommendations"):
+                rows = latest_doc.get(section)
+                if isinstance(rows, list):
+                    for row in rows:
+                        if not isinstance(row, dict):
+                            continue
+                        if "دخول مشروط" in str(row.get("decision") or ""):
+                            row["decision"] = "مراقبة بحثية فقط — بيانات التنفيذ غير مثبتة"
+                        row["execution_authority"] = False
+                        row["confidence_basis"] = "research_ranking_not_win_probability"
+            summary = latest_doc.get("summary")
+            if isinstance(summary, dict):
+                summary["stock_recommendations"] = 0
+                summary["contract_recommendations"] = 0
         latest_doc["trust_verdict"] = verdict
         status_doc["trust_verdict"] = verdict
         latest_path.write_text(
