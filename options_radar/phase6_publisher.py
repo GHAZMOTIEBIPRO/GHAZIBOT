@@ -4,6 +4,8 @@ import os
 import re
 from typing import Any
 
+from options_radar.source_permissions import allowed
+
 
 def _number(value: Any, default: float = 0.0) -> float:
     try:
@@ -81,6 +83,10 @@ def _source_item(
 
 def build_source_network(payload: dict[str, Any]) -> dict[str, Any]:
     active = _successful_providers(payload.get("provider_audit", {}))
+    # A populated/empty list is NOT evidence that a provider answered.
+    # Account rights are independent of whether an old adapter reported success.
+    yahoo_used = (bool({"yahoo", "yahoo/yfinance", "yfinance"} & active)
+                  and allowed("yahoo"))
     errors = payload.get("errors", {}) or {}
     sec_status = (payload.get("operational_status", {}) or {}).get("sec_fulltext_status", {}) or {}
 
@@ -98,7 +104,7 @@ def build_source_network(payload: dict[str, Any]) -> dict[str, Any]:
         _source_item("Alpaca", "أسعار وquotes للأسهم", configured=env("ALPACA_API_KEY") and env("ALPACA_SECRET_KEY"), active="alpaca" in active),
         _source_item("Twelve Data", "شموع احتياطية للأسهم", configured=env("TWELVE_DATA_API_KEY"), active="twelve_data" in active),
         _source_item("Alpha Vantage", "شموع وبيانات احتياطية", configured=env("ALPHA_VANTAGE_API_KEY"), active="alpha_vantage" in active),
-        _source_item("Yahoo/yfinance", "احتياط غير رسمي للأسعار والقوائم", configured=True, active="yahoo" in active or payload.get("stocks") is not None, freshness="غير رسمي وقد يتأخر", note="لا يستخدم وحده لتسمية الفرصة توصية مؤكدة"),
+        _source_item("Yahoo/yfinance", "احتياط غير رسمي للأسعار والقوائم", configured=allowed("yahoo"), active=yahoo_used, freshness="غير رسمي وقد يتأخر", note="لا يستخدم وحده لتسمية الفرصة توصية مؤكدة"),
     ]
     options = [
         _source_item("OPRA عبر Polygon / Massive", "تجميع quotes/trades من بورصات الخيارات الأمريكية", configured=env("POLYGON_API_KEY"), active="polygon" in active, freshness="حسب الخطة", note="الطريق النظامي لتغطية Cboe وNasdaq وNYSE وMIAX وغيرها بدل كشط مواقعها", entitlement=True),
@@ -106,7 +112,7 @@ def build_source_network(payload: dict[str, Any]) -> dict[str, Any]:
         _source_item("Alpaca Options", "إثراء quotes وGreeks عند توفر الصلاحية", configured=env("ALPACA_API_KEY") and env("ALPACA_SECRET_KEY"), active="alpaca" in active, entitlement=True),
         _source_item("MarketData.app", "سلاسل وGreeks اختيارية", configured=env("MARKETDATA_TOKEN"), active="marketdata" in active),
         _source_item("Finnhub", "إثراء سوقي عند توفر endpoint والخطة", configured=env("FINNHUB_API_KEY"), active="finnhub" in active, entitlement=True),
-        _source_item("Yahoo/yfinance Options", "احتياط غير رسمي لسلاسل الخيارات", configured=True, active="yahoo" in active or payload.get("options") is not None, freshness="غير رسمي وقد يتأخر", note="لا يثبت sweep أو buy-to-open"),
+        _source_item("Yahoo/yfinance Options", "احتياط غير رسمي لسلاسل الخيارات", configured=allowed("yahoo"), active=yahoo_used, freshness="غير رسمي وقد يتأخر", note="لا يثبت sweep أو buy-to-open"),
     ]
     return {
         "policy": {
@@ -136,9 +142,9 @@ def _stock_recommendation(stock: dict[str, Any]) -> dict[str, Any]:
         sources.append(fundamental_source)
     sources = _unique(sources)
     score = _number(stock.get("score"))
-    if len(sources) >= 2 and score >= 70 and stock.get("new_stock_setup"):
-        decision = "دخول مشروط"
-    elif score >= 60:
+    # A company headline plus Yahoo price is not two independent price feeds.
+    # This legacy public summary has no per-quote execution-entitlement proof.
+    if score >= 60:
         decision = "مرشح للمراقبة"
     else:
         decision = "مراقبة فقط"
@@ -147,6 +153,8 @@ def _stock_recommendation(stock: dict[str, Any]) -> dict[str, Any]:
         "symbol": stock.get("symbol"),
         "decision": decision,
         "confidence": round(confidence, 1),
+        "confidence_basis": "heuristic_priority_score_not_win_probability",
+        "execution_authority": False,
         "source_count": len(sources),
         "confirmed_sources": sources,
         "entry_low": stock.get("entry_low"),
@@ -169,9 +177,9 @@ def _contract_recommendation(option: dict[str, Any]) -> dict[str, Any]:
     flow = _number(option.get("flow_momentum_score"))
     score = _number(option.get("score"))
     unusual = bool(option.get("unusual_activity_flag"))
-    if len(sources) >= 2 and unusual and flow >= 65 and score >= 55:
-        decision = "دخول مشروط"
-    elif unusual and flow >= 50:
+    # OI, an indicative quote and a news item are heterogeneous context,
+    # not independent OPRA confirmations or proof of executable option fills.
+    if unusual and flow >= 50:
         decision = "مرشح للمراقبة"
     else:
         decision = "مراقبة عقد"
@@ -182,6 +190,8 @@ def _contract_recommendation(option: dict[str, Any]) -> dict[str, Any]:
         "option_type": option.get("option_type"),
         "decision": decision,
         "confidence": round(confidence, 1),
+        "confidence_basis": "heuristic_priority_score_not_win_probability",
+        "execution_authority": False,
         "source_count": len(sources),
         "confirmed_sources": sources,
         "entry_price": option.get("entry_price"),

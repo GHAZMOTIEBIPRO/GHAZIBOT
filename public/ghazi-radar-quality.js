@@ -29,7 +29,8 @@
       { cache: "no-store" });
     if (!response.ok) throw new Error("HTTP " + response.status);
     const payload = await response.json();
-    if (!payload || typeof payload !== "object" || !payload.option_provider_readiness ||
+    if (!payload || typeof payload !== "object" ||
+        !payload.coverage_diagnostics ||
         timestamp(payload.generated_at) === null) throw new Error("تقرير غير صالح");
     return { payload, url };
   }
@@ -47,15 +48,32 @@
     const age = (Date.now() - timestamp(data.generated_at)) / 60000;
     const current = age >= 0 && age <= 90;
     const veryOld = age > 360 || age < -5;
-    const readiness = data.option_provider_readiness;
+    const coverage = data.coverage_diagnostics || {};
+    // A missing option-provider readiness payload means NOT verified, not a
+    // broken health report. Only an explicitly true runtime gate permits green.
+    const readiness = (data.option_provider_readiness &&
+      typeof data.option_provider_readiness === "object") ?
+      data.option_provider_readiness : {
+        production_quote_ready: coverage.options_execution_quote_ready === true,
+        production_flow_ready: coverage.options_trade_flow_ready === true,
+        usable_chains: coverage.option_live_primary_chains_reported ?? 0,
+        sources: coverage.option_chain_source_families ?? [],
+        reasons: coverage.blocking_codes ?? [],
+      };
     const sources = data.source_status || {};
     const badge = $("ghazi-quality-badge");
     badge.className = "ghazi-quality-badge " + (current ? "ghazi-current" : "ghazi-degraded");
     const words = veryOld ? "تقرير قديم أو ساعة غير متطابقة" :
       current ? "تقرير حديث — لا يعني تسعيرًا لحظيًا" : "تقرير متأخر";
     badge.textContent = words;
-    show("ghazi-stock-sources", integer(sources.active_stock_sources));
-    show("ghazi-option-sources", integer(sources.active_option_sources));
+    // Source network may count context or old adapter attempts; qualified
+    // price families and option chains are the relevant trust denominators.
+    const stockFamilies = coverage.stock_primary_non_yahoo_families_reported;
+    const optionFamilies = coverage.option_chain_source_families;
+    show("ghazi-stock-sources", Array.isArray(stockFamilies) ?
+      integer(stockFamilies.length) : "—");
+    show("ghazi-option-sources", Array.isArray(optionFamilies) ?
+      integer(optionFamilies.length) : "—");
     show("ghazi-research-chains", integer(readiness.usable_chains));
     show("ghazi-approved-contracts", integer((data.row_counts || {}).options));
     show("ghazi-option-readiness", flag(current ? readiness.production_quote_ready : undefined));
@@ -63,7 +81,6 @@
     show("ghazi-chain-providers", Array.isArray(readiness.sources) && readiness.sources.length ?
       readiness.sources.join("، ") : "لا يوجد مصدر مثبت");
     show("ghazi-report-time", timeRiyadh(data.generated_at));
-    const coverage = data.coverage_diagnostics || {};
     const named = (items) => Array.isArray(items) ?
       (items.length ? items.join("، ") : "لا يوجد مصدر مؤكد في هذا التقرير") : "لم تُصدر بيانات تفصيلية بعد";
     show("ghazi-stock-price-families", named(coverage.stock_price_source_families_reported));
@@ -96,11 +113,15 @@
       sec && sec.available === false ? "غير متاح؛ تحقق من مسارات الإفصاح البديلة" : "غير مؤكد");
     const reasons = Array.isArray(readiness.reasons) ? readiness.reasons : [];
     const qualityNote = $("ghazi-quality-note");
-    if (!current || readiness.production_quote_ready !== true || readiness.production_flow_ready !== true) {
-      qualityNote.textContent = "أوبشن بحثي فقط: مصدر العقد أو توقيت السعر أو دليل التدفق لا يستوفي بوابة التنفيذ. " +
-        "لا تجعل كثرة السلاسل أو درجة الترتيب بديلًا عن عروض Bid/Ask موثقة وحديثة.";
+    const truth = data.trust_verdict || {};
+    const sourceGuard = truth.status === "NOT_TRADE_READY" ||
+      truth.trade_recommendations_authorized === false;
+    if (!current || sourceGuard || readiness.production_quote_ready !== true ||
+        readiness.production_flow_ready !== true) {
+      qualityNote.textContent = "غير مؤهل لتوصيات تنفيذية: مصدر العقد أو وقت Bid/Ask أو تدفق الصفقات غير موثق. " +
+        "نتائج المحاكاة على السهم ليست أرباح أوبشن؛ نجاح التحديث لا يثبت دقة التداول.";
     } else {
-      qualityNote.textContent = "آخر تقرير سجّل استيفاء متطلبات الجودة؛ تحقّق من طابع وقت كل عرض سعر قبل أي قرار.";
+      qualityNote.textContent = "بيانات البحث متاحة بحسب التقرير، لكن اعتماد تنفيذ أي عقد يحتاج تحققًا مستقلًا من الترخيص ووقت السعر.";
     }
     qualityNote.title = reasons.slice(0,2).join(" | ");
     qualityNote.dataset.origin = url.includes("bot-state") ? "runtime" : "published";

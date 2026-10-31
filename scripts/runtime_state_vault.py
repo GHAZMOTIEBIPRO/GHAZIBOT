@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 import json
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,14 @@ _guard_spec = importlib.util.spec_from_file_location(
     "ghazi_public_guard", Path(__file__).resolve().parents[1] / "options_radar" / "public_guard.py")
 public_guard = importlib.util.module_from_spec(_guard_spec)
 _guard_spec.loader.exec_module(public_guard)
+
+# Portable, standard-library-only verdict runs after the public licence
+# guard. Only already-redacted inputs are inspected; no secrets or raw prices.
+_truth_spec = importlib.util.spec_from_file_location(
+    "ghazi_trust_verdict",
+    Path(__file__).resolve().parents[1] / "options_radar" / "trust_verdict.py")
+trust_verdict = importlib.util.module_from_spec(_truth_spec)
+_truth_spec.loader.exec_module(trust_verdict)
 
 GUARDED_PUBLIC_FILES = {
     "public/data/latest.json": "latest",
@@ -181,6 +190,49 @@ def publish_runtime_state(*, repo_root: Path, vault_root: Path) -> dict[str, int
         else:
             shutil.copy2(source, destination)
         published += 1
+
+    # A successful GitHub job does not prove market-trade readiness.
+    # Annotate BOTH existing public views with the same source-backed verdict.
+    # No new public price-bearing artifact or independent market-data fetch.
+    latest_path = vault_root / "public/data/latest.json"
+    status_path = vault_root / "public/data/data-status.json"
+    health_path = vault_root / "public/data/health.json"
+    if latest_path.exists() and status_path.exists():
+        latest_doc = json.loads(latest_path.read_text(encoding="utf-8"))
+        status_doc = json.loads(status_path.read_text(encoding="utf-8"))
+        health_doc = (json.loads(health_path.read_text(encoding="utf-8"))
+                      if health_path.exists() else {})
+        verdict = trust_verdict.assess(
+            latest_doc, status_doc, health_doc,
+            now=datetime.now(timezone.utc))
+        # Overlays may have used different mixtures of news, Yahoo or
+        # indicative flow to mark a row "conditional entry". Their research
+        # score does NOT override an unqualified public execution feed.
+        if verdict["trade_recommendations_authorized"] is False:
+            for section in ("stock_recommendations", "contract_recommendations"):
+                rows = latest_doc.get(section)
+                if isinstance(rows, list):
+                    for row in rows:
+                        if not isinstance(row, dict):
+                            continue
+                        if "دخول مشروط" in str(row.get("decision") or ""):
+                            row["decision"] = "مراقبة بحثية فقط — بيانات التنفيذ غير مثبتة"
+                        row["execution_authority"] = False
+                        row["confidence_basis"] = "research_ranking_not_win_probability"
+            summary = latest_doc.get("summary")
+            if isinstance(summary, dict):
+                summary["stock_recommendations"] = 0
+                summary["contract_recommendations"] = 0
+        latest_doc["trust_verdict"] = verdict
+        status_doc["trust_verdict"] = verdict
+        latest_path.write_text(
+            json.dumps(latest_doc, ensure_ascii=False, allow_nan=False),
+            encoding="utf-8")
+        status_path.write_text(
+            json.dumps(status_doc, ensure_ascii=False, allow_nan=False),
+            encoding="utf-8")
+        validate_runtime_file(latest_path)
+        validate_runtime_file(status_path)
 
     manifest = {
         "schema_version": 1,
