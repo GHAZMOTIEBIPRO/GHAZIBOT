@@ -55,7 +55,9 @@ def test_current_stock_and_option_keys_count_only_respective_price_adapters(monk
     for report in (live, secondary):
         assert report["summary"]["active_stock_sources"] == 1
         assert report["summary"]["active_option_sources"] == 1
-        assert report["summary"]["configured_stock_sources"] == 1
+        # Tradier is configured for stock quotes as well as options, but did not
+        # successfully return a stock bar in this fixture.
+        assert report["summary"]["configured_stock_sources"] == 2
         assert report["summary"]["configured_option_sources"] == 1
     assert live["summary"]["active_official_event_sources"] == 1
 
