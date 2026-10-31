@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .settings import Settings
+from .source_permissions import allowed
 
 SOURCE_AUDIT_PATH = Path(os.getenv("GHAZI_SOURCE_AUDIT_PATH", "data/live/source_audit.json"))
 
@@ -18,28 +19,28 @@ def _read_json(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
-def _attempt_sets(audit: dict[str, Any]) -> tuple[set[str], dict[str, str]]:
+def _attempt_sets(audit: dict[str, Any], section: str) -> tuple[set[str], dict[str, str]]:
+    # A successful stock candle does not prove this provider returned an
+    # option chain, or vice versa. Preserve separate data-source lineages.
     success: set[str] = set()
     failures: dict[str, str] = {}
-    for section in ("stocks", "options"):
-        rows = audit.get(section, {})
-        if not isinstance(rows, dict):
+    rows = audit.get(section, {})
+    if not isinstance(rows, dict):
+        return success, failures
+    for item in rows.values():
+        if not isinstance(item, dict):
             continue
-        for item in rows.values():
-            if not isinstance(item, dict):
+        for attempt in item.get("attempts", []) or []:
+            if not isinstance(attempt, dict):
                 continue
-            for attempt in item.get("attempts", []) or []:
-                if not isinstance(attempt, dict):
-                    continue
-                provider = str(attempt.get("provider") or "").strip().lower()
-                if not provider:
-                    continue
-                if attempt.get("success"):
-                    success.add(provider)
-                elif attempt.get("error"):
-                    failures.setdefault(provider, str(attempt.get("error")))
+            provider = str(attempt.get("provider") or "").strip().lower()
+            if not provider:
+                continue
+            if attempt.get("success") is True:
+                success.add(provider)
+            elif attempt.get("error"):
+                failures.setdefault(provider, str(attempt.get("error")))
     return success, failures
-
 
 def _source_entry(
     *,
@@ -56,7 +57,9 @@ def _source_entry(
     integration: str = "active_connector",
 ) -> dict[str, Any]:
     keys = {name.lower(), *(alias.lower() for alias in aliases)}
-    used = any(key in success for key in keys)
+    # Provider attempts count only for an actually integrated source, not
+    # for a placeholder or a currently denied automated market-data source.
+    used = integration == "active_connector" and any(key in success for key in keys)
     error = next((failures[key] for key in keys if key in failures), None)
     if integration != "active_connector":
         status = integration
@@ -89,7 +92,9 @@ def build_source_network(
     payload: dict[str, Any],
     audit: dict[str, Any],
 ) -> dict[str, Any]:
-    success, failures = _attempt_sets(audit)
+    stock_success, stock_failures = _attempt_sets(audit, "stocks")
+    option_success, option_failures = _attempt_sets(audit, "options")
+    yahoo_allowed = allowed("yahoo")
     operational = payload.get("operational_status", {}) or {}
     sec_status = operational.get("sec_fulltext_status", {}) or {}
     sec_available = bool(sec_status.get("available"))
@@ -102,8 +107,8 @@ def build_source_network(
             role="إفصاحات، قوائم مالية، Form 4 و13D ومخاطر التخفيف",
             official=True,
             configured=True,
-            success=success | ({"sec"} if sec_available else set()),
-            failures={**failures, **({"sec": sec_note} if sec_note and not sec_available else {})},
+            success=stock_success | ({"sec"} if sec_available else set()),
+            failures={**stock_failures, **({"sec": sec_note} if sec_note and not sec_available else {})},
             freshness="رسمي حسب نشر EDGAR",
             note="حد SEC الرسمي الأقصى 10 طلبات/ثانية؛ الحظر المؤقت لا يوقف بقية الرادار.",
         ),
@@ -113,8 +118,8 @@ def build_source_network(
             role="قرارات ومعلومات FDA الدوائية",
             official=True,
             configured=True,
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
             freshness="رسمي؛ المفتاح اختياري لرفع الحصة",
         ),
         _source_entry(
@@ -123,8 +128,8 @@ def build_source_network(
             role="شموع وأسعار الأسهم",
             official=False,
             configured=bool(settings.tiingo_api_key),
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
         ),
         _source_entry(
             name="finnhub",
@@ -132,8 +137,8 @@ def build_source_network(
             role="شموع وأسعار وأحداث سوقية حسب الخطة",
             official=False,
             configured=bool(settings.finnhub_api_key),
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
         ),
         _source_entry(
             name="tradier",
@@ -141,8 +146,8 @@ def build_source_network(
             role="أسعار وشموع من حساب Tradier",
             official=False,
             configured=bool(settings.tradier_token),
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
             freshness=(
                 "Sandbox متأخر 15 دقيقة"
                 if "sandbox" in settings.tradier_base_url
@@ -155,8 +160,8 @@ def build_source_network(
             role="شموع IEX أو SIP حسب صلاحية الحساب",
             official=False,
             configured=bool(settings.alpaca_api_key and settings.alpaca_secret_key),
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
             freshness=f"Alpaca {settings.alpaca_stock_feed}",
         ),
         _source_entry(
@@ -165,8 +170,8 @@ def build_source_network(
             role="شموع وسجل سوقي من API Polygon",
             official=False,
             configured=bool(settings.polygon_api_key),
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
         ),
         _source_entry(
             name="twelve_data",
@@ -175,8 +180,8 @@ def build_source_network(
             role="شموع احتياطية ضمن حصة الحساب",
             official=False,
             configured=bool(settings.twelve_data_api_key),
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
         ),
         _source_entry(
             name="alpha_vantage",
@@ -185,8 +190,8 @@ def build_source_network(
             role="شموع وبيانات سوقية احتياطية",
             official=False,
             configured=bool(settings.alpha_vantage_api_key),
-            success=success,
-            failures=failures,
+            success=stock_success,
+            failures=stock_failures,
         ),
         _source_entry(
             name="yahoo",
@@ -194,11 +199,12 @@ def build_source_network(
             category="stocks",
             role="احتياط مجاني غير رسمي للأسعار والشموع",
             official=False,
-            configured=True,
-            success=success,
-            failures=failures,
+            configured=yahoo_allowed,
+            success=stock_success,
+            failures=stock_failures,
             freshness="قد يكون متأخرًا أو ناقصًا",
-            note="لا يسمح وحده برفع توصية إلى درجة قوية.",
+            note="مصدر غير مؤهل دون ترخيص آلي؛ النجاح القديم لا يثبت مصدر أسعار حديثًا.",
+            integration="active_connector" if yahoo_allowed else "SOURCE_TERMS_BLOCKED",
         ),
     ]
 
@@ -209,8 +215,8 @@ def build_source_network(
             role="سلاسل عقود، Bid/Ask، حجم وOpen Interest",
             official=False,
             configured=bool(settings.tradier_token),
-            success=success,
-            failures=failures,
+            success=option_success,
+            failures=option_failures,
             freshness=(
                 "Sandbox متأخر 15 دقيقة ولا يوفر Greeks من المزود"
                 if "sandbox" in settings.tradier_base_url
@@ -223,8 +229,8 @@ def build_source_network(
             role="سلسلة عقود وGreeks وOI وفق صلاحية OPRA",
             official=False,
             configured=bool(settings.marketdata_token),
-            success=success,
-            failures=failures,
+            success=option_success,
+            failures=option_failures,
             freshness="لحظي أو 15 دقيقة أو يوم سابق حسب الاستحقاق",
         ),
         _source_entry(
@@ -233,8 +239,8 @@ def build_source_network(
             role="إثراء آخر صفقة وآخر Quote وGreeks",
             official=False,
             configured=bool(settings.alpaca_api_key and settings.alpaca_secret_key),
-            success=success,
-            failures=failures,
+            success=option_success,
+            failures=option_failures,
             freshness=(
                 "OPRA رسمي عند الاشتراك؛ indicative مجاني متأخر ومعدل"
             ),
@@ -245,8 +251,8 @@ def build_source_network(
             role="سلسلة أو Bid/Ask حسب صلاحية الحساب",
             official=False,
             configured=bool(settings.finnhub_api_key),
-            success=success,
-            failures=failures,
+            success=option_success,
+            failures=option_failures,
         ),
         _source_entry(
             name="yahoo",
@@ -254,11 +260,12 @@ def build_source_network(
             category="options",
             role="احتياط غير رسمي لسلسلة العقود",
             official=False,
-            configured=True,
-            success=success,
-            failures=failures,
+            configured=yahoo_allowed,
+            success=option_success,
+            failures=option_failures,
             freshness="قد يكون متأخرًا؛ لا يثبت Sweep أو Buy-to-Open",
-            note="لا يسمح وحده بتوصية عقد قوية.",
+            note="دون تصريح آلي هذا ليس مصدر عقود مؤهلًا، ولا يثبت تدفق OPRA.",
+            integration="active_connector" if yahoo_allowed else "SOURCE_TERMS_BLOCKED",
         ),
         _source_entry(
             name="polygon_options",
@@ -266,8 +273,8 @@ def build_source_network(
             role="OPRA trades/quotes من جميع بورصات الخيارات الأمريكية",
             official=False,
             configured=bool(settings.polygon_api_key),
-            success=success,
-            failures=failures,
+            success=option_success,
+            failures=option_failures,
             freshness="بحسب خطة Polygon وترخيص OPRA",
             note="موثق كمصدر OPRA شامل؛ موصل سلسلة العقود سيبقى غير مفعل حتى تتوفر صلاحية Options API.",
             integration="entitlement_required",
@@ -278,8 +285,8 @@ def build_source_network(
             role="Realtime/Historical options وGreeks",
             official=False,
             configured=bool(settings.alpha_vantage_api_key),
-            success=success,
-            failures=failures,
+            success=option_success,
+            failures=option_failures,
             freshness="واجهة الخيارات اللحظية مدفوعة",
             integration="premium_connector",
         ),
