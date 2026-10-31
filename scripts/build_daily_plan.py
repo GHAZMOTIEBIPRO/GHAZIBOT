@@ -151,7 +151,7 @@ def checked(result: dict[str, Any], interval: str, as_of: datetime, need: int,
 
 
 def _private_volume_context(daily_q: dict[str, Any], minute_q: dict[str, Any],
-                            intraday: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+                            intraday: dict[str, list[dict[str, Any]]], now: datetime) -> dict[str, Any]:
     """Use only complete, gap-free 15m candles from the same validated feed.
 
     Existing volume_liquidity handles RVOL, VWAP and prior-session breakouts.
@@ -163,6 +163,12 @@ def _private_volume_context(daily_q: dict[str, Any], minute_q: dict[str, Any],
             if r.get("minutes") == 15 and r.get("bars_5m") == 3 and not r.get("partial")]
     if not rows or not daily_q.get("clean"):
         return {"status": "INSUFFICIENT_BARS", "inference_only": True}
+    latest_day = datetime.fromisoformat(rows[-1]["start"]).astimezone(NY).date()
+    last_daily_day = max(bar["t"].astimezone(NY).date() for bar in daily_q["clean"])
+    if latest_day != now.astimezone(NY).date() or latest_day <= last_daily_day:
+        # Before the next open and after the daily close, the most recent 15m
+        # session cannot be compared to the current plan's prior-day levels.
+        return {"status": "NO_ACTIVE_INTRADAY_SESSION", "inference_only": True}
     daily = pd.DataFrame([{"Date": b["t"].astimezone(NY).date().isoformat(),
                            "Open": b["open"], "High": b["high"], "Low": b["low"],
                            "Close": b["close"], "Volume": b["volume"] or 0}
@@ -208,7 +214,7 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
                               last_closed_week_end=facts["last_closed_week_end"] or "", provider=meta,
                               intraday=intraday)
     plan["quality_checks"] = {"daily": quality.summary(daily_q), "5m": quality.summary(minute_q)}
-    plan["liquidity_context"] = _private_volume_context(daily_q, minute_q, intraday)
+    plan["liquidity_context"] = _private_volume_context(daily_q, minute_q, intraday, now)
     plan["volume_scope"] = meta["volume_scope"]
     status["quality"] = {"daily": daily_q["status"], "5m": minute_q["status"]}
     return plan, status
