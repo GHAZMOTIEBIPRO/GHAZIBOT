@@ -174,8 +174,8 @@ def run(env: dict[str, str], *, session: Any = requests,
             {"timestamp": b["time"].isoformat(),
              "open": b["open"], "high": b["high"], "low": b["low"],
              "close": b["close"], "volume": b["volume"]}
-            for b in bars], now=now)
-        if plan["status"] == "RESEARCH_ONLY_IEX":
+            for b in bars], now=now, provider="twelve_data_basic")
+        if plan["status"] == "RESEARCH_ONLY_TWELVE_DATA":
             result["symbols_with_computed_levels"] += 1
             statuses.append("NON_DISPLAY_LEVELS_COMPUTED")
         else:

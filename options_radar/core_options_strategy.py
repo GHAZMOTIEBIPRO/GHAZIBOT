@@ -81,7 +81,14 @@ def _ema(values: list[float], period: int) -> float | None:
 
 def technical_levels(
     symbol: str, daily: list[dict], bars5: list[dict], *, now: datetime,
+    provider: str = "alpaca_iex",
 ) -> dict[str, Any]:
+    # Data providers do not become interchangeable merely because they use
+    # an OHLCV schema. Keep the exact feed and rights visible in research.
+    if provider not in ("alpaca_iex", "twelve_data_basic"):
+        return {"symbol": symbol, "status": "UNKNOWN_PROVIDER",
+                "decision": "WAIT", "levels": {},
+                "execution_authority": False}
     daily = ohlcv(daily, now=now, minutes=None)
     bars5 = ohlcv(bars5, now=now, minutes=5)
     day = now.astimezone(NY).date()
@@ -114,7 +121,8 @@ def technical_levels(
               "previous_week_5session_low": round(week_lo, 4),
               "opening_range_30m_high": round(or_high, 4),
               "opening_range_30m_low": round(or_low, 4),
-              "vwap_5m_iex": round(vwap, 4) if vwap else None,
+              ("vwap_5m_iex" if provider == "alpaca_iex"
+               else "vwap_5m_twelve_data"): round(vwap, 4) if vwap else None,
               "last_completed_5m_close": round(last, 4)}
     direction = "WAIT"
     if fast is not None and slow is not None and vwap:
@@ -122,12 +130,16 @@ def technical_levels(
             direction = "CALL"
         elif last < or_low and last < vwap and fast < slow:
             direction = "PUT"
-    # Source IEX has only one exchange's trades; do not call its volume
-    # complete-market volume, and do not confirm a broker-fill price.
-    return {"symbol": symbol, "status": "RESEARCH_ONLY_IEX",
+    # IEX covers only one venue; Twelve Data uses its own permitted upstream.
+    # Neither private observation proves executable NBBO or broker fills.
+    is_iex = provider == "alpaca_iex"
+    return {"symbol": symbol,
+            "status": "RESEARCH_ONLY_IEX" if is_iex else "RESEARCH_ONLY_TWELVE_DATA",
             "decision": direction, "levels": levels,
-            "source": "ALPACA_IEX_5M_AND_DAILY",
-            "source_scope": "IEX_PARTIAL_EXCHANGE_NOT_SIP",
+            "source": ("ALPACA_IEX_5M_AND_DAILY" if is_iex
+                       else "TWELVE_DATA_BASIC_PRIVATE_5M_AND_DAILY"),
+            "source_scope": ("IEX_PARTIAL_EXCHANGE_NOT_SIP" if is_iex
+                             else "TWELVE_DATA_BASIC_INTERNAL_NON_DISPLAY"),
             "last_bar_end": (current[-1]["time"] + timedelta(minutes=5)).isoformat(),
             "completed_5m_count": len(current),
             "day_five_minute_volume_iex": int(traded),
