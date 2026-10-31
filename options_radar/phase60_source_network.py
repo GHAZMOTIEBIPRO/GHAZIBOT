@@ -23,7 +23,7 @@ def _attempt_sets(
             provider = str(attempt.get("provider") or "").strip().lower()
             if not provider:
                 continue
-            if attempt.get("success"):
+            if attempt.get("success") is True:
                 success.add(provider)
             elif attempt.get("error"):
                 failures.setdefault(provider, str(attempt.get("error")))
@@ -47,7 +47,8 @@ def _entry(
     keys = {name.lower(), *(alias.lower() for alias in aliases)}
     # A historical provider success does not override the current data-rights
     # gate. Never count disabled Yahoo adapters as active market feeds.
-    used = any(key in success for key in keys) and fixed_status != "SOURCE_TERMS_BLOCKED"
+    # Only a currently configured, permitted/entitled source can be active.
+    used = bool(configured) and not fixed_status and any(key in success for key in keys)
     error = next((failures[key] for key in keys if key in failures), None)
     if fixed_status:
         status = fixed_status
@@ -191,10 +192,11 @@ def build_source_network(
             "single_source_cap": 65,
         },
         "summary": {
-            "active_stock_sources": sum(item["used_successfully"] for item in stocks),
-            "active_option_sources": sum(item["used_successfully"] for item in options),
-            "configured_stock_sources": sum(item["configured"] for item in stocks),
-            "configured_option_sources": sum(item["configured"] for item in options),
+            "active_stock_sources": sum(item["used_successfully"] for item in stocks if item["category"] == "stocks"),
+            "active_option_sources": sum(item["used_successfully"] for item in options if item["category"] == "options"),
+            "configured_stock_sources": sum(item["configured"] for item in stocks if item["category"] == "stocks"),
+            "configured_option_sources": sum(item["configured"] for item in options if item["category"] == "options"),
+            "active_official_event_sources": sum(item["used_successfully"] for item in stocks if item["category"] == "official_events"),
         },
         "stocks": stocks,
         "options": options,
