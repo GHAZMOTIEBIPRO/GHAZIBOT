@@ -19,6 +19,7 @@ import requests
 
 from options_radar.core_options_strategy import OCC, evaluate, number, ohlcv
 from options_radar.focus_universe import FOCUS_STOCKS
+from options_radar.structure_liquidity_shadow import analyze as market_structure_shadow
 
 NY = ZoneInfo("America/New_York")
 FOCUS = ("SPY", "QQQ", *FOCUS_STOCKS)
@@ -236,6 +237,9 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
                  if spot is not None and spot > 0 else [])
         plan = evaluate(symbol, daily=daily, bars5=intraday,
                         chain=chain, now=now, feed="indicative")
+        # Reuse authorized IEX bars without a new provider call or public quote.
+        structure = market_structure_shadow(
+            intraday, now=now - timedelta(minutes=15))
         technical = plan["technical"]
         entry = {"technical_status": technical["status"],
                  "technical_decision": technical["decision"],
@@ -243,6 +247,12 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
                  "gamma_coverage": plan["gamma"].get("joint_coverage", 0),
                  "gamma_status": plan["gamma"]["status"],
                  "option_status": plan["option"]["status"],
+                 "structure_status": structure["status"],
+                 "structure_signal": structure["signal"],
+                 "trend_5m": structure["trend_5m"],
+                 "trend_15m": structure["trend_15m"],
+                 "structure_direction": structure["direction"],
+                 "structure_research_only": True,
                  "eligible_execution_signals": 0}
         result["by_symbol"][symbol] = entry
         result["completed"] += int(technical["status"] == "RESEARCH_ONLY_IEX")
@@ -320,7 +330,21 @@ def owner_report(report: dict[str, Any]) -> str:
         side = str(item.get("technical_decision") or "WAIT")
         if side not in ("CALL", "PUT", "WAIT"):
             side = "WAIT"
-        messages.append(f"{html.escape(str(symbol))}: {side} (بحثي فقط)")
+        structure = str(item.get("structure_signal") or "WAIT")
+        safe_structures = {
+            "HIGH_SWEEP_PRICE_PROXY": "سحب علوي محتمل",
+            "LOW_SWEEP_PRICE_PROXY": "سحب سفلي محتمل",
+            "HIGH_SWEEP_THEN_DOWN_STRUCTURAL_BREAK": "سحب علوي ثم كسر هيكل هابط",
+            "LOW_SWEEP_THEN_UP_STRUCTURAL_BREAK": "سحب سفلي ثم كسر هيكل صاعد",
+            "WAIT": "لا تأكيد هيكل حديث",
+        }
+        structural = safe_structures.get(structure, "بحث فني غير حاسم")
+        five = str(item.get("trend_5m") or "INSUFFICIENT")
+        fifteen = str(item.get("trend_15m") or "INSUFFICIENT")
+        messages.append(
+            f"{html.escape(str(symbol))}: {side} (بحثي)؛ "
+            f"{html.escape(structural)}؛ اتجاه 5م/15م: "
+            f"{html.escape(five)}/{html.escape(fifteen)}")
     return "\n".join(messages)
 
 
