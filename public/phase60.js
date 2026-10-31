@@ -2,7 +2,8 @@
 
 const phase60RecommendationClass = (decision) => {
   const text = String(decision || "");
-  if (text.includes("دخول مشروط") || text.includes("مرشح")) return "confirmed";
+  // Research ranking is not a confirmed executable quote or trade.
+  if (text.includes("دخول مشروط") || text.includes("مرشح")) return "watch";
   if (text.includes("استبعاد")) return "reject";
   return "watch";
 };
@@ -32,11 +33,11 @@ renderStocks = function phase60RenderStocks(filter = "") {
     const decision = recommendation.decision || "مراقبة فقط";
     const confidence = Number(recommendation.confidence);
     const sourceCount = Number(recommendation.source_count || 1);
-    const sourceLabel = sourceCount >= 2 ? `تأكيد ${number(sourceCount, 0)} مصادر` : "مصدر واحد";
+    const sourceLabel = sourceCount >= 2 ? `${number(sourceCount, 0)} مصادر سياقية، ليست بالضرورة أسعارًا مستقلة` : "مصدر بحثي واحد";
     return `<article class="stock-card ${index === 0 || stock.new_stock_setup ? "top-pick" : ""}">
       <div class="card-top"><div><div class="symbol">${escapeHtml(stock.symbol)}</div><div class="price">السعر ${money(stock.price)}</div></div><div class="score-badge"><strong>${number(stock.score, 1)}</strong><span>${escapeHtml(stock.rating || "—")}</span></div></div>
-      <div class="recommendation-box ${phase60RecommendationClass(decision)}"><strong>${escapeHtml(decision)}</strong><small>ثقة ${Number.isFinite(confidence) ? `${number(confidence, 1)}%` : "—"} · ${escapeHtml(sourceLabel)}</small><div>${phase60SourcesHtml(recommendation.confirmed_sources)}</div></div>
-      <div class="levels"><div class="level"><span>دخول السهم</span><strong>${money(stock.entry_low)}–${money(stock.entry_high)}</strong></div><div class="level"><span>أهداف السهم</span><strong>${money(stock.target_1)} / ${money(stock.target_2)}</strong></div><div class="level"><span>إبطال تحليل السهم</span><strong>${money(stock.invalidation ?? stock.stop)}</strong></div></div>
+      <div class="recommendation-box ${phase60RecommendationClass(decision)}"><strong>${escapeHtml(decision)}</strong><small>ترتيب بحثي ${Number.isFinite(confidence) ? `${number(confidence, 1)}/100` : "—"} · ${escapeHtml(sourceLabel)}</small><div>${phase60SourcesHtml(recommendation.confirmed_sources)}</div></div>
+      <div class="levels"><div class="level"><span>منطقة بحثية، ليست أمر دخول</span><strong>${money(stock.entry_low)}–${money(stock.entry_high)}</strong></div><div class="level"><span>مستويات أهداف افتراضية</span><strong>${money(stock.target_1)} / ${money(stock.target_2)}</strong></div><div class="level"><span>إبطال تحليل السهم</span><strong>${money(stock.invalidation ?? stock.stop)}</strong></div></div>
       <div class="chips"><span class="chip ${side === "CALL" ? "call" : "put"}">${side === "CALL" ? "اتجاه صاعد" : "اتجاه هابط"}</span><span class="chip">${escapeHtml(stock.setup_status || "watchlist")}</span><span class="chip">${escapeHtml(stock.entry_state || "waiting")}</span><span class="chip">${escapeHtml(interestTierLabel(stock.interest_tier))}</span>${Number.isFinite(attention) ? `<span class="chip">اهتمام ${number(attention, 1)}/25</span>` : ""}${Number.isFinite(directional) ? `<span class="chip">قوة الاتجاه ${number(directional, 1)}/25</span>` : ""}<span class="chip">RSI ${number(stock.rsi, 1)}</span><span class="chip">RVOL ${number(stock.finviz_relative_volume ?? stock.relative_volume, 2)}x</span><span class="chip">${escapeHtml(stock.sector_etf || "SPY")} RS ${plainPct((Number(stock.relative_strength_20d) || 0) * 100, 1)}</span></div>
       <p class="catalyst">${escapeHtml(stock.catalyst || "لا يوجد محفز قوي حديث")}</p><p class="reasons">${escapeHtml(stock.reasons || "—")}</p>
       ${stockInterestDetails(stock)}
@@ -58,7 +59,7 @@ optionRow = function phase60OptionRow(option) {
   const flowClass = option.buying_flow_type === "Aggressive Buying" ? "call" : "";
   return `<tr>
     <td><strong>${number(option.side_rank, 0)}. ${escapeHtml(option.symbol)} <span class="${type === "CALL" ? "call" : "put"}">${type} ${number(option.strike)}</span></strong><br><small>${escapeHtml(String(option.expiration || "").slice(0, 10))} · ${number(option.dte, 0)} DTE</small></td>
-    <td><div class="recommendation-box ${phase60RecommendationClass(decision)}"><strong>${escapeHtml(decision)}</strong><small>ثقة ${Number.isFinite(confidence) ? `${number(confidence, 1)}%` : "—"} · ${number(sourceCount, 0)} مصدر</small></div><strong class="${flowClass}">Flow ${number(option.flow_momentum_score, 1)}</strong><br><small>النموذج ${number(option.score, 1)} · ${escapeHtml(option.rating || "—")}</small></td>
+    <td><div class="recommendation-box ${phase60RecommendationClass(decision)}"><strong>${escapeHtml(decision)}</strong><small>ترتيب بحثي ${Number.isFinite(confidence) ? `${number(confidence, 1)}/100` : "—"} · ${number(sourceCount, 0)} مصدر</small></div><strong class="${flowClass}">Flow ${number(option.flow_momentum_score, 1)}</strong><br><small>النموذج ${number(option.score, 1)} · ${escapeHtml(option.rating || "—")}</small></td>
     <td>${money(option.entry_price)}<br><small>Last ${money(option.last)} · Ask ${money(option.ask)}</small></td>
     <td>${money(option.target_1)} / ${money(option.target_2)}<br><small>السهم ${money(option.underlying_target_1)} / ${money(option.underlying_target_2)}</small></td>
     <td>${money(option.stop_price)}<br><small>إبطال السهم ${money(option.underlying_invalidation)}</small></td>
