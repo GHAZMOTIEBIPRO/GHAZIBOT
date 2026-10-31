@@ -33,7 +33,7 @@ def assess(card: dict[str, Any]) -> dict[str, Any]:
     if not card.get("available"):
         return {**base, "reasons": ["لا توجد قراءة سعرية مكتملة"]}
     quality = card.get("data_quality") or {}
-    if any((quality.get(frame) or {}).get("status") not in (None, "OK") or
+    if any((quality.get(frame) or {}).get("status") != "OK" or
            (quality.get(frame) or {}).get("issues") for frame in ("daily", "5m")):
         return {**base, "reasons": ["جودة بيانات الشموع لا تسمح بالترشيح"]}
     frames = ((card.get("interpretation") or {}).get("frames") or {})
