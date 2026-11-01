@@ -10,6 +10,8 @@ on:
       - "scripts/build_source_log.py"
       - "scripts/build_platform_scorecards.py"
       - "scripts/build_trading_readiness.py"
+      - "scripts/build_market_acceptance.py"
+      - "tests/test_build_market_acceptance.py"
       - "data/source_rights.json"
       - "tests/test_site_strength.py"
       - ".github/workflows/site-evidence-strength.yml"
@@ -102,6 +104,14 @@ jobs:
             --stages state/runtime/public/data/explosion_stage_evaluation.json \
             --strength state/runtime/public/data/site_strength.json \
             --output state/runtime/public/data/trading_readiness.json
+      - name: Evidence-gated recovery acceptance (public counts only, never private quotes)
+        run: >-
+          python app/scripts/build_market_acceptance.py
+          --daily-plan state/runtime/public/data/daily_plan.json
+          --operations state/runtime/public/data/data-status.json
+          --scorecards state/runtime/public/data/platform_scorecards.json
+          --trading-readiness state/runtime/public/data/trading_readiness.json
+          --output state/runtime/public/data/market_acceptance.json
       - name: Publish only source-backed readiness report
         shell: bash
         run: |
@@ -109,7 +119,7 @@ jobs:
           cd state
           git config user.name "GHAZI Evidence Audit"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json runtime/public/data/platform_scorecards.json runtime/public/data/trading_readiness.json runtime/public/data/source_log.json
+          git add runtime/public/data/site_strength.json runtime/public/data/data_hub.json runtime/public/data/platform_scorecards.json runtime/public/data/trading_readiness.json runtime/public/data/source_log.json runtime/public/data/market_acceptance.json
           if git diff --cached --quiet; then
             echo "Evidence report unchanged"
             exit 0
