@@ -94,12 +94,12 @@ def test_wrong_schema_malformed_counts_and_error_status_never_upgrade():
 
 def test_report_public_surface_never_contains_private_symbols_prices_or_tokens():
     reports = _reports()
-    reports["daily_plan"]["private_mode"]["symbols"] = ["NVDA", "PRIVATE"]
+    reports["daily_plan"]["private_mode"]["symbols"] = ["NVDA", "PRIVATE_TICKER"]
     reports["daily_plan"]["secret_key"] = "SHOULD_NOT_LEAK"
     reports["daily_plan"]["private_plans"] = {"SPY": {"entry": 534.22}}
     report = evaluate(reports, now=NOW)
     content = json.dumps(report, ensure_ascii=False)
-    for token in ("SHOULD_NOT_LEAK", "PRIVATE", "NVDA", "SPY", "534.22"):
+    for token in ("SHOULD_NOT_LEAK", "PRIVATE_TICKER", "NVDA", "SPY", "534.22"):
         assert token not in content
     assert report["public_market_prices"] is None
     assert report["research_only"]
