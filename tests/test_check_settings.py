@@ -88,3 +88,48 @@ def test_private_workflows_pass_the_canonical_names_and_resolve_the_broadcast_ch
     # The probe's old display label is gone; only canonical names are used anywhere.
     for wf in (ROOT / ".github" / "workflows").glob("*.yml"):
         assert "ALPACA_USE_AUTHORIZED" not in wf.read_text(encoding="utf-8"), wf.name
+
+
+def test_market_data_401_is_diagnosed_without_returning_account_or_key_data(tmp_path):
+    class IndependentHTTP:
+        def __init__(self, data_status, paper_status):
+            self.data_status = data_status
+            self.paper_status = paper_status
+            self.urls = []
+
+        def get(self, url, *, params=None, headers=None, timeout=None):
+            self.urls.append(url)
+            assert headers == {"APCA-API-KEY-ID": "TEST-KEY-SENSITIVE",
+                               "APCA-API-SECRET-KEY": "TEST-SECRET-SENSITIVE"}
+            return SimpleNamespace(status_code=self.paper_status if "paper-api.alpaca" in url
+                                   else self.data_status)
+
+    env = {"ALPACA_API_KEY": "TEST-KEY-SENSITIVE",
+           "ALPACA_SECRET_KEY": "TEST-SECRET-SENSITIVE",
+           "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}
+    scenarios = [
+        (401, 401, "PAIR_NOT_ACCEPTED_BY_PAPER_OR_MARKET_DATA", False),
+        (401, 200, "PAPER_VALID_MARKET_DATA_401", False),
+        (200, 200, "MARKET_DATA_AND_PAPER_VALID", True),
+    ]
+    for data_code, paper_code, expected, ready in scenarios:
+        transport = IndependentHTTP(data_code, paper_code)
+        report = cs.check(env, tmp_path / "absent.json", transport)
+        assert len(transport.urls) == 2
+        assert report["checks"]["alpaca_auth_diagnosis"] == expected
+        assert report["ready"]["private_price_analysis"] is ready
+        assert report["checks"]["alpaca_paper_auth"] == ("VALID" if paper_code == 200 else "REJECTED_HTTP_401")
+        text = json.dumps(report)
+        assert "TEST-KEY-SENSITIVE" not in text and "TEST-SECRET-SENSITIVE" not in text
+
+
+def test_paper_auth_is_not_called_without_user_attestation(tmp_path):
+    class MustNeverCall:
+        def get(self, *args, **kwargs):
+            raise AssertionError("Alpaca must not be contacted before owner attestation")
+
+    report = cs.check({"ALPACA_API_KEY": "x", "ALPACA_SECRET_KEY": "y",
+                       "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "false"},
+                      tmp_path / "absent.json", MustNeverCall())
+    assert report["checks"]["alpaca_keys"] == "NOT_TESTED_OWNER_ATTESTATION_NOT_RECORDED"
+    assert "alpaca_paper_auth" not in report["checks"]
