@@ -9,8 +9,9 @@ value, whether it works:
 - the owner chat (TELEGRAM_OWNER_CHAT_ID, or the resolved broadcast chat when
   TELEGRAM_OWNER_USERNAME is set): Telegram's chat type (must be "private") and,
   when a username is set, whether Telegram's username for that chat matches.
-- Alpaca keys: an HTTP status from the market-data API, only when the owner's
-  ALPACA_INTERNAL_DATA_USE_AUTHORIZED is "true" (otherwise not called).
+- Alpaca keys: independent HTTP statuses from the data API and paper trading
+  account authentication (response bodies never read or printed). Only checked
+  if ALPACA_INTERNAL_DATA_USE_AUTHORIZED is "true" (otherwise neither called).
 Never prints a value, a chat id, a price or a response body.
 """
 from __future__ import annotations
@@ -130,12 +131,31 @@ def check(env: dict[str, str], connection: Path, session: Any = requests) -> dic
     elif not (key and secret):
         checks["alpaca_keys"] = "NOT_TESTED_KEYS_ABSENT"
     else:
+        headers = {"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": secret}
         try:
             r = session.get("https://data.alpaca.markets/v2/stocks/bars/latest", params={"symbols": "SPY", "feed": "iex"},
-                            headers={"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": secret}, timeout=20)
+                            headers=headers, timeout=20)
             checks["alpaca_keys"] = "VALID" if r.status_code == 200 else f"REJECTED_HTTP_{r.status_code}"
         except requests.RequestException:
             checks["alpaca_keys"] = "UNREACHABLE"
+        # A paper account has separate credentials from a live account. Check
+        # only whether the *same* GitHub key pair authenticates to the paper
+        # trading API. We never parse or log the account response body.
+        try:
+            paper = session.get("https://paper-api.alpaca.markets/v2/account",
+                                headers=headers, timeout=20)
+            checks["alpaca_paper_auth"] = (
+                "VALID" if paper.status_code == 200 else f"REJECTED_HTTP_{paper.status_code}")
+        except requests.RequestException:
+            checks["alpaca_paper_auth"] = "UNREACHABLE"
+        if checks["alpaca_keys"] == "VALID" and checks["alpaca_paper_auth"] == "VALID":
+            checks["alpaca_auth_diagnosis"] = "MARKET_DATA_AND_PAPER_VALID"
+        elif checks["alpaca_paper_auth"] == "VALID" and checks["alpaca_keys"] == "REJECTED_HTTP_401":
+            checks["alpaca_auth_diagnosis"] = "PAPER_VALID_MARKET_DATA_401"
+        elif checks["alpaca_paper_auth"] == "REJECTED_HTTP_401" and checks["alpaca_keys"] == "REJECTED_HTTP_401":
+            checks["alpaca_auth_diagnosis"] = "PAIR_NOT_ACCEPTED_BY_PAPER_OR_MARKET_DATA"
+        else:
+            checks["alpaca_auth_diagnosis"] = "INCONCLUSIVE_CHECK_STATUS_CODES"
     out["checks"] = checks
     ready = {
         "public_telegram": checks.get("bot_token") == "VALID" and checks["broadcast_resolved"],
