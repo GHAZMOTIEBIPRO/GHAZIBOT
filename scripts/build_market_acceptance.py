@@ -97,10 +97,6 @@ def evaluate(inputs: dict[str, Any], *, now: datetime) -> dict[str, Any]:
                           and (trade.get("checks") or {}).get("walk_forward_passed") is True
                           and (trade.get("checks") or {}).get("stock_edge_proven") is True)
     quote_ready = bool(trade_ok and (trade.get("checks") or {}).get("options_execution_sources") is True)
-    trust = (operations.get("trust_verdict") or {}) if ops_ok else {}
-    if not isinstance(trust, dict):
-        trust = {}
-
     # Unknown/expired reports never masquerade as a verified result.
     reason = str(private.get("reason") or "MISSING_OR_STALE_REPORT")
     required = []
