@@ -89,7 +89,11 @@ class AlpacaBars:
         return "iex" if (self.env.get("ALPACA_BARS_FEED") or "").strip().lower() == "iex" else "sip"
 
     def _headers(self) -> dict[str, str]:
-        return {"APCA-API-KEY-ID": self.env["ALPACA_API_KEY"], "APCA-API-SECRET-KEY": self.env["ALPACA_SECRET_KEY"]}
+        # Same normalisation as status() and scripts/check_settings.py: a pasted
+        # secret often carries a trailing newline, which requests refuses as a
+        # header value (the call would then fail as UNAVAILABLE, not 401).
+        return {"APCA-API-KEY-ID": self.env["ALPACA_API_KEY"].strip(),
+                "APCA-API-SECRET-KEY": self.env["ALPACA_SECRET_KEY"].strip()}
 
     def _get(self, url: str, params: dict[str, Any]) -> tuple[str, Any]:
         self.calls += 1

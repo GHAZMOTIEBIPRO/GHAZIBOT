@@ -110,8 +110,8 @@ def probe_alpaca(env: dict[str, str], session: Any, now: datetime) -> dict[str, 
         return _result("NO_KEY")
     if not _permitted(env, "ALPACA_INTERNAL_DATA_USE_AUTHORIZED", "alpaca"):
         return _result("OWNER_TERMS_NOT_CONFIRMED")
-    headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"],
-               "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"]}
+    headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(),
+               "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
     status, bars = _http(
         session, "https://data.alpaca.markets/v2/stocks/SPY/bars",
         headers=headers, params={"feed": "iex", "timeframe": "1Day",

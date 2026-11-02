@@ -46,8 +46,8 @@ class AlpacaScreenerDiscovery:
         self.env, self.session, self.top = env, session, top
 
     def _get(self, path: str, params: dict[str, Any]) -> tuple[str, Any]:
-        headers = {"APCA-API-KEY-ID": self.env.get("ALPACA_API_KEY", ""),
-                   "APCA-API-SECRET-KEY": self.env.get("ALPACA_SECRET_KEY", "")}
+        headers = {"APCA-API-KEY-ID": (self.env.get("ALPACA_API_KEY") or "").strip(),
+                   "APCA-API-SECRET-KEY": (self.env.get("ALPACA_SECRET_KEY") or "").strip()}
         try:
             response = self.session.get(f"{BASE}/{path}", params=params, headers=headers, timeout=12)
             if response.status_code != 200:

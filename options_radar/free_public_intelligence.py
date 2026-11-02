@@ -545,8 +545,8 @@ def alpaca_iex_health(
     *, session: Any = requests, now: datetime | None = None,
     key: str = "", secret: str = "",
 ) -> dict[str, Any]:
-    key = key or os.getenv("ALPACA_API_KEY", "")
-    secret = secret or os.getenv("ALPACA_SECRET_KEY", "")
+    key = (key or os.getenv("ALPACA_API_KEY", "")).strip()
+    secret = (secret or os.getenv("ALPACA_SECRET_KEY", "")).strip()
     base = {
         "provider": "alpaca_iex", "feed": "iex", "source_family": "alpaca_iex",
         "execution_grade": False, "opra_options": False,

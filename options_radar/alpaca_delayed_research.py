@@ -91,8 +91,8 @@ def _load(session: Any, endpoint: str, params: dict[str, Any],
         response = session.get(
             BASE + endpoint,
             params=params,
-            headers={"APCA-API-KEY-ID": api_key,
-                     "APCA-API-SECRET-KEY": secret},
+            headers={"APCA-API-KEY-ID": api_key.strip(),
+                     "APCA-API-SECRET-KEY": secret.strip()},
             timeout=12,
         )
         if response.status_code != 200:

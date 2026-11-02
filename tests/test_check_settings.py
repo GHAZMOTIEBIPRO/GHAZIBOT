@@ -101,6 +101,8 @@ def test_market_data_401_is_diagnosed_without_returning_account_or_key_data(tmp_
             self.urls.append(url)
             assert headers == {"APCA-API-KEY-ID": "TEST-KEY-SENSITIVE",
                                "APCA-API-SECRET-KEY": "TEST-SECRET-SENSITIVE"}
+            if url == "https://api.alpaca.markets/v2/account":
+                return SimpleNamespace(status_code=401)
             return SimpleNamespace(status_code=self.paper_status if "paper-api.alpaca" in url
                                    else self.data_status)
 
@@ -115,12 +117,82 @@ def test_market_data_401_is_diagnosed_without_returning_account_or_key_data(tmp_
     for data_code, paper_code, expected, ready in scenarios:
         transport = IndependentHTTP(data_code, paper_code)
         report = cs.check(env, tmp_path / "absent.json", transport)
-        assert len(transport.urls) == 2
+        assert len(transport.urls) == 3  # market data, paper account, live account
         assert report["checks"]["alpaca_auth_diagnosis"] == expected
         assert report["ready"]["private_price_analysis"] is ready
         assert report["checks"]["alpaca_paper_auth"] == ("VALID" if paper_code == 200 else "REJECTED_HTTP_401")
         text = json.dumps(report)
         assert "TEST-KEY-SENSITIVE" not in text and "TEST-SECRET-SENSITIVE" not in text
+
+
+def test_diagnosis_separates_environment_permission_and_rate_limit_from_bad_pairs():
+    d = cs.alpaca_diagnosis
+    assert d("REJECTED_HTTP_401", "REJECTED_HTTP_401", "REJECTED_HTTP_401") == "PAIR_NOT_ACCEPTED_BY_PAPER_OR_MARKET_DATA"
+    assert d("REJECTED_HTTP_401", "REJECTED_HTTP_401", "VALID") == "LIVE_VALID_MARKET_DATA_401"
+    assert d("VALID", "REJECTED_HTTP_401", "VALID") == "LIVE_KEYS_MARKET_DATA_VALID"
+    assert d("VALID", "REJECTED_HTTP_401", "REJECTED_HTTP_401") == "MARKET_DATA_VALID_TRADING_HOSTS_REJECTED"
+    # Permission and rate limits are never reported as an authentication fault.
+    assert d("REJECTED_HTTP_403", "VALID", "REJECTED_HTTP_401") == "PERMISSION_OR_SUBSCRIPTION_403"
+    assert d("REJECTED_HTTP_429", "REJECTED_HTTP_401", "REJECTED_HTTP_401") == "RATE_LIMITED_429_RETRY_LATER"
+    assert d("UNREACHABLE", "VALID", "REJECTED_HTTP_401") == "INCONCLUSIVE_HOST_UNREACHABLE"
+
+
+def test_credential_shape_reports_paste_faults_without_any_character_of_the_values(tmp_path):
+    key, secret = "PKAB12CD34EF56GH78IJ", "q" * 40
+    clean = cs.alpaca_credential_shape(key, secret)
+    assert clean == {"key_id_length": 20, "key_id_prefix_family": "PAPER_STYLE_PREFIX", "key_id_issues": [],
+                     "secret_length": 40, "secret_issues": [], "pair_issues": []}
+    assert cs.alpaca_credential_shape("AK" + key[2:], secret)["key_id_prefix_family"] == "LIVE_STYLE_PREFIX"
+    swapped = cs.alpaca_credential_shape(secret, key)
+    assert "LOOKS_SWAPPED" in swapped["pair_issues"]
+    messy = cs.alpaca_credential_shape(f'APCA-API-KEY-ID: "{key}"\n', f"{secret[:20]} {secret[20:]}\n")
+    assert {"LABEL_PASTED_WITH_VALUE", "QUOTE_CHARACTERS", "INTERNAL_WHITESPACE", "OUTER_WHITESPACE_TRIMMED",
+            "NOT_UPPERCASE_ALNUM"} <= set(messy["key_id_issues"])
+    assert {"INTERNAL_WHITESPACE", "OUTER_WHITESPACE_TRIMMED"} <= set(messy["secret_issues"])
+    # The whole report, as printed by the workflow, never contains a fragment of either value.
+    env = {"ALPACA_API_KEY": key, "ALPACA_SECRET_KEY": "SECRETVALUE" * 4}
+
+    class Refuse:
+        def get(self, *a, **k):
+            return SimpleNamespace(status_code=401)
+
+    text = json.dumps(cs.check({**env, "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}, tmp_path / "x.json", Refuse()))
+    for fragment in (key, key[2:8], key[-6:], "SECRETVALUE"):
+        assert fragment not in text
+    # Shape is a local check: it is reported even when no Alpaca call is attested.
+    offline = cs.check(env, tmp_path / "x.json", Refuse())
+    assert offline["checks"]["alpaca_credential_shape"]["key_id_length"] == 20
+    assert offline["checks"]["alpaca_keys"] == "NOT_TESTED_OWNER_ATTESTATION_NOT_RECORDED"
+
+
+def test_swapped_secrets_are_proven_once_and_never_used_by_the_readiness(tmp_path):
+    key_id, secret = "ABCDEFGHJKLMNPQRSTUVWXYZ23", "s3cr3t/value+with=mixed-Case" + "x" * 15
+
+    class Alpaca:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, *, params=None, headers=None, timeout=None):
+            self.calls.append(url)
+            right = headers == {"APCA-API-KEY-ID": key_id, "APCA-API-SECRET-KEY": secret}
+            return SimpleNamespace(status_code=200 if right else 401)
+
+    env = {"ALPACA_API_KEY": secret, "ALPACA_SECRET_KEY": key_id, "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}
+    transport = Alpaca()
+    report = cs.check(env, tmp_path / "x.json", transport)
+    checks = report["checks"]
+    assert "LOOKS_SWAPPED" in checks["alpaca_credential_shape"]["pair_issues"]
+    assert checks["alpaca_reversed_order_probe"] == "VALID"
+    assert checks["alpaca_auth_diagnosis"] == "SECRETS_SWAPPED_OWNER_MUST_EXCHANGE_THE_TWO_VALUES"
+    # Fail closed: the stored order is still refused, so the private path stays not ready.
+    assert report["ready"]["private_price_analysis"] is False
+    assert len(transport.calls) == 4
+    text = json.dumps(report)
+    assert key_id not in text and secret not in text and key_id[:6] not in text
+    # A correctly ordered pair is never probed in reverse.
+    fixed = Alpaca()
+    ok = cs.check({**env, "ALPACA_API_KEY": key_id, "ALPACA_SECRET_KEY": secret}, tmp_path / "x.json", fixed)
+    assert "alpaca_reversed_order_probe" not in ok["checks"] and len(fixed.calls) == 3
 
 
 def test_paper_auth_is_not_called_without_user_attestation(tmp_path):
