@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-02T21:49:53.899637+00:00",
+ "generated_at": "2026-11-02T22:06:49.488457+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -13,11 +13,11 @@
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 26
+     "success": 27
     },
     "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
-     "success": 26
+     "success": 27
     },
     "index-radar.yml": {
      "success": 5
@@ -25,12 +25,14 @@
     "stock-watch-charts.yml": {
      "success": 5
     },
-    "public-macro.yml": {},
+    "public-macro.yml": {
+     "success": 1
+    },
     "site-evidence-strength.yml": {
-     "success": 19
+     "success": 20
     },
     "free-gex-validation.yml": {
-     "success": 26
+     "success": 27
     },
     "market-orchestrator.yml": {
      "success": 18,
@@ -40,7 +42,7 @@
      "success": 3
     },
     "daily-plan.yml": {
-     "success": 1
+     "success": 2
     },
     "fda-events.yml": {},
     "official-sec-pulse.yml": {
@@ -52,7 +54,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 10.0,
+   "value": 20.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -64,7 +66,7 @@
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
-    "macro_positioning": "STALE"
+    "macro_positioning": "AVAILABLE"
    },
    "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
    "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
@@ -359,7 +361,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-02T21:31:33Z"
+   "last_run_at": "2026-11-02T21:54:32Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -405,17 +407,17 @@
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
-   "verdict_ar": "البيانات قديمة",
-   "run": "NO_RUN_24H",
+   "verdict_ar": "يعمل",
+   "run": "OK",
    "source": "AVAILABLE",
-   "data": "STALE",
-   "data_state": "STALE",
-   "analysis": "NOT_COMPUTED",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-10-31T01:51:32.323443+00:00",
-   "last_run_at": null
+   "generated_at": "2026-11-02T21:56:50.357663+00:00",
+   "last_run_at": "2026-11-02T21:56:31Z"
   },
   "daily_plan": {
    "label_ar": "خطة اليوم",
@@ -428,8 +430,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-02T20:54:24.404708+00:00",
-   "last_run_at": "2026-11-02T20:53:39Z"
+   "generated_at": "2026-11-02T21:57:42.827958+00:00",
+   "last_run_at": "2026-11-02T21:56:49Z"
   }
  },
  "original_evidence_score": {
