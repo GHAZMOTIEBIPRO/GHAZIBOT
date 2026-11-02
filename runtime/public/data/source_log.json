@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-02T07:41:24.994115+00:00",
+ "generated_at": "2026-11-02T12:08:58.649326+00:00",
  "window_days": 14,
- "window_start": "2026-10-19T07:41:24.994115+00:00",
+ "window_start": "2026-10-19T12:08:58.649326+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -62,16 +62,16 @@
     ]
    },
    "rights_key": "tradier",
-   "runs_seen": 55,
+   "runs_seen": 50,
    "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-01T16:57:02.857091+00:00",
+   "last_run_at": "2026-11-02T12:02:57.101930+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "ACCOUNT_ENTITLEMENT_NOT_ASSERTED",
-   "last_commit": "269366b745"
+   "last_commit": "7be7a03a51"
   },
   {
    "key": "cboe_delayed",
@@ -94,16 +94,16 @@
     ]
    },
    "rights_key": "cboe_delayed",
-   "runs_seen": 289,
+   "runs_seen": 290,
    "attempted": 2,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-01T20:56:38.592652+00:00",
+   "last_run_at": "2026-11-02T12:03:16.259316+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "2cb71bd560"
+   "last_commit": "7aed7bbb45"
   },
   {
    "key": "sec_edgar",
@@ -126,16 +126,16 @@
     ]
    },
    "rights_key": "sec_edgar",
-   "runs_seen": 72,
-   "attempted": 72,
+   "runs_seen": 71,
+   "attempted": 71,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-01T16:57:02.108259+00:00",
+   "last_run_at": "2026-11-02T12:03:02.578329+00:00",
    "last_outcome": "FAILED",
    "last_detail": "UNAVAILABLE",
-   "last_commit": "ccfbb68ca4"
+   "last_commit": "05961bcb30"
   },
   {
    "key": "company_ir_feeds",
