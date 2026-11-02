@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-02T20:53:56.544333+00:00",
+ "generated_at": "2026-11-02T21:43:39.783885+00:00",
  "window_days": 14,
- "window_start": "2026-10-19T20:53:56.544333+00:00",
+ "window_start": "2026-10-19T21:43:39.783885+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -28,16 +28,16 @@
     ]
    },
    "rights_key": "alpaca",
-   "runs_seen": 27,
-   "attempted": 0,
+   "runs_seen": 28,
+   "attempted": 1,
    "succeeded": 0,
    "fully_ok": 0,
-   "success_ratio": null,
+   "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-01T04:41:57.017374+00:00",
-   "last_outcome": "NOT_ATTEMPTED",
-   "last_detail": "DATA_USE_PERMISSION_REQUIRED",
-   "last_commit": "80ebd8a95b"
+   "last_run_at": "2026-11-02T20:54:24.404708+00:00",
+   "last_outcome": "FAILED",
+   "last_detail": "0/12 symbols with daily bars",
+   "last_commit": "5ab964871a"
   },
   {
    "key": "tradier_options",
@@ -94,16 +94,16 @@
     ]
    },
    "rights_key": "cboe_delayed",
-   "runs_seen": 313,
+   "runs_seen": 315,
    "attempted": 2,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-02T20:48:30.913148+00:00",
+   "last_run_at": "2026-11-02T21:32:40.929245+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "47d403e1af"
+   "last_commit": "d39fb4c2e6"
   },
   {
    "key": "sec_edgar",
@@ -126,16 +126,16 @@
     ]
    },
    "rights_key": "sec_edgar",
-   "runs_seen": 72,
-   "attempted": 72,
+   "runs_seen": 73,
+   "attempted": 73,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-02T20:14:02.058791+00:00",
+   "last_run_at": "2026-11-02T21:43:07.796606+00:00",
    "last_outcome": "FAILED",
    "last_detail": "UNAVAILABLE",
-   "last_commit": "824b6c4113"
+   "last_commit": "506c108917"
   },
   {
    "key": "company_ir_feeds",
@@ -511,15 +511,15 @@
    },
    "rights_key": "yahoo",
    "runs_seen": 77,
-   "attempted": 3,
+   "attempted": 2,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-02T19:46:01.952151+00:00",
+   "last_run_at": "2026-11-02T21:38:40.825899+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "85dd0e3495"
+   "last_commit": "0dca94d5e0"
   }
  ],
  "research_only": true
