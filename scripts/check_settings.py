@@ -224,6 +224,16 @@ def check(env: dict[str, str], connection: Path, session: Any = requests) -> dic
         checks["alpaca_live_auth"] = _status(session, ALPACA_ACCOUNT["live"], headers)
         checks["alpaca_auth_diagnosis"] = alpaca_diagnosis(
             checks["alpaca_keys"], checks["alpaca_paper_auth"], checks["alpaca_live_auth"])
+        # When the format says the two values sit in each other's secret, test that
+        # hypothesis once (same pair, reversed, market data only). The workflows are
+        # never corrected silently: the owner swaps the two GitHub secrets.
+        if (checks["alpaca_keys"] == "REJECTED_HTTP_401"
+                and "LOOKS_SWAPPED" in checks["alpaca_credential_shape"]["pair_issues"]):
+            reversed_pair = {"APCA-API-KEY-ID": secret, "APCA-API-SECRET-KEY": key}
+            probe = _status(session, ALPACA_DATA, reversed_pair, {"symbols": "SPY", "feed": "iex"})
+            checks["alpaca_reversed_order_probe"] = probe
+            if probe == "VALID":
+                checks["alpaca_auth_diagnosis"] = "SECRETS_SWAPPED_OWNER_MUST_EXCHANGE_THE_TWO_VALUES"
     out["checks"] = checks
     ready = {
         "public_telegram": checks.get("bot_token") == "VALID" and checks["broadcast_resolved"],

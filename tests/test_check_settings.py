@@ -165,6 +165,36 @@ def test_credential_shape_reports_paste_faults_without_any_character_of_the_valu
     assert offline["checks"]["alpaca_keys"] == "NOT_TESTED_OWNER_ATTESTATION_NOT_RECORDED"
 
 
+def test_swapped_secrets_are_proven_once_and_never_used_by_the_readiness(tmp_path):
+    key_id, secret = "ABCDEFGHJKLMNPQRSTUVWXYZ23", "s3cr3t/value+with=mixed-Case" + "x" * 15
+
+    class Alpaca:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, *, params=None, headers=None, timeout=None):
+            self.calls.append(url)
+            right = headers == {"APCA-API-KEY-ID": key_id, "APCA-API-SECRET-KEY": secret}
+            return SimpleNamespace(status_code=200 if right else 401)
+
+    env = {"ALPACA_API_KEY": secret, "ALPACA_SECRET_KEY": key_id, "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}
+    transport = Alpaca()
+    report = cs.check(env, tmp_path / "x.json", transport)
+    checks = report["checks"]
+    assert "LOOKS_SWAPPED" in checks["alpaca_credential_shape"]["pair_issues"]
+    assert checks["alpaca_reversed_order_probe"] == "VALID"
+    assert checks["alpaca_auth_diagnosis"] == "SECRETS_SWAPPED_OWNER_MUST_EXCHANGE_THE_TWO_VALUES"
+    # Fail closed: the stored order is still refused, so the private path stays not ready.
+    assert report["ready"]["private_price_analysis"] is False
+    assert len(transport.calls) == 4
+    text = json.dumps(report)
+    assert key_id not in text and secret not in text and key_id[:6] not in text
+    # A correctly ordered pair is never probed in reverse.
+    fixed = Alpaca()
+    ok = cs.check({**env, "ALPACA_API_KEY": key_id, "ALPACA_SECRET_KEY": secret}, tmp_path / "x.json", fixed)
+    assert "alpaca_reversed_order_probe" not in ok["checks"] and len(fixed.calls) == 3
+
+
 def test_paper_auth_is_not_called_without_user_attestation(tmp_path):
     class MustNeverCall:
         def get(self, *args, **kwargs):
