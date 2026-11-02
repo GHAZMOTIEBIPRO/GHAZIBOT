@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.daily_plan_sheet.v1",
- "generated_at": "2026-11-01T04:41:57.017374+00:00",
+ "generated_at": "2026-11-02T20:54:24.404708+00:00",
  "title_ar": "موجز الجلسة والمحركات",
  "readiness": {
   "session_and_catalysts": "AVAILABLE",
@@ -16,19 +16,19 @@
  },
  "analysis_funnel": {
   "known_symbols": {
-   "count": 5954,
-   "nasdaq_listed": 5608,
+   "count": 5952,
+   "nasdaq_listed": 5606,
    "sp500_directory": 503,
    "basis": "NasdaqTrader Nasdaq Listed file and the S&P 500 directory (no prices)"
   },
   "with_official_news": {
-   "count": 53,
+   "count": 59,
    "basis": "catalyst_watchlist.json events (30 days)"
   },
   "bars_fetched": {
    "count": 0,
-   "attempted": 0,
-   "status": "DATA_USE_PERMISSION_REQUIRED",
+   "attempted": 12,
+   "status": "OWNER_AUTHORIZED_INTERNAL_USE",
    "basis": "completed daily bars from the owner-private Alpaca path"
   },
   "analysed": {
@@ -42,10 +42,18 @@
   }
  },
  "session": {
-  "today_is_session": false,
-  "today": null,
-  "next_session": {
+  "today_is_session": true,
+  "today": {
    "date": "2026-11-02",
+   "open_new_york": "09:30",
+   "close_new_york": "16:00",
+   "open_riyadh": "17:30",
+   "close_riyadh": "00:00",
+   "early_close": false,
+   "utc_offset_new_york": "-0500"
+  },
+  "next_session": {
+   "date": "2026-11-03",
    "open_new_york": "09:30",
    "close_new_york": "16:00",
    "open_riyadh": "17:30",
@@ -62,72 +70,64 @@
   "weekly": {
    "public": "UNAVAILABLE",
    "private_owner": "UNAVAILABLE",
-   "reason": "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and ALPACA_INTERNAL_DATA_USE_AUTHORIZED"
+   "reason": "not enough completed bars for this frame"
   },
   "daily": {
    "public": "UNAVAILABLE",
    "private_owner": "UNAVAILABLE",
-   "reason": "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and ALPACA_INTERNAL_DATA_USE_AUTHORIZED"
+   "reason": "not enough completed bars for this frame"
   },
   "4h": {
    "public": "UNAVAILABLE",
    "private_owner": "UNAVAILABLE",
-   "reason": "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and ALPACA_INTERNAL_DATA_USE_AUTHORIZED"
+   "reason": "not enough completed bars for this frame"
   },
   "1h": {
    "public": "UNAVAILABLE",
    "private_owner": "UNAVAILABLE",
-   "reason": "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and ALPACA_INTERNAL_DATA_USE_AUTHORIZED"
+   "reason": "not enough completed bars for this frame"
   },
   "15m": {
    "public": "UNAVAILABLE",
    "private_owner": "UNAVAILABLE",
-   "reason": "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and ALPACA_INTERNAL_DATA_USE_AUTHORIZED"
+   "reason": "not enough completed bars for this frame"
   },
   "5m": {
    "public": "UNAVAILABLE",
    "private_owner": "UNAVAILABLE",
-   "reason": "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and ALPACA_INTERNAL_DATA_USE_AUTHORIZED"
+   "reason": "not enough completed bars for this frame"
   }
  },
  "catalysts": [
   {
-   "symbol": "INTC",
-   "kind": "IR_EARNINGS",
-   "date": "2026-10-29",
-   "source": "Company IR",
-   "source_url": "https://www.intc.com/news-events/press-releases/detail/1786/intel-reports-third-quarter-2026-financial-results",
-   "score": 48.3,
-   "risk_flags": [],
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-11-02",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/02/2026-22318/airworthiness-directives-the-boeing-company-airplanes",
+   "score": 57.0,
+   "risk_flags": [
+    "توجيه صلاحية طيران إلزامي (FAA)"
+   ],
    "size": "MARKET_CAP_UNVERIFIED"
   },
   {
-   "symbol": "MRK",
-   "kind": "TRIAL_RESULTS_POSTED",
-   "date": "2026-10-29",
+   "symbol": "PFE",
+   "kind": "TRIAL_STATUS_REVIEW",
+   "date": "2026-11-02",
    "source": "ClinicalTrials.gov",
-   "source_url": "https://clinicaltrials.gov/study/NCT04165083",
-   "score": 46.7,
+   "source_url": "https://clinicaltrials.gov/study/NCT07073820",
+   "score": 53.9,
    "risk_flags": [],
    "size": "KNOWN_LARGE_ISSUER_LIST"
   },
   {
-   "symbol": "NVS",
+   "symbol": "NVO",
    "kind": "TRIAL_RESULTS_POSTED",
-   "date": "2026-10-29",
+   "date": "2026-11-02",
    "source": "ClinicalTrials.gov",
-   "source_url": "https://clinicaltrials.gov/study/NCT01742299",
-   "score": 42.4,
-   "risk_flags": [],
-   "size": "KNOWN_LARGE_ISSUER_LIST"
-  },
-  {
-   "symbol": "BIIB",
-   "kind": "TRIAL_RESULTS_POSTED",
-   "date": "2026-10-30",
-   "source": "ClinicalTrials.gov",
-   "source_url": "https://clinicaltrials.gov/study/NCT04488133",
-   "score": 33.2,
+   "source_url": "https://clinicaltrials.gov/study/NCT04916470",
+   "score": 37.8,
    "risk_flags": [],
    "size": "KNOWN_LARGE_ISSUER_LIST"
   },
@@ -137,9 +137,19 @@
    "date": "2026-10-30",
    "source": "Company IR",
    "source_url": "https://investorrelations.gd.com/news/press-release-details/2026/General-Dynamics-Reports-Third-Quarter-2026-Financial-Results/default.aspx",
-   "score": 32.8,
+   "score": 34.1,
    "risk_flags": [],
    "size": "MARKET_CAP_UNVERIFIED"
+  },
+  {
+   "symbol": "BIIB",
+   "kind": "TRIAL_RESULTS_POSTED",
+   "date": "2026-10-30",
+   "source": "ClinicalTrials.gov",
+   "source_url": "https://clinicaltrials.gov/study/NCT04488133",
+   "score": 32.6,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
   },
   {
    "symbol": "XOM",
@@ -147,7 +157,7 @@
    "date": "2026-10-30",
    "source": "Company IR",
    "source_url": "https://investor.exxonmobil.com/company-information/press-releases/detail/1213/exxonmobil-announces-third-quarter-2026-results",
-   "score": 27.2,
+   "score": 26.0,
    "risk_flags": [],
    "size": "MARKET_CAP_UNVERIFIED"
   }
@@ -169,9 +179,22 @@
   "regime_series": 12
  },
  "private_mode": {
-  "enabled": false,
-  "reason": "DATA_USE_PERMISSION_REQUIRED",
-  "symbols": [],
+  "enabled": true,
+  "reason": "OWNER_AUTHORIZED_INTERNAL_USE",
+  "symbols": [
+   "AAPL",
+   "AMD",
+   "AMZN",
+   "DIA",
+   "GOOGL",
+   "IWM",
+   "META",
+   "MSFT",
+   "NVDA",
+   "QQQ",
+   "SPY",
+   "TSLA"
+  ],
   "published": false,
   "delivery": "NOT_ATTEMPTED"
  },
