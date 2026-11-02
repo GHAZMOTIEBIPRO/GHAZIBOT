@@ -219,7 +219,7 @@ def run(*, now: datetime | None = None, session: Any = requests) -> dict[str, An
     if not _authorized():
         return result
     result["status"] = "PRIVATE_RESEARCH_SCAN"
-    key, secret = os.getenv("ALPACA_API_KEY", ""), os.getenv("ALPACA_SECRET_KEY", "")
+    key, secret = os.getenv("ALPACA_API_KEY", "").strip(), os.getenv("ALPACA_SECRET_KEY", "").strip()
     private_cards: list[dict[str, Any]] = []
     option_history_requests = 0
     for symbol in FOCUS:

@@ -56,8 +56,8 @@ class Settings:
     tiingo_api_key: str | None = os.getenv("TIINGO_API_KEY") or None
     # Alpaca data may not be redistributed: legacy (public) pipelines never load
     # the keys; only a run marked GHAZI_PIPELINE_SCOPE=private does.
-    alpaca_api_key: str | None = (os.getenv("ALPACA_API_KEY") or None) if _PRIVATE_SCOPE else None
-    alpaca_secret_key: str | None = (os.getenv("ALPACA_SECRET_KEY") or None) if _PRIVATE_SCOPE else None
+    alpaca_api_key: str | None = ((os.getenv("ALPACA_API_KEY") or "").strip() or None) if _PRIVATE_SCOPE else None
+    alpaca_secret_key: str | None = ((os.getenv("ALPACA_SECRET_KEY") or "").strip() or None) if _PRIVATE_SCOPE else None
     alpaca_options_feed: str = os.getenv("ALPACA_OPTIONS_FEED") or "indicative"
     alpaca_stock_feed: str = os.getenv("ALPACA_STOCK_FEED") or "iex"
 

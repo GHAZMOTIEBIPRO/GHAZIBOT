@@ -81,3 +81,32 @@ def test_snapshots_and_assets_parse_and_filter():
     assert got["status"] == "OK" and got["symbols"] == ["AAA"]
     assert got["excluded"] == {"OTC_OR_OTHER_VENUE": 1, "NOT_TRADABLE": 1, "SYMBOL_FORMAT": 1}
 
+
+def test_pasted_credentials_are_sent_trimmed_like_the_settings_check():
+    """Regression: a secret pasted with a trailing newline must not reach the header raw.
+
+    requests refuses such a header value, so the call failed as UNAVAILABLE while
+    the settings check (which trims) reported a different status for the same pair.
+    """
+    seen = []
+
+    class HeaderSpy(Session):
+        def get(self, url, params=None, headers=None, timeout=None):
+            seen.append(headers)
+            return super().get(url, params=params, headers=headers, timeout=timeout)
+
+    env = {**ENV, "ALPACA_API_KEY": "  PKTESTKEY\n", "ALPACA_SECRET_KEY": "secretvalue\r\n"}
+    got = AlpacaBars(env, HeaderSpy([(200, {"bars": [ROW]})]), NOW).bars("SPY", "1d", NOW - timedelta(days=3), NOW)
+    assert got["status"] == "OK"
+    assert seen == [{"APCA-API-KEY-ID": "PKTESTKEY", "APCA-API-SECRET-KEY": "secretvalue"}]
+
+
+def test_requests_itself_rejects_an_untrimmed_header_value():
+    """Documents why trimming matters: the raw value never leaves the process."""
+    import pytest
+    import requests
+
+    prepared = requests.Request("GET", "https://example.invalid", headers={"APCA-API-SECRET-KEY": "abc\n"})
+    with pytest.raises(requests.exceptions.InvalidHeader):
+        prepared.prepare()
+

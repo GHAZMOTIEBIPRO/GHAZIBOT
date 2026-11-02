@@ -111,7 +111,7 @@ def fetch_daily_bars(symbol: str, *, now: datetime, api_key: str, api_secret: st
         "limit": 500,
         "sort": "asc",
     }
-    headers = {"APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret}
+    headers = {"APCA-API-KEY-ID": api_key.strip(), "APCA-API-SECRET-KEY": api_secret.strip()}
     seen: set[str] = set()
     gathered: list[dict] = []
     for _ in range(MAX_PAGES):
