@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-03T20:00:03.923242+00:00",
+ "generated_at": "2026-11-03T20:07:56.403884+00:00",
  "window_days": 14,
- "window_start": "2026-10-20T20:00:03.923242+00:00",
+ "window_start": "2026-10-20T20:07:56.403884+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -94,16 +94,16 @@
     ]
    },
    "rights_key": "cboe_delayed",
-   "runs_seen": 312,
+   "runs_seen": 313,
    "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-03T19:36:12.355932+00:00",
+   "last_run_at": "2026-11-03T20:02:07.474873+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "ff8181bd1a"
+   "last_commit": "ad0ae75c4e"
   },
   {
    "key": "sec_edgar",
@@ -382,10 +382,10 @@
     "unknown": []
    },
    "rights_key": "openfda",
-   "runs_seen": 22,
-   "attempted": 22,
-   "succeeded": 22,
-   "fully_ok": 22,
+   "runs_seen": 21,
+   "attempted": 21,
+   "succeeded": 21,
+   "fully_ok": 21,
    "success_ratio": 1.0,
    "last_success_at": "2026-11-03T02:58:03.559845+00:00",
    "last_run_at": "2026-11-03T02:58:03.559845+00:00",
