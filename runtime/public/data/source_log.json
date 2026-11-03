@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-03T07:56:01.147380+00:00",
+ "generated_at": "2026-11-03T12:07:39.959605+00:00",
  "window_days": 14,
- "window_start": "2026-10-20T07:56:01.147380+00:00",
+ "window_start": "2026-10-20T12:07:39.959605+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -68,10 +68,10 @@
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-03T03:02:28.543930+00:00",
+   "last_run_at": "2026-11-03T12:01:57.489177+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "ACCOUNT_ENTITLEMENT_NOT_ASSERTED",
-   "last_commit": "935c0b7e32"
+   "last_commit": "53d103f85d"
   },
   {
    "key": "cboe_delayed",
@@ -94,16 +94,16 @@
     ]
    },
    "rights_key": "cboe_delayed",
-   "runs_seen": 318,
-   "attempted": 2,
+   "runs_seen": 314,
+   "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
-   "success_ratio": 0.0,
+   "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-02T22:41:23.364167+00:00",
+   "last_run_at": "2026-11-03T12:02:17.700637+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "eb08badc31"
+   "last_commit": "3243c42ed1"
   },
   {
    "key": "sec_edgar",
@@ -132,10 +132,10 @@
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-03T03:28:30.689247+00:00",
+   "last_run_at": "2026-11-03T12:01:56.462009+00:00",
    "last_outcome": "FAILED",
    "last_detail": "UNAVAILABLE",
-   "last_commit": "c497ad78a7"
+   "last_commit": "827506f444"
   },
   {
    "key": "company_ir_feeds",
@@ -190,10 +190,10 @@
     "unknown": []
    },
    "rights_key": "treasury_fiscaldata",
-   "runs_seen": 28,
-   "attempted": 28,
-   "succeeded": 28,
-   "fully_ok": 28,
+   "runs_seen": 27,
+   "attempted": 27,
+   "succeeded": 27,
+   "fully_ok": 27,
    "success_ratio": 1.0,
    "last_success_at": "2026-11-03T03:43:22.092963+00:00",
    "last_run_at": "2026-11-03T03:43:22.092963+00:00",
@@ -222,10 +222,10 @@
     "unknown": []
    },
    "rights_key": "cftc",
-   "runs_seen": 28,
-   "attempted": 28,
-   "succeeded": 28,
-   "fully_ok": 28,
+   "runs_seen": 27,
+   "attempted": 27,
+   "succeeded": 27,
+   "fully_ok": 27,
    "success_ratio": 1.0,
    "last_success_at": "2026-11-03T03:43:22.092963+00:00",
    "last_run_at": "2026-11-03T03:43:22.092963+00:00",
@@ -510,7 +510,7 @@
     "unknown": []
    },
    "rights_key": "yahoo",
-   "runs_seen": 75,
+   "runs_seen": 73,
    "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
