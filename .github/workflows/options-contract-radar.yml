@@ -28,6 +28,8 @@ on:
       - "scripts/run_options_radar_hardened.py"
       - "scripts/run_options_radar_fabric.py"
       - "scripts/send_strict_options_alerts.py"
+      - "options_radar/signal_ledger.py"
+      - "scripts/run_signal_ledger.py"
       - "scripts/telegram_connection_bootstrap.py"
       - "scripts/telegram_transport.py"
       - "data/options_ping.txt"
@@ -373,6 +375,9 @@ jobs:
         # burst caused solely by deployment; scheduled/manual radar runs retain
         # the normal direct-delivery path.
         if: github.event_name != 'push' && steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
+        env:
+          # Owner switch: adds the /options/signal/{id} link to new alerts. Off by default.
+          SIGNAL_LEDGER_LINKS: ${{ vars.SIGNAL_LEDGER_LINKS || '0' }}
         run: >-
           python -m scripts.send_strict_options_alerts
           --payload public/data/options_latest.json
@@ -385,6 +390,52 @@ jobs:
           name: options-telegram-state
           path: data/live/options_telegram_alert_state.json
           if-no-files-found: warn
+          retention-days: 30
+
+      - name: Restore signal ledger state
+        # Ledger holds delivered message ids, so like the Telegram dedupe state it is
+        # restored from the newest completed run, not only successful ones.
+        if: always() && steps.market.outputs.open == 'true'
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/live public/data
+          rm -rf .signal-ledger-restore && mkdir -p .signal-ledger-restore
+          for run_id in $(gh run list --workflow options-contract-radar.yml --status completed --branch main --limit 10 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            if gh run download "$run_id" -n signal-ledger-state -D .signal-ledger-restore >/dev/null 2>&1 && [[ -s .signal-ledger-restore/data/live/signal_ledger.json ]]; then
+              cp -f .signal-ledger-restore/data/live/signal_ledger.json data/live/signal_ledger.json
+              echo "Restored signal ledger from run $run_id."
+              break
+            fi
+          done
+
+      - name: Signal ledger cycle (adopt delivered alerts, paper monitor, page data)
+        # Never blocks the radar. Telegram edits/replies stay off unless the owner sets
+        # SIGNAL_LEDGER_TELEGRAM=1; public prices stay withheld unless the owner records
+        # SIGNAL_PUBLIC_DISPLAY_SOURCES. No new data source: quotes come from the payload.
+        if: always() && steps.market.outputs.open == 'true'
+        continue-on-error: true
+        env:
+          SIGNAL_LEDGER_TELEGRAM: ${{ env.TELEGRAM_READY == 'true' && vars.SIGNAL_LEDGER_TELEGRAM || '0' }}
+          SIGNAL_PUBLIC_DISPLAY_SOURCES: ${{ vars.SIGNAL_PUBLIC_DISPLAY_SOURCES || '' }}
+        run: >-
+          python -m scripts.run_signal_ledger
+          --payload public/data/options_latest.json
+          --sender-state data/live/options_telegram_alert_state.json
+          --ledger data/live/signal_ledger.json
+          --public public/data/signal_ledger.json
+
+      - name: Upload signal ledger state
+        if: always() && steps.market.outputs.open == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: signal-ledger-state
+          path: |
+            data/live/signal_ledger.json
+            public/data/signal_ledger.json
+          if-no-files-found: ignore
           retention-days: 30
 
       - name: Record non-sensitive options E2E delivery evidence

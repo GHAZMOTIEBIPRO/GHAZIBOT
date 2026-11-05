@@ -231,7 +231,30 @@ def _message(row: dict[str, Any], *, mode: str, readiness: dict[str, Any]) -> st
             ),
         ]
     )
+    link = _signal_page_link(row)
+    if link:
+        lines.append(link)
     return "\n".join(lines)
+
+
+def _signal_page_link(row: dict[str, Any], *, now: datetime | None = None) -> str:
+    """Link to /options/signal/{id}, only when the ledger cycle is enabled.
+
+    The id is the deterministic ledger id (contract + New York session), so
+    the page the link opens is the record scripts/run_signal_ledger.py adopts
+    from this sender's state. Off by default: no link to a page whose data is
+    not being published.
+    """
+    if os.getenv("SIGNAL_LEDGER_LINKS", "").strip() != "1":
+        return ""
+    from options_radar import signal_ledger
+
+    identity = signal_ledger.parse_occ(row.get("contract_symbol"))
+    if identity is None:
+        return ""
+    session = signal_ledger.ny_session(now or datetime.now(timezone.utc))
+    url = signal_ledger.signal_url(signal_ledger.signal_id_for(identity["occ"], session))
+    return f'🔗 <a href="{html.escape(url)}">شارت العقد ومتابعة الأهداف</a>'
 
 
 def select_rows(
