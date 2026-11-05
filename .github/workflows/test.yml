@@ -322,6 +322,13 @@ jobs:
         continue-on-error: true
         run: ruff check .
 
+      - name: Signal ledger and signal page regression
+        run: |
+          ruff check options_radar/signal_ledger.py scripts/run_signal_ledger.py tests/test_signal_ledger.py tests/test_run_signal_ledger.py
+          python -m pytest -q tests/test_signal_ledger.py tests/test_run_signal_ledger.py
+          node --check public/signal.js
+          node tests/signal_page.cjs
+
       - name: Independent gamma heatmap research regression
         run: |
           ruff check options_radar/gamma_heatmap_research.py tests/test_gamma_heatmap_research.py
