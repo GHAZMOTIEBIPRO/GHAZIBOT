@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-05T02:29:52.628959+00:00",
+ "generated_at": "2026-11-05T07:55:40.062994+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,11 +8,11 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 20
+     "success": 21
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 19
+     "success": 20
     },
     "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
@@ -34,12 +34,12 @@
      "success": 19
     },
     "market-orchestrator.yml": {
-     "success": 16,
+     "success": 15,
      "cancelled": 2,
      "failure": 1
     },
     "catalyst-watchlist.yml": {
-     "success": 5
+     "success": 6
     },
     "daily-plan.yml": {
      "success": 3
@@ -108,12 +108,16 @@
    "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
   },
   "ANALYTICAL_VALIDITY": {
-   "status": "UNMEASURED",
+   "status": "PASSING",
    "value": null,
    "unit": "status",
-   "evidence": {},
-   "method": "no completed CI run on main read",
-   "note_ar": "تعذر قراءة نتيجة اختبارات الحساب."
+   "evidence": {
+    "run_id": 41964943974,
+    "conclusion": "success",
+    "at": "2026-11-05T03:59:13Z"
+   },
+   "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
+   "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
   },
   "SIGNAL_PERFORMANCE": {
    "status": "NO_PROVEN_EDGE",
@@ -326,7 +330,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-04T22:59:33.648235+00:00",
+   "generated_at": "2026-11-05T04:00:35.460937+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -372,8 +376,8 @@
    "alerts": "DELIVERED 2026-11-04T13:08:49.832227+00:00",
    "closed_gates": [],
    "rows": 40,
-   "generated_at": "2026-11-05T01:35:54.259592+00:00",
-   "last_run_at": "2026-11-05T01:32:18Z"
+   "generated_at": "2026-11-05T02:32:30.580188+00:00",
+   "last_run_at": "2026-11-05T02:29:27Z"
   },
   "fda": {
    "label_ar": "أحداث FDA",
@@ -414,8 +418,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-04T20:02:49.683378+00:00",
-   "last_run_at": "2026-11-04T20:02:27Z"
+   "generated_at": "2026-11-05T02:49:39.513478+00:00",
+   "last_run_at": "2026-11-05T02:49:17Z"
   },
   "daily_plan": {
    "label_ar": "خطة اليوم",
