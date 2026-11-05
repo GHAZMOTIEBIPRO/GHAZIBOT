@@ -31,4 +31,7 @@ assert.deepStrictEqual(page.buildCandles(null, 60), []);
 assert.strictEqual(page.pricesBlocked({ display: { prices: 'LICENSE_BLOCKED' }, levels: { status: 'LICENSE_BLOCKED' } }), true);
 assert.strictEqual(page.pricesBlocked({ display: { prices: 'PERMITTED' }, levels: { stop: 1 } }), false);
 assert.strictEqual(page.pricesBlocked(null), true);
+assert.strictEqual(page.reasonAr('bid_reached_t1'), 'سعر العرض بلغ الهدف الأول');
+assert.strictEqual(page.reasonAr('data_stale:stale'), 'توقف البيانات أو تسعيرة غير قابلة للتنفيذ');
+assert.ok(!/[a-z_]{4,}/.test(page.reasonAr('some_new_code')), 'unknown codes must not leak English');
 console.log('signal page checks passed');

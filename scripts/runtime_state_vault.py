@@ -27,6 +27,10 @@ GUARDED_PUBLIC_FILES = {
     "public/data/latest.json": "latest",
     "public/data/contract_guardian.json": "guardian",
     "public/data/decision_brief.json": "generic",
+    # Written only by options-contract-radar.yml (scripts/run_signal_ledger.py, artifact
+    # signal-ledger-state); options-radar.yml mirrors it here. Prices are already
+    # withheld by the ledger's allowlist; the guard is a second boundary.
+    "public/data/signal_ledger.json": "generic",
 }
 
 RUNTIME_PATHS = (
@@ -35,6 +39,7 @@ RUNTIME_PATHS = (
     "public/data/data-status.json",
     "public/data/contract_guardian.json",
     "public/data/decision_brief.json",
+    "public/data/signal_ledger.json",
     "data/live/public_first_sightings.json",
     "data/cache/sec_efts_events.json",
     "data/cache/sec_efts_status.json",

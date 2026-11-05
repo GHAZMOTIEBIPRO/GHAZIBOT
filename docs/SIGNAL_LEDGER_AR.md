@@ -1,6 +1,6 @@
 # سجل التوصيات وصفحة `/options/signal/{id}` — GHAZI RADAR Ω
 
-_آخر مراجعة: 2026-11-05. حالة هذا العمل: **CODED + TESTED** محليًا. غير مربوط بأي Workflow مجدول بعد، ولم يُتحقق منه تشغيليًا._
+_آخر مراجعة: 2026-11-05. الحالة: مربوط بـ `options-contract-radar.yml` و`options-radar.yml` (انظر القسم 5). التحقق التشغيلي يتطلب جلسة سوق مفتوحة ومزود خيارات مرخّصًا._
 
 ## 1. نتيجة فحص المستودع (main @ `0dac77b`، وملفات bot-state المنشورة 2026-11-04 22:59 UTC)
 
@@ -52,12 +52,22 @@ _آخر مراجعة: 2026-11-05. حالة هذا العمل: **CODED + TESTED**
 
 الشموع تُبنى من منتصف Bid/Ask للقطات المؤرخة (دقيقة لكل شمعة) ومُعلَن ذلك على الصفحة؛ ليست صفقات، والحجم غير متاح منها. شارت السهم رابط منفصل ولا يُعرض كشارت للعقد.
 
-## 5. خطوات التفعيل (قرارات المالك — بالترتيب)
+## 5. الربط التشغيلي ومفاتيح المالك
 
-1. تفعيل مزود خيارات مرخّص يعطي Bid/Ask بتوقيت مطلق (بدونه لن تخرج أي توصية CONFIRMED؛ هذا سلوك صحيح).
-2. ربط `scripts/run_signal_ledger.py` بعد خطوة المرسل في `options-contract-radar.yml`، وإضافة `data/live/signal_ledger.json` و`public/data/signal_ledger.json` إلى `RUNTIME_PATHS` في `scripts/runtime_state_vault.py` (كاتب واحد لكل ملف).
-3. بعد ثبوت نشر الملف: `SIGNAL_LEDGER_LINKS=1` لإضافة الرابط في رسالة التوصية، و`SIGNAL_LEDGER_TELEGRAM=1` لتعديل الرسالة والردود.
-4. اختياري: `SIGNAL_PUBLIC_DISPLAY_SOURCES` فقط بعد توثيق حق النشر العام كتابيًا.
+**الربط (منفّذ):**
+
+| الملف | الكاتب الوحيد | المسار |
+|---|---|---|
+| `data/live/signal_ledger.json` (خاص: معرّفات الرسائل) | `options-contract-radar.yml` → `run_signal_ledger.py` | Artifact `signal-ledger-state` فقط، لا يُنشر |
+| `public/data/signal_ledger.json` (عام بعد الحجب) | نفس الخطوة | Artifact، ثم ينسخه `options-radar.yml` إلى `bot-state/runtime` عبر `runtime_state_vault` مع حارس الترخيص (`generic`) |
+
+خطوة السجل `continue-on-error`، فلا يمكن أن توقف الرادار. تعمل فقط في الجلسة الأمريكية النظامية، مثل الرادار.
+
+**مفاتيح المالك (Repository variables، كلها مطفأة افتراضيًا):**
+1. أولًا: تفعيل مزود خيارات مرخّص يعطي Bid/Ask بتوقيت مطلق. بدونه لن تخرج أي توصية CONFIRMED؛ هذا سلوك صحيح.
+2. `SIGNAL_LEDGER_LINKS=1`: يضيف رابط الصفحة إلى رسالة التوصية الجديدة.
+3. `SIGNAL_LEDGER_TELEGRAM=1`: يفعّل تعديل الرسالة الأصلية والردود عند الهدف/الوقف/الإلغاء/التوقف.
+4. `SIGNAL_PUBLIC_DISPLAY_SOURCES`: اختياري، فقط بعد توثيق حق النشر العام كتابيًا.
 
 **قيد التوقيت:** GitHub Actions لا يضمن تشغيلًا كل دقيقة؛ المراقبة تتم كل دورة للمنسق، وأي فجوة تظهر `DATA_STALE` ولا تُخفى. نجاح Workflow لا يعني أن المراقبة كانت متصلة.
 

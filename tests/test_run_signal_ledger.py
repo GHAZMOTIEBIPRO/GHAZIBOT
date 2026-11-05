@@ -68,6 +68,24 @@ def test_adopts_delivered_alert_monitors_and_redacts_public(tmp_path):
     assert "message_id" not in shown["telegram"] and public["decision_authority"] is False
 
 
+def test_public_ledger_passes_the_runtime_vault_and_its_licence_guard(tmp_path):
+    from scripts.runtime_state_vault import RUNTIME_PATHS, publish_runtime_state
+
+    assert "public/data/signal_ledger.json" in RUNTIME_PATHS
+    assert "data/live/signal_ledger.json" not in RUNTIME_PATHS  # message ids stay in the private artifact
+    sent = {"sent": {"AMD:CALL": {"kind": "options", "contract_symbol": OCC, "message_id": 55,
+                                  "sent_at": (T0 + timedelta(seconds=3)).isoformat()}}}
+    repo = tmp_path / "repo"
+    (repo / "public/data").mkdir(parents=True)
+    args = _args(tmp_path, {"contracts": [_row(T0, 4.9, 5.0, source="yahoo")]}, sent)
+    args.public = str(repo / "public/data/signal_ledger.json")
+    runner.run(args, now=T0 + timedelta(seconds=10))
+    publish_runtime_state(repo_root=repo, vault_root=tmp_path / "vault")
+    published = json.loads((tmp_path / "vault/public/data/signal_ledger.json").read_text())
+    assert published["signals"] == [] or published["signals"][0]["levels"]["status"] == "LICENSE_BLOCKED"
+    assert "yahoo" not in json.dumps(published.get("signals"))
+
+
 def test_delivered_alert_missing_from_payload_is_recorded_not_invented(tmp_path):
     sent = {"sent": {"AMD:CALL": {"kind": "options", "contract_symbol": OCC, "message_id": 9,
                                   "sent_at": T0.isoformat()}}}

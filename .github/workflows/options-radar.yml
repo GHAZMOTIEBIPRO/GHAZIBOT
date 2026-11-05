@@ -286,6 +286,25 @@ jobs:
           Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(lines), encoding='utf-8')
           PY
 
+      - name: Mirror public signal ledger from the options contract radar
+        # Single writer: options-contract-radar.yml (run_signal_ledger.py). This job only
+        # copies its latest public file into the runtime vault; a missing artifact keeps the
+        # previously published copy, whose own generated_at shows its age on the page.
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf .signal-ledger && mkdir -p .signal-ledger public/data
+          for run_id in $(gh run list --workflow options-contract-radar.yml --status completed --branch main --limit 10 --json databaseId --jq '.[].databaseId' 2>/dev/null || true); do
+            if gh run download "$run_id" -n signal-ledger-state -D .signal-ledger >/dev/null 2>&1 && [[ -s .signal-ledger/public/data/signal_ledger.json ]]; then
+              cp -f .signal-ledger/public/data/signal_ledger.json public/data/signal_ledger.json
+              echo "Mirrored public signal ledger from options contract radar run $run_id."
+              break
+            fi
+          done
+
       - name: Persist dashboard and research runtime state to bot-state
         if: github.ref == 'refs/heads/main'
         shell: bash

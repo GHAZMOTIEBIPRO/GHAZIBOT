@@ -18,6 +18,25 @@
   };
   const GRADE_AR = { LIVE: 'مباشرة وقابلة للتنفيذ', DELAYED: 'متأخرة — بحث فقط', RESEARCH_ONLY: 'بحثية',
     STALE: 'قديمة', UNAVAILABLE: 'غير متاحة' };
+  const REASON_AR = {
+    signal_created: 'إنشاء التوصية', published: 'نُشرت التوصية وبدأت المتابعة',
+    ask_inside_entry_zone_on_live_quote: 'سعر الطلب داخل منطقة الدخول على تسعيرة مباشرة',
+    ask_left_entry_zone: 'خرج سعر الطلب من منطقة الدخول',
+    bid_reached_t1: 'سعر العرض بلغ الهدف الأول', bid_reached_t2: 'سعر العرض بلغ الهدف الثاني',
+    bid_reached_t3: 'سعر العرض بلغ الهدف الثالث', bid_reached_stop: 'سعر العرض بلغ وقف الخسارة',
+    stop_and_target_inside_same_bar: 'الهدف والوقف داخل الشمعة نفسها',
+    underlying_invalidation_before_entry: 'كسر الأصل مستوى الإلغاء قبل الدخول',
+    underlying_invalidation_after_entry: 'كسر الأصل مستوى الإلغاء بعد الدخول',
+    entry_window_closed_without_entry: 'انتهت نافذة الدخول دون دخول',
+    contract_last_trade_time_passed: 'انتهى وقت تداول العقد', data_resumed: 'عادت البيانات',
+  };
+  function reasonAr(code) {
+    const text = String(code || '');
+    if (REASON_AR[text]) return REASON_AR[text];
+    if (text.startsWith('data_stale')) return 'توقف البيانات أو تسعيرة غير قابلة للتنفيذ';
+    if (text.startsWith('ask_inside_zone_but_quote_')) return 'السعر داخل المنطقة لكن التسعيرة غير قابلة للتنفيذ';
+    return text ? 'سبب آخر' : '';
+  }
   const GOOD = new Set(['TARGET_1', 'TARGET_2', 'TARGET_3', 'PAPER_ACTIVE']);
   const BAD = new Set(['STOPPED', 'INVALIDATED']);
   const WARN = new Set(['DATA_STALE', 'AMBIGUOUS', 'EXPIRED']);
@@ -63,7 +82,7 @@
       timeStyle: 'short' }).format(new Date(ms));
   }
 
-  const api = { signalIdFrom, buildCandles, pricesBlocked };
+  const api = { signalIdFrom, buildCandles, pricesBlocked, reasonAr };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
 
   const el = id => document.getElementById(id);
@@ -146,7 +165,7 @@
     const body = el('history'); body.replaceChildren();
     for (const ev of (s.events || []).filter(e => e.type === 'STATE' || e.type === 'CREATED')) {
       const tr = document.createElement('tr');
-      for (const value of [nyTime(ev.at), STATE_AR[ev.to] || ev.to || '—', ev.reason || '']) {
+      for (const value of [nyTime(ev.at), STATE_AR[ev.to] || ev.to || '—', reasonAr(ev.reason)]) {
         const td = document.createElement('td'); td.textContent = value; tr.append(td);
       }
       body.append(tr);
@@ -193,12 +212,21 @@
           hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(t * 1000)) + ' NY' },
       });
     } else if (candleSeries) { chart.removeSeries(candleSeries); }
+    const lv = s.levels; const t = lv.targets || [];
+    const levelPrices = [lv.stop, lv.entry_reference, lv.max_valid_entry, ...t].filter(Number.isFinite);
     candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
       upColor: pal.up, downColor: pal.down, borderUpColor: pal.up, borderDownColor: pal.down,
       wickUpColor: pal.up, wickDownColor: pal.down,
+      // Keep the stop and every target on screen, not only the candles' range.
+      autoscaleInfoProvider: original => {
+        const res = original();
+        if (!res || !res.priceRange || !levelPrices.length) return res;
+        res.priceRange.minValue = Math.min(res.priceRange.minValue, ...levelPrices);
+        res.priceRange.maxValue = Math.max(res.priceRange.maxValue, ...levelPrices);
+        return res;
+      },
     });
     candleSeries.setData(candles.map(({ time, open, high, low, close }) => ({ time, open, high, low, close })));
-    const lv = s.levels; const t = lv.targets || [];
     const line = (price, color, title, style) => { if (Number.isFinite(price)) candleSeries.createPriceLine({
       price, color, title, lineWidth: 2, lineStyle: style, axisLabelVisible: true }); };
     line(lv.entry_reference, pal.entry, 'دخول', 0);
