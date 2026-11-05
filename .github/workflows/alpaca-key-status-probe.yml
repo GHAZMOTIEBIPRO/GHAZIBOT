@@ -1,0 +1,39 @@
+name: GHAZI Alpaca Key Status Probe
+
+# Branch-only, log-only. Prints HTTP status codes and response field names only:
+# no prices, no account numbers, no key material. Nothing is stored or sent.
+on:
+  push:
+    branches:
+      - "ccr-alpaca-key-probe"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+    steps:
+      - name: Status codes only
+        shell: bash
+        run: |
+          if [[ "$ALPACA_INTERNAL_DATA_USE_AUTHORIZED" != "true" ]]; then echo "not authorized by owner; skipping"; exit 0; fi
+          echo "key_length=${#ALPACA_API_KEY} key_prefix_class=$(printf '%s' "$ALPACA_API_KEY" | cut -c1-2 | tr 'A-Z' 'a-z' | sed 's/[^a-z]/_/g') secret_length=${#ALPACA_SECRET_KEY}"
+          probe() {
+            local label="$1" url="$2"
+            code=$(curl -sS -o /tmp/body.json -w '%{http_code}' -H "APCA-API-KEY-ID: $ALPACA_API_KEY" -H "APCA-API-SECRET-KEY: $ALPACA_SECRET_KEY" "$url" || echo ERR)
+            fields=$(python3 -c 'import json,sys; d=json.load(open("/tmp/body.json")); print(sorted(d)[:8] if isinstance(d,dict) else type(d).__name__)' 2>/dev/null || echo "-")
+            msg=$(python3 -c 'import json; d=json.load(open("/tmp/body.json")); print(str(d.get("message",""))[:80])' 2>/dev/null || echo "")
+            echo "$label http=$code fields=$fields message=$msg"
+          }
+          probe "paper_account" "https://paper-api.alpaca.markets/v2/account"
+          probe "live_account" "https://api.alpaca.markets/v2/account"
+          probe "stock_bars_iex" "https://data.alpaca.markets/v2/stocks/AAPL/bars?timeframe=1Day&limit=2&feed=iex"
+          probe "stock_snapshot_iex" "https://data.alpaca.markets/v2/stocks/AAPL/snapshot?feed=iex"
+          probe "screener_movers" "https://data.alpaca.markets/v1beta1/screener/stocks/movers?top=5"
+          probe "option_snapshots_indicative" "https://data.alpaca.markets/v1beta1/options/snapshots/AAPL?feed=indicative&limit=2"
