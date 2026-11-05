@@ -27,5 +27,32 @@ const { chromium } = require("playwright");
     await page.close();
   }
   console.log("LIVE " + JSON.stringify(out));
+  // Signal page route (/options/signal/{id} -> /signal) on both hosts: served, scripts load,
+  // no page errors, and an honest status line for an id that is not in the ledger.
+  const sig = {};
+  for (const host of ["https://ghazibot.vercel.app", "https://ghazir.vercel.app"]) {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(String(e).slice(0, 160)));
+    const row = { host };
+    try {
+      const res = await page.goto(host + "/options/signal/0123456789abcdef", { waitUntil: "domcontentloaded", timeout: 45000 });
+      row.http = res ? res.status() : null;
+      row.title = await page.title();
+      await page.waitForTimeout(8000);
+      row.status = (await page.textContent("#status").catch(() => "") || "").trim().slice(0, 200);
+      row.chart_lib = await page.evaluate(() => typeof LightweightCharts !== "undefined");
+      row.ledger_http = await page.evaluate(async () => {
+        try { return (await fetch("https://raw.githubusercontent.com/GHAZMOTIEBIPRO/GHAZIBOT/bot-state/runtime/public/data/signal_ledger.json", { cache: "no-store" })).status; }
+        catch (e) { return "fetch_error"; }
+      });
+    } catch (err) {
+      row.error = String(err.message || err).slice(0, 200);
+    }
+    row.page_errors = errors;
+    sig[host] = row;
+    await page.close();
+  }
+  console.log("SIGNAL_PAGE " + JSON.stringify(sig));
   await browser.close();
 })();
