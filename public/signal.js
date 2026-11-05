@@ -112,16 +112,19 @@
 
   function stateClass(state) { return GOOD.has(state) ? 'good' : BAD.has(state) ? 'bad' : WARN.has(state) ? 'warn' : ''; }
 
+  // Returns the ledger, {notPublished: true} when every source answered 404, or null.
   async function load() {
+    let notFound = 0;
     for (const url of DATA_URLS) {
       try {
         const response = await fetch(url, { cache: 'no-store' });
+        if (response.status === 404) { notFound += 1; continue; }
         if (!response.ok) continue;
         const data = await response.json();
         if (data && Array.isArray(data.signals)) return data;
       } catch (_) { /* try next */ }
     }
-    return null;
+    return notFound === DATA_URLS.length ? { notPublished: true } : null;
   }
 
   function renderFacts(s) {
@@ -277,6 +280,10 @@
 
   async function refresh(id) {
     const data = await load();
+    if (data && data.notPublished) {
+      setStatus('لم يُنشر سجل توصيات الخيارات بعد: لا توجد توصية مؤكدة حتى الآن، لأن بيانات التنفيذ المرخّصة غير متاحة. هذا ليس عطلًا.', false);
+      return;
+    }
     if (!data) { setStatus('تعذر قراءة سجل التوصيات المنشور. لا نعرض بيانات بديلة.', true); return; }
     const s = data.signals.find(row => row && row.signal_id === id);
     if (!s) { setStatus('هذه التوصية غير موجودة في السجل المنشور (قد لا يكون السجل مفعّلًا بعد، أو انتهت مدة الاحتفاظ).', true); return; }
