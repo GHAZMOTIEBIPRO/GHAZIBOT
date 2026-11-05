@@ -33,7 +33,10 @@ jobs:
     # No runner is started unless the owner recorded the Alpaca attestation.
     if: vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # Run 42053590350 hit the old 8-minute limit while fetching whole-market history; the scan now
+    # fetches today's snapshots first and history only for the largest movers. The step limit
+    # below keeps a slow provider from consuming the whole job budget (3 runs per weekday).
+    timeout-minutes: 12
     env:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
@@ -75,6 +78,7 @@ jobs:
             --output "$RUNNER_TEMP/core_omega_private_health.json"
 
       - name: Scan (status only in the log)
+        timeout-minutes: 9
         run: |
           cd app
           python -m scripts.private_market_scan \

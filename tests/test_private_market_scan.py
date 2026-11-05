@@ -30,13 +30,13 @@ def daily_rows(price, n=30, stale=False):
              "v": 1_000_000} for d in days]
 
 
-def minute_rows(base, today_volume):
+def minute_rows(base, today_volume, today_factor=1.1):
     rows = []
     for i, (open_, close) in enumerate(SESS[-11:]):
         today = i == 10
         t = open_ - timedelta(minutes=30)  # pre-market bars must be ignored
         while t < close and t + timedelta(minutes=5) <= NOW:
-            price = base * (1.1 if today else 1.0)
+            price = base * (today_factor if today else 1.0)
             rows.append({"t": iso(t), "o": price, "h": price, "l": price, "c": price,
                          "v": today_volume if today else 100})
             t += timedelta(minutes=5)
@@ -53,9 +53,12 @@ class Response:
 
 
 class Session:
-    def __init__(self, assets_ok=True, snapshots_ok=True, fail_daily_batch=False, stale="NONE"):
+    def __init__(self, assets_ok=True, snapshots_ok=True, fail_daily_batch=False, stale="NONE",
+                 assets=("ABCD", "WXYZ", "OLDD"), prices=None, screener=None):
         self.assets_ok, self.snapshots_ok, self.fail_daily_batch, self.stale = assets_ok, snapshots_ok, fail_daily_batch, stale
-        self.calls = []
+        self.assets, self.screener = assets, screener
+        self.prices = prices or {"ABCD": 11.0}
+        self.calls, self.daily_symbols = [], []
 
     def get(self, url, params=None, headers=None, timeout=None):
         path = urlparse(url).path
@@ -63,21 +66,30 @@ class Session:
         if path == "/v2/assets":
             if not self.assets_ok:
                 return Response(500, {})
-            return Response(200, [{"symbol": s, "tradable": True, "exchange": "NASDAQ"} for s in ("ABCD", "WXYZ", "OLDD")]
+            return Response(200, [{"symbol": s, "tradable": True, "exchange": "NASDAQ"} for s in self.assets]
                             + [{"symbol": "OTCQ", "tradable": True, "exchange": "OTC"}])
+        if path.startswith("/v1beta1/screener/stocks/"):
+            if self.screener is None:
+                return Response(500, {})
+            if path.endswith("/movers"):
+                return Response(200, {"last_updated": iso(NOW - timedelta(minutes=5)), **self.screener})
+            return Response(200, {"most_actives": []})
         if path == "/v2/stocks/snapshots":
             if not self.snapshots_ok:
                 return Response(500, {})
             return Response(200, {s: {"dailyBar": {"v": 1}, "prevDailyBar": {"c": 10.0},
-                                      "latestTrade": {"p": 11.0 if s == "ABCD" else 10.1, "t": iso(NOW)}}
+                                      "latestTrade": {"p": self.prices.get(s, 10.1), "t": iso(NOW)}}
                                   for s in params["symbols"].split(",")})
         symbols = params["symbols"].split(",")
         if params["timeframe"] == "1Day":
+            self.daily_symbols.extend(symbols)
             if self.fail_daily_batch and "WXYZ" in symbols:
                 return Response(500, {})
             return Response(200, {"bars": {s: daily_rows(10.0, stale=(s == self.stale)) for s in symbols},
                                   "next_page_token": None})
-        return Response(200, {"bars": {s: minute_rows(10.0, 400 if s == "ABCD" else 100) for s in symbols},
+        factor = {s: p / 10.0 for s, p in self.prices.items()}
+        return Response(200, {"bars": {s: minute_rows(10.0, 400 if s in self.prices else 100,
+                                                      today_factor=factor.get(s, 1.1)) for s in symbols},
                               "next_page_token": None})
 
 
@@ -114,11 +126,44 @@ def test_success_path_full_market_with_coverage_and_private_delivery_only():
 
 def test_missing_endpoints_degrade_instead_of_stopping():
     no_assets = pms.run(NOW, OWNER, {"watchlist": [{"symbol": "ABCD"}]}, session=Session(assets_ok=False))
-    assert no_assets["universe"] == {"mode": "LIMITED_LIST", "status": "ASSETS_HTTP_500"}
+    assert no_assets["universe"] == {"mode": "LIMITED_LIST", "status": "ASSETS_HTTP_500", "screener": "HTTP_500"}
     assert no_assets["_private"]["coverage"]["mode"] == "LIMITED_LIST"
     no_snaps = pms.run(NOW, OWNER, None, session=Session(snapshots_ok=False))
     assert no_snaps["status"] == "MEASURED" and no_snaps["snapshots"] == "NO_SNAPSHOTS"
     assert no_snaps["_private"]["coverage"]["pick_basis"] == "liquidity only (snapshots unavailable)"
+
+
+def test_a_falling_stock_is_shortlisted_and_labelled_down():
+    sent = []
+    session = Session(prices={"ABCD": 11.0, "DOWN": 8.8}, assets=("ABCD", "WXYZ", "DOWN"))
+    result = pms.run(NOW, OWNER, None, session=session, send_private=sink(sent))
+    rows = {r["symbol"]: r for r in result["_private"]["rows"]}
+    assert rows["DOWN"]["direction"] == "DOWN" and rows["ABCD"]["direction"] == "UP"
+    assert rows["DOWN"]["setup"]["change_at_most_minus_5pct"] is True
+    assert rows["DOWN"]["setup"]["change_at_least_5pct"] is False
+    body = sent[0][1]
+    assert "▼ هابط" in body and "هبوط ≥ 5%" in body and "change_at" not in body  # Arabic labels, no raw keys
+
+
+def test_history_is_fetched_only_for_the_largest_movers(monkeypatch):
+    monkeypatch.setattr(pms, "PREFILTER", 2)
+    names = tuple(f"S{i:03d}" for i in range(50))
+    prices = {"S007": 12.0, "S031": 7.5}  # the two largest absolute moves, one up, one down
+    session = Session(assets=names, prices=prices)
+    catalysts = {"watchlist": [{"symbol": "S040", "latest_date": "2026-10-23"}]}
+    result = pms.run(NOW, OWNER, catalysts, session=session)
+    assert sorted(set(session.daily_symbols)) == ["S007", "S031", "S040"]  # movers + catalyst, not all 50
+    assert result["_private"]["coverage"]["history_requested"] == 3
+    assert result["_private"]["coverage"]["with_snapshots"] == 50
+    assert set(result["stage_seconds"]) == {"universe", "snapshots", "daily_history", "intraday_bars"}
+
+
+def test_limited_list_adds_screener_gainers_and_losers():
+    screener = {"gainers": [{"symbol": "UPPP", "percent_change": 12.0}],
+                "losers": [{"symbol": "DNNN", "percent_change": -9.0}]}
+    result = pms.run(NOW, OWNER, None, session=Session(assets_ok=False, screener=screener))
+    assert result["universe"]["screener"] == "OK"
+    assert result["_private"]["coverage"]["universe"] == len(pms.LIMITED_LIST) + 2
 
 
 def test_a_failed_batch_is_reported_and_the_rest_continues():

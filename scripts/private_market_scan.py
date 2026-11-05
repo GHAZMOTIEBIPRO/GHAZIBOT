@@ -1,22 +1,26 @@
-"""Owner-private market scan: universe -> batched data -> liquidity -> momentum -> setup conditions.
+"""Owner-private market scan: universe -> today's movers -> liquidity -> momentum -> setup conditions.
 
 No single endpoint is required. Stages, each reported with its own status:
 1. Universe: the account's active, tradable U.S. equities (Alpaca Trading API
    assets) -> FULL_MARKET. If that call fails, a declared LIMITED_LIST
-   (index ETFs, the site's watch lists and official-catalyst symbols).
-2. Daily history (batched multi-symbol bars, consolidated tape when allowed):
-   20-session average dollar volume, last close, prior-day high; symbols
-   with too little history, a stale last bar, low price or low liquidity are
-   excluded with a reason.
-3. Today (IEX snapshots, labelled IEX): change vs the prior close and trade
-   freshness, used only to pick a shortlist. If snapshots are unavailable
-   the shortlist falls back to liquidity order and says so.
-4. Shortlist (5-minute bars, one feed per symbol for today and history):
-   same-time relative volume (cumulative volume to the last completed bar vs
-   the median at the same elapsed time over prior sessions), change, prior-
-   day high, and data-quality checks (duplicates, pre-market excluded, bars
-   seen vs session minutes elapsed, last-bar age).
-5. Setup conditions: explicit booleans; no probability, no order, no target.
+   (index ETFs, the site's watch lists, official-catalyst symbols) plus the
+   Alpaca screener's top gainers, top losers and most actives.
+2. Today first (IEX snapshots, labelled IEX, ~20 calls for the whole market):
+   change vs the prior close. The PREFILTER symbols with the largest absolute
+   move (up or down, price >= 1) go on, plus every official-catalyst symbol.
+   Fetching history for the whole market first took ~110 sequential calls
+   and ran past the job limit (run 42053590350, cancelled at 8 minutes).
+   If snapshots are unavailable, history is fetched for at most
+   MAX_HISTORY_SYMBOLS of the universe and the shortlist uses liquidity order.
+3. Daily history for that subset (batched, consolidated tape when allowed):
+   20-session average dollar volume, last close; symbols with too little
+   history, a stale last bar, low price or low liquidity are excluded with a
+   reason.
+4. Shortlist by absolute move (5-minute bars, one feed per symbol): same-time
+   relative volume, change, prior-day high and low, and data-quality checks
+   (duplicates, pre-market excluded, bars seen vs minutes elapsed, last-bar age).
+5. Setup conditions on both sides: explicit booleans; no probability, no
+   order, no target.
 
 Official catalysts (public catalyst_watchlist.json) are context only. The
 result goes to the owner's personal Telegram chat only
@@ -30,6 +34,7 @@ import argparse
 import json
 import os
 import statistics
+import time
 from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -39,13 +44,19 @@ import exchange_calendars as xcals
 import pandas as pd
 
 from options_radar.bar_providers import AlpacaBars
+from options_radar.discovery_providers import AlpacaScreenerDiscovery
 from options_radar.output_policy import deliver_private
 
 PRIOR_SESSIONS = 10
 SHORTLIST = 30
+PREFILTER = 400            # largest absolute movers from the snapshots that get daily history
+MAX_HISTORY_SYMBOLS = 600  # cap when snapshots are unavailable (keeps the job inside its limit)
 MIN_PRICE = 1.0
 MIN_AVG_DOLLAR_VOLUME = 2_000_000
 MIN_DAILY_BARS = 15
+SETUP_AR = {"above_prior_day_high": "فوق قمة أمس", "below_prior_day_low": "تحت قاع أمس",
+            "same_time_rvol_at_least_2": "حجم نسبي ≥ 2 بنفس الوقت",
+            "change_at_least_5pct": "صعود ≥ 5%", "change_at_most_minus_5pct": "هبوط ≥ 5%"}
 LIMITED_LIST = ("SPY", "QQQ", "IWM", "DIA", "NVDA", "AAPL", "MSFT", "AMZN", "META", "GOOGL", "TSLA", "AVGO", "AMD",
                 "MU", "ORCL", "BAC", "SOUN", "RGTI", "IONQ", "RKLB", "ASTS", "PLTR", "SOFI", "RGC", "BNAI")
 
@@ -57,13 +68,30 @@ def sessions(now: datetime, days: int = 25) -> list[tuple[datetime, datetime]]:
             for _, r in sched.iterrows() if pd.Timestamp(r["open"]).to_pydatetime() <= now]
 
 
-def universe(provider: AlpacaBars, catalysts: Any) -> dict[str, Any]:
+def universe(provider: AlpacaBars, catalysts: Any, screener: Any = None, now: datetime | None = None) -> dict[str, Any]:
     assets = provider.assets()
     if assets["status"] == "OK" and assets["symbols"]:
         return {"mode": "FULL_MARKET", "symbols": assets["symbols"], "excluded": assets["excluded"], "status": "OK"}
     extra = [e.get("symbol") for e in (catalysts or {}).get("watchlist") or [] if isinstance(e, dict)]
-    symbols = list(dict.fromkeys([*LIMITED_LIST, *[s for s in extra if isinstance(s, str)]]))
-    return {"mode": "LIMITED_LIST", "symbols": symbols, "excluded": {}, "status": assets["status"]}
+    found = screener.candidates(now or datetime.now(timezone.utc)) if screener is not None else {"status": "NOT_USED"}
+    movers = [c["symbol"] for c in found.get("candidates") or [] if isinstance(c, dict) and c.get("symbol")]
+    symbols = list(dict.fromkeys([*LIMITED_LIST, *[s for s in extra if isinstance(s, str)], *movers]))
+    return {"mode": "LIMITED_LIST", "symbols": symbols, "excluded": {}, "status": assets["status"],
+            "screener": found.get("status"), "screener_symbols": len(movers)}
+
+
+def _change(snap: dict[str, Any]) -> float | None:
+    prev = snap.get("prev_close") or 0.0
+    return snap["price"] / prev - 1 if prev > 0 else None
+
+
+def prefilter(symbols: list[str], snaps: dict[str, Any], keep: list[str]) -> list[str]:
+    """Largest absolute moves today (price >= MIN_PRICE), plus symbols that must stay (catalysts)."""
+    moved = [(abs(c), s) for s in symbols if (snap := snaps.get(s)) and snap["price"] >= MIN_PRICE
+             and (c := _change(snap)) is not None]
+    top = [s for _, s in sorted(moved, reverse=True)[:PREFILTER]]
+    universe_set = set(symbols)
+    return list(dict.fromkeys([*top, *[s for s in keep if s in universe_set]]))
 
 
 def _dedupe(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
@@ -124,6 +152,7 @@ def measure(bars: list[dict[str, Any]], sess: list[tuple[datetime, datetime]], c
     if not prior_day:
         return {"status": "NO_PRIOR_SESSION"}
     prior_close, prior_high = prior_day[-1]["c"], max(b["h"] for b in prior_day)
+    prior_low = min(b["l"] for b in prior_day)
     last = today[-1]["c"]
     median = statistics.median(prior_volumes) if len(prior_volumes) >= 5 else None
     rvol = round(sum(b["v"] for b in today) / median, 2) if median else None
@@ -132,7 +161,8 @@ def measure(bars: list[dict[str, Any]], sess: list[tuple[datetime, datetime]], c
             "change_pct": round((last / prior_close - 1) * 100, 2), "rvol_same_time": rvol,
             "rvol_basis": (f"median of {len(prior_volumes)} prior sessions at the same elapsed time, same feed"
                            if median else "INSUFFICIENT (fewer than 5 prior sessions)"),
-            "above_prior_high": last > prior_high, "prior_high": prior_high, "last": last,
+            "above_prior_high": last > prior_high, "prior_high": prior_high,
+            "below_prior_low": last < prior_low, "prior_low": prior_low, "last": last,
             "quality": {"duplicates_removed": duplicates, "outside_session_excluded": len(done) - len(regular),
                         "bars_today": len(today), "five_minute_slots_elapsed": int(elapsed.total_seconds() // 300),
                         "last_bar_age_min": round((cutoff - last_end).total_seconds() / 60 + 16, 1),
@@ -140,9 +170,18 @@ def measure(bars: list[dict[str, Any]], sess: list[tuple[datetime, datetime]], c
 
 
 def setup_conditions(m: dict[str, Any]) -> dict[str, bool]:
+    """Both sides. The two sides exclude each other, so at most three can be true at once."""
+    change = m.get("change_pct") or 0
     return {"above_prior_day_high": bool(m.get("above_prior_high")),
+            "below_prior_day_low": bool(m.get("below_prior_low")),
             "same_time_rvol_at_least_2": (m.get("rvol_same_time") or 0) >= 2,
-            "change_at_least_5pct": (m.get("change_pct") or 0) >= 5}
+            "change_at_least_5pct": change >= 5,
+            "change_at_most_minus_5pct": change <= -5}
+
+
+def direction(m: dict[str, Any]) -> str:
+    change = m.get("change_pct") or 0
+    return "UP" if change > 0 else "DOWN" if change < 0 else "FLAT"
 
 
 def run(now: datetime, env: Mapping[str, str], catalysts: Any, *, session: Any = None,
@@ -156,25 +195,45 @@ def run(now: datetime, env: Mapping[str, str], catalysts: Any, *, session: Any =
     sess = sessions(now)
     if not sess or not sess[-1][0] <= now <= sess[-1][1] + timedelta(minutes=20):
         return {**status, "status": "OUTSIDE_SESSION"}
-    uni = universe(provider, catalysts)
+    timings: dict[str, float] = {}
+    clock = time.monotonic()
+
+    def lap(stage: str) -> None:
+        nonlocal clock
+        timings[stage] = round(time.monotonic() - clock, 2)
+        clock = time.monotonic()
+
+    status["stage_seconds"] = timings
+    screener = AlpacaScreenerDiscovery(env, **({"session": session} if session is not None else {}))
+    uni = universe(provider, catalysts, screener, now)
     status["universe"] = {"mode": uni["mode"], "status": uni["status"]}
-    history = provider.multi_bars(uni["symbols"], "1d", now - timedelta(days=45), sess[-2][1] + timedelta(minutes=1))
+    if uni["mode"] == "LIMITED_LIST":
+        status["universe"]["screener"] = uni.get("screener")
+    lap("universe")
+    official = {e.get("symbol"): e for e in (catalysts or {}).get("watchlist") or [] if isinstance(e, dict)}
+    snaps = provider.snapshots(uni["symbols"])
+    status["snapshots"] = snaps["status"]
+    lap("snapshots")
+    if snaps["status"] == "OK":
+        candidates = prefilter(uni["symbols"], snaps["snapshots"], list(official))
+        pick_basis = "absolute change vs prior close (IEX last trade), both directions"
+    else:
+        candidates = uni["symbols"][:MAX_HISTORY_SYMBOLS]
+        pick_basis = "liquidity only (snapshots unavailable)"
+    history = provider.multi_bars(candidates, "1d", now - timedelta(days=45), sess[-2][1] + timedelta(minutes=1))
     status["daily_batches"] = {"batches": history["batches"], "failed": history["failed_batches"]}
+    lap("daily_history")
     if history["status"] != "OK":
         return {**status, "status": "DAILY_" + history["status"]}
-    liquid, excluded = daily_screen(history, uni["symbols"], sess[-2][0])
-    snaps = provider.snapshots(list(liquid))
-    status["snapshots"] = snaps["status"]
+    liquid, excluded = daily_screen(history, candidates, sess[-2][0])
     if snaps["status"] == "OK":
-        movers = sorted((s for s in liquid if s in snaps["snapshots"]),
-                        key=lambda s: snaps["snapshots"][s]["price"] / liquid[s]["prior_close"], reverse=True)
-        pick_basis = "change vs prior close (IEX last trade)"
+        moves = {s: _change(snaps["snapshots"][s]) for s in liquid if s in snaps["snapshots"]}
+        movers = sorted((s for s, c in moves.items() if c is not None), key=lambda s: abs(moves[s]), reverse=True)
     else:
         movers = sorted(liquid, key=lambda s: liquid[s]["avg_dollar_volume"], reverse=True)
-        pick_basis = "liquidity only (snapshots unavailable)"
     shortlist = movers[:SHORTLIST]
     minute = provider.multi_bars(shortlist, "5m", sess[-1 - PRIOR_SESSIONS][0], now, batch=10)
-    official = {e.get("symbol"): e for e in (catalysts or {}).get("watchlist") or [] if isinstance(e, dict)}
+    lap("intraday_bars")
     rows, failed = [], 0
     for sym in shortlist:
         m = measure(minute["bars"].get(sym) or [], sess, now - timedelta(minutes=16))
@@ -182,12 +241,16 @@ def run(now: datetime, env: Mapping[str, str], catalysts: Any, *, session: Any =
             failed += 1
             continue
         rows.append({"symbol": sym, "feed": minute["feed"].get(sym), "liquidity": liquid[sym], "momentum": m,
-                     "setup": setup_conditions(m), "official_catalyst": (official.get(sym) or {}).get("latest_date")})
-    coverage = {"mode": uni["mode"], "universe": len(uni["symbols"]), "with_daily_bars": len(history["bars"]),
+                     "direction": direction(m), "setup": setup_conditions(m),
+                     "official_catalyst": (official.get(sym) or {}).get("latest_date")})
+    coverage = {"mode": uni["mode"], "universe": len(uni["symbols"]), "with_snapshots": len(snaps["snapshots"]),
+                "history_requested": len(candidates), "with_daily_bars": len(history["bars"]),
                 "liquid": len(liquid), "excluded": excluded, "shortlist": len(shortlist), "measured": len(rows),
                 "pick_basis": pick_basis, "calls": provider.calls}
-    status["fetch_success"] = {"daily_symbols_pct": round(100 * len(history["bars"]) / max(1, len(uni["symbols"])), 1),
+    status["fetch_success"] = {"snapshot_symbols_pct": round(100 * len(snaps["snapshots"]) / max(1, len(uni["symbols"])), 1),
+                               "daily_symbols_pct": round(100 * len(history["bars"]) / max(1, len(candidates)), 1),
                                "intraday_measured_pct": round(100 * len(rows) / max(1, len(shortlist)), 1)}
+    status["calls"] = provider.calls
     if not rows:
         return {**status, "status": "NO_MEASURABLE_CANDIDATES"}
     rows.sort(key=lambda r: (sum(r["setup"].values()), r["momentum"].get("rvol_same_time") or 0), reverse=True)
@@ -200,19 +263,23 @@ def run(now: datetime, env: Mapping[str, str], catalysts: Any, *, session: Any =
 def message(rows: list[dict[str, Any]], coverage: dict[str, Any]) -> str:
     excl = "، ".join(f"{k} {v}" for k, v in sorted(coverage["excluded"].items())) or "لا شيء"
     scope = "مسح السوق كامل" if coverage["mode"] == "FULL_MARKET" else "قائمة محدودة (تعذر جلب قائمة السوق)"
+    pick = ("أكبر تغير مطلق صعودًا وهبوطًا" if coverage["pick_basis"].startswith("absolute")
+            else "السيولة فقط (لقطات اليوم غير متاحة)")
     lines = ["<b>فحص السوق الخاص (Alpaca)</b>",
-             f"{scope}: {coverage['universe']} رمز · بتاريخ يومي {coverage['with_daily_bars']} · سيولة كافية "
-             f"{coverage['liquid']} · مختصرة {coverage['shortlist']} · مقاسة {coverage['measured']}",
-             f"الاستبعاد: {excl} · اختيار القائمة المختصرة: {coverage['pick_basis']}",
+             (f"{scope}: {coverage['universe']} رمز · بلقطة اليوم {coverage.get('with_snapshots', 0)} · "
+              f"تاريخ يومي {coverage['with_daily_bars']}/{coverage.get('history_requested', 0)} · سيولة كافية "
+              f"{coverage['liquid']} · مختصرة {coverage['shortlist']} · مقاسة {coverage['measured']}"),
+             f"الاستبعاد: {excl} · اختيار القائمة المختصرة: {pick}",
              "شموع 5 دقائق مكتملة، أحدثها أقدم من 16 دقيقة · استخدام شخصي؛ لا يُعاد نشره."]
     for r in rows[:10]:
         m, s = r["momentum"], r["setup"]
-        met = [k for k, v in s.items() if v]
+        met = [SETUP_AR.get(k, k) for k, v in s.items() if v]
         vol = "كل البورصات" if r["feed"] == "sip" else "IEX فقط"
-        lines.append(f"<b>{r['symbol']}</b> · حجم {vol}" + (f" · محفز رسمي {r['official_catalyst']}"
-                                                            if r.get("official_catalyst") else ""))
+        arrow = {"UP": "▲ صاعد", "DOWN": "▼ هابط"}.get(r.get("direction"), "—")
+        lines.append(f"<b>{r['symbol']}</b> · {arrow} · حجم {vol}" + (f" · محفز رسمي {r['official_catalyst']}"
+                                                                       if r.get("official_catalyst") else ""))
         lines.append(f"  تغير {m['change_pct']}% · RVOL بنفس الوقت {m['rvol_same_time'] or 'غير كافٍ'}"
-                     f" · فوق قمة أمس {m['prior_high']}: {'نعم' if m['above_prior_high'] else 'لا'}"
+                     f" · قمة أمس {m['prior_high']} / قاع أمس {m.get('prior_low', '—')}"
                      f" · آخر شمعة {m['last_bar_end'][11:16]} UTC")
         lines.append("  شروط الإعداد المتحققة: " + ("، ".join(met) if met else "لا شيء"))
     lines.append("الشروط وصف لا احتمال نجاح ولا أمر تداول.")
@@ -239,7 +306,7 @@ def main() -> int:
     args.status_output.parent.mkdir(parents=True, exist_ok=True)
     args.status_output.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
     print("Private scan:", json.dumps({k: result.get(k) for k in ("status", "delivery", "universe", "snapshots",
-                                                                   "fetch_success")}))
+                                                                   "fetch_success", "stage_seconds", "calls")}))
     return 0
 
 

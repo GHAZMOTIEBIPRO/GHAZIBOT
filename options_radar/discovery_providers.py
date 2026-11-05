@@ -78,10 +78,12 @@ class AlpacaScreenerDiscovery:
         if now - updated > MAX_AGE:
             return {**base, "status": "STALE", "provider_time": updated.isoformat()}
         found: dict[str, dict[str, Any]] = {}
-        for row in movers.get("gainers") or []:
-            if isinstance(row, dict) and SYMBOL.fullmatch(str(row.get("symbol") or "")):
-                found[row["symbol"]] = {"symbol": row["symbol"], "why": "TOP_GAINER",
-                                        "percent_change": row.get("percent_change")}
+        # Both sides: a falling stock is as much a candidate (PUT side) as a rising one.
+        for key, why in (("gainers", "TOP_GAINER"), ("losers", "TOP_LOSER")):
+            for row in movers.get(key) or []:
+                if isinstance(row, dict) and SYMBOL.fullmatch(str(row.get("symbol") or "")):
+                    found.setdefault(row["symbol"], {"symbol": row["symbol"], "why": why,
+                                                     "percent_change": row.get("percent_change")})
         for row in (actives or {}).get("most_actives") or [] if status_active == "OK" else []:
             if isinstance(row, dict) and SYMBOL.fullmatch(str(row.get("symbol") or "")):
                 found.setdefault(row["symbol"], {"symbol": row["symbol"], "why": "MOST_ACTIVE"})
