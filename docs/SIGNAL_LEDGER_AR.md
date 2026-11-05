@@ -66,6 +66,7 @@ _آخر مراجعة: 2026-11-05. الحالة: مربوط بـ `options-contrac
 **لماذا لا تعمل دورة السجل حاليًا (تحقق 2026-11-05):**
 - `options-contract-radar.yml`: بوابة المصدر تتخطى الفحص في كل دورة. الدليل: التشغيل 41904405935 سجّل `SOURCE_TERMS_BLOCKED`.
 - السبب: `scripts/price_source_gate.py` لا يعتبر مفتاح Alpaca صالحًا إلا إذا كان `alpaca` ضمن المتغير `DATA_TERMS_CONFIRMED`. المتغير فارغ في settings-check 41941112955، مع أن `ALPACA_INTERNAL_DATA_USE_AUTHORIZED=true`.
+- سبب أعمق: مفتاحا Alpaca مخزّنان بالعكس. التشخيص `SECRETS_SWAPPED_OWNER_MUST_EXCHANGE_THE_TWO_VALUES`، والاختبار العكسي أعاد VALID. التفاصيل والإجراءات في `docs/research/GHAZI_GLOBAL_RESEARCH.md`.
 - حتى لو فُتحت البوابة: خطة Alpaca المجانية تعطي تغذية الخيارات «Indicative» فقط، فتبقى بحثية ولا توافق عليها V11. تغذية OPRA تأتي مع خطة Algo Trader Plus المدفوعة.
 - مسار الصفحة نفسه يعمل على النطاقين: probe 41965698590 أعاد HTTP 200، ومكتبة الشارت محمّلة، و0 أخطاء. الصفحة تعرض «لم يُنشر سجل التوصيات بعد» حتى أول نشر.
 
