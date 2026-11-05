@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-05T19:58:20.622999+00:00",
+ "generated_at": "2026-11-05T20:40:36.062092+00:00",
  "window_days": 14,
- "window_start": "2026-10-22T19:58:20.622999+00:00",
+ "window_start": "2026-10-22T20:40:36.062092+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -28,16 +28,16 @@
     ]
    },
    "rights_key": "alpaca",
-   "runs_seen": 38,
-   "attempted": 11,
-   "succeeded": 2,
-   "fully_ok": 2,
-   "success_ratio": 0.182,
-   "last_success_at": "2026-11-05T19:02:13.036882+00:00",
-   "last_run_at": "2026-11-05T19:02:13.036882+00:00",
+   "runs_seen": 39,
+   "attempted": 12,
+   "succeeded": 3,
+   "fully_ok": 3,
+   "success_ratio": 0.25,
+   "last_success_at": "2026-11-05T20:18:10.114458+00:00",
+   "last_run_at": "2026-11-05T20:18:10.114458+00:00",
    "last_outcome": "OK",
    "last_detail": "12/12 symbols with daily bars",
-   "last_commit": "ad5a146c2e"
+   "last_commit": "3c85ba03d6"
   },
   {
    "key": "tradier_options",
@@ -100,10 +100,10 @@
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-05T19:39:21.458367+00:00",
+   "last_run_at": "2026-11-05T20:25:04.385179+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "2df5a68c79"
+   "last_commit": "6319cdffac"
   },
   {
    "key": "sec_edgar",
@@ -126,8 +126,8 @@
     ]
    },
    "rights_key": "sec_edgar",
-   "runs_seen": 56,
-   "attempted": 56,
+   "runs_seen": 55,
+   "attempted": 55,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
@@ -158,16 +158,16 @@
     ]
    },
    "rights_key": "company_ir_feeds",
-   "runs_seen": 38,
-   "attempted": 38,
-   "succeeded": 38,
-   "fully_ok": 38,
+   "runs_seen": 39,
+   "attempted": 39,
+   "succeeded": 39,
+   "fully_ok": 39,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-05T16:26:19.719271+00:00",
-   "last_run_at": "2026-11-05T16:26:19.719271+00:00",
+   "last_success_at": "2026-11-05T19:58:30.523690+00:00",
+   "last_run_at": "2026-11-05T19:58:30.523690+00:00",
    "last_outcome": "OK",
    "last_detail": "10/10",
-   "last_commit": "1d1526be6c"
+   "last_commit": "116ed1bba1"
   },
   {
    "key": "treasury",
@@ -190,16 +190,16 @@
     "unknown": []
    },
    "rights_key": "treasury_fiscaldata",
-   "runs_seen": 25,
-   "attempted": 25,
-   "succeeded": 25,
-   "fully_ok": 25,
+   "runs_seen": 26,
+   "attempted": 26,
+   "succeeded": 26,
+   "fully_ok": 26,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-05T02:49:39.513478+00:00",
-   "last_run_at": "2026-11-05T02:49:39.513478+00:00",
+   "last_success_at": "2026-11-05T20:16:41.426380+00:00",
+   "last_run_at": "2026-11-05T20:16:41.426380+00:00",
    "last_outcome": "OK",
    "last_detail": "curve 2026-11-04",
-   "last_commit": "8b31224e71"
+   "last_commit": "39a1fd47af"
   },
   {
    "key": "cftc",
@@ -222,16 +222,16 @@
     "unknown": []
    },
    "rights_key": "cftc",
-   "runs_seen": 25,
-   "attempted": 25,
-   "succeeded": 25,
-   "fully_ok": 25,
+   "runs_seen": 26,
+   "attempted": 26,
+   "succeeded": 26,
+   "fully_ok": 26,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-05T02:49:39.513478+00:00",
-   "last_run_at": "2026-11-05T02:49:39.513478+00:00",
+   "last_success_at": "2026-11-05T20:16:41.426380+00:00",
+   "last_run_at": "2026-11-05T20:16:41.426380+00:00",
    "last_outcome": "OK",
    "last_detail": "5/5 markets, positions 2026-10-27",
-   "last_commit": "8b31224e71"
+   "last_commit": "39a1fd47af"
   },
   {
    "key": "dol_claims",
@@ -350,16 +350,16 @@
     "unknown": []
    },
    "rights_key": "usaspending",
-   "runs_seen": 36,
-   "attempted": 36,
-   "succeeded": 36,
-   "fully_ok": 33,
+   "runs_seen": 37,
+   "attempted": 37,
+   "succeeded": 37,
+   "fully_ok": 34,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-05T16:26:32.576606+00:00",
-   "last_run_at": "2026-11-05T16:26:32.576606+00:00",
+   "last_success_at": "2026-11-05T19:58:42.651328+00:00",
+   "last_run_at": "2026-11-05T19:58:42.651328+00:00",
    "last_outcome": "OK",
    "last_detail": "10/10",
-   "last_commit": "1d1526be6c"
+   "last_commit": "116ed1bba1"
   },
   {
    "key": "openfda",
@@ -414,16 +414,16 @@
     ]
    },
    "rights_key": null,
-   "runs_seen": 78,
-   "attempted": 78,
-   "succeeded": 67,
+   "runs_seen": 79,
+   "attempted": 79,
+   "succeeded": 68,
    "fully_ok": 0,
-   "success_ratio": 0.859,
-   "last_success_at": "2026-11-05T16:26:09.972349+00:00",
-   "last_run_at": "2026-11-05T16:26:09.972349+00:00",
+   "success_ratio": 0.861,
+   "last_success_at": "2026-11-05T19:58:20.607021+00:00",
+   "last_run_at": "2026-11-05T19:58:20.607021+00:00",
    "last_outcome": "PARTIAL",
    "last_detail": "PARTIAL",
-   "last_commit": "1d1526be6c"
+   "last_commit": "116ed1bba1"
   },
   {
    "key": "federal_register",
@@ -446,16 +446,16 @@
     "unknown": []
    },
    "rights_key": "federal_register",
-   "runs_seen": 47,
-   "attempted": 47,
-   "succeeded": 47,
-   "fully_ok": 47,
+   "runs_seen": 48,
+   "attempted": 48,
+   "succeeded": 48,
+   "fully_ok": 48,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-05T16:26:12.928098+00:00",
-   "last_run_at": "2026-11-05T16:26:12.928098+00:00",
+   "last_success_at": "2026-11-05T19:58:23.593559+00:00",
+   "last_run_at": "2026-11-05T19:58:23.593559+00:00",
    "last_outcome": "OK",
    "last_detail": "258 documents",
-   "last_commit": "1d1526be6c"
+   "last_commit": "116ed1bba1"
   },
   {
    "key": "fred",
