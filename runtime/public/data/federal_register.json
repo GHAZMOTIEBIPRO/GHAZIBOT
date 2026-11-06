@@ -1,31 +1,31 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-06T02:28:00.466457+00:00",
+ "generated_at": "2026-11-06T12:58:29.404583+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 61,
-  "FAA": 91,
+  "FDA": 63,
+  "FAA": 96,
   "FTC": 8,
-  "FERC": 123,
-  "NRC": 37,
+  "FERC": 131,
+  "NRC": 38,
   "NHTSA": 15
  },
  "counts": {
-  "after_noise_filter": 240,
-  "linked": 32,
-  "company_unlinked": 82,
-  "general": 126,
+  "after_noise_filter": 253,
+  "linked": 33,
+  "company_unlinked": 86,
+  "general": 134,
   "by_kind": {
    "FR_PRIORITY_REVIEW_VOUCHER": 4,
    "FR_APPROVAL_WITHDRAWN": 3,
-   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 22,
+   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 24,
    "FR_AIRWORTHINESS_DIRECTIVE": 27,
    "FR_SPECIAL_CONDITIONS": 1,
    "FR_FTC_CONSENT_ORDER": 1,
-   "FR_ENERGY_REGULATORY_FILING": 47,
-   "FR_NUCLEAR_LICENSE_ACTION": 9
+   "FR_ENERGY_REGULATORY_FILING": 49,
+   "FR_NUCLEAR_LICENSE_ACTION": 10
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
@@ -890,6 +890,42 @@
    ]
   },
   {
+   "document_number": "2026-22721",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Transcontinental Gas Pipe Line Company, LLC; Notice of Schedule for the Preparation of an Environmental Assessment for the Leidy Access Expansion Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22721/transcontinental-gas-pipe-line-company-llc-notice-of-schedule-for-the-preparation-of-an",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Transcontinental Gas Pipe Line Company, LLC"
+   ],
+   "links": [
+    {
+     "name": "Transcontinental Gas Pipe Line Company, LLC",
+     "ticker": "WMB",
+     "legal_entity": "Transcontinental Gas Pipe Line Company, LLC",
+     "relation": "WHOLLY_OWNED_SUBSIDIARY",
+     "listed_company": "The Williams Companies, Inc.",
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
+    }
+   ],
+   "unmatched": []
+  },
+  {
    "document_number": "2026-22411",
    "date": "2026-11-03",
    "agency": "FERC",
@@ -1357,6 +1393,64 @@
     {
      "name": "Elite Laboratories, Inc.",
      "reason": "NOT_EXCHANGE_LISTED"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22665",
+   "date": "2026-11-06",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Airbus SAS Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22665/airworthiness-directives-airbus-sas-airplanes",
+   "effective_on": null,
+   "comments_close_on": "2026-12-21",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Airbus SAS"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus SAS",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22664",
+   "date": "2026-11-06",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Dassault Aviation Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22664/airworthiness-directives-dassault-aviation-airplanes",
+   "effective_on": null,
+   "comments_close_on": "2026-12-21",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Dassault Aviation"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Dassault Aviation",
+     "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
   },
@@ -2256,6 +2350,35 @@
     {
      "name": "Airbus SAS",
      "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22722",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Columbia Gulf Transmission, LLC; Notice of Application and Establishing Intervention Deadline",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22722/columbia-gulf-transmission-llc-notice-of-application-and-establishing-intervention-deadline",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Columbia Gulf Transmission, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Columbia Gulf Transmission, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
   },
@@ -3392,6 +3515,35 @@
    ]
   },
   {
+   "document_number": "2026-22711",
+   "date": "2026-11-06",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "Entergy Operations Inc.; Arkansas Nuclear One, Unit 2; License Amendment Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22711/entergy-operations-inc-arkansas-nuclear-one-unit-2-license-amendment-application",
+   "effective_on": null,
+   "comments_close_on": "2026-11-20",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Entergy Operations Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Entergy Operations Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
    "document_number": "2026-22577",
    "date": "2026-11-05",
    "agency": "NRC",
@@ -3654,6 +3806,28 @@
   }
  ],
  "general": [
+  {
+   "document_number": "2026-22663",
+   "date": "2026-11-06",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Food Additive Petitions; Change of Address",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22663/food-additive-petitions-change-of-address",
+   "effective_on": "2026-11-06",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22657",
+   "date": "2026-11-06",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Medical Devices; Ear, Nose, and Throat Devices; Classification of the External Mechanical Stimulator for the Relief of Congestion",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22657/medical-devices-ear-nose-and-throat-devices-classification-of-the-external-mechanical-stimulator-for",
+   "effective_on": "2026-11-06",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
   {
    "document_number": "2026-22593",
    "date": "2026-11-05",
@@ -4073,6 +4247,28 @@
    "status": "GENERAL"
   },
   {
+   "document_number": "2026-22678",
+   "date": "2026-11-06",
+   "agency": "FAA",
+   "type": "Notice",
+   "title": "Notice of Intent of Waiver With Respect to Land; Watertown Regional Airport, Watertown, South Dakota",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22678/notice-of-intent-of-waiver-with-respect-to-land-watertown-regional-airport-watertown-south-dakota",
+   "effective_on": null,
+   "comments_close_on": "2026-12-07",
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22651",
+   "date": "2026-11-06",
+   "agency": "FAA",
+   "type": "Notice",
+   "title": "Deadline for Submitting Intent To Use Airport Improvement Program (AIP) Apportioned Funds for Fiscal Year (FY) 2027",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22651/deadline-for-submitting-intent-to-use-airport-improvement-program-aip-apportioned-funds-for-fiscal",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-22497",
    "date": "2026-11-04",
    "agency": "FAA",
@@ -4392,6 +4588,50 @@
    "status": "GENERAL"
   },
   {
+   "document_number": "2026-22724",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Records Governing Off-the-Record Communications; Public Notice",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22724/records-governing-off-the-record-communications-public-notice",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22723",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Filing Process and Data Collection for the Electric Quarterly Report Notice of Technical Conference",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22723/filing-process-and-data-collection-for-the-electric-quarterly-report-notice-of-technical-conference",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22720",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Dauphin Island Gathering Partners; Notice of Schedule for the Preparation of an Environmental Assessment for the Dauphin Island Gathering Partners Abandonment Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22720/dauphin-island-gathering-partners-notice-of-schedule-for-the-preparation-of-an-environmental",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22714",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Blue Earth County, Minnesota; Notice of Reasonable Period of Time for Water Quality Certification Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22714/blue-earth-county-minnesota-notice-of-reasonable-period-of-time-for-water-quality-certification",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-22607",
    "date": "2026-11-05",
    "agency": "FERC",
@@ -4444,94 +4684,6 @@
    "source_url": "https://www.federalregister.gov/documents/2026/11/03/2026-22414/public-utility-district-no-1-of-chelan-county-washington-notice-of-applications-for-approval-of",
    "effective_on": null,
    "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22198",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "City of Pelican, AK; Notice of Authorization for Continued Project Operation",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22198/city-of-pelican-ak-notice-of-authorization-for-continued-project-operation",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22140",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Southeastern Power Administration; Notice of Filing",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22140/southeastern-power-administration-notice-of-filing",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22134",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Grand River Dam Authority; Notice of Revised Procedural Schedule",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22134/grand-river-dam-authority-notice-of-revised-procedural-schedule",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21874",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21874/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21869",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21869/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21866",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P. Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21866/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21716",
-   "date": "2026-10-26",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Records Governing Off-the-Record Communications; Public Notice",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/26/2026-21716/records-governing-off-the-record-communications-public-notice",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21443",
-   "date": "2026-10-20",
-   "agency": "FERC",
-   "type": "Proposed Rule",
-   "title": "Authorizations for Certain Activities at Liquefied Natural Gas Plants",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21443/authorizations-for-certain-activities-at-liquefied-natural-gas-plants",
-   "effective_on": null,
-   "comments_close_on": "2026-12-21",
    "status": "GENERAL"
   }
  ],
