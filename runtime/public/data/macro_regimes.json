@@ -1,7 +1,7 @@
 {
  "schema": "ghazi.macro_regimes.v2",
- "generated_at": "2026-11-06T19:43:35.534714+00:00",
- "history_generated_at": "2026-11-06T19:42:48.862989+00:00",
+ "generated_at": "2026-11-07T02:24:30.591680+00:00",
+ "history_generated_at": "2026-11-07T02:23:40.016453+00:00",
  "status": "AVAILABLE",
  "series": {
   "treasury_10y_2y_bp": {
@@ -9,12 +9,12 @@
    "unit": "bp",
    "frequency": "daily",
    "source": "U.S. Treasury par yield curve",
-   "observations": 462,
+   "observations": 463,
    "release_lag_days": 0,
    "available": true,
    "first_date": "2025-01-02",
-   "last_date": "2026-11-05",
-   "latest_value": 38.0,
+   "last_date": "2026-11-06",
+   "latest_value": 35.0,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -29,18 +29,18 @@
    "segments": [
     {
      "start": "2025-01-03",
-     "end": "2026-11-05",
-     "periods": 461,
-     "mean_change": 0.013,
-     "std_change": 3.1753,
+     "end": "2026-11-06",
+     "periods": 462,
+     "mean_change": 0.0065,
+     "std_change": 3.1749,
      "level_start": 32.0,
-     "level_end": 38.0
+     "level_end": 35.0
     }
    ],
    "current_regime": {
     "since": "2025-01-03",
-    "periods": 461,
-    "mean_change": 0.013,
+    "periods": 462,
+    "mean_change": 0.0065,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -50,12 +50,12 @@
    "unit": "%",
    "frequency": "daily",
    "source": "U.S. Treasury par yield curve",
-   "observations": 462,
+   "observations": 463,
    "release_lag_days": 0,
    "available": true,
    "first_date": "2025-01-02",
-   "last_date": "2026-11-05",
-   "latest_value": 4.84,
+   "last_date": "2026-11-06",
+   "latest_value": 4.86,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -70,17 +70,17 @@
    "segments": [
     {
      "start": "2025-01-03",
-     "end": "2026-11-05",
-     "periods": 461,
+     "end": "2026-11-06",
+     "periods": 462,
      "mean_change": 0.0006,
-     "std_change": 0.0476,
+     "std_change": 0.0475,
      "level_start": 4.57,
-     "level_end": 4.84
+     "level_end": 4.86
     }
    ],
    "current_regime": {
     "since": "2025-01-03",
-    "periods": 461,
+    "periods": 462,
     "mean_change": 0.0006,
     "previous_mean_change": null,
     "detectable_from": null
@@ -94,65 +94,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": 923449,
-   "method": {
-    "library": "ruptures",
-    "algorithm": "Binseg",
-    "cost": "l2",
-    "input": "period changes",
-    "penalty": "2 * var(changes) * ln(n)",
-    "min_size": 8,
-    "max_breaks": 5,
-    "calibration_false_alarm_rate": "3-5% (synthetic, no change)"
-   },
-   "breaks": [
-    {
-     "date": "2024-01-09",
-     "detectable_from": "2024-03-08",
-     "hindsight_only": false
-    }
-   ],
-   "segments": [
-    {
-     "start": "2023-11-14",
-     "end": "2024-01-02",
-     "periods": 8,
-     "mean_change": 35650.625,
-     "std_change": 25710.134,
-     "level_start": 669718,
-     "level_end": 954923
-    },
-    {
-     "start": "2024-01-09",
-     "end": "2026-10-27",
-     "periods": 147,
-     "mean_change": -214.1088,
-     "std_change": 30184.8014,
-     "level_start": 954923,
-     "level_end": 923449
-    }
-   ],
-   "current_regime": {
-    "since": "2024-01-09",
-    "periods": 147,
-    "mean_change": -214.1088,
-    "previous_mean_change": 35650.625,
-    "detectable_from": "2024-03-08"
-   }
-  },
-  "cftc_ES_leveraged_funds_net": {
-   "label_ar": "عقود E-mini S&P 500",
-   "unit": "contracts",
-   "frequency": "weekly",
-   "source": "CFTC Traders in Financial Futures",
-   "observations": 156,
-   "release_lag_days": 3,
-   "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": -400604,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": 928584,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -166,19 +110,60 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": -824.2516,
-     "std_change": 47352.9596,
-     "level_start": -272845,
-     "level_end": -400604
+     "mean_change": 1494.1548,
+     "std_change": 30935.3228,
+     "level_start": 696990,
+     "level_end": 928584
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": -824.2516,
+    "mean_change": 1494.1548,
+    "previous_mean_change": null,
+    "detectable_from": null
+   }
+  },
+  "cftc_ES_leveraged_funds_net": {
+   "label_ar": "عقود E-mini S&P 500",
+   "unit": "contracts",
+   "frequency": "weekly",
+   "source": "CFTC Traders in Financial Futures",
+   "observations": 156,
+   "release_lag_days": 3,
+   "available": true,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": -372318,
+   "method": {
+    "library": "ruptures",
+    "algorithm": "Binseg",
+    "cost": "l2",
+    "input": "period changes",
+    "penalty": "2 * var(changes) * ln(n)",
+    "min_size": 8,
+    "max_breaks": 5,
+    "calibration_false_alarm_rate": "3-5% (synthetic, no change)"
+   },
+   "breaks": [],
+   "segments": [
+    {
+     "start": "2023-11-21",
+     "end": "2026-11-03",
+     "periods": 155,
+     "mean_change": -524.4258,
+     "std_change": 47389.1875,
+     "level_start": -291032,
+     "level_end": -372318
+    }
+   ],
+   "current_regime": {
+    "since": "2023-11-21",
+    "periods": 155,
+    "mean_change": -524.4258,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -191,9 +176,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": 65381,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": 73137,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -207,19 +192,19 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": 0.729,
-     "std_change": 5750.4339,
-     "level_start": 65268,
-     "level_end": 65381
+     "mean_change": -72.0,
+     "std_change": 5578.0157,
+     "level_start": 84297,
+     "level_end": 73137
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": 0.729,
+    "mean_change": -72.0,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -232,9 +217,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": 2301,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": 10073,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -248,19 +233,19 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": -50.5871,
-     "std_change": 11913.1147,
-     "level_start": 10142,
-     "level_end": 2301
+     "mean_change": 96.6516,
+     "std_change": 11867.768,
+     "level_start": -4908,
+     "level_end": 10073
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": -50.5871,
+    "mean_change": 96.6516,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -273,9 +258,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": 19602,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": 23623,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -289,19 +274,19 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": 151.8774,
-     "std_change": 11947.3565,
-     "level_start": -3939,
-     "level_end": 19602
+     "mean_change": 22.9226,
+     "std_change": 11796.0699,
+     "level_start": 20070,
+     "level_end": 23623
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": 151.8774,
+    "mean_change": 22.9226,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -314,9 +299,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": -48081,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": -55080,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -330,19 +315,19 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": -323.7742,
-     "std_change": 12730.6089,
-     "level_start": 2104,
-     "level_end": -48081
+     "mean_change": -370.2065,
+     "std_change": 12741.741,
+     "level_start": 2302,
+     "level_end": -55080
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": -323.7742,
+    "mean_change": -370.2065,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -355,9 +340,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": 12233,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": 8220,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -371,19 +356,19 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": 132.7355,
-     "std_change": 3979.6456,
-     "level_start": -8341,
-     "level_end": 12233
+     "mean_change": 104.4129,
+     "std_change": 3993.4041,
+     "level_start": -7964,
+     "level_end": 8220
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": 132.7355,
+    "mean_change": 104.4129,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -396,9 +381,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": 96,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": 820,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -409,24 +394,39 @@
     "max_breaks": 5,
     "calibration_false_alarm_rate": "3-5% (synthetic, no change)"
    },
-   "breaks": [],
+   "breaks": [
+    {
+     "date": "2024-01-16",
+     "detectable_from": "2024-03-08",
+     "hindsight_only": false
+    }
+   ],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
-     "periods": 155,
-     "mean_change": 128.6774,
-     "std_change": 3903.3128,
-     "level_start": -19849,
-     "level_end": 96
+     "start": "2023-11-21",
+     "end": "2024-01-09",
+     "periods": 8,
+     "mean_change": 4546.0,
+     "std_change": 3747.2554,
+     "level_start": -19217,
+     "level_end": 17151
+    },
+    {
+     "start": "2024-01-16",
+     "end": "2026-11-03",
+     "periods": 147,
+     "mean_change": -111.0952,
+     "std_change": 3765.9136,
+     "level_start": 17151,
+     "level_end": 820
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
-    "periods": 155,
-    "mean_change": 128.6774,
-    "previous_mean_change": null,
-    "detectable_from": null
+    "since": "2024-01-16",
+    "periods": 147,
+    "mean_change": -111.0952,
+    "previous_mean_change": 4546.0,
+    "detectable_from": "2024-03-08"
    }
   },
   "cftc_VX_asset_manager_net": {
@@ -437,9 +437,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": -44424,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": -35514,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -453,19 +453,19 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": -351.6194,
-     "std_change": 9756.3591,
-     "level_start": 10077,
-     "level_end": -44424
+     "mean_change": -278.3419,
+     "std_change": 9782.9558,
+     "level_start": 7629,
+     "level_end": -35514
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": -351.6194,
+    "mean_change": -278.3419,
     "previous_mean_change": null,
     "detectable_from": null
    }
@@ -478,9 +478,9 @@
    "observations": 156,
    "release_lag_days": 3,
    "available": true,
-   "first_date": "2023-11-07",
-   "last_date": "2026-10-27",
-   "latest_value": -26334,
+   "first_date": "2023-11-14",
+   "last_date": "2026-11-03",
+   "latest_value": -31479,
    "method": {
     "library": "ruptures",
     "algorithm": "Binseg",
@@ -494,19 +494,19 @@
    "breaks": [],
    "segments": [
     {
-     "start": "2023-11-14",
-     "end": "2026-10-27",
+     "start": "2023-11-21",
+     "end": "2026-11-03",
      "periods": 155,
-     "mean_change": -79.5032,
-     "std_change": 12829.4603,
-     "level_start": -14011,
-     "level_end": -26334
+     "mean_change": -157.471,
+     "std_change": 12823.2844,
+     "level_start": -7071,
+     "level_end": -31479
     }
    ],
    "current_regime": {
-    "since": "2023-11-14",
+    "since": "2023-11-21",
     "periods": 155,
-    "mean_change": -79.5032,
+    "mean_change": -157.471,
     "previous_mean_change": null,
     "detectable_from": null
    }
