@@ -1,12 +1,12 @@
 {
   "schema": "ghazi.market_acceptance.v1",
-  "generated_at": "2026-11-08T07:22:44.066728+00:00",
+  "generated_at": "2026-11-08T18:22:23.470621+00:00",
   "status": "RESEARCH_EVIDENCE_PENDING",
   "scope": "owner_private_research_evidence_and_public_health_only",
   "checks": {
-    "daily_plan_recent": true,
-    "private_bars_observed": true,
-    "private_multi_frame_levels_computed": true,
+    "daily_plan_recent": false,
+    "private_bars_observed": false,
+    "private_multi_frame_levels_computed": false,
     "private_market_report_telegram_accepted": false,
     "operational_telegram_digest_accepted": false,
     "operational_pipeline_healthy": false,
@@ -14,15 +14,25 @@
     "execution_grade_option_quotes_verified": false
   },
   "counts": {
-    "price_bar_symbols_fetched": 12,
-    "symbols_with_computed_levels": 12
+    "price_bar_symbols_fetched": 0,
+    "symbols_with_computed_levels": 0
   },
   "latest_evidence": {
-    "daily_plan_generated_at": "2026-11-06T22:06:46.958015+00:00",
-    "operations_generated_at": "2026-11-07T19:43:35.292260+00:00",
-    "scorecards_generated_at": "2026-11-08T07:22:38.784651+00:00"
+    "daily_plan_generated_at": null,
+    "operations_generated_at": "2026-11-08T15:56:02.896905+00:00",
+    "scorecards_generated_at": "2026-11-08T18:22:17.498766+00:00"
   },
   "action_queue": [
+    {
+      "id": "VERIFY_COMPLETED_BARS",
+      "owner_action": false,
+      "message_ar": "تحقق من الاستجابة الفعلية للمصدر وعدد الشموع المكتملة وصلاحية استخدامها."
+    },
+    {
+      "id": "MEASURE_SUPPORT_AND_TRENDS",
+      "owner_action": false,
+      "message_ar": "أثبت مستويات فعلية واتجاهات متعددة الأطر من الشموع المؤهلة، دون أسعار مصطنعة."
+    },
     {
       "id": "VERIFY_PRIVATE_MARKET_REPORT",
       "owner_action": true,

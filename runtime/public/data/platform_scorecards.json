@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-08T07:22:38.784651+00:00",
+ "generated_at": "2026-11-08T18:22:17.498766+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -44,7 +44,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 20.0,
+   "value": 10.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -56,7 +56,7 @@
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
-    "macro_positioning": "AVAILABLE"
+    "macro_positioning": "STALE"
    },
    "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
    "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
@@ -96,16 +96,12 @@
    "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
   },
   "ANALYTICAL_VALIDITY": {
-   "status": "PASSING",
+   "status": "UNMEASURED",
    "value": null,
    "unit": "status",
-   "evidence": {
-    "run_id": 42056510717,
-    "conclusion": "success",
-    "at": "2026-11-05T15:35:25Z"
-   },
-   "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
-   "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
+   "evidence": {},
+   "method": "no completed CI run on main read",
+   "note_ar": "تعذر قراءة نتيجة اختبارات الحساب."
   },
   "SIGNAL_PERFORMANCE": {
    "status": "NO_PROVEN_EDGE",
@@ -278,7 +274,7 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "checked_at": "2026-11-07T19:44:04.066838+00:00",
+    "checked_at": "2026-11-08T15:56:26.105550+00:00",
     "status": "BLOCKED_MISSING_BOT_TOKEN",
     "sent": 0,
     "edited": 0,
@@ -321,7 +317,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-07T19:44:01.173476+00:00",
+   "generated_at": "2026-11-08T15:56:23.220962+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -337,8 +333,8 @@
     "yahoo"
    ],
    "rows": null,
-   "generated_at": "2026-11-07T19:43:26.848668+00:00",
-   "last_run_at": "2026-11-07T19:42:48Z"
+   "generated_at": "2026-11-08T15:56:06.886607+00:00",
+   "last_run_at": "2026-11-08T15:55:20Z"
   },
   "classical": {
    "label_ar": "الاتجاه الكلاسيكي",
@@ -354,7 +350,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-07T19:42:32Z"
+   "last_run_at": "2026-11-08T15:55:03Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -395,8 +391,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-07T15:55:02.334219+00:00",
-   "last_run_at": "2026-11-07T15:54:35Z"
+   "generated_at": "2026-11-08T15:55:43.833596+00:00",
+   "last_run_at": "2026-11-08T15:55:17Z"
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
