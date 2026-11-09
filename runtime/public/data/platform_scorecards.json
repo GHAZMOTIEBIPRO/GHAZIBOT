@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-09T22:23:25.453729+00:00",
+ "generated_at": "2026-11-09T22:59:55.400838+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,15 +8,15 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 28
+     "success": 30
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 28
+     "success": 29
     },
     "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
-     "success": 28
+     "success": 29
     },
     "index-radar.yml": {
      "success": 5
@@ -24,23 +24,25 @@
     "stock-watch-charts.yml": {
      "success": 5
     },
-    "public-macro.yml": {},
+    "public-macro.yml": {
+     "success": 1
+    },
     "site-evidence-strength.yml": {
      "success": 18,
      "failure": 1
     },
     "free-gex-validation.yml": {
-     "success": 28
+     "success": 29
     },
     "market-orchestrator.yml": {
-     "cancelled": 3,
-     "success": 18
+     "success": 19,
+     "cancelled": 3
     },
     "catalyst-watchlist.yml": {
-     "success": 2
+     "success": 3
     },
     "daily-plan.yml": {
-     "success": 1
+     "success": 2
     },
     "fda-events.yml": {},
     "official-sec-pulse.yml": {
@@ -52,7 +54,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 10.0,
+   "value": 20.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -64,7 +66,7 @@
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
-    "macro_positioning": "STALE"
+    "macro_positioning": "AVAILABLE"
    },
    "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
    "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
@@ -282,7 +284,7 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "checked_at": "2026-11-09T22:19:30.584874+00:00",
+    "checked_at": "2026-11-09T22:53:15.994434+00:00",
     "status": "BLOCKED_MISSING_BOT_TOKEN",
     "sent": 0,
     "edited": 0,
@@ -325,7 +327,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-09T22:19:26.938321+00:00",
+   "generated_at": "2026-11-09T22:53:13.267839+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -358,7 +360,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-09T22:18:00Z"
+   "last_run_at": "2026-11-09T22:40:51Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -371,8 +373,8 @@
    "alerts": "DELIVERED 2026-11-05T13:16:52.234296+00:00",
    "closed_gates": [],
    "rows": 40,
-   "generated_at": "2026-11-09T18:46:02.234755+00:00",
-   "last_run_at": "2026-11-09T18:43:09Z"
+   "generated_at": "2026-11-09T22:26:12.454289+00:00",
+   "last_run_at": "2026-11-09T22:22:58Z"
   },
   "fda": {
    "label_ar": "أحداث FDA",
@@ -404,17 +406,17 @@
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
-   "verdict_ar": "البيانات قديمة",
-   "run": "NO_RUN_24H",
+   "verdict_ar": "يعمل",
+   "run": "OK",
    "source": "AVAILABLE",
-   "data": "STALE",
-   "data_state": "STALE",
-   "analysis": "NOT_COMPUTED",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-07T02:23:40.016453+00:00",
-   "last_run_at": null
+   "generated_at": "2026-11-09T22:43:15.173026+00:00",
+   "last_run_at": "2026-11-09T22:42:49Z"
   },
   "daily_plan": {
    "label_ar": "خطة اليوم",
@@ -427,8 +429,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-09T21:38:43.316147+00:00",
-   "last_run_at": "2026-11-09T21:38:08Z"
+   "generated_at": "2026-11-09T22:44:41.939004+00:00",
+   "last_run_at": "2026-11-09T22:43:56Z"
   }
  },
  "original_evidence_score": {
