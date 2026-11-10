@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-09T23:07:23.726474+00:00",
+ "generated_at": "2026-11-10T03:39:51.465352+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
@@ -14,58 +14,21 @@
  },
  "counts": {
   "after_noise_filter": 227,
-  "linked": 27,
-  "company_unlinked": 81,
+  "linked": 26,
+  "company_unlinked": 82,
   "general": 119,
   "by_kind": {
-   "FR_PRIORITY_REVIEW_VOUCHER": 3,
    "FR_AIRWORTHINESS_DIRECTIVE": 29,
    "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 20,
    "FR_SPECIAL_CONDITIONS": 1,
    "FR_FTC_CONSENT_ORDER": 1,
    "FR_ENERGY_REGULATORY_FILING": 47,
+   "FR_PRIORITY_REVIEW_VOUCHER": 3,
    "FR_NUCLEAR_LICENSE_ACTION": 7
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
  "linked": [
-  {
-   "document_number": "2026-21910",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [
-    "Incyte Corporation"
-   ],
-   "links": [
-    {
-     "name": "Incyte Corporation",
-     "ticker": "INCY",
-     "legal_entity": "Incyte Corp",
-     "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
-     "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)",
-     "listed_company": null,
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "MEDIUM",
-     "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
-    }
-   ],
-   "unmatched": []
-  },
   {
    "document_number": "2026-22817",
    "date": "2026-11-09",
@@ -1056,6 +1019,28 @@
    "unmatched": []
   },
   {
+   "document_number": "2026-21910",
+   "date": "2026-10-28",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "decision",
+   "companies": [],
+   "links": [],
+   "unmatched": []
+  },
+  {
    "document_number": "2026-21718",
    "date": "2026-10-26",
    "agency": "FDA",
@@ -1073,16 +1058,9 @@
    "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
    "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
-   "companies": [
-    "Scholar Rock, Inc."
-   ],
+   "companies": [],
    "links": [],
-   "unmatched": [
-    {
-     "name": "Scholar Rock, Inc.",
-     "reason": "OWNERSHIP_NOT_VERIFIED"
-    }
-   ]
+   "unmatched": []
   },
   {
    "document_number": "2026-22785",
@@ -1092,7 +1070,7 @@
    "title": "Airworthiness Directives; Lycoming Engines",
    "source_url": "https://www.federalregister.gov/documents/2026/11/09/2026-22785/airworthiness-directives-lycoming-engines",
    "effective_on": "2026-11-24",
-   "comments_close_on": null,
+   "comments_close_on": "2026-12-24",
    "status": "COMPANY_UNLINKED",
    "kind": "FR_AIRWORTHINESS_DIRECTIVE",
    "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
