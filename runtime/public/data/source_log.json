@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-10T08:26:10.611477+00:00",
+ "generated_at": "2026-11-10T12:09:25.518496+00:00",
  "window_days": 14,
- "window_start": "2026-10-27T08:26:10.611477+00:00",
+ "window_start": "2026-10-27T12:09:25.518496+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -68,10 +68,10 @@
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-10T03:46:36.179197+00:00",
+   "last_run_at": "2026-11-10T12:03:21.194655+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "ACCOUNT_ENTITLEMENT_NOT_ASSERTED",
-   "last_commit": "90e695253e"
+   "last_commit": "29af8fbe54"
   },
   {
    "key": "cboe_delayed",
@@ -100,10 +100,10 @@
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-09T22:42:02.223263+00:00",
+   "last_run_at": "2026-11-10T12:03:30.664270+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "fad3e9b0f1"
+   "last_commit": "503eeb2c25"
   },
   {
    "key": "sec_edgar",
@@ -132,10 +132,10 @@
    "fully_ok": 0,
    "success_ratio": 0.0,
    "last_success_at": null,
-   "last_run_at": "2026-11-09T22:22:50.456193+00:00",
+   "last_run_at": "2026-11-10T12:03:21.335980+00:00",
    "last_outcome": "FAILED",
    "last_detail": "UNAVAILABLE",
-   "last_commit": "24de67ca60"
+   "last_commit": "202bbd348f"
   },
   {
    "key": "company_ir_feeds",
@@ -414,11 +414,11 @@
     ]
    },
    "rights_key": null,
-   "runs_seen": 66,
-   "attempted": 66,
-   "succeeded": 55,
+   "runs_seen": 65,
+   "attempted": 65,
+   "succeeded": 54,
    "fully_ok": 0,
-   "success_ratio": 0.833,
+   "success_ratio": 0.831,
    "last_success_at": "2026-11-10T03:39:46.528893+00:00",
    "last_run_at": "2026-11-10T03:39:46.528893+00:00",
    "last_outcome": "PARTIAL",
