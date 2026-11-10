@@ -1,34 +1,71 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-10T03:39:51.465352+00:00",
+ "generated_at": "2026-11-10T13:29:11.307325+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 47,
-  "FAA": 96,
+  "FDA": 50,
+  "FAA": 104,
   "FTC": 8,
-  "FERC": 121,
-  "NRC": 32,
+  "FERC": 125,
+  "NRC": 36,
   "NHTSA": 11
  },
  "counts": {
-  "after_noise_filter": 227,
-  "linked": 26,
-  "company_unlinked": 82,
-  "general": 119,
+  "after_noise_filter": 242,
+  "linked": 27,
+  "company_unlinked": 89,
+  "general": 126,
   "by_kind": {
-   "FR_AIRWORTHINESS_DIRECTIVE": 29,
-   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 20,
-   "FR_SPECIAL_CONDITIONS": 1,
-   "FR_FTC_CONSENT_ORDER": 1,
-   "FR_ENERGY_REGULATORY_FILING": 47,
    "FR_PRIORITY_REVIEW_VOUCHER": 3,
-   "FR_NUCLEAR_LICENSE_ACTION": 7
+   "FR_AIRWORTHINESS_DIRECTIVE": 31,
+   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 23,
+   "FR_SPECIAL_CONDITIONS": 2,
+   "FR_FTC_CONSENT_ORDER": 1,
+   "FR_ENERGY_REGULATORY_FILING": 48,
+   "FR_NUCLEAR_LICENSE_ACTION": 8
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
  "linked": [
+  {
+   "document_number": "2026-21910",
+   "date": "2026-10-28",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
+   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
+   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
+   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "decision",
+   "companies": [
+    "Incyte Corporation"
+   ],
+   "links": [
+    {
+     "name": "Incyte Corporation",
+     "ticker": "INCY",
+     "legal_entity": "Incyte Corp",
+     "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
+     "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)",
+     "listed_company": null,
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
+    }
+   ],
+   "unmatched": []
+  },
   {
    "document_number": "2026-22817",
    "date": "2026-11-09",
@@ -1019,28 +1056,6 @@
    "unmatched": []
   },
   {
-   "document_number": "2026-21910",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [],
-   "links": [],
-   "unmatched": []
-  },
-  {
    "document_number": "2026-21718",
    "date": "2026-10-26",
    "agency": "FDA",
@@ -1058,9 +1073,190 @@
    "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
    "potential_impact_ar": "يحتاج تقييم الأثر",
    "group": "decision",
-   "companies": [],
+   "companies": [
+    "Scholar Rock, Inc."
+   ],
    "links": [],
-   "unmatched": []
+   "unmatched": [
+    {
+     "name": "Scholar Rock, Inc.",
+     "reason": "OWNERSHIP_NOT_VERIFIED"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22951",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Special Conditions: Gulfstream Aerospace Corporation, Model GVII-G400 Airplane; Flight Envelope Protection: Takeoff Stall Protection",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22951/special-conditions-gulfstream-aerospace-corporation-model-gvii-g400-airplane-flight-envelope",
+   "effective_on": "2026-11-10",
+   "comments_close_on": "2026-12-28",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_SPECIAL_CONDITIONS",
+   "label_ar": "شروط خاصة لاعتماد طراز طائرة (FAA)",
+   "document_type": "FR_SPECIAL_CONDITIONS",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Gulfstream Aerospace Corporation"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Gulfstream Aerospace Corporation",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22928",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Leonardo S.p.a. Helicopters",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22928/airworthiness-directives-leonardo-spa-helicopters",
+   "effective_on": null,
+   "comments_close_on": "2026-12-28",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Leonardo S.p.a."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Leonardo S.p.a.",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22919",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Airbus Canada Limited Partnership (Type Certificate Previously Held by C Series Aircraft Limited Partnership (CSALP); Bombardier, Inc.) Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22919/airworthiness-directives-airbus-canada-limited-partnership-type-certificate-previously-held-by-c",
+   "effective_on": null,
+   "comments_close_on": "2026-12-28",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Airbus Canada Limited Partnership"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus Canada Limited Partnership",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22907",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; Airbus SAS Airplanes; Correction",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22907/airworthiness-directives-airbus-sas-airplanes-correction",
+   "effective_on": "2026-11-23",
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "Airbus SAS"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus SAS",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22899",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Bombardier, Inc., Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22899/airworthiness-directives-bombardier-inc-airplanes",
+   "effective_on": null,
+   "comments_close_on": "2026-12-28",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Bombardier, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Bombardier, Inc.",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22897",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; Airbus SAS Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22897/airworthiness-directives-airbus-sas-airplanes",
+   "effective_on": "2026-12-15",
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "Airbus SAS"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus SAS",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
   },
   {
    "document_number": "2026-22785",
@@ -1987,6 +2183,35 @@
     {
      "name": "Rolls-Royce Deutschland Ltd & Co KG",
      "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-22878",
+   "date": "2026-11-10",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "ConocoPhillips Company; Notice of Institution of Section 206 Proceeding and Refund Effective Date",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22878/conocophillips-company-notice-of-institution-of-section-206-proceeding-and-refund-effective-date",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "ConocoPhillips Company"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "ConocoPhillips Company",
+     "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
   },
@@ -3181,6 +3406,35 @@
    ]
   },
   {
+   "document_number": "2026-22884",
+   "date": "2026-11-10",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "SMR, LLC; Palisades SMR, LLC; Pioneer Units 1 and 2; Receipt of Construction Permit Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22884/smr-llc-palisades-smr-llc-pioneer-units-1-and-2-receipt-of-construction-permit-application",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "SMR, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "SMR, LLC",
+     "reason": "PRIVATE"
+    }
+   ]
+  },
+  {
    "document_number": "2026-22711",
    "date": "2026-11-06",
    "agency": "NRC",
@@ -3385,6 +3639,39 @@
   }
  ],
  "general": [
+  {
+   "document_number": "2026-22883",
+   "date": "2026-11-10",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Validation of Certain In Vitro Diagnostic Devices for Emerging Pathogens During a Section 564 Declared Emergency; Guidance for Industry and Food and Drug Administration Staff; Availability",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22883/validation-of-certain-in-vitro-diagnostic-devices-for-emerging-pathogens-during-a-section-564",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22866",
+   "date": "2026-11-10",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Color Additive Petition From the International Association of Color Manufacturers; Request To Amend the Color Additive Regulations To Remove the Solvents Methylene Chloride, Trichloroethylene, and Ethylene Dichloride",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22866/color-additive-petition-from-the-international-association-of-color-manufacturers-request-to-amend",
+   "effective_on": "2027-01-11",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22865",
+   "date": "2026-11-10",
+   "agency": "FDA",
+   "type": "Rule",
+   "title": "Color Additive Petition From Environmental Defense Fund et al.; Request To Amend the Color Additive Regulations To Remove the Solvents Ethylene Dichloride, Methylene Chloride, and Trichloroethylene",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22865/color-additive-petition-from-environmental-defense-fund-et-al-request-to-amend-the-color-additive",
+   "effective_on": "2027-01-11",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
   {
    "document_number": "2026-22663",
    "date": "2026-11-06",
@@ -3733,6 +4020,28 @@
    "type": "Notice",
    "title": "Postapproval Manufacturing Changes to Biosimilar and Interchangeable Biosimilar Products: Questions and Answers; Guidance for Industry; Availability",
    "source_url": "https://www.federalregister.gov/documents/2026/10/13/2026-20817/postapproval-manufacturing-changes-to-biosimilar-and-interchangeable-biosimilar-products-questions",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22953",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Inspection Programs for Single-Engine Turbine-Powered Airplanes and Unmanned Aircraft; and Miscellaneous Maintenance-Related Updates",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22953/inspection-programs-for-single-engine-turbine-powered-airplanes-and-unmanned-aircraft-and",
+   "effective_on": "2027-01-11",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22898",
+   "date": "2026-11-10",
+   "agency": "FAA",
+   "type": "Notice",
+   "title": "Notice of Intent To Prepare a Programmatic Environmental Impact Statement (PEIS), Open Public Scoping Period, and Hold Public Scoping Meetings on the Proposed SpaceX Starship-Super Heavy Launch and Landing Operations at the Boca Chica Launch Site at Starbase, Texas and Expansion of Starship Landing ",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22898/notice-of-intent-to-prepare-a-programmatic-environmental-impact-statement-peis-open-public-scoping",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
@@ -4090,6 +4399,17 @@
    "status": "GENERAL"
   },
   {
+   "document_number": "2026-22880",
+   "date": "2026-11-10",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Notice of Effectiveness of Exempt Wholesale Generator Status",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22880/notice-of-effectiveness-of-exempt-wholesale-generator-status",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-22762",
    "date": "2026-11-09",
    "agency": "FERC",
@@ -4195,72 +4515,6 @@
    "type": "Notice",
    "title": "Public Utility District No. 1 of Chelan County, Washington; Notice of Applications for Approval of Contracts for the Sale of Power Under Section 22 of the Federal Power Act",
    "source_url": "https://www.federalregister.gov/documents/2026/11/03/2026-22414/public-utility-district-no-1-of-chelan-county-washington-notice-of-applications-for-approval-of",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22198",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "City of Pelican, AK; Notice of Authorization for Continued Project Operation",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22198/city-of-pelican-ak-notice-of-authorization-for-continued-project-operation",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22140",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Southeastern Power Administration; Notice of Filing",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22140/southeastern-power-administration-notice-of-filing",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22134",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Grand River Dam Authority; Notice of Revised Procedural Schedule",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22134/grand-river-dam-authority-notice-of-revised-procedural-schedule",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21874",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21874/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21869",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21869/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21866",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P. Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21866/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
