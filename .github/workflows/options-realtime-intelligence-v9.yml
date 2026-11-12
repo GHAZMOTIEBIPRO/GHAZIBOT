@@ -84,6 +84,11 @@ jobs:
             echo "Intrinio key present. V9 will request realtime OPRA and fail closed if entitlement is unavailable."
           fi
 
+      - name: Resolve the broadcast destination as the notifiers do
+        uses: ./.github/actions/resolve-telegram-broadcast
+        with:
+          app-path: .
+
       - name: Run realtime parent-order + thesis engine
         if: env.INTRINIO_API_KEY != ''
         shell: bash

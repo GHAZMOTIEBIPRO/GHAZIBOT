@@ -132,8 +132,13 @@ jobs:
           print('V10.1 dry-run execution gates passed.')
           PY
 
+      - name: Resolve the broadcast destination as the notifiers do
+        uses: ./.github/actions/resolve-telegram-broadcast
+        with:
+          app-path: .
+
       - name: Run unified chart + catalyst + contract thesis
-        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        if: env.TELEGRAM_READY == 'true'
         shell: bash
         run: |
           if [[ -s data/live/fast_explosion_scan.json ]]; then
@@ -234,8 +239,13 @@ jobs:
             fi
           done
 
+      - name: Resolve the broadcast destination as the notifiers do
+        uses: ./.github/actions/resolve-telegram-broadcast
+        with:
+          app-path: .
+
       - name: Run options repeat-flow intelligence
-        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        if: env.TELEGRAM_READY == 'true'
         shell: bash
         run: |
           if [[ -s public/data/options_latest.json ]]; then
