@@ -40,4 +40,34 @@ def test_a_sender_that_resends_would_fail_the_dedupe_check(monkeypatch):
 
     monkeypatch.setattr(bot, "run", leaky)
     fresh = {"schema": bot.SCHEMA, "seen": {}, "updated_at": NOW.isoformat()}
-    assert acc.check(report, fresh, None, NOW)["checks"]["second_run_sends_nothing_new"] is False
+    assert acc.check(report, fresh, None, NOW)["checks"]["repeat_runs_send_each_event_once"] is False
+
+
+def test_backlog_larger_than_the_per_run_cap_drains_once_and_passes():
+    # Regression: 5+ unsent events with the sender's cap of 3 per run. The second run
+    # legitimately sends the backlog; the check must accept that and still require
+    # every event exactly once and a quiet run after the backlog is gone.
+    report = _report()
+    fresh = {"schema": bot.SCHEMA, "seen": {}, "updated_at": NOW.isoformat()}
+    eligible = len(bot.candidates(report, now=NOW))
+    assert eligible > 3, "fixture must exceed the per-run cap"
+    result = acc.check(report, fresh, None, NOW)
+    assert result["checks"]["repeat_runs_send_each_event_once"] is True, result
+    assert result["first_run"]["sent"] == 3 and result["first_run"]["pending"] == eligible - 3
+    assert result["drain"]["total_sent"] == eligible and result["drain"]["final_run_sent"] == 0
+    assert result["passed"], result["checks"]
+
+
+def test_a_sender_that_sends_the_same_event_twice_fails(monkeypatch):
+    report = _report()
+    real_run = bot.run
+
+    def double(report, state, *, send, **kw):        # sends every message twice
+        def twice(text):
+            send(text)
+            return send(text)
+        return real_run(report, state, send=twice, **kw)
+
+    monkeypatch.setattr(bot, "run", double)
+    fresh = {"schema": bot.SCHEMA, "seen": {}, "updated_at": NOW.isoformat()}
+    assert acc.check(report, fresh, None, NOW)["checks"]["repeat_runs_send_each_event_once"] is False
