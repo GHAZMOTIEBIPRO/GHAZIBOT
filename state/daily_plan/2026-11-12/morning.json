@@ -1,0 +1,217 @@
+{
+ "schema": "ghazi.daily_plan_sheet.v1",
+ "generated_at": "2026-11-12T19:10:20.995021+00:00",
+ "title_ar": "موجز الجلسة والمحركات",
+ "readiness": {
+  "session_and_catalysts": "AVAILABLE",
+  "multi_timeframe": {
+   "public": "UNAVAILABLE",
+   "private_owner": "FULL",
+   "frames_private": [
+    "15m",
+    "1h",
+    "4h",
+    "5m",
+    "daily",
+    "weekly"
+   ]
+  },
+  "price_levels": {
+   "public": "NOT_COMPUTED",
+   "private_owner": "COMPUTED"
+  }
+ },
+ "analysis_funnel": {
+  "known_symbols": {
+   "count": 5941,
+   "nasdaq_listed": 5597,
+   "sp500_directory": 503,
+   "basis": "NasdaqTrader Nasdaq Listed file and the S&P 500 directory (no prices)"
+  },
+  "with_official_news": {
+   "count": 54,
+   "basis": "catalyst_watchlist.json events (30 days)"
+  },
+  "bars_fetched": {
+   "count": 12,
+   "attempted": 12,
+   "status": "OWNER_AUTHORIZED_INTERNAL_USE",
+   "basis": "completed daily bars from the owner-private Alpaca path"
+  },
+  "analysed": {
+   "count": 12,
+   "basis": "frames, levels and conditional scenarios computed"
+  },
+  "qualified": {
+   "count": null,
+   "status": "NOT_EVALUATED_IN_THIS_PATH",
+   "basis": "setup conditions are evaluated by the private market scan, not the daily plan"
+  }
+ },
+ "session": {
+  "today_is_session": true,
+  "today": {
+   "date": "2026-11-12",
+   "open_new_york": "09:30",
+   "close_new_york": "16:00",
+   "open_riyadh": "17:30",
+   "close_riyadh": "00:00",
+   "early_close": false,
+   "utc_offset_new_york": "-0500"
+  },
+  "next_session": {
+   "date": "2026-11-13",
+   "open_new_york": "09:30",
+   "close_new_york": "16:00",
+   "open_riyadh": "17:30",
+   "close_riyadh": "00:00",
+   "early_close": false,
+   "utc_offset_new_york": "-0500"
+  },
+  "last_closed_session": "2026-11-11",
+  "last_closed_week_end": "2026-11-06",
+  "calendar": "exchange_calendars XNYS",
+  "timezone": "America/New_York"
+ },
+ "frames": {
+  "weekly": {
+   "public": "UNAVAILABLE",
+   "private_owner": "AVAILABLE",
+   "reason": "Alpaca IEX bars: owner's internal use only, not redistributed"
+  },
+  "daily": {
+   "public": "UNAVAILABLE",
+   "private_owner": "AVAILABLE",
+   "reason": "Alpaca IEX bars: owner's internal use only, not redistributed"
+  },
+  "4h": {
+   "public": "UNAVAILABLE",
+   "private_owner": "AVAILABLE",
+   "reason": "Alpaca IEX bars: owner's internal use only, not redistributed"
+  },
+  "1h": {
+   "public": "UNAVAILABLE",
+   "private_owner": "AVAILABLE",
+   "reason": "Alpaca IEX bars: owner's internal use only, not redistributed"
+  },
+  "15m": {
+   "public": "UNAVAILABLE",
+   "private_owner": "AVAILABLE",
+   "reason": "Alpaca IEX bars: owner's internal use only, not redistributed"
+  },
+  "5m": {
+   "public": "UNAVAILABLE",
+   "private_owner": "AVAILABLE",
+   "reason": "Alpaca IEX bars: owner's internal use only, not redistributed"
+  }
+ },
+ "catalysts": [
+  {
+   "symbol": "BA",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "date": "2026-11-09",
+   "source": "Federal Register",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/09/2026-22817/airworthiness-directives-the-boeing-company-airplanes",
+   "score": 50.3,
+   "risk_flags": [
+    "توجيه صلاحية طيران إلزامي (FAA)"
+   ],
+   "size": "MARKET_CAP_UNVERIFIED"
+  },
+  {
+   "symbol": "PFE",
+   "kind": "TRIAL_RESULTS_POSTED",
+   "date": "2026-11-12",
+   "source": "ClinicalTrials.gov",
+   "source_url": "https://clinicaltrials.gov/study/NCT05689164",
+   "score": 47.5,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
+  },
+  {
+   "symbol": "LLY",
+   "kind": "TRIAL_RESULTS_POSTED",
+   "date": "2026-11-12",
+   "source": "ClinicalTrials.gov",
+   "source_url": "https://clinicaltrials.gov/study/NCT05433584",
+   "score": 46.8,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
+  },
+  {
+   "symbol": "NVS",
+   "kind": "TRIAL_STATUS_REVIEW",
+   "date": "2026-11-12",
+   "source": "ClinicalTrials.gov",
+   "source_url": "https://clinicaltrials.gov/study/NCT05268289",
+   "score": 35.7,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
+  },
+  {
+   "symbol": "AMD",
+   "kind": "IR_OTHER",
+   "date": "2026-11-10",
+   "source": "Company IR",
+   "source_url": "https://ir.amd.com/news-events/press-releases/detail/1305/amd-showcases-6th-gen-amd-epyc-processors-to-lead-next-era-of-ai-and-enterprise-computing",
+   "score": 33.2,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
+  },
+  {
+   "symbol": "NVDA",
+   "kind": "IR_FILING_8K",
+   "date": "2026-11-12",
+   "source": "Company IR",
+   "source_url": "https://investor.nvidia.com/financial-info/sec-filings/sec-filings-details/default.aspx?FilingId=19923299",
+   "score": 27.6,
+   "risk_flags": [],
+   "size": "KNOWN_LARGE_ISSUER_LIST"
+  }
+ ],
+ "macro": {
+  "curve_date": "2026-11-10",
+  "spreads_bp": {
+   "10Y_2Y": 25.0,
+   "10Y_3M": 68.0
+  },
+  "yields_pct": {
+   "3M": 4.3,
+   "2Y": 4.73,
+   "5Y": 4.81,
+   "10Y": 4.98,
+   "30Y": 5.35
+  },
+  "regime_series_with_breaks": 1,
+  "regime_series": 12
+ },
+ "private_mode": {
+  "enabled": true,
+  "reason": "OWNER_AUTHORIZED_INTERNAL_USE",
+  "symbols": [
+   "AAPL",
+   "AMD",
+   "AMZN",
+   "DIA",
+   "GOOGL",
+   "IWM",
+   "META",
+   "MSFT",
+   "NVDA",
+   "QQQ",
+   "SPY",
+   "TSLA"
+  ],
+  "published": false,
+  "delivery": "NOT_ATTEMPTED"
+ },
+ "public_price_plans": {},
+ "notes_ar": [
+  "الموجز العام بلا أسعار: لم نتحقق حتى الآن من مصدر مجاني مناسب لتغذية محركنا وإعادة توزيع مخرجاته ضمن الاستخدام المطلوب. الشارت الخارجي (TradingView) متاح في الأقسام لكنه لا يغذي تحليلنا.",
+  "الأوقات من تقويم بورصة نيويورك (XNYS) بتوقيت نيويورك والرياض، مع الإغلاق المبكر والعطل.",
+  "المحفزات رسمية وليست اتجاهًا؛ السيناريوهات السعرية تظهر فقط عند توفر شموع مسموحة."
+ ],
+ "research_only": true,
+ "decision_authority": false,
+ "execution_authority": false
+}
