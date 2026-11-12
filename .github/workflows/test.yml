@@ -47,6 +47,13 @@ jobs:
       - name: Unit and integration tests
         run: pytest -q
 
+      - name: Platform alpha (feature-flagged) static checks
+        run: |
+          ruff check ghazi_platform tests/test_ghazi_platform.py
+          python -m compileall -q ghazi_platform
+          node --check platform_ui/app.js
+          node --check scripts/platform_ui_smoke.cjs
+
       - name: Independent radar CLI import smoke
         run: |
           python -m scripts.run_stock_radar_independent --help >/dev/null
