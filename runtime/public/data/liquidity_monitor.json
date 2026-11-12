@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.liquidity_monitor.v1",
- "generated_at": "2026-11-12T04:04:41+00:00",
+ "generated_at": "2026-11-12T21:50:49+00:00",
  "fetch": {
-  "claims": "NOT_MODIFIED_HTTP_304",
+  "claims": "OK_HTTP_200",
   "nyfed_sofr": "OK_HTTP_200",
   "nyfed_effr": "OK_HTTP_200",
   "ofr_tri_party_rate": "OK_HTTP_200",
@@ -33,9 +33,15 @@
   "continued_reflect_week": "2026-10-24",
   "continued_weeks_claimed_year_ago": 1705532,
   "continued_yoy_pct": -12.7,
-  "incomplete_weeks": [],
+  "incomplete_weeks": [
+   {
+    "week_ending": "2026-11-07",
+    "states": 3,
+    "expected": 53
+   }
+  ],
   "rejected_rows": 0,
-  "source_last_modified": "Wed, 11 Nov 2026 20:51:01 GMT",
+  "source_last_modified": "Thu, 12 Nov 2026 20:50:58 GMT",
   "history": [
    [
     "2024-11-09",
@@ -458,8 +464,7 @@
    "initial_claims": "ETA 539 c3 (IC), state UI, summed over jurisdictions",
    "continued_weeks_claimed": "ETA 539 c8 (CW), for the reflected week c2"
   },
-  "checked_at": "2026-11-12T04:04:41+00:00",
-  "not_modified_since": "Wed, 11 Nov 2026 20:51:01 GMT"
+  "checked_at": "2026-11-12T21:50:49+00:00"
  },
  "funding_rates": {
   "publisher": "Federal Reserve Bank of New York",
@@ -468,39 +473,35 @@
   "attribution": "Source: Federal Reserve Bank of New York.",
   "available": true,
   "stale": false,
-  "age_days": 3,
+  "age_days": 2,
   "sofr": {
-   "date": "2026-11-09",
-   "rate": 3.88,
-   "p1": 3.84,
-   "p99": 3.96,
-   "volume_bn": 3100,
+   "date": "2026-11-10",
+   "rate": 3.89,
+   "p1": 3.83,
+   "p99": 3.97,
+   "volume_bn": 3159,
    "target_from": null,
    "target_to": null,
    "revised": false
   },
   "effr": {
-   "date": "2026-11-09",
+   "date": "2026-11-10",
    "rate": 3.88,
    "p1": 3.85,
    "p99": 3.9,
-   "volume_bn": 95,
+   "volume_bn": 98,
    "target_from": 3.75,
    "target_to": 4.0,
    "revised": false
   },
-  "sofr_minus_effr_bp": 0.0,
+  "sofr_minus_effr_bp": 1.0,
   "target_range": [
    3.75,
    4.0
   ],
-  "sofr_minus_target_top_bp": -12.0,
-  "sofr_p99_minus_target_top_bp": -4.0,
+  "sofr_minus_target_top_bp": -11.0,
+  "sofr_p99_minus_target_top_bp": -3.0,
   "sofr_history": [
-   [
-    "2026-09-28",
-    3.9
-   ],
    [
     "2026-09-29",
     3.88
@@ -616,6 +617,10 @@
    [
     "2026-11-09",
     3.88
+   ],
+   [
+    "2026-11-10",
+    3.89
    ]
   ],
   "notice": {
@@ -624,7 +629,7 @@
    "dtcc": "The Secured Overnight Financing Rate (SOFR) Data and Broad General Collateral Rate (BGCR) Data are calculated using data provided under a license granted to the New York Fed by DTCC Solutions LLC (\"Solutions\"), an affiliate of The Depository Trust & Clearing Corporation. Solutions, its affiliates, and third parties from which they obtained data have no liability for the content of this material."
   },
   "publication_rule": "Published about 08:00 ET on the business day after the effective date; same-day revisions possible at about 14:30 ET.",
-  "checked_at": "2026-11-12T04:04:41+00:00"
+  "checked_at": "2026-11-12T21:50:49+00:00"
  },
  "repo": {
   "publisher": "Office of Financial Research (U.S. Treasury)",
@@ -635,34 +640,34 @@
   "tri_party_rate": {
    "available": true,
    "mnemonic": "REPO-TRI_AR_OO-P",
-   "date": "2026-11-06",
-   "value": 3.88,
+   "date": "2026-11-09",
+   "value": 3.87,
    "stale": false,
-   "age_days": 6,
+   "age_days": 3,
    "vintage": "Preliminary",
-   "source_last_update": "2026-11-10 15:17:51",
+   "source_last_update": "2026-11-12 16:39:23",
    "unit": "Percent",
    "month_ago": {
-    "date": "2026-10-07",
-    "value": 3.87
+    "date": "2026-10-09",
+    "value": 3.86
    },
    "change_bp": 1.0
   },
   "tri_party_volume": {
    "available": true,
    "mnemonic": "REPO-TRI_TV_OO-P",
-   "date": "2026-11-06",
-   "value": 1825542246224.89,
+   "date": "2026-11-09",
+   "value": 1822097199938.38,
    "stale": false,
-   "age_days": 6,
+   "age_days": 3,
    "vintage": "Preliminary",
-   "source_last_update": "2026-11-10 15:13:47",
+   "source_last_update": "2026-11-12 16:35:52",
    "unit": "USD",
    "month_ago": {
-    "date": "2026-10-07",
-    "value": 1746001129634.72
+    "date": "2026-10-09",
+    "value": 1771756283156.3
    },
-   "change_pct": 4.6
+   "change_pct": 2.8
   },
   "mmf_repo_holdings": {
    "available": true,
@@ -681,7 +686,7 @@
    "change_pct": 2.2
   },
   "note": "Tri-party rates are provided by the OFR for informational purposes only and are not intended to be referenced in contracts (OFR series notes).",
-  "checked_at": "2026-11-12T04:04:41+00:00"
+  "checked_at": "2026-11-12T21:50:49+00:00"
  },
  "available": true
 }
