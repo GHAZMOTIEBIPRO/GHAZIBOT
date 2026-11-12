@@ -84,3 +84,15 @@ jobs:
         run: >-
           python -m scripts.verify_free_market_sources
           --output "$RUNNER_TEMP/ghazi_free_source_health.json"
+      # Every Telegram sender skips (and its run stays green) when no destination resolves,
+      # and the failure watchdog cannot alert without the same token. Between 5 Nov 14:42 and
+      # 15:15 UTC both secrets disappeared and nothing was delivered for a week without a
+      # single red run. This last step makes that state a failed scheduled run, which GitHub
+      # e-mails to the owner. It runs after every diagnostic and prints no value.
+      - name: Fail loudly when Telegram delivery is not configured
+        if: always() && env.TELEGRAM_READY != 'true'
+        run: |
+          token_state=absent; [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]] && token_state=present
+          chat_state=absent; [[ -n "${TELEGRAM_CHAT_ID:-}" ]] && chat_state=present
+          echo "::error title=Telegram delivery is OFF::No Telegram destination resolved. TELEGRAM_BOT_TOKEN=${token_state}, TELEGRAM_CHAT_ID=${chat_state}. Every Telegram sender is skipping. Re-add the repository secrets (Settings > Secrets and variables > Actions)."
+          exit 1
