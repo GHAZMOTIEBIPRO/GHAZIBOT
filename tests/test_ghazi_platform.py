@@ -52,21 +52,47 @@ class Client:
             payload = out
         return captured["status"], payload, dict(captured["headers"])
 
-    def signup(self, email: str, password: str = PASSWORD):
+    def signup(self, email: str, password: str = PASSWORD, *, verify: bool = True):
         st, body, _ = self.call("POST", "/api/auth/register", {"email": email, "password": password, "consent": True})
         assert st == 201, body
+        if verify:
+            assert self.call("POST", "/api/auth/verify", {"token": body["dev_verification_token"]})[0] == 200
+        return self.login(email, password)
+
+    def login(self, email: str, password: str = PASSWORD):
         st, body, _ = self.call("POST", "/api/auth/login", {"email": email, "password": password})
         assert st == 200, body
         self.csrf = body["csrf_token"]
         return body
 
 
+WEBHOOK_SECRET = "whsec_test_secret_0123456789"
+
+
+def make_config(tmp_path, **overrides) -> Config:
+    values = {"enabled": True, "environment": "development", "db_path": str(tmp_path / "p.sqlite3"),
+                  "secure_cookies": True, "dev_mode": True, "billing_mode": "sandbox",
+                  "billing_webhook_secret": WEBHOOK_SECRET,
+                  # generous unauthenticated limits so functional tests do not trip them;
+                  # the rate-limit tests use the production defaults
+                  "register_per_ip": (1000, 3600), "token_attempts_per_ip": (1000, 900)}
+    values.update(overrides)
+    return Config(**values)
+
+
 @pytest.fixture
 def app(tmp_path):
-    cfg = Config(enabled=True, db_path=str(tmp_path / "p.sqlite3"), secure_cookies=True, dev_mode=True,
-                 billing_mode="sandbox", billing_webhook_secret="whsec_test",
-                 admin_emails=frozenset({"owner@example.com"}))
-    return App(cfg)
+    return App(make_config(tmp_path))
+
+
+def make_owner(app: App, client: Client, email: str = "owner@example.com") -> Client:
+    """Sign up, verify, grant the owner role server-side, sign in again."""
+    from ghazi_platform.accounts import grant_owner
+    client.signup(email)
+    grant_owner(app.db, email=email, via="test")
+    client.cookie, client.csrf = "", None     # the grant signed the account out everywhere
+    client.login(email)
+    return client
 
 
 def daily_csv(n: int = 260, start: float = 100.0, seed_step: float = 0.37) -> str:
@@ -117,6 +143,7 @@ def test_session_cookie_flags_and_token_not_stored(app):
     st, body, headers = c.call("POST", "/api/auth/login", {"email": "a@example.com", "password": PASSWORD})
     cookie = headers["Set-Cookie"]
     assert st == 200 and "HttpOnly" in cookie and "SameSite=Lax" in cookie and "Secure" in cookie
+    assert cookie.startswith("__Host-ghazi_session=") and "Domain" not in cookie and "Path=/" in cookie
     token = c.cookie.split("=", 1)[1]
     stored = json.dumps([dict(r) for r in app.db.query("SELECT * FROM sessions")])
     assert token and token not in stored
@@ -241,8 +268,7 @@ def test_admin_surface_is_hidden_from_users_and_open_to_owner(app):
     user.signup("user@example.com")
     assert user.call("GET", "/api/admin/overview")[0] == 404
     assert user.call("POST", "/api/admin/grant", {"user_id": 1, "plan": "pro", "days": 30})[0] == 404
-    owner = Client(app)
-    owner.signup("owner@example.com")
+    owner = make_owner(app, Client(app))
     st, body, _ = owner.call("GET", "/api/admin/overview")
     assert st == 200 and any(u["email"] == "user@example.com" for u in body["users"])
     uid = next(u["id"] for u in body["users"] if u["email"] == "user@example.com")
@@ -488,7 +514,7 @@ def test_webhook_requires_signature_and_is_idempotent(app):
     body = _event(user_id=uid)
     hook = Client(app)
     assert hook.call("POST", "/api/billing/webhook", raw=body, headers={"X-Ghazi-Signature": "bad"})[0] == 401
-    sig = sign("whsec_test", body)
+    sig = sign(WEBHOOK_SECRET, body)
     st, out, _ = hook.call("POST", "/api/billing/webhook", raw=body, headers={"X-Ghazi-Signature": sig})
     assert st == 200 and out["outcome"] == "applied"
     st, out, _ = hook.call("POST", "/api/billing/webhook", raw=body, headers={"X-Ghazi-Signature": sig})
@@ -498,7 +524,7 @@ def test_webhook_requires_signature_and_is_idempotent(app):
     # payment failure -> grace keeps the plan; refund -> free
     for i, kind in enumerate(("payment.failed", "payment.refunded"), start=2):
         b = _event(id=f"evt_{i}", type=kind, user_id=uid)
-        hook.call("POST", "/api/billing/webhook", raw=b, headers={"X-Ghazi-Signature": sign("whsec_test", b)})
+        hook.call("POST", "/api/billing/webhook", raw=b, headers={"X-Ghazi-Signature": sign(WEBHOOK_SECRET, b)})
         expected = "pro" if kind == "payment.failed" else "free"
         assert c.call("GET", "/api/me")[1]["user"]["plan"]["code"] == expected
 
@@ -506,7 +532,7 @@ def test_webhook_requires_signature_and_is_idempotent(app):
 def test_webhook_rejects_stale_events_and_is_off_when_billing_disabled(app, tmp_path):
     old = _event(id="evt_old", created_at=(datetime.now(timezone.utc) - timedelta(hours=1)).isoformat())
     st, body, _ = Client(app).call("POST", "/api/billing/webhook", raw=old,
-                                   headers={"X-Ghazi-Signature": sign("whsec_test", old)})
+                                   headers={"X-Ghazi-Signature": sign(WEBHOOK_SECRET, old)})
     assert st == 400 and body["error"] == "stale_event"
     off = App(Config(enabled=True, db_path=str(tmp_path / "off.sqlite3"), billing_mode="disabled"))
     b = _event()

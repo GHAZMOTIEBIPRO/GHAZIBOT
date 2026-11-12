@@ -62,6 +62,23 @@ Off unless `GHAZI_PLATFORM_ENABLED=1` (every route answers 404 otherwise).
   time-based OOS split; cost multipliers ×0–×3.
 - **Security headers:** strict CSP (self only), no framing, nosniff, no-store.
 
+## 3b. Security review round 1 (owner review of PR #425)
+
+| # | Finding | Severity | Fix | Test (mutation-checked: re-introducing the bug fails it) |
+|---|---|---|---|---|
+| 1 | Admin role given at sign-up to any address listed in `GHAZI_PLATFORM_ADMIN_EMAILS`, before e-mail ownership was proven: whoever registered the owner's address first became admin | **Critical** | Setting removed. Sign-up always creates `user`. Admin only via `python -m ghazi_platform grant-owner` on the host, only for a verified account; the grant is recorded and signs the account out. Authority = role ∧ verified e-mail ∧ recorded grant | `test_public_registration_never_creates_an_admin`, `test_grant_owner_requires_existing_verified_account`, `test_admin_role_without_verified_email_or_grant_record_has_no_authority` |
+| 2 | Admin tab shown to every user (CSS `display` overrode `hidden`); API still answered 404 | Low (UI) | `[hidden]{display:none!important}` | Playwright: "admin tab hidden before the server-side grant" |
+| 3 | Plan limits checked outside the write transaction: concurrent requests could exceed watchlist / symbol / dataset / daily-backtest limits | Medium | `BEGIN IMMEDIATE` transactions; count + insert in one locked transaction; backtest slot reserved before the run | `test_concurrent_requests_cannot_exceed_plan_limits`, `test_concurrent_backtests_cannot_exceed_daily_quota` (separate app instances = separate processes) |
+| 4 | No rate limit on registration, reset requests or token guessing | Medium | Per-IP limits (register 5/h, reset 10/h, token attempts 20/15 min); per-address reset limit 3/h, silent (no enumeration) | `test_registration_is_rate_limited_per_ip`, `test_reset_requests_are_limited_without_revealing_accounts`, `test_token_guessing_is_rate_limited` |
+| 5 | Dev mode / insecure cookies could be switched on anywhere | Medium | `GHAZI_PLATFORM_ENV` defaults to `production`; the app refuses to start with either flag outside `development` | `test_dev_mode_and_insecure_cookies_refused_outside_development`, `test_production_never_returns_one_time_tokens` |
+| 6 | Unhandled exceptions went to wsgiref's default handler (full traceback, possibly request data) | Low | Last-resort handler: generic 500, log = exception type + method + path only | `test_unhandled_error_returns_generic_500_and_logs_no_secrets` |
+| 7 | Pre-registration of someone else's address | Low | Completing a password reset proves the mailbox: verifies the address, revokes all sessions; grants and paid plans need a verified address | `test_pre_registered_owner_address_is_recovered_by_reset_and_squatter_is_locked_out`, `test_admin_api_cannot_create_admins_or_grant_to_unverified` |
+| 8 | Hardening | — | `__Host-` cookie prefix; 24 h idle session expiry; `Sec-Fetch-Site: cross-site` and `Origin: null` refused; e-mail-keyed rate rows store a hash | `test_cross_site_fetch_metadata_and_null_origin_are_refused`, `test_idle_session_expires`, `test_login_failure_keys_do_not_store_email_addresses` |
+
+Known limits kept for Beta: behind a reverse proxy every client has the proxy's IP, so per-IP limits
+need a trusted `X-Forwarded-For` setting; a per-address login lock lets someone lock an account for
+15 minutes (accepted trade-off against password guessing).
+
 ## 4. Evidence
 
 - `tests/test_ghazi_platform.py`: 31 tests (two-user IDOR matrix over 9 endpoints, CSRF, cross-origin,

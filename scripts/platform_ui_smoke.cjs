@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 // End-to-end smoke for the platform alpha against a running local server.
 // Usage: GHAZI_PLATFORM_URL=http://127.0.0.1:8765 node scripts/platform_ui_smoke.cjs [screenshot_dir]
-// The server must run with GHAZI_PLATFORM_ENABLED=1 GHAZI_PLATFORM_DEV=1 GHAZI_PLATFORM_INSECURE_COOKIES=1
-// and GHAZI_PLATFORM_ADMIN_EMAILS=owner@example.test (dev mode auto-confirms e-mail in the UI).
+// The server must run on a FRESH database with GHAZI_PLATFORM_ENV=development GHAZI_PLATFORM_ENABLED=1
+// GHAZI_PLATFORM_DEV=1 GHAZI_PLATFORM_INSECURE_COOKIES=1 (dev mode auto-confirms e-mail in the UI), and
+// this script must see the same GHAZI_PLATFORM_DB / GHAZI_PLATFORM_ENV: it grants the owner role with
+// `python -m ghazi_platform grant-owner`, the only path to admin.
 'use strict';
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { chromium, devices } = require('playwright');
@@ -155,7 +158,23 @@ async function signup(page, email, name) {
     const owner = await desk.newPage();
     owner.on('pageerror', (e) => consoleErrors.push(String(e)));
     await signup(owner, 'owner@example.test', 'المالك');
-    check('admin tab visible for owner', await owner.locator('a[data-view=admin]').isVisible());
+    // Signing up (even with the owner's address, verified) gives no admin authority.
+    check('admin tab hidden before the server-side grant', !(await owner.locator('a[data-view=admin]').isVisible()));
+    const before = await owner.evaluate(async () => (await fetch('/api/admin/overview')).status);
+    check('admin API is 404 before the server-side grant', before === 404, `status ${before}`);
+    // The only way to the admin role: the command line on the host.
+    execFileSync('python3', ['-m', 'ghazi_platform', 'grant-owner', '--email', 'owner@example.test'],
+      { cwd: path.join(__dirname, '..'), env: process.env, stdio: 'pipe' });
+    await owner.goto(`${BASE}/#dashboard`);
+    await owner.reload();
+    check('grant signed the owner out', await owner.locator('#who a', { hasText: 'دخول' }).isVisible());
+    await owner.goto(`${BASE}/#login`);
+    const ownerLogin = owner.locator('form', { hasText: 'تسجيل الدخول' });
+    await ownerLogin.locator('input[name=email]').fill('owner@example.test');
+    await ownerLogin.locator('input[name=password]').fill(PASSWORD);
+    await ownerLogin.locator('button[type=submit]').click();
+    await owner.locator('#who', { hasText: 'خروج' }).waitFor();
+    check('admin tab visible for owner after the grant', await owner.locator('a[data-view=admin]').isVisible());
     await owner.goto(`${BASE}/#admin`);
     const grant = owner.locator('form', { hasText: 'منح خطة' });
     await grant.locator('select[name=user_id]').selectOption({ label: 'alice@example.test' });

@@ -26,7 +26,7 @@ RIGHTS_ATTESTATION_AR = ("أقر بأن هذه البيانات ملكي أو أ
 
 
 def plan_for(db: Database, user: SessionUser):
-    return effective_plan(subscription_of(db, user.id), user.role)
+    return effective_plan(subscription_of(db, user.id), user.effective_role)
 
 
 def clean_symbol(value: Any) -> str:
@@ -75,10 +75,11 @@ def create_watchlist(db: Database, user: SessionUser, name: Any, ip: str = "") -
     plan = plan_for(db, user)
     require_feature(plan, "watchlists")
     name_c = _clean_name(name)
-    count = db.one("SELECT COUNT(*) AS n FROM watchlists WHERE user_id=?", (user.id,))["n"]
-    require_below(count, plan.max_watchlists, "عدد قوائم المراقبة", "max_watchlists")
     now = iso(utcnow())
     with db.tx() as conn:
+        # count and insert under one write lock: concurrent requests cannot both pass the limit
+        count = conn.execute("SELECT COUNT(*) FROM watchlists WHERE user_id=?", (user.id,)).fetchone()[0]
+        require_below(count, plan.max_watchlists, "عدد قوائم المراقبة", "max_watchlists")
         if conn.execute("SELECT 1 FROM watchlists WHERE user_id=? AND name=?", (user.id, name_c)).fetchone():
             raise AccountError("لديك قائمة بهذا الاسم.", 409)
         cur = conn.execute("INSERT INTO watchlists(user_id, name, created_at, updated_at) VALUES (?,?,?,?)",
@@ -113,10 +114,12 @@ def add_symbol(db: Database, user: SessionUser, watchlist_id: Any, symbol: Any, 
     wl = _owned_watchlist(db, user, watchlist_id)
     plan = plan_for(db, user)
     sym = clean_symbol(symbol)
-    count = db.one("SELECT COUNT(*) AS n FROM watchlist_symbols WHERE watchlist_id=?", (wl["id"],))["n"]
     with db.tx() as conn:
+        if not conn.execute("SELECT 1 FROM watchlists WHERE id=? AND user_id=?", (wl["id"], user.id)).fetchone():
+            raise AccountError("القائمة غير موجودة.", 404)  # deleted between the check and the lock
         if conn.execute("SELECT 1 FROM watchlist_symbols WHERE watchlist_id=? AND symbol=?", (wl["id"], sym)).fetchone():
             raise AccountError("الرمز موجود في القائمة.", 409)
+        count = conn.execute("SELECT COUNT(*) FROM watchlist_symbols WHERE watchlist_id=?", (wl["id"],)).fetchone()[0]
         require_below(count, plan.max_symbols_per_watchlist, "عدد الرموز في القائمة", "max_symbols_per_watchlist")
         conn.execute("INSERT INTO watchlist_symbols(watchlist_id, symbol, note, added_at) VALUES (?,?,?,?)",
                      (wl["id"], sym, str(note or "")[:200], iso(utcnow())))
@@ -188,11 +191,11 @@ def upload_dataset(db: Database, user: SessionUser, *, symbol: Any, label: Any, 
         raise AccountError("يجب الإقرار بحق استخدام البيانات قبل الرفع.")
     plan = plan_for(db, user)
     require_feature(plan, "analysis")
-    count = db.one("SELECT COUNT(*) AS n FROM datasets WHERE user_id=?", (user.id,))["n"]
-    require_below(count, plan.max_datasets, "عدد ملفات البيانات", "max_datasets")
     sym = clean_symbol(symbol)
     bars = parse_bars_csv(str(csv_text or ""))
     with db.tx() as conn:
+        count = conn.execute("SELECT COUNT(*) FROM datasets WHERE user_id=?", (user.id,)).fetchone()[0]
+        require_below(count, plan.max_datasets, "عدد ملفات البيانات", "max_datasets")
         cur = conn.execute(
             "INSERT INTO datasets(user_id, symbol, label, rights_attestation, bars_json, bar_count, first_date, last_date,"
             " created_at) VALUES (?,?,?,?,?,?,?,?,?)",

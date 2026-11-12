@@ -49,7 +49,7 @@ jobs:
 
       - name: Platform alpha (feature-flagged) static checks
         run: |
-          ruff check ghazi_platform tests/test_ghazi_platform.py
+          ruff check ghazi_platform tests/test_ghazi_platform.py tests/test_ghazi_platform_security.py
           python -m compileall -q ghazi_platform
           node --check platform_ui/app.js
           node --check scripts/platform_ui_smoke.cjs

@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS users (
     display_name TEXT NOT NULL DEFAULT '',
     role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     email_verified_at TEXT,
+    -- Admin role is only ever set by the server-side owner command (never by an
+    -- HTTP request); these record when and how it was granted.
+    admin_granted_at TEXT,
+    admin_granted_via TEXT,
     consent_version TEXT NOT NULL,
     consent_at TEXT NOT NULL,
     created_at TEXT NOT NULL
@@ -48,12 +52,14 @@ CREATE TABLE IF NOT EXISTS one_time_tokens (
     used_at TEXT
 );
 
-CREATE TABLE IF NOT EXISTS login_failures (
+-- Rate-limit and failed-login events. Keys are namespaced ("login:email:...",
+-- "register:ip:..."); e-mail keys hold a SHA-256 of the address, not the address.
+CREATE TABLE IF NOT EXISTS rate_events (
     id INTEGER PRIMARY KEY,
     key TEXT NOT NULL,
     at_unix REAL NOT NULL
 );
-CREATE INDEX IF NOT EXISTS login_failures_key ON login_failures(key, at_unix);
+CREATE INDEX IF NOT EXISTS rate_events_key ON rate_events(key, at_unix);
 
 CREATE TABLE IF NOT EXISTS watchlists (
     id INTEGER PRIMARY KEY,
@@ -93,6 +99,8 @@ CREATE TABLE IF NOT EXISTS backtests (
     strategy TEXT NOT NULL,
     params_json TEXT NOT NULL,
     result_json TEXT NOT NULL,
+    -- 'running' reserves a slot of the daily quota before the (slow) run starts
+    status TEXT NOT NULL DEFAULT 'done' CHECK (status IN ('running', 'done')),
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS backtests_user ON backtests(user_id, created_at);
@@ -130,31 +138,56 @@ CREATE INDEX IF NOT EXISTS audit_user ON audit_events(user_id, at);
 """
 
 
+# Columns added after the first alpha schema: (table, column, definition).
+_ADDED_COLUMNS = (
+    ("users", "admin_granted_at", "TEXT"),
+    ("users", "admin_granted_via", "TEXT"),
+    ("backtests", "status", "TEXT NOT NULL DEFAULT 'done'"),
+)
+
+
 class Database:
-    """One connection per thread; foreign keys enforced on every connection."""
+    """One connection per thread; foreign keys enforced on every connection.
+
+    Connections run in autocommit mode and every `tx()` opens BEGIN IMMEDIATE,
+    which takes SQLite's write lock at the start. A "count, check the plan limit,
+    insert" sequence inside one `tx()` is therefore atomic even across processes
+    (several WSGI workers on one database file).
+    """
 
     def __init__(self, path: str):
         self.path = path
         self._local = threading.local()
         if path != ":memory:":
             Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self._shared = sqlite3.connect(path, check_same_thread=False) if path == ":memory:" else None
+        self._shared = self._open() if path == ":memory:" else None
         self._lock = threading.RLock()
-        with self.tx() as conn:
+        with self._lock:
+            conn = self._conn()
             conn.executescript(SCHEMA)
-            conn.execute("INSERT OR IGNORE INTO meta(key, value) VALUES ('schema_version', '1')")
+            for table, column, definition in _ADDED_COLUMNS:
+                have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+                if column not in have:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            conn.execute("INSERT OR IGNORE INTO meta(key, value) VALUES ('schema_version', '2')")
+            conn.execute("UPDATE meta SET value='2' WHERE key='schema_version'")
+
+    def _open(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.path, timeout=15, isolation_level=None, check_same_thread=False)
+        if self.path != ":memory:":
+            conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=15000")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
+        return conn
 
     def _conn(self) -> sqlite3.Connection:
         if self._shared is not None:
-            conn = self._shared
-        else:
-            conn = getattr(self._local, "conn", None)
-            if conn is None:
-                conn = sqlite3.connect(self.path, timeout=10)
-                conn.execute("PRAGMA journal_mode=WAL")
-                self._local.conn = conn
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys=ON")
+            return self._shared
+        conn = getattr(self._local, "conn", None)
+        if conn is None:
+            conn = self._open()
+            self._local.conn = conn
         return conn
 
     def tx(self) -> _Tx:
@@ -175,14 +208,16 @@ class _Tx:
 
     def __enter__(self) -> sqlite3.Connection:
         self.db._lock.acquire()
-        self.conn = self.db._conn()
+        try:
+            self.conn = self.db._conn()
+            self.conn.execute("BEGIN IMMEDIATE")
+        except BaseException:
+            self.db._lock.release()
+            raise
         return self.conn
 
     def __exit__(self, exc_type, exc, tb) -> None:
         try:
-            if exc_type is None:
-                self.conn.commit()
-            else:
-                self.conn.rollback()
+            self.conn.execute("COMMIT" if exc_type is None else "ROLLBACK")
         finally:
             self.db._lock.release()

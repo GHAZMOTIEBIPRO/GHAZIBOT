@@ -13,6 +13,7 @@ Security posture:
 from __future__ import annotations
 
 import json
+import logging
 import mimetypes
 import re
 from collections.abc import Callable
@@ -30,7 +31,13 @@ from .db import Database
 from .entitlements import EntitlementError, require_below, require_feature
 from .security import iso, utcnow
 
-COOKIE = "ghazi_session"
+LOG = logging.getLogger("ghazi_platform")
+
+
+def cookie_name(cfg: Config) -> str:
+    # The __Host- prefix makes the browser reject the cookie unless it is Secure,
+    # host-only (no Domain) and Path=/, so a sibling subdomain cannot plant one.
+    return "__Host-ghazi_session" if cfg.secure_cookies else "ghazi_session"
 MAX_JSON_BYTES = 64_000
 STATIC_FILES = {"app.css", "app.js"}
 SECURITY_HEADERS = [
@@ -63,7 +70,8 @@ class Request:
             cookie.load(environ.get("HTTP_COOKIE", ""))
         except CookieError:
             cookie = SimpleCookie()  # a malformed cookie header is treated as no cookie
-        self.session_token = cookie[COOKIE].value if COOKIE in cookie else None
+        name = cookie_name(cfg)
+        self.session_token = cookie[name].value if name in cookie else None
         self._body: bytes | None = None
         self.cfg = cfg
 
@@ -96,7 +104,8 @@ Handler = Callable[..., Any]
 
 class App:
     def __init__(self, cfg: Config | None = None, db: Database | None = None):
-        self.cfg = cfg or Config.from_env()
+        # validate() refuses to start with dev mode / insecure cookies outside development
+        self.cfg = (cfg or Config.from_env()).validate()
         self.db = db or Database(self.cfg.db_path)
         self.routes: list[tuple[str, re.Pattern[str], Handler, str]] = []
         r = self._route
@@ -155,6 +164,13 @@ class App:
             body = json.dumps({"error": err.code, "message_ar": err.message_ar, **err.extra},
                               ensure_ascii=False).encode("utf-8")
             return self._send(start_response, err.status, body, "application/json; charset=utf-8")
+        except Exception as exc:  # noqa: BLE001 - last-resort handler; nothing sensitive leaves
+            # Log only the exception type and the path (no message, body, headers,
+            # cookies or query string, which may hold tokens or personal data).
+            LOG.error("unhandled %s on %s %s", type(exc).__name__, req.method, req.path[:120])
+            body = json.dumps({"error": "server_error", "message_ar": "خطأ داخلي؛ لم يُحفظ أي تغيير غير مكتمل."},
+                              ensure_ascii=False).encode("utf-8")
+            return self._send(start_response, 500, body, "application/json; charset=utf-8")
 
     def _send(self, start_response: Callable, status: int, body: bytes, ctype: str,
               extra: list[tuple[str, str]] | None = None) -> list[bytes]:
@@ -174,11 +190,16 @@ class App:
         return self._send(start_response, 200, path.read_bytes(), ctype)
 
     def _check_origin(self, req: Request) -> None:
+        # Browsers send Sec-Fetch-Site on every request; "cross-site" is refused even
+        # when Origin is absent. Non-browser clients send neither and carry no
+        # victim cookies, so they are judged by the session/CSRF checks alone.
+        if req.environ.get("HTTP_SEC_FETCH_SITE", "").lower() == "cross-site":
+            raise HttpError(403, "cross_origin", "طلب من موقع آخر مرفوض.")
         origin = req.environ.get("HTTP_ORIGIN")
         if not origin:
             return
         host = req.environ.get("HTTP_HOST") or req.environ.get("SERVER_NAME", "")
-        if urlparse(origin).netloc != host:
+        if origin == "null" or urlparse(origin).netloc != host:
             raise HttpError(403, "cross_origin", "طلب من موقع آخر مرفوض.")
 
     def _api(self, req: Request) -> tuple[int, Any, list[tuple[str, str]]]:
@@ -195,10 +216,11 @@ class App:
             if access != "webhook":
                 if mutating:
                     self._check_origin(req)
-                user = accounts.user_for_token(self.db, req.session_token)
+                user = accounts.user_for_token(self.db, req.session_token, idle_hours=self.cfg.session_idle_hours)
                 if access in ("user", "admin") and user is None:
                     raise HttpError(401, "login_required", "سجّل الدخول أولًا.")
-                if access == "admin" and (user is None or user.role != "admin"):
+                # Admin needs role + verified e-mail + a recorded server-side grant.
+                if access == "admin" and (user is None or not user.is_admin):
                     # not 403: do not advertise the admin surface
                     raise HttpError(404, "not_found", "غير موجود.")
                 if mutating and user is not None and req.environ.get("HTTP_X_CSRF_TOKEN") != user.csrf_token:
@@ -219,7 +241,7 @@ class App:
         raise HttpError(404, "not_found", "غير موجود.")
 
     def _cookie(self, token: str, max_age: int) -> tuple[str, str]:
-        parts = [f"{COOKIE}={token}", "Path=/", "HttpOnly", "SameSite=Lax", f"Max-Age={max_age}"]
+        parts = [f"{cookie_name(self.cfg)}={token}", "Path=/", "HttpOnly", "SameSite=Lax", f"Max-Age={max_age}"]
         if self.cfg.secure_cookies:
             parts.append("Secure")
         return ("Set-Cookie", "; ".join(parts))
@@ -263,7 +285,7 @@ class App:
         return 200, payload, [self._cookie(token, self.cfg.session_hours * 3600)]
 
     def verify(self, req, user):
-        accounts.verify_email(self.db, req.json().get("token"), ip=req.ip)
+        accounts.verify_email(self.db, self.cfg, req.json().get("token"), ip=req.ip)
         return {"ok": True}
 
     def reset_request(self, req, user):
@@ -271,7 +293,7 @@ class App:
 
     def reset(self, req, user):
         data = req.json()
-        accounts.reset_password(self.db, token=data.get("token"), new=data.get("password"), ip=req.ip)
+        accounts.reset_password(self.db, self.cfg, token=data.get("token"), new=data.get("password"), ip=req.ip)
         return {"ok": True}
 
     def logout(self, req, user):
@@ -347,7 +369,7 @@ class App:
         return analysis.analyse_user_bars(meta["symbol"], bars, dataset_label=meta["label"])
 
     def backtests(self, req, user):
-        rows = self.db.query("SELECT id, dataset_id, strategy, created_at FROM backtests WHERE user_id=?"
+        rows = self.db.query("SELECT id, dataset_id, strategy, created_at FROM backtests WHERE user_id=? AND status='done'"
                              " ORDER BY id DESC LIMIT 50", (user.id,))
         return {"backtests": [dict(r) for r in rows], "strategies": {k: {"name_ar": v["name_ar"], "params": {
             p: {"min": lo, "max": hi, "default": d} for p, (lo, hi, d) in v["params"].items()}}
@@ -356,31 +378,42 @@ class App:
     def run_backtest(self, req, user):
         plan = workspace.plan_for(self.db, user)
         require_feature(plan, "backtest_lab")
-        since = iso(utcnow() - timedelta(hours=24))
-        used = self.db.one("SELECT COUNT(*) AS n FROM backtests WHERE user_id=? AND created_at>=?",
-                           (user.id, since))["n"]
-        require_below(used, plan.backtests_per_day, "عدد الاختبارات اليومية", "backtests_per_day")
         data = req.json()
         meta, bars = workspace.dataset_bars(self.db, user, data.get("dataset_id"))
         params = data.get("params") if isinstance(data.get("params"), dict) else {}
+        strategy = str(data.get("strategy") or "")
         if params.get("oos_fraction") not in (None, 0, 0.0, "0", ""):
             require_feature(plan, "backtest_oos_split")
-        result = backtest.run(str(data.get("strategy") or ""), bars, params,
-                              allow_oos="backtest_oos_split" in plan.features,
-                              allow_cost_sensitivity="backtest_cost_sensitivity" in plan.features)
+        backtest.validate(strategy, params)  # reject bad input before a quota slot is used
+        since = iso(utcnow() - timedelta(hours=24))
+        with self.db.tx() as conn:
+            # Reserve the quota slot under the write lock, before the slow run: concurrent
+            # requests cannot all see the same count and exceed the daily limit.
+            used = conn.execute("SELECT COUNT(*) FROM backtests WHERE user_id=? AND created_at>=?",
+                                (user.id, since)).fetchone()[0]
+            require_below(used, plan.backtests_per_day, "عدد الاختبارات اليومية", "backtests_per_day")
+            bid = conn.execute("INSERT INTO backtests(user_id, dataset_id, strategy, params_json, result_json, status,"
+                               " created_at) VALUES (?,?,?,'{}','{}','running',?)",
+                               (user.id, meta["id"], strategy, iso(utcnow()))).lastrowid
+        try:
+            result = backtest.run(strategy, bars, params,
+                                  allow_oos="backtest_oos_split" in plan.features,
+                                  allow_cost_sensitivity="backtest_cost_sensitivity" in plan.features)
+        except Exception:
+            with self.db.tx() as conn:
+                conn.execute("DELETE FROM backtests WHERE id=? AND user_id=?", (bid, user.id))
+            raise
         result["dataset"] = {"id": meta["id"], "symbol": meta["symbol"], "label": meta["label"]}
         with self.db.tx() as conn:
-            cur = conn.execute("INSERT INTO backtests(user_id, dataset_id, strategy, params_json, result_json, created_at)"
-                               " VALUES (?,?,?,?,?,?)", (user.id, meta["id"], result["strategy"],
-                                                         json.dumps(result["params"]), json.dumps(result),
-                                                         iso(utcnow())))
-        audit.record(self.db, "backtest.run", user_id=user.id, ip=req.ip, backtest=cur.lastrowid,
-                     strategy=result["strategy"])
-        result["id"] = cur.lastrowid
+            conn.execute("UPDATE backtests SET params_json=?, result_json=?, status='done' WHERE id=? AND user_id=?",
+                         (json.dumps(result["params"]), json.dumps(result), bid, user.id))
+        audit.record(self.db, "backtest.run", user_id=user.id, ip=req.ip, backtest=bid, strategy=result["strategy"])
+        result["id"] = bid
         return 201, result, []
 
     def get_backtest(self, req, user, bid):
-        row = self.db.one("SELECT result_json FROM backtests WHERE id=? AND user_id=?", (int(bid), user.id))
+        row = self.db.one("SELECT result_json FROM backtests WHERE id=? AND user_id=? AND status='done'",
+                          (int(bid), user.id))
         if not row:
             raise HttpError(404, "not_found", "الاختبار غير موجود.")
         return {**json.loads(row["result_json"]), "id": int(bid)}

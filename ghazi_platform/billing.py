@@ -46,8 +46,12 @@ def admin_grant(db: Database, *, actor_id: int, user_id: Any, plan: Any, days: A
         raise AccountError("قيم غير صالحة.") from None
     if not 1 <= n_days <= 366:
         raise AccountError("المدة بين 1 و366 يومًا.")
-    if not db.one("SELECT 1 FROM users WHERE id=?", (uid,)):
+    target = db.one("SELECT email_verified_at FROM users WHERE id=?", (uid,))
+    if not target:
         raise AccountError("المستخدم غير موجود.", 404)
+    if plan != "free" and not target["email_verified_at"]:
+        # a paid plan goes only to an account whose mailbox ownership is proven
+        raise AccountError("بريد المستخدم غير مؤكد؛ لا تُمنح خطة مدفوعة قبل التأكيد.", 409)
     end = iso(utcnow() + timedelta(days=n_days)) if plan != "free" else None
     with db.tx() as conn:
         _set(conn, uid, plan=plan, status="active", source="admin_grant" if plan != "free" else "default",
