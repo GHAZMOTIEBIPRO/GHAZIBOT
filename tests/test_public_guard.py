@@ -165,3 +165,39 @@ def test_public_gate_mode_needs_public_display_right(monkeypatch):
     assert psg.key_usable("POLYGON_API_KEY", public=True) is False
     monkeypatch.setenv("PUBLIC_DISPLAY_TERMS_CONFIRMED", "massive_polygon")
     assert psg.key_usable("POLYGON_API_KEY", public=True) is True
+
+
+# --- Regression: an artifact whose own top-level source is a closed family -------------
+# redact() drops such an object to None; guard_payload then wrote its report into None
+# and raised TypeError, which stopped runtime_state_vault from publishing every file.
+
+@pytest.mark.parametrize("kind", ["latest", "generic", "guardian"])
+def test_payload_whose_root_source_is_closed_is_withheld_not_crashed(kind):
+    payload = {"generated_at": "2026-10-20T18:41:17+00:00", "status": "OK",
+               "source": "Yahoo Finance (yfinance / yahooquery)",
+               "symbols": {"SPY": {"price": 671.2}}, "rows": [{"symbol": "AMD", "price": 649.4}]}
+    out = guard.guard_payload(payload, kind=kind)
+    assert isinstance(out, dict)
+    text = json.dumps(out)
+    assert "671.2" not in text and "649.4" not in text and "yfinance" not in text
+    assert out["status"] == "LICENSE_BLOCKED" and out["redacted"] is True
+    assert out["generated_at"] == payload["generated_at"]
+    report = out["public_license_guard"]
+    assert report["data_state"] == "LICENSE_BLOCKED" and report["redacted_objects"] == {"yahoo": 1}
+    assert report["withheld_whole_payload"] is True
+
+
+def test_vault_keeps_publishing_when_one_guarded_file_is_wholly_closed(tmp_path):
+    from scripts import runtime_state_vault as vault
+
+    repo, vault_root = tmp_path / "repo", tmp_path / "vault"
+    (repo / "public/data").mkdir(parents=True)
+    (repo / "public/data/decision_brief.json").write_text(json.dumps(
+        {"generated_at": "2026-10-20T18:00:00+00:00", "source": "yfinance", "stocks": [{"price": 1.5}]}))
+    (repo / "public/data/latest.json").write_text(json.dumps(latest_payload()))
+    (repo / "public/data/health.json").write_text(json.dumps({"status": "degraded"}))
+    vault.publish_runtime_state(repo_root=repo, vault_root=vault_root)
+    brief = json.loads((vault_root / "public/data/decision_brief.json").read_text())
+    assert brief["status"] == "LICENSE_BLOCKED" and "1.5" not in json.dumps(brief)
+    assert json.loads((vault_root / "public/data/latest.json").read_text())["stocks"] == []
+    assert json.loads((vault_root / "public/data/health.json").read_text()) == {"status": "degraded"}
