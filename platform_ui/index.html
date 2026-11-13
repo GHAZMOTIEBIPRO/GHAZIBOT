@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="robots" content="noindex">
+  <title>غازي رادار برو — منصة البحث</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">◎</span>
+      <div>
+        <strong>غازي رادار برو</strong>
+        <small>منصة بحث أسواق أمريكية — نسخة ألفا تجريبية</small>
+      </div>
+    </div>
+    <div class="who" id="who" aria-live="polite"></div>
+  </header>
+
+  <nav class="tabs" aria-label="أقسام المنصة">
+    <a href="#dashboard" data-view="dashboard">لوحة التحكم</a>
+    <a href="#watchlists" data-view="watchlists" data-auth>قوائم المراقبة</a>
+    <a href="#analysis" data-view="analysis" data-auth>تحليل سهم</a>
+    <a href="#research" data-view="research">مركز الأبحاث</a>
+    <a href="#lab" data-view="lab" data-auth>مختبر الاختبارات</a>
+    <a href="#plans" data-view="plans">الاشتراكات</a>
+    <a href="#account" data-view="account" data-auth>حسابي</a>
+    <a href="#admin" data-view="admin" data-admin hidden>الإدارة</a>
+  </nav>
+
+  <div class="notice" role="note">
+    منصة بحث ومعلومات فقط: لا أوامر تداول، لا توصيات مخصصة، ولا تتحول درجات الثقة إلى نسب نجاح.
+    لا تُعرض بيانات لا يملك المصدر حق عرضها تجاريًا.
+  </div>
+
+  <main id="main" tabindex="-1">
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <section id="view" aria-live="polite"></section>
+  </main>
+
+  <footer class="foot">
+    <span>نسخة ألفا خلف علم تشغيل — ليست للإنتاج.</span>
+    <a href="#privacy">الخصوصية وحدود الخدمة</a>
+  </footer>
+</body>
+</html>
