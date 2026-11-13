@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-13T17:07:50.329170+00:00",
+ "generated_at": "2026-11-13T18:04:34.817712+00:00",
  "window_days": 14,
- "window_start": "2026-10-30T17:07:50.329170+00:00",
+ "window_start": "2026-10-30T18:04:34.817712+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -28,7 +28,7 @@
     ]
    },
    "rights_key": "alpaca",
-   "runs_seen": 33,
+   "runs_seen": 32,
    "attempted": 28,
    "succeeded": 19,
    "fully_ok": 19,
@@ -62,16 +62,16 @@
     ]
    },
    "rights_key": "tradier",
-   "runs_seen": 35,
+   "runs_seen": 36,
    "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-13T12:01:16.322272+00:00",
+   "last_run_at": "2026-11-13T18:04:09.631524+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "ACCOUNT_ENTITLEMENT_NOT_ASSERTED",
-   "last_commit": "c7398e2c60"
+   "last_commit": "21a8d79bb2"
   },
   {
    "key": "cboe_delayed",
@@ -94,16 +94,16 @@
     ]
    },
    "rights_key": "cboe_delayed",
-   "runs_seen": 286,
+   "runs_seen": 285,
    "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-13T16:56:19.582480+00:00",
+   "last_run_at": "2026-11-13T17:42:31.281306+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "74f8bde3b5"
+   "last_commit": "9aa97a75bf"
   },
   {
    "key": "sec_edgar",
@@ -126,8 +126,8 @@
     ]
    },
    "rights_key": "sec_edgar",
-   "runs_seen": 47,
-   "attempted": 47,
+   "runs_seen": 46,
+   "attempted": 46,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": 0.0,
@@ -516,10 +516,10 @@
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-13T15:59:01.289513+00:00",
+   "last_run_at": "2026-11-13T17:53:22.345262+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "0a90c9a639"
+   "last_commit": "3a744914bb"
   }
  ],
  "research_only": true
