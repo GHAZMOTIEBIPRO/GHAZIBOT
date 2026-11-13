@@ -1,0 +1,126 @@
+name: GHAZI Telegram Diagnose (no values)
+
+# Where are the Telegram credentials, do they work, and can the bot post in the group?
+# Prints names, booleans, shape checks and Telegram status fields only — never a value.
+# The repository-scope job may send ONE test message (never on a re-run attempt).
+# Environment jobs only report; they never send, so one run sends at most one message.
+on:
+  workflow_dispatch:
+    inputs:
+      send_test:
+        description: Send one test message to the resolved group
+        type: boolean
+        default: false
+  push:
+    branches: ["claude/telegram-recovery"]
+    paths:
+      - ".github/workflows/telegram-diagnose.yml"
+      - "scripts/telegram_diagnose.py"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Candidate names, repository secrets and variables. Every value is masked by GitHub.
+      DIAG_SECRET_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      DIAG_SECRET_TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      DIAG_SECRET_TELEGRAM_API_TOKEN: ${{ secrets.TELEGRAM_API_TOKEN }}
+      DIAG_SECRET_TELEGRAM_BOT_API_TOKEN: ${{ secrets.TELEGRAM_BOT_API_TOKEN }}
+      DIAG_SECRET_BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      DIAG_SECRET_TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      DIAG_SECRET_TG_TOKEN: ${{ secrets.TG_TOKEN }}
+      DIAG_SECRET_TELEGRAM_BOT: ${{ secrets.TELEGRAM_BOT }}
+      DIAG_SECRET_TELEGRAM_KEY: ${{ secrets.TELEGRAM_KEY }}
+      DIAG_SECRET_TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DIAG_SECRET_TELEGRAM_GROUP_ID: ${{ secrets.TELEGRAM_GROUP_ID }}
+      DIAG_SECRET_TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+      DIAG_SECRET_TELEGRAM_CHATID: ${{ secrets.TELEGRAM_CHATID }}
+      DIAG_SECRET_CHAT_ID: ${{ secrets.CHAT_ID }}
+      DIAG_SECRET_TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+      DIAG_SECRET_GROUP_ID: ${{ secrets.GROUP_ID }}
+      DIAG_VAR_TELEGRAM_BOT_TOKEN: ${{ vars.TELEGRAM_BOT_TOKEN }}
+      DIAG_VAR_TELEGRAM_TOKEN: ${{ vars.TELEGRAM_TOKEN }}
+      DIAG_VAR_BOT_TOKEN: ${{ vars.BOT_TOKEN }}
+      DIAG_VAR_TG_BOT_TOKEN: ${{ vars.TG_BOT_TOKEN }}
+      DIAG_VAR_TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
+      DIAG_VAR_TELEGRAM_GROUP_ID: ${{ vars.TELEGRAM_GROUP_ID }}
+      DIAG_VAR_CHAT_ID: ${{ vars.CHAT_ID }}
+    outputs:
+      environments: ${{ steps.envs.outputs.names }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - name: List repository environments (names only)
+        id: envs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          names=$(gh api "repos/$GITHUB_REPOSITORY/environments" --jq '[.environments[].name]' 2>/dev/null)
+          status=$?
+          set -e
+          if [[ $status -ne 0 || -z "$names" ]]; then names='[]'; echo "environments: not listable or none"; fi
+          echo "environments: $names"
+          echo "names=$names" >> "$GITHUB_OUTPUT"
+      - name: Diagnose repository scope (and send one test message when asked)
+        env:
+          DIAG_SCOPE: repository
+          SEND_TEST: ${{ github.event_name == 'push' || inputs.send_test }}
+        run: |
+          args=(--output "$RUNNER_TEMP/telegram_diagnosis.json")
+          if [[ "$SEND_TEST" == "true" ]]; then args+=(--send-test); fi
+          python scripts/telegram_diagnose.py "${args[@]}"
+
+  environment:
+    needs: repository
+    if: needs.repository.outputs.environments != '[]' && needs.repository.outputs.environments != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJSON(needs.repository.outputs.environments) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: ${{ matrix.name }}
+    env:
+      # Candidate names, repository secrets and variables. Every value is masked by GitHub.
+      DIAG_SECRET_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      DIAG_SECRET_TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      DIAG_SECRET_TELEGRAM_API_TOKEN: ${{ secrets.TELEGRAM_API_TOKEN }}
+      DIAG_SECRET_TELEGRAM_BOT_API_TOKEN: ${{ secrets.TELEGRAM_BOT_API_TOKEN }}
+      DIAG_SECRET_BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      DIAG_SECRET_TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      DIAG_SECRET_TG_TOKEN: ${{ secrets.TG_TOKEN }}
+      DIAG_SECRET_TELEGRAM_BOT: ${{ secrets.TELEGRAM_BOT }}
+      DIAG_SECRET_TELEGRAM_KEY: ${{ secrets.TELEGRAM_KEY }}
+      DIAG_SECRET_TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DIAG_SECRET_TELEGRAM_GROUP_ID: ${{ secrets.TELEGRAM_GROUP_ID }}
+      DIAG_SECRET_TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+      DIAG_SECRET_TELEGRAM_CHATID: ${{ secrets.TELEGRAM_CHATID }}
+      DIAG_SECRET_CHAT_ID: ${{ secrets.CHAT_ID }}
+      DIAG_SECRET_TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+      DIAG_SECRET_GROUP_ID: ${{ secrets.GROUP_ID }}
+      DIAG_VAR_TELEGRAM_BOT_TOKEN: ${{ vars.TELEGRAM_BOT_TOKEN }}
+      DIAG_VAR_TELEGRAM_TOKEN: ${{ vars.TELEGRAM_TOKEN }}
+      DIAG_VAR_BOT_TOKEN: ${{ vars.BOT_TOKEN }}
+      DIAG_VAR_TG_BOT_TOKEN: ${{ vars.TG_BOT_TOKEN }}
+      DIAG_VAR_TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
+      DIAG_VAR_TELEGRAM_GROUP_ID: ${{ vars.TELEGRAM_GROUP_ID }}
+      DIAG_VAR_CHAT_ID: ${{ vars.CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "requests>=2.32,<3"
+      - name: Diagnose this environment's scope (report only, never sends)
+        env:
+          DIAG_SCOPE: "environment:${{ matrix.name }}"
+        run: python scripts/telegram_diagnose.py
