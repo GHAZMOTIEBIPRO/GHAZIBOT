@@ -10,6 +10,8 @@ import math
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from .opening_fib_context import fib_context_lines
+
 BAR = timedelta(minutes=5)
 PROVIDER_DELAY = timedelta(minutes=16)
 FIB_RATIOS = (0.236, 0.382, 0.5, 0.618, 0.786)
@@ -133,7 +135,8 @@ def evaluate(
 
 
 def render_private_digest(results: list[dict[str, Any]], *,
-                          session_date: str, limit: int = 5) -> str:
+                          session_date: str, limit: int = 5,
+                          official_context: dict[str, Any] | None = None) -> str:
     """One short owner-only Telegram message. No redistribution/public output."""
     states = {"WATCH_CALL": [], "WATCH_PUT": [], "WAIT": [], "NO_DATA": []}
     for item in results:
@@ -166,6 +169,20 @@ def render_private_digest(results: list[dict[str, Any]], *,
             f"وقف {item['stop']:.2f} | أهداف {targets}\n"
             f"آخر شمعة مصدر {ts} UTC | تغطية {html.escape(item['feed'].upper())}"
         )
+    # Link *officially sourced, dated* events without turning them into
+    # bullish/bearish evidence. Keep them apart from price-derived decisions.
+    if official_context is not None:
+        pick_syms = [p["symbol"] for p in picks]
+        present = {x["symbol"] for x in results}
+        for priority in ("NVDA", "TSLA", "AMD", "AAPL", "SPY", "QQQ"):
+            if priority in present and priority not in pick_syms:
+                pick_syms.append(priority)
+        pick_syms.extend(x["symbol"] for x in results if x["symbol"] not in pick_syms)
+        lines.extend(fib_context_lines(official_context, symbols=pick_syms, limit=3))
+        sources = official_context.get("sources") if isinstance(official_context, dict) else {}
+        if isinstance(sources, dict):
+            available = sum(v == "AVAILABLE" for v in sources.values())
+            lines.append(f"المصادر العامة الحديثة: {available} من {len(sources)}؛ الغائب لا يعني عدم وجود أخبار.")
     # Every configured symbol gets a status; minimize Telegram noise.
     for state, label in [("WATCH_CALL", "كول"), ("WATCH_PUT", "بوت"),
                          ("WAIT", "انتظار"), ("NO_DATA", "غير مكتمل")]:

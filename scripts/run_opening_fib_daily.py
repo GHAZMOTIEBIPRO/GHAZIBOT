@@ -18,6 +18,7 @@ import requests
 
 from options_radar.bar_providers import AlpacaBars
 from options_radar.opening_fib_scan import evaluate, render_private_digest
+from options_radar.opening_fib_context import collect_official_events
 from options_radar.output_policy import decide, deliver_private
 from scripts.telegram_transport import send_html_message
 from scripts.telegram_owner_setup import owner_id_help, telegram_connectivity_test
@@ -146,7 +147,7 @@ def preflight(now: datetime) -> str:
 
 
 def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
-        max_symbols: int) -> str:
+        max_symbols: int, context_dir: Path | None = None) -> str:
     now = now.astimezone(timezone.utc)
     ny_now = now.astimezone(NY)
     opening = session_open(now)
@@ -204,7 +205,10 @@ def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
     if valid == 0 or multi.get("failed_batches"):
         # An incomplete scan must not be announced as an "all stocks" report.
         return "NO_COMPLETE_SCAN"
-    message = render_private_digest(results, session_date=session_date)
+    context = (collect_official_events(context_dir, now=now, symbols=symbols)
+               if context_dir is not None else None)
+    message = render_private_digest(results, session_date=session_date,
+                                    official_context=context)
 
     if dry_run:
         # Never emit licensed price levels into public CI logs.
@@ -225,6 +229,7 @@ def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
 def main() -> int:
     parser = argparse.ArgumentParser(description="Owner-private 15m opening Fibonacci scan")
     parser.add_argument("--universe", type=Path, default=Path("data/universe.txt"))
+    parser.add_argument("--context-dir", type=Path, default=None, help="Public official event files, no licensed prices")
     parser.add_argument("--state", type=Path, required=True)
     parser.add_argument("--max-symbols", type=int,
                         default=int(os.environ.get("OPENING_FIB_MAX_SYMBOLS", "150")))
@@ -241,7 +246,8 @@ def main() -> int:
         status = preflight(datetime.now(timezone.utc))
     else:
         status = run(now=datetime.now(timezone.utc), universe=args.universe,
-                     state_path=args.state, max_symbols=args.max_symbols, dry_run=args.dry_run)
+                     state_path=args.state, max_symbols=args.max_symbols,
+                     dry_run=args.dry_run, context_dir=args.context_dir)
     print("Opening Fibonacci scan status:", status)
     # Weekend, wrong local time, or duplicate are legitimate non-events.
     if status.startswith(("SKIP_", "ALREADY_", "DRY_RUN_")) or status in ("PREFLIGHT_READY", "TELEGRAM_TEST_DELIVERED", "OWNER_ID_REPLIED_PRIVATELY"):
