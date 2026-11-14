@@ -64,7 +64,8 @@ def owner_id_help(*, now: datetime | None = None) -> str:
         message = update.get("message") if isinstance(update, dict) else None
         if not isinstance(message, dict):
             continue
-        command = str(message.get("text") or "").strip().split(maxsplit=1)[0].lower()
+        text = str(message.get("text") or "").strip()
+        command = text.split(maxsplit=1)[0].lower() if text else ""
         if command != "/ghazi_id" and not command.startswith("/ghazi_id@"):
             continue
         chat = message.get("chat") if isinstance(message.get("chat"), dict) else {}
