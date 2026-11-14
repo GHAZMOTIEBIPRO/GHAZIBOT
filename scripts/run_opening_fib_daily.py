@@ -167,6 +167,9 @@ def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
         for symbol in symbols
     ]
     valid = sum(item["state"] != "NO_DATA" for item in results)
+    sip_valid = sum(item.get("feed") == "sip" for item in results)
+    if valid and sip_valid == 0:
+        return "NO_CONSOLIDATED_SIP_COVERAGE"
     if valid == 0 or multi.get("failed_batches"):
         # An incomplete scan must not be announced as an "all stocks" report.
         return "NO_COMPLETE_SCAN"
