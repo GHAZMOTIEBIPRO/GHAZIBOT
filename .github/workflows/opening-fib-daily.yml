@@ -99,10 +99,12 @@ jobs:
           elif [[ "$RUN_DRY" == "true" ]]; then
             python -m scripts.run_opening_fib_daily \
               --universe app/data/universe.txt \
+              --context-dir state/runtime/public/data \
               --state state/state/opening_fib/sent.json --dry-run
           else
             python -m scripts.run_opening_fib_daily \
               --universe app/data/universe.txt \
+              --context-dir state/runtime/public/data \
               --state state/state/opening_fib/sent.json
           fi
 
