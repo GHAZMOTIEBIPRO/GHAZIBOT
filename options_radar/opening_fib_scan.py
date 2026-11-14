@@ -146,7 +146,10 @@ def render_private_digest(results: list[dict[str, Any]], *,
         f"المفحوص {len(results)} | مراقبة كول {len(states['WATCH_CALL'])} | "
         f"مراقبة بوت {len(states['WATCH_PUT'])} | انتظار {len(states['WAIT'])} | "
         f"بيانات ناقصة {len(states['NO_DATA'])}",
-        "⚠️ الشموع متأخرة 16 دقيقة أو أكثر؛ هذه مناطق بحث وليست أسعار تنفيذ أو عقود خيارات.",
+        f"تغطية مصدر الشموع: SIP "
+        f"{sum(x.get('feed') == 'sip' for x in results)} | IEX "
+        f"{sum(x.get('feed') == 'iex' for x in results)}",
+        "⚠️ الشموع متأخرة 16 دقيقة أو أكثر؛ CALL/PUT انحياز للسهم لا إثبات توفر عقد خيار، وليست أسعار تنفيذ.",
     ]
     if picks:
         lines.append("<b>أبرز فرص المراقبة (ليست صفقات منفذة):</b>")
@@ -181,4 +184,4 @@ def render_private_digest(results: list[dict[str, Any]], *,
                 lines[idx] = head + "</b> " + ", ".join(names[:8]) + f" ... ({len(names)-8} أخرى)"
                 continue
         lines.pop(idx)
-    return "\n".join(lines)[:3900]
+    return "\n".join(lines)
