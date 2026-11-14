@@ -1,0 +1,88 @@
+name: GHAZI RADAR - Weekly Official Events (owner private)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview readiness without Telegram or state writes"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - "options_radar/opening_fib_context.py"
+      - "scripts/run_weekly_official_brief.py"
+      - ".github/workflows/weekly-official-brief.yml"
+  # Sundays, 17:15 and 17:45 Asia/Riyadh (UTC+3 fixed).
+  schedule:
+    - cron: "15,45 14 * * 0"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: ghazi-owner-private-weekly-official
+  cancel-in-progress: false
+
+jobs:
+  weekly-official:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install existing project dependencies
+        run: python -m pip install -r app/requirements.txt
+      - name: Send official events to verified owner only or run safe dry check
+        shell: bash
+        env:
+          PYTHONPATH: app
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+            python -m scripts.run_weekly_official_brief \
+              --universe app/data/universe.txt \
+              --context-dir state/runtime/public/data \
+              --state state/state/weekly_official/sent.json
+          else
+            python -m scripts.run_weekly_official_brief \
+              --universe app/data/universe.txt \
+              --context-dir state/runtime/public/data \
+              --state state/state/weekly_official/sent.json --dry-run
+          fi
+      - name: Persist only weekly delivery date, never quotes or news payload
+        if: success() && github.event_name == 'schedule'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          if [[ ! -f state/weekly_official/sent.json ]]; then
+            echo "No weekly owner delivery to record"
+            exit 0
+          fi
+          git config user.name "GHAZI RADAR Weekly Official"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add state/weekly_official/sent.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "state: private weekly official delivered [skip ci]"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2 + RANDOM % 5))
+          done
+          exit 1
