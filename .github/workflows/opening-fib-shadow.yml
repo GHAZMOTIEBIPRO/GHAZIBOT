@@ -1,0 +1,96 @@
+name: GHAZI RADAR - Opening Fibonacci Shadow Scorecard (owner private)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Test shadow analysis only without Telegram delivery"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - "scripts/run_opening_fib_shadow.py"
+      - "scripts/run_opening_fib_daily.py"
+      - "options_radar/opening_fib_replay.py"
+      - ".github/workflows/opening-fib-shadow.yml"
+  # Tuesday through Saturday 08:10 Asia/Riyadh (05:10 UTC),
+  # after the preceding U.S. market close. GitHub cron may be delayed.
+  schedule:
+    - cron: "10 5 * * 2-6"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: ghazi-opening-fib-private-shadow
+  cancel-in-progress: false
+
+jobs:
+  private-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          fetch-depth: 0
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned major dependencies
+        run: python -m pip install -r app/requirements.txt
+      - name: Audit only previously sent private Fib alert, never raw prices
+        shell: bash
+        env:
+          PYTHONPATH: app
+          INPUT_DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+            python -m scripts.run_opening_fib_shadow \
+              --sent-marker state/state/opening_fib/sent.json \
+              --state state/state/opening_fib/shadow_sent.json \
+              --universe app/data/universe.txt
+          else
+            python -m scripts.run_opening_fib_shadow \
+              --sent-marker state/state/opening_fib/sent.json \
+              --state state/state/opening_fib/shadow_sent.json \
+              --universe app/data/universe.txt --dry-run
+          fi
+      - name: Persist only audited session date, never quotes or outcomes
+        if: success() && github.event_name == 'schedule'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          if [[ ! -f state/opening_fib/shadow_sent.json ]]; then
+            echo "No private shadow delivery marker."
+            exit 0
+          fi
+          git config user.name "GHAZI RADAR Private Shadow"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add state/opening_fib/shadow_sent.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "state: private shadow delivered [skip ci]"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2 + RANDOM % 5))
+          done
+          exit 1
