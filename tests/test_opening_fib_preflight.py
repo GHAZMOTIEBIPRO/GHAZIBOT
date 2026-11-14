@@ -93,3 +93,29 @@ def test_preflight_rejects_missing_first_5minute_bar(monkeypatch):
             return {**d, "bars": d["bars"][1:]}
     monkeypatch.setattr(module, "AlpacaBars", GappedAlpaca)
     assert module.preflight(NOW) == "PREFLIGHT_OPENING_BARS_INCOMPLETE"
+
+
+def test_delivery_authorization_denied_but_independent_checks_complete(monkeypatch, capsys):
+    _base(monkeypatch)
+    monkeypatch.setenv("ALPACA_PRIVATE_ALERTS_AUTHORIZED", "false")
+    assert module.preflight(NOW) == "PREFLIGHT_RIGHTS_DENIED_TELEGRAM_PRIVATE"
+    output = capsys.readouterr().out
+    assert "private price delivery: NOT_AUTHORIZED" in output
+    assert "private Telegram destination: VERIFIED" in output
+    assert "historical consolidated SIP: VERIFIED" in output
+    for secret in ("987654", "test", "@owner"):
+        # Avoid printing recipient IDs, access credentials, and usernames.
+        assert secret not in output
+
+
+def test_delivery_denied_does_not_hide_missing_sip(monkeypatch, capsys):
+    _base(monkeypatch)
+    monkeypatch.setenv("ALPACA_PRIVATE_ALERTS_AUTHORIZED", "false")
+    class IexAlpaca(FakeAlpaca):
+        def bars(self, *args):
+            result = super().bars(*args)
+            return {**result, "feed": "iex"}
+    monkeypatch.setattr(module, "AlpacaBars", IexAlpaca)
+    assert module.preflight(NOW) == "PREFLIGHT_RIGHTS_DENIED_TELEGRAM_PRIVATE"
+    output = capsys.readouterr().out
+    assert "PREFLIGHT_HISTORICAL_SIP_UNAVAILABLE" in output
