@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-14T07:37:22.281084+00:00",
+ "generated_at": "2026-11-14T18:44:49.106389+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,37 +8,37 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 30
+     "success": 17
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 30
+     "success": 13
     },
     "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
-     "success": 30
+     "success": 13
     },
     "index-radar.yml": {
-     "success": 5
+     "success": 3
     },
     "stock-watch-charts.yml": {
-     "success": 5
+     "success": 2
     },
     "public-macro.yml": {
      "success": 2
     },
     "site-evidence-strength.yml": {
-     "success": 22
+     "success": 12
     },
     "free-gex-validation.yml": {
-     "success": 30
+     "success": 13
     },
     "market-orchestrator.yml": {
-     "success": 20,
-     "cancelled": 5
+     "success": 10,
+     "cancelled": 1
     },
     "catalyst-watchlist.yml": {
-     "success": 6
+     "success": 4
     },
     "daily-plan.yml": {
      "success": 3
@@ -47,7 +47,7 @@
      "success": 2
     },
     "official-sec-pulse.yml": {
-     "success": 4
+     "success": 3
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
@@ -107,12 +107,16 @@
    "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
   },
   "ANALYTICAL_VALIDITY": {
-   "status": "UNMEASURED",
+   "status": "PASSING",
    "value": null,
    "unit": "status",
-   "evidence": {},
-   "method": "no completed CI run on main read",
-   "note_ar": "تعذر قراءة نتيجة اختبارات الحساب."
+   "evidence": {
+    "run_id": 43590596963,
+    "conclusion": "success",
+    "at": "2026-11-14T11:33:33Z"
+   },
+   "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
+   "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
   },
   "SIGNAL_PERFORMANCE": {
    "status": "NO_PROVEN_EDGE",
@@ -137,7 +141,7 @@
   },
   "WEBSITE_FUNCTIONALITY": {
    "status": "MEASURED",
-   "value": 90.0,
+   "value": 100.0,
    "unit": "percent of pages",
    "evidence": {
     "ghazibot.vercel.app:home": {
@@ -163,7 +167,7 @@
      "external_widget_frames": 2,
      "index_panel": "",
      "spx_status": "",
-     "list_rows": 51,
+     "list_rows": 49,
      "chart_state": "ready",
      "chart_symbol": "NVDA",
      "tradingview_frames": 1
@@ -177,7 +181,7 @@
      "external_widget_frames": 1,
      "index_panel": "",
      "spx_status": "",
-     "list_rows": 120,
+     "list_rows": 116,
      "chart_state": "idle",
      "chart_symbol": null
     },
@@ -203,7 +207,7 @@
      "own_dom_dollar_prices": 0,
      "external_widget_frames": 0,
      "index_panel": "",
-     "spx_status": "LICENSE_BLOCKED • 2026-11-13T20:32:31.809448+00:00",
+     "spx_status": "LICENSE_BLOCKED • 2026-11-13T22:58:59.946061+00:00",
      "list_rows": 0,
      "chart_state": null,
      "chart_symbol": null
@@ -231,7 +235,7 @@
      "external_widget_frames": 2,
      "index_panel": "",
      "spx_status": "",
-     "list_rows": 51,
+     "list_rows": 49,
      "chart_state": "ready",
      "chart_symbol": "NVDA",
      "tradingview_frames": 1
@@ -245,17 +249,13 @@
      "external_widget_frames": 1,
      "index_panel": "",
      "spx_status": "",
-     "list_rows": 120,
+     "list_rows": 116,
      "chart_state": "idle",
      "chart_symbol": null
     },
     "ghazir.vercel.app:classic": {
      "http_status": 200,
-     "errors": [
-      "Error: Cannot update oldest data, last time=[object Object], new time=[object Object]",
-      "Error: Cannot update oldest data, last time=[object Object], new time=[object Object]",
-      "Error: Cannot update oldest data, last time=[object Object], new time=[object Object]"
-     ],
+     "errors": [],
      "overflow": false,
      "blocked_reason_shown": true,
      "own_dom_dollar_prices": 0,
@@ -275,7 +275,7 @@
      "own_dom_dollar_prices": 0,
      "external_widget_frames": 0,
      "index_panel": "",
-     "spx_status": "LICENSE_BLOCKED • 2026-11-13T20:32:31.809448+00:00",
+     "spx_status": "LICENSE_BLOCKED • 2026-11-13T22:58:59.946061+00:00",
      "list_rows": 0,
      "chart_state": null,
      "chart_symbol": null
@@ -285,20 +285,17 @@
    "note_ar": "يقيس سلامة العرض لا صحة البيانات المعروضة."
   },
   "TELEGRAM_DELIVERY": {
-   "status": "NOT_VERIFIED",
+   "status": "DELIVERED",
    "value": null,
    "unit": "status",
    "evidence": {
-    "checked_at": "2026-11-13T22:54:24.469588+00:00",
-    "status": "BLOCKED_MISSING_BOT_TOKEN",
-    "sent": 0,
-    "edited": 0,
-    "unchanged": 0,
-    "bot_api_responded": false,
-    "destination_api_verified": false
+    "last_sent_at": "2026-11-14T18:19:58.507095+00:00",
+    "kind": "change",
+    "message_id": 1365,
+    "log": "state/telegram/ops_digest_state.json"
    },
-   "method": "Bot API identity and destination chat verified by the Contract Guardian delivery audit",
-   "note_ar": "قبول Telegram للرسالة لا يثبت أن المستخدم قرأها."
+   "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
+   "note_ar": "Telegram قبل رسالة فعلية وأعاد رقمها؛ هذا لا يثبت أن المستخدم قرأها."
   }
  },
  "engines": {
@@ -332,7 +329,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-13T22:54:21.443444+00:00",
+   "generated_at": "2026-11-14T15:57:13.398249+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -348,8 +345,8 @@
     "yahoo"
    ],
    "rows": null,
-   "generated_at": "2026-11-13T21:41:25.062802+00:00",
-   "last_run_at": "2026-11-13T21:40:37Z"
+   "generated_at": "2026-11-14T15:56:53.951389+00:00",
+   "last_run_at": "2026-11-14T15:56:03Z"
   },
   "classical": {
    "label_ar": "الاتجاه الكلاسيكي",
@@ -365,7 +362,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-13T22:58:29Z"
+   "last_run_at": "2026-11-14T15:55:41Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -406,8 +403,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-14T02:27:42.951877+00:00",
-   "last_run_at": "2026-11-14T02:27:14Z"
+   "generated_at": "2026-11-14T15:56:22.402534+00:00",
+   "last_run_at": "2026-11-14T15:55:59Z"
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
