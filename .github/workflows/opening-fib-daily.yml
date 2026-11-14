@@ -16,6 +16,12 @@ on:
   schedule:
     - cron: "27,42 14 * * 1-5"
     - cron: "27,42 15 * * 1-5"
+  # One-shot safe account verification when this workflow is deployed to main.
+  # Push preflight NEVER sends Telegram messages or changes the sent marker.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/opening-fib-daily.yml"
 
 permissions:
   contents: write
@@ -66,7 +72,7 @@ jobs:
         env:
           PYTHONPATH: app
           RUN_DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
-          RUN_PREFLIGHT: ${{ github.event_name == 'workflow_dispatch' && inputs.preflight && 'true' || 'false' }}
+          RUN_PREFLIGHT: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preflight) && 'true' || 'false' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -84,7 +90,7 @@ jobs:
           fi
 
       - name: Persist date-only delivery marker, never market prices
-        if: success() && (github.event_name != 'workflow_dispatch' || inputs.dry_run == false)
+        if: success() && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false && inputs.preflight == false))
         shell: bash
         run: |
           set -euo pipefail
