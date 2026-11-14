@@ -1,0 +1,151 @@
+"""Owner-only daily opening Fibonacci Telegram digest.
+
+This runner must never log, persist or publish provider price data. Only a
+date-only SENT marker is written to the isolated bot-state checkout.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from datetime import datetime, time, timedelta, timezone
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import exchange_calendars as xcals
+import pandas as pd
+import requests
+
+from options_radar.bar_providers import AlpacaBars
+from options_radar.opening_fib_scan import evaluate, render_private_digest
+from options_radar.output_policy import decide, deliver_private
+from scripts.telegram_transport import send_html_message
+
+NY = ZoneInfo("America/New_York")
+SYMBOLS_MAX = 300
+
+
+def load_symbols(path: Path, *, maximum: int) -> list[str]:
+    import re
+    out: list[str] = []
+    for text in path.read_text(encoding="utf-8").splitlines():
+        symbol = text.partition("#")[0].strip().upper()
+        if symbol and re.fullmatch(r"[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?", symbol) and symbol not in out:
+            out.append(symbol)
+    return out[:max(1, min(SYMBOLS_MAX, maximum))]
+
+
+def session_open(now: datetime) -> datetime | None:
+    calendar = xcals.get_calendar("XNYS")
+    today = now.astimezone(NY).date()
+    label = pd.Timestamp(today)
+    if not calendar.is_session(label):
+        return None
+    return pd.Timestamp(calendar.schedule.loc[str(today), "open"]).to_pydatetime().astimezone(timezone.utc)
+
+
+def owner_chat(chat_id: str) -> dict[str, str]:
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if not token:
+        raise RuntimeError("missing Telegram bot")
+    res = requests.get(
+        f"https://api.telegram.org/bot{token}/getChat",
+        params={"chat_id": chat_id}, timeout=12,
+    )
+    res.raise_for_status()
+    body = res.json()
+    if not body.get("ok") or not isinstance(body.get("result"), dict):
+        raise RuntimeError("Telegram getChat not verified")
+    chat = body["result"]
+    return {"type": str(chat.get("type") or ""), "username": str(chat.get("username") or "")}
+
+
+def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
+        max_symbols: int) -> str:
+    now = now.astimezone(timezone.utc)
+    ny_now = now.astimezone(NY)
+    opening = session_open(now)
+    if opening is None:
+        return "SKIP_NON_SESSION"
+    # Two UTC crons cover both DST and standard time; only the matching local
+    # 10:xx New York window is active. GitHub schedules can arrive late.
+    if not time(10, 15) <= ny_now.time().replace(tzinfo=None) <= time(11, 45):
+        return "SKIP_OUTSIDE_LOCAL_DELIVERY_WINDOW"
+    session_date = ny_now.date().isoformat()
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
+        if not isinstance(state, dict):
+            state = {}
+    except (OSError, ValueError):
+        state = {}
+    if state.get("sent_session") == session_date and not dry_run:
+        return "ALREADY_DELIVERED"
+
+    env = dict(os.environ)
+    provider = AlpacaBars(env, now=now)
+    if provider.status() != "READY":
+        return "DATA_PROVIDER_NOT_READY"
+    if not decide(provider.rights_source, "compute", env).allowed:
+        return "DATA_COMPUTE_NOT_AUTHORIZED"
+    if not decide(provider.rights_source, "telegram_private", env).allowed:
+        return "PRIVATE_DELIVERY_NOT_AUTHORIZED"
+
+    symbols = load_symbols(universe, maximum=max_symbols)
+    if not symbols:
+        return "EMPTY_UNIVERSE"
+    # Delayed SIP when entitled; IEX fallback labels coverage honestly.
+    # A tight request from session open prevents pulling unneeded historical bars.
+    multi = provider.multi_bars(symbols, "5m", opening, now, batch=70)
+    if multi.get("status") != "OK":
+        return "DATA_BATCHES_FAILED"
+    results = [
+        evaluate(
+            symbol,
+            multi.get("bars", {}).get(symbol, []),
+            session_open=opening,
+            now=now,
+            feed=str(multi.get("feed", {}).get(symbol) or ""),
+        )
+        for symbol in symbols
+    ]
+    valid = sum(item["state"] != "NO_DATA" for item in results)
+    if valid == 0 or multi.get("failed_batches"):
+        # An incomplete scan must not be announced as an "all stocks" report.
+        return "NO_COMPLETE_SCAN"
+    message = render_private_digest(results, session_date=session_date)
+
+    if dry_run:
+        # Never emit licensed price levels into public CI logs.
+        return f"DRY_RUN_CHECKED_{len(results)}_VALID_{valid}"
+    status = deliver_private(
+        message, sources=[provider.rights_source], env=env,
+        get_chat=owner_chat,
+        send=lambda text, chat_id: send_html_message(text, chat_id=chat_id),
+    )
+    if status == "DELIVERED":
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        # Only a date, not any licensed quote, symbol-level result or chat ID.
+        state_path.write_text(json.dumps({"sent_session": session_date},
+                                         ensure_ascii=False) + "\n", encoding="utf-8")
+    return status
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Owner-private 15m opening Fibonacci scan")
+    parser.add_argument("--universe", type=Path, default=Path("data/universe.txt"))
+    parser.add_argument("--state", type=Path, required=True)
+    parser.add_argument("--max-symbols", type=int,
+                        default=int(os.environ.get("OPENING_FIB_MAX_SYMBOLS", "150")))
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+    status = run(now=datetime.now(timezone.utc), universe=args.universe,
+                 state_path=args.state, max_symbols=args.max_symbols, dry_run=args.dry_run)
+    print("Opening Fibonacci scan status:", status)
+    # Weekend, wrong local time, or duplicate are legitimate non-events.
+    if status.startswith(("SKIP_", "ALREADY_", "DRY_RUN_")):
+        return 0
+    return 0 if status == "DELIVERED" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
