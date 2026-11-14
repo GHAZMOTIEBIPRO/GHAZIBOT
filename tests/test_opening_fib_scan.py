@@ -121,7 +121,8 @@ def test_digest_marks_delayed_data_and_no_fake_option_quote():
     assert "16 دقيقة" in message
     assert "مراقبة كول" in message
     assert "SPY" in message and "AMD" in message
-    assert "عقود خيارات" in message
+    assert "عقد خيار" in message
+    assert "SIP 1" in message
     assert len(message) <= 3900
 
 
