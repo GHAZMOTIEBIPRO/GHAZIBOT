@@ -29,7 +29,7 @@ def test_owner_id_help_responds_only_to_private_explicit_recent_command(monkeypa
                          "from": {"id": 333}}},
             {"message": {"text": "/ghazi_id", "date": int(NOW.timestamp()),
                          "chat": {"id": 123456, "type": "private"},
-                         "from": {"id": 123456, "first_name": "غازي"}}]}
+                         "from": {"id": 123456, "first_name": "غازي"}}}]}
     monkeypatch.setattr(setup, "_get", get)
     monkeypatch.setattr(setup, "send_html_message",
                         lambda text, *, chat_id: sent.append((text, chat_id)) or SimpleNamespace(message_id=5))
@@ -56,7 +56,7 @@ def test_owner_id_help_ignores_old_group_and_empty_messages(monkeypatch):
                                          "from": {"id": 22}}},
                             {"message": {"text": "/ghazi_id", "date": int(NOW.timestamp()) - 7200,
                                          "chat": {"id": 5, "type": "private"},
-                                         "from": {"id": 5}}]})
+                                         "from": {"id": 5}}}]})
     assert setup.owner_id_help(now=NOW) == "OWNER_ID_COMMAND_NOT_FOUND"
 
 
