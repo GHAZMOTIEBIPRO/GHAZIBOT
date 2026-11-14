@@ -3,6 +3,10 @@ name: GHAZI RADAR - Daily Opening Fibonacci (owner private)
 on:
   workflow_dispatch:
     inputs:
+      preflight:
+        description: "Verify private Telegram account and historical SIP without sending"
+        type: boolean
+        default: false
       dry_run:
         description: "Validate calculations without Telegram delivery"
         type: boolean
@@ -36,6 +40,7 @@ jobs:
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       OPENING_FIB_MAX_SYMBOLS: ${{ vars.OPENING_FIB_MAX_SYMBOLS || '150' }}
+      OPENING_FIB_MIN_OPENING_NOTIONAL: ${{ vars.OPENING_FIB_MIN_OPENING_NOTIONAL || '1000000' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -61,10 +66,14 @@ jobs:
         env:
           PYTHONPATH: app
           RUN_DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+          RUN_PREFLIGHT: ${{ github.event_name == 'workflow_dispatch' && inputs.preflight && 'true' || 'false' }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$RUN_DRY" == "true" ]]; then
+          if [[ "${RUN_PREFLIGHT:-false}" == "true" ]]; then
+            python -m scripts.run_opening_fib_daily \
+              --state state/state/opening_fib/sent.json --preflight
+          elif [[ "$RUN_DRY" == "true" ]]; then
             python -m scripts.run_opening_fib_daily \
               --universe app/data/universe.txt \
               --state state/state/opening_fib/sent.json --dry-run

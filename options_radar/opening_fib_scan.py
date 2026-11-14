@@ -36,6 +36,7 @@ def evaluate(
     session_open: datetime,
     now: datetime,
     feed: str,
+    min_opening_notional: float = 1_000_000.0,
 ) -> dict[str, Any]:
     """Pure deterministic scanner; anchor precisely to the 09:30-09:45 session.
 
@@ -65,6 +66,8 @@ def evaluate(
     if any(t not in chosen for t in starts):
         return _empty(symbol, "شمعة افتتاح ناقصة (يلزم 3×5 دقائق)")
     first = [chosen[t] for t in starts]
+    # A complete SIP tape is essential for meaningful breakout levels. IEX
+    # tracks a single venue and can misstate both volume and extremes.
     high, low = max(x["h"] for x in first), min(x["l"] for x in first)
     width = high - low
     midpoint = (high + low) / 2
@@ -79,10 +82,16 @@ def evaluate(
     base = {
         "symbol": symbol, "state": "WAIT", "feed": feed,
         "opening_high": high, "opening_low": low, "midpoint": midpoint,
+        "opening_notional_estimate": round(sum(x["v"] for x in first) * midpoint, 2),
         "fib": fib, "opening_direction": opening_direction,
         "source_last_bar": post[-1]["t"].isoformat() if post else None,
         "reason": "انتظار تأكيد بعد الافتتاح",
     }
+    if feed != "sip":
+        return {**base, "reason": "IEX تغطية جزئية؛ لا نصدر مراقبة كول/بوت دون SIP مكتملة"}
+    if (min_opening_notional > 0 and
+            base["opening_notional_estimate"] < min_opening_notional):
+        return {**base, "reason": "سيولة افتتاح تقديرية أدنى من الحد المعتمد"}
     if len(post) < 2:
         return base
     last = post[-2:]
@@ -137,7 +146,10 @@ def render_private_digest(results: list[dict[str, Any]], *,
         f"المفحوص {len(results)} | مراقبة كول {len(states['WATCH_CALL'])} | "
         f"مراقبة بوت {len(states['WATCH_PUT'])} | انتظار {len(states['WAIT'])} | "
         f"بيانات ناقصة {len(states['NO_DATA'])}",
-        "⚠️ الشموع متأخرة 16 دقيقة أو أكثر؛ هذه مناطق بحث وليست أسعار تنفيذ أو عقود خيارات.",
+        f"تغطية مصدر الشموع: SIP "
+        f"{sum(x.get('feed') == 'sip' for x in results)} | IEX "
+        f"{sum(x.get('feed') == 'iex' for x in results)}",
+        "⚠️ الشموع متأخرة 16 دقيقة أو أكثر؛ CALL/PUT انحياز للسهم لا إثبات توفر عقد خيار، وليست أسعار تنفيذ.",
     ]
     if picks:
         lines.append("<b>أبرز فرص المراقبة (ليست صفقات منفذة):</b>")
@@ -172,4 +184,4 @@ def render_private_digest(results: list[dict[str, Any]], *,
                 lines[idx] = head + "</b> " + ", ".join(names[:8]) + f" ... ({len(names)-8} أخرى)"
                 continue
         lines.pop(idx)
-    return "\n".join(lines)[:3900]
+    return "\n".join(lines)

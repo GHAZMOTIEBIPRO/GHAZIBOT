@@ -9,7 +9,7 @@ OPEN = datetime(2026, 11, 16, 14, 30, tzinfo=UTC)  # 09:30 NY / EST
 NOW = datetime(2026, 11, 16, 15, 20, tzinfo=UTC)
 
 
-def candle(minute, o, h, l, c, v=1000):
+def candle(minute, o, h, l, c, v=10000):
     return {"t": OPEN + timedelta(minutes=minute), "o": o, "h": h,
             "l": l, "c": c, "v": v}
 
@@ -37,7 +37,7 @@ def down():
 
 
 def test_call_after_two_consecutive_confirmations():
-    result = evaluate("SPY", up(), session_open=OPEN, now=NOW, feed="iex")
+    result = evaluate("SPY", up(), session_open=OPEN, now=NOW, feed="sip")
     assert result["state"] == "WATCH_CALL"
     assert result["opening_high"] == 101
     assert result["opening_low"] == 99
@@ -59,7 +59,7 @@ def test_put_uses_downward_extensions():
 def test_missing_one_of_three_opening_candles_is_no_data():
     b = up()
     del b[1]
-    result = evaluate("NVDA", b, session_open=OPEN, now=NOW, feed="iex")
+    result = evaluate("NVDA", b, session_open=OPEN, now=NOW, feed="sip")
     assert result["state"] == "NO_DATA"
 
 
@@ -76,7 +76,7 @@ def test_unrecognized_feed_refuses_price():
 
 def test_repeated_bar_refused():
     result = evaluate("SPY", up() + [up()[0]],
-                      session_open=OPEN, now=NOW, feed="iex")
+                      session_open=OPEN, now=NOW, feed="sip")
     assert result["state"] == "NO_DATA"
 
 
@@ -85,7 +85,7 @@ def test_wait_when_no_close_breakout():
         candle(15, 100, 100.4, 99.8, 100.1),
         candle(20, 100.1, 100.5, 100, 100.4),
     ]
-    result = evaluate("SPY", b, session_open=OPEN, now=NOW, feed="iex")
+    result = evaluate("SPY", b, session_open=OPEN, now=NOW, feed="sip")
     assert result["state"] == "WAIT"
 
 
@@ -94,7 +94,7 @@ def test_gap_cannot_confirm():
         candle(15, 100.95, 101.15, 100.95, 101.05),
         candle(25, 101.05, 101.2, 101, 101.1),
     ]
-    result = evaluate("SPY", b, session_open=OPEN, now=NOW, feed="iex")
+    result = evaluate("SPY", b, session_open=OPEN, now=NOW, feed="sip")
     assert result["state"] == "WAIT"
 
 
@@ -110,16 +110,36 @@ def test_unrealistic_narrow_opening_waits():
         candle(5, 100.01, 100.02, 100.01, 100.02),
         candle(10, 100.02, 100.025, 100.01, 100.02),
     ]
-    result = evaluate("SPY", b, session_open=OPEN, now=NOW, feed="iex")
+    result = evaluate("SPY", b, session_open=OPEN, now=NOW, feed="sip")
     assert result["state"] == "WAIT"
 
 
 def test_digest_marks_delayed_data_and_no_fake_option_quote():
-    result = evaluate("SPY", up(), session_open=OPEN, now=NOW, feed="iex")
+    result = evaluate("SPY", up(), session_open=OPEN, now=NOW, feed="sip")
     message = render_private_digest([result, {"symbol": "AMD", "state": "NO_DATA"}],
                                     session_date="2026-11-16")
     assert "16 دقيقة" in message
     assert "مراقبة كول" in message
     assert "SPY" in message and "AMD" in message
-    assert "عقود خيارات" in message
+    assert "عقد خيار" in message
+    assert "SIP 1" in message
     assert len(message) <= 3900
+
+
+def test_iex_partial_tape_may_never_issue_option_direction():
+    out = evaluate("SPY", up(), session_open=OPEN, now=NOW, feed="iex")
+    assert out["state"] == "WAIT"
+    assert "IEX" in out["reason"]
+
+
+def test_low_opening_notional_cannot_create_breakout_watch():
+    bars = [{**bar, "v": 1} for bar in up()]
+    out = evaluate("SPY", bars, session_open=OPEN, now=NOW, feed="sip")
+    assert out["state"] == "WAIT"
+    assert "سيولة" in out["reason"]
+
+
+def test_liquidity_rule_can_be_researched_with_explicit_threshold():
+    bars = [{**bar, "v": 1} for bar in up()]
+    out = evaluate("SPY", bars, session_open=OPEN, now=NOW, feed="sip", min_opening_notional=0)
+    assert out["state"] == "WATCH_CALL"
