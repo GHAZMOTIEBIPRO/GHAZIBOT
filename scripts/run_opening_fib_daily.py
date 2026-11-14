@@ -20,6 +20,7 @@ from options_radar.bar_providers import AlpacaBars
 from options_radar.opening_fib_scan import evaluate, render_private_digest
 from options_radar.output_policy import decide, deliver_private
 from scripts.telegram_transport import send_html_message
+from scripts.telegram_owner_setup import owner_id_help, telegram_connectivity_test
 
 NY = ZoneInfo("America/New_York")
 SYMBOLS_MAX = 300
@@ -229,13 +230,21 @@ def main() -> int:
                         default=int(os.environ.get("OPENING_FIB_MAX_SYMBOLS", "150")))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--preflight", action="store_true", help="Verify SIP and private Telegram without sending")
+    parser.add_argument("--owner-id-help", action="store_true", help="Reply to a private /ghazi_id command with its own chat ID")
+    parser.add_argument("--telegram-test", action="store_true", help="Send a no-market-data connectivity test to configured owner chat")
     args = parser.parse_args()
-    status = (preflight(datetime.now(timezone.utc)) if args.preflight else
-              run(now=datetime.now(timezone.utc), universe=args.universe,
-                  state_path=args.state, max_symbols=args.max_symbols, dry_run=args.dry_run))
+    if args.owner_id_help:
+        status = owner_id_help()
+    elif args.telegram_test:
+        status = telegram_connectivity_test()
+    elif args.preflight:
+        status = preflight(datetime.now(timezone.utc))
+    else:
+        status = run(now=datetime.now(timezone.utc), universe=args.universe,
+                     state_path=args.state, max_symbols=args.max_symbols, dry_run=args.dry_run)
     print("Opening Fibonacci scan status:", status)
     # Weekend, wrong local time, or duplicate are legitimate non-events.
-    if status.startswith(("SKIP_", "ALREADY_", "DRY_RUN_")) or status == "PREFLIGHT_READY":
+    if status.startswith(("SKIP_", "ALREADY_", "DRY_RUN_")) or status in ("PREFLIGHT_READY", "TELEGRAM_TEST_DELIVERED", "OWNER_ID_REPLIED_PRIVATELY"):
         return 0
     return 0 if status == "DELIVERED" else 2
 
