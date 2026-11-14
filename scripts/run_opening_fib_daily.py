@@ -221,7 +221,8 @@ def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
     if status == "DELIVERED":
         state_path.parent.mkdir(parents=True, exist_ok=True)
         # Only a date, not any licensed quote, symbol-level result or chat ID.
-        state_path.write_text(json.dumps({"sent_session": session_date},
+        state_path.write_text(json.dumps({"sent_session": session_date,
+                                               "sent_at_utc": datetime.now(timezone.utc).isoformat()},
                                          ensure_ascii=False) + "\n", encoding="utf-8")
     return status
 
