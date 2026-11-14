@@ -92,8 +92,22 @@ def test_workflows_with_alpaca_secrets_never_publish_private_data():
                 assert "RUNNER_TEMP" in text
     # only owner-private workflows receive the keys; public publishers never do
     assert sorted(with_keys) == ["alpaca-iex-vcp-private.yml", "alpaca-private-probe.yml", "daily-plan.yml",
-                                 "opening-fib-daily.yml", "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
+                                 "opening-fib-daily.yml", "opening-fib-shadow.yml", "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
                                  "settings-check.yml"]
+
+
+def test_opening_fib_shadow_workflow_does_not_publish_market_data():
+    text = (ROOT / ".github/workflows/opening-fib-shadow.yml").read_text(encoding="utf-8")
+    wf = yaml.safe_load(text)
+    assert "schedule" in (wf.get("on") or wf.get(True) or {})
+    assert "TELEGRAM_OWNER_CHAT_ID" in text
+    assert "ALPACA_PRIVATE_ALERTS_AUTHORIZED" in text
+    assert "actions/upload-artifact" not in text
+    assert "actions/cache" not in text
+    assert "state/opening_fib/shadow_sent.json" in text
+    assert "git add state/opening_fib/shadow_sent.json" in text
+    assert "state/opening_fib/sent.json" in text
+    assert "data/live" not in text
 
 
 def test_legacy_settings_never_load_alpaca_keys_outside_private_scope(monkeypatch):
