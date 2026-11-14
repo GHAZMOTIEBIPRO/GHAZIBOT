@@ -61,56 +61,86 @@ def owner_chat(chat_id: str) -> dict[str, str]:
 
 
 def preflight(now: datetime) -> str:
-    """No-delivery account/network check, also callable on non-trading days.
+    """No-send readiness diagnostics: independently check SIP, private chat, rights.
 
-    Verifies authorized SIP retrieval and that the owner destination resolves
-    to a private Telegram chat; never logs quote values or credential strings.
+    This checks a historical consolidated SPY opening and the destination's
+    private Telegram identity without sending any message. Logs include only
+    bounded status codes; no quotes, credentials, usernames or chat IDs.
     """
     env = dict(os.environ)
     provider = AlpacaBars(env, now=now)
     if provider.status() != "READY":
+        print("Preflight Alpaca source: NOT_READY")
         return "PREFLIGHT_ALPACA_KEY_OR_RIGHTS_MISSING"
-    for use in ("fetch", "compute", "telegram_private"):
+    for use in ("fetch", "compute"):
         if not decide(provider.rights_source, use, env).allowed:
+            print("Preflight Alpaca data rights: DENIED")
             return "PREFLIGHT_RIGHTS_DENIED_" + use.upper()
+    print("Preflight Alpaca data computation: ALLOWED")
+
+    # Read-only diagnostics for the chat and historical consolidated SIP are
+    # independent of permission to SEND licensed prices. A missing attestation
+    # must never prevent us identifying another installation fault.
+    delivery_allowed = decide(provider.rights_source, "telegram_private", env).allowed
+    print("Preflight private price delivery:", "AUTHORIZED" if delivery_allowed else "NOT_AUTHORIZED")
+
+    chat_problem = None
     chat_id = (env.get("TELEGRAM_OWNER_CHAT_ID") or "").strip()
     username = (env.get("TELEGRAM_OWNER_USERNAME") or "").strip().lstrip("@").lower()
     if not chat_id and username:
         chat_id = (env.get("TELEGRAM_CHAT_ID") or "").strip()
     if not chat_id:
-        return "PREFLIGHT_OWNER_CHAT_NOT_SET"
-    try:
-        chat = owner_chat(chat_id)
-    except (requests.RequestException, RuntimeError, ValueError):
-        return "PREFLIGHT_TELEGRAM_UNREACHABLE"
-    if chat.get("type") != "private":
-        return "PREFLIGHT_CHAT_NOT_PRIVATE"
-    if username and str(chat.get("username") or "").lower() != username:
-        return "PREFLIGHT_OWNER_IDENTITY_MISMATCH"
+        chat_problem = "PREFLIGHT_OWNER_CHAT_NOT_SET"
+    else:
+        try:
+            chat = owner_chat(chat_id)
+        except (requests.RequestException, RuntimeError, ValueError):
+            chat_problem = "PREFLIGHT_TELEGRAM_UNREACHABLE"
+        else:
+            if chat.get("type") != "private":
+                chat_problem = "PREFLIGHT_CHAT_NOT_PRIVATE"
+            elif username and str(chat.get("username") or "").lower() != username:
+                chat_problem = "PREFLIGHT_OWNER_IDENTITY_MISMATCH"
+    print("Preflight private Telegram destination:",
+          "VERIFIED" if chat_problem is None else chat_problem)
 
+    sip_problem = None
     calendar = xcals.get_calendar("XNYS")
     end_date = now.astimezone(NY).date()
     schedule = calendar.schedule.loc[
         str(end_date - timedelta(days=15)):str(end_date)
     ]
     if schedule.empty:
-        return "PREFLIGHT_NO_RECENT_MARKET_SESSION"
-    recent_open = pd.Timestamp(schedule.iloc[-1]["open"]).to_pydatetime()
-    result = provider.bars(
-        "SPY", "5m", recent_open, recent_open + timedelta(minutes=15)
-    )
-    if result.get("status") != "OK" or result.get("feed") != "sip":
-        return "PREFLIGHT_HISTORICAL_SIP_UNAVAILABLE"
-    stamps = {
-        row.get("t").astimezone(timezone.utc)
-        for row in result.get("bars", [])
-        if isinstance(row, dict)
-        and isinstance(row.get("t"), datetime)
-        and row["t"].tzinfo is not None
-    }
-    if any(recent_open + timedelta(minutes=5 * i) not in stamps
-           for i in range(3)):
-        return "PREFLIGHT_OPENING_BARS_INCOMPLETE"
+        sip_problem = "PREFLIGHT_NO_RECENT_MARKET_SESSION"
+    else:
+        recent_open = pd.Timestamp(schedule.iloc[-1]["open"]).to_pydatetime()
+        result = provider.bars(
+            "SPY", "5m", recent_open, recent_open + timedelta(minutes=15)
+        )
+        if result.get("status") != "OK" or result.get("feed") != "sip":
+            sip_problem = "PREFLIGHT_HISTORICAL_SIP_UNAVAILABLE"
+        else:
+            stamps = {
+                row.get("t").astimezone(timezone.utc)
+                for row in result.get("bars", [])
+                if isinstance(row, dict)
+                and isinstance(row.get("t"), datetime)
+                and row["t"].tzinfo is not None
+            }
+            if any(recent_open + timedelta(minutes=5 * i) not in stamps
+                   for i in range(3)):
+                sip_problem = "PREFLIGHT_OPENING_BARS_INCOMPLETE"
+    print("Preflight historical consolidated SIP:",
+          "VERIFIED" if sip_problem is None else sip_problem)
+
+    # Denied-by-default: a successful read/identity test is NEVER permission
+    # to send a licensed price to Telegram.
+    if not delivery_allowed:
+        return "PREFLIGHT_RIGHTS_DENIED_TELEGRAM_PRIVATE"
+    if chat_problem:
+        return chat_problem
+    if sip_problem:
+        return sip_problem
     return "PREFLIGHT_READY"
 
 
