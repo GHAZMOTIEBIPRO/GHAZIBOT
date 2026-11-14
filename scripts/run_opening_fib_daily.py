@@ -60,6 +60,60 @@ def owner_chat(chat_id: str) -> dict[str, str]:
     return {"type": str(chat.get("type") or ""), "username": str(chat.get("username") or "")}
 
 
+def preflight(now: datetime) -> str:
+    """No-delivery account/network check, also callable on non-trading days.
+
+    Verifies authorized SIP retrieval and that the owner destination resolves
+    to a private Telegram chat; never logs quote values or credential strings.
+    """
+    env = dict(os.environ)
+    provider = AlpacaBars(env, now=now)
+    if provider.status() != "READY":
+        return "PREFLIGHT_ALPACA_KEY_OR_RIGHTS_MISSING"
+    for use in ("fetch", "compute", "telegram_private"):
+        if not decide(provider.rights_source, use, env).allowed:
+            return "PREFLIGHT_RIGHTS_DENIED_" + use.upper()
+    chat_id = (env.get("TELEGRAM_OWNER_CHAT_ID") or "").strip()
+    username = (env.get("TELEGRAM_OWNER_USERNAME") or "").strip().lstrip("@").lower()
+    if not chat_id and username:
+        chat_id = (env.get("TELEGRAM_CHAT_ID") or "").strip()
+    if not chat_id:
+        return "PREFLIGHT_OWNER_CHAT_NOT_SET"
+    try:
+        chat = owner_chat(chat_id)
+    except (requests.RequestException, RuntimeError, ValueError):
+        return "PREFLIGHT_TELEGRAM_UNREACHABLE"
+    if chat.get("type") != "private":
+        return "PREFLIGHT_CHAT_NOT_PRIVATE"
+    if username and str(chat.get("username") or "").lower() != username:
+        return "PREFLIGHT_OWNER_IDENTITY_MISMATCH"
+
+    calendar = xcals.get_calendar("XNYS")
+    end_date = now.astimezone(NY).date()
+    schedule = calendar.schedule.loc[
+        str(end_date - timedelta(days=15)):str(end_date)
+    ]
+    if schedule.empty:
+        return "PREFLIGHT_NO_RECENT_MARKET_SESSION"
+    recent_open = pd.Timestamp(schedule.iloc[-1]["open"]).to_pydatetime()
+    result = provider.bars(
+        "SPY", "5m", recent_open, recent_open + timedelta(minutes=15)
+    )
+    if result.get("status") != "OK" or result.get("feed") != "sip":
+        return "PREFLIGHT_HISTORICAL_SIP_UNAVAILABLE"
+    stamps = {
+        row.get("t").astimezone(timezone.utc)
+        for row in result.get("bars", [])
+        if isinstance(row, dict)
+        and isinstance(row.get("t"), datetime)
+        and row["t"].tzinfo is not None
+    }
+    if any(recent_open + timedelta(minutes=5 * i) not in stamps
+           for i in range(3)):
+        return "PREFLIGHT_OPENING_BARS_INCOMPLETE"
+    return "PREFLIGHT_READY"
+
+
 def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
         max_symbols: int) -> str:
     now = now.astimezone(timezone.utc)
@@ -98,6 +152,9 @@ def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
     multi = provider.multi_bars(symbols, "5m", opening, now, batch=70)
     if multi.get("status") != "OK":
         return "DATA_BATCHES_FAILED"
+    min_opening_notional = float(os.getenv("OPENING_FIB_MIN_OPENING_NOTIONAL", "1000000"))
+    if not 0 <= min_opening_notional <= 1_000_000_000:
+        return "INVALID_LIQUIDITY_THRESHOLD"
     results = [
         evaluate(
             symbol,
@@ -105,6 +162,7 @@ def run(*, now: datetime, universe: Path, state_path: Path, dry_run: bool,
             session_open=opening,
             now=now,
             feed=str(multi.get("feed", {}).get(symbol) or ""),
+            min_opening_notional=min_opening_notional,
         )
         for symbol in symbols
     ]
@@ -137,12 +195,14 @@ def main() -> int:
     parser.add_argument("--max-symbols", type=int,
                         default=int(os.environ.get("OPENING_FIB_MAX_SYMBOLS", "150")))
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--preflight", action="store_true", help="Verify SIP and private Telegram without sending")
     args = parser.parse_args()
-    status = run(now=datetime.now(timezone.utc), universe=args.universe,
-                 state_path=args.state, max_symbols=args.max_symbols, dry_run=args.dry_run)
+    status = (preflight(datetime.now(timezone.utc)) if args.preflight else
+              run(now=datetime.now(timezone.utc), universe=args.universe,
+                  state_path=args.state, max_symbols=args.max_symbols, dry_run=args.dry_run))
     print("Opening Fibonacci scan status:", status)
     # Weekend, wrong local time, or duplicate are legitimate non-events.
-    if status.startswith(("SKIP_", "ALREADY_", "DRY_RUN_")):
+    if status.startswith(("SKIP_", "ALREADY_", "DRY_RUN_")) or status == "PREFLIGHT_READY":
         return 0
     return 0 if status == "DELIVERED" else 2
 
