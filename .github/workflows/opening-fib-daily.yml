@@ -72,7 +72,7 @@ jobs:
         env:
           PYTHONPATH: app
           RUN_DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
-          RUN_PREFLIGHT: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preflight) && 'true' || 'false' }}
+          RUN_PREFLIGHT: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preflight)) && 'true' || 'false' }}
         shell: bash
         run: |
           set -euo pipefail
