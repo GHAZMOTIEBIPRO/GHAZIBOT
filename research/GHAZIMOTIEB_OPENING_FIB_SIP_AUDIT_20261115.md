@@ -39,3 +39,17 @@ Sources:
 - https://docs.alpaca.markets/us/docs/market-data-faq
 - https://docs.alpaca.markets/us/reference/stockbars
 - https://docs.alpaca.markets/us/docs/historical-stock-data-1
+
+
+## Additional v1.1 reversal replay: still an independent JavaScript check
+
+After correcting the source-level stop geometry, the same SIP dates were retrieved again and the revised **15-minute Fibonacci Reversal** rule independently re-evaluated. No final 55-day holdout results were computed.
+
+| Level family; assumed round-trip cost | Training trades / mean R | Validation trades | Validation win rate | Validation mean net R | Validation PF |
+|---|---:|---:|---:|---:|---:|
+| Fib / 12bps | 32 / -0.6100 | 25 | 24.0% | -1.2265 | 0.163 |
+| Equal / 12bps | 25 / -0.9775 | 23 | 21.7% | -1.3626 | 0.125 |
+| Fib / 25bps | 32 / -1.6122 | 25 | 12.0% | -2.2982 | 0.027 |
+| Fib / 50bps | 32 / -3.5396 | 25 | 0.0% | -4.3591 | 0.000 |
+
+This additional run supports **a negative result for the revised reversal prototype at these assumed costs**. Although the Fib variant was less negative than the equal-level variant in this particular sample, neither was profitable and the sample is far too small for a conclusion that Fibonacci adds a robust edge. This independent replay still has no transaction-by-transaction verification in the Python CLI and is not an options execution backtest.
