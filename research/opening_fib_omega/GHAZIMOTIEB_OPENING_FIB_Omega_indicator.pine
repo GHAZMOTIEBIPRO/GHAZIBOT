@@ -1,0 +1,374 @@
+//@version=6
+indicator("GHAZIMOTIEB | OPENING FIB Ω [Research v1]", "GHAZI FIB Ω", overlay=true, max_labels_count=100, max_lines_count=100)
+// RESEARCH ONLY. Runs on the UNDERLYING standard US stock/ETF chart, never an option quote.
+// All signals require barstate.isconfirmed; the opening window must be complete and gap-free.
+// Pine compilation and real-market performance MUST be checked in TradingView.
+
+string TZ = "America/New_York"
+string RTH = "0930-1600:23456"
+string grpCore = "01 | الجلسة والنموذج"
+string grpFilters = "02 | فلاتر وقيود"
+string grpView = "03 | العرض والتنبيهات"
+
+int openMinutes = input.int(15, "طول نطاق الافتتاح بالدقائق", options=[5, 10, 15, 30, 60], group=grpCore)
+string model = input.string("ORB", "نموذج البحث", options=["ORB", "Retest", "Fib Reversal", "False Break", "VWAP Confluence", "MTF Alignment"], group=grpCore)
+int latestEntry = input.int(705, "آخر دقيقة دخول بتوقيت نيويورك (705 = 11:45)", minval=615, maxval=930, group=grpCore)
+int confirmBars = input.int(2, "إغلاقات الاختراق المطلوبة (ORB)", minval=1, maxval=3, group=grpCore)
+float stopBuffer = input.float(0.25, "هامش الوقف كنسبة من نطاق الافتتاح", minval=0.05, maxval=1.0, step=0.05, group=grpCore)
+float minRR = input.float(1.5, "الحد الأدنى للعائد/المخاطرة نحو الهدف الثاني", minval=0.5, maxval=6.0, step=0.25, group=grpCore)
+float minRange = input.float(0.12, "أدنى عرض للنطاق (%)", minval=0.01, maxval=4.0, step=0.01, group=grpFilters)
+float maxRange = input.float(6.0, "أقصى عرض للنطاق (%)", minval=1.0, maxval=30.0, step=0.5, group=grpFilters)
+bool useVolume = input.bool(false, "اشتراط حجم نسبي (إلغاؤه عند نقص الحجم)", group=grpFilters)
+float volumeMult = input.float(1.0, "مضاعف الحجم إلى متوسط 20 شمعة سابقة", minval=0.5, maxval=5.0, step=0.25, group=grpFilters)
+bool useDaily = input.bool(false, "توافق اتجاه اليوم السابق (EMA20)", group=grpFilters)
+bool useH1 = input.bool(false, "توافق اتجاه آخر ساعة مكتملة", group=grpFilters)
+bool useVwap = input.bool(false, "تأكيد VWAP للجلسة النظامية", group=grpFilters)
+float retestTol = input.float(0.20, "سماحية إعادة الاختبار من عرض النطاق", minval=0.01, maxval=0.60, step=0.01, group=grpFilters)
+int maxSignals = input.int(1, "أقصى إشارات لكل اتجاه في الجلسة", minval=1, maxval=3, group=grpFilters)
+bool showFib = input.bool(true, "عرض مستويات فيبوناتشي", group=grpView)
+bool showProv = input.bool(true, "عرض نطاق الافتتاح المؤقت بلون مختلف", group=grpView)
+bool showPrev = input.bool(true, "قمة وقاع اليوم السابق", group=grpView)
+bool showHTF = input.bool(false, "فيبو 0.618 للأمس / الأسبوع / الشهر المكتمل", group=grpView)
+bool showVwap = input.bool(true, "VWAP الجلسة", group=grpView)
+bool showTable = input.bool(true, "لوحة عربية", group=grpView)
+bool showLabels = input.bool(true, "ملصقات مستويات النطاق", group=grpView)
+bool earlyAlert = input.bool(true, "تنبيه الاقتراب", group=grpView)
+bool entryAlert = input.bool(true, "تنبيه الدخول المؤكد", group=grpView)
+bool invalidAlert = input.bool(true, "تنبيه الإلغاء", group=grpView)
+bool targetsAlert = input.bool(true, "تنبيه الهدف / الوقف", group=grpView)
+color colorCall = input.color(color.lime, "لون CALL", group=grpView)
+color colorPut = input.color(color.red, "لون PUT", group=grpView)
+
+// Explicitly reject unsupported chart intervals. 15-minute OR cannot be
+// exactly reconstructed from 10/30/60-minute chart candles.
+bool supportedTf = timeframe.isminutes and timeframe.multiplier <= openMinutes and (openMinutes % timeframe.multiplier == 0)
+int clockNY = hour(time, TZ) * 60 + minute(time, TZ)
+int dayKey = year(time, TZ) * 10000 + month(time, TZ) * 100 + dayofmonth(time, TZ)
+bool inRth = not na(time(timeframe.period, RTH, TZ))
+int expectedBars = int(openMinutes / timeframe.multiplier)
+var int lastDay = na
+bool newDay = supportedTf and inRth and (na(lastDay) or dayKey != lastDay)
+
+var float orHigh = na
+var float orLow = na
+var int orCount = 0
+var int prevOrStamp = na
+var bool continuousOr = true
+var bool orReady = false
+var bool hadRealOpen = false
+var int callCount = 0
+var int putCount = 0
+var bool brokeAbove = false
+var bool brokeBelow = false
+var int breakAboveBar = na
+var int breakBelowBar = na
+var float rthPV = 0.0
+var float rthV = 0.0
+var int active = 0
+var float tradeEntry = na
+var float tradeStop = na
+var float target1 = na
+var float target2 = na
+var float target3 = na
+var float signalRR = na
+var bool hit1 = false
+var bool hit2 = false
+var bool hit3 = false
+var string lastReason = "بانتظار افتتاح نيويورك"
+
+bool isOR = supportedTf and inRth and clockNY >= 570 and clockNY < 570 + openMinutes
+if newDay
+    lastDay := dayKey
+    orHigh := na
+    orLow := na
+    orCount := 0
+    prevOrStamp := na
+    continuousOr := true
+    orReady := false
+    hadRealOpen := clockNY == 570
+    callCount := 0
+    putCount := 0
+    brokeAbove := false
+    brokeBelow := false
+    breakAboveBar := na
+    breakBelowBar := na
+    rthPV := 0.0
+    rthV := 0.0
+    active := 0
+    tradeEntry := na
+    tradeStop := na
+    target1 := na
+    target2 := na
+    target3 := na
+    signalRR := na
+    hit1 := false
+    hit2 := false
+    hit3 := false
+    lastReason := "النطاق قيد التكوين"
+
+// Complete opening bars only. Detect a missing or duplicate interval.
+if supportedTf and isOR and barstate.isconfirmed
+    if orCount > 0 and (na(prevOrStamp) or time - prevOrStamp != timeframe.multiplier * 60000)
+        continuousOr := false
+    orHigh := na(orHigh) ? high : math.max(orHigh, high)
+    orLow := na(orLow) ? low : math.min(orLow, low)
+    orCount += 1
+    prevOrStamp := time
+    if clockNY + timeframe.multiplier == 570 + openMinutes
+        orReady := hadRealOpen and continuousOr and orCount == expectedBars
+        lastReason := orReady ? "النطاق مكتمل ومؤكد" : "شموع افتتاح ناقصة؛ WAIT"
+
+// Confirmed previous daily and 60-minute values. Avoid future HTF data.
+[priorHigh, priorLow, priorClose, dailyEma] = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1], ta.ema(close, 20)[1]], lookahead=barmerge.lookahead_on)
+[h1Close, h1Ema] = request.security(syminfo.tickerid, "60", [close[1], ta.ema(close, 20)[1]], lookahead=barmerge.lookahead_on)
+[priorWeekHigh, priorWeekLow] = request.security(syminfo.tickerid, "W", [high[1], low[1]], lookahead=barmerge.lookahead_on)
+[priorMonthHigh, priorMonthLow] = request.security(syminfo.tickerid, "M", [high[1], low[1]], lookahead=barmerge.lookahead_on)
+float avgVolume = ta.sma(volume, 20)[1]
+if supportedTf and inRth and barstate.isconfirmed and not na(volume)
+    rthPV += hlc3 * volume
+    rthV += volume
+float vwapRth = rthV > 0 ? rthPV / rthV : na
+
+float width = orReady ? orHigh - orLow : na
+float rangePct = orReady and orLow > 0 ? width / ((orHigh + orLow) * 0.5) * 100.0 : na
+bool validRange = orReady and width > 0 and rangePct >= minRange and rangePct <= maxRange
+float mid = orReady ? (orHigh + orLow) * 0.5 : na
+float fib236 = orReady ? orLow + width * 0.236 : na
+float fib382 = orReady ? orLow + width * 0.382 : na
+float fib500 = mid
+float fib618 = orReady ? orLow + width * 0.618 : na
+float fib705 = orReady ? orLow + width * 0.705 : na
+float fib786 = orReady ? orLow + width * 0.786 : na
+float extUp1272 = orReady ? orHigh + width * 0.272 : na
+float extUp1414 = orReady ? orHigh + width * 0.414 : na
+float extUp1618 = orReady ? orHigh + width * 0.618 : na
+float extUp2000 = orReady ? orHigh + width : na
+float extUp2618 = orReady ? orHigh + width * 1.618 : na
+float extDn1272 = orReady ? orLow - width * 0.272 : na
+float extDn1414 = orReady ? orLow - width * 0.414 : na
+float extDn1618 = orReady ? orLow - width * 0.618 : na
+float extDn2000 = orReady ? orLow - width : na
+float extDn2618 = orReady ? orLow - width * 1.618 : na
+float prevDayFib618 = priorLow + (priorHigh - priorLow) * 0.618
+float prevWeekFib618 = priorWeekLow + (priorWeekHigh - priorWeekLow) * 0.618
+float prevMonthFib618 = priorMonthLow + (priorMonthHigh - priorMonthLow) * 0.618
+
+bool timeOK = supportedTf and inRth and barstate.isconfirmed and clockNY >= 570 + openMinutes and clockNY <= latestEntry
+bool volumeOK = not useVolume or (not na(volume) and not na(avgVolume) and volume >= avgVolume * volumeMult)
+bool dailyBull = not na(priorClose) and not na(dailyEma) and priorClose > dailyEma
+bool dailyBear = not na(priorClose) and not na(dailyEma) and priorClose < dailyEma
+bool h1Bull = not na(h1Close) and not na(h1Ema) and h1Close > h1Ema
+bool h1Bear = not na(h1Close) and not na(h1Ema) and h1Close < h1Ema
+bool allowBull = (not useDaily or dailyBull) and (not useH1 or h1Bull) and (not useVwap or (not na(vwapRth) and close > vwapRth))
+bool allowBear = (not useDaily or dailyBear) and (not useH1 or h1Bear) and (not useVwap or (not na(vwapRth) and close < vwapRth))
+
+// Check stop first if target/stop occur in the same OHLC bar, but never
+// call this an actual option fill. This remains an underlying-price alert.
+bool invalidated = false
+bool hitTarget = false
+if active != 0 and supportedTf and inRth and barstate.isconfirmed
+    bool stopped = active == 1 ? low <= tradeStop : high >= tradeStop
+    if stopped
+        active := 0
+        invalidated := true
+        lastReason := "لامس الأصل الأساسي مستوى الوقف/الإلغاء"
+    else
+        if not hit1 and (active == 1 ? high >= target1 : low <= target1)
+            hit1 := true
+            hitTarget := true
+            lastReason := "لامس الأصل الأساسي الهدف الأول"
+        if not hit2 and (active == 1 ? high >= target2 : low <= target2)
+            hit2 := true
+            hitTarget := true
+            lastReason := "لامس الأصل الأساسي الهدف الثاني"
+        if not hit3 and (active == 1 ? high >= target3 : low <= target3)
+            hit3 := true
+            hitTarget := true
+            active := 0
+            lastReason := "لامس الأصل الأساسي الهدف الثالث"
+
+bool breakLong = validRange and close > orHigh and (confirmBars == 1 or (close[1] > orHigh and (confirmBars == 2 or close[2] > orHigh)))
+bool breakShort = validRange and close < orLow and (confirmBars == 1 or (close[1] < orLow and (confirmBars == 2 or close[2] < orLow)))
+bool retestLong = brokeAbove and bar_index > breakAboveBar and low <= orHigh + width * retestTol and close > orHigh and close > open
+bool retestShort = brokeBelow and bar_index > breakBelowBar and high >= orLow - width * retestTol and close < orLow and close < open
+bool fakeLong = low[1] < orLow and close[1] > orLow and close > high[1] and close > open
+bool fakeShort = high[1] > orHigh and close[1] < orHigh and close < low[1] and close < open
+bool reverseLong = low <= fib382 and close > fib382 and close[1] <= fib382 and close > open
+bool reverseShort = high >= fib618 and close < fib618 and close[1] >= fib618 and close < open
+bool vwConfluenceL = not na(vwapRth) and math.abs(vwapRth - orHigh) <= width * 0.50 and close > vwapRth
+bool vwConfluenceS = not na(vwapRth) and math.abs(vwapRth - orLow) <= width * 0.50 and close < vwapRth
+bool selectedLong = switch model
+    "Retest" => retestLong
+    "Fib Reversal" => reverseLong
+    "False Break" => fakeLong
+    "VWAP Confluence" => breakLong and vwConfluenceL
+    "MTF Alignment" => breakLong and dailyBull and h1Bull
+    => breakLong
+bool selectedShort = switch model
+    "Retest" => retestShort
+    "Fib Reversal" => reverseShort
+    "False Break" => fakeShort
+    "VWAP Confluence" => breakShort and vwConfluenceS
+    "MTF Alignment" => breakShort and dailyBear and h1Bear
+    => breakShort
+
+bool confirmedCall = false
+bool confirmedPut = false
+if timeOK and validRange and volumeOK and active == 0
+    bool reversal = model == "Fib Reversal" or model == "False Break"
+    if selectedLong and allowBull and callCount < maxSignals
+        float nextStop = reversal ? orLow - width * stopBuffer : orHigh - width * stopBuffer
+        float nextT1 = reversal ? mid : extUp1272
+        float nextT2 = reversal ? orHigh : extUp1618
+        float nextT3 = reversal ? extUp1272 : extUp2000
+        float risk = close - nextStop
+        float rr = risk > 0 ? (nextT2 - close) / risk : na
+        if risk > 0 and close < nextT1 and not na(rr) and rr >= minRR
+            confirmedCall := true
+            callCount += 1
+            active := 1
+            tradeEntry := close
+            tradeStop := nextStop
+            target1 := nextT1
+            target2 := nextT2
+            target3 := nextT3
+            signalRR := rr
+            hit1 := false
+            hit2 := false
+            hit3 := false
+            lastReason := "CALL: تأكيد إغلاق واختبار مخاطرة؛ إشارة للأصل فقط"
+        else
+            lastReason := "رفض CALL: مطاردة السعر أو R/R ضعيف"
+    else if selectedShort and allowBear and putCount < maxSignals
+        float nextStop = reversal ? orHigh + width * stopBuffer : orLow + width * stopBuffer
+        float nextT1 = reversal ? mid : extDn1272
+        float nextT2 = reversal ? orLow : extDn1618
+        float nextT3 = reversal ? extDn1272 : extDn2000
+        float risk = nextStop - close
+        float rr = risk > 0 ? (close - nextT2) / risk : na
+        if risk > 0 and close > nextT1 and not na(rr) and rr >= minRR
+            confirmedPut := true
+            putCount += 1
+            active := -1
+            tradeEntry := close
+            tradeStop := nextStop
+            target1 := nextT1
+            target2 := nextT2
+            target3 := nextT3
+            signalRR := rr
+            hit1 := false
+            hit2 := false
+            hit3 := false
+            lastReason := "PUT: تأكيد إغلاق واختبار مخاطرة؛ إشارة للأصل فقط"
+        else
+            lastReason := "رفض PUT: مطاردة السعر أو R/R ضعيف"
+
+if timeOK and validRange
+    if not brokeAbove and close > orHigh
+        brokeAbove := true
+        breakAboveBar := bar_index
+    if not brokeBelow and close < orLow
+        brokeBelow := true
+        breakBelowBar := bar_index
+
+// Clear unresolved research watches at the end of the exchange session.
+// This is not a stop and not an option exit; it is expiry of the watch.
+if active != 0 and supportedTf and inRth and barstate.isconfirmed and clockNY + timeframe.multiplier >= 960
+    active := 0
+    lastReason := "انتهت الجلسة دون إثبات نتيجة عقد خيار"
+
+bool nearCall = earlyAlert and timeOK and validRange and active == 0 and close <= orHigh and orHigh - close <= width * retestTol and close > mid and allowBull
+bool nearPut = earlyAlert and timeOK and validRange and active == 0 and close >= orLow and close - orLow <= width * retestTol and close < mid and allowBear
+bool earlyWarning = (nearCall or nearPut) and not (confirmedCall or confirmedPut)
+
+// Distinct provisional vs confirmed levels. All confirmed objects stop when
+// the opening had missing bars. No retrospective drawing into the opening.
+float tempHigh = isOR and showProv and not orReady ? (na(orHigh) ? high : math.max(orHigh, high)) : na
+float tempLow = isOR and showProv and not orReady ? (na(orLow) ? low : math.min(orLow, low)) : na
+plot(tempHigh, "نطاق مؤقت أعلى", color=color.new(color.yellow, 45), linewidth=1, style=plot.style_linebr)
+plot(tempLow, "نطاق مؤقت أدنى", color=color.new(color.yellow, 45), linewidth=1, style=plot.style_linebr)
+plot(inRth and orReady ? orHigh : na, "OR HIGH مؤكد", color=colorCall, linewidth=2, style=plot.style_linebr)
+plot(inRth and orReady ? orLow : na, "OR LOW مؤكد", color=colorPut, linewidth=2, style=plot.style_linebr)
+plot(inRth and orReady and showFib ? fib236 : na, "Fib 0.236", color=color.new(color.blue, 70), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? fib382 : na, "Fib 0.382", color=color.new(color.blue, 45), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? fib500 : na, "Fib 0.500", color=color.new(color.gray, 20), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? fib618 : na, "Fib 0.618", color=color.new(color.blue, 45), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? fib705 : na, "Fib 0.705", color=color.new(color.blue, 70), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? fib786 : na, "Fib 0.786", color=color.new(color.blue, 70), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extUp1272 : na, "Ext +1.272", color=color.new(colorCall, 70), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extUp1414 : na, "Ext +1.414", color=color.new(colorCall, 80), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extUp1618 : na, "Ext +1.618", color=color.new(colorCall, 55), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extUp2000 : na, "Ext +2.000", color=color.new(colorCall, 75), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extUp2618 : na, "Ext +2.618", color=color.new(colorCall, 82), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extDn1272 : na, "Ext -1.272", color=color.new(colorPut, 70), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extDn1414 : na, "Ext -1.414", color=color.new(colorPut, 80), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extDn1618 : na, "Ext -1.618", color=color.new(colorPut, 55), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extDn2000 : na, "Ext -2.000", color=color.new(colorPut, 75), style=plot.style_linebr)
+plot(inRth and orReady and showFib ? extDn2618 : na, "Ext -2.618", color=color.new(colorPut, 82), style=plot.style_linebr)
+plot(showPrev and inRth ? priorHigh : na, "قمة أمس مؤكدة", color=color.new(color.orange, 25), style=plot.style_linebr)
+plot(showPrev and inRth ? priorLow : na, "قاع أمس مؤكد", color=color.new(color.orange, 25), style=plot.style_linebr)
+plot(showHTF and inRth ? prevDayFib618 : na, "فيبو 0.618 أمس المؤكد", color=color.new(color.orange, 20), style=plot.style_linebr)
+plot(showHTF and inRth ? prevWeekFib618 : na, "فيبو 0.618 الأسبوع المكتمل", color=color.new(color.purple, 25), style=plot.style_linebr)
+plot(showHTF and inRth ? prevMonthFib618 : na, "فيبو 0.618 الشهر المكتمل", color=color.new(color.aqua, 25), style=plot.style_linebr)
+plot(showVwap and inRth ? vwapRth : na, "VWAP RTH تقريبي", color=color.fuchsia, linewidth=2, style=plot.style_linebr)
+plot(active != 0 ? tradeStop : na, "مستوى الإلغاء للأصل", color=color.red, style=plot.style_linebr)
+plot(active != 0 ? target1 : na, "هدف 1 للأصل", color=color.new(colorCall, 40), style=plot.style_linebr)
+plot(active != 0 ? target2 : na, "هدف 2 للأصل", color=colorCall, style=plot.style_linebr)
+plot(active != 0 ? target3 : na, "هدف 3 للأصل", color=color.new(colorCall, 20), style=plot.style_linebr)
+plotshape(confirmedCall, title="CALL مؤكدة للأصل", style=shape.labelup, location=location.belowbar, color=colorCall, text="CALL", textcolor=color.black, size=size.tiny)
+plotshape(confirmedPut, title="PUT مؤكدة للأصل", style=shape.labeldown, location=location.abovebar, color=colorPut, text="PUT", textcolor=color.white, size=size.tiny)
+plotshape(earlyWarning, title="تحذير مبكر", style=shape.circle, location=location.abovebar, color=color.orange, size=size.tiny)
+plotshape(invalidated, title="إلغاء", style=shape.xcross, location=location.abovebar, color=color.red, size=size.tiny)
+
+fmt(float v) => na(v) ? "—" : str.tostring(v, format.mintick)
+var table dash = table.new(position.top_right, 2, 11, border_width=1)
+if showTable and barstate.islast
+    color headBg = color.new(color.navy, 20)
+    color cellBg = color.new(color.black, 25)
+    string condition = not supportedTf ? "فريم غير متوافق" : not inRth ? "خارج جلسة الأسهم" : not orReady ? "مؤقت / بيانات ناقصة" : validRange ? "نطاق مؤكد" : "نطاق غير مناسب"
+    string direction = active == 1 ? "CALL مراقبة" : active == -1 ? "PUT مراقبة" : "WAIT"
+    string marketState = not na(mid) ? close > orHigh ? "فوق النطاق" : close < orLow ? "تحت النطاق" : close > mid ? "أعلى المنتصف" : "أسفل المنتصف" : "غير متاح"
+    table.cell(dash, 0, 0, "GHAZI FIB Ω", text_color=color.white, bgcolor=headBg)
+    table.cell(dash, 1, 0, "بحث غير مثبت", text_color=color.yellow, bgcolor=headBg)
+    table.cell(dash, 0, 1, "حالة الجلسة", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 1, condition, text_color=color.yellow, bgcolor=cellBg)
+    string modelAR = switch model
+        "ORB" => "اختراق الافتتاح"
+        "Retest" => "كسر وإعادة اختبار"
+        "Fib Reversal" => "ارتداد فيبوناتشي"
+        "False Break" => "اختراق كاذب"
+        "VWAP Confluence" => "التقاء VWAP"
+        => "توافق أطر زمنية"
+    table.cell(dash, 0, 2, "النموذج", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 2, modelAR, text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 3, "الموقع / الاتجاه", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 3, marketState + " | " + direction, text_color=active == 1 ? colorCall : active == -1 ? colorPut : color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 4, "أعلى / أدنى الافتتاح", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 4, fmt(orHigh) + " / " + fmt(orLow), text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 5, "دخول مرصود", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 5, fmt(tradeEntry), text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 6, "إلغاء فرضية", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 6, fmt(tradeStop), text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 7, "الأهداف 1 / 2 / 3", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 7, fmt(target1) + " | " + fmt(target2) + " | " + fmt(target3), text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 8, "العائد/المخاطرة", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 8, na(signalRR) ? "—" : str.tostring(signalRR, "#.##"), text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 9, "سبب الحالة", text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 1, 9, lastReason, text_color=color.white, bgcolor=cellBg)
+    table.cell(dash, 0, 10, "العقود/البيانات", text_color=color.yellow, bgcolor=cellBg)
+    table.cell(dash, 1, 10, "لا Greeks / لا أسعار تنفيذ", text_color=color.yellow, bgcolor=cellBg)
+
+var label highLabel = na
+var label lowLabel = na
+if barstate.islast
+    label.delete(highLabel)
+    label.delete(lowLabel)
+    if showLabels and orReady and inRth
+        highLabel := label.new(bar_index, orHigh, "قمة افتتاح مؤكدة", color=color.new(colorCall, 75), textcolor=color.white, style=label.style_label_left, size=size.tiny)
+        lowLabel := label.new(bar_index, orLow, "قاع افتتاح مؤكد", color=color.new(colorPut, 75), textcolor=color.white, style=label.style_label_left, size=size.tiny)
+
+alertcondition(earlyAlert and earlyWarning, title="EARLY WARNING | اقتراب", message="GHAZI FIB: early proximity alert on underlying {{ticker}} at {{close}}; NOT a confirmed entry.")
+alertcondition(entryAlert and confirmedCall, title="CONFIRMED ENTRY | CALL", message="GHAZI FIB: confirmed bullish underlying watch on {{ticker}} at {{close}}. Verify option independently.")
+alertcondition(entryAlert and confirmedPut, title="CONFIRMED ENTRY | PUT", message="GHAZI FIB: confirmed bearish underlying watch on {{ticker}} at {{close}}. Verify option independently.")
+alertcondition(invalidAlert and invalidated, title="INVALIDATED | إلغاء", message="GHAZI FIB: underlying invalidation/stop observed {{ticker}} {{close}}; not an option execution.")
+alertcondition(targetsAlert and hitTarget, title="TARGET / STOP | هدف", message="GHAZI FIB: underlying target touched {{ticker}} at {{close}}. Not an option execution.")
