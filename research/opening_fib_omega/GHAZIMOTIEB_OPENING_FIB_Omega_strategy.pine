@@ -1,0 +1,211 @@
+//@version=6
+strategy("GHAZIMOTIEB | OPENING FIB Ω [UNDERLYING RESEARCH ONLY]", "GHAZI FIB Ω TEST", overlay=true, initial_capital=100000, pyramiding=0, commission_type=strategy.commission.percent, commission_value=0.05, slippage=2, process_orders_on_close=false, calc_on_every_tick=false, max_labels_count=100)
+// This strategy tests the UNDERLYING security, not CALL/PUT option contracts.
+// Fills/slippage are chart-model assumptions, NOT observed executions or option P&L.
+// Use standard candles with a 1/3/5/15 minute chart (or any minute interval exactly
+// dividing openingMinutes). Session is 09:30-16:00 America/New_York, no repaint.
+
+string TZ = "America/New_York"
+string RTH = "0930-1600:23456"
+string G1 = "01 | النماذج"
+string G2 = "02 | الفلاتر"
+int orMinutes = input.int(15, "دقائق الافتتاح", options=[5, 10, 15, 30, 60], group=G1)
+string model = input.string("ORB", "نموذج (اختبر كل واحد مستقلًا)", options=["ORB", "Retest", "Fib Reversal", "False Break", "VWAP Confluence", "MTF Alignment"], group=G1)
+int confBars = input.int(2, "عدد الإغلاقات المؤكدة", minval=1, maxval=3, group=G1)
+int lastEntryNY = input.int(705, "آخر دقيقة دخول نيويورك (705=11:45)", minval=615, maxval=930, group=G1)
+float stopFactor = input.float(0.25, "هامش وقف/نطاق", minval=0.05, maxval=1.0, step=0.05, group=G1)
+float rrMin = input.float(1.5, "الحد الأدنى R/R للهدف الثاني", minval=0.5, maxval=6.0, step=0.25, group=G1)
+float riskPercent = input.float(0.50, "حد المخاطرة التقريبي للسهم من رأس مال المحاكاة (%)", minval=0.05, maxval=2.0, step=0.05, group=G1)
+float retestTol = input.float(0.20, "سماحية إعادة اختبار من النطاق", minval=0.01, maxval=0.60, step=0.01, group=G1)
+float minWidthPct = input.float(0.12, "أدنى عرض نطاق (%)", minval=0.01, maxval=5.0, group=G2)
+float maxWidthPct = input.float(6.0, "أعلى عرض نطاق (%)", minval=1.0, maxval=30.0, group=G2)
+bool volumeFilter = input.bool(false, "حجم نسبي (20 شمعة سابقة)", group=G2)
+float volMultiplier = input.float(1.0, "حد الحجم النسبي", minval=0.5, maxval=5.0, step=0.25, group=G2)
+bool dailyFilter = input.bool(false, "اتجاه اليوم السابق", group=G2)
+bool hourFilter = input.bool(false, "اتجاه الساعة المكتملة", group=G2)
+bool vwapFilter = input.bool(false, "فلتر VWAP الجلسة", group=G2)
+
+bool supported = timeframe.isminutes and timeframe.multiplier <= orMinutes and orMinutes % timeframe.multiplier == 0
+int mn = hour(time, TZ) * 60 + minute(time, TZ)
+int dayKey = year(time, TZ) * 10000 + month(time, TZ) * 100 + dayofmonth(time, TZ)
+bool rth = not na(time(timeframe.period, RTH, TZ))
+var int priorDayKey = na
+bool fresh = supported and rth and (na(priorDayKey) or dayKey != priorDayKey)
+var float hiOR = na
+var float loOR = na
+var int countOR = 0
+var int prevOrTime = na
+var bool noMissing = true
+var bool hadStart = false
+var bool locked = false
+var int tradesToday = 0
+var bool brokeUp = false
+var bool brokeDown = false
+var int breakUpBar = na
+var int breakDownBar = na
+var float pv = 0.0
+var float vv = 0.0
+var float plannedStop = na
+var float plannedT1 = na
+var float plannedT2 = na
+var float plannedT3 = na
+
+if fresh
+    priorDayKey := dayKey
+    hiOR := na
+    loOR := na
+    countOR := 0
+    prevOrTime := na
+    noMissing := true
+    hadStart := mn == 570
+    locked := false
+    tradesToday := 0
+    brokeUp := false
+    brokeDown := false
+    breakUpBar := na
+    breakDownBar := na
+    pv := 0.0
+    vv := 0.0
+    plannedStop := na
+    plannedT1 := na
+    plannedT2 := na
+    plannedT3 := na
+
+bool inOpening = supported and rth and mn >= 570 and mn < 570 + orMinutes
+if inOpening and barstate.isconfirmed
+    if countOR > 0 and (na(prevOrTime) or time - prevOrTime != timeframe.multiplier * 60000)
+        noMissing := false
+    hiOR := na(hiOR) ? high : math.max(hiOR, high)
+    loOR := na(loOR) ? low : math.min(loOR, low)
+    countOR += 1
+    prevOrTime := time
+    if mn + timeframe.multiplier == 570 + orMinutes
+        locked := hadStart and noMissing and countOR == int(orMinutes / timeframe.multiplier)
+
+[dayClose, dayEma] = request.security(syminfo.tickerid, "D", [close[1], ta.ema(close, 20)[1]], lookahead=barmerge.lookahead_on)
+[hourClose, hourEma] = request.security(syminfo.tickerid, "60", [close[1], ta.ema(close, 20)[1]], lookahead=barmerge.lookahead_on)
+float volBase = ta.sma(volume, 20)[1]
+if supported and rth and barstate.isconfirmed and not na(volume)
+    pv += hlc3 * volume
+    vv += volume
+float sessionVwap = vv > 0 ? pv / vv : na
+float w = locked ? hiOR - loOR : na
+float midpoint = locked ? (hiOR + loOR) / 2 : na
+float support = locked ? loOR + w * 0.382 : na
+float resist = locked ? loOR + w * 0.618 : na
+float upT1 = locked ? hiOR + w * 0.272 : na
+float upT2 = locked ? hiOR + w * 0.618 : na
+float upT3 = locked ? hiOR + w : na
+float downT1 = locked ? loOR - w * 0.272 : na
+float downT2 = locked ? loOR - w * 0.618 : na
+float downT3 = locked ? loOR - w : na
+float widthPct = locked and loOR > 0 ? w / midpoint * 100 : na
+bool widthOK = locked and w > 0 and widthPct >= minWidthPct and widthPct <= maxWidthPct
+bool volumeOK = not volumeFilter or (not na(volBase) and not na(volume) and volume >= volBase * volMultiplier)
+bool bullish = (not dailyFilter or (not na(dayEma) and dayClose > dayEma)) and (not hourFilter or (not na(hourEma) and hourClose > hourEma)) and (not vwapFilter or (not na(sessionVwap) and close > sessionVwap))
+bool bearish = (not dailyFilter or (not na(dayEma) and dayClose < dayEma)) and (not hourFilter or (not na(hourEma) and hourClose < hourEma)) and (not vwapFilter or (not na(sessionVwap) and close < sessionVwap))
+bool allowed = supported and rth and barstate.isconfirmed and widthOK and volumeOK and mn >= 570 + orMinutes and mn <= lastEntryNY and tradesToday == 0 and strategy.position_size == 0
+
+bool orbL = close > hiOR and (confBars == 1 or (close[1] > hiOR and (confBars == 2 or close[2] > hiOR)))
+bool orbS = close < loOR and (confBars == 1 or (close[1] < loOR and (confBars == 2 or close[2] < loOR)))
+bool retestL = brokeUp and bar_index > breakUpBar and low <= hiOR + w * retestTol and close > hiOR and close > open
+bool retestS = brokeDown and bar_index > breakDownBar and high >= loOR - w * retestTol and close < loOR and close < open
+bool fibL = low <= support and close > support and close[1] <= support and close > open
+bool fibS = high >= resist and close < resist and close[1] >= resist and close < open
+bool fakeL = low[1] < loOR and close[1] > loOR and close > high[1] and close > open
+bool fakeS = high[1] > hiOR and close[1] < hiOR and close < low[1] and close < open
+bool confL = not na(sessionVwap) and math.abs(sessionVwap - hiOR) <= w * 0.5 and close > sessionVwap
+bool confS = not na(sessionVwap) and math.abs(sessionVwap - loOR) <= w * 0.5 and close < sessionVwap
+bool longSignal = switch model
+    "Retest" => retestL
+    "Fib Reversal" => fibL
+    "False Break" => fakeL
+    "VWAP Confluence" => orbL and confL
+    "MTF Alignment" => orbL and not na(dayEma) and dayClose > dayEma and not na(hourEma) and hourClose > hourEma
+    => orbL
+bool shortSignal = switch model
+    "Retest" => retestS
+    "Fib Reversal" => fibS
+    "False Break" => fakeS
+    "VWAP Confluence" => orbS and confS
+    "MTF Alignment" => orbS and not na(dayEma) and dayClose < dayEma and not na(hourEma) and hourClose < hourEma
+    => orbS
+
+bool reverseMode = model == "Fib Reversal" or model == "False Break"
+bool chooseLong = allowed and longSignal and bullish
+bool chooseShort = allowed and shortSignal and bearish
+if chooseLong
+    float st = reverseMode ? loOR - w * stopFactor : hiOR - w * stopFactor
+    float t1 = reverseMode ? midpoint : upT1
+    float t2 = reverseMode ? hiOR : upT2
+    float t3 = reverseMode ? upT1 : upT3
+    float risk = close - st
+    float rr = risk > 0 ? (t2 - close) / risk : na
+    float qtyShares = risk > 0 and close > 0 ? math.floor(math.min(strategy.equity * riskPercent * 0.01 / risk, strategy.equity / close)) : 0
+    if risk > 0 and qtyShares >= 1 and close < t1 and not na(rr) and rr >= rrMin
+        plannedStop := st
+        plannedT1 := t1
+        plannedT2 := t2
+        plannedT3 := t3
+        tradesToday += 1
+        strategy.entry("LONG", strategy.long, qty=qtyShares, comment="افتراضي: سهم CALL")
+        strategy.exit("L-1", "LONG", qty_percent=33, limit=plannedT1, stop=plannedStop)
+        strategy.exit("L-2", "LONG", qty_percent=33, limit=plannedT2, stop=plannedStop)
+        strategy.exit("L-3", "LONG", qty_percent=34, limit=plannedT3, stop=plannedStop)
+else if chooseShort
+    float st = reverseMode ? hiOR + w * stopFactor : loOR + w * stopFactor
+    float t1 = reverseMode ? midpoint : downT1
+    float t2 = reverseMode ? loOR : downT2
+    float t3 = reverseMode ? downT1 : downT3
+    float risk = st - close
+    float rr = risk > 0 ? (close - t2) / risk : na
+    float qtyShares = risk > 0 and close > 0 ? math.floor(math.min(strategy.equity * riskPercent * 0.01 / risk, strategy.equity / close)) : 0
+    if risk > 0 and qtyShares >= 1 and close > t1 and not na(rr) and rr >= rrMin
+        plannedStop := st
+        plannedT1 := t1
+        plannedT2 := t2
+        plannedT3 := t3
+        tradesToday += 1
+        strategy.entry("SHORT", strategy.short, qty=qtyShares, comment="افتراضي: سهم PUT")
+        strategy.exit("S-1", "SHORT", qty_percent=33, limit=plannedT1, stop=plannedStop)
+        strategy.exit("S-2", "SHORT", qty_percent=33, limit=plannedT2, stop=plannedStop)
+        strategy.exit("S-3", "SHORT", qty_percent=34, limit=plannedT3, stop=plannedStop)
+
+if allowed
+    if not brokeUp and close > hiOR
+        brokeUp := true
+        breakUpBar := bar_index
+    if not brokeDown and close < loOR
+        brokeDown := true
+        breakDownBar := bar_index
+
+// Approximate flat-by-close in backtest; default next-bar fill can differ at
+// the session boundary and requires validation with Bar Magnifier/tick data.
+bool closeWindow = supported and rth and barstate.isconfirmed and mn + timeframe.multiplier >= 960
+if closeWindow and strategy.position_size != 0
+    strategy.close_all(comment="انتهاء الجلسة (سهم فقط)", immediately=true)
+
+plot(rth and locked ? hiOR : na, "قمة الافتتاح", color=color.lime, linewidth=2, style=plot.style_linebr)
+plot(rth and locked ? loOR : na, "قاع الافتتاح", color=color.red, linewidth=2, style=plot.style_linebr)
+plot(rth and locked ? midpoint : na, "منتصف النطاق", color=color.gray, style=plot.style_linebr)
+plot(rth and locked ? support : na, "0.382 من القاع", color=color.new(color.blue, 45), style=plot.style_linebr)
+plot(rth and locked ? resist : na, "0.618 من القاع", color=color.new(color.blue, 45), style=plot.style_linebr)
+plot(rth and locked ? upT2 : na, "+1.618", color=color.new(color.green, 65), style=plot.style_linebr)
+plot(rth and locked ? downT2 : na, "-1.618", color=color.new(color.red, 65), style=plot.style_linebr)
+plot(strategy.position_size != 0 ? plannedStop : na, "الوقف الافتراضي للسهم", color=color.maroon, style=plot.style_linebr)
+plot(strategy.position_size != 0 ? plannedT1 : na, "الهدف الأول", color=color.new(color.yellow, 25), style=plot.style_linebr)
+plot(strategy.position_size != 0 ? plannedT2 : na, "الهدف الثاني", color=color.new(color.yellow, 25), style=plot.style_linebr)
+plot(strategy.position_size != 0 ? plannedT3 : na, "الهدف الثالث", color=color.new(color.yellow, 25), style=plot.style_linebr)
+
+var table statusTable = table.new(position.top_right, 2, 5, border_width=1)
+if barstate.islast
+    table.cell(statusTable, 0, 0, "اختبار السهم فقط", bgcolor=color.navy, text_color=color.white)
+    table.cell(statusTable, 1, 0, "لا توجد خيارات/Greeks", bgcolor=color.navy, text_color=color.yellow)
+    table.cell(statusTable, 0, 1, "النموذج", text_color=color.white)
+    table.cell(statusTable, 1, 1, model, text_color=color.white)
+    table.cell(statusTable, 0, 2, "الافتتاح", text_color=color.white)
+    table.cell(statusTable, 1, 2, not supported ? "فريم غير متوافق" : locked ? "مؤكد" : "مؤقت/ناقص", text_color=color.yellow)
+    table.cell(statusTable, 0, 3, "تنفيذ", text_color=color.white)
+    table.cell(statusTable, 1, 3, "إغلاق شمعة -> افتتاح لاحق", text_color=color.white)
+    table.cell(statusTable, 0, 4, "المصداقية", text_color=color.white)
+    table.cell(statusTable, 1, 4, "تحتاج OOS وتكاليف فعلية", text_color=color.yellow)
