@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-15T07:53:11.694997+00:00",
+ "generated_at": "2026-11-15T19:23:27.147308+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,15 +8,15 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 8
+     "success": 3
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 2
+     "success": 3
     },
     "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
-     "success": 2
+     "success": 3
     },
     "index-radar.yml": {
      "success": 2
@@ -27,7 +27,7 @@
      "success": 2
     },
     "free-gex-validation.yml": {
-     "success": 2
+     "success": 3
     },
     "market-orchestrator.yml": {
      "success": 5
@@ -36,7 +36,7 @@
     "daily-plan.yml": {},
     "fda-events.yml": {},
     "official-sec-pulse.yml": {
-     "success": 2
+     "success": 3
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
@@ -44,7 +44,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 20.0,
+   "value": 10.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -56,7 +56,7 @@
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
-    "macro_positioning": "AVAILABLE"
+    "macro_positioning": "STALE"
    },
    "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
    "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
@@ -100,9 +100,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 43630263336,
+    "run_id": 43724404895,
     "conclusion": "success",
-    "at": "2026-11-14T19:06:25Z"
+    "at": "2026-11-15T14:26:55Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -278,9 +278,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "last_sent_at": "2026-11-14T18:19:58.507095+00:00",
-    "kind": "change",
-    "message_id": 1365,
+    "last_sent_at": "2026-11-15T18:59:19.330308+00:00",
+    "kind": "daily",
+    "message_id": 1368,
     "log": "state/telegram/ops_digest_state.json"
    },
    "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
@@ -318,7 +318,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-14T20:17:11.675489+00:00",
+   "generated_at": "2026-11-15T18:48:58.052260+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -334,8 +334,8 @@
     "yahoo"
    ],
    "rows": null,
-   "generated_at": "2026-11-14T20:16:36.503634+00:00",
-   "last_run_at": "2026-11-14T20:16:04Z"
+   "generated_at": "2026-11-15T18:48:21.086907+00:00",
+   "last_run_at": "2026-11-15T18:47:46Z"
   },
   "classical": {
    "label_ar": "الاتجاه الكلاسيكي",
@@ -351,7 +351,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-14T20:15:44Z"
+   "last_run_at": "2026-11-15T18:47:28Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -392,8 +392,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-14T20:16:33.866465+00:00",
-   "last_run_at": "2026-11-14T20:16:01Z"
+   "generated_at": "2026-11-15T18:48:07.215607+00:00",
+   "last_run_at": "2026-11-15T18:47:42Z"
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
