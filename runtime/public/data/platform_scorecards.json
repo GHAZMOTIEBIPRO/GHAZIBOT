@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-16T22:03:22.376160+00:00",
+ "generated_at": "2026-11-16T22:54:01.007489+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,15 +8,15 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 27
+     "success": 30
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 27
+     "success": 29
     },
     "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
-     "success": 26,
+     "success": 28,
      "cancelled": 1
     },
     "index-radar.yml": {
@@ -25,22 +25,24 @@
     "stock-watch-charts.yml": {
      "success": 5
     },
-    "public-macro.yml": {},
+    "public-macro.yml": {
+     "success": 1
+    },
     "site-evidence-strength.yml": {
-     "success": 16
+     "success": 17
     },
     "free-gex-validation.yml": {
-     "success": 27
+     "success": 29
     },
     "market-orchestrator.yml": {
-     "success": 18,
+     "success": 19,
      "cancelled": 3
     },
     "catalyst-watchlist.yml": {
-     "success": 3
+     "success": 4
     },
     "daily-plan.yml": {
-     "success": 1
+     "success": 2
     },
     "fda-events.yml": {},
     "official-sec-pulse.yml": {
@@ -52,7 +54,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 10.0,
+   "value": 20.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -64,7 +66,7 @@
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
-    "macro_positioning": "STALE"
+    "macro_positioning": "AVAILABLE"
    },
    "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
    "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
@@ -286,9 +288,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "last_sent_at": "2026-11-16T08:00:19.672636+00:00",
+    "last_sent_at": "2026-11-16T22:04:18.701721+00:00",
     "kind": "change",
-    "message_id": 1373,
+    "message_id": 1384,
     "log": "state/telegram/ops_digest_state.json"
    },
    "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
@@ -326,7 +328,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-16T21:52:07.086532+00:00",
+   "generated_at": "2026-11-16T22:42:19.937427+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -359,7 +361,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-16T21:50:29Z"
+   "last_run_at": "2026-11-16T22:35:18Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -372,8 +374,8 @@
    "alerts": "DELIVERED 2026-11-16T13:43:34.215259+00:00",
    "closed_gates": [],
    "rows": 40,
-   "generated_at": "2026-11-16T18:29:39.539203+00:00",
-   "last_run_at": "2026-11-16T18:26:53Z"
+   "generated_at": "2026-11-16T22:05:25.160443+00:00",
+   "last_run_at": "2026-11-16T22:02:50Z"
   },
   "fda": {
    "label_ar": "أحداث FDA",
@@ -405,17 +407,17 @@
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
-   "verdict_ar": "البيانات قديمة",
-   "run": "NO_RUN_24H",
+   "verdict_ar": "يعمل",
+   "run": "OK",
    "source": "AVAILABLE",
-   "data": "STALE",
-   "data_state": "STALE",
-   "analysis": "NOT_COMPUTED",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-14T02:42:03.712856+00:00",
-   "last_run_at": null
+   "generated_at": "2026-11-16T22:31:55.405796+00:00",
+   "last_run_at": "2026-11-16T22:31:32Z"
   },
   "daily_plan": {
    "label_ar": "خطة اليوم",
@@ -428,8 +430,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-16T21:16:12.575172+00:00",
-   "last_run_at": "2026-11-16T21:15:24Z"
+   "generated_at": "2026-11-16T22:33:54.969247+00:00",
+   "last_run_at": "2026-11-16T22:33:20Z"
   }
  },
  "original_evidence_score": {
