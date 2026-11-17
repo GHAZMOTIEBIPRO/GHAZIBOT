@@ -1,30 +1,30 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-17T04:30:01.284796+00:00",
+ "generated_at": "2026-11-17T14:26:39.601882+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 45,
-  "FAA": 100,
+  "FDA": 48,
+  "FAA": 102,
   "FTC": 7,
-  "FERC": 124,
-  "NRC": 38,
+  "FERC": 128,
+  "NRC": 43,
   "NHTSA": 13
  },
  "counts": {
-  "after_noise_filter": 237,
-  "linked": 28,
-  "company_unlinked": 90,
-  "general": 119,
+  "after_noise_filter": 247,
+  "linked": 29,
+  "company_unlinked": 92,
+  "general": 126,
   "by_kind": {
    "FR_PRIORITY_REVIEW_VOUCHER": 3,
    "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 25,
    "FR_AIRWORTHINESS_DIRECTIVE": 30,
    "FR_SPECIAL_CONDITIONS": 2,
    "FR_FTC_CONSENT_ORDER": 1,
-   "FR_ENERGY_REGULATORY_FILING": 48,
-   "FR_NUCLEAR_LICENSE_ACTION": 9
+   "FR_ENERGY_REGULATORY_FILING": 49,
+   "FR_NUCLEAR_LICENSE_ACTION": 11
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
@@ -831,6 +831,42 @@
      "reason": "LISTED_OUTSIDE_US"
     }
    ]
+  },
+  {
+   "document_number": "2026-23361",
+   "date": "2026-11-17",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Eastern Shore Natural Gas Company; Notice of Scoping Period Requesting Comments on Environmental Issues for the Proposed Delmar Regional Enhancement Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23361/eastern-shore-natural-gas-company-notice-of-scoping-period-requesting-comments-on-environmental",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Eastern Shore Natural Gas Company"
+   ],
+   "links": [
+    {
+     "name": "Eastern Shore Natural Gas Company",
+     "ticker": "CPK",
+     "legal_entity": "Eastern Shore Natural Gas Company",
+     "relation": "WHOLLY_OWNED_SUBSIDIARY",
+     "listed_company": "Chesapeake Utilities Corporation",
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
+    }
+   ],
+   "unmatched": []
   },
   {
    "document_number": "2026-22721",
@@ -3476,6 +3512,64 @@
    ]
   },
   {
+   "document_number": "2026-23395",
+   "date": "2026-11-17",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "In the Matter of TRISO-X, LLC; Confirmatory Order Modifying License",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23395/in-the-matter-of-triso-x-llc-confirmatory-order-modifying-license",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "In the Matter of TRISO-X, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "In the Matter of TRISO-X, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23355",
+   "date": "2026-11-17",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "SMR, LLC; Palisades SMR, LLC; Pioneer Units 1 and 2; Receipt of Construction Permit Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23355/smr-llc-palisades-smr-llc-pioneer-units-1-and-2-receipt-of-construction-permit-application",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "SMR, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "SMR, LLC",
+     "reason": "PRIVATE"
+    }
+   ]
+  },
+  {
    "document_number": "2026-23029",
    "date": "2026-11-12",
    "agency": "NRC",
@@ -3709,6 +3803,39 @@
   }
  ],
  "general": [
+  {
+   "document_number": "2026-23367",
+   "date": "2026-11-17",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Determination That M.V.I. PEDIATRIC (Multiple Vitamins for Injection) Was Not Withdrawn From Sale for Reasons of Safety or Effectiveness",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23367/determination-that-mvi-pediatric-multiple-vitamins-for-injection-was-not-withdrawn-from-sale-for",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23366",
+   "date": "2026-11-17",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Determination That M.V.I. ADULT (Multiple Vitamins for Injection) Was Not Withdrawn From Sale for Reasons of Safety or Effectiveness",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23366/determination-that-mvi-adult-multiple-vitamins-for-injection-was-not-withdrawn-from-sale-for-reasons",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23351",
+   "date": "2026-11-17",
+   "agency": "FDA",
+   "type": "Proposed Rule",
+   "title": "Rulemaking To Provide That N-acetyl-L-cysteine Is Not Excluded From the Dietary Supplement Definition",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23351/rulemaking-to-provide-that-n-acetyl-l-cysteine-is-not-excluded-from-the-dietary-supplement",
+   "effective_on": null,
+   "comments_close_on": "2027-01-19",
+   "status": "GENERAL"
+  },
   {
    "document_number": "2026-23141",
    "date": "2026-11-13",
@@ -4070,6 +4197,28 @@
    "source_url": "https://www.federalregister.gov/documents/2026/10/20/2026-21453/new-dietary-ingredient-ndi-notifications-and-related-issues-identity-and-safety-information-about",
    "effective_on": null,
    "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23397",
+   "date": "2026-11-17",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Modernizing to Electronic Payments",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23397/modernizing-to-electronic-payments",
+   "effective_on": null,
+   "comments_close_on": "2027-01-04",
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23372",
+   "date": "2026-11-17",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Daher Aircraft, SAS",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/17/2026-23372/airworthiness-directives-daher-aircraft-sas",
+   "effective_on": null,
+   "comments_close_on": "2027-01-04",
    "status": "GENERAL"
   },
   {
@@ -4530,61 +4679,6 @@
    "type": "Notice",
    "title": "Public Utility District No. 1 of Chelan County, Washington; Notice of Applications for Approval of Contracts for the Sale of Power Under Section 22 of the Federal Power Act",
    "source_url": "https://www.federalregister.gov/documents/2026/11/03/2026-22414/public-utility-district-no-1-of-chelan-county-washington-notice-of-applications-for-approval-of",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22198",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "City of Pelican, AK; Notice of Authorization for Continued Project Operation",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22198/city-of-pelican-ak-notice-of-authorization-for-continued-project-operation",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22140",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Southeastern Power Administration; Notice of Filing",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22140/southeastern-power-administration-notice-of-filing",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22134",
-   "date": "2026-10-30",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Grand River Dam Authority; Notice of Revised Procedural Schedule",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/30/2026-22134/grand-river-dam-authority-notice-of-revised-procedural-schedule",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21874",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21874/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21869",
-   "date": "2026-10-27",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Erie Boulevard Hydropower, L.P.; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/27/2026-21869/erie-boulevard-hydropower-lp-notice-of-intent-to-prepare-an-environmental-assessment",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
