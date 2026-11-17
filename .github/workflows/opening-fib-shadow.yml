@@ -62,7 +62,10 @@ jobs:
           INPUT_DRY: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+          # schedule, or an explicit dry_run=false dispatch (the Market Orchestrator's
+          # rescue, because GitHub delivers this cron late or not at all).
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]] || \
+             [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$INPUT_DRY" == "false" ]]; then
             python -m scripts.run_opening_fib_shadow \
               --sent-marker state/state/opening_fib/sent.json \
               --state state/state/opening_fib/shadow_sent.json \
@@ -74,7 +77,7 @@ jobs:
               --universe app/data/universe.txt --dry-run
           fi
       - name: Persist only audited session date, never quotes or outcomes
-        if: success() && github.event_name == 'schedule'
+        if: success() && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false))
         shell: bash
         run: |
           set -euo pipefail

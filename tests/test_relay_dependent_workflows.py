@@ -159,8 +159,11 @@ def test_every_relay_target_accepts_workflow_dispatch_with_declared_inputs():
 def test_orchestrator_owns_relay_and_live_status_titles_name_their_source():
     central = Path(".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
     assert "python3 scripts/relay_dependent_workflows.py" in central
-    assert "sparse-checkout: scripts/relay_dependent_workflows.py" in central
-    live = Path(".github/workflows/live-dashboard-status.yml").read_text(encoding="utf-8")
+    import yaml
+    steps = yaml.safe_load(central)["jobs"]["dispatch"]["steps"]
+    checkout = next(s for s in steps if s.get("uses", "").startswith("actions/checkout"))
+    assert "scripts/relay_dependent_workflows.py" in checkout["with"]["sparse-checkout"].split()
+    live =Path(".github/workflows/live-dashboard-status.yml").read_text(encoding="utf-8")
     assert "inputs.source_workflow || github.event.workflow_run.path" in live
 
 

@@ -84,7 +84,9 @@ jobs:
       - name: Check out dependent-stage relay
         uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/relay_dependent_workflows.py
+          sparse-checkout: |
+            scripts/relay_dependent_workflows.py
+            scripts/private_schedule_rescue.py
           sparse-checkout-cone-mode: false
 
       # Each pass: dispatch stale engines, then relay completed source runs to
@@ -180,6 +182,10 @@ jobs:
             dispatch_pass || echo "::warning title=Dispatch pass failed::pass ${pass}"
             python3 scripts/relay_dependent_workflows.py --repo "$GITHUB_REPOSITORY" \
               || echo "::warning title=Relay pass failed::pass ${pass}"
+            # Owner-private opening Fib + shadow: their own crons arrived ~9h late on
+            # 2026-11-16. Reads only date markers; the runners still decide delivery.
+            python3 scripts/private_schedule_rescue.py --repo "$GITHUB_REPOSITORY" \
+              || echo "::warning title=Private schedule rescue failed::pass ${pass}"
             echo "::endgroup::"
             if (( pass < passes )); then
               sleep 300
