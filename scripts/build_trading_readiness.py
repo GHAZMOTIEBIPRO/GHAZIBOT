@@ -143,6 +143,20 @@ def build(data: dict[str, dict], *, now: datetime) -> dict[str, Any]:
     # Historical hit-rate is not a trade win rate, option premium return or
     # forward-looking probability. Publish only this descriptive cohort.
     historical_t1_pct = round(100*t1_hit/t1_n, 2) if t1_n is not None else None
+    # Legacy v1 evaluations matured one-session targets early; they stay visible for audit
+    # under their own label and never feed the primary figures above.
+    legacy = (target.get("legacy_v1") or {}) if targets_valid else {}
+    legacy_cohort = ((legacy.get("cohorts") or {}).get("T1:INTRADAY_1D") or {}) if isinstance(legacy, dict) else {}
+    legacy_n, legacy_hit = integer(legacy_cohort.get("sample")), integer(legacy_cohort.get("hits"))
+    legacy_t1 = None
+    if legacy_n and legacy_hit is not None and 0 <= legacy_hit <= legacy_n:
+        legacy_t1 = {
+            "matured": legacy_n,
+            "hits": legacy_hit,
+            "hit_rate_pct": round(100*legacy_hit/legacy_n, 2),
+            "valid_evidence": False,
+            "defect": str(legacy.get("defect") or "UNKNOWN")[:40],
+        }
 
     perf_valid = (
         performance.get("schema_version") == 1
@@ -232,6 +246,7 @@ def build(data: dict[str, dict], *, now: datetime) -> dict[str, Any]:
             "target_t1_intraday_matured": t1_n,
             "target_t1_intraday_hits": t1_hit,
             "target_t1_historical_hit_rate_pct": historical_t1_pct,
+            "target_t1_legacy_v1": legacy_t1,
             "historical_target_calibration_ready_reported": bool(
                 targets_valid and target.get("calibration_ready") is True
             ),

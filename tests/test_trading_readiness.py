@@ -79,6 +79,26 @@ def test_actual_style_evidence_fails_closed_and_reports_true_sample():
     assert h["historical_hit_rate_is_forward_probability"] is False
 
 
+def test_legacy_v1_target_figures_are_labelled_invalid_and_kept_apart():
+    f = fixture()
+    f["targets"]["global_matured_t1_sample"] = 0
+    f["targets"]["calibration_ready"] = False
+    f["targets"]["cohorts"]["T1:INTRADAY_1D"] = {"sample": 0, "hits": 0}
+    f["targets"]["legacy_v1"] = {
+        "valid_evidence": False, "defect": "PREMATURE_MATURITY",
+        "cohorts": {"T1:INTRADAY_1D": {"sample": 412, "hits": 8}},
+    }
+    h = build(f, now=NOW)["historical_evidence"]
+    assert h["target_t1_intraday_matured"] is None
+    assert h["target_t1_historical_hit_rate_pct"] is None
+    assert h["target_t1_legacy_v1"] == {
+        "matured": 412, "hits": 8, "hit_rate_pct": 1.94,
+        "valid_evidence": False, "defect": "PREMATURE_MATURITY",
+    }
+    f["targets"]["legacy_v1"]["cohorts"]["T1:INTRADAY_1D"] = {"sample": 4, "hits": 9}
+    assert build(f, now=NOW)["historical_evidence"]["target_t1_legacy_v1"] is None
+
+
 def test_fake_future_old_or_missing_reports_never_trust():
     f = fixture()
     f["access"]["generated_at"] = (NOW - timedelta(days=3)).isoformat()

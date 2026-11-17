@@ -3,12 +3,15 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from statistics import median
 from typing import Any, Iterable
 
+import exchange_calendars as xcals
 import pandas as pd
 
 from .hybrid_fetcher import DataFetcher
@@ -19,6 +22,22 @@ MIN_GLOBAL_SAMPLE = 100
 MIN_TARGET_COHORT = 30
 REENTRY_GAP_MINUTES = 240
 MAX_ACTIVE_DAYS = 45
+
+# Version 2 measures a target over its whole horizon: the XNYS sessions start with the
+# session that contains the signal (or the next one when the signal is outside regular
+# hours), bars after the last required close are ignored, and a miss is final only after
+# that close plus the provider delay, with bars observed for the last session.
+# Version 1 (records without "evaluation_version") counted the in-progress signal date as a
+# completed session, so a one-session target became MATURED_MISS after the first quiet bars.
+EVALUATION_VERSION = 2
+SETTLE_GRACE = pd.Timedelta(minutes=20)
+NEW_YORK = "America/New_York"
+LEGACY_V1_DEFECT = "PREMATURE_MATURITY"
+LEGACY_V1_NOTE = (
+    "Evaluation v1 counted the signal's own unfinished date as a completed session, so a "
+    "one-session target matured as a miss after the first quiet bars and was never re-checked. "
+    "These records are kept unchanged for audit and are not valid hit-rate evidence."
+)
 
 HORIZON_MATURITY_SESSIONS = {
     "INTRADAY_1D": 1,
@@ -250,11 +269,40 @@ def _normalise_bars(bars: pd.DataFrame, start: datetime) -> pd.DataFrame:
     return frame[frame.index >= start_ts].dropna(subset=["High", "Low"])
 
 
-def _sessions_observed(frame: pd.DataFrame) -> int:
+@lru_cache(maxsize=1)
+def _xnys() -> Any:
+    return xcals.get_calendar("XNYS")
+
+
+def _utc(value: datetime | pd.Timestamp) -> pd.Timestamp:
+    stamp = pd.Timestamp(value)
+    return stamp.tz_localize("UTC") if stamp.tzinfo is None else stamp.tz_convert("UTC")
+
+
+def _horizon_window(signal_time: datetime, sessions: int) -> tuple[date, pd.Timestamp] | None:
+    """Last required XNYS session date and its close, or None outside the calendar range."""
+    calendar = _xnys()
+    try:
+        first = calendar.minute_to_session(_utc(signal_time).floor("min"), direction="next")
+        window = calendar.sessions_window(first, max(1, int(sessions)))
+    except (ValueError, KeyError, IndexError):
+        return None
+    last = window[-1]
+    return last.date(), _utc(calendar.session_close(last))
+
+
+def _bar_session_dates(frame: pd.DataFrame) -> list[date]:
+    """Session date of each bar: date-stamped daily bars keep their own date, others use New York."""
     if frame.empty:
-        return 0
-    dates = pd.Index(frame.index.date).unique()
-    return int(len(dates))
+        return []
+    index = pd.DatetimeIndex(frame.index)
+    if bool((index == index.normalize()).all()):
+        return [stamp.date() for stamp in index]
+    return [stamp.date() for stamp in index.tz_convert(NEW_YORK)]
+
+
+def _sessions_observed(frame: pd.DataFrame) -> int:
+    return int(len(set(_bar_session_dates(frame))))
 
 
 def _sessions_to(frame: pd.DataFrame, timestamp: pd.Timestamp) -> int:
@@ -272,8 +320,25 @@ def _evaluate_target(
     target_price: float,
     invalidation: float,
     maturity_sessions: int,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
+    window = _horizon_window(signal_time, maturity_sessions)
+    horizon_close = window[1] if window else None
+    if horizon_close is not None and not frame.empty:
+        frame = frame[frame.index < horizon_close]
+    elif horizon_close is None:
+        frame = frame.iloc[0:0]
     sessions_seen = _sessions_observed(frame)
+    if now is not None:
+        as_of: pd.Timestamp | None = _utc(now)
+    else:
+        as_of = _utc(frame.index.max()) if not frame.empty else None
+    if frame.empty:
+        coverage = "NO_BARS_IN_HORIZON"
+    elif window and window[0] in set(_bar_session_dates(frame)):
+        coverage = "LAST_SESSION_OBSERVED"
+    else:
+        coverage = "LAST_SESSION_MISSING"
     target_at: pd.Timestamp | None = None
     stop_at: pd.Timestamp | None = None
     ambiguous_at: pd.Timestamp | None = None
@@ -307,7 +372,12 @@ def _evaluate_target(
     elif stop_at is not None:
         status = "FAILED"
         matured = True
-    elif sessions_seen >= maturity_sessions:
+    elif (
+        horizon_close is not None
+        and as_of is not None
+        and as_of >= horizon_close + SETTLE_GRACE
+        and coverage == "LAST_SESSION_OBSERVED"
+    ):
         status = "MATURED_MISS"
         matured = True
     else:
@@ -332,6 +402,9 @@ def _evaluate_target(
         "sessions_to_hit": sessions_to_hit,
         "sessions_observed": sessions_seen,
         "matured": matured,
+        "evaluation_version": EVALUATION_VERSION,
+        "horizon_close": _iso(horizon_close),
+        "coverage": coverage,
     }
 
 
@@ -413,6 +486,7 @@ def update_target_outcomes(
                 target_price=target_price,
                 invalidation=invalidation,
                 maturity_sessions=max(1, int(_number(target.get("maturity_sessions"), 20))),
+                now=current,
             )
             target.update(result)
 
@@ -460,6 +534,12 @@ def _cohort_stats(rows: list[dict[str, Any]], minimum: int) -> dict[str, Any]:
         "hits": successes,
         "misses": sample - successes,
         "ambiguous": len(ambiguous),
+        "unresolved_missing_bars": sum(
+            1 for row in rows
+            if row.get("matured") is not True
+            and row.get("coverage") in {"NO_BARS_IN_HORIZON", "LAST_SESSION_MISSING"}
+        ),
+        "bar_sources": dict(sorted(Counter(str(row.get("bar_source") or "UNKNOWN") for row in matured).items())),
         "hit_rate": round(successes / sample, 4) if sample else None,
         "ci95_low": round(interval[0], 4) if interval else None,
         "ci95_high": round(interval[1], 4) if interval else None,
@@ -482,6 +562,7 @@ def build_target_calibration(
         if not isinstance(signal, dict):
             continue
         targets = signal.get("targets") if isinstance(signal.get("targets"), dict) else {}
+        audit = signal.get("data_audit") if isinstance(signal.get("data_audit"), dict) else {}
         for label, target in targets.items():
             if not isinstance(target, dict):
                 continue
@@ -492,39 +573,67 @@ def build_target_calibration(
                     "direction": str(signal.get("direction") or "").upper(),
                     "explosion_cause": signal.get("explosion_cause"),
                     "opportunity_tier": signal.get("opportunity_tier"),
+                    "bar_source": audit.get("source"),
                 }
             )
 
-    matured_t1 = [
+    current = [
         row for row in flattened
+        if int(_number(row.get("evaluation_version"), 1)) >= EVALUATION_VERSION
+    ]
+    legacy = [
+        row for row in flattened
+        if int(_number(row.get("evaluation_version"), 1)) < EVALUATION_VERSION
+    ]
+
+    def _cohorts(rows: list[dict[str, Any]], ready: bool) -> dict[str, dict[str, Any]]:
+        output: dict[str, dict[str, Any]] = {}
+        for label in ("T1", "T2", "T3"):
+            label_rows = [row for row in rows if row.get("target") == label]
+            for bucket in HORIZON_MATURITY_SESSIONS:
+                group = [row for row in label_rows if row.get("horizon_bucket") == bucket]
+                stats = _cohort_stats(group, minimum_cohort)
+                stats["target"] = label
+                stats["horizon_bucket"] = bucket
+                stats["probability_available"] = bool(ready and stats["eligible"])
+                output[f"{label}:{bucket}"] = stats
+        return output
+
+    matured_t1 = [
+        row for row in current
         if row.get("target") == "T1" and row.get("matured") is True
     ]
     global_ready = len(matured_t1) >= minimum_global
-
-    cohorts: dict[str, dict[str, Any]] = {}
-    for label in ("T1", "T2", "T3"):
-        label_rows = [row for row in flattened if row.get("target") == label]
-        for bucket in HORIZON_MATURITY_SESSIONS:
-            group = [row for row in label_rows if row.get("horizon_bucket") == bucket]
-            stats = _cohort_stats(group, minimum_cohort)
-            stats["target"] = label
-            stats["horizon_bucket"] = bucket
-            stats["probability_available"] = bool(global_ready and stats["eligible"])
-            cohorts[f"{label}:{bucket}"] = stats
+    cohorts = _cohorts(current, global_ready)
+    legacy_matured_t1 = [
+        row for row in legacy
+        if row.get("target") == "T1" and row.get("matured") is True
+    ]
 
     return {
         "schema_version": 1,
+        "evaluation_version": EVALUATION_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "global_matured_t1_sample": len(matured_t1),
         "minimum_global_sample": minimum_global,
         "minimum_target_cohort": minimum_cohort,
         "calibration_ready": global_ready,
         "cohorts": cohorts,
+        "legacy_v1": {
+            "valid_evidence": False,
+            "defect": LEGACY_V1_DEFECT,
+            "note": LEGACY_V1_NOTE,
+            "matured_t1_sample": len(legacy_matured_t1),
+            "cohorts": _cohorts(legacy, False),
+        },
         "policy": {
             "probability_requires_global_sample": True,
             "probability_requires_target_horizon_cohort": True,
             "same_bar_target_stop_is_never_a_win": True,
             "matured_miss_is_counted_as_non_hit": True,
+            "matured_miss_requires_completed_horizon_sessions": True,
+            "bars_after_horizon_close_are_ignored": True,
+            "legacy_v1_records_excluded_from_cohorts": True,
             "target_learning_uses_underlying_ohlc_not_option_premium": True,
             "research_only": True,
         },
