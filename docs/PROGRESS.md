@@ -1,4 +1,23 @@
-# Progress — mission "restore leader / index price analysis" (started 2026-10-29)
+# Progress — mission "global discovery and data intelligence" (started 2026-11-17)
+
+Status words follow AGENTS.md.
+
+- **PR #440 (evaluation v2 for T1/T2/T3) — MERGED (201ff53).**
+  - Reproduced the 412 / 8 / 1.94 % baseline exactly.
+  - Found the premature-maturity defect.
+  - Kept the legacy records as invalid evidence.
+  - See `signal-validation-report.md`. RUNTIME VERIFIED is pending the next Full Omega Radar run.
+- **Research documents and the reproducible OSS scoring tool:**
+  - documents: `data-source-registry.md` (60 sources), `provider-license-matrix.md`,
+    `open-source-project-review.md` (572 scored, 452 kept, 27 deep-reviewed, 0 integrated), `data-architecture.md`,
+    `quant-research-roadmap.md`;
+  - tool: `scripts/oss_review.py` with `tests/test_oss_review.py`.
+- **Next:**
+  - owner-private Alpaca re-measurement of the 414 legacy signals (Telegram only);
+  - public macro archive (Parquet release assets);
+  - SEC archive once `SEC_USER_AGENT` is set.
+
+# Previous mission — "restore leader / index price analysis" (started 2026-10-29)
 
 Status words follow AGENTS.md: CODED, TESTED, CI GREEN, MERGED, RUNTIME VERIFIED, EMPIRICALLY VALIDATED.
 
