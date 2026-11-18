@@ -93,8 +93,12 @@
     const hits=Number.isInteger(h.target_t1_intraday_hits)?
       h.target_t1_intraday_hits:"—";
     document.getElementById("trust-t1").textContent=hits+" / "+sample+" · "+pct;
+    const legacy=h.target_t1_legacy_v1;
+    const legacyNote=legacy&&legacy.valid_evidence===false&&Number.isInteger(legacy.matured)&&
+      Number.isInteger(legacy.hits)?
+      " القياس السابق ("+legacy.hits+" / "+legacy.matured+") أُبطل: كان يُغلق هدف الجلسة الواحدة قبل انتهاء الجلسة، فلا يُعرض دليلاً.":"";
     document.getElementById("trust-t1-note").textContent=
-      "تحقق هدف T1 وفق قياس تاريخي لشموع السهم نفسه؛ لا يعني ربح صفقة أو احتمال نجاح مستقبلي.";
+      "تحقق هدف T1 وفق قياس تاريخي لشموع السهم نفسه؛ لا يعني ربح صفقة أو احتمال نجاح مستقبلي."+legacyNote;
     const win=document.getElementById("trust-stock");
     const tracked=Number.isInteger(h.stock_audit_records)?h.stock_audit_records:"—";
     const proof=Number.isInteger(h.individually_close_time_verified_records)?
