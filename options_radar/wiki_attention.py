@@ -16,7 +16,8 @@ from typing import Any
 from urllib.parse import quote
 
 SCHEMA = "ghazi.wiki_attention.v1"
-API = ("https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/user/"
+# /per-article/{project}/{access}/{agent}/{article}/{granularity}/{start}/{end}
+API = ("https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/"
        "{title}/daily/{start}/{end}")
 ARTICLE = "https://en.wikipedia.org/wiki/{title}"
 BASELINE_DAYS = 60
