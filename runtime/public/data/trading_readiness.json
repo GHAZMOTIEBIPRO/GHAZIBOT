@@ -1,6 +1,6 @@
 {
   "schema": "ghazi.trading_readiness.v1",
-  "generated_at": "2026-11-18T08:33:54.287544+00:00",
+  "generated_at": "2026-11-18T12:09:24.797715+00:00",
   "status": "NOT_TRADE_READY",
   "trade_recommendations_authorized": false,
   "automated_execution_allowed": false,
@@ -27,11 +27,17 @@
     "stock_audit_records": 714,
     "individually_close_time_verified_records": 58,
     "walk_forward_research_passed": false,
-    "target_t1_intraday_matured": 412,
-    "target_t1_intraday_hits": 8,
-    "target_t1_historical_hit_rate_pct": 1.94,
-    "target_t1_legacy_v1": null,
-    "historical_target_calibration_ready_reported": true,
+    "target_t1_intraday_matured": null,
+    "target_t1_intraday_hits": null,
+    "target_t1_historical_hit_rate_pct": null,
+    "target_t1_legacy_v1": {
+      "matured": 412,
+      "hits": 8,
+      "hit_rate_pct": 1.94,
+      "valid_evidence": false,
+      "defect": "PREMATURE_MATURITY"
+    },
+    "historical_target_calibration_ready_reported": false,
     "qualified_option_closed_samples": 0,
     "option_calibration_active": false,
     "stage_cost_model_expectancy": [
