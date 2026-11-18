@@ -139,7 +139,7 @@ agree.
 | 55 | Google News RSS | LICENSE_RESTRICTED | robots `Disallow: /` | — | GATED |
 | 56 | Press wires (PR Newswire, GlobeNewswire, Business Wire) | LICENSE_RESTRICTED | rights matrix | — | GATED |
 | 57 | FDA press RSS | UNAVAILABLE | bot-protection page | Not worked around | — |
-| 58 | Wikimedia pageviews (AQS) | FREE_PUBLIC (CC0) | doc.wikimedia.org analytics-api | User-Agent required; rate limits revised in 2026 | CANDIDATE (attention context) |
+| 58 | Wikimedia pageviews (AQS) | FREE_PUBLIC (CC0) | doc.wikimedia.org analytics-api | User-Agent required; rate limits revised in 2026 | IN_USE (`wiki-attention.yml` → `wiki_attention.json`, home summary card) |
 | 59 | House Clerk financial disclosures (PTRs) | FREE_PUBLIC (records) | disclosures-clerk.house.gov | PDFs; automated-access terms not found | UNKNOWN — do not automate yet |
 | 60 | Senate eFD | UNKNOWN | efdsearch.senate.gov; Ethics instructions include an "Unlawful Use of Reports" section | Terms not read | UNKNOWN — do not automate |
 

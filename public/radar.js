@@ -11,7 +11,7 @@
   const FILES = { plan: "daily_plan.json", macro: "public_macro.json", catalysts: "catalyst_watchlist.json",
     directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json",
     agenda: "week_agenda.json", scorecards: "platform_scorecards.json", sources: "source_log.json",
-    liquidity: "liquidity_monitor.json" };
+    liquidity: "liquidity_monitor.json", attention: "wiki_attention.json" };
   const NASDAQ_FILE = "nasdaq_listed.json";   // ~5,600 rows: loaded only when search or a view needs it
   const SYMBOL_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
   const WATCH_KEY = "ghazi.watchlist.v1";      // same key as the previous page, so saved lists carry over
@@ -589,7 +589,18 @@
     return out;
   }
 
-  const api = { sessionState, eventRows, liquidityFacts, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
+  // Investor attention (wiki_attention.json, Wikipedia pageviews, CC0): the rows furthest above their own
+  // 60-day median. Context only; never a price signal. Returns null when the file is missing or invalid.
+  function attentionTop(doc, count) {
+    if (!doc || doc.schema !== "ghazi.wiki_attention.v1" || doc.is_price_signal !== false || !Array.isArray(doc.rows)) return null;
+    const rows = doc.rows.filter((r) => r && r.status === "OK" && Number.isFinite(r.ratio_1d) && SYMBOL_RE.test(r.symbol))
+      .sort((a, b) => b.ratio_1d - a.ratio_1d).slice(0, count || 3);
+    if (!rows.length) return null;
+    return { through: doc.data_through, kept: doc.kept_previous_copy === true,
+      rows: rows.map((r) => ({ symbol: r.symbol, ratio: r.ratio_1d, level: r.level, level_ar: r.level_ar, url: r.url })) };
+  }
+
+  const api = { sessionState, eventRows, liquidityFacts, attentionTop, filterEvents, headline, eventText, timesLine, indexRows, leaderRows, smallRows,
     searchIndex, suggest, optionMath, positionMath, kindInfo, day, FILTERS, INDEX_ROWS, CORE_LEADERS, generalRows, newsDistribution,
     foldAr, nasdaqMap, flagRows, flagSummary, readingLine, agendaGroups, companyCounts, OPTION_DATA_KINDS, GAP_AR, funnelLine, GLOSSARY,
     platformState, sourceState };
@@ -703,6 +714,15 @@
     // Price-analysis path, stage by stage: a symbol directory is not a price scan.
     const fn = plan && plan.analysis_funnel;
     if (fn) add("رموز حُللت سعريًا", n((fn.analysed || {}).count || 0), funnelLine(fn));
+    // Investor attention: Wikipedia pageviews vs each company's own 60-day median (CC0), context only.
+    const att = attentionTop(state.data.attention, 3);
+    if (att) {
+      const lead = att.rows[0];
+      const others = att.rows.slice(1).map((r) => `${r.symbol} ×${r.ratio.toFixed(1)}`).join(" · ");
+      add("اهتمام المستثمرين (ويكيبيديا)", `${lead.symbol} ×${lead.ratio.toFixed(1)} · ${lead.level_ar}`,
+        (others ? others + " · " : "") + `مقارنة بوسيط 60 يومًا · بيانات ${day(att.through) || att.through}` +
+        (att.kept ? " · تعذّر التحديث، آخر نسخة" : "") + " · سياق وليس إشارة سعر");
+    }
     // one practical sentence on data, its details under «المزيد ← حالة المنصة»
     const dataState = platformState(state.data.scorecards, state.data.sources, Date.now())[1];
     if (dataState.state !== "none") {

@@ -1,0 +1,64 @@
+name: GHAZI RADAR Investor Attention (Wikipedia pageviews, CC0)
+
+# Daily attention context for leading U.S. companies and indices: yesterday's English-Wikipedia
+# pageviews against the previous 60-day median. Not a price signal. Single writer of
+# runtime/public/data/wiki_attention.json on bot-state.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "options_radar/wiki_attention.py"
+      - "scripts/build_wiki_attention.py"
+      - ".github/workflows/wiki-attention.yml"
+  schedule:
+    - cron: "23 7 * * *"
+    - cron: "47 11 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-radar-wiki-attention
+  cancel-in-progress: false
+
+jobs:
+  update-wiki-attention:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+      - uses: actions/checkout@v4
+        with:
+          ref: bot-state
+          path: state
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch pageviews and compute attention (standard library only)
+        run: python app/scripts/build_wiki_attention.py --output state/runtime/public/data/wiki_attention.json
+      - name: Publish only the attention document to durable state
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI RADAR Attention"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add runtime/public/data/wiki_attention.json
+          if git diff --cached --quiet; then
+            echo "Attention document unchanged."
+            exit 0
+          fi
+          git commit -m "state: Wikipedia attention for U.S. leaders [skip ci]"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then
+              exit 0
+            fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2 + RANDOM % 5))
+          done
+          echo "Failed to publish the attention document after retries." >&2
+          exit 1
