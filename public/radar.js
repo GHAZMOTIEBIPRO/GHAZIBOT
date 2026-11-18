@@ -675,13 +675,18 @@
   }
 
   // ----- summary -----
+  // Summary cards: a short label, the value, then one small line of detail (date, source, comparison).
+  const DATA_WORD = { good: "سليمة", partial: "تعمل جزئيًا", stopped: "موقوفة جزئيًا", bad: "متعثرة" };
+  function factCard(label, value, sub, extra) {
+    const li = el("li", "gr-fact" + (extra ? " " + extra : ""));
+    li.append(el("span", "gr-fact-label", label), el("strong", null, value));
+    if (sub) li.append(el("span", "gr-fact-sub", sub));
+    return li;
+  }
   function renderFacts() {
     const facts = $("gr-facts");
     facts.replaceChildren();
-    const add = (label, value, sub) => {
-      const li = el("li", "gr-fact"); li.append(el("strong", null, value)); li.append(doc.createTextNode(label + (sub ? " · " + sub : "")));
-      facts.append(li);
-    };
+    const add = (label, value, sub, extra) => facts.append(factCard(label, value, sub, extra));
     const { plan, macro, catalysts } = state.data;
     const last = plan && plan.session ? plan.session.last_closed_session : null;
     if (last) add("آخر جلسة مكتملة", day(last));
@@ -691,25 +696,35 @@
       add("عائد سندات 10 سنوات", curve.yields_pct["10Y"].toFixed(2) + "%",
         (Number.isFinite(sp) ? `الفارق مع سنتين ${signed(sp, n(Math.abs(sp)))} نقطة · ` : "") + day(curve.curve_date));
     }
-    const notices = [];
-    for (const f of liquidityFacts(state.data.liquidity, Date.now())) {
-      add(f.label, f.value, f.sub + " · المصدر: " + f.source);
-      if (f.notice) notices.push(f.notice);
-    }
     if (catalysts) {
       const week = state.events.filter((e) => e.info.group !== "admin" && Date.now() - Date.parse(e.date + "T00:00:00Z") <= 7 * 864e5);
-      add("أحداث رسمية مهمة خلال 7 أيام", n(week.length), "حُدّثت " + (ago(catalysts.generated_at, Date.now()) || "—"));
+      add("أحداث رسمية مهمة", n(week.length), "آخر 7 أيام · حُدّثت " + (ago(catalysts.generated_at, Date.now()) || "—"));
     }
     // Price-analysis path, stage by stage: a symbol directory is not a price scan.
     const fn = plan && plan.analysis_funnel;
     if (fn) add("رموز حُللت سعريًا", n((fn.analysed || {}).count || 0), funnelLine(fn));
     // one practical sentence on data, its details under «المزيد ← حالة المنصة»
     const dataState = platformState(state.data.scorecards, state.data.sources, Date.now())[1];
-    if (dataState.state !== "none") add("حالة البيانات", dataState.mark, dataState.line);
-    if (!facts.children.length) facts.append(el("li", "gr-fact gr-muted", "ملخص السوق غير متاح الآن؛ تعذّر تحميل الملفات المنشورة."));
-    for (const text of notices) {
-      const li = el("li", "gr-fact-note", text); li.lang = "en"; li.dir = "ltr"; facts.append(li);
+    if (dataState.state !== "none") {
+      add("حالة البيانات", `${dataState.mark} ${DATA_WORD[dataState.state] || ""}`.trim(), dataState.line,
+        "gr-fact-wide gr-fact-" + dataState.state);
     }
+    // Macro and funding context sits in one folded block. SOFR is only shown together with the New York
+    // Fed's required notice (verbatim, English): opening the block shows both, a closed block shows neither.
+    const macroFacts = liquidityFacts(state.data.liquidity, Date.now());
+    if (macroFacts.length) {
+      const holder = el("li", "gr-fact-more");
+      const d = el("details");
+      d.append(el("summary", null, "الاقتصاد والسيولة: " + macroFacts.map((f) => f.key === "sofr" ? "فائدة SOFR" : "طلبات إعانة البطالة").join(" و")));
+      const inner = el("ul", "gr-facts gr-facts-inner");
+      for (const f of macroFacts) {
+        inner.append(factCard(f.key === "sofr" ? "فائدة SOFR لليلة واحدة" : "طلبات إعانة البطالة الأولية", f.value,
+          `${f.sub} · المصدر: ${f.source}`));
+        if (f.notice) { const note = el("li", "gr-fact-note", f.notice); note.lang = "en"; note.dir = "ltr"; inner.append(note); }
+      }
+      d.append(inner); holder.append(d); facts.append(holder);
+    }
+    if (!facts.children.length) facts.append(el("li", "gr-fact gr-muted", "ملخص السوق غير متاح الآن؛ تعذّر تحميل الملفات المنشورة."));
   }
   function renderTape() {
     const box = $("gr-tape");
