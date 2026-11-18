@@ -45,6 +45,10 @@ const out = process.argv[2] || "site_smoke.json";
             list_rows: document.querySelectorAll("#gr-list .gr-row").length,
             chart_state: document.querySelector("[data-gr-chart]")?.dataset.state || null,
             chart_symbol: document.querySelector("[data-gr-chart]")?.dataset.symbol || null,
+            // Home summary: which cards the visitor sees (labels only, no values).
+            fact_cards: [...document.querySelectorAll("#gr-facts .gr-fact-label")]
+              .map(e => (e.textContent || "").trim().slice(0, 60)),
+            radar_js: document.querySelector("script[src*='radar.js?v=']")?.getAttribute("src") || null,
           };
         });
         // TradingView widgets load lazily: open the section, scroll to it, then
