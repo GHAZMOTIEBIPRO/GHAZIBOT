@@ -73,6 +73,8 @@ RIGHTS["alpaca_indicative_options"] = {
 for _official in ("treasury", "cftc", "openfda", "sec_edgar", "clinicaltrials"):
     RIGHTS[_official] = {use: (ALLOWED, _PUBLIC_DOMAIN if _official != "clinicaltrials" else
                                "NLM terms: attribution, no endorsement", ()) for use in USES}
+RIGHTS["wikimedia_pageviews"] = {use: (ALLOWED, "Wikimedia AQS pageviews: CC0 1.0 (attention context, not prices)", ())
+                                 for use in USES}
 for _blocked, _why in (("yahoo", "Yahoo terms prohibit automated access"),
                        ("nasdaq_web", "Nasdaq.com terms prohibit automated capture")):
     RIGHTS[_blocked] = {use: (DENIED, _why, ()) for use in USES}

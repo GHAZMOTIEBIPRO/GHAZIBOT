@@ -280,4 +280,18 @@ assert.ok(lightStart > 0 && darkTokens.bg === "#0b1220", "two themes from tokens
   assert.deepStrictEqual(R.liquidityFacts(null), []);
 }
 
+// --- investor attention (Wikipedia pageviews, CC0): highest ratio first, context only ---
+{
+  const doc = { schema: "ghazi.wiki_attention.v1", is_price_signal: false, data_through: "2026-11-17", rows: [
+    { symbol: "AAPL", status: "OK", ratio_1d: 1.2, level: "NORMAL", level_ar: "عادي" },
+    { symbol: "NVDA", status: "OK", ratio_1d: 3.4, level: "VERY_HIGH", level_ar: "مرتفع جدًا" },
+    { symbol: "TSLA", status: "INSUFFICIENT_HISTORY" },
+    { symbol: "MSFT", status: "OK", ratio_1d: 1.9, level: "HIGH", level_ar: "مرتفع" }] };
+  const top = R.attentionTop(doc, 3);
+  assert.deepStrictEqual(top.rows.map((r) => r.symbol), ["NVDA", "MSFT", "AAPL"], "highest ratio first, failures skipped");
+  assert.strictEqual(top.through, "2026-11-17");
+  assert.strictEqual(R.attentionTop({ ...doc, is_price_signal: true }, 3), null, "never shown as a price signal");
+  assert.strictEqual(R.attentionTop(null, 3), null);
+}
+
 console.log("radar_ui ok");
