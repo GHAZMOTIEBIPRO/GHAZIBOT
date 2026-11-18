@@ -19,10 +19,14 @@ ul{margin:8px 0;padding-inline-start:20px}li{padding:5px 0}
 .ok{color:#8be3ce}.bad{color:#ffbcaa}
 .note{margin-top:24px;color:#c4d6e0;border-inline-start:3px solid #6a8fb0;padding:9px 15px}
 @media(max-width:650px){.cards{grid-template-columns:1fr}main{padding:20px 14px 45px}}
+
+/* Arabic captions: letter-spacing and upper-case transforms break Arabic letter joining; 14px minimum for readable captions. */
+:is(.eyebrow,.kicker,.sector-kicker,.terminal-overline,.tag,.lead):lang(ar){letter-spacing:normal!important;text-transform:none!important;font-family:inherit!important}
+:is(.eyebrow,.kicker,.sector-kicker,.terminal-overline):lang(ar){font-size:.875rem!important}
 </style>
 </head><body><main>
 <nav><a href="./index.html">← العودة إلى الرادار</a><a href="./catalyst-desk.html">رادار المحفزات</a><a href="./github-projects.html">مكتبة المشاريع</a></nav>
-<p class="lead">GHAZI RADAR · BLACK BOX Ω · SOURCE & OUTCOME AUDIT</p>
+<p class="lead">غازي رادار · تدقيق المصادر والنتائج</p>
 <h1>هل يمكن الاعتماد على الرادار في التداول؟</h1>
 <p class="lead">نقيس قابلية الوصول، وجود الأسعار المصرح بها، تأهيل عقود الأوبشن، والنتائج التاريخية واختبارات المستقبل الزمني كلًّا على حدة. نجاح الموقع لا يثبت صحة التوصيات.</p>
 <section class="status" aria-live="polite">

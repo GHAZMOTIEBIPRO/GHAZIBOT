@@ -95,9 +95,25 @@ h1, h2, h3 { margin: 0; line-height: 1.35; text-wrap: balance; }
 .gr-tape:empty { display: none; }
 .gr-facts { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: var(--s2);
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-.gr-fact { padding: var(--s2) var(--s3); border-radius: 10px; background: var(--surface); border: 1px solid var(--line);
-  font-size: var(--t-sm); color: var(--text-2); }
-.gr-fact strong { display: block; color: var(--text); font-size: var(--t-md); font-weight: 600; }
+.gr-fact { display: flex; flex-direction: column; gap: 2px; padding: var(--s2) var(--s3); border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--line); font-size: var(--t-sm); color: var(--text-2); min-width: 0; }
+.gr-fact-label { font-size: .875rem; color: var(--text-3); }
+.gr-fact strong { display: block; color: var(--text); font-size: 1.25rem; font-weight: 700; line-height: 1.25;
+  font-variant-numeric: tabular-nums; }
+.gr-fact-sub { font-size: .875rem; line-height: 1.45; color: var(--text-2); overflow-wrap: anywhere; }
+.gr-fact-wide { grid-column: 1 / -1; }
+.gr-fact-wide strong { font-size: 1rem; }
+.gr-fact-good strong { color: var(--ok); }
+.gr-fact-bad strong, .gr-fact-stopped strong { color: var(--warn, #b45309); }
+/* Folded macro/funding block; the notice below shows only when the block (and SOFR) is open. */
+.gr-fact-more { grid-column: 1 / -1; list-style: none; }
+.gr-fact-more summary { cursor: pointer; padding: var(--s2) var(--s3); border-radius: 10px; background: var(--surface);
+  border: 1px solid var(--line); font-size: var(--t-sm); font-weight: 600; color: var(--text); min-height: 44px;
+  display: flex; align-items: center; }
+.gr-fact-more summary::-webkit-details-marker { display: none; }
+.gr-fact-more summary::after { content: "▾"; margin-inline-start: auto; color: var(--text-3); transition: transform .2s; }
+.gr-fact-more details[open] summary::after { transform: rotate(180deg); }
+.gr-facts-inner { margin-top: var(--s2); }
 /* Publisher notices that must accompany a value (e.g. the New York Fed's reference-rate notice). */
 .gr-fact-note { grid-column: 1 / -1; padding: var(--s1) var(--s3); font-size: .875rem; line-height: 1.5;
   color: var(--text-3); text-align: left; overflow-wrap: anywhere; }
@@ -258,11 +274,9 @@ body { padding-bottom: calc(var(--bnav-h) + env(safe-area-inset-bottom)); }
   .gr-top-row { flex-wrap: wrap; row-gap: 0; }
   .gr-session { order: 3; flex-basis: 100%; }
   .gr-watch-btn { margin-inline-start: auto; }
-  .gr-facts { grid-template-columns: 1fr; gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-  .gr-fact { display: flex; align-items: baseline; gap: var(--s2); border: 0; border-radius: 0;
-    border-bottom: 1px solid var(--line); padding: 6px var(--s3); }
-  .gr-fact:last-child { border-bottom: 0; }
-  .gr-fact strong { display: inline; flex: none; }
+  /* Two compact cards per row on phones; wide cards (data state, macro block) take the full row. */
+  .gr-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+  .gr-fact { padding: var(--s2); }
 }
 @media (min-width: 1024px) {
   .gr-main { display: grid; grid-template-columns: minmax(360px, 440px) minmax(0, 1fr); gap: var(--s5); align-items: start; }
