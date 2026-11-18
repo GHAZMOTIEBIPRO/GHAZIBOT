@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -60,7 +61,10 @@ def test_refusals_are_recorded_and_document_is_context_only():
     body = json.dumps({"items": [{"timestamp": d.replace("-", "") + "00", "views": v}
                                  for d, v in _series(68, 1_000, 2_000).items()]}).encode()
 
-    def fake(url, **_):
+    agents = set()
+
+    def fake(url, **kw):
+        agents.add(kw.get("user_agent"))
         if "Nvidia" in url:
             return SimpleNamespace(ok=False, status=lambda: "REFUSED_HTTP_403", body=b"")
         return SimpleNamespace(ok=True, status=lambda: "OK_HTTP_200", body=body)
@@ -70,6 +74,9 @@ def test_refusals_are_recorded_and_document_is_context_only():
     assert doc["is_price_signal"] is False and doc["research_only"] is True
     assert doc["source"]["license"] == "CC0 1.0" and doc["data_through"] == "2026-11-17"
     assert all(r["status"] == "OK" for r in doc["rows"]) and len(doc["rows"]) == len(wa.LEADERS) - 1
+    # Wikimedia User-Agent policy: name/version, an https contact URL, then the library
+    assert agents == {wa.USER_AGENT}
+    assert re.fullmatch(r"[\w.-]+/[\d.]+ \(https://[^)\s]+\) [\w.-]+/[\d.]+", wa.USER_AGENT)
 
 
 def test_workflow_is_the_single_writer_of_the_attention_file():

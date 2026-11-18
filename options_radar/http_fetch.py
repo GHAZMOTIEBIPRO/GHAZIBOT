@@ -56,10 +56,11 @@ def _space(host: str, min_interval: float, sleep: Callable[[float], None], clock
 
 def fetch(url: str, *, attempts: int = 3, timeout: float = 30, min_interval: float = 1.0,
           if_modified_since: str | None = None, etag: str | None = None, max_retry_after: float = 30,
-          opener: Callable[..., object] = urllib.request.urlopen,
+          user_agent: str | None = None, opener: Callable[..., object] = urllib.request.urlopen,
           sleep: Callable[[float], None] = time.sleep, clock: Callable[[], float] = time.monotonic) -> FetchResult:
+    """`user_agent` replaces the default UA for a provider whose policy asks for a specific format."""
     host = urllib.parse.urlsplit(url).netloc
-    headers = {"User-Agent": UA}
+    headers = {"User-Agent": user_agent or UA}
     if if_modified_since:
         headers["If-Modified-Since"] = if_modified_since
     if etag:
