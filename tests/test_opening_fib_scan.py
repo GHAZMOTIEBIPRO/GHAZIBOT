@@ -119,11 +119,20 @@ def test_digest_marks_delayed_data_and_no_fake_option_quote():
     message = render_private_digest([result, {"symbol": "AMD", "state": "NO_DATA"}],
                                     session_date="2026-11-16")
     assert "16 دقيقة" in message
-    assert "مراقبة كول" in message
+    assert "مراقبة صعود (كول)" in message
     assert "SPY" in message and "AMD" in message
     assert "عقد خيار" in message
-    assert "SIP 1" in message
+    assert "SIP لـ 1 من 2" in message
     assert len(message) <= 3900
+    # Plain Arabic: no raw state codes, UTC stamps or "R2" abbreviation.
+    for code in ("WATCH_CALL", "NO_DATA", "UTC", "R2", "|"):
+        assert code not in message
+    # Every line is laid out right-to-left even when it starts with a ticker or a number.
+    from options_radar.telegram_ar import first_strong, RLM
+    assert all(not line or line.startswith(RLM) or first_strong(line) == "R"
+               for line in message.split("\n"))
+    # Levels are exactly the scanner's numbers.
+    assert f"{result['trigger']:,.2f}" in message and f"{result['stop']:,.2f}" in message
 
 
 def test_iex_partial_tape_may_never_issue_option_direction():

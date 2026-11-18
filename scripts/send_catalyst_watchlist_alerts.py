@@ -18,6 +18,7 @@ from typing import Any
 from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
+from options_radar import telegram_ar as ar
 from scripts.catalyst_health_context import health_context
 from scripts.telegram_transport import send_html_message
 
@@ -128,37 +129,56 @@ def candidates(report: dict[str, Any], *, now: datetime,
                   reverse=True)
 
 
+NLM_ATTRIBUTION = "Courtesy of the U.S. National Library of Medicine"
+
+
+def _date_line(day: str) -> str:
+    try:
+        return ar.date_ar(day)
+    except ValueError:
+        return html.escape(day)
+
+
 def message(event: dict[str, Any]) -> str:
     e = lambda value: html.escape(str(value), quote=True)
-    tag = "خطر إفصاح" if event["dilution_risk"] else "متابعة تنظيمية"
-    return "\n".join([
-        "📌 <b>GHAZI RADAR | محفز رسمي جديد</b>",
-        f"<b>{e(event['symbol'])}</b> · {e(tag)} · {e(event['source'])}",
-        f"نوع: {e(event['kind'])} · أهمية للمتابعة: {e(event['importance'])}",
-        f"الحدث: {e(event['label'])}",
-        f"تاريخ القرار/الإفصاح: {e(event['date'])}",
-        f'<a href="{e(event["url"])}">الوثيقة الرسمية</a> · <a href="{SITE}?symbol={quote(event["symbol"], safe="")}">شارت وقراءة فنية للسهم</a>',
-        *( ["سجل يقدمه الراعي؛ لا يثبت نجاح العلاج أو فشله. Courtesy of the U.S. National Library of Medicine"]
-           if event["source"] == "ClinicalTrials.gov" else []),
-        "⚠️ لا تتوفر أسعار تنفيذ أو تأكيد اتجاه CALL/PUT من هذا الخبر. ليست توصية شراء.",
-    ])
+    name, why, watch = ar.event_kind(str(event["kind"]))
+    source = ar.SOURCE_AR.get(str(event["source"]), e(event["source"]))
+    lines = [
+        f"📌 <b>حدث رسمي جديد</b> — {ar.ticker(event['symbol'])}",
+        f"• نوع الحدث: {e(name)}" + (" ⚠️" if event["dilution_risk"] else ""),
+        f"• التفاصيل: {ar.ltr_tokens(e(event['label']))}",
+        f"• المصدر: {e(source)}",
+        f"• تاريخ الحدث: {_date_line(str(event['date']))}",
+        f"• أهميته للمتابعة: {ar.IMPORTANCE_AR.get(str(event['importance']), e(event['importance']))}",
+        "",
+        f"<b>لماذا يهم:</b> {e(why)}",
+        f"<b>ماذا تراقب:</b> {e(watch)}",
+        "",
+        (f'🔗 <a href="{e(event["url"])}">الوثيقة الرسمية</a> · '
+         f'<a href="{SITE}?symbol={quote(event["symbol"], safe="")}">الشارت والقراءة الفنية</a>'),
+    ]
+    if event["source"] == "ClinicalTrials.gov":
+        lines.append(f"سجل يقدمه الراعي؛ لا يثبت نجاح العلاج أو فشله. {NLM_ATTRIBUTION}")
+    lines.append("⚠️ للمتابعة فقط — ليست توصية شراء أو بيع، والخبر وحده لا يحدد اتجاه CALL أو PUT ولا يعطي سعر تنفيذ.")
+    return ar.render(lines)
 
 
 def readiness_message(report: dict[str, Any]) -> str:
     """Once-only operational confirmation, never a stock/option signal."""
     total = len(report.get("watchlist") or [])
     providers = report.get("sources") or {}
-    fda = "متاح" if providers.get("openfda") is True else "غير متاح"
-    sec = "متاح" if providers.get("sec_edgar") is True else "غير متاح"
-    created = html.escape(str(report.get("generated_at") or "غير محدد")[:35])
-    return "\n".join([
-        "✅ <b>GHAZI RADAR | تم ربط رادار المحفزات الرسمي</b>",
-        f"شركات في التقرير: <b>{total}</b> (قائمة متابعة تنظيمية، لا إشارات تداول)",
-        f"openFDA: <b>{fda}</b> · SEC EDGAR: <b>{sec}</b>",
-        f"تاريخ تقرير البيانات: {created}",
-        f'<a href="{SITE}">فتح الرادار على الموقع</a>',
-        "⚠️ لا توجد أسعار تنفيذية مثبتة من هذه الأحداث؛ CALL/PUT لا يتحدد من الخبر وحده.",
-        "التنبيهات التالية تخص أحداثًا رسمية جديدة مؤهلة فقط، مع منع تكرارها.",
+    fda = "✅ متاح" if providers.get("openfda") is True else "❌ غير متاح"
+    sec = "✅ متاح" if providers.get("sec_edgar") is True else "❌ غير متاح"
+    created = ar.parse_time(report.get("generated_at"))
+    created_text = (f"{ar.date_ar(created, year=False)}، {ar.when_ar(created)}" if created else "غير محدد")
+    return ar.render([
+        "✅ <b>تم ربط رادار الأحداث الرسمية للشركات الأمريكية</b>",
+        f"• شركات في التقرير: <b>{total}</b> (قائمة متابعة تنظيمية، لا إشارات تداول)",
+        f"• إدارة الغذاء والدواء (FDA): {fda} · هيئة الأوراق المالية (SEC): {sec}",
+        f"• وقت تقرير البيانات: {created_text}",
+        f'🔗 <a href="{SITE}">فتح الرادار على الموقع</a>',
+        "ستصلك فقط الأحداث الرسمية الجديدة المؤهلة، دون تكرار.",
+        "⚠️ لا توجد أسعار تنفيذية من هذه الأحداث؛ CALL/PUT لا يتحدد من الخبر وحده.",
     ])
 
 def run(report: dict[str, Any], state: dict[str, Any] | None, *,
@@ -313,46 +333,49 @@ def daily_brief_candidates(report: dict[str, Any], *, now: datetime,
 
 def daily_brief_message(report: dict[str, Any], picks: list[dict[str, Any]],
                         *, now: datetime, market_health: Any = None) -> str:
-    today = now.astimezone(DIGEST_TZ).date().isoformat()
     sources = report.get("sources") or {}
-    source_status = ("openFDA متاح" if sources.get("openfda") is True else "openFDA غير متاح")
-    source_status += (" | SEC متاح" if sources.get("sec_edgar") is True else " | SEC غير متاح")
-    source_status += " | سجل الدراسات " + ("متاح" if sources.get("clinicaltrials") is True else "غير متاح")
+    mark = lambda ok: "✅" if ok is True else "❌"
     lines = [
-        f"🗓 <b>GHAZI RADAR | الملخص الرسمي اليومي | {today}</b>",
-        f"المصادر: {html.escape(source_status)}",
-        "هذه أحداث تنظيمية من أيام سابقة حسب التواريخ أدناه، وليست أخبار سعرية لحظية.",
+        f"🗓 <b>ملخص الأحداث الرسمية للشركات الأمريكية — {ar.date_ar(now.astimezone(DIGEST_TZ))}</b>",
+        "أحداث تنظيمية من الأيام الماضية حسب تواريخها أدناه، وليست أخبار أسعار لحظية.",
+        (f"📡 المصادر: إدارة الغذاء والدواء {mark(sources.get('openfda'))}"
+         f" · هيئة الأوراق المالية {mark(sources.get('sec_edgar'))}"
+         f" · سجل التجارب السريرية {mark(sources.get('clinicaltrials'))}"),
     ]
     verified = health_context(market_health, now=now)
     if verified["available"]:
-        lines.append(
-            f"حالة نظام المصادر: {html.escape(verified['status_ar'])} "
-            f"| تقرير {html.escape(verified['source_time'])}"
-        )
-        lines.append(f"الأوبشن: {html.escape(verified['options_ar'])}")
-        lines.append(f"SEC: {html.escape(verified['sec_ar'])}")
+        lines.append(f"⚙️ حالة المصادر: {html.escape(verified['status_ar'])} (تقرير {html.escape(verified['source_time'])})")
+        lines.append(f"• الخيارات: {html.escape(verified['options_ar'])}")
+        lines.append(f"• هيئة الأوراق المالية: {html.escape(verified['sec_ar'])}")
         if verified["blockers"]:
-            lines.append("أسباب المنع: " + html.escape(" | ".join(verified["blockers"])))
+            lines.append("• أسباب المنع: " + html.escape("، ".join(verified["blockers"])))
     else:
-        lines.append("صحة محركات الأسعار والأوبشن: تقرير حديث غير متاح؛ لا إثبات تشغيل حي.")
+        lines.append("⚙️ محركات الأسعار والخيارات: تقرير حديث غير متاح؛ لا إثبات تشغيل حي.")
+    lines.append("")
     if not picks:
         lines.append("لا أحداث رسمية حديثة مؤهلة في المصادر المتاحة خلال نافذة هذا التقرير.")
+    caveat = {"TRIAL_RESULTS_POSTED": " (الاتجاه غير مقيّم)", "TRIAL_STATUS_REVIEW": " (السبب غير مثبت)"}
     for item in picks:
-        kind = DIGEST_TYPES[item["kind"]]
-        caution = " | مراجعة مخاطر" if item["risk"] else ""
+        kind = ar.event_kind(item["kind"])[0] + caveat.get(item["kind"], "")
+        try:
+            when = ar.day_month_ar(item["date"])
+        except ValueError:
+            when = html.escape(item["date"])
+        caution = " ⚠️ يستحق مراجعة المخاطر" if item["risk"] else ""
         lines.append(
-            f"• <b>{html.escape(item['symbol'])}</b> | {html.escape(kind)}"
-            f" | {html.escape(item['date'])}{caution}"
-            f" | <a href=\"{html.escape(item['url'], quote=True)}\">المصدر</a>"
+            f"• {ar.ticker(item['symbol'])} — {html.escape(kind)} ({when}){caution} · "
+            f"<a href=\"{html.escape(item['url'], quote=True)}\">المصدر</a>"
         )
     if any(item["source"] == "ClinicalTrials.gov" for item in picks):
-        lines.append("سجلات الدراسات لا تثبت نجاح العلاج؛ Courtesy of the U.S. National Library of Medicine. لا تأييد من NLM وقد لا تعكس آخر تعديل.")
+        lines.append("سجلات الدراسات لا تثبت نجاح العلاج، ولا تأييد من المكتبة الوطنية للطب وقد لا تعكس آخر تعديل. "
+                     f"{NLM_ATTRIBUTION}.")
     lines.extend([
-        f'<a href="{SITE}">تصفح المحفزات والشارتات</a>',
-        ("⚠️ لا توجد أسعار أو عقود تنفيذية متحققة من هذه الوقائع. "
-         "الأهمية ترتيب للمتابعة وليست توقع ارتفاع أو توصية CALL/PUT."),
+        "",
+        f'🔗 <a href="{SITE}">تصفح الأحداث والشارتات على الموقع</a>',
+        ("⚠️ للمتابعة فقط — الترتيب حسب الأهمية وليس توقع ارتفاع، ولا توجد أسعار أو عقود تنفيذية "
+         "من هذه الوقائع، وليست توصية CALL/PUT."),
     ])
-    return "\n".join(lines)
+    return ar.render(lines)
 
 
 def send_daily_brief(report: dict[str, Any], state: dict[str, Any], *,

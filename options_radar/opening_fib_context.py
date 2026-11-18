@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from . import telegram_ar as ar
+
 ALLOWED_PUBLIC_SCHEMAS = {
     "week_agenda": "ghazi.week_agenda.v1",
     "ir_news": "ghazi.ir_news.v1",
@@ -177,16 +179,19 @@ def collect_official_events(
 
 
 def _event_html(item: dict[str, Any]) -> str:
-    date_ar = html.escape(item["date"])
+    try:
+        when = ar.day_month_ar(item["date"])
+    except ValueError:
+        when = html.escape(str(item["date"]))
     if item["kind"] == "UPCOMING_COMPANY_EVENT":
         kind = "موعد رسمي مقبل"
     elif item["kind"] == "ISSUER_NEWS_REVIEW":
         kind = "خبر من الشركة"
     else:
         kind = "سجل رسمي للمراجعة"
-    title = html.escape(item["title"][:75])
+    title = ar.ltr_tokens(html.escape(item["title"][:75]))
     link = html.escape(item["url"], quote=True)
-    return f"{kind} {date_ar}: <a href=\"{link}\">{title}</a>"
+    return f"{kind} ({when}): <a href=\"{link}\">{title}</a>"
 
 
 def fib_context_lines(context: dict[str, Any], *, symbols: list[str], limit: int = 4) -> list[str]:
@@ -201,15 +206,15 @@ def fib_context_lines(context: dict[str, Any], *, symbols: list[str], limit: int
             continue
         for event in rows[:1]:
             if isinstance(event, dict):
-                lines.append(f"<b>{html.escape(symbol)}</b>: {_event_html(event)}")
+                lines.append(f"• {ar.ticker(symbol)} — {_event_html(event)}")
                 if len(lines) >= limit:
                     break
         if len(lines) >= limit:
             break
     if not lines:
-        return ["الأخبار الرسمية: لا أحداث حديثة مرتبطة بالمرشحين في المصادر المتاحة؛ لا يعني غياب الأخبار."]
-    return ["<b>أحداث رسمية مرتبطة بالمراقبة (لا تحدد اتجاه السعر):</b>", *lines,
-            "تنبيه: الخبر والموعد لا يؤكدان CALL/PUT ولا يضمنان سيولة عقد الخيارات."]
+        return ["📰 الأخبار الرسمية: لا أحداث حديثة مرتبطة بهذه الأسهم في المصادر المتاحة (لا يعني غياب الأخبار)."]
+    return ["📰 <b>أخبار رسمية مرتبطة بهذه الأسهم:</b>", *lines,
+            "الخبر والموعد للمعلومة فقط، ولا تحدد اتجاه السعر ولا تؤكد CALL/PUT."]
 
 
 def render_weekly_official_brief(
@@ -228,25 +233,27 @@ def render_weekly_official_brief(
     recent = sorted((x for x in records if x.get("kind") == "ISSUER_NEWS_REVIEW"),
                     key=lambda x: (x["date"], x["symbol"]), reverse=True)[:3]
     lines = [
-        f"<b>غازي رادار | تقرير الأسبوع {now.date().isoformat()}</b>",
-        "المرجع: تقاويم علاقات المستثمرين والأخبار الرسمية المنشورة؛ بلا أسعار سوق أو توصيات عقود.",
+        f"🗓 <b>مواعيد الأسبوع للشركات الأمريكية — {ar.date_ar(now)}</b>",
+        "من تقاويم علاقات المستثمرين والأخبار الرسمية المنشورة؛ بلا أسعار سوق أو توصيات عقود.",
+        "",
     ]
     if upcoming:
         lines.append("<b>المواعيد القادمة المعلنة من الشركات:</b>")
         for event in upcoming:
-            lines.append(f"<b>{html.escape(event['symbol'])}</b>: {_event_html(event)}")
+            lines.append(f"• {ar.ticker(event['symbol'])} — {_event_html(event)}")
     else:
         lines.append("لم يتوفر موعد شركة مؤكد ضمن نطاق مصادر التقويم الحالية.")
     if recent:
-        lines.append("<b>أحدث بيانات علاقات المستثمرين:</b>")
+        lines += ["", "<b>أحدث بيانات علاقات المستثمرين:</b>"]
         for event in recent:
-            lines.append(f"<b>{html.escape(event['symbol'])}</b>: {_event_html(event)}")
+            lines.append(f"• {ar.ticker(event['symbol'])} — {_event_html(event)}")
     sources = context.get("sources", {}) if isinstance(context, dict) else {}
     usable = sum(v == "AVAILABLE" for v in sources.values()) if isinstance(sources, dict) else 0
     lines.extend([
+        "",
         f"حالة المصادر: {usable} من {len(ALLOWED_PUBLIC_SCHEMAS)} صالحة زمنيًا وقت إعداد التقرير.",
-        "هذه قائمة أحداث للمراقبة فقط؛ تحقق من التفاصيل والساعة من المصدر قبل أي قرار.",
+        "⚠️ قائمة أحداث للمراقبة فقط؛ تحقق من التفاصيل والساعة من المصدر قبل أي قرار.",
     ])
-    while len("\n".join(lines)) > 3800 and len(lines) > 4:
-        lines.pop(-3)  # shed lowest-priority recent context; preserve disclaimers
-    return "\n".join(lines)
+    while len("\n".join(lines)) + len(lines) > 3800 and len(lines) > 5:
+        lines.pop(-4)  # shed lowest-priority recent context; preserve disclaimers
+    return ar.render(lines)

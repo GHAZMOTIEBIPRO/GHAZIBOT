@@ -89,7 +89,7 @@ def test_one_time_real_telegram_readiness_notice_after_seed():
     updated, delivery = run(base, seeded, now=NOW, send=messages.append, notify_ready=True)
     assert delivery["ready_notice_sent"] is True
     assert len(messages) == 1
-    assert "تم ربط رادار المحفزات الرسمي" in messages[0]
+    assert "تم ربط رادار الأحداث الرسمية" in messages[0]
     assert "18" not in messages[0]  # Count comes from the real input, not a hardcoded claim.
     assert "\\n" not in messages[0]  # Render real HTML message lines.
     _, replay = run(base, updated, now=NOW, send=messages.append, notify_ready=True)
@@ -122,9 +122,10 @@ def test_riyadh_daily_brief_source_authentication_and_research_only():
     result = daily_brief_candidates(base, now=NOW)
     assert len(result) == 1 and result[0]["symbol"] == "ABBV"
     txt = daily_brief_message(base, result, now=NOW)
-    assert "الملخص الرسمي اليومي" in txt and "ليست" in txt
-    assert "2026-10-20" in txt and "www.accessdata.fda.gov" in txt
+    assert "ملخص الأحداث الرسمية" in txt and "ليست" in txt
+    assert "20 أكتوبر" in txt and "www.accessdata.fda.gov" in txt
     assert "CALL/PUT" in txt
+    assert "|" not in txt and "GHAZI RADAR" not in txt  # plain Arabic, no code-like separators
     assert daily_brief_candidates(report(row(), generated_at=(NOW-timedelta(days=3)).isoformat()),
                                   now=NOW) == []
     assert daily_brief_candidates(report(row(), sources={"openfda": False}), now=NOW) == []
