@@ -68,8 +68,9 @@ def test_daily_digest_once_per_day_with_message_id_logged():
                                 now=NOON, mode="scheduled", send=send)
     assert summary["sent"] == ["daily"] and state["last_daily"] == "2026-10-21"
     text = send.sent[0]
-    assert "محجوبة بالترخيص 1" in text and "1/2" in text and "جزيئات جديدة معتمدة 2" in text
+    assert "محجوبة بالترخيص 1" in text and "1 من 2 صفحات" in text and "جزيئات جديدة معتمدة 2" in text
     assert "ليس توصية تداول" in text
+    assert "UTC" not in text and "GHAZI RADAR" not in text
     assert state["delivery_log"][-1] == {"kind": "daily", "sent_at": NOON.isoformat(), "message_id": 101}
     digest.run(hub=_hub(a="DELAYED", b="LICENSE_BLOCKED"), fda=fda, smoke=smoke, state=state,
                now=NOON + timedelta(hours=3), mode="scheduled", send=send)

@@ -18,6 +18,7 @@ from typing import Any
 import exchange_calendars as xcals
 import pandas as pd
 
+from options_radar import telegram_ar as ar
 from options_radar.bar_providers import AlpacaBars
 from options_radar.opening_fib_replay import replay_session
 from options_radar.output_policy import decide, deliver_private
@@ -132,22 +133,33 @@ def shadow_summary(symbols: list[str], bars: dict[str, list[dict[str, Any]]],
 def render_shadow_message(summary: dict[str, Any], *, session: str) -> str:
     v = Counter(summary["outcomes"])
     decisions = sum(v[k] for k in ("WIN", "LOSS", "EXPIRED"))
+    excluded = v["INCOMPLETE_BAR_COVERAGE"] + v["SOURCE_UNAVAILABLE"]
     lines = [
-        f"<b>غازي رادار | رقابة فيبوناتشي بعد جلسة {session}</b>",
-        "<b>محاكاة سهم فقط؛ ليست أداء عقود خيارات، وليست صفقات تم تنفيذها.</b>",
-        f"المسح: {summary['scanned']} سهم | تغطية SIP كاملة لآخر الجلسة: {summary['complete_sip']}",
-        f"حالات المحاكاة: هدف 2 = {v['WIN']} | وقف = {v['LOSS']} | إغلاق جلسة = {v['EXPIRED']}",
-        f"لم تتوفر إشارة = {v['NO_TRADE']} | دخول متأخر = {v['SKIPPED_LATE_FILL']} | لم ينفذ افتراضيًا = {v['UNFILLED']}",
-        f"استبعاد نقص الشموع = {v['INCOMPLETE_BAR_COVERAGE']} | مصدر SIP غير متاح = {v['SOURCE_UNAVAILABLE']}",
-        f"الحالات الحاسمة أو المنتهية الصالحة للمقارنة: {decisions}.",
-        f"أُعيد الحساب من وقت لا يسبق تسليم التنبيه، مع تأخير SIP واستخدام افتتاح لاحق وتكلفة افتراضية 0.02 دولار/سهم.",
+        f"🧪 <b>مراجعة فيبوناتشي بعد الإغلاق — جلسة {ar.date_ar(session)}</b>",
+        "<b>محاكاة على حركة السهم فقط — ليست أداء عقود خيارات، وليست صفقات تم تنفيذها.</b>",
+        "",
+        f"• أسهم فُحصت: {summary['scanned']} — منها {summary['complete_sip']} ببيانات جلسة كاملة",
+        f"• وصلت الهدف الثاني: {v['WIN']}",
+        f"• لمست مستوى إلغاء الفكرة: {v['LOSS']}",
+        f"• انتهت الجلسة دون هدف أو إلغاء: {v['EXPIRED']}",
+        f"• لم تظهر إشارة: {v['NO_TRADE']} · دخول متأخر: {v['SKIPPED_LATE_FILL']} · لم يتحقق سعر الدخول: {v['UNFILLED']}",
+        (f"• مستبعدة لنقص البيانات: {excluded} (شموع ناقصة {v['INCOMPLETE_BAR_COVERAGE']}"
+         f" · مصدر غير متاح {v['SOURCE_UNAVAILABLE']})"),
+        "",
+        f"الحالات الصالحة للمقارنة: {decisions}.",
     ]
     if decisions < 30:
         lines.append("العينة أقل من 30 صفقة افتراضية؛ لا ننشر نسبة نجاح ولا نستنتج أفضلية.")
     else:
-        lines.append("الأرقام أعلاه وصفية، ولا تثبت أفضلية مستقلة أو ربحية خيارات.")
-    lines.append("لم تُحفظ الأسعار أو نتائج الأسهم الفردية في GitHub. استمرار الاختبار خارج العينة مطلوب.")
-    return "\n".join(lines)
+        lines.append("الأرقام وصفية، ولا تثبت أفضلية مستقلة أو ربحية خيارات.")
+    delay = summary.get("notice_delay_minutes")
+    after_open = f" (بعد {delay} دقيقة من الافتتاح)" if isinstance(delay, int) else ""
+    lines += [
+        (f"<b>طريقة الحساب:</b> من لحظة وصول التنبيه إليك{after_open}، "
+         "مع تأخير SIP، والدخول من افتتاح الشمعة التالية، وتكلفة افتراضية 0.02 دولار للسهم."),
+        "لا تُحفظ الأسعار ولا نتائج الأسهم الفردية في GitHub؛ يستمر الاختبار على أيام لاحقة.",
+    ]
+    return ar.render(lines)
 
 
 def run(*, now: datetime, sent_marker: Path, state_path: Path, universe: Path,

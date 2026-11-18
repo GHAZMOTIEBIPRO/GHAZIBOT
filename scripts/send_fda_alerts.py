@@ -31,12 +31,16 @@ from typing import Any
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from options_radar import telegram_ar as ar
+
 STATE_SCHEMA = "ghazi.fda_alert_state.v1"
 OFFICIAL_HOSTS = {"www.accessdata.fda.gov", "accessdata.fda.gov", "www.fda.gov", "fda.gov"}
 SITE_URL = "https://ghazibot.vercel.app"
 KEEP_DAYS = 90
 FRESH_DAYS = 1
-TYPE_AR = {"APPROVAL_ORIGINAL": "موافقة على طلب أصلي", "RECALL": "سحب منتج"}
+TYPE_AR = {"APPROVAL_ORIGINAL": "موافقة على دواء جديد (طلب أصلي)", "RECALL": "سحب منتج"}
 METHOD_AR = {"exact_normalised_name": "مطابقة الاسم القانوني",
              "reviewed_sponsor_alias": "اسم راعٍ مراجَع لدى FDA"}
 
@@ -67,39 +71,68 @@ def timing(event: dict[str, Any], first_seen: str, sent_at: str, source_updated:
             "label": "NEW" if lag is not None and lag <= FRESH_DAYS else "FOLLOW_UP"}
 
 
+PRIORITY_AR = {"PRIORITY": "أولوية (مراجعة سريعة)", "STANDARD": "عادية"}
+CLASS_AR = {"Class I": "الدرجة الأولى (Class I) — الأخطر", "Class II": "الدرجة الثانية (Class II)",
+            "Class III": "الدرجة الثالثة (Class III) — الأقل خطورة"}
+WHY_AR = {"APPROVAL_ORIGINAL": "موافقة أصلية على دواء أو منتج حيوي جديد تسمح ببيعه في السوق الأمريكي.",
+          "RECALL": "السحب قد يعني خطرًا صحيًا وتكاليف على الشركة حسب درجته وحجم المنتج."}
+
+
+def _date_text(value: Any) -> str:
+    try:
+        return ar.date_ar(str(value))
+    except ValueError:
+        return html.escape(str(value or "—"))
+
+
+def _moment_text(value: Any) -> str:
+    moment = ar.parse_time(value)
+    if moment is None:
+        return "غير معلن"
+    return f"{ar.day_month_ar(moment.astimezone(ar.NEW_YORK).date())} {ar.clock_ar(moment, ar.NEW_YORK)} نيويورك"
+
+
 def format_message(event: dict[str, Any], when: dict[str, Any] | None = None) -> str:
     esc = html.escape
     who = str(event.get("sponsor") or event.get("firm") or "—")
     ticker = str(event.get("ticker") or "")
-    head = f"<b>{esc(ticker)}</b> · {esc(who)}" if ticker else esc(who)
-    label = "" if when is None else (" · جديد" if when["label"] == "NEW" else
-                                      f" · للمتابعة (رُصد بعد {when['days_event_to_first_seen']} يوم من تاريخ الحدث)")
-    lines = [f"🏛️ <b>واقعة FDA رسمية — {esc(TYPE_AR[event['event_type']])}</b>{esc(label)}", head]
+    lines = [f"🏛️ <b>قرار رسمي من FDA — {esc(TYPE_AR[event['event_type']])}</b>"]
+    if when is not None:
+        lines.append("• الحالة: جديد" if when["label"] == "NEW" else
+                     f"• الحالة: للمتابعة (رُصد بعد {ar.days_ar(when['days_event_to_first_seen'] or 0)}"
+                     " من تاريخ الحدث)")
+    lines.append(f"• الشركة: {esc(who)}")
+    lines.append(f"• السهم: {ar.ticker(ticker)} ({METHOD_AR.get(str(event.get('match_method')), 'مطابقة اسم')})"
+                 if ticker else "• السهم: بلا رمز (لا مطابقة مؤكدة لشركة مدرجة)")
     if event["event_type"] == "APPROVAL_ORIGINAL":
         products = "، ".join(str(p) for p in event.get("products") or []) or "—"
-        lines.append(f"المنتج: {esc(products)} · {esc(str(event.get('application_kind') or ''))} "
-                     f"{esc(str(event.get('application_number') or ''))}")
+        number = str(event.get("application_number") or "")
+        lines.append(f"• المنتج: {esc(products)}" + (f" (طلب رقم {esc(number)})" if number else ""))
         if event.get("review_priority"):
-            lines.append(f"أولوية المراجعة: {esc(str(event['review_priority']))}")
+            priority = str(event["review_priority"])
+            lines.append(f"• أولوية المراجعة: {esc(PRIORITY_AR.get(priority.upper(), priority))}")
     else:
-        lines.append(f"التصنيف: {esc(str(event.get('classification') or '—'))}")
-        lines.append(f"المنتج: {esc(str(event.get('product') or '—')[:160])}")
-        lines.append(f"السبب: {esc(str(event.get('reason') or '—')[:200])}")
-    lines.append(f"تاريخ FDA: {esc(str(event.get('date') or '—'))}")
-    if when is not None:
-        lines.append(f"تحديث بيانات openFDA: {esc(str(when['source_dataset_updated'] or 'غير معلن'))}"
-                     f" · أول رصد لدينا: {esc(when['first_seen_at'][:16].replace('T', ' '))} UTC"
-                     f" · الإرسال: {esc(when['sent_at'][:16].replace('T', ' '))} UTC")
-        lines.append("لا نملك وقت أول نشر في المصدر؛ الفارق بين تاريخ الحدث وأول رصد لا يُنسب كله للمصدر.")
-    lines.append("الرمز: " + (METHOD_AR.get(str(event.get("match_method")), "مطابقة اسم") if ticker
-                              else "بلا رمز (لا مطابقة مؤكدة لشركة مدرجة)"))
+        classification = str(event.get("classification") or "—")
+        lines.append(f"• درجة السحب: {esc(CLASS_AR.get(classification, classification))}")
+        lines.append(f"• المنتج: {esc(str(event.get('product') or '—')[:160])}")
+        lines.append(f"• السبب: {esc(str(event.get('reason') or '—')[:200])}")
+    lines.append(f"• تاريخ القرار: {_date_text(event.get('date'))}")
+    lines += ["", f"<b>لماذا يهم:</b> {WHY_AR[event['event_type']]}", ""]
     official = _official(event.get("official_url"))
+    links = []
     if official:
-        lines.append(f'🔗 <a href="{esc(official, quote=True)}">صفحة FDA الرسمية</a>')
-    lines.append(f'🔗 <a href="{SITE_URL}/">أحداث FDA على الموقع</a>')
+        links.append(f'<a href="{esc(official, quote=True)}">صفحة FDA الرسمية</a>')
+    links.append(f'<a href="{SITE_URL}/">أحداث FDA على الموقع</a>')
+    lines.append("🔗 " + " · ".join(links))
+    if when is not None:
+        updated = when["source_dataset_updated"]
+        lines.append(f"⏱️ التوقيت: تحديث بيانات openFDA {_date_text(updated) if updated else 'غير معلن'}"
+                     f" · أول رصد لدينا {_moment_text(when['first_seen_at'])}"
+                     f" · الإرسال {_moment_text(when['sent_at'])}. "
+                     "لا نملك وقت أول نشر في المصدر؛ الفارق بين تاريخ الحدث وأول رصد لا يُنسب كله للمصدر.")
     lines.append("⚠️ واقعة تنظيمية من openFDA (ملك عام CC0) وليست توصية ولا تعني اتجاهًا للسعر؛ "
                  "openFDA يتأخر عن قرار FDA أيامًا.")
-    return "\n".join(lines)
+    return ar.render(lines)
 
 
 def load_state(path: Path) -> dict[str, Any] | None:

@@ -25,6 +25,10 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from options_radar import telegram_ar as ar
+
 SCHEMA = "ghazi.ops_digest_state.v1"
 SITE_URL = "https://ghazibot.vercel.app"
 WORKING = {"LIVE", "DELAYED", "HISTORICAL", "RESEARCH_ONLY", "MODEL_ESTIMATED"}
@@ -72,7 +76,8 @@ def _line(info: dict[str, str]) -> str:
 
 
 def change_message(down: list[str], back: list[str], current: dict[str, dict[str, str]], now: datetime) -> str:
-    lines = ["🛰️ <b>GHAZI RADAR — تغيّر حالة المصادر</b>", f"الوقت: {now:%Y-%m-%d %H:%M} UTC"]
+    lines = ["🛰️ <b>تغيّر في حالة مصادر بيانات غازي رادار</b>",
+             f"🕘 {ar.date_ar(now.astimezone(ar.NEW_YORK), year=False)}، {ar.when_ar(now)}"]
     if down:
         lines.append("⛔ <b>توقف:</b>")
         lines += [_line(current[f]) for f in down]
@@ -80,7 +85,7 @@ def change_message(down: list[str], back: list[str], current: dict[str, dict[str
         lines.append("✅ <b>عاد للعمل:</b>")
         lines += [_line(current[f]) for f in back]
     lines += [f'🔗 <a href="{SITE_URL}/">حالة البيانات على الموقع</a>', "تقرير تشغيلي، وليس توصية تداول."]
-    return "\n".join(lines)
+    return ar.render(lines)
 
 
 def daily_message(current: dict[str, dict[str, str]], fda: Any, smoke: Any, now: datetime) -> str:
@@ -89,23 +94,26 @@ def daily_message(current: dict[str, dict[str, str]], fda: Any, smoke: Any, now:
         counts[info["state"]] = counts.get(info["state"], 0) + 1
     working = sum(v for k, v in counts.items() if k in WORKING)
     broken = [info for info in current.values() if info["state"] in BROKEN]
-    lines = ["🛰️ <b>GHAZI RADAR — التقرير التشغيلي اليومي</b>", f"{now:%Y-%m-%d} (UTC)",
-             (f"مجموعات البيانات: {len(current)} · تعمل {working}"
-              f" · محجوبة بالترخيص {counts.get('LICENSE_BLOCKED', 0)} · متعطلة {len(broken)}")]
+    lines = [f"🛰️ <b>تقرير تشغيل غازي رادار — {ar.date_ar(now.astimezone(ar.NEW_YORK))}</b>",
+             (f"📦 مصادر البيانات: {len(current)} — تعمل {working}"
+              f" · محجوبة بالترخيص {counts.get('LICENSE_BLOCKED', 0)} · متوقفة {len(broken)}")]
     if broken:
-        lines.append("⛔ <b>المتعطل الآن:</b>")
+        lines.append("⛔ <b>المتوقف الآن:</b>")
         lines += [_line(info) for info in broken[:8]]
     if isinstance(fda, dict):
         c = fda.get("counts") or {}
-        lines.append(f"💊 FDA (آخر 30 يومًا): جزيئات جديدة معتمدة {c.get('new_molecule_approvals', '—')}"
-                     f" · سحوبات Class I {c.get('class_i_recalls', '—')} · مرتبطة برمز {c.get('matched_to_ticker', '—')}")
+        lines.append(f"💊 إدارة الغذاء والدواء FDA (آخر 30 يومًا): أدوية بجزيئات جديدة معتمدة {c.get('new_molecule_approvals', '—')}"
+                     f" · سحوبات من الدرجة الأولى {c.get('class_i_recalls', '—')}"
+                     f" · أحداث مرتبطة بسهم مدرج {c.get('matched_to_ticker', '—')}")
     pages = smoke.get("pages") if isinstance(smoke, dict) else None
     if isinstance(pages, dict) and pages:
         ok = sum(1 for p in pages.values() if isinstance(p, dict) and p.get("http_status") == 200 and not p.get("errors"))
-        lines.append(f"🌐 الموقع: {ok}/{len(pages)} صفحة بلا أخطاء (فحص {html.escape(str(smoke.get('generated_at', '—'))[:16])})")
-    lines += [f'🔗 <a href="{SITE_URL}/">GHAZI RADAR</a>',
-              "تقرير تشغيلي عن البيانات والمصادر، وليس توصية تداول."]
-    return "\n".join(lines)
+        checked = ar.parse_time(smoke.get("generated_at"))
+        when = f" (آخر فحص {ar.clock_ar(checked, ar.NEW_YORK)} نيويورك)" if checked else ""
+        lines.append(f"🌐 الموقع: {ok} من {len(pages)} صفحات تعمل بلا أخطاء{when}")
+    lines += [f'🔗 <a href="{SITE_URL}/">افتح غازي رادار</a>',
+              "تقرير تشغيلي عن مصادر البيانات — ليس توصية تداول."]
+    return ar.render(lines)
 
 
 def run(*, hub: Any, fda: Any, smoke: Any, state: dict[str, Any] | None, now: datetime, mode: str,

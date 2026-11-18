@@ -10,6 +10,7 @@ import math
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from . import telegram_ar as ar
 from .opening_fib_context import fib_context_lines
 
 BAR = timedelta(minutes=5)
@@ -134,43 +135,57 @@ def evaluate(
     }
 
 
+def _pick_block(item: dict[str, Any]) -> list[str]:
+    """One opportunity: what was confirmed, where it is invalid, and the measured targets."""
+    call = item["state"] == "WATCH_CALL"
+    head = (f"🟢 {ar.ticker(item['symbol'])} — مراقبة صعود (كول)" if call
+            else f"🔴 {ar.ticker(item['symbol'])} — مراقبة هبوط (بوت)")
+    seen = ar.parse_time(item.get("source_last_bar"))
+    bar_note = f" (شمعة {ar.clock_ar(seen, ar.NEW_YORK)} نيويورك)" if seen else ""
+    targets = " ← ".join(ar.price(p) for p in item["targets"])
+    return [
+        head,
+        f"• تأكد الاختراق {'فوق' if call else 'تحت'}: {ar.price(item['trigger'])}",
+        f"• آخر إغلاق مرصود: {ar.price(item['entry_observed_delayed'])}{bar_note}",
+        f"• الأهداف: {targets}",
+        f"• تُلغى الفكرة {'تحت' if call else 'فوق'}: {ar.price(item['stop'])}",
+        f"• العائد مقابل المخاطرة حتى الهدف الثاني: {float(item['rr2']):.2f} مرة",
+    ]
+
+
 def render_private_digest(results: list[dict[str, Any]], *,
                           session_date: str, limit: int = 5,
                           official_context: dict[str, Any] | None = None) -> str:
-    """One short owner-only Telegram message. No redistribution/public output."""
+    """One owner-only Telegram message in plain Arabic. No redistribution/public output.
+
+    Every number is a field computed by evaluate(); the text only labels and explains it.
+    """
     states = {"WATCH_CALL": [], "WATCH_PUT": [], "WAIT": [], "NO_DATA": []}
     for item in results:
         states.get(str(item.get("state")), states["NO_DATA"]).append(item)
     picks = sorted(states["WATCH_CALL"] + states["WATCH_PUT"],
                    key=lambda x: (-float(x.get("rr2", 0)), x["symbol"]))[:limit]
+    sip = sum(x.get("feed") == "sip" for x in results)
     lines = [
-        f"<b>غازي رادار | فيبوناتشي افتتاح {html.escape(session_date)}</b>",
-        "المرجع 9:30–9:45 نيويورك | فريم 15 دقيقة",
-        f"المفحوص {len(results)} | مراقبة كول {len(states['WATCH_CALL'])} | "
-        f"مراقبة بوت {len(states['WATCH_PUT'])} | انتظار {len(states['WAIT'])} | "
-        f"بيانات ناقصة {len(states['NO_DATA'])}",
-        f"تغطية مصدر الشموع: SIP "
-        f"{sum(x.get('feed') == 'sip' for x in results)} | IEX "
-        f"{sum(x.get('feed') == 'iex' for x in results)}",
-        "⚠️ الشموع متأخرة 16 دقيقة أو أكثر؛ CALL/PUT انحياز للسهم لا إثبات توفر عقد خيار، وليست أسعار تنفيذ.",
+        f"📊 <b>فيبوناتشي الافتتاح — {html.escape(ar.date_ar(session_date))}</b>",
+        "السوق الأمريكي · رسالة خاصة بك",
+        "🕘 النطاق المرجعي: أول 15 دقيقة من الجلسة (9:30–9:45 ص نيويورك = 5:30–5:45 م الرياض)",
+        (f"📋 النتيجة: فُحص {ar.stocks_ar(len(results))} — صعود (كول) {len(states['WATCH_CALL'])}"
+         f" · هبوط (بوت) {len(states['WATCH_PUT'])} · انتظار {len(states['WAIT'])}"
+         f" · بيانات ناقصة {len(states['NO_DATA'])}"),
+        f"مصدر الشموع: الشريط الموحد SIP لـ {sip} من {len(results)}"
+        + (f" (مصدر جزئي IEX لـ {sum(x.get('feed') == 'iex' for x in results)})"
+           if any(x.get("feed") == "iex" for x in results) else ""),
+        "",
     ]
     if picks:
-        lines.append("<b>أبرز فرص المراقبة (ليست صفقات منفذة):</b>")
+        lines.append("<b>فرص للمراقبة (ليست صفقات منفذة):</b>")
+        for item in picks:
+            lines.extend(_pick_block(item))
+            lines.append("")
     else:
-        lines.append("لا توجد فرصة اجتازت شروط التأكيد والعائد/المخاطرة حتى وقت الفحص.")
-    for item in picks:
-        symbol = html.escape(item["symbol"])
-        side = "كول" if item["state"] == "WATCH_CALL" else "بوت"
-        ts = html.escape(str(item.get("source_last_bar") or "?")[:16])
-        targets = " / ".join(f"{p:.2f}" for p in item["targets"])
-        lines.append(
-            f"<b>{symbol} — مراقبة {side}</b> | R2 {item['rr2']:.2f}\n"
-            f"الاختراق {item['trigger']:.2f} | إغلاق مرصود {item['entry_observed_delayed']:.2f}\n"
-            f"وقف {item['stop']:.2f} | أهداف {targets}\n"
-            f"آخر شمعة مصدر {ts} UTC | تغطية {html.escape(item['feed'].upper())}"
-        )
-    # Link *officially sourced, dated* events without turning them into
-    # bullish/bearish evidence. Keep them apart from price-derived decisions.
+        lines += ["لا يوجد سهم اجتاز شرطي التأكيد والعائد مقابل المخاطرة حتى وقت الفحص.", ""]
+    # Officially sourced, dated events stay apart from the price-derived readings.
     if official_context is not None:
         pick_syms = [p["symbol"] for p in picks]
         present = {x["symbol"] for x in results}
@@ -182,23 +197,30 @@ def render_private_digest(results: list[dict[str, Any]], *,
         sources = official_context.get("sources") if isinstance(official_context, dict) else {}
         if isinstance(sources, dict):
             available = sum(v == "AVAILABLE" for v in sources.values())
-            lines.append(f"المصادر العامة الحديثة: {available} من {len(sources)}؛ الغائب لا يعني عدم وجود أخبار.")
-    # Every configured symbol gets a status; minimize Telegram noise.
-    for state, label in [("WATCH_CALL", "كول"), ("WATCH_PUT", "بوت"),
-                         ("WAIT", "انتظار"), ("NO_DATA", "غير مكتمل")]:
-        names = ", ".join(html.escape(x["symbol"]) for x in states[state])
+            lines.append(f"مصادر الأخبار الرسمية المتاحة: {available} من {len(sources)} (غياب الخبر لا يعني عدم وجوده).")
+        lines.append("")
+    for state, label in [("WATCH_CALL", "🟢 صعود"), ("WATCH_PUT", "🔴 هبوط"),
+                         ("WAIT", "⏸️ انتظار"), ("NO_DATA", "⚠️ بيانات ناقصة")]:
+        names = "، ".join(html.escape(x["symbol"]) for x in states[state])
         if names:
-            lines.append(f"<b>{label} ({len(states[state])}):</b> {names}")
-    lines.append("لا توجد احتمالات نجاح مثبتة؛ طابق السعر المباشر وسيولة العقد قبل أي تداول.")
-    while len("\n".join(lines)) > 3900 and len(lines) > 5:
-        # Shorten the longest status list, but never cut an HTML tag/number.
-        idx = max(range(4, len(lines) - 1), key=lambda i: len(lines[i]))
-        candidate = lines[idx]
-        if "," in candidate and "<b>" in candidate:
-            head, _, body = candidate.partition("</b> ")
-            names = body.split(", ")
-            if len(names) > 8:
-                lines[idx] = head + "</b> " + ", ".join(names[:8]) + f" ... ({len(names)-8} أخرى)"
-                continue
+            lines.append(f"{label} ({len(states[state])}): {names}")
+    lines += [
+        "",
+        ("<b>كيف تقرأ الرسالة:</b> إغلاق شمعتين متتاليتين (5 دقائق) فوق النطاق المرجعي = مراقبة صعود، "
+         "وتحته = مراقبة هبوط. الأهداف امتدادات فيبوناتشي للنطاق نفسه."),
+        ("⚠️ الأسعار متأخرة 16 دقيقة على الأقل وليست أسعار تنفيذ، والإشارة للسهم لا تثبت توفر عقد خيار مناسب. "
+         "لا توجد نسبة نجاح مثبتة؛ راجع السعر الحي وسيولة العقد قبل أي قرار."),
+    ]
+    def size() -> int:
+        return len("\n".join(lines)) + len(lines)  # at most one direction mark per line
+
+    while size() > 3900 and len(lines) > 8:
+        # Shorten the longest status list first; never cut inside a tag or a number.
+        idx = max(range(len(lines) - 3), key=lambda i: len(lines[i]))
+        head, sep, body = lines[idx].partition("): ")
+        names = body.split("، ") if sep else []
+        if len(names) > 8:
+            lines[idx] = f"{head}{sep}{'، '.join(names[:8])} … و{len(names) - 8} أخرى"
+            continue
         lines.pop(idx)
-    return "\n".join(lines)
+    return ar.render(lines)

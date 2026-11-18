@@ -142,13 +142,15 @@ def test_timing_chain_is_recorded_and_late_events_are_follow_up_not_new():
     later = datetime(2026, 10, 21, 9, 0, tzinfo=timezone.utc)
     sender = Sender()
     done, _ = alerts.run(report, held, now=later, max_age_days=10, max_new=5, send=sender)
-    by_text = {("LATE" if "تاريخ FDA: 2026-10-16" in t else "FRESH"): t for t in sender.sent}
-    assert "للمتابعة (رُصد بعد 4 يوم من تاريخ الحدث)" in by_text["LATE"]
-    assert "· جديد" in by_text["FRESH"]
-    # first sighting is the earlier run, distinct from the send time; source date shown as the dataset date
-    assert "أول رصد لدينا: 2026-10-20 21:30 UTC · الإرسال: 2026-10-21 09:00 UTC" in by_text["LATE"]
-    assert "تحديث بيانات openFDA: 2026-10-19" in by_text["LATE"]
+    by_text = {("LATE" if "تاريخ القرار: الجمعة 16 أكتوبر 2026" in t else "FRESH"): t for t in sender.sent}
+    assert "للمتابعة (رُصد بعد 4 أيام من تاريخ الحدث)" in by_text["LATE"]
+    assert "الحالة: جديد" in by_text["FRESH"]
+    # first sighting is the earlier run, distinct from the send time; source date shown as the dataset date.
+    # 21:30 UTC on 20 Oct = 5:30 PM New York; 09:00 UTC on 21 Oct = 5:00 AM New York.
+    assert "أول رصد لدينا 20 أكتوبر 5:30 م نيويورك · الإرسال 21 أكتوبر 5:00 ص نيويورك" in by_text["LATE"]
+    assert "تحديث بيانات openFDA الاثنين 19 أكتوبر 2026" in by_text["LATE"]
     assert "لا نملك وقت أول نشر في المصدر" in by_text["LATE"]
+    assert "UTC" not in by_text["LATE"] and "STANDARD" not in by_text["LATE"]
     assert done["events"]["LATE"]["label"] == "FOLLOW_UP" and done["events"]["FRESH"]["label"] == "NEW"
     assert done["events"]["LATE"]["first_seen_at"] == NOW.isoformat()
 

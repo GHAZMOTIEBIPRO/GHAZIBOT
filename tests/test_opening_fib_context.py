@@ -96,7 +96,7 @@ def test_daily_digest_shows_confirmed_upcoming_event_even_without_trade(tmp_path
     )
     assert "NVDA" in message
     assert "موعد رسمي مقبل" in message
-    assert "مراقبة كول 0" in message
+    assert "صعود (كول) 0" in message
     assert len(message) <= 3900
 
 
@@ -104,7 +104,7 @@ def test_weekly_report_warns_of_source_coverage_and_not_direction(tmp_path):
     fixture_events(tmp_path)
     context = collect_official_events(tmp_path, now=NOW, symbols=["NVDA"])
     message = render_weekly_official_brief(context, now=NOW)
-    assert "2026-11-17" in message
+    assert "17 نوفمبر" in message  # the event date, in Arabic
     assert "المواعيد القادمة" in message
     assert "3 من 3" in message
     assert "لا" in message and "توصيات عقود" in message
