@@ -38,7 +38,8 @@ def test_window_ends_yesterday_and_url_is_human_traffic_only():
     start, end = wa.window(date(2026, 11, 18))
     assert end == date(2026, 11, 17) and (end - start).days == wa.BASELINE_DAYS + 8
     url = wa.url_for("Tesla,_Inc.", start, end)
-    assert "/en.wikipedia/user/Tesla%2C_Inc./daily/" in url and url.endswith("2026111700")
+    # AQS path: /per-article/{project}/{access}/{agent}/{article}/{granularity}/{start}/{end}
+    assert "/per-article/en.wikipedia/all-access/user/Tesla%2C_Inc./daily/" in url and url.endswith("2026111700")
 
 
 def test_parse_drops_malformed_rows():

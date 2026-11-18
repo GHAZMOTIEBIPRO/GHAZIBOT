@@ -33,7 +33,7 @@ def collect(*, now: datetime, fetch=hf.fetch) -> dict[str, Any]:
     start, end = wa.window(now.date())
     rows, errors = [], {}
     for symbol, (title, _) in wa.LEADERS.items():
-        result = fetch(wa.url_for(title, start, end), attempts=2, timeout=20, min_interval=0.25)
+        result = fetch(wa.url_for(title, start, end), attempts=2, timeout=20, min_interval=1.0)
         if not result.ok:
             errors[symbol] = result.status()
             continue
