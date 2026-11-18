@@ -20,6 +20,9 @@ SCHEMA = "ghazi.wiki_attention.v1"
 API = ("https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/"
        "{title}/daily/{start}/{end}")
 ARTICLE = "https://en.wikipedia.org/wiki/{title}"
+# Wikimedia User-Agent policy: "Name/version (contact URL or e-mail) library". A request that does
+# not identify its client is put in the most restricted rate-limit tier (keyed on the shared runner IP).
+USER_AGENT = "GHAZI-RADAR-wiki-attention/1.0 (https://github.com/GHAZMOTIEBIPRO/GHAZIBOT) python-urllib/3"
 BASELINE_DAYS = 60
 MIN_BASELINE_POINTS = 40
 

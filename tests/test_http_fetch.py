@@ -107,6 +107,15 @@ def test_conditional_get_sends_validators_and_reports_not_modified():
     assert req.get_header("If-none-match") == '"x1"'
 
 
+def test_default_user_agent_and_provider_specific_override():
+    default = _Opener(_Resp(b"", {}))
+    _run(default)
+    assert default.requests[0].get_header("User-agent") == hf.UA
+    custom = _Opener(_Resp(b"", {}))
+    _run(custom, user_agent="Tool/1.0 (https://example.org) lib/1")
+    assert custom.requests[0].get_header("User-agent") == "Tool/1.0 (https://example.org) lib/1"
+
+
 def test_requests_to_one_host_are_spaced():
     sleeps: list[float] = []
     hf._last_call.clear()

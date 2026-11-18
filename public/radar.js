@@ -721,7 +721,7 @@
       const others = att.rows.slice(1).map((r) => `${r.symbol} ×${r.ratio.toFixed(1)}`).join(" · ");
       add("اهتمام المستثمرين (ويكيبيديا)", `${lead.symbol} ×${lead.ratio.toFixed(1)} · ${lead.level_ar}`,
         (others ? others + " · " : "") + `مقارنة بوسيط 60 يومًا · بيانات ${day(att.through) || att.through}` +
-        (att.kept ? " · تعذّر التحديث، آخر نسخة" : "") + " · سياق وليس إشارة سعر");
+        (att.kept ? " · تعذّر التحديث، آخر نسخة" : "") + " · سياق وليس إشارة سعر", "gr-fact-wide");
     }
     // one practical sentence on data, its details under «المزيد ← حالة المنصة»
     const dataState = platformState(state.data.scorecards, state.data.sources, Date.now())[1];
