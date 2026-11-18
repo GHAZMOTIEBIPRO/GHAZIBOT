@@ -6,7 +6,24 @@ Status words follow AGENTS.md.
   - Reproduced the 412 / 8 / 1.94 % baseline exactly.
   - Found the premature-maturity defect.
   - Kept the legacy records as invalid evidence.
-  - See `signal-validation-report.md`. RUNTIME VERIFIED is pending the next Full Omega Radar run.
+  - See `signal-validation-report.md`.
+  - RUNTIME VERIFIED 2026-11-18 (run 44300198117, calibration commit 6bfd94f): evaluation_version 2,
+    primary sample 0, legacy 412 / 8 / 1.94 % kept as invalid evidence.
+- **PR #442 (Arabic Telegram messages) — MERGED (075d8b2).**
+  - Added `telegram_ar.py` (RTL-safe lines, New York and Riyadh times, allowed HTML only).
+  - Rewrote the Fibonacci, shadow, catalyst, FDA and ops messages with it.
+- **PR #443 (site summary cards and Arabic captions) — MERGED (d74a796).**
+  - Production smoke: all pages 200, 0 errors, no overflow.
+- **PRs #444–#446 (investor attention, Wikipedia pageviews, CC0) — MERGED.**
+  - #444 added the module, builder, workflow and home card.
+  - #445 fixed the AQS path: it was missing the `{access}` segment, so 30/33 requests returned 404.
+  - #446 sent a Wikimedia-policy User-Agent, `Name/version (https contact) library`.
+    - Before: every 11th request got 429 (TSLA, NFLX, PFE), including the retry.
+    - Lesson: a client that does not identify itself is put in the most restricted tier, keyed on
+      the shared runner IP.
+  - RUNTIME VERIFIED on bot-state b0001a8 (2026-11-18 21:52Z): 33/33 OK, 0 errors, data through 2026-11-17.
+- **PR #447 (site smoke):** records the labels of the home cards and the `radar.js?v=` it served,
+  so a new card on the production domains is checked on the runner.
 - **Research documents and the reproducible OSS scoring tool:**
   - documents: `data-source-registry.md` (60 sources), `provider-license-matrix.md`,
     `open-source-project-review.md` (572 scored, 452 kept, 27 deep-reviewed, 0 integrated), `data-architecture.md`,
