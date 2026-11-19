@@ -50,7 +50,8 @@ jobs:
           python app/scripts/build_fda_events.py
           --output state/runtime/public/data/fda_events.json
       - name: Install Telegram transport dependency
-        run: pip install "requests>=2.32,<3.0"
+        # the sender imports options_radar.telegram_ar; the package import needs the runtime set (pandas)
+        run: pip install -r app/requirements.txt
       - name: Restore Telegram destination when chat secret is absent
         if: env.TELEGRAM_CHAT_ID == ''
         shell: bash

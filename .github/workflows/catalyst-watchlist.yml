@@ -115,7 +115,8 @@ jobs:
             --federal-register state/runtime/public/data/federal_register.json \
             --output state/runtime/public/data/week_agenda.json
       - name: Install shared Telegram transport dependency
-        run: pip install "requests>=2.32,<3.0"
+        # the sender imports options_radar.telegram_ar; the package import needs the runtime set (pandas)
+        run: pip install -r app/requirements.txt
       - name: Restore Telegram destination when chat secret is absent
         if: env.TELEGRAM_CHAT_ID == ''
         shell: bash
