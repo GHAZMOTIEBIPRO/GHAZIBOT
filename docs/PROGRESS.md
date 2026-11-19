@@ -31,8 +31,23 @@ Status words follow AGENTS.md.
   - tool: `scripts/oss_review.py` with `tests/test_oss_review.py`.
 - **Next:**
   - owner-private Alpaca re-measurement of the 414 legacy signals (Telegram only);
-  - public macro archive (Parquet release assets);
+  - public macro archive (Parquet release assets) — piloted 2026-11-19, see below;
   - SEC archive once `SEC_USER_AGENT` is set.
+
+## Phase 2026-11-19 — security, dependencies, sources, quant, archive
+- **#451** security gate (zizmor, pip-audit, pip-licenses) and the Wilder RSI/ATR seed fix — MERGED, CI GREEN.
+- **#452** every action pinned to a SHA + Dependabot; **#455** least privilege (38 checkouts without a
+  persisted token, no secrets on PR runs) — MERGED; zizmor 370 → 103, 0 High.
+- **#458** runtime installs 55 → 18 packages (514 → 169 MB, install −39 %) — MERGED.
+- **#459** GDELT escalating pause (12 → 72 h) and "fetch failed" never shown as "no news" — MERGED.
+- **#460** owner-private historical replay of the fixed opening-Fibonacci rule — MERGED (f4cb206).
+  RUNTIME VERIFIED: dry run 44501024518 `HISTORY_DRY_RUN_COMPUTED`; run 44501619990 `HISTORY_DELIVERED`
+  (aggregate report in the owner's private chat; the log carries the status only).
+- **Public archive pilot** (`docs/PUBLIC_ARCHIVE.md`): need measured (110 Treasury observations in history vs 5 in
+  the latest copy; one DOL revision that a backtest would see as look-ahead); 789 versions → 511 vintage rows,
+  21.6 KB Parquet; GDELT failing 100 % of observed hours since 2026-10-12.
+- Known item: `exchange_calendars` triggers NumPy's "generic timedelta" deprecation while building XNYS; it
+  becomes an error in a future NumPy, so the next `exchange_calendars` release must be checked before NumPy moves.
 
 # Previous mission — "restore leader / index price analysis" (started 2026-10-29)
 
