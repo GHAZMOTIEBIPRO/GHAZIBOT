@@ -45,12 +45,12 @@ jobs:
         run: zizmor --offline --format json .github/workflows > "$RUNNER_TEMP/zizmor.json" || true
       - name: Known vulnerabilities in runtime requirements (pip-audit)
         run: |
-          pip-audit -r requirements.txt --format json -o "$RUNNER_TEMP/pip_audit.json" \
+          pip-audit -r requirements.txt -r requirements-archive.txt --format json -o "$RUNNER_TEMP/pip_audit.json" \
             --progress-spinner off || echo "pip-audit reported findings or could not run"
       - name: Runtime dependency licences (pip-licenses)
         run: |
           python -m venv "$RUNNER_TEMP/runtime"
-          "$RUNNER_TEMP/runtime/bin/pip" install -q -r requirements.txt
+          "$RUNNER_TEMP/runtime/bin/pip" install -q -r requirements.txt -r requirements-archive.txt
           pip-licenses --python "$RUNNER_TEMP/runtime/bin/python" --format json > "$RUNNER_TEMP/licenses.json"
       - name: Summary and gate
         # explicit bash = -eo pipefail, so `tee` cannot mask the gate's exit code
