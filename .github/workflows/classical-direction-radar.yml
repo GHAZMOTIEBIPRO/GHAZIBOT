@@ -45,30 +45,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Classical Direction GHAZMOTIEBIPRO@users.noreply.github.com' }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
-      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
-      TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN }}
-      TRADIER_BASE_URL: ${{ secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
-      ALPACA_STOCK_FEED: ${{ secrets.ALPACA_STOCK_FEED || 'iex' }}
-      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
-      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
-      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
-      DAILY_PRICE_PROVIDER_ORDER: ${{ secrets.DAILY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
-      INTRADAY_PRICE_PROVIDER_ORDER: ${{ secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
-      CLASSICAL_DIRECTION_MAX_SYMBOLS: ${{ secrets.CLASSICAL_DIRECTION_MAX_SYMBOLS || '48' }}
-      CLASSICAL_MIN_DOLLAR_VOLUME: ${{ secrets.CLASSICAL_MIN_DOLLAR_VOLUME || '100000000' }}
-      CLASSICAL_MIN_DATA_COVERAGE: ${{ secrets.CLASSICAL_MIN_DATA_COVERAGE || '0.60' }}
-      CLASSICAL_FETCH_WORKERS: ${{ secrets.CLASSICAL_FETCH_WORKERS || '3' }}
-      CLASSICAL_INTRADAY_LOOKBACK_DAYS: ${{ secrets.CLASSICAL_INTRADAY_LOOKBACK_DAYS || '30' }}
-      CLASSICAL_ALERT_MAX: ${{ secrets.CLASSICAL_ALERT_MAX || '3' }}
+      SEC_USER_AGENT: ${{ github.event_name != 'pull_request' && secrets.SEC_USER_AGENT || 'GHAZI Classical Direction GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      TELEGRAM_BOT_TOKEN: ${{ github.event_name != 'pull_request' && secrets.TELEGRAM_BOT_TOKEN || '' }}
+      TELEGRAM_CHAT_ID: ${{ github.event_name != 'pull_request' && secrets.TELEGRAM_CHAT_ID || '' }}
+      TIINGO_API_KEY: ${{ github.event_name != 'pull_request' && secrets.TIINGO_API_KEY || '' }}
+      FINNHUB_API_KEY: ${{ github.event_name != 'pull_request' && secrets.FINNHUB_API_KEY || '' }}
+      TRADIER_TOKEN: ${{ github.event_name != 'pull_request' && secrets.TRADIER_TOKEN || '' }}
+      TRADIER_BASE_URL: ${{ github.event_name != 'pull_request' && secrets.TRADIER_BASE_URL || 'https://sandbox.tradier.com' }}
+      ALPACA_STOCK_FEED: ${{ github.event_name != 'pull_request' && secrets.ALPACA_STOCK_FEED || 'iex' }}
+      TWELVE_DATA_API_KEY: ${{ github.event_name != 'pull_request' && secrets.TWELVE_DATA_API_KEY || '' }}
+      POLYGON_API_KEY: ${{ github.event_name != 'pull_request' && secrets.POLYGON_API_KEY || '' }}
+      ALPHA_VANTAGE_API_KEY: ${{ github.event_name != 'pull_request' && secrets.ALPHA_VANTAGE_API_KEY || '' }}
+      DAILY_PRICE_PROVIDER_ORDER: ${{ github.event_name != 'pull_request' && secrets.DAILY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
+      INTRADAY_PRICE_PROVIDER_ORDER: ${{ github.event_name != 'pull_request' && secrets.INTRADAY_PRICE_PROVIDER_ORDER || 'tiingo,finnhub,tradier,alpaca,twelve_data,polygon,alpha_vantage,yahooquery,yahoo' }}
+      CLASSICAL_DIRECTION_MAX_SYMBOLS: ${{ github.event_name != 'pull_request' && secrets.CLASSICAL_DIRECTION_MAX_SYMBOLS || '48' }}
+      CLASSICAL_MIN_DOLLAR_VOLUME: ${{ github.event_name != 'pull_request' && secrets.CLASSICAL_MIN_DOLLAR_VOLUME || '100000000' }}
+      CLASSICAL_MIN_DATA_COVERAGE: ${{ github.event_name != 'pull_request' && secrets.CLASSICAL_MIN_DATA_COVERAGE || '0.60' }}
+      CLASSICAL_FETCH_WORKERS: ${{ github.event_name != 'pull_request' && secrets.CLASSICAL_FETCH_WORKERS || '3' }}
+      CLASSICAL_INTRADAY_LOOKBACK_DAYS: ${{ github.event_name != 'pull_request' && secrets.CLASSICAL_INTRADAY_LOOKBACK_DAYS || '30' }}
+      CLASSICAL_ALERT_MAX: ${{ github.event_name != 'pull_request' && secrets.CLASSICAL_ALERT_MAX || '3' }}
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:

@@ -88,6 +88,7 @@ jobs:
             scripts/relay_dependent_workflows.py
             scripts/private_schedule_rescue.py
           sparse-checkout-cone-mode: false
+          persist-credentials: false
 
       # Each pass: dispatch stale engines, then relay completed source runs to
       # their dependents (runs started with GITHUB_TOKEN never raise
