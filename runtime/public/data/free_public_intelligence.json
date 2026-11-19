@@ -1,6 +1,6 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-11-19T03:39:03.864219+00:00",
+  "generated_at": "2026-11-19T09:48:02.108141+00:00",
   "status": "DEGRADED",
   "source_errors": {
     "gdelt_attention": "COOLDOWN_ACTIVE",
@@ -13,6 +13,80 @@
     "gdelt_attention": {
       "last_error": "HTTP_429",
       "retry_after": "2026-11-19T15:27:08.150190+00:00"
+    }
+  },
+  "source_streaks": {
+    "gdelt_attention": {
+      "consecutive_failures": 0,
+      "last_success_at": null
+    },
+    "fed_monetary": {
+      "consecutive_failures": 0,
+      "last_success_at": "2026-11-19T09:48:02.108141+00:00"
+    },
+    "bls_upcoming": {
+      "consecutive_failures": 0,
+      "last_success_at": null
+    },
+    "press_wire_attention": {
+      "consecutive_failures": 0,
+      "last_success_at": null
+    },
+    "google_news_attention": {
+      "consecutive_failures": 0,
+      "last_success_at": null
+    }
+  },
+  "source_status": {
+    "gdelt_attention": {
+      "state": "PAUSED_AFTER_REFUSALS",
+      "state_ar": "متوقف مؤقتًا بعد رفض المزود للطلبات (حد الاستخدام)",
+      "error": "COOLDOWN_ACTIVE",
+      "items": 0,
+      "consecutive_failures": 0,
+      "last_success_at": null,
+      "retry_after": "2026-11-19T15:27:08.150190+00:00",
+      "empty_means_no_news": false
+    },
+    "fed_monetary": {
+      "state": "OK",
+      "state_ar": "يعمل",
+      "error": null,
+      "items": 2,
+      "consecutive_failures": 0,
+      "last_success_at": "2026-11-19T09:48:02.108141+00:00",
+      "retry_after": null,
+      "empty_means_no_news": false
+    },
+    "bls_upcoming": {
+      "state": "BLOCKED_BY_TERMS",
+      "state_ar": "غير مستخدم لأن شروط المصدر لا تسمح بالجلب الآلي",
+      "error": "SOURCE_TERMS_BLOCKED",
+      "items": 0,
+      "consecutive_failures": 0,
+      "last_success_at": null,
+      "retry_after": null,
+      "empty_means_no_news": false
+    },
+    "press_wire_attention": {
+      "state": "BLOCKED_BY_TERMS",
+      "state_ar": "غير مستخدم لأن شروط المصدر لا تسمح بالجلب الآلي",
+      "error": "SOURCE_TERMS_BLOCKED",
+      "items": 0,
+      "consecutive_failures": 0,
+      "last_success_at": null,
+      "retry_after": null,
+      "empty_means_no_news": false
+    },
+    "google_news_attention": {
+      "state": "BLOCKED_BY_TERMS",
+      "state_ar": "غير مستخدم لأن شروط المصدر لا تسمح بالجلب الآلي",
+      "error": "SOURCE_TERMS_BLOCKED",
+      "items": 0,
+      "consecutive_failures": 0,
+      "last_success_at": null,
+      "retry_after": null,
+      "empty_means_no_news": false
     }
   },
   "decision_authority": false,
