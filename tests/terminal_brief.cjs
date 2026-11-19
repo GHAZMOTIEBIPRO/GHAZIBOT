@@ -48,4 +48,15 @@ const gs=Object.fromEntries(g.sections.map(s=>[s.key,s]));
 assert.match(gs.scenarios.lines[0],/^هابط \(القراءة الحالية\).*T1 860/);
 assert.match(gs.scenarios.lines[1],/^صاعد \(إلغاء\): العودة فوق 887.05/);
 assert.ok(gs.technical.lines[0].includes("PUT بحثي"));
+
+// News sources failing or paused: an empty news list must not read as "there is no news" (2026-11-19).
+const down={source_status:{gdelt_attention:{state:"PAUSED_AFTER_REFUSALS",state_ar:"متوقف مؤقتًا بعد رفض المزود للطلبات (حد الاستخدام)"},
+  press_wire_attention:{state:"BLOCKED_BY_TERMS",state_ar:"غير مستخدم لأن شروط المصدر لا تسمح بالجلب الآلي"}}};
+const nd=Object.fromEntries(brief("ZZZZ",{news:down},now).sections.map(s=>[s.key,s]));
+assert.match(nd.catalysts.lines[0],/تعذر جلب الأخبار العامة الآن/);
+assert.match(nd.catalysts.lines[0],/لا يعني عدم وجودها/);
+// a source that worked and found nothing keeps the plain "no news" sentence
+const ok={source_status:{gdelt_attention:{state:"OK_EMPTY"},press_wire_attention:{state:"OK_EMPTY"}}};
+const ne=Object.fromEntries(brief("ZZZZ",{news:ok},now).sections.map(s=>[s.key,s]));
+assert.ok(!/تعذر جلب/.test(ne.catalysts.lines[0]));
 console.log("terminal brief ok");

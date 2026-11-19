@@ -162,7 +162,24 @@ agree.
 ## Highest-value next steps (licensing first)
 
 1. **SEC access.**
-   - What it needs: the owner sets the `SEC_USER_AGENT` secret (name + contact).
+   - What it needs: the owner sets the `SEC_USER_AGENT` secret (name + contact). This is checked in the code
+     (2026-11-19):
+     - Format: `<application or organisation name> <contact e-mail>`, at most 256 characters.
+       - SEC fair-access guidance: "Sample Company Name AdminContact@<sample company domain>.com".
+       - Example: `GHAZI RADAR owner@example.com`.
+     - Validation: `scripts/verify_free_market_sources.py::probe_sec` requires an address of the form
+       `x@y.z`. Without one, the probe reports `NO_CONTACT_USER_AGENT` or `INVALID_USER_AGENT`.
+     - Where to set it: GitHub → Settings → Secrets and variables → Actions → Secrets → `SEC_USER_AGENT`.
+     - Never put it in a file or a repository variable: variables are readable in logs.
+     - No other setting is needed. `official-sec-pulse.yml`, `catalyst-watchlist.yml`, `company-news-watch.yml`
+       and the edgartools adapter read this one secret.
+     - Pull-request runs never receive it (#455).
+     - Fallback today: a `users.noreply.github.com` address, which SEC refuses with 403. That address is not a
+       contact.
+     - Verify after setting it:
+       - `settings-check.yml` reports `sec_edgar` as no longer `NO_CONTACT_USER_AGENT`;
+       - `sec_filing_pulse.json` lists filings.
+     - SEC may still refuse cloud IP ranges. If it does, the 403 stays recorded and is not worked around.
    - What it unblocks:
      - the submissions and XBRL APIs;
      - the 13F and Form 3/4/5 quarterly data sets (Engine E);

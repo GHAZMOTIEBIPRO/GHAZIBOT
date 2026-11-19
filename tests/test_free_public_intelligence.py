@@ -242,6 +242,55 @@ def test_gdelt_429_is_explicit_and_never_retried_or_fake_articles():
     assert len(context["bls_upcoming"]) == 2
 
 
+def _refused_session():
+    refusal = requests.HTTPError("429 rejected", response=SimpleNamespace(status_code=429))
+    return Session({GDELT_DOC: refusal, FED_MONETARY: Response(content=FED),
+                    BLS_ICS: Response(content=ICS.encode())})
+
+
+def test_repeated_gdelt_refusals_escalate_the_pause_to_72h_and_a_success_resets_it():
+    pauses, streaks = [], {}
+    for attempt in range(5):
+        now = NOW + timedelta(days=4 * attempt)  # each attempt after the previous pause ended
+        context = build_context(symbols=["MU"], session=_refused_session(), now=now, prior_streaks=streaks)
+        streaks = context["source_streaks"]
+        pauses.append(context["source_cooldowns"]["gdelt_attention"]["pause_hours"])
+    assert pauses == [12, 24, 48, 72, 72]
+    assert streaks["gdelt_attention"]["consecutive_failures"] == 5
+    ok = Session({GDELT_DOC: Response(json_value={"articles": []}), FED_MONETARY: Response(content=FED),
+                  BLS_ICS: Response(content=ICS.encode())})
+    context = build_context(symbols=["MU"], session=ok, now=NOW + timedelta(days=30), prior_streaks=streaks)
+    assert context["source_streaks"]["gdelt_attention"]["consecutive_failures"] == 0
+    assert "gdelt_attention" not in context["source_cooldowns"]
+
+
+def test_failed_paused_and_empty_sources_are_published_as_different_states():
+    failed = build_context(symbols=["MU"], session=_refused_session(), now=NOW)["source_status"]["gdelt_attention"]
+    assert failed["state"] == "FETCH_FAILED" and failed["error"] == "HTTP_429"
+    assert failed["empty_means_no_news"] is False and failed["consecutive_failures"] == 1
+    assert failed["retry_after"] and failed["state_ar"].startswith("تعذر")
+    session = _refused_session()
+    paused = build_context(symbols=["MU"], session=session, now=NOW,
+                           prior_cooldowns={"gdelt_attention": {"last_error": "HTTP_429",
+                                                                "retry_after": "2026-10-15T00:00:00+00:00"}})
+    assert paused["source_status"]["gdelt_attention"]["state"] == "PAUSED_AFTER_REFUSALS"
+    assert not any(url == GDELT_DOC for url, *_ in session.calls)  # paused: GDELT is not called at all
+    empty = Session({GDELT_DOC: Response(json_value={"articles": []}), FED_MONETARY: Response(content=FED),
+                     BLS_ICS: Response(content=ICS.encode())})
+    status = build_context(symbols=["MU"], session=empty, now=NOW)["source_status"]["gdelt_attention"]
+    assert status["state"] == "OK_EMPTY" and status["empty_means_no_news"] is True
+    assert status["last_success_at"] == NOW.isoformat()
+
+
+def test_failure_streaks_survive_an_expired_pause_but_not_a_stale_report():
+    from options_radar.free_public_intelligence import prior_failure_streaks
+
+    previous = {"schema": "free_public_intelligence_v1", "generated_at": NOW.isoformat(),
+                "source_streaks": {"gdelt_attention": {"consecutive_failures": 3, "last_success_at": None}}}
+    assert prior_failure_streaks(previous, now=NOW + timedelta(days=3))["gdelt_attention"]["consecutive_failures"] == 3
+    assert prior_failure_streaks(previous, now=NOW + timedelta(days=8)) == {}
+
+
 def test_single_bounded_gdelt_query_covers_12_explicit_smallcap_symbols():
     watch=["RGC","BNAI","RKLB","SOUN","ASTS","IONQ","MU","NVDA","AMD","AAPL","TSLA","PLTR"]
     session=Session({GDELT_DOC:Response(json_value={"articles":[]})})

@@ -65,10 +65,24 @@ UTC = timezone.utc
 NY = ZoneInfo("America/New_York")
 WATCH_DEFAULT = ("MU", "NVDA", "RGC", "BNAI", "RKLB", "AMD")
 _COOLDOWN_HOURS = {"HTTP_429": 12, "HTTP_403": 24, "HTTP_404": 48}
+# Repeated refusals double the pause (12 h, 24 h, 48 h, then 72 h at most); a success resets it.
+# GDELT answered HTTP 429 to the shared GitHub runners on every attempt from 2026-11-17 to 11-19,
+# so a fixed 12 h pause only produced a refused call twice a day.
+_COOLDOWN_MAX_HOURS = 72
 _COOLDOWN_SOURCES = frozenset((
     "gdelt_attention", "press_wire_prnewswire",
     "press_wire_globenewswire", "google_news_attention",
 ))
+# Published fetch state per source, so "nothing was fetched" never reads as "there is no news".
+STATUS_SOURCES = ("gdelt_attention", "fed_monetary", "bls_upcoming", "press_wire_attention",
+                  "google_news_attention")
+STATE_AR = {
+    "OK": "يعمل",
+    "OK_EMPTY": "يعمل، ولا عناصر جديدة في النافذة",
+    "FETCH_FAILED": "تعذر الجلب",
+    "PAUSED_AFTER_REFUSALS": "متوقف مؤقتًا بعد رفض المزود للطلبات (حد الاستخدام)",
+    "BLOCKED_BY_TERMS": "غير مستخدم لأن شروط المصدر لا تسمح بالجلب الآلي",
+}
 _SYMBOL_RE = re.compile(r"^[A-Z][A-Z0-9.\-]{1,6}$")
 _ICS_DT_RE = re.compile(r"^(?P<key>DTSTART)(?:;TZID=(?P<tz>[^:]+)|;VALUE=DATE)?:(?P<value>.+)$")
 
@@ -593,14 +607,78 @@ def valid_source_cooldowns(previous: dict, *, now: datetime) -> dict[str, dict]:
         if not isinstance(item, dict) or item.get("last_error") not in _COOLDOWN_HOURS:
             continue
         until = _iso(item.get("retry_after"))
-        if until is not None and timedelta(0) < until - now <= timedelta(hours=48):
+        if until is not None and timedelta(0) < until - now <= timedelta(hours=_COOLDOWN_MAX_HOURS):
             active[key] = {"last_error": item["last_error"],
                            "retry_after": until.isoformat()}
     return active
 
 
-def update_source_cooldowns(existing: dict, errors: dict, *, now: datetime) -> dict:
-    """Bounded circuit breaker; original 403/404/429 remain explicit."""
+def prior_failure_streaks(previous: dict, *, now: datetime) -> dict[str, dict]:
+    """Consecutive-failure counts from a recent first-party report (they outlive an expired pause)."""
+    if not isinstance(previous, dict) or previous.get("schema") != "free_public_intelligence_v1":
+        return {}
+    report_time = _iso(previous.get("generated_at"))
+    if report_time is None or not timedelta(0) <= now - report_time <= timedelta(days=7):
+        return {}
+    raw = previous.get("source_streaks")
+    out = {}
+    for key in STATUS_SOURCES:
+        item = raw.get(key) if isinstance(raw, dict) else None
+        if isinstance(item, dict) and isinstance(item.get("consecutive_failures"), int):
+            out[key] = {k: item.get(k) for k in ("consecutive_failures", "last_success_at", "first_failed_at",
+                                                 "last_error")}
+    return out
+
+
+def _fetch_state(key: str, pieces: dict, errors: dict) -> tuple[str, str | None]:
+    """OK / OK_EMPTY / FETCH_FAILED / PAUSED_AFTER_REFUSALS / BLOCKED_BY_TERMS, with the error code."""
+    prefix = key.removesuffix("_attention") + "_"
+    codes = [errors[key]] if key in errors else [v for k, v in errors.items() if k.startswith(prefix)]
+    if pieces.get(key):
+        return "OK", None
+    if not codes:
+        return "OK_EMPTY", None
+    if all(c == "SOURCE_TERMS_BLOCKED" for c in codes):
+        return "BLOCKED_BY_TERMS", codes[0]
+    if all(c in ("COOLDOWN_ACTIVE", "SOURCE_TERMS_BLOCKED") for c in codes):
+        return "PAUSED_AFTER_REFUSALS", "COOLDOWN_ACTIVE"
+    return "FETCH_FAILED", next(c for c in codes if c not in ("COOLDOWN_ACTIVE", "SOURCE_TERMS_BLOCKED"))
+
+
+def update_failure_streaks(prior: dict, pieces: dict, errors: dict, *, now: datetime) -> dict:
+    """A fetch failure adds one; a pause or a terms block leaves the count; any success resets it."""
+    streaks = {}
+    for key in STATUS_SOURCES:
+        old = dict(prior.get(key) or {"consecutive_failures": 0, "last_success_at": None})
+        state, code = _fetch_state(key, pieces, errors)
+        if state in ("OK", "OK_EMPTY"):
+            old = {"consecutive_failures": 0, "last_success_at": now.isoformat()}
+        elif state == "FETCH_FAILED":
+            old["consecutive_failures"] = int(old.get("consecutive_failures") or 0) + 1
+            old["first_failed_at"] = old.get("first_failed_at") or now.isoformat()
+            old["last_error"] = code
+        streaks[key] = old
+    return streaks
+
+
+def source_status(pieces: dict, errors: dict, streaks: dict, cooldowns: dict) -> dict:
+    out = {}
+    for key in STATUS_SOURCES:
+        state, code = _fetch_state(key, pieces, errors)
+        streak = streaks.get(key) or {}
+        out[key] = {"state": state, "state_ar": STATE_AR[state], "error": code,
+                    "items": len(pieces.get(key) or []),
+                    "consecutive_failures": streak.get("consecutive_failures", 0),
+                    "last_success_at": streak.get("last_success_at"),
+                    "retry_after": (cooldowns.get(key) or {}).get("retry_after"),
+                    # an empty list from a failed or paused source is NOT evidence of "no news"
+                    "empty_means_no_news": state == "OK_EMPTY"}
+    return out
+
+
+def update_source_cooldowns(existing: dict, errors: dict, *, now: datetime,
+                            streaks: dict | None = None) -> dict:
+    """Bounded circuit breaker; original 403/404/429 remain explicit; repeats escalate to 72 h."""
     active = dict(existing)
     for key in _COOLDOWN_SOURCES:
         error = errors.get(key)
@@ -608,16 +686,20 @@ def update_source_cooldowns(existing: dict, errors: dict, *, now: datetime) -> d
             error = next((v for k, v in errors.items()
                           if k.startswith("google_news_") and v in _COOLDOWN_HOURS), None)
         if error in _COOLDOWN_HOURS:
+            repeats = int(((streaks or {}).get(key) or {}).get("consecutive_failures") or 1)
+            hours = min(_COOLDOWN_HOURS[error] * 2 ** (max(repeats, 1) - 1), _COOLDOWN_MAX_HOURS)
             active[key] = {
                 "last_error": error,
-                "retry_after": (now + timedelta(hours=_COOLDOWN_HOURS[error])).isoformat(),
+                "retry_after": (now + timedelta(hours=hours)).isoformat(),
+                "pause_hours": hours,
             }
     return active
 
 
 def build_context(*, symbols: list[str], now: datetime | None = None,
                   session: Any = requests, prior_cooldowns: dict | None = None,
-                  dynamic_names: dict[str, str] | None = None) -> dict[str, Any]:
+                  dynamic_names: dict[str, str] | None = None,
+                  prior_streaks: dict | None = None) -> dict[str, Any]:
     current = now or datetime.now(UTC)
     cooldowns = prior_cooldowns or {}
     pieces: dict[str, Any] = {}
@@ -666,13 +748,16 @@ def build_context(*, symbols: list[str], now: datetime | None = None,
     pieces["google_news_attention"] = google_items
     errors.update({"google_news_" + key: value for key, value in google_errors.items()})
     pieces["alpaca_iex"] = alpaca_iex_health(session=session, now=current)
-    updated_cooldowns = update_source_cooldowns(cooldowns, errors, now=current)
+    streaks = update_failure_streaks(prior_streaks or {}, pieces, errors, now=current)
+    updated_cooldowns = update_source_cooldowns(cooldowns, errors, now=current, streaks=streaks)
     return {
         "schema": "free_public_intelligence_v1",
         "generated_at": current.isoformat(),
         "status": "READY" if not errors else "DEGRADED",
         "source_errors": errors,
         "source_cooldowns": updated_cooldowns,
+        "source_streaks": streaks,
+        "source_status": source_status(pieces, errors, streaks, updated_cooldowns),
         "decision_authority": False, "live_alert_weights_changed": False,
         "is_independent_executable_market_data": False,
         "policy": {
@@ -793,7 +878,7 @@ def main() -> None:
     symbols.extend(s for s in extra if s in dynamic_names)
     payload = build_context(
         symbols=symbols, now=current, prior_cooldowns=cooldowns,
-        dynamic_names=dynamic_names,
+        dynamic_names=dynamic_names, prior_streaks=prior_failure_streaks(previous, now=current),
     )
     payload["issuer_directory"] = directory
     if (isinstance(previous, dict)
