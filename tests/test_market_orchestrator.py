@@ -36,6 +36,17 @@ def test_core_children_are_dispatchable_but_not_independently_scheduled():
         assert "schedule:" not in text, name
 
 
+def test_source_gated_engines_keep_a_slow_heartbeat_not_a_busy_loop():
+    # 2026-11-18: these ended SOURCE_TERMS_BLOCKED / "scan skipped" with zero rows on every run.
+    central = _workflow("market-orchestrator.yml")
+    for name in ("spx-dashboard.yml", "classical-direction-radar.yml", "options-contract-radar.yml"):
+        assert central.count(f"dispatch_if_stale {name} 360 ") == 1, name
+    assert central.count("dispatch_if_stale options-radar.yml 60 ") == 1
+    # every core child is still dispatched exactly once (none silently dropped)
+    for name in CORE_CHILDREN:
+        assert central.count(f"dispatch_if_stale {name} ") == 1, name
+
+
 def test_paid_realtime_options_is_manual_only_under_zero_cost_policy():
     text = _workflow("options-realtime-intelligence-v9.yml")
     assert "workflow_dispatch:" in text
