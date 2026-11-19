@@ -162,6 +162,15 @@ jobs:
           if (( utc_hour >= 14 && utc_hour <= 21 )); then
             dispatch_if_stale index-radar.yml 110 "Index Research"
           fi
+
+          # Owner-private full-market scan (Alpaca, owner's Telegram only). Its own crons
+          # arrived 6-8 h late on 2026-11-18 (22:20, 23:08, 00:44 UTC -> OUTSIDE_SESSION), so it
+          # never ran in a session. Dispatched here 10:00-15:30 New York on weekdays, at most
+          # every 150 min (about three runs a session); the scan still checks the XNYS session.
+          ny_hm="$(TZ=America/New_York date +%H%M)"; ny_hm=$((10#$ny_hm))
+          if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1530 )); then
+            dispatch_if_stale private-market-scan.yml 150 "Private Market Scan"
+          fi
           }
 
           passes="${ORCHESTRATOR_PASSES:-1}"
