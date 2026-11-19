@@ -1,0 +1,61 @@
+name: GHAZI Security Audit (workflows, dependencies, licences)
+
+# Supply-chain checks added 2026-11-19 (docs/INTEGRATION_VALIDATION.md):
+# - zizmor (MIT): static audit of every workflow, offline;
+# - pip-audit (Apache-2.0): known vulnerabilities in the runtime requirements;
+# - pip-licenses (MIT): licences of the installed runtime dependencies.
+# Report-only, except two classes that block: a High-severity template injection in a
+# workflow, and GPL/AGPL code among runtime dependencies. Read-only token, no secrets.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "requirements*.txt"
+      - "scripts/security_audit_summary.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "requirements*.txt"
+      - "scripts/security_audit_summary.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghazi-security-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the pinned audit tools
+        run: python -m pip install "zizmor==1.32.0" "pip-audit==2.10.1" "pip-licenses==5.5.5"
+      - name: Workflow audit (zizmor, offline)
+        # zizmor exits non-zero when it reports findings; the summary step decides.
+        run: zizmor --offline --format json .github/workflows > "$RUNNER_TEMP/zizmor.json" || true
+      - name: Known vulnerabilities in runtime requirements (pip-audit)
+        run: |
+          pip-audit -r requirements.txt --format json -o "$RUNNER_TEMP/pip_audit.json" \
+            --progress-spinner off || echo "pip-audit reported findings or could not run"
+      - name: Runtime dependency licences (pip-licenses)
+        run: |
+          python -m venv "$RUNNER_TEMP/runtime"
+          "$RUNNER_TEMP/runtime/bin/pip" install -q -r requirements.txt
+          pip-licenses --python "$RUNNER_TEMP/runtime/bin/python" --format json > "$RUNNER_TEMP/licenses.json"
+      - name: Summary and gate
+        # explicit bash = -eo pipefail, so `tee` cannot mask the gate's exit code
+        shell: bash
+        run: |
+          python scripts/security_audit_summary.py --zizmor "$RUNNER_TEMP/zizmor.json" \
+            --pip-audit "$RUNNER_TEMP/pip_audit.json" --licenses "$RUNNER_TEMP/licenses.json" \
+            | tee -a "$GITHUB_STEP_SUMMARY"

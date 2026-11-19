@@ -47,7 +47,7 @@ Rules applied here:
 | openFDA | `fda_events.json` 21:52Z: 237 approvals, 123 recalls; source updated 2026-11-16 | Working |
 | ClinicalTrials.gov | `clinical_registry.json` 21:52Z: `PARTIAL`, 750 records | Working, partial |
 | U.S. Treasury yield curve | `public_macro.json` 21:20Z has a curve and no errors; `free_data_health.json` 22:43Z lists it `ok: false` without a status | **Conflict.** The two checks disagree; to investigate |
-| GDELT | bot-state commit 9c10492 at 15:49Z ("public GDELT news attention") | Working (cooldowns after HTTP 429 seen earlier) |
+| GDELT | `free_public_intelligence.json`: 0 rows in all 54 versions from 2026-11-17 13:38Z to 11-18 22:46Z (1 × HTTP 429, then `COOLDOWN_ACTIVE`) | **Not delivering** from shared GitHub runners; the 429 is not worked around |
 | TradingView widgets | Site smoke 13:12Z: widget frames render | Display only |
 | SEC submissions / Company Facts / EFTS | `free_data_health.json`: HTTP 403 | Blocked (no `SEC_USER_AGENT`); never retried |
 | OCC, FINRA Reg SHO, community GEX repos | `SOURCE_TERMS_BLOCKED` | Gated |
@@ -131,7 +131,7 @@ agree.
 
 | # | Source | Class | Docs | Notes | Status |
 |---|---|---|---|---|---|
-| 50 | GDELT | FREE_PUBLIC | gdeltproject.org terms | Citation and link | IN_USE |
+| 50 | GDELT | FREE_PUBLIC | gdeltproject.org terms | Citation and link | IN_USE (code); no rows since 2026-11-17: HTTP 429 on shared runners (2026-11-19 review) |
 | 51 | openFDA | FREE_PUBLIC (CC0) | open.fda.gov | — | IN_USE |
 | 52 | ClinicalTrials.gov API v2 | FREE_PUBLIC (ODbL) | clinicaltrials.gov | Attribution | IN_USE |
 | 53 | Federal Register API | FREE_PUBLIC | federalregister.gov | Needs a sponsor→ticker review | CANDIDATE |
@@ -139,7 +139,7 @@ agree.
 | 55 | Google News RSS | LICENSE_RESTRICTED | robots `Disallow: /` | — | GATED |
 | 56 | Press wires (PR Newswire, GlobeNewswire, Business Wire) | LICENSE_RESTRICTED | rights matrix | — | GATED |
 | 57 | FDA press RSS | UNAVAILABLE | bot-protection page | Not worked around | — |
-| 58 | Wikimedia pageviews (AQS) | FREE_PUBLIC (CC0) | doc.wikimedia.org analytics-api | User-Agent required; rate limits revised in 2026 | IN_USE (`wiki-attention.yml` → `wiki_attention.json`, home summary card) |
+| 58 | Wikimedia pageviews (AQS) | FREE_PUBLIC (CC0) | doc.wikimedia.org analytics-api | User-Agent required; rate limits revised in 2026 | IN_USE (`wiki-attention.yml` → `wiki_attention.json`, home summary card); policy-format User-Agent since #446: 33/33 articles OK |
 | 59 | House Clerk financial disclosures (PTRs) | FREE_PUBLIC (records) | disclosures-clerk.house.gov | PDFs; automated-access terms not found | UNKNOWN — do not automate yet |
 | 60 | Senate eFD | UNKNOWN | efdsearch.senate.gov; Ethics instructions include an "Unlawful Use of Reports" section | Terms not read | UNKNOWN — do not automate |
 

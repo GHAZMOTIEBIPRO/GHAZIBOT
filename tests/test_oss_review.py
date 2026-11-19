@@ -56,3 +56,41 @@ def test_forks_are_ranked_only_when_named_and_order_is_deterministic():
     assert names[0] == "z/top"
     assert names.index("a/tie") < names.index("b/tie")
     assert "y/named-fork" in names
+
+
+def test_verify_batches_exact_names_resolves_renames_and_reports_missing():
+    from scripts import oss_review
+
+    calls = []
+    world = {"a/one": _repo("a/one"), "b/two": _repo("b/two"),
+             "new-owner/moved": _repo("new-owner/moved", stargazers_count=900)}
+
+    def fake_search(query, per_page):
+        calls.append(query)
+        if query.startswith("repo:"):
+            wanted = {q.split(":", 1)[1].lower() for q in query.split()}
+            return [r for n, r in world.items() if n in wanted]
+        short = query.split()[0]
+        return [r for n, r in world.items() if n.split("/")[1] == short]
+
+    out = oss_review.verify(("a/one", "b/two", "old-owner/moved", "gone/never"), search=fake_search, pause=0, batch=3)
+    assert calls[0] == "repo:a/one repo:b/two repo:old-owner/moved" and calls[1] == "repo:gone/never"
+    names = {r["full_name"]: r for r in out["repositories"]}
+    assert set(names) == {"a/one", "b/two", "new-owner/moved"}
+    assert names["new-owner/moved"]["resolved_from"] == "old-owner/moved"
+    assert out["not_found"] == ["gone/never"]  # reported, never guessed
+
+
+def test_integration_registry_uses_snapshot_metadata_and_known_statuses():
+    from scripts import build_integration_registry as reg
+
+    seed = {"fetched_at": "2026-11-19T03:00:00+00:00", "repositories": [_repo(n) for n in reg.D]}
+    doc = reg.build(seed, {"repositories": [_repo(n) for n in reg.EXTENDED]})
+    assert len(doc["candidates"]) == len(reg.D) + len(reg.EXTENDED)
+    assert all(c["decision"] in reg.STATUSES for c in doc["candidates"])
+    assert all(c["evidence"] in doc["evidence_levels"] for c in doc["candidates"])
+    assert all(c["license"] == "MIT" and c["latest_push"] == "2026-11-01" for c in doc["candidates"])
+    # copyleft and paid services are never ready for pilot
+    by = {c["name"]: c["decision"] for c in doc["candidates"]}
+    assert by["backtesting.py"] == by["gammagrid"] == by["python-telegram-bot"] == "REJECTED"
+    assert by["sec-api-python"] == "BLOCKED" and by["vectorbt"] == "BLOCKED"

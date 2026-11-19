@@ -1,6 +1,6 @@
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 import yaml
@@ -98,7 +98,8 @@ def test_fast_radar_explicitly_dispatches_stock_validation_for_same_run():
     assert "No stock scan, Telegram sends, or secret access permitted in this job." in stock
     assert stock.index("verify-workflow-registration:") < stock.index("deep-stock-validation:")
     assert "source_run_id:" in stock
-    assert 'current="${{ inputs.source_run_id }}"' in stock
+    # the run id reaches the shell as data (env), never expanded into the script (zizmor, 2026-11-19)
+    assert "SOURCE_RUN_ID: ${{ inputs.source_run_id }}" in stock and 'current="${SOURCE_RUN_ID:-}"' in stock
     assert '"BLACK BOX Omega Fast Explosion Radar"' in stock
     assert '"$source_branch" != "main"' in stock
     assert '"$status" != "completed" || "$conclusion" != "success"' in stock
