@@ -189,3 +189,6 @@ def test_archive_workflow_is_read_only_secret_free_and_uploads_only_public_files
     assert all("@" in str(s["uses"]) and len(str(s["uses"]).split("@")[1].split()[0]) == 40
                for s in steps if s.get("uses"))
     assert (ROOT / "requirements-archive.txt").read_text(encoding="utf-8").strip().startswith("duckdb==")
+    # run 44504097132 failed with only duckdb installed: the options_radar package imports pandas
+    install = next(s["run"] for s in steps if "pip install" in str(s.get("run")))
+    assert "app/requirements.txt" in install and "app/requirements-archive.txt" in install
