@@ -120,4 +120,4 @@ def test_contract_guardian_telegram_updates_share_omega_single_writer() -> None:
     assert "Update Contract Guardian Telegram lifecycle cards" in workflow
     assert "python -m scripts.send_contract_guardian_updates" in workflow
     assert "contract_guardian_telegram_state.json" in workflow
-    assert 'dispatch_if_stale options-radar.yml 18 "Full Omega Radar + Contract Guardian"' in orchestrator
+    assert 'dispatch_if_stale options-radar.yml 60 "Full Omega Radar + Contract Guardian"' in orchestrator

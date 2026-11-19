@@ -252,4 +252,5 @@ def test_latency_sensitive_cadence_is_owned_by_offset_orchestrator():
     assert "schedule:" not in fast
     assert "schedule:" not in options
     assert "dispatch_if_stale fast-explosion-radar.yml 8" in orchestrator
-    assert "dispatch_if_stale options-contract-radar.yml 18" in orchestrator
+    # source-gated (no permitted options/price source): slow heartbeat, still orchestrator-owned
+    assert "dispatch_if_stale options-contract-radar.yml 360" in orchestrator

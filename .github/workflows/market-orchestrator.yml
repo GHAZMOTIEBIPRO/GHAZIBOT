@@ -142,13 +142,22 @@ jobs:
           fi
 
           if (( utc_hour >= 12 && utc_hour <= 22 )); then
-            dispatch_if_stale spx-dashboard.yml 8 "SPX"
-            dispatch_if_stale classical-direction-radar.yml 18 "Classical Direction"
-            dispatch_if_stale options-contract-radar.yml 18 "Options Contract"
+            # Source-gated engines (2026-11-18 evidence): no public price/options source is
+            # permitted (Yahoo/Nasdaq.com/Cboe terms; Alpaca is owner-private), so these runs
+            # end SOURCE_TERMS_BLOCKED or "scan skipped" with zero rows. They keep a slow
+            # heartbeat so their blocked status stays current and they resume on their own
+            # when a source opens; restore the short cadence once their gate reports usable.
+            #   spx-dashboard: SOURCE_TERMS_BLOCKED (Yahoo), was every 8 min
+            #   classical-direction / options-contract: price gate "scan skipped", was every 18 min
+            #   options-radar: 0 stocks / 0 contracts (Yahoo); its catalyst, health and Contract
+            #   Guardian steps still run, hourly instead of every 18 min
+            dispatch_if_stale spx-dashboard.yml 360 "SPX (source-gated heartbeat)"
+            dispatch_if_stale classical-direction-radar.yml 360 "Classical Direction (source-gated heartbeat)"
+            dispatch_if_stale options-contract-radar.yml 360 "Options Contract (source-gated heartbeat)"
             dispatch_if_stale company-news-watch.yml 18 "Company News"
             dispatch_if_stale free-data-health.yml 18 "Free Data Health"
             dispatch_if_stale free-gex-validation.yml 18 "Free GEX Validation"
-            dispatch_if_stale options-radar.yml 18 "Full Omega Radar + Contract Guardian"
+            dispatch_if_stale options-radar.yml 60 "Full Omega Radar + Contract Guardian"
             dispatch_if_stale adaptive-review.yml 70 "Adaptive Evidence Review"
             dispatch_if_stale stock-outcome-auditor.yml 70 "Stock Outcome Auditor"
             # Low-frequency official/free sources whose own crons GitHub drops.
