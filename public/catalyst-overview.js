@@ -294,13 +294,23 @@
         link.href=safeNewsLink(a.url);link.rel="noopener noreferrer";
         link.target="_blank";item.append(link);news.append(item);
       }
+      // Explicit fetch state (source_status, 2026-11-19): a failed or paused GDELT is not "no news".
+      const gst=newsContext?.source_status?.gdelt_attention;
       if(!included.length)news.append(node("p",
-        "لا توجد عناوين تطابق رموز الأسهم بوضوح في نافذة البحث أو المصدر غير متاح؛ لا يعني ذلك عدم وجود أخبار أخرى."));
+        gst&&gst.state==="OK_EMPTY"?
+          "جُلب GDELT بنجاح ولا توجد عناوين تطابق رموز الأسهم بوضوح في نافذة البحث؛ لا يعني ذلك عدم وجود أخبار أخرى.":
+          gst?
+            "لم تُجلب أخبار GDELT الآن ("+String(gst.state_ar||gst.state)+")، فغياب العناوين هنا لا يعني غياب الأخبار.":
+            "لا توجد عناوين تطابق رموز الأسهم بوضوح في نافذة البحث أو المصدر غير متاح؛ لا يعني ذلك عدم وجود أخبار أخرى."));
       const errors=newsContext?.source_errors||{};
       set("gdelt-source-status",newsContext?
         "آخر فحص "+time(newsContext.generated_at)+
         " · نتائج البحث المسموح عرضها "+n(included.length,0)+
-        (errors.gdelt_attention?
+        (gst&&!["OK","OK_EMPTY"].includes(gst.state)?
+          " · GDELT: "+String(gst.state_ar||gst.state)+
+          (gst.last_success_at?" · آخر جلب ناجح "+time(gst.last_success_at):" · لا جلب ناجح مسجل")+
+          (gst.retry_after?" · المحاولة التالية "+time(gst.retry_after):""):
+         errors.gdelt_attention?
           " · تعذر جلب GDELT: "+String(errors.gdelt_attention):
           " · المصدر تجميعي وليس دليلاً رسميًا"):
         "لم تصل تغذية GDELT المنشورة؛ يظهر قسم SEC منفصلًا.");

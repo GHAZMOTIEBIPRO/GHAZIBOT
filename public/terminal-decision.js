@@ -175,8 +175,14 @@
       " · "+String(c.source||""));
     const ctx=context.map(c=>"سياق غير مؤكد: "+String(c.headline||"").slice(0,110)+" ("+String(c.source||"")+"، "+day(c.published_at)+")");
     const nw=news.map(x=>"خبر: "+String(x.headline||x.title||"").slice(0,110)+" ("+day(x.published_at||x.seendate)+")");
+    // A failed or paused news source is not "no news": say which, from the published source_status.
+    const st=feeds.news?.source_status||{};
+    const newsDown=["gdelt_attention","press_wire_attention"].filter(k=>st[k]&&!["OK","OK_EMPTY"].includes(st[k].state));
     add("catalysts","المحفزات والأخبار",[...cat,...nw,...ctx],
-      "لا توجد محفزات رسمية أو أخبار مرتبطة بهذا الرمز في آخر 30 يومًا ضمن المصادر المسموحة.");
+      newsDown.length===2?
+        "لا توجد محفزات رسمية لهذا الرمز في آخر 30 يومًا، وتعذر جلب الأخبار العامة الآن ("+
+          newsDown.map(k=>String(st[k].state_ar||st[k].state)).join("؛ ")+")، فغياب الأخبار هنا لا يعني عدم وجودها.":
+        "لا توجد محفزات رسمية أو أخبار مرتبطة بهذا الرمز في آخر 30 يومًا ضمن المصادر المسموحة.");
     // 2. Official filings.
     const secState=hubState("sec_filing_pulse.json");
     add("filings","الإفصاحات الرسمية (SEC)",filings.map(f=>String(f.form)+" · "+day(f.filing_date)+" · "+
