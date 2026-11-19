@@ -39,12 +39,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
-      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || 'GHAZI Market Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
-      OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      NEWS_ALERT_MIN_ABS_SCORE: ${{ secrets.NEWS_ALERT_MIN_ABS_SCORE || '15' }}
-      NEWS_ALERT_MAX_PER_RUN: ${{ secrets.NEWS_ALERT_MAX_PER_RUN || '5' }}
+      SEC_USER_AGENT: ${{ github.event_name != 'pull_request' && secrets.SEC_USER_AGENT || 'GHAZI Market Radar GHAZMOTIEBIPRO@users.noreply.github.com' }}
+      OPENFDA_API_KEY: ${{ github.event_name != 'pull_request' && secrets.OPENFDA_API_KEY || '' }}
+      TELEGRAM_BOT_TOKEN: ${{ github.event_name != 'pull_request' && secrets.TELEGRAM_BOT_TOKEN || '' }}
+      TELEGRAM_CHAT_ID: ${{ github.event_name != 'pull_request' && secrets.TELEGRAM_CHAT_ID || '' }}
+      NEWS_ALERT_MIN_ABS_SCORE: ${{ github.event_name != 'pull_request' && secrets.NEWS_ALERT_MIN_ABS_SCORE || '15' }}
+      NEWS_ALERT_MAX_PER_RUN: ${{ github.event_name != 'pull_request' && secrets.NEWS_ALERT_MAX_PER_RUN || '5' }}
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
