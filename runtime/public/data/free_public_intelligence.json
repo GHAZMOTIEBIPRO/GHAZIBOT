@@ -1,9 +1,9 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-11-19T15:08:38.015820+00:00",
+  "generated_at": "2026-11-19T15:30:39.952983+00:00",
   "status": "DEGRADED",
   "source_errors": {
-    "gdelt_attention": "COOLDOWN_ACTIVE",
+    "gdelt_attention": "HTTP_429",
     "bls_upcoming": "SOURCE_TERMS_BLOCKED",
     "press_wire_prnewswire": "SOURCE_TERMS_BLOCKED",
     "press_wire_globenewswire": "SOURCE_TERMS_BLOCKED",
@@ -12,19 +12,20 @@
   "source_cooldowns": {
     "gdelt_attention": {
       "last_error": "HTTP_429",
-      "retry_after": "2026-11-19T15:27:08.150190+00:00"
+      "retry_after": "2026-11-20T03:30:39.952983+00:00",
+      "pause_hours": 12
     }
   },
   "source_streaks": {
     "gdelt_attention": {
-      "consecutive_failures": 0,
+      "consecutive_failures": 1,
       "last_success_at": null,
-      "first_failed_at": null,
-      "last_error": null
+      "first_failed_at": "2026-11-19T15:30:39.952983+00:00",
+      "last_error": "HTTP_429"
     },
     "fed_monetary": {
       "consecutive_failures": 0,
-      "last_success_at": "2026-11-19T15:08:38.015820+00:00"
+      "last_success_at": "2026-11-19T15:30:39.952983+00:00"
     },
     "bls_upcoming": {
       "consecutive_failures": 0,
@@ -47,13 +48,13 @@
   },
   "source_status": {
     "gdelt_attention": {
-      "state": "PAUSED_AFTER_REFUSALS",
-      "state_ar": "متوقف مؤقتًا بعد رفض المزود للطلبات (حد الاستخدام)",
-      "error": "COOLDOWN_ACTIVE",
+      "state": "FETCH_FAILED",
+      "state_ar": "تعذر الجلب",
+      "error": "HTTP_429",
       "items": 0,
-      "consecutive_failures": 0,
+      "consecutive_failures": 1,
       "last_success_at": null,
-      "retry_after": "2026-11-19T15:27:08.150190+00:00",
+      "retry_after": "2026-11-20T03:30:39.952983+00:00",
       "empty_means_no_news": false
     },
     "fed_monetary": {
@@ -62,7 +63,7 @@
       "error": null,
       "items": 2,
       "consecutive_failures": 0,
-      "last_success_at": "2026-11-19T15:08:38.015820+00:00",
+      "last_success_at": "2026-11-19T15:30:39.952983+00:00",
       "retry_after": null,
       "empty_means_no_news": false
     },
