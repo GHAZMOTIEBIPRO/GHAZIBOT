@@ -127,8 +127,11 @@ jobs:
 
       - name: Generate separated stock and contract radar
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
         run: |
-          if [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" != "45 12 * * 1-5" ]]; then
+          if [[ "$EVENT_NAME" == "schedule" && "${EVENT_SCHEDULE:-}" != "45 12 * * 1-5" ]]; then
             python run_live_export.py --top-stocks 15 --top-options 15 --skip-closed
           else
             python run_live_export.py --top-stocks 15 --top-options 15

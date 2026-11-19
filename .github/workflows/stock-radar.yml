@@ -128,9 +128,11 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          # passed as data, never expanded into the script (it is validated as digits below)
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
         run: |
           mkdir -p data/live
-          current="${{ inputs.source_run_id }}"
+          current="${SOURCE_RUN_ID:-}"
           if [[ -n "$current" ]]; then
             if [[ ! "$current" =~ ^[0-9]+$ ]]; then
               echo "::error::Invalid Fast Radar source run ID"

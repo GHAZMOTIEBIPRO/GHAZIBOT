@@ -33,12 +33,30 @@ def _ema(series: pd.Series, span: int) -> pd.Series:
     return series.ewm(span=span, adjust=False, min_periods=span).mean()
 
 
+def _wilder(series: pd.Series, period: int) -> pd.Series:
+    """Wilder smoothing (RMA) seeded with the SMA of the first `period` valid values.
+
+    Same convention as TA-Lib and pandas-ta-classic `rma`. The former first-value seed
+    (plain ewm) was 22 % off for RSI and 12.6 % off for ATR at 25 bars, and still
+    2.3 % / 1.0 % at 60 bars (differential test, docs/INTEGRATION_VALIDATION.md).
+    """
+    values = series.astype(float)
+    first = values.first_valid_index()
+    if first is None:
+        return pd.Series(np.nan, index=values.index)
+    start = values.index.get_loc(first)
+    if start + period > len(values):
+        return pd.Series(np.nan, index=values.index)
+    seeded = values.copy()
+    seeded.iloc[: start + period - 1] = np.nan
+    seeded.iloc[start + period - 1] = values.iloc[start:start + period].mean()
+    return seeded.ewm(alpha=1 / period, adjust=False).mean()
+
+
 def _rsi(series: pd.Series, period: int = 14) -> pd.Series:
     delta = series.diff()
-    gain = delta.clip(lower=0)
-    loss = -delta.clip(upper=0)
-    avg_gain = gain.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
-    avg_loss = loss.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    avg_gain = _wilder(delta.clip(lower=0), period)
+    avg_loss = _wilder(-delta.clip(upper=0), period)
     rs = avg_gain / avg_loss.replace(0, np.nan)
     return 100 - (100 / (1 + rs))
 
@@ -53,7 +71,9 @@ def _atr(frame: pd.DataFrame, period: int = 14) -> pd.Series:
         ],
         axis=1,
     )
-    return ranges.max(axis=1).ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    true_range = ranges.max(axis=1)
+    true_range.iloc[:1] = np.nan  # the first bar has no previous close (Wilder's TR starts at bar 2)
+    return _wilder(true_range, period)
 
 
 def analyze_technical(symbol: str, history: pd.DataFrame) -> TechnicalSnapshot:

@@ -51,6 +51,53 @@ CATEGORIES: dict[str, tuple[str, ...]] = {
     "dashboards": ("trading dashboard stars:>300", "topic:stock-dashboard stars:>30"),
 }
 
+# 2026-11-19 sweep: categories from the integration brief that the 2026-11-17 queries did not cover.
+EXTENDED_CATEGORIES: dict[str, tuple[str, ...]] = {
+    "gap_detection": ("gap up stock scanner in:name,description stars:>10",),
+    "relative_strength": ("relative strength sector rotation in:name,description stars:>20",),
+    "momentum_breakout": ("breakout scanner stocks in:name,description stars:>50",),
+    "opening_range": ("opening range breakout in:name,description stars:>10",),
+    "volume_profile": ("volume profile in:name,description stars:>50",),
+    "market_breadth": ("market breadth in:name,description stars:>10",),
+    "insider_form4": ("form 4 insider sec in:name,description stars:>5",),
+    "xbrl_fundamentals": ("xbrl in:name,description stars:>100",),
+    "news_entity_linking": ("financial news named entity ticker in:description stars:>10",),
+    "fda_regulatory": ("openfda in:name,description stars:>20",),
+    "regime_change_point": ("change point detection in:name,description stars:>300",),
+    "volatility_models": ("topic:garch stars:>50", "implied volatility surface in:description stars:>50"),
+    "hit_probability": ("first passage probability in:description stars:>5",),
+    "data_quality_monitoring": ("data quality validation pandas in:description stars:>500",),
+    "model_explainability": ("topic:explainable-ai stars:>1000",),
+    "telegram_alerts": ("telegram bot framework python stars:>1000",),
+    "notification_routing": ("notification library python stars:>1000",),
+    "workflow_security": ("github actions security audit in:description stars:>100",),
+    "dependency_audit": ("python dependency vulnerability audit in:description stars:>300",),
+    "time_series_store": ("topic:time-series-database stars:>2000",),
+    "charts_web": ("financial chart library in:description stars:>500",),
+    "probabilistic_forecasting": ("topic:probabilistic-forecasting stars:>300",),
+}
+
+# Projects named in the 2026-11-19 integration brief (groups A-H), verified by exact name.
+SEED_2026_11_19 = (
+    "openbb-finance/OpenBB", "alpacahq/alpaca-py", "dgunning/edgartools", "alphanome-ai/sec-parser",
+    "JerBouma/FinanceDatabase", "JerBouma/FinanceToolkit", "OpenByteInc/QuantDinger",
+    "xgboosted/pandas-ta-classic", "TA-Lib/ta-lib-python", "nardew/talipp",
+    "VladPetrariu/Qullamaggie-breakout-scanner", "xang1234/stock-screener", "pAulseperformance/awesome-pinescript",
+    "stefan-jansen/alphalens-reloaded", "ranaroussi/quantstats", "statsmodels/statsmodels", "bashtage/arch",
+    "deepcharles/ruptures", "skfolio/skfolio", "stefan-jansen/zipline-reloaded", "QuantConnect/Lean",
+    "polakowo/vectorbt", "nautechsystems/nautilus_trader", "optuna/optuna",
+    "microsoft/qlib", "AI4Finance-Foundation/FinGPT", "TauricResearch/TradingAgents", "scikit-learn/scikit-learn",
+    "shap/shap", "evidentlyai/evidently", "langchain-ai/langgraph",
+    "tradingview/lightweight-charts", "plotly/plotly.py", "ErTasselli/OpenTerminal", "questdb/questdb",
+    "duckdb/duckdb", "apache/arrow", "fastapi/fastapi", "pydantic/pydantic",
+    "aiogram/aiogram", "caronc/apprise", "microsoft/playwright", "getsentry/sentry-python",
+    "open-telemetry/opentelemetry-python", "prometheus/client_python", "encode/httpx",
+    "PyPortfolio/PyPortfolioOpt", "dcajasn/Riskfolio-Lib", "gammagrid/gammagrid", "kernc/backtesting.py",
+    # tools this sweep ran or measured
+    "zizmorcore/zizmor", "pypa/pip-audit", "raimon49/pip-licenses", "unionai-oss/pandera",
+    "gerrymanoim/exchange_calendars", "vollib/py_vollib",
+)
+
 NAMED = (
     "OpenBB-finance/OpenBB", "polakowo/vectorbt", "QuantConnect/Lean", "nautechsystems/nautilus_trader",
     "ranaroussi/quantstats", "lballabio/QuantLib", "TA-Lib/ta-lib-python", "dgunning/edgartools",
@@ -108,9 +155,12 @@ def _search(query: str, per_page: int = 30) -> list[dict[str, Any]]:
     return rows
 
 
-def fetch(output: Path, *, pause: float = 4.0, per_page: int = 30) -> dict[str, Any]:
+def fetch(output: Path, *, pause: float = 4.0, per_page: int = 30,
+          categories: dict[str, tuple[str, ...]] | None = None, named: tuple[str, ...] | None = None) -> dict[str, Any]:
+    categories = CATEGORIES if categories is None else categories
+    named = NAMED if named is None else named
     repos: dict[str, dict[str, Any]] = {}
-    for category, queries in CATEGORIES.items():
+    for category, queries in categories.items():
         for query in queries:
             for row in _search(query, per_page):
                 entry = repos.setdefault(row["full_name"], {**row, "categories": []})
@@ -122,7 +172,7 @@ def fetch(output: Path, *, pause: float = 4.0, per_page: int = 30) -> dict[str, 
     # Forks are searched too (zipline-reloaded and alphalens-reloaded are forks). An exact
     # owner/name match wins; otherwise only a same-named repository with >=100 stars is accepted
     # and recorded as resolved from the requested name, never a low-star copy.
-    for name in NAMED:
+    for name in named:
         short = name.split("/", 1)[1]
         candidates = _search(f"{short} in:name fork:true", 20)
         exact = [row for row in candidates if row["full_name"].lower() == name.lower()]
@@ -142,13 +192,44 @@ def fetch(output: Path, *, pause: float = 4.0, per_page: int = 30) -> dict[str, 
         "schema": "ghazi.oss_review.v1",
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "method": "GitHub repository search, sorted by stars, metadata only",
-        "queries": {category: list(queries) for category, queries in CATEGORIES.items()},
-        "named": list(NAMED),
+        "queries": {category: list(queries) for category, queries in categories.items()},
+        "named": list(named),
         "repositories": sorted(repos.values(), key=lambda r: r["full_name"].lower()),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(snapshot, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     return snapshot
+
+
+def verify(names: tuple[str, ...], *, search=_search, pause: float = 2.5, batch: int = 6) -> dict[str, Any]:
+    """Exact-name metadata for a list of repositories, `batch` per search (repo: qualifiers are ORed).
+
+    A name GitHub does not resolve (renamed, moved or private) is retried alone by repository name
+    (forks included); a different owner is accepted only with >=100 stars and is recorded as
+    `resolved_from`. Anything still missing is listed under `not_found`, never guessed.
+    """
+    found: dict[str, dict[str, Any]] = {}
+    for start in range(0, len(names), batch):
+        chunk = names[start:start + batch]
+        for row in search(" ".join(f"repo:{n}" for n in chunk), len(chunk)):
+            found[row["full_name"].lower()] = row
+        time.sleep(pause)
+    rows, missing = [], []
+    for name in names:
+        row = found.get(name.lower())
+        if row is None:
+            short = name.split("/", 1)[1]
+            candidates = search(f"{short} in:name fork:true", 10)
+            time.sleep(pause)
+            same = [c for c in candidates if c["full_name"].split("/", 1)[1].lower() == short.lower()
+                    and int(c.get("stargazers_count") or 0) >= 100]
+            if same:
+                row = {**same[0], "resolved_from": name}
+        if row is None:
+            missing.append(name)
+        else:
+            rows.append({**row, "requested": name})
+    return {"repositories": rows, "not_found": missing}
 
 
 def score(row: dict[str, Any], *, now: datetime) -> dict[str, Any]:
@@ -221,14 +302,28 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     f = sub.add_parser("fetch")
     f.add_argument("--output", type=Path, required=True)
+    f.add_argument("--extended", action="store_true",
+                   help="run only the 2026-11-19 categories (no named list) to spare the search quota")
+    v = sub.add_parser("verify", help="exact-name metadata for the 2026-11-19 seed list")
+    v.add_argument("--output", type=Path, required=True)
     s = sub.add_parser("score")
     s.add_argument("--snapshot", type=Path, required=True)
     s.add_argument("--as-of", help="ISO time used for push age (defaults to the snapshot time)")
     s.add_argument("--top", type=int, default=0, help="print only the first N kept rows")
     args = parser.parse_args()
     if args.command == "fetch":
-        snap = fetch(args.output)
+        snap = (fetch(args.output, categories=EXTENDED_CATEGORIES, named=(), pause=2.5) if args.extended
+                else fetch(args.output))
         print(f"{len(snap['repositories'])} repositories written to {args.output}")
+        return
+    if args.command == "verify":
+        result = verify(SEED_2026_11_19)
+        snap = {"schema": "ghazi.oss_review.v1", "fetched_at": datetime.now(timezone.utc).isoformat(),
+                "method": "GitHub repository search by exact repo: name, metadata only",
+                "requested": list(SEED_2026_11_19), **result}
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(snap, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"{len(result['repositories'])} verified, not found: {result['not_found']}")
         return
     snap = json.loads(args.snapshot.read_text(encoding="utf-8"))
     as_of = datetime.fromisoformat((args.as_of or snap["fetched_at"]).replace("Z", "+00:00"))

@@ -1,5 +1,16 @@
 # Open-source project review (2026-11-17)
 
+> **2026-11-19 update.** The review continues in `INTEGRATION_GAP_ANALYSIS.md` (inventory, gaps, ten opportunities,
+> roadmap) and `INTEGRATION_VALIDATION.md` (what was run). The 63 recorded decisions are in
+> `data/integration_candidates_2026-11-19.json`.
+>
+> Corrections to this page, found by checking the repository itself:
+> - edgartools already has an adapter (`options_radar/edgartools_research_adapter.py`).
+> - ruptures (`macro_regimes.py`), arch (SPA test) and alpaca-py (stream gateway) are already used.
+>
+> Two pilots were added: a workflow and dependency security gate, and an indicator differential test that found and
+> fixed a Wilder-seeding defect.
+
 This document continues `OSS_SELECTION_2026-10-29.md`, `OSS_REEVALUATION_2026-10-20.md` and
 `OPEN_SOURCE_AND_DATA_SOURCE_DECISIONS.md`. Their standing decisions still hold:
 - pandera in use;
