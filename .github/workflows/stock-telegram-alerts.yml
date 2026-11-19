@@ -38,11 +38,11 @@ jobs:
       STOCK_PAYLOAD_MAX_AGE_MINUTES: ${{ secrets.STOCK_PAYLOAD_MAX_AGE_MINUTES || '90' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: main
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
 
@@ -143,7 +143,7 @@ jobs:
 
       - name: Upload fallback stock Telegram state
         if: always() && steps.market_day.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: stock-telegram-state
           path: data/live/stock_alert_state.json

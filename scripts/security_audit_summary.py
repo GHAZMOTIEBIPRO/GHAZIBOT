@@ -1,7 +1,8 @@
 """Summarise the supply-chain audit (zizmor, pip-audit, pip-licenses) and apply the blocking gate.
 
-Report-only except two classes that block (exit 1):
+Report-only except these, which block (exit 1):
 - a High-severity template injection in a workflow (a value expanded into a shell script);
+- an external action referenced by tag instead of a commit SHA (unpinned-uses);
 - GPL or AGPL code among the runtime dependencies (AGENTS.md: needs explicit licence review).
 An unreadable zizmor report also blocks: the gate fails closed when it cannot see.
 Everything else (unpinned actions, workflow_run triggers, credential persistence, known
@@ -18,7 +19,9 @@ from pathlib import Path
 from typing import Any
 
 SEVERITY_ORDER = ("High", "Medium", "Low", "Informational", "Unknown")
-BLOCKING_RULES = {("template-injection", "High")}
+# unpinned-uses blocks since 2026-11-19: every external action is pinned to a commit SHA (#452) and
+# Dependabot keeps the pins current, so a new tag-only reference is a regression.
+BLOCKING_RULES = {("template-injection", "High"), ("unpinned-uses", "High")}
 # checked after WEAK_COPYLEFT, so "Lesser General Public License" never lands here
 STRONG_COPYLEFT = ("agpl", "affero", "general public license", "gpl-2", "gpl-3", "gplv2", "gplv3", "(gpl)")
 WEAK_COPYLEFT = ("lgpl", "lesser general public", "mpl", "mozilla public", "epl", "eclipse public")
@@ -106,7 +109,7 @@ def licence_summary(rows: Any) -> dict[str, Any]:
 
 
 def markdown(z: dict[str, Any], a: dict[str, Any], lic: dict[str, Any]) -> str:
-    out = ["## Security audit (report-only, two blocking classes)", "",
+    out = ["## Security audit (report-only except the blocking rules)", "",
            f"**Workflows (zizmor):** {z['status']}" + (f", {z.get('total', 0)} findings" if z["status"] == "OK" else "")]
     out += [f"- {k}: {n}" for k, n in z.get("counts", {}).items()]
     out += ["", f"**Runtime dependencies (pip-audit):** {a['status']}" +

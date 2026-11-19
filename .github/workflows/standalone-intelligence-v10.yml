@@ -39,12 +39,12 @@ jobs:
       BLACK_BOX_MAX_EXECUTION_QUOTE_AGE_SECONDS: ${{ secrets.BLACK_BOX_MAX_EXECUTION_QUOTE_AGE_SECONDS || '120' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: main
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
@@ -172,7 +172,7 @@ jobs:
 
       - name: Upload V10 thesis memory
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: stock-intelligence-v10-state
           path: data/live/stock_intelligence_v10_state.json
@@ -197,12 +197,12 @@ jobs:
       OPTIONS_INTEL_MAX_PAYLOAD_AGE_MINUTES: ${{ secrets.OPTIONS_INTEL_MAX_PAYLOAD_AGE_MINUTES || '45' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: main
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
@@ -248,7 +248,7 @@ jobs:
 
       - name: Upload options flow/outcome memory
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: options-intelligence-v8-state
           path: data/live/options_intelligence_v8_state.json
