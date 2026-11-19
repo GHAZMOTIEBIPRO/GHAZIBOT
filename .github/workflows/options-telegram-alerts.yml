@@ -50,7 +50,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install Telegram and exchange-calendar dependencies
-        run: pip install 'requests>=2.32,<3.0' 'exchange-calendars>=4.13,<5.0'
+        # the sender imports the options_radar package, which needs the runtime set (pandas)
+        run: pip install -r requirements.txt 'exchange-calendars>=4.13,<5.0'
 
       - name: Check U.S. regular session before fallback alert
         id: market

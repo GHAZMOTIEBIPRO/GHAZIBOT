@@ -56,7 +56,8 @@ jobs:
           cache: pip
 
       - name: Install lightweight flash dependencies
-        run: pip install "requests>=2.32,<3.0" "yfinance>=0.2.65" "python-dotenv>=1.0,<2.0"
+        # the sender imports the options_radar package, which needs the runtime set (pandas)
+        run: pip install -r requirements.txt "yfinance>=0.2.65"
 
       - name: Restore Telegram destination when chat secret is absent
         if: env.TELEGRAM_CHAT_ID == ''
