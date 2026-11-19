@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-19T02:46:26.414415+00:00",
+ "generated_at": "2026-11-19T03:17:39.845785+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,10 +8,12 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 33,
+     "success": 34,
      "cancelled": 1
     },
-    "stock-radar.yml": {},
+    "stock-radar.yml": {
+     "success": 1
+    },
     "options-contract-radar.yml": {
      "success": 29
     },
@@ -40,14 +42,13 @@
     },
     "catalyst-watchlist.yml": {
      "failure": 4,
-     "success": 5
+     "success": 4
     },
     "daily-plan.yml": {
      "success": 4
     },
     "fda-events.yml": {
-     "failure": 3,
-     "success": 1
+     "failure": 3
     },
     "official-sec-pulse.yml": {
      "success": 5
@@ -114,9 +115,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 44443307376,
+    "run_id": 44448958448,
     "conclusion": "success",
-    "at": "2026-11-19T02:18:12Z"
+    "at": "2026-11-19T03:05:30Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -395,7 +396,7 @@
   "stock_radar": {
    "label_ar": "رادار الأسهم",
    "verdict_ar": "متوقف لغياب مصدر مؤهل",
-   "run": "NO_RUN_24H",
+   "run": "OK",
    "source": "BLOCKED_BY_TERMS",
    "data": "EMPTY",
    "data_state": "RESEARCH_ONLY",
@@ -406,8 +407,8 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-19T02:19:33.554940+00:00",
-   "last_run_at": null
+   "generated_at": "2026-11-19T03:06:56.821801+00:00",
+   "last_run_at": "2026-11-19T03:05:30Z"
   },
   "index_radar": {
    "label_ar": "تحليل المؤشرات",
