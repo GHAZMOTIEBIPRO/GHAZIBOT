@@ -1,11 +1,11 @@
+# Runtime dependencies of the data and bot workflows.
+# yfinance / yahooquery (Yahoo terms block automated use) moved to requirements-legacy.txt and
+# streamlit (local app.py UI only) to requirements-ui.txt on 2026-11-19: they pulled 37 of the 55
+# installed packages, including curl-cffi. See options_radar/yahoo_optional.py.
 pandas>=2.2,<3.0
 numpy>=1.26,<3.0
 requests>=2.32,<3.0
-yfinance>=0.2.65
 python-dotenv>=1.0,<2.0
-streamlit>=1.40,<2.0
 exchange-calendars>=4.5,<5.0
-
-yahooquery>=2.4,<3.0
 feedparser>=6.0.12,<7.0
 defusedxml>=0.7.1,<0.8

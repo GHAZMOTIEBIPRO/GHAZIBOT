@@ -11,13 +11,13 @@ from pathlib import Path
 from typing import Any
 
 import requests
-import yfinance as yf
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from options_radar.source_permissions import require
+from options_radar.yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 NASDAQ_SCREENER = "https://api.nasdaq.com/api/screener/stocks"
 CACHE_PATH = Path("data/cache/structural_microfloat_candidates.json")

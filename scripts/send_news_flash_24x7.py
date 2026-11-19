@@ -13,10 +13,10 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pandas as pd
-import yfinance as yf
 
 from options_radar.halt_news_engine import NewsEvent, collect_fast_news
 from options_radar.source_permissions import allowed
+from options_radar.yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 from scripts.telegram_transport import edit_html_message, send_html_message
 
 RIYADH = ZoneInfo("Asia/Riyadh")

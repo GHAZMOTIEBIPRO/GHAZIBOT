@@ -6,13 +6,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
-import yfinance as yf
-
 from options_radar.research_attribution import (
     build_stock_research_features,
     evaluate_stock_research_attribution,
 )
 from options_radar.source_permissions import allowed, require
+from options_radar.yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 
 def _read(path: Path) -> dict[str, Any]:

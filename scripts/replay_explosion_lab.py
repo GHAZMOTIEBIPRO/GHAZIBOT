@@ -11,13 +11,13 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-import yfinance as yf
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from options_radar.source_permissions import allowed, require
+from options_radar.yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 OUTPUT_PATH = Path("data/replay/explosion_replay_report.json")
 DEFAULT_SYMBOLS = "RGC,BNAI,ATXG,HOLO,MLGO"
