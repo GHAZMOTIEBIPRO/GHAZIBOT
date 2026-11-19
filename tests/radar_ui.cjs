@@ -214,6 +214,12 @@ for (const bad of [{ entry: 50, stop: 50 }, { entry: 50, stop: 49, risk_pct: 0 }
 const fl = R.funnelLine({ known_symbols: { count: 5615 }, with_official_news: { count: 120 },
   bars_fetched: { count: 0, status: "DATA_USE_PERMISSION_REQUIRED" }, analysed: { count: 0 }, qualified: { count: null } });
 assert.ok(/معروفة .*لها أخبار .*جُلبت شموعها 0 \(بانتظار إعداد مسار البيانات الخاص\)/.test(fl), fl);
+// partial fetch: "N of M" and a time-budget stop is said, not hidden
+const fl2 = R.funnelLine({ known_symbols: { count: 5615 }, with_official_news: { count: 120 },
+  bars_fetched: { count: 30, attempted: 33, skipped_for_time: 2, status: "OWNER_AUTHORIZED_INTERNAL_USE" } });
+assert.ok(/جُلبت شموعها 30 من 33 · لم يتسع الوقت لـ2/.test(fl2), fl2);
+const fl3 = R.funnelLine({ bars_fetched: { count: 35, attempted: 35, skipped_for_time: 0 } });
+assert.ok(/جُلبت شموعها 35 ·/.test(fl3) && !/ من |لم يتسع/.test(fl3), fl3);
 
 // --- contrast: every text colour on bg / surface / surface-2 clears WCAG AA in both themes ---
 const tokens = (block) => Object.fromEntries([...block.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]));

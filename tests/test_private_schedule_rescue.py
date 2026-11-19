@@ -150,3 +150,15 @@ def test_private_market_scan_runs_in_the_new_york_session_via_the_orchestrator()
     # one dispatcher only: no own schedule that could land next to a dispatch and send twice
     scan = yaml.safe_load(Path(".github/workflows/private-market-scan.yml").read_text(encoding="utf-8"))
     assert "schedule" not in scan[True] and "workflow_dispatch" in scan[True]
+
+
+def test_daily_plan_is_dispatched_before_the_open_in_new_york_time():
+    # 2026-11-17/18: the "pre-open" morning copies were made at 20:02Z and 19:37Z (late crons).
+    central = Path(".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
+    assert central.count("dispatch_if_stale daily-plan.yml 240") == 1
+    block = central.split("Pre-open daily plan", 1)[1].split("dispatch_if_stale daily-plan.yml", 1)[0]
+    assert "ny_hm >= 830 && ny_hm <= 920" in block and "date -u +%u) <= 5" in block
+    # ny_hm is New York local time, computed once before both private dispatches
+    assert central.index('TZ=America/New_York date +%H%M') < central.index("dispatch_if_stale daily-plan.yml")
+    plan = yaml.safe_load(Path(".github/workflows/daily-plan.yml").read_text(encoding="utf-8"))
+    assert "workflow_dispatch" in plan[True]

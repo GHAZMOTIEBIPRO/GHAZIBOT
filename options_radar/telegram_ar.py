@@ -216,6 +216,18 @@ def days_ar(count: int) -> str:
     return f"{n} يومًا"
 
 
+def symbols_ar(count: int) -> str:
+    """'رمز واحد' / 'رمزين' / '5 رموز' / '21 رمزًا'."""
+    n = int(count)
+    if n == 1:
+        return "رمز واحد"
+    if n == 2:
+        return "رمزين"
+    if 3 <= n <= 10:
+        return f"{n} رموز"
+    return f"{n} رمزًا"
+
+
 def stocks_ar(count: int) -> str:
     """'سهم واحد' / 'سهمين' / '5 أسهم' / '60 سهمًا'."""
     n = int(count)

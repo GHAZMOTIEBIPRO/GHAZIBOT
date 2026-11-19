@@ -30,6 +30,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
+from collections.abc import Callable
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -42,14 +44,23 @@ from options_radar import analysis_card as card
 from options_radar import daily_plan as dp
 from options_radar import ohlcv_quality as quality
 from options_radar import telegram_market_digest as digest
-from options_radar.volume_liquidity import liquidity_context
 from options_radar.bar_aggregation import frames_from_5m
 from options_radar.bar_providers import COVERAGE, AlpacaBars
+from options_radar.focus_universe import FOCUS_STOCKS, SECONDARY_STOCKS
 from options_radar.output_policy import decide, deliver_private
+from options_radar.volume_liquidity import liquidity_context
 
 NY = ZoneInfo("America/New_York")
 RIYADH = ZoneInfo("Asia/Riyadh")
-PLAN_SYMBOLS = ("SPY", "QQQ", "IWM", "DIA", "NVDA", "AAPL", "MSFT", "AMZN", "META", "TSLA", "AMD", "GOOGL")
+# U.S. market only: index funds, the owner-approved focus list (options_radar.focus_universe)
+# and the other leading large caps shown in the investor-attention card. About 2 Alpaca
+# requests per symbol, spaced by SYMBOL_PAUSE_S so this job alone stays far below the
+# provider's per-minute limit while other private jobs share the same account.
+INDEX_FUNDS = ("SPY", "QQQ", "IWM", "DIA")
+OTHER_LEADERS = ("LLY", "V", "MA", "UNH", "WMT", "BRK.B", "INTC", "CRM", "ADBE", "BA", "DIS", "PFE")
+PLAN_SYMBOLS = tuple(dict.fromkeys((*INDEX_FUNDS, *FOCUS_STOCKS, *SECONDARY_STOCKS, *OTHER_LEADERS)))
+SYMBOL_PAUSE_S = 0.5
+FETCH_BUDGET_S = 6 * 60  # the job has 10 minutes; the rest is analysis, writing and delivery
 FRAMES = ("weekly", "daily", "4h", "1h", "15m", "5m")
 
 
@@ -221,7 +232,9 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
 
 
 def private_plans(facts: dict[str, Any], now: datetime, *, session: Any = None,
-                  env: Any = None, symbols: tuple[str, ...] | None = None) -> dict[str, Any]:
+                  env: Any = None, symbols: tuple[str, ...] | None = None,
+                  pause: Callable[[float], None] = time.sleep,
+                  clock: Callable[[], float] = time.monotonic) -> dict[str, Any]:
     env = os.environ if env is None else env
     provider = AlpacaBars(env, **({"session": session} if session is not None else {}), now=now)
     status = provider.status()
@@ -231,10 +244,21 @@ def private_plans(facts: dict[str, Any], now: datetime, *, session: Any = None,
         return {"enabled": False, "reason": reason, "plans": {}}
     sessions = _sessions(now, 60)
     closes = session_closes(now)
-    plans, statuses = {}, {}
-    for symbol in symbols or PLAN_SYMBOLS:
+    plans, statuses, skipped = {}, {}, []
+    started = clock()
+    for index, symbol in enumerate(symbols or PLAN_SYMBOLS):
+        # a slow or hanging provider must not cost the whole plan: stop starting new symbols
+        # once the budget is spent, keep what finished, and say which were not fetched
+        if clock() - started > FETCH_BUDGET_S:
+            skipped.append(symbol)
+            continue
+        if index:
+            pause(SYMBOL_PAUSE_S)
         plans[symbol], statuses[symbol] = plan_from_provider(provider, symbol, facts, sessions, now, closes)
-    return {"enabled": True, "reason": "OWNER_AUTHORIZED_INTERNAL_USE", "plans": plans, "fetch_status": statuses}
+    out = {"enabled": True, "reason": "OWNER_AUTHORIZED_INTERNAL_USE", "plans": plans, "fetch_status": statuses}
+    if skipped:
+        out["skipped_for_time"] = {"count": len(skipped), "budget_seconds": FETCH_BUDGET_S}
+    return out
 
 
 def readiness(private: dict[str, Any], catalysts: list[Any], macro: dict[str, Any]) -> dict[str, Any]:
@@ -285,7 +309,7 @@ def cards_for(private: dict[str, Any], watch: Any, now: datetime, opt_status: st
 
 def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
     """Ranked, compact private digest. Never cuts a Telegram message mid-level."""
-    return digest.render(private.get("cards") or {}, facts.get("last_closed_session"))
+    return digest.render(private.get("cards") or {}, facts.get("last_closed_session"), pinned=INDEX_FUNDS)
 
 
 def funnel(nasdaq: Any, directory: Any, watch: Any, private: dict[str, Any]) -> dict[str, Any]:
@@ -306,6 +330,7 @@ def funnel(nasdaq: Any, directory: Any, watch: Any, private: dict[str, Any]) -> 
                           "basis": "NasdaqTrader Nasdaq Listed file and the S&P 500 directory (no prices)"},
         "with_official_news": {"count": len(news), "basis": "catalyst_watchlist.json events (30 days)"},
         "bars_fetched": {"count": fetched, "attempted": len(statuses), "status": private.get("reason"),
+                         "skipped_for_time": (private.get("skipped_for_time") or {}).get("count", 0),
                          "basis": "completed daily bars from the owner-private Alpaca path"},
         "analysed": {"count": analysed, "basis": "frames, levels and conditional scenarios computed"},
         "qualified": {"count": None, "status": "NOT_EVALUATED_IN_THIS_PATH",

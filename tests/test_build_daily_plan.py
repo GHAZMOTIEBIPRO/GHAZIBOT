@@ -82,8 +82,12 @@ def test_private_plans_need_policy_and_keys_and_build_intraday_frames(monkeypatc
     assert bdp.private_plans(facts, now, session=Session(), env=no_keys)["reason"] == "ACCOUNT_CREDENTIALS_NOT_CONFIGURED"
     assert calls == []  # neither denial touched the provider
     ok = {**denied, "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}
-    result = bdp.private_plans(facts, now, session=Session(), env=ok)
+    pauses: list[float] = []
+    result = bdp.private_plans(facts, now, session=Session(), env=ok, pause=pauses.append)
     assert result["enabled"] is True and len(calls) == 2 * len(bdp.PLAN_SYMBOLS)
+    # symbols are spaced (shared Alpaca per-minute limit): one pause between consecutive symbols
+    assert pauses == [bdp.SYMBOL_PAUSE_S] * (len(bdp.PLAN_SYMBOLS) - 1)
+    assert "skipped_for_time" not in result
     # nothing newer than now - 16 minutes is ever requested
     assert all(datetime.fromisoformat(c["end"]) <= now - timedelta(minutes=16) for c in calls)
     # completed history uses the consolidated tape (allowed on Basic when 15+ minutes old)
@@ -119,6 +123,40 @@ def test_private_plans_need_policy_and_keys_and_build_intraday_frames(monkeypatc
     assert sheet["readiness"]["price_levels"] == {"public": "NOT_COMPUTED", "private_owner": "COMPUTED"}
     assert sheet["title_ar"] == "موجز الجلسة والمحركات"  # no public frames: not a technical plan
     assert sheet["public_price_plans"] == {} and '"close":' not in json.dumps(sheet)
+
+
+def test_slow_provider_keeps_finished_symbols_and_reports_the_rest():
+    calls = []
+
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {"bars": [], "next_page_token": None}
+
+    class Session:
+        def get(self, url, params=None, headers=None, timeout=None):
+            calls.append(params)
+            return Response()
+
+    ticks = iter(range(0, 10_000, 200))  # every clock read is 200 s later: a very slow provider
+    now = datetime(2026, 10, 26, 18, 0, tzinfo=timezone.utc)
+    env = {"ALPACA_API_KEY": "k", "ALPACA_SECRET_KEY": "s", "ALPACA_INTERNAL_DATA_USE_AUTHORIZED": "true"}
+    out = bdp.private_plans(bdp.calendar_facts(now), now, session=Session(), env=env,
+                            pause=lambda _: None, clock=lambda: next(ticks))
+    fetched = len(out["fetch_status"])
+    assert 0 < fetched < len(bdp.PLAN_SYMBOLS) and len(calls) == 2 * fetched
+    assert out["skipped_for_time"] == {"count": len(bdp.PLAN_SYMBOLS) - fetched, "budget_seconds": bdp.FETCH_BUDGET_S}
+    funnel = bdp.funnel(None, None, None, out)["bars_fetched"]
+    assert funnel["attempted"] == fetched and funnel["skipped_for_time"] == len(bdp.PLAN_SYMBOLS) - fetched
+
+
+def test_plan_symbols_are_us_leaders_and_index_funds_without_duplicates():
+    from options_radar.focus_universe import FOCUS_STOCKS, SECONDARY_STOCKS
+    assert len(bdp.PLAN_SYMBOLS) == len(set(bdp.PLAN_SYMBOLS)) >= 30
+    assert bdp.PLAN_SYMBOLS[:4] == ("SPY", "QQQ", "IWM", "DIA")
+    assert set(FOCUS_STOCKS) | set(SECONDARY_STOCKS) <= set(bdp.PLAN_SYMBOLS)
+    assert all(bdp.SYMBOL_RE.fullmatch(s) for s in bdp.PLAN_SYMBOLS) if hasattr(bdp, "SYMBOL_RE") else True
 
 
 def test_sheet_without_any_frames_is_a_session_brief():
