@@ -2,14 +2,14 @@
   "schema_version": 1,
   "decision_authority": false,
   "contains_secrets": false,
-  "generated_at": "2026-11-19T03:35:37.469557+00:00",
+  "generated_at": "2026-11-19T03:36:06.809442+00:00",
   "overall_status": "CRITICAL",
   "paths": {
     "fast_discovery": {
       "status": "STALE",
       "file": "data/live/fast_explosion_scan.json",
       "generated_at": "2026-10-20T11:23:16.332352+00:00",
-      "age_minutes": 42732.35,
+      "age_minutes": 42732.84,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": null,
@@ -20,41 +20,41 @@
       "last_attempt_at": "2026-10-25T22:25:46.601101+00:00"
     },
     "stocks": {
-      "status": "UNAVAILABLE",
+      "status": "STALE",
       "file": "public/data/stocks_latest.json",
       "generated_at": "2026-10-20T12:52:36.813826+00:00",
-      "age_minutes": 42643.01,
+      "age_minutes": 42643.5,
       "maximum_age_minutes": 90.0,
       "candidate_count": 2,
       "provider_readiness": null,
       "reasons": [
+        "Payload age 42643.5m exceeds the 90m safety limit.",
         "SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact."
       ],
       "last_attempt_at": "2026-11-19T03:35:37.469557+00:00"
     },
     "options": {
-      "status": "STALE",
+      "status": "UNAVAILABLE",
       "file": "public/data/options_latest.json",
       "generated_at": "2026-10-19T19:43:21.393889+00:00",
-      "age_minutes": 43672.27,
+      "age_minutes": 43672.76,
       "maximum_age_minutes": 45.0,
       "candidate_count": 0,
       "provider_readiness": "FALLBACK_ONLY",
       "reasons": [
-        "Payload age 43672.3m exceeds the 45m safety limit.",
         "SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact."
       ],
-      "last_attempt_at": "2026-11-19T03:28:31.201862+00:00"
+      "last_attempt_at": "2026-11-19T03:36:06.809442+00:00"
     }
   },
   "reasons": [
     "fast_discovery: Payload age 14845.0m exceeds the 45m safety limit.; SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact.",
-    "stocks: SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact.",
-    "options: Payload age 43672.3m exceeds the 45m safety limit.; SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact."
+    "stocks: Payload age 42643.5m exceeds the 90m safety limit.; SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact.",
+    "options: SOURCE_ARTIFACT_MISSING: source run supplied no validated scan artifact."
   ],
   "publisher": {
-    "source_workflow": "BLACK BOX Omega Stock Radar",
-    "source_run_id": "44452448508",
+    "source_workflow": "BLACK BOX Omega Options Contract Radar",
+    "source_run_id": "44452448320",
     "mode": "missing_artifact_status_only"
   }
 }
