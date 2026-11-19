@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-19T08:49:37.238206+00:00",
+ "generated_at": "2026-11-19T12:11:02.082112+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,7 +8,7 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 36,
+     "success": 40,
      "cancelled": 2
     },
     "stock-radar.yml": {
@@ -21,8 +21,8 @@
      "success": 2
     },
     "classical-direction-radar.yml": {
-     "cancelled": 1,
-     "success": 30
+     "success": 30,
+     "cancelled": 1
     },
     "index-radar.yml": {
      "success": 6
@@ -42,7 +42,7 @@
     },
     "market-orchestrator.yml": {
      "success": 24,
-     "cancelled": 7
+     "cancelled": 6
     },
     "catalyst-watchlist.yml": {
      "failure": 7,
@@ -120,9 +120,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 44452841572,
+    "run_id": 44504816187,
     "conclusion": "success",
-    "at": "2026-11-19T03:38:22Z"
+    "at": "2026-11-19T10:20:57Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -176,6 +176,12 @@
       "فائدة SOFR لليلة واحدة"
      ],
      "radar_js": "./radar.js?v=20261119-1",
+     "scripts": [
+      "./radar.js?v=20261119-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true,
      "tradingview_frames": 1
     },
     "ghazibot.vercel.app:chart_nvda": {
@@ -201,6 +207,12 @@
       "فائدة SOFR لليلة واحدة"
      ],
      "radar_js": "./radar.js?v=20261119-1",
+     "scripts": [
+      "./radar.js?v=20261119-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true,
      "tradingview_frames": 1
     },
     "ghazibot.vercel.app:news": {
@@ -225,7 +237,13 @@
       "طلبات إعانة البطالة الأولية",
       "فائدة SOFR لليلة واحدة"
      ],
-     "radar_js": "./radar.js?v=20261119-1"
+     "radar_js": "./radar.js?v=20261119-1",
+     "scripts": [
+      "./radar.js?v=20261119-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true
     },
     "ghazibot.vercel.app:classic": {
      "http_status": 200,
@@ -241,6 +259,31 @@
      "chart_symbol": null,
      "fact_cards": [],
      "radar_js": "./index-radar.js?v=20261018-2",
+     "scripts": [
+      "./app.js?v=20261020-1",
+      "./bls-macro.js?v=20261018-1",
+      "./catalyst-overview.js?v=20261119-1",
+      "./contract-risk-lab.js?v=20261018-1",
+      "./decision-room.js?v=20261018-1",
+      "./expiry-radar.js?v=20260807-omega",
+      "./ghazi-radar-quality.js?v=trust-20261024",
+      "./index-radar.js?v=20261018-2",
+      "./market-chart.js?v=20261010-open-source",
+      "./omega.js?v=20260807-omega",
+      "./phase51.js?v=20260807-omega",
+      "./phase60.js?v=20261020-1",
+      "./phase62.js?v=20260807-omega",
+      "./terminal-decision.js?v=20261119-1",
+      "./terminal-evidence.js?v=20261019-1",
+      "./terminal-hub.js?v=20261026-5",
+      "./terminal-oos.js?v=20261020-1",
+      "./terminal-ops.js?v=20261020-3",
+      "./terminal-research.js?v=20261019-1",
+      "./terminal-source-agreement.js?v=20261019-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true,
      "tradingview_frames": 1
     },
     "ghazibot.vercel.app:spx": {
@@ -256,7 +299,12 @@
      "chart_state": null,
      "chart_symbol": null,
      "fact_cards": [],
-     "radar_js": null
+     "radar_js": null,
+     "scripts": [
+      "./spx.js?v=20261020-1"
+     ],
+     "scripts_missing": [],
+     "version_match": true
     },
     "ghazir.vercel.app:home": {
      "http_status": 200,
@@ -281,6 +329,12 @@
       "فائدة SOFR لليلة واحدة"
      ],
      "radar_js": "./radar.js?v=20261119-1",
+     "scripts": [
+      "./radar.js?v=20261119-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true,
      "tradingview_frames": 1
     },
     "ghazir.vercel.app:chart_nvda": {
@@ -306,6 +360,12 @@
       "فائدة SOFR لليلة واحدة"
      ],
      "radar_js": "./radar.js?v=20261119-1",
+     "scripts": [
+      "./radar.js?v=20261119-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true,
      "tradingview_frames": 1
     },
     "ghazir.vercel.app:news": {
@@ -330,7 +390,13 @@
       "طلبات إعانة البطالة الأولية",
       "فائدة SOFR لليلة واحدة"
      ],
-     "radar_js": "./radar.js?v=20261119-1"
+     "radar_js": "./radar.js?v=20261119-1",
+     "scripts": [
+      "./radar.js?v=20261119-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true
     },
     "ghazir.vercel.app:classic": {
      "http_status": 200,
@@ -346,6 +412,31 @@
      "chart_symbol": null,
      "fact_cards": [],
      "radar_js": "./index-radar.js?v=20261018-2",
+     "scripts": [
+      "./app.js?v=20261020-1",
+      "./bls-macro.js?v=20261018-1",
+      "./catalyst-overview.js?v=20261119-1",
+      "./contract-risk-lab.js?v=20261018-1",
+      "./decision-room.js?v=20261018-1",
+      "./expiry-radar.js?v=20260807-omega",
+      "./ghazi-radar-quality.js?v=trust-20261024",
+      "./index-radar.js?v=20261018-2",
+      "./market-chart.js?v=20261010-open-source",
+      "./omega.js?v=20260807-omega",
+      "./phase51.js?v=20260807-omega",
+      "./phase60.js?v=20261020-1",
+      "./phase62.js?v=20260807-omega",
+      "./terminal-decision.js?v=20261119-1",
+      "./terminal-evidence.js?v=20261019-1",
+      "./terminal-hub.js?v=20261026-5",
+      "./terminal-oos.js?v=20261020-1",
+      "./terminal-ops.js?v=20261020-3",
+      "./terminal-research.js?v=20261019-1",
+      "./terminal-source-agreement.js?v=20261019-1",
+      "./tv-intelligence.js?v=20261026-3"
+     ],
+     "scripts_missing": [],
+     "version_match": true,
      "tradingview_frames": 1
     },
     "ghazir.vercel.app:spx": {
@@ -361,7 +452,12 @@
      "chart_state": null,
      "chart_symbol": null,
      "fact_cards": [],
-     "radar_js": null
+     "radar_js": null,
+     "scripts": [
+      "./spx.js?v=20261020-1"
+     ],
+     "scripts_missing": [],
+     "version_match": true
     }
    },
    "method": "headless browser: no page errors and no horizontal overflow at 390 px",
@@ -412,7 +508,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-19T03:39:33.207704+00:00",
+   "generated_at": "2026-11-19T12:05:16.285161+00:00",
    "last_run_at": "2026-11-19T03:35:02Z"
   },
   "index_radar": {
@@ -434,7 +530,7 @@
   "classical": {
    "label_ar": "الاتجاه الكلاسيكي",
    "verdict_ar": "متوقف لغياب مصدر مؤهل",
-   "run": "FAILED",
+   "run": "OK",
    "source": "BLOCKED_BY_TERMS",
    "data": "STALE",
    "data_state": "LICENSE_BLOCKED",
@@ -445,7 +541,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-19T03:35:02Z"
+   "last_run_at": "2026-11-19T12:03:58Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -486,8 +582,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-19T03:29:03.468978+00:00",
-   "last_run_at": "2026-11-19T03:28:33Z"
+   "generated_at": "2026-11-19T12:04:49.965555+00:00",
+   "last_run_at": "2026-11-19T12:04:17Z"
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
