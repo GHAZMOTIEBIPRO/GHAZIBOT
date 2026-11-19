@@ -138,3 +138,15 @@ def test_shadow_workflow_delivers_only_on_explicit_non_dry_run_dispatch_or_sched
     assert '"$INPUT_DRY" == "false"' in audit["run"]
     persist = next(s for s in steps if s.get("name", "").startswith("Persist only"))
     assert "inputs.dry_run == false" in persist["if"] and "github.event_name == 'schedule'" in persist["if"]
+
+
+def test_private_market_scan_runs_in_the_new_york_session_via_the_orchestrator():
+    # 2026-11-18: the scan's own crons arrived at 22:20, 23:08 and 00:44 UTC (OUTSIDE_SESSION).
+    central = Path(".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
+    assert central.count("dispatch_if_stale private-market-scan.yml 150") == 1
+    block = central.split("ny_hm=", 1)[1].split("dispatch_if_stale private-market-scan.yml", 1)[0]
+    assert "TZ=America/New_York" in block and "ny_hm >= 1000 && ny_hm <= 1530" in block
+    assert "date -u +%u) <= 5" in block
+    # one dispatcher only: no own schedule that could land next to a dispatch and send twice
+    scan = yaml.safe_load(Path(".github/workflows/private-market-scan.yml").read_text(encoding="utf-8"))
+    assert "schedule" not in scan[True] and "workflow_dispatch" in scan[True]

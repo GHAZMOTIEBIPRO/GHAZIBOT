@@ -13,12 +13,10 @@ on:
       - "scripts/run_focus_options_private.py"
       - "scripts/run_twelve_non_display_scan.py"
       - ".github/workflows/private-market-scan.yml"
-  # 14:47 / 16:47 / 18:47 UTC on weekdays (mid-session in EDT and EST); the
-  # script checks the XNYS session itself.
-  schedule:
-    - cron: "47 14 * * 1-5"
-    - cron: "47 16 * * 1-5"
-    - cron: "47 18 * * 1-5"
+  # No own schedule: GitHub delivered the former 14:47/16:47/18:47 UTC crons 6-8 h late
+  # (after the close), and a late cron next to a dispatch would send a second message.
+  # market-orchestrator.yml dispatches this 10:00-15:30 New York, at most every 150 min;
+  # the script checks the XNYS session itself.
 
 permissions:
   contents: read
