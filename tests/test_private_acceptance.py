@@ -91,8 +91,10 @@ def test_workflows_with_alpaca_secrets_never_publish_private_data():
             if path.name != "settings-check.yml":   # writes no private output at all, only names and booleans
                 assert "RUNNER_TEMP" in text
     # only owner-private workflows receive the keys; public publishers never do
+    # opening-fib-history.yml (2026-11-19): manual, read-only, aggregate report to the owner's chat only
     assert sorted(with_keys) == ["alpaca-iex-vcp-private.yml", "alpaca-private-probe.yml", "daily-plan.yml",
-                                 "opening-fib-daily.yml", "opening-fib-shadow.yml", "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
+                                 "opening-fib-daily.yml", "opening-fib-history.yml", "opening-fib-shadow.yml",
+                                 "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
                                  "settings-check.yml"]
 
 
