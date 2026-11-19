@@ -180,6 +180,14 @@ jobs:
           if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1530 )); then
             dispatch_if_stale private-market-scan.yml 150 "Private Market Scan"
           fi
+
+          # Pre-open daily plan (owner's private plan is sent by the session's first run only).
+          # Its 11:47/12:47 UTC crons arrived 6-8 h late: the "morning" copies were made at
+          # 20:02Z (11-17) and 19:37Z (11-18), mid-afternoon in New York. Dispatched here
+          # 08:30-09:20 New York; the crons stay as a backup and a late one only adds an update.
+          if (( $(date -u +%u) <= 5 && ny_hm >= 830 && ny_hm <= 920 )); then
+            dispatch_if_stale daily-plan.yml 240 "Daily Plan (pre-open)"
+          fi
           }
 
           passes="${ORCHESTRATOR_PASSES:-1}"

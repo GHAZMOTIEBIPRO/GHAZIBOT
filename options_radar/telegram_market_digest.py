@@ -14,6 +14,7 @@ import math
 from typing import Any
 
 from options_radar.analysis_card import scope_ar
+from options_radar.telegram_ar import rtl_line, symbols_ar
 
 REQUIRED_FRAMES = ("daily", "1h", "15m", "5m")
 MAX_TELEGRAM_CHARS = 3900
@@ -97,32 +98,55 @@ def _line(card: dict[str, Any], result: dict[str, Any]) -> str:
             "المستوى شرط مراقبة وليس أمر دخول؛ يلزم تحديث البيانات قبل أي قرار.")
 
 
+def _rtl(block: str) -> str:
+    """Every physical line is a right-to-left paragraph, even when it starts with a ticker."""
+    return "\n".join(rtl_line(part) for part in block.split("\n"))
+
+
+def _omitted_summary(omitted: list[dict[str, Any]]) -> str:
+    """Tickers and states only (no levels): nothing computed is silently dropped."""
+    groups = (("مراقبة", [o["symbol"] for o in omitted if o["state"] != "WAIT"]),
+              ("انتظار", [o["symbol"] for o in omitted if o["state"] == "WAIT"]))
+    parts = [f"{label}: {'، '.join(html.escape(s, quote=True) for s in syms)}" for label, syms in groups if syms]
+    return (f"لم تُعرض تفاصيل {symbols_ar(len(omitted))} لضيق رسالة تيليجرام، وقراءتها محسوبة — "
+            + "؛ ".join(parts) + ".")
+
+
 def render(cards: dict[str, dict[str, Any]], last_closed_session: Any, *,
-           max_chars: int = MAX_TELEGRAM_CHARS) -> str:
+           max_chars: int = MAX_TELEGRAM_CHARS, pinned: tuple[str, ...] = ()) -> str:
     """Return complete Telegram-safe blocks; never truncate one mid-number or mid-HTML.
 
+    `pinned` symbols (the index funds: market context) come first in that order; the
+    rest are ranked by readiness. Symbols without room are listed by ticker and state.
     The existing delivery path must independently authorize both the source
     and the owner's one-to-one chat. This function performs no transmission.
     """
     if max_chars < 280 or max_chars > 4096:
         raise ValueError("max_chars must be between 280 and 4096")
     date = html.escape(str(last_closed_session or "غير متاح"), quote=True)
-    lines = [f"<b>خطة اليوم الخاصة — {date}</b>",
-             "مصدر: Alpaca؛ شموع مكتملة متأخرة 16 دقيقة أو أكثر؛ استخدام شخصي فقط.",
-             "WATCH = مراقبة لا توصية CALL/PUT. التوافق ليس احتمالًا؛ بلا احتمال نجاح ولا توصية تنفيذ.",
-             "السيولة وRVOL استنتاجان من الشموع والحجم، وليسا سجل أوامر أو صفقات مؤسسية."]
+    lines = [_rtl(x) for x in (
+        f"<b>خطة اليوم الخاصة — {date}</b>",
+        "مصدر: Alpaca؛ شموع مكتملة متأخرة 16 دقيقة أو أكثر؛ استخدام شخصي فقط.",
+        "WATCH = مراقبة لا توصية CALL/PUT. التوافق ليس احتمالًا؛ بلا احتمال نجاح ولا توصية تنفيذ.",
+        "السيولة وRVOL استنتاجان من الشموع والحجم، وليسا سجل أوامر أو صفقات مؤسسية.")]
     eligible = [c for c in (cards or {}).values() if isinstance(c, dict) and c.get("available")]
     scored = [(assess(c), c) for c in eligible]
-    scored.sort(key=lambda x: (x[0]["state"] == "WAIT", -x[0]["aligned_frames"], x[0]["symbol"]))
-    omitted = 0
+    pin = {s: i for i, s in enumerate(pinned)}
+    scored.sort(key=lambda x: (pin.get(x[0]["symbol"], len(pin)), x[0]["state"] == "WAIT",
+                               -x[0]["aligned_frames"], x[0]["symbol"]))
+    # room kept for the one-line list of symbols whose details do not fit
+    reserve = min(80 + 9 * len(scored), 400)
+    omitted: list[dict[str, Any]] = []
     for outcome, card in scored:
-        line = _line(card, outcome)
-        if len("\n\n".join([*lines, line])) + 80 <= max_chars:
+        line = _rtl(_line(card, outcome))
+        if not omitted and len("\n\n".join([*lines, line])) + reserve <= max_chars:
             lines.append(line)
         else:
-            omitted += 1
+            omitted.append(outcome)
     if omitted:
-        suffix = f"لم تُعرض {omitted} رموز لضيق رسالة تيليجرام؛ لا يعني ذلك غياب البيانات."
-        if len("\n\n".join([*lines, suffix])) <= max_chars:
-            lines.append(suffix)
+        for suffix in (_omitted_summary(omitted),
+                       f"لم تُعرض {symbols_ar(len(omitted))} لضيق رسالة تيليجرام؛ لا يعني ذلك غياب البيانات."):
+            if len("\n\n".join([*lines, _rtl(suffix)])) <= max_chars:
+                lines.append(_rtl(suffix))
+                break
     return "\n\n".join(lines)

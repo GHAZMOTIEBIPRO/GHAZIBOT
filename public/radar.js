@@ -450,7 +450,11 @@
     const c = (k) => (fn[k] && Number.isFinite(fn[k].count) ? n(fn[k].count) : "—");
     const bars = fn.bars_fetched || {};
     const why = bars.count ? "" : ` (${FUNNEL_REASON[bars.status] || "لم تُجلب"})`;
-    return `معروفة ${c("known_symbols")} · لها أخبار ${c("with_official_news")} · جُلبت شموعها ${c("bars_fetched")}${why}` +
+    // of the symbols attempted; a time-budget stop is said, not hidden
+    const of = bars.count && Number.isFinite(bars.attempted) && bars.attempted > bars.count ? ` من ${n(bars.attempted)}` : "";
+    const late = Number.isFinite(bars.skipped_for_time) && bars.skipped_for_time > 0
+      ? ` · لم يتسع الوقت لـ${n(bars.skipped_for_time)}` : "";
+    return `معروفة ${c("known_symbols")} · لها أخبار ${c("with_official_news")} · جُلبت شموعها ${c("bars_fetched")}${of}${why}${late}` +
       " · المؤهلة: تُقيَّم في المسح الخاص";
   }
 

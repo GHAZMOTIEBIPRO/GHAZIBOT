@@ -85,6 +85,27 @@ def test_message_escapes_external_content_and_never_splits_a_block():
     assert "16 دقيقة" in msg
 
 
+def test_index_funds_lead_and_symbols_without_room_are_listed_not_dropped():
+    tickers = ["SPY", "QQQ", *[f"S{i:02d}" for i in range(40)]]
+    cards = {t: card(t, rvol=1.0) for t in tickers}  # volume not confirmed: WAIT
+    cards["S07"] = card("S07")  # one confirmed watch among waits
+    msg = render(cards, "2026-10-23", pinned=("SPY", "QQQ"))
+    assert len(msg) <= 3900
+    blocks = msg.split("\n\n")
+    detail = [b for b in blocks if " — " in b and "(" in b and b.lstrip("\u200f")[:1].isascii()]
+    assert detail[0].lstrip("\u200f").startswith("SPY (") and detail[1].lstrip("\u200f").startswith("QQQ (")
+    assert detail[2].lstrip("\u200f").startswith("S07 (")  # readiness ranks the watch next
+    summary = blocks[-1]
+    assert "لم تُعرض تفاصيل" in summary and "انتظار:" in summary
+    shown = {b.lstrip("\u200f").split(" (", 1)[0] for b in detail}
+    listed = set(summary.split("— ", 1)[1].replace("انتظار:", "").replace("مراقبة:", "").rstrip(".")
+                 .replace("؛", "،").split("،"))
+    assert shown | {s.strip() for s in listed if s.strip()} == set(tickers)  # every symbol accounted for
+    # every physical line reads right-to-left in an Arabic chat, even when it starts with a ticker
+    from options_radar.telegram_ar import first_strong
+    assert all(line.startswith("\u200f") or first_strong(line) == "R" for line in msg.split("\n") if line)
+
+
 def test_no_candidate_message_does_not_invent_signal():
     msg = render({"T": {"symbol": "T", "available": False}}, "2026-10-30")
     assert "مراقبة صعود مشروطة" not in msg
