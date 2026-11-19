@@ -11,11 +11,33 @@ const SITES = (process.env.SMOKE_SITES || "https://ghazibot.vercel.app,https://g
 const PAGES = [["home", "/"], ["chart_nvda", "/?chart=NVDA"], ["news", "/?tab=news"], ["classic", "/classic.html"],
                ["spx", "/spx/"]];
 const out = process.argv[2] || "site_smoke.json";
+// Does production serve this checkout (main)? Every versioned local script (`src="...?v=..."`) of the page's
+// HTML file must be in the served page, and the service worker must carry the same VERSION.
+const PAGE_FILES = { home: "public/index.html", chart_nvda: "public/index.html", news: "public/index.html",
+                     classic: "public/classic.html", spx: "public/spx/index.html" };
+const expectedScripts = file => {
+  try {
+    return [...fs.readFileSync(file, "utf8").matchAll(/<script[^>]*\ssrc="([^"]*\?v=[^"]*)"/g)].map(m => m[1]).sort();
+  } catch { return null; }
+};
+const swVersion = text => (/VERSION\s*=\s*["']([^"']+)/.exec(text || "") || [])[1] || null;
+const readOrNull = file => { try { return fs.readFileSync(file, "utf8"); } catch { return null; } };
 
 (async () => {
   const browser = await chromium.launch();
   const pages = {};
+  const sites = {};
+  const expectedSw = swVersion(readOrNull("public/sw.js"));
   for (const site of SITES) {
+    const ctx = await browser.newContext();
+    let servedSw = null;
+    try {
+      const response = await ctx.request.get(`${site}/sw.js`, { timeout: 20000 });
+      servedSw = response.ok() ? swVersion(await response.text()) : null;
+    } catch { servedSw = null; }
+    await ctx.close();
+    sites[new URL(site).hostname] = { sw_served: servedSw, sw_expected: expectedSw,
+                                      sw_match: expectedSw ? servedSw === expectedSw : null };
     for (const [label, path] of PAGES) {
       const key = `${new URL(site).hostname}:${label}`;
       const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
@@ -49,8 +71,12 @@ const out = process.argv[2] || "site_smoke.json";
             fact_cards: [...document.querySelectorAll("#gr-facts .gr-fact-label")]
               .map(e => (e.textContent || "").trim().slice(0, 60)),
             radar_js: document.querySelector("script[src*='radar.js?v=']")?.getAttribute("src") || null,
+            scripts: [...document.querySelectorAll("script[src*='?v=']")].map(s => s.getAttribute("src")).sort(),
           };
         });
+        const expected = expectedScripts(PAGE_FILES[label]);
+        info.scripts_missing = expected ? expected.filter(src => !info.scripts.includes(src)) : null;
+        info.version_match = expected ? info.scripts_missing.length === 0 : null;
         // TradingView widgets load lazily: open the section, scroll to it, then
         // count the frames TradingView injected (their content stays inside them).
         // New page: the price tape on home, the stock chart on a ?chart= link.
@@ -76,14 +102,21 @@ const out = process.argv[2] || "site_smoke.json";
     }
   }
   await browser.close();
+  const checks = [...Object.values(pages).map(p => p.version_match), ...Object.values(sites).map(s => s.sw_match)];
   const report = {
     schema: "ghazi.site_smoke.v1",
     generated_at: new Date().toISOString(),
     viewport: "390x900",
+    checked_commit: process.env.GITHUB_SHA || null,
+    // true only when every page serves this checkout's scripts and every site its service-worker version
+    production_matches_checkout: checks.length && checks.every(v => v !== null) ? checks.every(Boolean) : null,
+    sites,
     pages,
     research_only: true,
   };
   fs.writeFileSync(out, JSON.stringify(report, null, 1));
   console.log(JSON.stringify(Object.fromEntries(Object.entries(pages).map(([k, v]) =>
-    [k, { http: v.http_status, errors: (v.errors || []).length, overflow: v.overflow, blocked: v.blocked_reason_shown, tv: v.tradingview_frames }]))));
+    [k, { http: v.http_status, errors: (v.errors || []).length, overflow: v.overflow, blocked: v.blocked_reason_shown,
+          tv: v.tradingview_frames, versions: v.version_match }]))));
+  console.log(JSON.stringify({ production_matches_checkout: report.production_matches_checkout, sites }));
 })();
