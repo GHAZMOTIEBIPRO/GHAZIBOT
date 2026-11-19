@@ -1,0 +1,16 @@
+# Keeps the SHA-pinned GitHub Actions current: Dependabot opens one grouped, reviewable PR a week that
+# moves each pin (and its version comment) to the newest release. Major upgrades arrive as their own PRs.
+# The PRs run the normal checks (test.yml, security-audit.yml) with a read-only token and no secrets.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-and-patch:
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: "chore(actions)"
