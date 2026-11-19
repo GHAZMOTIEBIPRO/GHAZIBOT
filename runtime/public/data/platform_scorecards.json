@@ -1,26 +1,27 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-19T03:30:17.521714+00:00",
+ "generated_at": "2026-11-19T03:40:46.086412+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 96.0,
+   "value": 95.2,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 35,
+     "success": 36,
      "cancelled": 2
     },
     "stock-radar.yml": {
-     "success": 2
+     "success": 3
     },
     "options-contract-radar.yml": {
-     "success": 30
+     "success": 32
     },
     "fast-explosion-radar.yml": {
-     "success": 1
+     "success": 2
     },
     "classical-direction-radar.yml": {
+     "cancelled": 1,
      "success": 30
     },
     "index-radar.yml": {
@@ -33,19 +34,19 @@
      "success": 3
     },
     "site-evidence-strength.yml": {
-     "success": 30,
+     "success": 31,
      "cancelled": 3
     },
     "free-gex-validation.yml": {
      "success": 30
     },
     "market-orchestrator.yml": {
-     "success": 24,
-     "cancelled": 4
+     "cancelled": 5,
+     "success": 24
     },
     "catalyst-watchlist.yml": {
+     "failure": 7,
      "cancelled": 1,
-     "failure": 5,
      "success": 4
     },
     "daily-plan.yml": {
@@ -119,9 +120,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "run_id": 44451329034,
+    "run_id": 44452841572,
     "conclusion": "success",
-    "at": "2026-11-19T03:25:30Z"
+    "at": "2026-11-19T03:38:22Z"
    },
    "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
    "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
@@ -395,7 +396,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-21T00:06:12.921144+00:00",
-   "last_run_at": "2026-11-19T03:25:30Z"
+   "last_run_at": "2026-11-19T03:35:02Z"
   },
   "stock_radar": {
    "label_ar": "رادار الأسهم",
@@ -411,8 +412,8 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-19T03:28:34.961488+00:00",
-   "last_run_at": "2026-11-19T03:25:30Z"
+   "generated_at": "2026-11-19T03:39:33.207704+00:00",
+   "last_run_at": "2026-11-19T03:35:02Z"
   },
   "index_radar": {
    "label_ar": "تحليل المؤشرات",
@@ -433,7 +434,7 @@
   "classical": {
    "label_ar": "الاتجاه الكلاسيكي",
    "verdict_ar": "متوقف لغياب مصدر مؤهل",
-   "run": "OK",
+   "run": "FAILED",
    "source": "BLOCKED_BY_TERMS",
    "data": "STALE",
    "data_state": "LICENSE_BLOCKED",
@@ -444,7 +445,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-19T03:25:30Z"
+   "last_run_at": "2026-11-19T03:35:02Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -457,8 +458,8 @@
    "alerts": "DELIVERED 2026-11-18T14:02:48.056797+00:00",
    "closed_gates": [],
    "rows": 40,
-   "generated_at": "2026-11-19T03:28:02.196168+00:00",
-   "last_run_at": "2026-11-19T03:26:29Z"
+   "generated_at": "2026-11-19T03:33:54.929733+00:00",
+   "last_run_at": "2026-11-19T03:29:13Z"
   },
   "fda": {
    "label_ar": "أحداث FDA",
