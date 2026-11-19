@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import yfinance as yf
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -20,6 +19,7 @@ from options_radar.research_attribution import (
     evaluate_replay_feature_ablation,
 )
 from options_radar.source_permissions import allowed, require
+from options_radar.yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 from scripts.replay_explosion_lab import build_replay_frame, evaluate_replay
 
 OUTPUT_PATH = Path("data/replay/explosion_replay_report.json")

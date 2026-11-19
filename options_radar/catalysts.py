@@ -14,11 +14,11 @@ from urllib.parse import urljoin
 
 import pandas as pd
 import requests
-import yfinance as yf
 
 from .clinicaltrials_registry import scan_recent_clinicaltrials
 from .settings import Settings
 from .source_permissions import allowed
+from .yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 LOGGER = logging.getLogger(__name__)
 SEC_BASE = "https://www.sec.gov"

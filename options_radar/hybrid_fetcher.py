@@ -14,13 +14,13 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 import requests
-import yfinance as yf
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .advanced_signals import is_standard_occ_contract
 from .settings import Settings
 from .source_permissions import require
+from .yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 LOGGER = logging.getLogger(__name__)
 RIYADH_TZ = ZoneInfo("Asia/Riyadh")

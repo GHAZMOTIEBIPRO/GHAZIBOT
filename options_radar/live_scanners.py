@@ -6,7 +6,8 @@ import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
-from datetime import date, datetime, time as clock_time
+from datetime import date, datetime
+from datetime import time as clock_time
 from pathlib import Path
 from typing import Iterable
 from urllib.parse import urljoin
@@ -14,9 +15,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
-import yfinance as yf
 
-from .source_permissions import allowed
 from .advanced_signals import enrich_sec_event
 from .catalysts import (
     SEC_BASE,
@@ -29,7 +28,9 @@ from .catalysts import (
     _score_text,
     best_catalyst_map,
 )
+from .source_permissions import allowed
 from .stocks import StockRadar, StockScanResult
+from .yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 LOGGER = logging.getLogger(__name__)
 _GENERIC_NEWS_TOKENS = {

@@ -9,11 +9,11 @@ from typing import Any
 
 import pandas as pd
 import requests
-import yfinance as yf
 
 from . import twelve_data_budget as td_budget
 from .settings import Settings
 from .source_permissions import allowed, require
+from .yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 LOGGER = logging.getLogger(__name__)
 OHLCV = ["Open", "High", "Low", "Close", "Volume"]

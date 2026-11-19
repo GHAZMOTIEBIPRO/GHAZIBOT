@@ -1,4 +1,6 @@
 -r requirements.txt
+# Gated Yahoo clients: tests cover those code paths offline (production installs only requirements.txt)
+-r requirements-legacy.txt
 pytest>=8.0,<9.0
 # Pinned: the rule set changes between minor releases (0.16.x reports DTZ001 where CI's 0.17.3 does not).
 ruff==0.17.3

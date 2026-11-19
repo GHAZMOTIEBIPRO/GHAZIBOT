@@ -1,0 +1,6 @@
+# Yahoo client libraries. Yahoo's terms block automated access (CLAUDE.md, source_permissions.py), so no
+# workflow installs these while the gate is closed. Install them only if the owner records approval
+# (YAHOO_AUTOMATED_ACCESS_APPROVED=true); call sites are imported lazily through options_radar/yahoo_optional.py.
+# Tests install them via requirements-dev.txt so the gated code paths stay covered offline.
+yfinance>=0.2.65
+yahooquery>=2.4,<3.0

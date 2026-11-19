@@ -8,10 +8,10 @@ from typing import Any
 
 import pandas as pd
 import requests
-import yfinance as yf
 
 from .settings import Settings
 from .source_permissions import require
+from .yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 LOGGER = logging.getLogger(__name__)
 SEC_TICKERS = "https://www.sec.gov/files/company_tickers.json"

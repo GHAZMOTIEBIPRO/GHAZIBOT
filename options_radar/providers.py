@@ -9,11 +9,11 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import requests
-import yfinance as yf
 
 from .market_bars import get_daily_history
 from .settings import Settings
 from .source_permissions import require
+from .yahoo_optional import yf  # lazy: Yahoo is gated; see yahoo_optional.py
 
 LOGGER = logging.getLogger(__name__)
 STANDARD_COLUMNS = [
