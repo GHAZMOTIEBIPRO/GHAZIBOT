@@ -275,7 +275,7 @@ jobs:
 
       - name: Upload options radar payload
         if: steps.market.outputs.open == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: independent-options-radar
           path: public/data/options_latest.json
@@ -317,7 +317,7 @@ jobs:
 
       - name: Upload independent options state
         if: steps.market.outputs.open == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: options-contract-state
           path: .options-state-upload/
@@ -389,7 +389,7 @@ jobs:
 
       - name: Upload direct options Telegram state
         if: always() && steps.market.outputs.open == 'true' && env.TELEGRAM_READY == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: options-telegram-state
           path: data/live/options_telegram_alert_state.json
@@ -433,7 +433,7 @@ jobs:
 
       - name: Upload signal ledger state
         if: always() && steps.market.outputs.open == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: signal-ledger-state
           path: |
@@ -458,7 +458,7 @@ jobs:
 
       - name: Upload options E2E delivery evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: options-e2e-evidence
           path: data/live/e2e_delivery_evidence.json
