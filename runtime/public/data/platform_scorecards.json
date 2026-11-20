@@ -1,63 +1,54 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-20T03:16:45.519429+00:00",
+ "generated_at": "2026-11-20T08:34:17.842054+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
-   "value": 96.8,
+   "value": 99.2,
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 18,
-     "cancelled": 1
+     "success": 16
     },
-    "stock-radar.yml": {
-     "success": 2
-    },
+    "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 5
-    },
-    "fast-explosion-radar.yml": {
      "success": 2
     },
+    "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
-     "success": 3,
-     "cancelled": 1
+     "success": 2
     },
     "index-radar.yml": {
-     "success": 6
-    },
-    "stock-watch-charts.yml": {
-     "success": 7
-    },
-    "public-macro.yml": {
-     "success": 3
-    },
-    "site-evidence-strength.yml": {
-     "success": 31,
-     "cancelled": 3
-    },
-    "free-gex-validation.yml": {
-     "success": 30
-    },
-    "market-orchestrator.yml": {
-     "success": 22,
-     "cancelled": 7
-    },
-    "catalyst-watchlist.yml": {
-     "success": 6,
-     "failure": 4,
-     "cancelled": 1
-    },
-    "daily-plan.yml": {
      "success": 5
     },
-    "fda-events.yml": {
-     "success": 3,
+    "stock-watch-charts.yml": {
+     "success": 5
+    },
+    "public-macro.yml": {
+     "success": 2
+    },
+    "site-evidence-strength.yml": {
+     "success": 25
+    },
+    "free-gex-validation.yml": {
+     "success": 29
+    },
+    "market-orchestrator.yml": {
+     "cancelled": 4,
+     "success": 20
+    },
+    "catalyst-watchlist.yml": {
+     "success": 7,
      "failure": 1
     },
+    "daily-plan.yml": {
+     "success": 4
+    },
+    "fda-events.yml": {
+     "success": 3
+    },
     "official-sec-pulse.yml": {
-     "success": 7
+     "success": 5
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
@@ -482,7 +473,7 @@
   "fast_explosion": {
    "label_ar": "رادار الانفجار السريع",
    "verdict_ar": "متوقف لغياب مصدر مؤهل",
-   "run": "OK",
+   "run": "NO_RUN_24H",
    "source": "BLOCKED_BY_TERMS",
    "data": "STALE",
    "data_state": "LICENSE_BLOCKED",
@@ -493,12 +484,12 @@
    ],
    "rows": null,
    "generated_at": "2026-10-21T00:06:12.921144+00:00",
-   "last_run_at": "2026-11-19T03:35:02Z"
+   "last_run_at": null
   },
   "stock_radar": {
    "label_ar": "رادار الأسهم",
    "verdict_ar": "متوقف لغياب مصدر مؤهل",
-   "run": "OK",
+   "run": "NO_RUN_24H",
    "source": "BLOCKED_BY_TERMS",
    "data": "EMPTY",
    "data_state": "RESEARCH_ONLY",
@@ -510,7 +501,7 @@
    ],
    "rows": 0,
    "generated_at": "2026-11-19T22:52:48.893547+00:00",
-   "last_run_at": "2026-11-19T03:35:02Z"
+   "last_run_at": null
   },
   "index_radar": {
    "label_ar": "تحليل المؤشرات",
@@ -555,8 +546,8 @@
    "alerts": "DELIVERED 2026-11-19T16:12:48.013688+00:00",
    "closed_gates": [],
    "rows": 40,
-   "generated_at": "2026-11-20T02:29:06.389910+00:00",
-   "last_run_at": "2026-11-20T02:26:14Z"
+   "generated_at": "2026-11-20T03:18:57.420267+00:00",
+   "last_run_at": "2026-11-20T03:16:13Z"
   },
   "fda": {
    "label_ar": "أحداث FDA",
@@ -597,8 +588,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-19T20:59:09.438265+00:00",
-   "last_run_at": "2026-11-19T20:58:43Z"
+   "generated_at": "2026-11-20T03:45:07.954011+00:00",
+   "last_run_at": "2026-11-20T03:44:39Z"
   },
   "daily_plan": {
    "label_ar": "خطة اليوم",
