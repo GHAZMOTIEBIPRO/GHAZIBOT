@@ -8,7 +8,8 @@ with a recording transport, and checks:
 - destination: the broadcast destination is the one telegram_connection_bootstrap resolves (a
   private chat by the settings check); this script sends nothing, it records texts only;
 - timing: the daily brief opens at 08:15 Riyadh on weekdays and is sent once per day;
-- dedupe: a second run over the same inputs sends nothing new;
+- dedupe: repeat runs over the same inputs send each event exactly once (a backlog above the
+  sender's per-run cap drains over the next runs), then send nothing;
 - recovery: when the transport fails mid-run, the unsent events stay pending and the next
   run sends exactly those, once.
 
@@ -65,9 +66,24 @@ def check(report: dict[str, Any], state: dict[str, Any] | None, health: Any, now
     out["first_run"] = {k: summary.get(k) for k in ("mode", "sent", "eligible", "pending", "failed")}
     content_ok = all(("<a href=\"https://" in t and "WAIT" not in t and "GHAZI RADAR" in t) for t in rec.texts)
     out["checks"]["content_from_real_events"] = content_ok
-    rec2 = Recorder()
-    _, summary2 = bot.run(report, copy.deepcopy(after), now=now + timedelta(minutes=30), send=rec2)
-    out["checks"]["second_run_sends_nothing_new"] = summary2.get("sent") == 0 and not rec2.texts
+    # Dedupe. The sender sends at most `maximum_new` (3) new events per run on purpose, so a
+    # backlog larger than that is drained over the next runs. Repeat runs until one sends
+    # nothing (bounded): every event must be sent exactly once, and the run after the
+    # backlog is gone must send nothing. A sender that resends never reaches a quiet run.
+    all_texts = list(rec.texts)
+    state_i, final_sent, runs = after, None, 0
+    for runs in range(1, len(found) // 3 + 3):
+        rec_i = Recorder()
+        state_i, summary_i = bot.run(report, copy.deepcopy(state_i), now=now + timedelta(minutes=30 * runs),
+                                     send=rec_i)
+        all_texts += rec_i.texts
+        final_sent = summary_i.get("sent")
+        if final_sent == 0 and not rec_i.texts:
+            break
+    out["drain"] = {"runs_after_first": runs, "total_sent": len(all_texts), "final_run_sent": final_sent}
+    out["checks"]["repeat_runs_send_each_event_once"] = (
+        final_sent == 0 and len(all_texts) == len(set(all_texts))
+        and len(all_texts) == out["eligible"] - out["already_delivered"])
     # 2) recovery: an empty state (every event new) with an outage after the first message
     fresh = {"schema": bot.SCHEMA, "seen": {}, "updated_at": now.isoformat()}
     broken = Recorder(fail_after=1)
