@@ -203,7 +203,14 @@ def guard_payload(payload: Any, *, kind: str, families: list[str] | None = None)
                 if isinstance(result.get(parent), dict):
                     result[parent] = _empty_priced_lists(result[parent], parent, blocked_sections)
     result = redact(result, families, counts)
+    withheld_whole = result is None
+    if withheld_whole:
+        # The file's own source is a closed family, so redact() dropped all of it.
+        # Publish a stub that keeps only our production time, never a value.
+        result = {"status": "LICENSE_BLOCKED", "redacted": True,
+                  "generated_at": payload.get("generated_at") if isinstance(payload.get("generated_at"), str) else None}
     result["public_license_guard"] = {
+        "withheld_whole_payload": withheld_whole,
         "applied_at": datetime.now(timezone.utc).isoformat(),
         "closed_families": families,
         "redacted_objects": counts,
