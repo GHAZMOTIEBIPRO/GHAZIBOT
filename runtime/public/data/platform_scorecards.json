@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-22T07:59:52.086211+00:00",
+ "generated_at": "2026-11-22T20:22:13.372478+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -24,7 +24,7 @@
     "stock-watch-charts.yml": {},
     "public-macro.yml": {},
     "site-evidence-strength.yml": {
-     "success": 2
+     "success": 1
     },
     "free-gex-validation.yml": {
      "success": 2
@@ -44,7 +44,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 20.0,
+   "value": 10.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -56,7 +56,7 @@
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
-    "macro_positioning": "AVAILABLE"
+    "macro_positioning": "STALE"
    },
    "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
    "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
@@ -96,16 +96,12 @@
    "note_ar": "الثقة هنا تعني صحة البنية ووضوح حق الاستخدام، لا دقة السعر."
   },
   "ANALYTICAL_VALIDITY": {
-   "status": "PASSING",
+   "status": "UNMEASURED",
    "value": null,
    "unit": "status",
-   "evidence": {
-    "run_id": 44562855433,
-    "conclusion": "success",
-    "at": "2026-11-19T16:09:16Z"
-   },
-   "method": "latest test workflow on main (Greeks oracle, gamma clock, guards, parsers)",
-   "note_ar": "نجاح الاختبارات يثبت صحة الحسابات على حالات معروفة، لا وجود أفضلية تداول."
+   "evidence": {},
+   "method": "no completed CI run on main read",
+   "note_ar": "تعذر قراءة نتيجة اختبارات الحساب."
   },
   "SIGNAL_PERFORMANCE": {
    "status": "NO_PROVEN_EDGE",
@@ -448,9 +444,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "last_sent_at": "2026-11-21T19:32:55.791826+00:00",
+    "last_sent_at": "2026-11-22T19:52:29.355370+00:00",
     "kind": "daily",
-    "message_id": 1461,
+    "message_id": 1463,
     "log": "state/telegram/ops_digest_state.json"
    },
    "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
@@ -488,7 +484,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-21T21:47:35.791215+00:00",
+   "generated_at": "2026-11-22T16:43:05.852213+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -504,8 +500,8 @@
     "yahoo"
    ],
    "rows": null,
-   "generated_at": "2026-11-21T21:47:14.511891+00:00",
-   "last_run_at": "2026-11-21T21:46:32Z"
+   "generated_at": "2026-11-22T16:42:44.360381+00:00",
+   "last_run_at": "2026-11-22T16:42:12Z"
   },
   "classical": {
    "label_ar": "الاتجاه الكلاسيكي",
@@ -521,7 +517,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-21T16:26:41Z"
+   "last_run_at": "2026-11-22T16:41:52Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -562,8 +558,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-21T21:47:01.355903+00:00",
-   "last_run_at": "2026-11-21T21:46:29Z"
+   "generated_at": "2026-11-22T16:42:31.493332+00:00",
+   "last_run_at": "2026-11-22T16:42:08Z"
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
