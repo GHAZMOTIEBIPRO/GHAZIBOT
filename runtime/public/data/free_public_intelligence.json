@@ -1,30 +1,25 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-11-23T16:12:56.149023+00:00",
+  "generated_at": "2026-11-23T16:36:10.720740+00:00",
   "status": "DEGRADED",
   "source_errors": {
-    "gdelt_attention": "COOLDOWN_ACTIVE",
+    "gdelt_attention": "JSONDecodeError",
     "bls_upcoming": "SOURCE_TERMS_BLOCKED",
     "press_wire_prnewswire": "SOURCE_TERMS_BLOCKED",
     "press_wire_globenewswire": "SOURCE_TERMS_BLOCKED",
     "google_news_all": "SOURCE_TERMS_BLOCKED"
   },
-  "source_cooldowns": {
-    "gdelt_attention": {
-      "last_error": "HTTP_429",
-      "retry_after": "2026-11-23T16:27:26.587404+00:00"
-    }
-  },
+  "source_cooldowns": {},
   "source_streaks": {
     "gdelt_attention": {
-      "consecutive_failures": 3,
+      "consecutive_failures": 4,
       "last_success_at": null,
       "first_failed_at": "2026-11-19T15:30:39.952983+00:00",
-      "last_error": "HTTP_429"
+      "last_error": "JSONDecodeError"
     },
     "fed_monetary": {
       "consecutive_failures": 0,
-      "last_success_at": "2026-11-23T16:12:56.149023+00:00"
+      "last_success_at": "2026-11-23T16:36:10.720740+00:00"
     },
     "bls_upcoming": {
       "consecutive_failures": 0,
@@ -47,13 +42,13 @@
   },
   "source_status": {
     "gdelt_attention": {
-      "state": "PAUSED_AFTER_REFUSALS",
-      "state_ar": "متوقف مؤقتًا بعد رفض المزود للطلبات (حد الاستخدام)",
-      "error": "COOLDOWN_ACTIVE",
+      "state": "FETCH_FAILED",
+      "state_ar": "تعذر الجلب",
+      "error": "JSONDecodeError",
       "items": 0,
-      "consecutive_failures": 3,
+      "consecutive_failures": 4,
       "last_success_at": null,
-      "retry_after": "2026-11-23T16:27:26.587404+00:00",
+      "retry_after": null,
       "empty_means_no_news": false
     },
     "fed_monetary": {
@@ -62,7 +57,7 @@
       "error": null,
       "items": 1,
       "consecutive_failures": 0,
-      "last_success_at": "2026-11-23T16:12:56.149023+00:00",
+      "last_success_at": "2026-11-23T16:36:10.720740+00:00",
       "retry_after": null,
       "empty_means_no_news": false
     },
