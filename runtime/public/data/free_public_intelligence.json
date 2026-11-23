@@ -1,25 +1,31 @@
 {
   "schema": "free_public_intelligence_v1",
-  "generated_at": "2026-11-23T16:36:10.720740+00:00",
+  "generated_at": "2026-11-23T16:58:41.678869+00:00",
   "status": "DEGRADED",
   "source_errors": {
-    "gdelt_attention": "JSONDecodeError",
+    "gdelt_attention": "HTTP_429",
     "bls_upcoming": "SOURCE_TERMS_BLOCKED",
     "press_wire_prnewswire": "SOURCE_TERMS_BLOCKED",
     "press_wire_globenewswire": "SOURCE_TERMS_BLOCKED",
     "google_news_all": "SOURCE_TERMS_BLOCKED"
   },
-  "source_cooldowns": {},
+  "source_cooldowns": {
+    "gdelt_attention": {
+      "last_error": "HTTP_429",
+      "retry_after": "2026-11-26T16:58:41.678869+00:00",
+      "pause_hours": 72
+    }
+  },
   "source_streaks": {
     "gdelt_attention": {
-      "consecutive_failures": 4,
+      "consecutive_failures": 5,
       "last_success_at": null,
       "first_failed_at": "2026-11-19T15:30:39.952983+00:00",
-      "last_error": "JSONDecodeError"
+      "last_error": "HTTP_429"
     },
     "fed_monetary": {
       "consecutive_failures": 0,
-      "last_success_at": "2026-11-23T16:36:10.720740+00:00"
+      "last_success_at": "2026-11-23T16:58:41.678869+00:00"
     },
     "bls_upcoming": {
       "consecutive_failures": 0,
@@ -44,11 +50,11 @@
     "gdelt_attention": {
       "state": "FETCH_FAILED",
       "state_ar": "تعذر الجلب",
-      "error": "JSONDecodeError",
+      "error": "HTTP_429",
       "items": 0,
-      "consecutive_failures": 4,
+      "consecutive_failures": 5,
       "last_success_at": null,
-      "retry_after": null,
+      "retry_after": "2026-11-26T16:58:41.678869+00:00",
       "empty_means_no_news": false
     },
     "fed_monetary": {
@@ -57,7 +63,7 @@
       "error": null,
       "items": 1,
       "consecutive_failures": 0,
-      "last_success_at": "2026-11-23T16:36:10.720740+00:00",
+      "last_success_at": "2026-11-23T16:58:41.678869+00:00",
       "retry_after": null,
       "empty_means_no_news": false
     },
