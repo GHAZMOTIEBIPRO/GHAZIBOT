@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-23T15:56:26.858002+00:00",
+ "generated_at": "2026-11-23T16:07:32.614936+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -22,11 +22,11 @@
      "success": 3
     },
     "stock-watch-charts.yml": {
-     "success": 1
+     "success": 2
     },
     "public-macro.yml": {},
     "site-evidence-strength.yml": {
-     "success": 7
+     "success": 8
     },
     "free-gex-validation.yml": {
      "success": 13
@@ -35,13 +35,15 @@
      "success": 12,
      "cancelled": 1
     },
-    "catalyst-watchlist.yml": {},
+    "catalyst-watchlist.yml": {
+     "success": 1
+    },
     "daily-plan.yml": {
      "success": 1
     },
     "fda-events.yml": {},
     "official-sec-pulse.yml": {
-     "success": 3
+     "success": 4
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
@@ -497,7 +499,7 @@
    "verdict_ar": "متوقف لغياب مصدر مؤهل",
    "run": "OK",
    "source": "BLOCKED_BY_TERMS",
-   "data": "STALE",
+   "data": "NOT_USABLE",
    "data_state": "LICENSE_BLOCKED",
    "analysis": "NOT_COMPUTED",
    "alerts": "NO_ALERT_PATH",
@@ -505,7 +507,7 @@
     "yahoo"
    ],
    "rows": null,
-   "generated_at": "2026-11-23T14:01:14.000377+00:00",
+   "generated_at": "2026-11-23T15:56:08.829104+00:00",
    "last_run_at": "2026-11-23T15:55:28Z"
   },
   "classical": {
@@ -526,17 +528,17 @@
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
-   "verdict_ar": "البيانات قديمة",
-   "run": "NO_RUN_24H",
+   "verdict_ar": "يعمل",
+   "run": "OK",
    "source": "AVAILABLE",
-   "data": "STALE",
-   "data_state": "STALE",
-   "analysis": "NOT_COMPUTED",
-   "alerts": "DELIVERED 2026-11-20T14:05:11.452961+00:00",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
+   "alerts": "DELIVERED 2026-11-23T16:03:16.595168+00:00",
    "closed_gates": [],
    "rows": 40,
-   "generated_at": "2026-11-21T03:17:00.465192+00:00",
-   "last_run_at": null
+   "generated_at": "2026-11-23T16:03:01.019867+00:00",
+   "last_run_at": "2026-11-23T15:59:43Z"
   },
   "fda": {
    "label_ar": "أحداث FDA",
@@ -564,7 +566,7 @@
    "closed_gates": [],
    "rows": null,
    "generated_at": "2026-11-23T12:02:20.846232+00:00",
-   "last_run_at": "2026-11-23T12:01:49Z"
+   "last_run_at": "2026-11-23T16:06:38Z"
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
