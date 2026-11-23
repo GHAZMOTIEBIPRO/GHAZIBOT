@@ -1,30 +1,29 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-21T03:14:32.655819+00:00",
+ "generated_at": "2026-11-23T16:00:07.476384+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 52,
-  "FAA": 107,
-  "FTC": 8,
-  "FERC": 126,
-  "NRC": 42,
-  "NHTSA": 13
+  "FDA": 47,
+  "FAA": 110,
+  "FTC": 6,
+  "FERC": 127,
+  "NRC": 39,
+  "NHTSA": 12
  },
  "counts": {
-  "after_noise_filter": 252,
-  "linked": 26,
+  "after_noise_filter": 244,
+  "linked": 23,
   "company_unlinked": 101,
-  "general": 125,
+  "general": 120,
   "by_kind": {
    "FR_PRIORITY_REVIEW_VOUCHER": 3,
-   "FR_AIRWORTHINESS_DIRECTIVE": 30,
-   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 27,
+   "FR_AIRWORTHINESS_DIRECTIVE": 27,
+   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 29,
    "FR_SPECIAL_CONDITIONS": 2,
-   "FR_FTC_CONSENT_ORDER": 1,
    "FR_ENERGY_REGULATORY_FILING": 52,
-   "FR_NUCLEAR_LICENSE_ACTION": 12
+   "FR_NUCLEAR_LICENSE_ACTION": 11
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
@@ -611,120 +610,6 @@
    "unmatched": []
   },
   {
-   "document_number": "2026-21686",
-   "date": "2026-10-23",
-   "agency": "FAA",
-   "type": "Rule",
-   "title": "Airworthiness Directives; The Boeing Company Airplanes; Correction",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21686/airworthiness-directives-the-boeing-company-airplanes-correction",
-   "effective_on": "2026-11-12",
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
-   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "risk",
-   "companies": [
-    "The Boeing Company"
-   ],
-   "links": [
-    {
-     "name": "The Boeing Company",
-     "ticker": "BA",
-     "legal_entity": "The Boeing Company",
-     "relation": "SAME_ENTITY",
-     "listed_company": "The Boeing Company",
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "HIGH",
-     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
-    }
-   ],
-   "unmatched": []
-  },
-  {
-   "document_number": "2026-21590",
-   "date": "2026-10-22",
-   "agency": "FAA",
-   "type": "Rule",
-   "title": "Airworthiness Directives; General Electric Company Engines",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/22/2026-21590/airworthiness-directives-general-electric-company-engines",
-   "effective_on": "2026-11-27",
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
-   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "risk",
-   "companies": [
-    "General Electric Company"
-   ],
-   "links": [
-    {
-     "name": "General Electric Company",
-     "ticker": "GE",
-     "legal_entity": "General Electric Company",
-     "relation": "SAME_ENTITY",
-     "listed_company": "GE Aerospace (legal name General Electric Company)",
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "HIGH",
-     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
-    }
-   ],
-   "unmatched": []
-  },
-  {
-   "document_number": "2026-21659",
-   "date": "2026-10-23",
-   "agency": "FTC",
-   "type": "Notice",
-   "title": "Publicis and LiveRamp; Analysis of Proposed Agreement Containing Consent Order To Aid Public Comment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21659/publicis-and-liveramp-analysis-of-proposed-agreement-containing-consent-order-to-aid-public-comment",
-   "effective_on": null,
-   "comments_close_on": "2026-11-23",
-   "status": "LINKED",
-   "kind": "FR_FTC_CONSENT_ORDER",
-   "label_ar": "⚠ تسوية مقترحة مع لجنة التجارة الفيدرالية (FTC)",
-   "document_type": "FR_FTC_CONSENT_ORDER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "risk",
-   "companies": [
-    "Publicis",
-    "LiveRamp"
-   ],
-   "links": [
-    {
-     "name": "LiveRamp",
-     "ticker": "RAMP",
-     "legal_entity": "LiveRamp Holdings, Inc.",
-     "relation": "SAME_ENTITY",
-     "listed_company": "LiveRamp Holdings, Inc.",
-     "exposure": "DIRECT",
-     "name_basis": "OTHER_REVIEWED_NAME",
-     "interpretation_confidence": "HIGH",
-     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
-    }
-   ],
-   "unmatched": [
-    {
-     "name": "Publicis",
-     "reason": "LISTED_OUTSIDE_US"
-    }
-   ]
-  },
-  {
    "document_number": "2026-23361",
    "date": "2026-11-17",
    "agency": "FERC",
@@ -1045,6 +930,64 @@
     {
      "name": "Scholar Rock, Inc.",
      "reason": "OWNERSHIP_NOT_VERIFIED"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23752",
+   "date": "2026-11-23",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; ATR-GIE Avions de Transport Régional Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/23/2026-23752/airworthiness-directives-atr-gie-avions-de-transport-rgional-airplanes",
+   "effective_on": null,
+   "comments_close_on": "2027-01-07",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "ATR-GIE Avions de Transport Régional"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "ATR-GIE Avions de Transport Régional",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23749",
+   "date": "2026-11-23",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; ATR-GIE Avions de Transport Régional Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/23/2026-23749/airworthiness-directives-atr-gie-avions-de-transport-rgional-airplanes",
+   "effective_on": null,
+   "comments_close_on": "2027-01-07",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "ATR-GIE Avions de Transport Régional"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "ATR-GIE Avions de Transport Régional",
+     "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
   },
@@ -2234,35 +2177,6 @@
     {
      "name": "Airbus",
      "reason": "LISTED_OUTSIDE_US"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-21664",
-   "date": "2026-10-23",
-   "agency": "FAA",
-   "type": "Rule",
-   "title": "Airworthiness Directives; MD Helicopters, LLC Helicopters",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21664/airworthiness-directives-md-helicopters-llc-helicopters",
-   "effective_on": "2026-11-27",
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
-   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "risk",
-   "companies": [
-    "MD Helicopters, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "MD Helicopters, LLC",
-     "reason": "PRIVATE"
     }
    ]
   },
@@ -3631,6 +3545,35 @@
    ]
   },
   {
+   "document_number": "2026-23754",
+   "date": "2026-11-23",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "Radiant Industries, Inc.; Special Nuclear Materials License Application for a Fuel Packing Facility; Environmental Assessment and Finding of No Significant Impact",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/23/2026-23754/radiant-industries-inc-special-nuclear-materials-license-application-for-a-fuel-packing-facility",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Radiant Industries, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Radiant Industries, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
    "document_number": "2026-23630",
    "date": "2026-11-20",
    "agency": "NRC",
@@ -3890,67 +3833,20 @@
      "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
-  },
-  {
-   "document_number": "2026-21594",
-   "date": "2026-10-22",
-   "agency": "NRC",
-   "type": "Notice",
-   "title": "Palisades Energy, LLC; Palisades Nuclear Plant; License Amendment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/22/2026-21594/palisades-energy-llc-palisades-nuclear-plant-license-amendment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_NUCLEAR_LICENSE_ACTION",
-   "label_ar": "إجراء ترخيص نووي (NRC)",
-   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Palisades Energy, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Palisades Energy, LLC",
-     "reason": "PRIVATE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-21588",
-   "date": "2026-10-22",
-   "agency": "NRC",
-   "type": "Notice",
-   "title": "SMR, LLC; Palisades SMR, LLC; Pioneer Units 1 and 2; Phased Construction Permit Application-Limited Work Authorization",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/22/2026-21588/smr-llc-palisades-smr-llc-pioneer-units-1-and-2-phased-construction-permit-application-limited-work",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_NUCLEAR_LICENSE_ACTION",
-   "label_ar": "إجراء ترخيص نووي (NRC)",
-   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "SMR, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "SMR, LLC",
-     "reason": "PRIVATE"
-    }
-   ]
   }
  ],
  "general": [
+  {
+   "document_number": "2026-23750",
+   "date": "2026-11-23",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Tobacco Products Scientific Advisory Committee; Notice of Meeting; Establishment of a Public Docket; Request for Comments",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/23/2026-23750/tobacco-products-scientific-advisory-committee-notice-of-meeting-establishment-of-a-public-docket",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
   {
    "document_number": "2026-23692",
    "date": "2026-11-20",
@@ -4326,47 +4222,25 @@
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-21711",
-   "date": "2026-10-23",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Determination of Regulatory Review Period for Purposes of Patent Extension; Correction of Notices-ANDEMBRY; ANZUPGO; ANKTIVA; BIZENGRI; BRINSUPRI; DAYVIGO",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21711/determination-of-regulatory-review-period-for-purposes-of-patent-extension-correction-of",
-   "effective_on": null,
+   "document_number": "2026-23786",
+   "date": "2026-11-23",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Miscellaneous Technical Amendments; Technical Amendment",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/23/2026-23786/miscellaneous-technical-amendments-technical-amendment",
+   "effective_on": "2026-11-23",
    "comments_close_on": null,
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-21679",
-   "date": "2026-10-23",
-   "agency": "FDA",
+   "document_number": "2026-23763",
+   "date": "2026-11-23",
+   "agency": "FAA",
    "type": "Notice",
-   "title": "Questions and Answers Regarding Mandatory Cosmetics Recalls; Guidance for Industry; Availability",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21679/questions-and-answers-regarding-mandatory-cosmetics-recalls-guidance-for-industry-availability",
+   "title": "Notice of Intent To Designate as Abandoned Heli-Support, Inc. Supplemental Type Certificates",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/23/2026-23763/notice-of-intent-to-designate-as-abandoned-heli-support-inc-supplemental-type-certificates",
    "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21670",
-   "date": "2026-10-23",
-   "agency": "FDA",
-   "type": "Proposed Rule",
-   "title": "Action Levels for Cadmium in Processed Food Intended for Babies and Young Children; Draft Guidance for Industry; Availability",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21670/action-levels-for-cadmium-in-processed-food-intended-for-babies-and-young-children-draft-guidance",
-   "effective_on": null,
-   "comments_close_on": "2026-12-22",
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21669",
-   "date": "2026-10-23",
-   "agency": "FDA",
-   "type": "Proposed Rule",
-   "title": "Hazard Analysis and Risk-Based Preventive Controls for Human Food; Draft Guidance for Industry; Availability",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/23/2026-21669/hazard-analysis-and-risk-based-preventive-controls-for-human-food-draft-guidance-for-industry",
-   "effective_on": null,
-   "comments_close_on": "2027-01-21",
+   "comments_close_on": "2027-05-24",
    "status": "GENERAL"
   },
   {
@@ -4711,17 +4585,6 @@
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-21630",
-   "date": "2026-10-22",
-   "agency": "FTC",
-   "type": "Notice",
-   "title": "Granting of Requests for Early Termination of the Waiting Period under the Premerger Notification Rules",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/22/2026-21630/granting-of-requests-for-early-termination-of-the-waiting-period-under-the-premerger-notification",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
    "document_number": "2026-23674",
    "date": "2026-11-20",
    "agency": "FERC",
@@ -4827,6 +4690,28 @@
    "type": "Notice",
    "title": "Records Governing Off-the-Record Communications; Public Notice",
    "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22724/records-governing-off-the-record-communications-public-notice",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22723",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Filing Process and Data Collection for the Electric Quarterly Report Notice of Technical Conference",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22723/filing-process-and-data-collection-for-the-electric-quarterly-report-notice-of-technical-conference",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-22720",
+   "date": "2026-11-06",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Dauphin Island Gathering Partners; Notice of Schedule for the Preparation of an Environmental Assessment for the Dauphin Island Gathering Partners Abandonment Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22720/dauphin-island-gathering-partners-notice-of-schedule-for-the-preparation-of-an-environmental",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
