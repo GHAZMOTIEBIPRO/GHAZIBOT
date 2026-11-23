@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-23T09:07:19.825927+00:00",
+ "generated_at": "2026-11-23T12:08:19.840157+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,15 +8,15 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 2
+     "success": 3
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
-     "success": 1
+     "success": 2
     },
     "fast-explosion-radar.yml": {},
     "classical-direction-radar.yml": {
-     "success": 1
+     "success": 2
     },
     "index-radar.yml": {
      "success": 1
@@ -24,19 +24,20 @@
     "stock-watch-charts.yml": {},
     "public-macro.yml": {},
     "site-evidence-strength.yml": {
-     "success": 1
-    },
-    "free-gex-validation.yml": {
      "success": 2
     },
+    "free-gex-validation.yml": {
+     "success": 3
+    },
     "market-orchestrator.yml": {
-     "success": 4
+     "success": 8,
+     "cancelled": 1
     },
     "catalyst-watchlist.yml": {},
     "daily-plan.yml": {},
     "fda-events.yml": {},
     "official-sec-pulse.yml": {
-     "success": 2
+     "success": 3
     }
    },
    "method": "success / (success + failure + timeout) over core workflows; cancelled and skipped excluded",
@@ -444,9 +445,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "last_sent_at": "2026-11-22T19:52:29.355370+00:00",
-    "kind": "daily",
-    "message_id": 1463,
+    "last_sent_at": "2026-11-23T09:08:17.676624+00:00",
+    "kind": "change",
+    "message_id": 1465,
     "log": "state/telegram/ops_digest_state.json"
    },
    "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
@@ -484,7 +485,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-22T22:03:35.645077+00:00",
+   "generated_at": "2026-11-23T12:02:53.768551+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -492,7 +493,7 @@
    "verdict_ar": "متوقف لغياب مصدر مؤهل",
    "run": "OK",
    "source": "BLOCKED_BY_TERMS",
-   "data": "NOT_USABLE",
+   "data": "STALE",
    "data_state": "LICENSE_BLOCKED",
    "analysis": "NOT_COMPUTED",
    "alerts": "NO_ALERT_PATH",
@@ -517,7 +518,7 @@
    ],
    "rows": null,
    "generated_at": "2026-10-20T18:57:41.297165+00:00",
-   "last_run_at": "2026-11-22T16:41:52Z"
+   "last_run_at": "2026-11-23T12:01:32Z"
   },
   "catalysts": {
    "label_ar": "المحفزات الرسمية",
@@ -558,8 +559,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-22T22:03:02.193556+00:00",
-   "last_run_at": "2026-11-22T22:02:28Z"
+   "generated_at": "2026-11-23T12:02:20.846232+00:00",
+   "last_run_at": "2026-11-23T12:01:49Z"
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
