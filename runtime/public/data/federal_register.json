@@ -1,29 +1,29 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-24T05:23:48.590195+00:00",
+ "generated_at": "2026-11-24T15:54:57.858837+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
   "FDA": 47,
-  "FAA": 110,
+  "FAA": 120,
   "FTC": 6,
-  "FERC": 127,
-  "NRC": 39,
+  "FERC": 142,
+  "NRC": 44,
   "NHTSA": 12
  },
  "counts": {
-  "after_noise_filter": 244,
-  "linked": 23,
-  "company_unlinked": 101,
-  "general": 120,
+  "after_noise_filter": 269,
+  "linked": 25,
+  "company_unlinked": 118,
+  "general": 126,
   "by_kind": {
    "FR_PRIORITY_REVIEW_VOUCHER": 3,
-   "FR_AIRWORTHINESS_DIRECTIVE": 27,
-   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 29,
+   "FR_AIRWORTHINESS_DIRECTIVE": 32,
+   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 31,
    "FR_SPECIAL_CONDITIONS": 2,
-   "FR_ENERGY_REGULATORY_FILING": 52,
-   "FR_NUCLEAR_LICENSE_ACTION": 11
+   "FR_ENERGY_REGULATORY_FILING": 61,
+   "FR_NUCLEAR_LICENSE_ACTION": 14
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
@@ -61,6 +61,82 @@
      "name_basis": "LEGAL_NAME",
      "interpretation_confidence": "MEDIUM",
      "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
+    }
+   ],
+   "unmatched": []
+  },
+  {
+   "document_number": "2026-23926",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; The Boeing Company Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23926/airworthiness-directives-the-boeing-company-airplanes",
+   "effective_on": "2026-12-01",
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "The Boeing Company"
+   ],
+   "links": [
+    {
+     "name": "The Boeing Company",
+     "ticker": "BA",
+     "legal_entity": "The Boeing Company",
+     "relation": "SAME_ENTITY",
+     "listed_company": "The Boeing Company",
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
+    }
+   ],
+   "unmatched": []
+  },
+  {
+   "document_number": "2026-23860",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; CFM International, S.A. Engines",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23860/airworthiness-directives-cfm-international-sa-engines",
+   "effective_on": "2026-12-29",
+   "comments_close_on": null,
+   "status": "LINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "CFM International, S.A."
+   ],
+   "links": [
+    {
+     "name": "CFM International, S.A.",
+     "ticker": "GE",
+     "legal_entity": "CFM International, S.A.",
+     "relation": "JOINT_VENTURE_PARTNER",
+     "validity_source": "https://en.wikipedia.org/wiki/CFM_International",
+     "ownership_band": "EQUAL_JOINT_VENTURE",
+     "ownership_share": 0.5,
+     "relation_as_of": "2026-10-29",
+     "listed_company": "General Electric Company (GE Aerospace)",
+     "exposure": "INDIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "MEDIUM",
+     "confidence_basis": "the named entity is linked through a documented ownership relation, not the listed company itself; its share of any effect is not assessed"
     }
    ],
    "unmatched": []
@@ -930,6 +1006,151 @@
     {
      "name": "Scholar Rock, Inc.",
      "reason": "OWNERSHIP_NOT_VERIFIED"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23880",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Airbus Helicopters",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23880/airworthiness-directives-airbus-helicopters",
+   "effective_on": null,
+   "comments_close_on": "2027-01-08",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Airbus"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23879",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; Airbus Helicopters",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23879/airworthiness-directives-airbus-helicopters",
+   "effective_on": "2026-12-29",
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "Airbus"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23877",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; Bell Textron Canada Limited Helicopters",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23877/airworthiness-directives-bell-textron-canada-limited-helicopters",
+   "effective_on": "2026-12-09",
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "Bell Textron Canada Limited"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Bell Textron Canada Limited",
+     "reason": "OWNERSHIP_NOT_VERIFIED"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23874",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23874/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
+   "effective_on": null,
+   "comments_close_on": "2027-01-08",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Airbus Helicopters Deutschland GmbH"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus Helicopters Deutschland GmbH",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23873",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; Airbus Helicopters",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23873/airworthiness-directives-airbus-helicopters",
+   "effective_on": "2026-12-29",
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "Airbus"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus",
+     "reason": "LISTED_OUTSIDE_US"
     }
    ]
   },
@@ -2177,6 +2398,267 @@
     {
      "name": "Airbus",
      "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23894",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Southern Star Central Gas Pipeline, Inc.; Notice of Schedule for the Preparation of an Environmental Assessment for the Evergy Mcnew Power Plant Delivery Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23894/southern-star-central-gas-pipeline-inc-notice-of-schedule-for-the-preparation-of-an-environmental",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Southern Star Central Gas Pipeline, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Southern Star Central Gas Pipeline, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23893",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Eastern Gas Transmission and Storage, Inc.; Notice of Application and Establishing Intervention Deadline",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23893/eastern-gas-transmission-and-storage-inc-notice-of-application-and-establishing-intervention",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Eastern Gas Transmission and Storage, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Eastern Gas Transmission and Storage, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23892",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Columbia Gas Transmission, LLC; Notice of Request Under Blanket Authorization and Establishing Intervention and Protest Deadline",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23892/columbia-gas-transmission-llc-notice-of-request-under-blanket-authorization-and-establishing",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Columbia Gas Transmission, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Columbia Gas Transmission, LLC",
+     "reason": "EVIDENCE_PENDING"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23891",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Enable Gas Transmission, LLC; Notice of Request Under Blanket Authorization and Establishing Intervention and Protest Deadline",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23891/enable-gas-transmission-llc-notice-of-request-under-blanket-authorization-and-establishing",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Enable Gas Transmission, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Enable Gas Transmission, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23888",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Forestport Hydro, LLC; Notice of Availability of Environmental Assessment",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23888/forestport-hydro-llc-notice-of-availability-of-environmental-assessment",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Forestport Hydro, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Forestport Hydro, LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23835",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Tres Palacios Gas Storage LLC; Notice of Schedule for the Preparation of an Environmental Assessment for the Tres Palacios Smith Cavern Expansion Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23835/tres-palacios-gas-storage-llc-notice-of-schedule-for-the-preparation-of-an-environmental-assessment",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Tres Palacios Gas Storage LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Tres Palacios Gas Storage LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23834",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Spire MoGas Pipeline LLC; Notice of Request Under Blanket Authorization and Establishing Intervention and Protest Deadline",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23834/spire-mogas-pipeline-llc-notice-of-request-under-blanket-authorization-and-establishing-intervention",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Spire MoGas Pipeline LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Spire MoGas Pipeline LLC",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23832",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "City of Hamilton, Ohio and American Municipal Power, Inc.; Notice of Availability of Environmental Assessment",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23832/city-of-hamilton-ohio-and-american-municipal-power-inc-notice-of-availability-of-environmental",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Ohio and American Municipal Power, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Ohio and American Municipal Power, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23831",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Seefeld Corporation; Notice of Intent To Prepare an Environmental Assessment",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23831/seefeld-corporation-notice-of-intent-to-prepare-an-environmental-assessment",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Seefeld Corporation"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Seefeld Corporation",
+     "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
   },
@@ -3545,6 +4027,93 @@
    ]
   },
   {
+   "document_number": "2026-23887",
+   "date": "2026-11-24",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "Southern Nuclear Operating Company; Vogtle Electric Generating Plant, Units 3 and 4; Exemptions",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23887/southern-nuclear-operating-company-vogtle-electric-generating-plant-units-3-and-4-exemptions",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Southern Nuclear Operating Company"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Southern Nuclear Operating Company",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23865",
+   "date": "2026-11-24",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "International Isotopes Fluorine Products, Inc.; Consideration of Approval of Transfer of Control of License",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23865/international-isotopes-fluorine-products-inc-consideration-of-approval-of-transfer-of-control-of",
+   "effective_on": null,
+   "comments_close_on": "2026-12-24",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "International Isotopes Fluorine Products, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "International Isotopes Fluorine Products, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-23826",
+   "date": "2026-11-24",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "SMR, LLC; Palisades SMR, LLC; Pioneer Units 1 and 2; Receipt of Construction Permit Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23826/smr-llc-palisades-smr-llc-pioneer-units-1-and-2-receipt-of-construction-permit-application",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "SMR, LLC"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "SMR, LLC",
+     "reason": "PRIVATE"
+    }
+   ]
+  },
+  {
    "document_number": "2026-23754",
    "date": "2026-11-23",
    "agency": "NRC",
@@ -4222,6 +4791,17 @@
    "status": "GENERAL"
   },
   {
+   "document_number": "2026-23900",
+   "date": "2026-11-24",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "IFR Altitudes; Miscellaneous Amendments",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23900/ifr-altitudes-miscellaneous-amendments",
+   "effective_on": "2026-12-24",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-23786",
    "date": "2026-11-23",
    "agency": "FAA",
@@ -4585,6 +5165,50 @@
    "status": "GENERAL"
   },
   {
+   "document_number": "2026-23890",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Bonneville Power Administration; Notice of Filing",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23890/bonneville-power-administration-notice-of-filing",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23889",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "The City of Columbus, Ohio; Notice of Intent To Prepare an Environmental Assessment",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23889/the-city-of-columbus-ohio-notice-of-intent-to-prepare-an-environmental-assessment",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23884",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Rule",
+   "title": "Denial of Rehearing Requests by Operation of Law Under the Commission's Rules of Practice and Procedure",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23884/denial-of-rehearing-requests-by-operation-of-law-under-the-commissions-rules-of-practice-and",
+   "effective_on": "2026-12-24",
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23833",
+   "date": "2026-11-24",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "FERC Form 580 Interrogatories on Fuel and Energy Purchase Practices; Notice of Request for Partial Waiver",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23833/ferc-form-580-interrogatories-on-fuel-and-energy-purchase-practices-notice-of-request-for-partial",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-23674",
    "date": "2026-11-20",
    "agency": "FERC",
@@ -4657,61 +5281,6 @@
    "type": "Notice",
    "title": "Equitrans, L.P.; Notice of Request Under Blanket Authorization and Establishing Intervention and Protest Deadline",
    "source_url": "https://www.federalregister.gov/documents/2026/11/13/2026-23170/equitrans-lp-notice-of-request-under-blanket-authorization-and-establishing-intervention-and-protest",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22880",
-   "date": "2026-11-10",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Notice of Effectiveness of Exempt Wholesale Generator Status",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/10/2026-22880/notice-of-effectiveness-of-exempt-wholesale-generator-status",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22762",
-   "date": "2026-11-09",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Reliability Technical Conference; Notice Inviting Post-Technical Conference Comments",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/09/2026-22762/reliability-technical-conference-notice-inviting-post-technical-conference-comments",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22724",
-   "date": "2026-11-06",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Records Governing Off-the-Record Communications; Public Notice",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22724/records-governing-off-the-record-communications-public-notice",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22723",
-   "date": "2026-11-06",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Filing Process and Data Collection for the Electric Quarterly Report Notice of Technical Conference",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22723/filing-process-and-data-collection-for-the-electric-quarterly-report-notice-of-technical-conference",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-22720",
-   "date": "2026-11-06",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Dauphin Island Gathering Partners; Notice of Schedule for the Preparation of an Environmental Assessment for the Dauphin Island Gathering Partners Abandonment Project",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/06/2026-22720/dauphin-island-gathering-partners-notice-of-schedule-for-the-preparation-of-an-environmental",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
