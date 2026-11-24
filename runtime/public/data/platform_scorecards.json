@@ -1,6 +1,6 @@
 {
  "schema": "ghazi.platform_scorecards.v1",
- "generated_at": "2026-11-23T23:54:58.812050+00:00",
+ "generated_at": "2026-11-24T00:51:32.885629+00:00",
  "scorecards": {
   "SYSTEM_RELIABILITY": {
    "status": "MEASURED",
@@ -8,7 +8,7 @@
    "unit": "percent of completed runs (24 h)",
    "evidence": {
     "options-radar.yml": {
-     "success": 11
+     "success": 12
     },
     "stock-radar.yml": {},
     "options-contract-radar.yml": {
@@ -24,22 +24,24 @@
     "stock-watch-charts.yml": {
      "success": 5
     },
-    "public-macro.yml": {},
+    "public-macro.yml": {
+     "success": 1
+    },
     "site-evidence-strength.yml": {
-     "success": 19
+     "success": 20
     },
     "free-gex-validation.yml": {
      "success": 29
     },
     "market-orchestrator.yml": {
-     "success": 19,
+     "success": 20,
      "cancelled": 2
     },
     "catalyst-watchlist.yml": {
-     "success": 2
+     "success": 3
     },
     "daily-plan.yml": {
-     "success": 2
+     "success": 3
     },
     "fda-events.yml": {},
     "official-sec-pulse.yml": {
@@ -51,7 +53,7 @@
   },
   "DATA_COVERAGE": {
    "status": "MEASURED",
-   "value": 10.0,
+   "value": 20.0,
    "unit": "percent of capabilities",
    "evidence": {
     "index_prices": "LICENSE_BLOCKED",
@@ -63,7 +65,7 @@
     "classical_direction": "LICENSE_BLOCKED",
     "news_and_events": "AVAILABLE",
     "issuer_filings": "SOURCE_UNAVAILABLE",
-    "macro_positioning": "STALE"
+    "macro_positioning": "AVAILABLE"
    },
    "method": "a capability counts only when its published file is current, permitted and validated by timestamp",
    "note_ar": "التغطية تقيس توفر البيانات المسموح بها، لا جودتها التنبؤية."
@@ -451,9 +453,9 @@
    "value": null,
    "unit": "status",
    "evidence": {
-    "last_sent_at": "2026-11-23T09:08:17.676624+00:00",
+    "last_sent_at": "2026-11-23T23:56:01.079095+00:00",
     "kind": "change",
-    "message_id": 1465,
+    "message_id": 1475,
     "log": "state/telegram/ops_digest_state.json"
    },
    "method": "Telegram accepted a message and returned its message_id (ops digest delivery log)",
@@ -491,7 +493,7 @@
     "yahoo"
    ],
    "rows": 0,
-   "generated_at": "2026-11-23T22:31:50.433476+00:00",
+   "generated_at": "2026-11-24T00:03:16.209981+00:00",
    "last_run_at": null
   },
   "index_radar": {
@@ -537,8 +539,8 @@
    "alerts": "DELIVERED 2026-11-23T16:03:16.595168+00:00",
    "closed_gates": [],
    "rows": 40,
-   "generated_at": "2026-11-23T20:10:17.167499+00:00",
-   "last_run_at": "2026-11-23T20:06:51Z"
+   "generated_at": "2026-11-23T23:58:06.236967+00:00",
+   "last_run_at": "2026-11-23T23:54:25Z"
   },
   "fda": {
    "label_ar": "أحداث FDA",
@@ -570,17 +572,17 @@
   },
   "macro": {
    "label_ar": "الخزانة وCFTC",
-   "verdict_ar": "البيانات قديمة",
-   "run": "NO_RUN_24H",
+   "verdict_ar": "يعمل",
+   "run": "OK",
    "source": "AVAILABLE",
-   "data": "STALE",
-   "data_state": "STALE",
-   "analysis": "NOT_COMPUTED",
+   "data": "FRESH",
+   "data_state": "DELAYED",
+   "analysis": "COMPUTED",
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-21T03:30:16.953075+00:00",
-   "last_run_at": null
+   "generated_at": "2026-11-24T00:23:14.951519+00:00",
+   "last_run_at": "2026-11-24T00:22:45Z"
   },
   "daily_plan": {
    "label_ar": "خطة اليوم",
@@ -593,8 +595,8 @@
    "alerts": "NO_ALERT_PATH",
    "closed_gates": [],
    "rows": null,
-   "generated_at": "2026-11-23T22:56:11.474853+00:00",
-   "last_run_at": "2026-11-23T22:55:30Z"
+   "generated_at": "2026-11-24T00:24:59.432570+00:00",
+   "last_run_at": "2026-11-24T00:24:17Z"
   }
  },
  "original_evidence_score": {
