@@ -1,8 +1,8 @@
 {
  "schema": "ghazi.source_log.v1",
- "generated_at": "2026-11-25T22:33:47.989975+00:00",
+ "generated_at": "2026-11-25T22:47:38.492880+00:00",
  "window_days": 14,
- "window_start": "2026-11-11T22:33:47.989975+00:00",
+ "window_start": "2026-11-11T22:47:38.492880+00:00",
  "method": "One run = one published version of the producer's file (distinct generated_at) on bot-state. NOT_ATTEMPTED (gate, key, terms) is excluded from the ratio; a run that never wrote its file is not seen here (see workflow reliability).",
  "method_ar": "كل تشغيل = نسخة منشورة من ملف المصدر على bot-state خلال النافذة. التشغيل الموقوف بسبب شرط أو مفتاح لا يُحسب فشلًا ولا نجاحًا. نجاح الجلب لا يعني صحة التحليل.",
  "sources": [
@@ -94,16 +94,16 @@
     ]
    },
    "rights_key": "cboe_delayed",
-   "runs_seen": 300,
+   "runs_seen": 301,
    "attempted": 0,
    "succeeded": 0,
    "fully_ok": 0,
    "success_ratio": null,
    "last_success_at": null,
-   "last_run_at": "2026-11-25T22:14:04.861568+00:00",
+   "last_run_at": "2026-11-25T22:36:09.415317+00:00",
    "last_outcome": "NOT_ATTEMPTED",
    "last_detail": "SOURCE_TERMS_BLOCKED",
-   "last_commit": "d64b3b7808"
+   "last_commit": "f48d382a6c"
   },
   {
    "key": "sec_edgar",
@@ -158,16 +158,16 @@
     ]
    },
    "rights_key": "company_ir_feeds",
-   "runs_seen": 64,
-   "attempted": 64,
-   "succeeded": 64,
-   "fully_ok": 63,
+   "runs_seen": 65,
+   "attempted": 65,
+   "succeeded": 65,
+   "fully_ok": 64,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-25T21:44:07.532446+00:00",
-   "last_run_at": "2026-11-25T21:44:07.532446+00:00",
-   "last_outcome": "PARTIAL",
-   "last_detail": "4/10",
-   "last_commit": "d2c8305b53"
+   "last_success_at": "2026-11-25T22:41:41.943561+00:00",
+   "last_run_at": "2026-11-25T22:41:41.943561+00:00",
+   "last_outcome": "OK",
+   "last_detail": "10/10",
+   "last_commit": "997a888ad3"
   },
   {
    "key": "treasury",
@@ -350,16 +350,16 @@
     "unknown": []
    },
    "rights_key": "usaspending",
-   "runs_seen": 64,
-   "attempted": 64,
-   "succeeded": 64,
-   "fully_ok": 64,
+   "runs_seen": 65,
+   "attempted": 65,
+   "succeeded": 65,
+   "fully_ok": 65,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-25T21:44:13.638885+00:00",
-   "last_run_at": "2026-11-25T21:44:13.638885+00:00",
+   "last_success_at": "2026-11-25T22:41:54.898436+00:00",
+   "last_run_at": "2026-11-25T22:41:54.898436+00:00",
    "last_outcome": "OK",
    "last_detail": "10/10",
-   "last_commit": "d2c8305b53"
+   "last_commit": "997a888ad3"
   },
   {
    "key": "openfda",
@@ -382,16 +382,16 @@
     "unknown": []
    },
    "rights_key": "openfda",
-   "runs_seen": 22,
-   "attempted": 22,
-   "succeeded": 22,
-   "fully_ok": 22,
+   "runs_seen": 23,
+   "attempted": 23,
+   "succeeded": 23,
+   "fully_ok": 23,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-25T04:22:09.348715+00:00",
-   "last_run_at": "2026-11-25T04:22:09.348715+00:00",
+   "last_success_at": "2026-11-25T22:40:37.636933+00:00",
+   "last_run_at": "2026-11-25T22:40:37.636933+00:00",
    "last_outcome": "OK",
    "last_detail": "no errors",
-   "last_commit": "bc22c4c169"
+   "last_commit": "1d91712eb6"
   },
   {
    "key": "clinicaltrials",
@@ -414,16 +414,16 @@
     ]
    },
    "rights_key": null,
-   "runs_seen": 64,
-   "attempted": 64,
-   "succeeded": 62,
+   "runs_seen": 65,
+   "attempted": 65,
+   "succeeded": 63,
    "fully_ok": 0,
    "success_ratio": 0.969,
-   "last_success_at": "2026-11-25T21:43:55.054862+00:00",
-   "last_run_at": "2026-11-25T21:43:55.054862+00:00",
+   "last_success_at": "2026-11-25T22:41:31.791306+00:00",
+   "last_run_at": "2026-11-25T22:41:31.791306+00:00",
    "last_outcome": "PARTIAL",
    "last_detail": "PARTIAL",
-   "last_commit": "d2c8305b53"
+   "last_commit": "997a888ad3"
   },
   {
    "key": "federal_register",
@@ -446,16 +446,16 @@
     "unknown": []
    },
    "rights_key": "federal_register",
-   "runs_seen": 64,
-   "attempted": 64,
-   "succeeded": 64,
-   "fully_ok": 64,
+   "runs_seen": 65,
+   "attempted": 65,
+   "succeeded": 65,
+   "fully_ok": 65,
    "success_ratio": 1.0,
-   "last_success_at": "2026-11-25T21:43:59.440390+00:00",
-   "last_run_at": "2026-11-25T21:43:59.440390+00:00",
+   "last_success_at": "2026-11-25T22:41:34.967044+00:00",
+   "last_run_at": "2026-11-25T22:41:34.967044+00:00",
    "last_outcome": "OK",
    "last_detail": "281 documents",
-   "last_commit": "d2c8305b53"
+   "last_commit": "997a888ad3"
   },
   {
    "key": "fred",
