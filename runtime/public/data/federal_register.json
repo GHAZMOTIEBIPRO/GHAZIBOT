@@ -1,29 +1,29 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-26T04:10:51.617812+00:00",
+ "generated_at": "2026-11-26T15:19:45.775378+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 49,
-  "FAA": 126,
-  "FTC": 5,
-  "FERC": 139,
-  "NRC": 42,
-  "NHTSA": 12
+  "FDA": 51,
+  "FAA": 133,
+  "FTC": 6,
+  "FERC": 144,
+  "NRC": 45,
+  "NHTSA": 13
  },
  "counts": {
-  "after_noise_filter": 274,
-  "linked": 27,
-  "company_unlinked": 120,
-  "general": 127,
+  "after_noise_filter": 288,
+  "linked": 28,
+  "company_unlinked": 127,
+  "general": 133,
   "by_kind": {
    "FR_PRIORITY_REVIEW_VOUCHER": 2,
-   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 34,
-   "FR_AIRWORTHINESS_DIRECTIVE": 34,
+   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 37,
+   "FR_AIRWORTHINESS_DIRECTIVE": 35,
    "FR_SPECIAL_CONDITIONS": 2,
-   "FR_ENERGY_REGULATORY_FILING": 60,
-   "FR_NUCLEAR_LICENSE_ACTION": 15
+   "FR_ENERGY_REGULATORY_FILING": 62,
+   "FR_NUCLEAR_LICENSE_ACTION": 17
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
@@ -61,6 +61,42 @@
      "name_basis": "LEGAL_NAME",
      "interpretation_confidence": "MEDIUM",
      "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
+    }
+   ],
+   "unmatched": []
+  },
+  {
+   "document_number": "2026-24099",
+   "date": "2026-11-27",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; General Electric Company Engines",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24099/airworthiness-directives-general-electric-company-engines",
+   "effective_on": null,
+   "comments_close_on": "2027-01-11",
+   "status": "LINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "General Electric Company"
+   ],
+   "links": [
+    {
+     "name": "General Electric Company",
+     "ticker": "GE",
+     "legal_entity": "General Electric Company",
+     "relation": "SAME_ENTITY",
+     "listed_company": "GE Aerospace (legal name General Electric Company)",
+     "exposure": "DIRECT",
+     "name_basis": "LEGAL_NAME",
+     "interpretation_confidence": "HIGH",
+     "confidence_basis": "company read from the title with the document type's fixed pattern; runner-verified reviewed row"
     }
    ],
    "unmatched": []
@@ -1051,6 +1087,93 @@
    "companies": [],
    "links": [],
    "unmatched": []
+  },
+  {
+   "document_number": "2026-24137",
+   "date": "2026-11-27",
+   "agency": "FAA",
+   "type": "Rule",
+   "title": "Airworthiness Directives; Airbus Canada Limited Partnership (Type Certificate Previously Held by C Series Aircraft Limited Partnership (CSALP); Bombardier, Inc.) Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24137/airworthiness-directives-airbus-canada-limited-partnership-type-certificate-previously-held-by-c",
+   "effective_on": "2026-12-14",
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "⚠ توجيه صلاحية طيران إلزامي (FAA)",
+   "document_type": "FR_AIRWORTHINESS_DIRECTIVE",
+   "importance": "MEDIUM",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "risk",
+   "companies": [
+    "Airbus Canada Limited Partnership"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus Canada Limited Partnership",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-24122",
+   "date": "2026-11-27",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Airbus SAS Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24122/airworthiness-directives-airbus-sas-airplanes",
+   "effective_on": null,
+   "comments_close_on": "2027-01-11",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Airbus SAS"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Airbus SAS",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-24120",
+   "date": "2026-11-27",
+   "agency": "FAA",
+   "type": "Proposed Rule",
+   "title": "Airworthiness Directives; Bombardier, Inc., Airplanes",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24120/airworthiness-directives-bombardier-inc-airplanes",
+   "effective_on": null,
+   "comments_close_on": "2027-01-11",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
+   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Bombardier, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Bombardier, Inc.",
+     "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
   },
   {
    "document_number": "2026-23985",
@@ -2528,6 +2651,64 @@
     {
      "name": "Airbus",
      "reason": "LISTED_OUTSIDE_US"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-24103",
+   "date": "2026-11-27",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "WBI Energy Transmission, Inc.; Notice of Availability of the Environmental Assessment for the Proposed Line Section 32 Expansion Project",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24103/wbi-energy-transmission-inc-notice-of-availability-of-the-environmental-assessment-for-the-proposed",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "WBI Energy Transmission, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "WBI Energy Transmission, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-24101",
+   "date": "2026-11-27",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "R.J. Fortier Hydropower, Inc.; Notice of Availability of Environmental Assessment",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24101/rj-fortier-hydropower-inc-notice-of-availability-of-environmental-assessment",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_ENERGY_REGULATORY_FILING",
+   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
+   "document_type": "FR_ENERGY_REGULATORY_FILING",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "R.J. Fortier Hydropower, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "R.J. Fortier Hydropower, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
   },
@@ -4128,6 +4309,64 @@
    ]
   },
   {
+   "document_number": "2026-24127",
+   "date": "2026-11-27",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "General Matter, Inc.; General Matter Paducah Enrichment Facility; Notice of Intent To Conduct Scoping Process and Prepare an Environmental Impact Statement",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24127/general-matter-inc-general-matter-paducah-enrichment-facility-notice-of-intent-to-conduct-scoping",
+   "effective_on": null,
+   "comments_close_on": "2026-12-28",
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "General Matter, Inc."
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "General Matter, Inc.",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
+   "document_number": "2026-24075",
+   "date": "2026-11-27",
+   "agency": "NRC",
+   "type": "Notice",
+   "title": "Northern States Power Company; Prairie Island Independent Spent Fuel Storage Installation; License Amendment Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24075/northern-states-power-company-prairie-island-independent-spent-fuel-storage-installation-license",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "COMPANY_UNLINKED",
+   "kind": "FR_NUCLEAR_LICENSE_ACTION",
+   "label_ar": "إجراء ترخيص نووي (NRC)",
+   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
+   "importance": "LOW",
+   "importance_basis": "DOCUMENT_TYPE",
+   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
+   "potential_impact_ar": "يحتاج تقييم الأثر",
+   "group": "status",
+   "companies": [
+    "Northern States Power Company"
+   ],
+   "links": [],
+   "unmatched": [
+    {
+     "name": "Northern States Power Company",
+     "reason": "NOT_IN_REVIEWED_TABLE"
+    }
+   ]
+  },
+  {
    "document_number": "2026-24019",
    "date": "2026-11-25",
    "agency": "NRC",
@@ -4535,6 +4774,17 @@
   }
  ],
  "general": [
+  {
+   "document_number": "2026-24021",
+   "date": "2026-11-27",
+   "agency": "FDA",
+   "type": "Notice",
+   "title": "Individualized Human Genome Editing Products: Considerations for BLA Submission and Postapproval Management; Draft Guidance for Industry; Extension of Comment Period",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24021/individualized-human-genome-editing-products-considerations-for-bla-submission-and-postapproval",
+   "effective_on": null,
+   "comments_close_on": "2026-10-28",
+   "status": "GENERAL"
+  },
   {
    "document_number": "2026-24015",
    "date": "2026-11-25",
@@ -4954,6 +5204,28 @@
    "status": "GENERAL"
   },
   {
+   "document_number": "2026-24028",
+   "date": "2026-11-27",
+   "agency": "FAA",
+   "type": "Notice",
+   "title": "Notice of Intent To Designate as Abandoned Felts Field Aviation Supplemental Type Certificate No. SA376NW",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24028/notice-of-intent-to-designate-as-abandoned-felts-field-aviation-supplemental-type-certificate-no",
+   "effective_on": null,
+   "comments_close_on": "2027-05-26",
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-24022",
+   "date": "2026-11-27",
+   "agency": "FAA",
+   "type": "Notice",
+   "title": "Notice of Intent To Designate as Abandoned Martin Slone Supplemental Type Certificate Nos. SA441SW, SA500SW, SA501SW, SA512SW, and SA725SW",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24022/notice-of-intent-to-designate-as-abandoned-martin-slone-supplemental-type-certificate-nos-sa441sw",
+   "effective_on": null,
+   "comments_close_on": "2027-05-26",
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-23900",
    "date": "2026-11-24",
    "agency": "FAA",
@@ -5328,6 +5600,17 @@
    "status": "GENERAL"
   },
   {
+   "document_number": "2026-24102",
+   "date": "2026-11-27",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Leopold, Diane G.; Notice of Filing",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/27/2026-24102/leopold-diane-g-notice-of-filing",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
    "document_number": "2026-24006",
    "date": "2026-11-25",
    "agency": "FERC",
@@ -5367,50 +5650,6 @@
    "type": "Notice",
    "title": "The City of Columbus, Ohio; Notice of Intent To Prepare an Environmental Assessment",
    "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23889/the-city-of-columbus-ohio-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-23884",
-   "date": "2026-11-24",
-   "agency": "FERC",
-   "type": "Rule",
-   "title": "Denial of Rehearing Requests by Operation of Law Under the Commission's Rules of Practice and Procedure",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23884/denial-of-rehearing-requests-by-operation-of-law-under-the-commissions-rules-of-practice-and",
-   "effective_on": "2026-12-24",
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-23833",
-   "date": "2026-11-24",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "FERC Form 580 Interrogatories on Fuel and Energy Purchase Practices; Notice of Request for Partial Waiver",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/24/2026-23833/ferc-form-580-interrogatories-on-fuel-and-energy-purchase-practices-notice-of-request-for-partial",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-23674",
-   "date": "2026-11-20",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Records Governing Off-the-Record Communications; Public Notice",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/20/2026-23674/records-governing-off-the-record-communications-public-notice",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-23673",
-   "date": "2026-11-20",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Nevada Irrigation District; Notice of Reasonable Period of Time for Water Quality Certification Application",
-   "source_url": "https://www.federalregister.gov/documents/2026/11/20/2026-23673/nevada-irrigation-district-notice-of-reasonable-period-of-time-for-water-quality-certification",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
