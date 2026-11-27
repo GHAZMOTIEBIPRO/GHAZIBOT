@@ -106,6 +106,15 @@ def parity(underlying: str, root: str, headers: dict[str, str], now: datetime, s
         expiries = sorted({str(p["expiry"]) for p in (pr.parse_occ(k) for k in snaps) if p})
         roots = sorted({p["root"] for p in (pr.parse_occ(k) for k in snaps) if p})
         diag[name] = {"http": code, "contracts": len(snaps), "roots": roots, "first_expiries": expiries[:3]}
+    code, ranged = _paged_chain(underlying, {"expiration_date_gte": start.isoformat(),
+                                             "expiration_date_lte": (start + timedelta(days=10)).isoformat()}, headers)
+    hist: dict[str, int] = {}
+    for k in ranged:
+        p = pr.parse_occ(k)
+        if p:
+            key = f"{p['root']}:{p['expiry']}"
+            hist[key] = hist.get(key, 0) + 1
+    diag["range_10d_all_pages"] = {"http": code, "contracts": len(ranged), "root_expiry_counts": hist}
     print("chain filter diagnostic", underlying, json.dumps(diag))
     for offset in range(8):
         expiry = start + timedelta(days=offset)
