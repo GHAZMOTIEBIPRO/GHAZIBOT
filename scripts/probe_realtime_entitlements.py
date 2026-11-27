@@ -7,6 +7,8 @@ Checks:
 - stocks latest snapshot, feed=iex (real-time single venue on the Basic plan)
 - stocks latest snapshot, feed=sip (expected refused on Basic: latest SIP is paid)
 - option chain snapshots, feed=indicative, for SPY, QQQ (ETF options) and SPX, NDX (index options)
+- put-call parity forward quality for the nearest SPXW / NDXP expiry (options_radar.parity_reference):
+  status, strikes, dispersion, spread, quote age, and for SPX the ratio to 10 x SPY - never the level
 """
 from __future__ import annotations
 
@@ -17,6 +19,7 @@ from typing import Any
 
 import requests
 
+from options_radar import parity_reference as pr
 from options_radar.output_policy import decide
 
 BASE = "https://data.alpaca.markets"
@@ -70,6 +73,46 @@ def chain(underlying: str, headers: dict[str, str], now: datetime) -> dict[str, 
     return out
 
 
+def _paged_chain(underlying: str, params: dict[str, Any], headers: dict[str, str]) -> tuple[int, dict]:
+    snaps: dict = {}
+    token = None
+    for _ in range(10):
+        query = {**params, "feed": "indicative", "limit": 1000, **({"page_token": token} if token else {})}
+        code, body = _get(f"/v1beta1/options/snapshots/{underlying}", query, headers)
+        if code != 200 or not isinstance(body, dict):
+            return code, snaps
+        snaps.update(body.get("snapshots") or {})
+        token = body.get("next_page_token")
+        if not token:
+            break
+    return 200, snaps
+
+
+def parity(underlying: str, root: str, headers: dict[str, str], now: datetime, spy_price: float | None) -> dict:
+    """Nearest-expiry parity forward; prints quality metrics and, for SPX, the ratio to 10 x SPY only."""
+    from datetime import timedelta
+    from zoneinfo import ZoneInfo
+
+    ny = ZoneInfo("America/New_York")
+    start = now.astimezone(ny).date()
+    for offset in range(8):
+        expiry = start + timedelta(days=offset)
+        code, snaps = _paged_chain(underlying, {"root_symbol": root, "expiration_date": expiry.isoformat()}, headers)
+        if code != 200:
+            return {"http": code}
+        if snaps:
+            close = datetime.combine(expiry, datetime.min.time(), ny).replace(hour=16)
+            years = max((close - now).total_seconds(), 0) / (365 * 86400)
+            out = pr.implied_forward(snaps, root=root, expiry=expiry, years_to_expiry=years)
+            metrics = pr.public_metrics(out)
+            if underlying == "SPX" and out.get("forward") and spy_price:
+                # sanity only: SPX forward vs 10 x SPY (SPY tracks SPX/10 less fees and dividends)
+                metrics["ratio_to_10x_spy_minus_1_pct"] = round((out["forward"] / (10 * spy_price) - 1) * 100, 3)
+            metrics["contracts_in_expiry"] = len(snaps)
+            return metrics
+    return {"status": "NO_EXPIRY_WITHIN_7_DAYS"}
+
+
 def main() -> int:
     env = os.environ
     if not decide("alpaca_iex", "fetch", env).allowed or not env.get("ALPACA_API_KEY"):
@@ -77,9 +120,13 @@ def main() -> int:
         return 0
     headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
     now = datetime.now(timezone.utc)
+    code, snap = _get("/v2/stocks/snapshots", {"symbols": "SPY", "feed": "iex"}, headers)
+    spy = ((snap or {}).get("SPY") or {}).get("latestTrade", {}).get("p") if code == 200 else None
     result = {"checked_at": now.isoformat(),
               "stocks_iex_latest": stocks("iex", headers, now), "stocks_sip_latest": stocks("sip", headers, now),
-              "options_indicative": {u: chain(u, headers, now) for u in ("SPY", "QQQ", "SPX", "NDX")}}
+              "options_indicative": {u: chain(u, headers, now) for u in ("SPY", "QQQ", "SPX", "NDX")},
+              "parity_forward_quality": {"SPXW": parity("SPX", "SPXW", headers, now, spy),
+                                         "NDXP": parity("NDX", "NDXP", headers, now, None)}}
     text = json.dumps(result, indent=1)
     print("Realtime entitlement probe (metadata only):", text)
     if env.get("GITHUB_STEP_SUMMARY"):
