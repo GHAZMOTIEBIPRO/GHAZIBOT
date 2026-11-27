@@ -42,8 +42,15 @@ def run(symbols: list[str], count: int, now: datetime, env, pause=time.sleep) ->
     coverage = {"symbols_ok": 0, "symbols_failed": 0, "sessions": len(study)}
     for symbol in symbols:
         daily = provider.bars(symbol, "1d", now - timedelta(days=(count + 80) * 2), now)
-        minute = provider.bars(symbol, "5m", days[0][0], now)
-        pause(2.0)  # shared 200 calls/min Basic limit with other private jobs
+        # 20-session chunks: one request over 160 sessions hits the provider's page cap (TRUNCATED)
+        minute = {"status": "OK", "bars": []}
+        for i in range(0, len(days), 20):
+            part = provider.bars(symbol, "5m", days[i][0], days[min(i + 19, len(days) - 1)][1])
+            pause(1.0)  # shared 200 calls/min Basic limit with other private jobs
+            if part.get("status") != "OK":
+                minute = part
+                break
+            minute["bars"].extend(part["bars"])
         if daily.get("status") != "OK" or minute.get("status") != "OK":
             coverage["symbols_failed"] += 1
             reason = f"daily={daily.get('status')} 5m={minute.get('status')}"
