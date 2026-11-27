@@ -118,7 +118,7 @@ def parity(underlying: str, root: str, headers: dict[str, str], now: datetime, s
     print("chain filter diagnostic", underlying, json.dumps(diag))
     for offset in range(8):
         expiry = start + timedelta(days=offset)
-        # root_symbol is not honoured by the endpoint (diagnostic 2026-11-28): filter the date only and pick
+        # weeklies are their own underlyings (SPXW, NDXP); root_symbol is not honoured (diagnostic 2026-11-28): filter the date only and pick
         # the root in code (weekly SPXW/NDXP preferred, else the monthly SPX/NDX of that date)
         code, snaps = _paged_chain(underlying, {"expiration_date": expiry.isoformat()}, headers)
         snaps = {k: v for k, v in snaps.items() if (pr.parse_occ(k) or {}).get("expiry") == expiry}
@@ -131,7 +131,7 @@ def parity(underlying: str, root: str, headers: dict[str, str], now: datetime, s
             years = max((close - now).total_seconds(), 0) / (365 * 86400)
             out = pr.implied_forward(snaps, root=root, expiry=expiry, years_to_expiry=years)
             metrics = pr.public_metrics(out)
-            if underlying == "SPX" and out.get("forward") and spy_price:
+            if underlying in ("SPX", "SPXW") and out.get("forward") and spy_price:
                 # sanity only: SPX forward vs 10 x SPY (SPY tracks SPX/10 less fees and dividends)
                 metrics["ratio_to_10x_spy_minus_1_pct"] = round((out["forward"] / (10 * spy_price) - 1) * 100, 3)
             metrics["contracts_in_expiry"] = len(snaps)
@@ -151,8 +151,8 @@ def main() -> int:
     result = {"checked_at": now.isoformat(),
               "stocks_iex_latest": stocks("iex", headers, now), "stocks_sip_latest": stocks("sip", headers, now),
               "options_indicative": {u: chain(u, headers, now) for u in ("SPY", "QQQ", "SPX", "NDX", "SPXW", "NDXP", "XSP")},
-              "parity_forward_quality": {"SPXW": parity("SPX", "SPXW", headers, now, spy),
-                                         "NDXP": parity("NDX", "NDXP", headers, now, None)}}
+              "parity_forward_quality": {"SPXW": parity("SPXW", "SPXW", headers, now, spy),
+                                         "NDXP": parity("NDXP", "NDXP", headers, now, None)}}
     text = json.dumps(result, indent=1)
     print("Realtime entitlement probe (metadata only):", text)
     if env.get("GITHUB_STEP_SUMMARY"):
