@@ -109,8 +109,12 @@ def parity(underlying: str, root: str, headers: dict[str, str], now: datetime, s
     print("chain filter diagnostic", underlying, json.dumps(diag))
     for offset in range(8):
         expiry = start + timedelta(days=offset)
-        code, snaps = _paged_chain(underlying, {"root_symbol": root, "expiration_date": expiry.isoformat()}, headers)
+        # root_symbol is not honoured by the endpoint (diagnostic 2026-11-28): filter the date only and pick
+        # the root in code (weekly SPXW/NDXP preferred, else the monthly SPX/NDX of that date)
+        code, snaps = _paged_chain(underlying, {"expiration_date": expiry.isoformat()}, headers)
         snaps = {k: v for k, v in snaps.items() if (pr.parse_occ(k) or {}).get("expiry") == expiry}
+        roots = {(pr.parse_occ(k) or {}).get("root") for k in snaps}
+        root = root if root in roots else (underlying if underlying in roots else root)
         if code != 200:
             return {"http": code}
         if snaps:
