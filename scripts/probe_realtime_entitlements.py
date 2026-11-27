@@ -95,9 +95,22 @@ def parity(underlying: str, root: str, headers: dict[str, str], now: datetime, s
 
     ny = ZoneInfo("America/New_York")
     start = now.astimezone(ny).date()
+    # which filters does the endpoint honour? counts only (first page)
+    diag = {}
+    for name, params in (("date_gte", {"expiration_date_gte": start.isoformat()}),
+                         ("root", {"root_symbol": root}),
+                         ("root_date_gte", {"root_symbol": root, "expiration_date_gte": start.isoformat()})):
+        code, body = _get(f"/v1beta1/options/snapshots/{underlying}", {**params, "feed": "indicative", "limit": 1000},
+                          headers)
+        snaps = (body or {}).get("snapshots") or {} if code == 200 and isinstance(body, dict) else {}
+        expiries = sorted({str(p["expiry"]) for p in (pr.parse_occ(k) for k in snaps) if p})
+        roots = sorted({p["root"] for p in (pr.parse_occ(k) for k in snaps) if p})
+        diag[name] = {"http": code, "contracts": len(snaps), "roots": roots, "first_expiries": expiries[:3]}
+    print("chain filter diagnostic", underlying, json.dumps(diag))
     for offset in range(8):
         expiry = start + timedelta(days=offset)
         code, snaps = _paged_chain(underlying, {"root_symbol": root, "expiration_date": expiry.isoformat()}, headers)
+        snaps = {k: v for k, v in snaps.items() if (pr.parse_occ(k) or {}).get("expiry") == expiry}
         if code != 200:
             return {"http": code}
         if snaps:
