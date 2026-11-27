@@ -149,10 +149,13 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     # every listed common stock (NasdaqTrader, kept on bot-state): small sponsors match without aliases
     parser.add_argument("--listed", type=Path, default=ROOT.parent / "state/runtime/public/data/nasdaq_listed.json")
+    parser.add_argument("--sec-registry", type=Path,
+                        default=ROOT.parent / "state/runtime/public/data/sec_company_tickers.json")
     args = parser.parse_args()
     aliases = json.loads((ROOT / "data/company_aliases.json").read_text())
     sponsors = json.loads((ROOT / "data/fda_sponsor_aliases.json").read_text())["aliases"]
-    listed = _names.listed_issuers(json.loads(args.listed.read_text())) if args.listed.exists() else {}
+    listed = _names.registry_issuers(json.loads(args.listed.read_text()) if args.listed.exists() else None,
+                                     json.loads(args.sec_registry.read_text()) if args.sec_registry.exists() else None)
     report = collect(_names.build_name_index(aliases, sponsors, listed), now=datetime.now(timezone.utc))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.output.with_suffix(".tmp")

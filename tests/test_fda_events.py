@@ -100,3 +100,31 @@ def test_listed_registry_is_optional():
     assert fda.listed_issuers(None) == {} and fda.listed_issuers({"rows": [["X"]]}) == {}
     assert fda.build_name_index(ALIASES) == fda.build_name_index(ALIASES, None, {})
 
+
+def test_sec_registry_adds_nyse_issuers_and_drops_ambiguous_share_classes():
+    from datetime import datetime, timezone
+
+    from scripts import build_sec_registry as sec
+
+    payload = {"fields": ["cik", "name", "ticker", "exchange"],
+               "data": [[14272, "BRISTOL MYERS SQUIBB CO", "BMY", "NYSE"],
+                        [1652044, "Alphabet Inc.", "GOOGL", "Nasdaq"], [1652044, "Alphabet Inc.", "GOOG", "Nasdaq"],
+                        [99, "Pink Sheet Corp", "PNKS", "OTC"], [5, "Cogent Biosciences, Inc.", "COGT", "Nasdaq"]]}
+    built = sec.build(payload, datetime(2026, 11, 28, tzinfo=timezone.utc))
+    assert built["fields"] == ["ticker", "cik", "name", "exchange"] and built["counts"]["rows"] == 4
+    assert "PNKS" not in {r[0] for r in built["rows"]}
+    issuers = fda.registry_issuers(LISTED, built)
+    index = fda.build_name_index({}, None, issuers)
+    assert fda.match_ticker("Bristol-Myers Squibb Company", index) == ("BMY", "listed_issuer_name")
+    assert fda.match_ticker("Alphabet Inc", index) == (None, "unmatched")  # two share classes: no guess
+    assert fda.match_ticker("Cogent Biosciences", index)[0] == "COGT"
+
+
+def test_sec_registry_refuses_without_a_declared_user_agent(tmp_path, monkeypatch, capsys):
+    from scripts import build_sec_registry as sec
+
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+    monkeypatch.setattr(sys, "argv", ["x", "--output", str(tmp_path / "out.json")])
+    assert sec.main() == 0 and not (tmp_path / "out.json").exists()
+    assert "NOT_ATTEMPTED" in capsys.readouterr().out
+

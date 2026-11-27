@@ -56,6 +56,7 @@ def main() -> int:
     parser.add_argument("--aliases", default=str(ROOT / "data" / "company_aliases.json"))
     parser.add_argument("--sponsors", default=str(ROOT / "data" / "fda_sponsor_aliases.json"))
     parser.add_argument("--listed", default=str(ROOT.parent / "state" / "runtime/public/data/nasdaq_listed.json"))
+    parser.add_argument("--sec-registry", default=str(ROOT.parent / "state" / "runtime/public/data/sec_company_tickers.json"))
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
     end = now.date()
@@ -63,7 +64,9 @@ def main() -> int:
     span = f"[{start:%Y%m%d}+TO+{end:%Y%m%d}]"
     sponsors = json.loads(Path(args.sponsors).read_text(encoding="utf-8")).get("aliases", {})
     listed_path = Path(args.listed)
-    listed = fda.listed_issuers(json.loads(listed_path.read_text(encoding="utf-8"))) if listed_path.exists() else {}
+    sec_path = Path(args.sec_registry)
+    listed = fda.registry_issuers(json.loads(listed_path.read_text(encoding="utf-8")) if listed_path.exists() else None,
+                                  json.loads(sec_path.read_text(encoding="utf-8")) if sec_path.exists() else None)
     index = fda.build_name_index(json.loads(Path(args.aliases).read_text(encoding="utf-8")), sponsors, listed)
     errors: dict[str, str] = {}
     approvals: list[dict] = []

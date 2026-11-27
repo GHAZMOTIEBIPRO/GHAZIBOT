@@ -51,6 +51,11 @@ jobs:
         id: nasdaq
         continue-on-error: true
         run: python app/scripts/build_nasdaq_listed.py --output state/runtime/public/data/nasdaq_listed.json
+      # SEC registrants with exchange (covers NYSE / NYSE American); needs the SEC_USER_AGENT secret
+      - name: Build the SEC registrant list (NOT_ATTEMPTED without SEC_USER_AGENT)
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python app/scripts/build_sec_registry.py --output state/runtime/public/data/sec_company_tickers.json
       - name: Publish the leaders directory
         shell: bash
         run: |
@@ -58,7 +63,7 @@ jobs:
           cd state
           git config user.name "GHAZI Symbol Directory"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          for f in symbol_directory.json nasdaq_listed.json; do
+          for f in symbol_directory.json nasdaq_listed.json sec_company_tickers.json; do
             if [[ -f runtime/public/data/$f ]]; then git add runtime/public/data/$f; fi
           done
           if git diff --cached --quiet; then

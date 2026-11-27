@@ -52,6 +52,18 @@ def listed_issuers(nasdaq_listed: Any) -> dict[str, str]:
     return out
 
 
+def registry_issuers(nasdaq_listed: Any = None, sec_registry: Any = None) -> dict[str, str]:
+    """ticker -> issuer name from both registries: SEC (all U.S. exchanges) then NasdaqTrader on top."""
+    out: dict[str, str] = {}
+    sec = sec_registry if isinstance(sec_registry, dict) else {}
+    if sec.get("fields") == ["ticker", "cik", "name", "exchange"]:
+        for row in sec.get("rows") or []:
+            if isinstance(row, list) and len(row) == 4:
+                out[str(row[0])] = str(row[2])
+    out.update(listed_issuers(nasdaq_listed))
+    return out
+
+
 def _index(entries: list[tuple[str, str, str]]) -> dict[str, tuple[str, str]]:
     index: dict[str, tuple[str, str]] = {}
     collisions: set[str] = set()
