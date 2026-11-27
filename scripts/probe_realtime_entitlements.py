@@ -150,7 +150,7 @@ def main() -> int:
     spy = ((snap or {}).get("SPY") or {}).get("latestTrade", {}).get("p") if code == 200 else None
     result = {"checked_at": now.isoformat(),
               "stocks_iex_latest": stocks("iex", headers, now), "stocks_sip_latest": stocks("sip", headers, now),
-              "options_indicative": {u: chain(u, headers, now) for u in ("SPY", "QQQ", "SPX", "NDX")},
+              "options_indicative": {u: chain(u, headers, now) for u in ("SPY", "QQQ", "SPX", "NDX", "SPXW", "NDXP", "XSP")},
               "parity_forward_quality": {"SPXW": parity("SPX", "SPXW", headers, now, spy),
                                          "NDXP": parity("NDX", "NDXP", headers, now, None)}}
     text = json.dumps(result, indent=1)
