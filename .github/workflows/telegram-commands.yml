@@ -1,0 +1,79 @@
+name: GHAZI Telegram commands (owner only)
+
+# Dispatched by the market orchestrator about every 10 minutes (it holds no Telegram secret). The
+# first step peeks with the system Python and no install; without a pending owner message the job
+# ends there (scripts/telegram_commands.py). Answers /map /stock /levels /market /status /help
+# with the same engines as the scheduled report; owner-private delivery only. The only file written
+# to bot-state is the next getUpdates offset with per-command statuses (no symbol, price or text).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-telegram-commands
+  cancel-in-progress: false
+
+jobs:
+  serve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: main
+          path: app
+          persist-credentials: false
+      - name: Peek for owner commands (reads, does not consume)
+        id: peek
+        run: |
+          count="$(python3 app/scripts/telegram_commands.py peek | awk '/^PENDING/{print $2}')"
+          echo "pending=${count:-0}" >> "$GITHUB_OUTPUT"
+          echo "pending=${count:-0}"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: steps.peek.outputs.pending != '0'
+        with:
+          ref: bot-state
+          path: state
+      - if: steps.peek.outputs.pending != '0'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install dependencies (charts optional)
+        if: steps.peek.outputs.pending != '0'
+        run: |
+          pip install -r app/requirements.txt
+          pip install -r app/requirements-charts.txt || echo "::warning title=Charts unavailable::matplotlib install failed"
+      - name: Answer pending owner commands
+        if: steps.peek.outputs.pending != '0'
+        run: |
+          cd app
+          python -m scripts.telegram_commands serve --state-dir ../state/state/telegram
+      - name: Store the next offset
+        if: steps.peek.outputs.pending != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI Telegram Commands"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          if [[ ! -f state/telegram/telegram_commands_offset.json ]]; then exit 0; fi
+          git add state/telegram/telegram_commands_offset.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "state: telegram command offset [skip ci]"
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2))
+          done
+          exit 1

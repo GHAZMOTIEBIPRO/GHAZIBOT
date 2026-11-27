@@ -98,7 +98,8 @@ def test_workflows_with_alpaca_secrets_never_publish_private_data():
                                  "opening-fib-daily.yml", "opening-fib-history.yml", "opening-fib-shadow.yml",
                                  "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
                                  "probe-realtime-entitlements.yml", "research-confirmation-frames.yml",
-                                 "settings-check.yml"]
+                                 "settings-check.yml", "telegram-commands.yml"]
+    # telegram-commands.yml commits only the getUpdates offset (tests/test_telegram_commands.py)
     for name in ("probe-realtime-entitlements.yml", "research-confirmation-frames.yml"):
         text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
         assert yaml.safe_load(text)["permissions"] == {"contents": "read"} and "git " not in text

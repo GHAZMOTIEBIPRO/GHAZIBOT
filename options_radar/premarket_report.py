@@ -103,6 +103,11 @@ def card(m: dict[str, Any]) -> str:
         (f"انتظار بين {_p(m['wait_band']['low'])} و{_p(m['wait_band']['high'])}؛ الأفق: الجلسة الحالية؛ "
         f"الأطر المتوافقة {m['aligned_frames']}/4."),
     ]
+    sr = m.get("levels_sr") or {}
+    parts = [f"{word} {_p(sr[key]['value'])} ({sr[key]['basis_ar']})"
+             for key, word in (("resistance", "مقاومة"), ("support", "دعم")) if sr.get(key)]
+    if parts:
+        lines.append("، ".join(parts))
     return "\n".join(rtl_line(x) for x in lines)
 
 
@@ -136,6 +141,7 @@ def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: dateti
         (f"المصدر: Alpaca ({html.escape('; '.join(scopes) or 'غير مسمى')})؛ استخدام شخصي فقط. "
         f"التغطية: {fetched}/{attempted} رمزًا."),
         "WATCH مراقبة مشروطة لا توصية؛ لا احتمال نجاح ولا أمر تنفيذ. CONFIRMED لا يُعلن قبل الافتتاح.",
+        "الخرائط المرسلة: صناديق المؤشرات وأفضل 3 شركات؛ اطلب أي خريطة أخرى بالأمر /map ثم الرمز.",
         INDEX_BLOCKED_AR,
     ]
     header = "\n".join(rtl_line(x) for x in head)

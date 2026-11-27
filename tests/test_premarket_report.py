@@ -330,3 +330,25 @@ def test_every_planned_symbol_gets_a_map_row_even_when_not_fetched():
     assert list(maps) == list(bdp.PLAN_SYMBOLS)
     assert maps["MSFT"]["state"] == "NO_DATA" and "time budget" in maps["MSFT"]["reason"]
     assert maps["NVDA"]["state"] == "CALL_WATCH"
+
+
+def test_every_chart_level_is_printed_in_the_card_text():
+    """Text and image come from one map: each line drawn on the chart carries the same number in the card."""
+    from options_radar import price_map_chart as chart
+
+    plan = _plan("NVDA", week_high=112.0)
+    plan["recent_daily"] = [{"date": f"2026-11-{d:02d}", "open": 99.0, "high": 115.0 - d * 0.1, "low": 90.0 + d * 0.1,
+                             "close": 100.0} for d in range(1, 21)]
+    m = pm.build_map(_card(plan, "UP"), plan)
+    text = report.card(m)
+    assert m["levels_sr"]  # support and resistance exist for this plan
+    for level in chart.levels(m):
+        assert f"{level['value']:,.2f}" in text, level
+
+
+def test_default_charts_are_index_funds_and_three_leaders():
+    maps = {s: pm.build_map(_card(_plan(s), "UP" if s in ("NVDA", "AMD") else None), _plan(s))
+            for s in ("SPY", "QQQ", "NVDA", "AMD", "MSFT", "META", "AAPL")}
+    chosen = bdp.chart_symbols(maps)
+    assert chosen[:2] == ["SPY", "QQQ"] and len(chosen) == 5 and chosen[2:4] == ["AMD", "NVDA"]
+

@@ -210,6 +210,10 @@ jobs:
             dispatch_pass || echo "::warning title=Dispatch pass failed::pass ${pass}"
             python3 scripts/relay_dependent_workflows.py --repo "$GITHUB_REPOSITORY" \
               || echo "::warning title=Relay pass failed::pass ${pass}"
+            # Owner Telegram commands (/map /stock /market ...): the orchestrator holds no Telegram
+            # secret, so it only wakes the command job; that job peeks first and stops in seconds
+            # when nothing is pending.
+            dispatch_if_stale telegram-commands.yml 9 "Telegram commands"
             # Owner-private opening Fib + shadow: their own crons arrived ~9h late on
             # 2026-11-16. Reads only date markers; the runners still decide delivery.
             python3 scripts/private_schedule_rescue.py --repo "$GITHUB_REPOSITORY" \

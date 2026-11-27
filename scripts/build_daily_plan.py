@@ -374,6 +374,18 @@ def fingerprints(maps: dict[str, dict[str, Any]], secret: str) -> dict[str, str]
     return out
 
 
+def chart_symbols(maps: dict[str, dict[str, Any]], limit: int = 3) -> list[str]:
+    """Default images (owner, 2026-11-28): the index funds, then the `limit` leaders most worth watching.
+
+    Leaders are ranked WATCH first, then by distance to the nearer trigger in ATR. Every other chart
+    is available on request (/map SYMBOL). SPX/NDX have no licensed price map yet, so none is drawn.
+    """
+    funds = [s for s in DETAIL_INDEX_FUNDS if (maps.get(s) or {}).get("state") not in (None, "NO_DATA")]
+    leaders = [m for s, m in maps.items() if s not in DETAIL_INDEX_FUNDS and m.get("state") not in (None, "NO_DATA")]
+    leaders.sort(key=lambda m: (m["state"] not in ("CALL_WATCH", "PUT_WATCH"), m.get("distance_atr", 99), m["symbol"]))
+    return funds + [m["symbol"] for m in leaders[:limit]]
+
+
 def detail_symbols(maps: dict[str, dict[str, Any]]) -> list[str]:
     """Owner's fixed list (index funds + DETAIL_LEADERS) first, then up to five other WATCH names."""
     fixed = [s for s in (*DETAIL_INDEX_FUNDS, *DETAIL_LEADERS) if (maps.get(s) or {}).get("state") not in (None, "NO_DATA")]
@@ -461,17 +473,19 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
     maps = maps_for(private)
     prints = fingerprints(maps, str(env.get("TELEGRAM_BOT_TOKEN") or ""))
     details = detail_symbols(maps)
+    charted = chart_symbols(maps)
     changed_note = None
     if slot["slot"] == "FINAL":
         early = (_load(day_dir / "report_EARLY.json") or {}).get("fingerprints") or {}
         if early and prints:
             details = [s for s in details if early.get(s) != prints.get(s)]
+            charted = [s for s in charted if early.get(s) != prints.get(s)]
             changed_note = len(details)
     statuses = private.get("fetch_status") or {}
     texts = report.render(maps, slot=slot, now=now, session_date=session_date, index_funds=INDEX_FUNDS,
                           detail_symbols=details, attempted=len(PLAN_SYMBOLS), changed_since_early=changed_note,
                           fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"))
-    albums, charts_status = chart_items(maps, private, details, now, session_date) if send_album else ([], "NOT_REQUESTED")
+    albums, charts_status = chart_items(maps, private, charted, now, session_date) if send_album else ([], "NOT_REQUESTED")
     n_text = len(texts)
     outbox: list[tuple[str, Callable[[str], Any]]] = []
     for index, text in enumerate(texts):
