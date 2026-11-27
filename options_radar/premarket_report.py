@@ -31,8 +31,6 @@ MAX_CHARS = 3900
 SLOT_AR = {"EARLY": "التقرير المبكر قبل الافتتاح", "FINAL": "التقرير النهائي قبل الافتتاح"}
 TREND_ARROW = {"UP": "↑", "DOWN": "↓", "MIXED": "↔"}
 FRAME_SHORT = (("daily", "يومي"), ("1h", "ساعة"), ("15m", "15د"))
-REF_AR = {"PREMARKET_LAST_COMPLETED_5M": "آخر شمعة 5د مكتملة قبل الافتتاح",
-          "PRIOR_SESSION_CLOSE": "إغلاق الجلسة السابقة"}
 POSITION_AR = {"ABOVE_CALL_TRIGGER": "فوق محفز CALL قبل الافتتاح — يلزم تأكيد بعد الافتتاح",
                "BELOW_PUT_TRIGGER": "تحت محفز PUT قبل الافتتاح — يلزم تأكيد بعد الافتتاح",
                "INSIDE_WAIT_BAND": "داخل نطاق الانتظار"}
@@ -95,7 +93,7 @@ def card(m: dict[str, Any]) -> str:
     ref, pd, call, put = m["reference"], m["prior_day"], m["call"], m["put"]
     lines = [
         f"{_sym(m['symbol'])} — {m['state_ar']} — {POSITION_AR[m['position']]}",
-        f"المرجع: {_p(ref['price'])} ({REF_AR[ref['type']]}، {html.escape(str(ref['time']))})",
+        f"المرجع: {_p(ref['price'])} ({ref['type_ar']}، {html.escape(ref['time_ar'])})",
         (f"الجلسة السابقة {html.escape(str(pd['date']))}: قمة {_p(pd['high'])}، قاع {_p(pd['low'])}، "
         f"إغلاق {_p(pd['close'])}؛ المحور {_p(m['pivot'])}؛ ATR14 {_p(m['atr14'])}"),
         (f"CALL: محفز {_p(call['trigger'])}، تأكيد بإغلاق شمعة ساعة مكتملة فوقه؛ {_targets(call)}؛ "
@@ -126,7 +124,8 @@ def _pack(blocks: list[str], header: str) -> list[str]:
 
 
 def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: datetime, session_date: str,
-           index_funds: tuple[str, ...], detail_symbols: list[str], fetched: int, attempted: int) -> list[str]:
+           index_funds: tuple[str, ...], detail_symbols: list[str], fetched: int, attempted: int,
+           changed_since_early: int | None = None) -> list[str]:
     late = f" — متأخر {slot['late_minutes']} دقيقة عن موعده" if slot.get("late") else ""
     as_of = sorted({str(m.get("data_as_of")) for m in maps.values() if m.get("data_as_of")})
     scopes = sorted({scope_ar(m.get("feed_scope")) for m in maps.values() if m.get("feed_scope")})
@@ -144,9 +143,32 @@ def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: dateti
     rows += [rtl_line("<b>الأسهم القيادية</b>")] + [row(m) for s, m in maps.items() if s not in index_funds]
     summary = _pack(rows, header)
     cards = [card(maps[s]) for s in detail_symbols if (maps.get(s) or {}).get("state") not in (None, "NO_DATA")]
-    watches = [s for s in detail_symbols if s not in index_funds]
-    note = ("لا أسهم بتوافق كامل للأطر الأربعة اليوم؛ لا فرص مفروضة." if not watches
-            else f"فرص المراقبة الأقرب إلى محفزها: {len(watches)}.")
+    watches = [s for s, m in maps.items() if m.get("state") in ("CALL_WATCH", "PUT_WATCH")]
+    if changed_since_early is not None:
+        note = (f"بطاقات الرموز التي تغيّرت منذ التقرير المبكر فقط: {changed_since_early}."
+                if changed_since_early else "لا تغيير جوهري في الحالات والمستويات منذ التقرير المبكر.")
+    else:
+        note = (f"الرموز بتوافق كامل للأطر الأربعة: {len(watches)}؛ البقية انتظار ولا فرص مفروضة."
+                if watches else "لا رموز بتوافق كامل للأطر الأربعة اليوم؛ لا فرص مفروضة.")
     detail_header = rtl_line(f"<b>البطاقات التفصيلية — {date_ar(session_date)}</b>") + "\n" + rtl_line(note)
     details = _pack(cards, detail_header) if cards else []
+    if changed_since_early == 0:
+        details = [detail_header]
     return summary + details
+
+
+def chart_caption(m: dict[str, Any]) -> str:
+    """Short caption under a chart (Telegram limit 1024): state, reference, the two scenarios."""
+    call, put = m["call"], m["put"]
+
+    def first(side: dict[str, Any]) -> str:
+        t = (side.get("targets") or [{}])[0]
+        return f"{t['name']} {_p(t['value'])}" if t.get("value") else "لا هدف مقاس"
+
+    lines = [f"{_sym(m['symbol'])} — {m['state_ar']} — المرجع {_p(m['reference']['price'])}",
+             f"سيناريو CALL: إغلاق ساعة فوق {_p(call['trigger'])} ← {first(call)}؛ إبطال {_p(call['invalidation'])}",
+             f"سيناريو PUT: إغلاق ساعة تحت {_p(put['trigger'])} ← {first(put)}؛ إبطال {_p(put['invalidation'])}",
+             "مسار افتراضي مشروط، ليس توصية."]
+    text = "\n".join(rtl_line(x) for x in lines)
+    check_html(text)
+    return text[:1024]

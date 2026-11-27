@@ -199,8 +199,12 @@ def test_report_slot_sends_once_records_status_only_and_never_sends_outside_wind
     marker_text = (tmp_path / "report_EARLY.json").read_text()
     marker = json.loads(marker_text)
     assert marker["accepted"] == marker["messages"] == count and marker["telegram_acceptance_is_not_read_receipt"]
+    assert "fingerprints" in marker and marker["fingerprints"] == {}  # no runner secret, no fingerprints
     # the public marker carries no level, price or state derived from the private bars
-    assert "110" not in marker_text and "trigger" not in marker_text and "WATCH" not in marker_text
+    assert "trigger" not in marker_text and "WATCH" not in marker_text and "105" not in marker_text.replace(
+        "2026-11-30", "")
+    floats = [v for v in json.loads(marker_text).values() if isinstance(v, float)]
+    assert floats == []
     final = run(datetime(2026, 11, 30, 14, 12, tzinfo=UTC))  # 09:12: FINAL, 12 minutes late
     assert final["slot"] == "FINAL" and final["late"] is True and final["late_minutes"] == 12
     assert run(datetime(2026, 11, 30, 15, 0, tzinfo=UTC)) is None  # after the open: nothing sent
@@ -227,22 +231,98 @@ def test_failed_send_is_retried_in_the_window_but_bounded(tmp_path):
     assert out["status"] == "SEND_FAILED" and out["attempt"] == bdp.MAX_SLOT_ATTEMPTS
 
 
-def test_partial_delivery_is_final_so_accepted_messages_are_never_duplicated(tmp_path):
-    sent = []
+def _run(tmp_path, minute, send, hour=13, album=None, env=None, private=None):
+    return bdp.run_report_slot(private or _private(), _facts(), datetime(2026, 11, 30, hour, minute, tzinfo=UTC),
+                               tmp_path, env=env or ENV, get_chat=lambda _: {"type": "private"}, send=send,
+                               send_album=album)
+
+
+def test_partial_delivery_resends_only_the_undelivered_items(tmp_path):
+    sent, broken = [], [True]
 
     def flaky(text, chat):
         sent.append(text)
-        if len(sent) > 1:
-            raise RuntimeError("network")
+        if broken[0] and len(sent) > 1:
+            raise RuntimeError("telegram 400")
         return _Receipt()
 
-    first = bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 13, 31, tzinfo=UTC), tmp_path,
-                                env=ENV, get_chat=lambda _: {"type": "private"}, send=flaky)
-    assert first["status"] == "PARTIAL" and first["accepted"] == 1
-    count = len(sent)
-    again = bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 13, 36, tzinfo=UTC), tmp_path,
-                                env=ENV, get_chat=lambda _: {"type": "private"}, send=flaky)
-    assert again["status"] == "PARTIAL" and len(sent) == count
+    first = _run(tmp_path, 31, flaky)
+    assert first["status"] == "PARTIAL" and first["accepted"] == 1 and first["messages"] >= 2
+    delivered = [k for k, v in first["items"].items() if v["status"] == "DELIVERED"]
+    broken[0] = False
+    again = _run(tmp_path, 36, flaky)
+    assert again["status"] == "DELIVERED"
+    # the item already accepted was not sent again
+    assert len(sent) == 2 * first["messages"] - 1 and delivered == [k for k in first["items"] if k.endswith(":text:0")]
+
+
+def test_unconfirmed_item_is_never_resent_automatically(tmp_path):
+    import requests
+
+    calls = []
+
+    def timeout(text, chat):
+        calls.append(text)
+        if len(calls) == 1:
+            raise requests.ReadTimeout("read timed out")
+        return _Receipt()
+
+    first = _run(tmp_path, 31, timeout)
+    assert first["items"][next(iter(first["items"]))]["status"] == "UNCONFIRMED"
+    assert first["status"] == "UNCONFIRMED"
+    assert _run(tmp_path, 36, timeout)["status"] == "UNCONFIRMED" and len(calls) == first["messages"]
+
+
+def test_interrupted_run_leaves_a_record_per_message(tmp_path):
+    sent = []
+
+    def dies(text, chat):
+        if sent:
+            raise SystemExit("runner cancelled")  # not caught by the policy layer
+        sent.append(text)
+        return _Receipt()
+
+    try:
+        _run(tmp_path, 31, dies)
+    except SystemExit:
+        pass
+    marker = json.loads((tmp_path / "report_EARLY.json").read_text())
+    assert [v["status"] for v in marker["items"].values()] == ["DELIVERED"]
+    resumed = _run(tmp_path, 36, lambda text, chat: sent.append(text) or _Receipt())
+    assert resumed["status"] == "DELIVERED" and len(sent) == resumed["messages"]  # first one not repeated
+
+
+def test_ids_are_unique_per_session_slot_and_message(tmp_path):
+    out = _run(tmp_path, 31, lambda t, c: _Receipt())
+    assert all(k.startswith("2026-11-30:EARLY:text:") for k in out["items"])
+    assert len(set(out["items"])) == out["messages"] == out["text_messages"]
+
+
+def test_final_sends_cards_only_for_changed_symbols(tmp_path):
+    env = {**ENV, "TELEGRAM_BOT_TOKEN": "secret"}
+    _run(tmp_path, 31, lambda t, c: _Receipt(), env=env)
+    texts = []
+    final = _run(tmp_path, 2, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env)
+    assert final["slot"] == "FINAL" and final["status"] == "DELIVERED"
+    joined = "\n".join(texts)
+    assert "لا تغيير جوهري" in joined and "تأكيد بإغلاق شمعة ساعة" not in joined  # no unchanged cards
+    early = json.loads((tmp_path / "report_EARLY.json").read_text())["fingerprints"]
+    assert set(early) == set(bdp.PLAN_SYMBOLS) and all(len(v) == 16 for v in early.values())
+    changed = _private()
+    changed["plans"]["NVDA"]["prior_session"]["high"] = 111.0
+    texts.clear()
+    (tmp_path / "report_FINAL.json").unlink()
+    _run(tmp_path, 3, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env, private=changed)
+    assert "<b>NVDA</b>" in "\n".join(texts) and ": 1." in "\n".join(texts)
+
+
+def test_charts_go_out_as_albums_after_the_text(tmp_path):
+    albums = []
+    out = _run(tmp_path, 31, lambda t, c: _Receipt(), album=lambda a, c: albums.append(a) or _Receipt())
+    assert out["charts"] == "OK" and out["status"] == "DELIVERED"
+    assert [k.split(":")[2] for k in out["items"]][-1] == "charts" and len(albums) == 1
+    png, caption = albums[0][0]
+    assert png[:8] == b"\x89PNG\r\n\x1a\n" and len(caption) <= 1024 and "سيناريو CALL" in caption
 
 
 def test_every_planned_symbol_gets_a_map_row_even_when_not_fetched():
