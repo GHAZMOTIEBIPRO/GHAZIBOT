@@ -39,7 +39,7 @@ def test_buckets_are_session_aligned_and_drop_incomplete_ones():
 
 def test_shorter_frames_enter_earlier_and_every_rule_is_scored_after_its_entry():
     signals = cs.session_signals(_session(_rally()), OPEN, PRIOR, 4.0, None, _hours())
-    calls = {s.rule: s for s in signals if s.side == "CALL" and s.stop_model == "map"}
+    calls = {s.rule: s for s in signals if s.side == "CALL" and s.stop_model == "map" and s.target_model == "T1"}
     assert {"C3", "C5", "C10", "C15", "C30", "C60", "H1F"} <= set(calls)
     mins = [calls[f"C{m}"].minutes_after_open for m in cs.FRAMES]
     assert mins == sorted(mins) and calls["C60"].minutes_after_open == 60
@@ -59,16 +59,16 @@ def test_same_bar_target_and_stop_is_ambiguous_never_a_win():
     bars = _session(path)
     bars[20].update(h=113.0, l=108.5)  # one bar touches both T1 (112.72) and the map stop (109)
     signals = cs.session_signals(bars, OPEN, PRIOR, 4.0, None, _hours())
-    c3 = next(s for s in signals if s.rule == "C3" and s.side == "CALL" and s.stop_model == "map")
+    c3 = next(s for s in signals if s.rule == "C3" and s.side == "CALL" and s.stop_model == "map" and s.target_model == "T1")
     assert c3.outcome == "AMBIGUOUS" and c3.r == 0.0
 
 
 def test_false_breakout_is_stopped_early_and_counted():
     path = [105.0] * 10 + [110.5] * 5 + [108.0] * 375  # breaks out, then falls back through the stop
     signals = cs.session_signals(_session(path), OPEN, PRIOR, 4.0, None, _hours())
-    c3 = next(s for s in signals if s.rule == "C3" and s.side == "CALL" and s.stop_model == "map")
+    c3 = next(s for s in signals if s.rule == "C3" and s.side == "CALL" and s.stop_model == "map" and s.target_model == "T1")
     assert c3.outcome == "STOP" and c3.stopped_within_30m and c3.r < -1
-    assert cs.summarise(signals)["C3/map"]["false_break_30m"] > 0
+    assert cs.summarise(signals)["C3/map/T1"]["false_break_30m"] > 0
 
 
 def test_retest_needs_a_touch_that_holds_and_rvol_needs_volume():
@@ -79,7 +79,7 @@ def test_retest_needs_a_touch_that_holds_and_rvol_needs_volume():
                                  volume_baseline={(5, i): 100.0 for i in range(80)} | {(15, i): 1e9 for i in range(30)})
     rules = {s.rule for s in signals if s.side == "CALL"}
     assert "R5" in rules and "V5" in rules and "V15" not in rules  # 15m volume below 1.5 x its baseline
-    r5 = next(s for s in signals if s.rule == "R5" and s.stop_model == "map")
+    r5 = next(s for s in signals if s.rule == "R5" and s.stop_model == "map" and s.target_model == "T1")
     assert r5.minutes_after_open > next(s for s in signals if s.rule == "C5").minutes_after_open
 
 
@@ -87,8 +87,18 @@ def test_summary_explains_win_rate_vs_expectancy_without_prices():
     path = [105.0] * 10 + [110.5] * 5 + [108.0] * 375
     rally = cs.session_signals(_session(_rally()), OPEN, PRIOR, 4.0, None, _hours())
     fail = cs.session_signals(_session(path), OPEN, PRIOR, 4.0, None, _hours())
-    s = cs.summarise(rally + fail)["C3/map"]
+    s = cs.summarise(rally + fail)["C3/map/T1"]
     assert s["n"] == 2 and s["win_rate"] == 0.5 and s["avg_loss_r"] < -1 < 0 < s["avg_win_r"]
     assert s["exp_r"] == round((s["avg_win_r"] + s["avg_loss_r"]) / 2, 3)
     assert {"pf", "mfe_r", "mae_r", "preconf_atr", "by_entry_time", "by_volatility"} <= set(s)
     assert "110" not in str(s)
+
+
+def test_target_models_for_the_main_rules():
+    signals = cs.session_signals(_session(_rally()), OPEN, PRIOR, 4.0, None, _hours())
+    c5 = {s.target_model: s for s in signals if s.rule == "C5" and s.side == "CALL" and s.stop_model == "map"}
+    assert set(c5) == set(cs.TARGETS)
+    assert c5["R1"].outcome == "T1" and 0.9 < c5["R1"].r < 1.0  # reward equal to risk, less 2 x 2 bp costs
+    assert c5["EOD"].outcome == "CLOSE"  # no target: held to the close
+    c3 = {s.target_model for s in signals if s.rule == "C3"}
+    assert c3 == {"T1"}  # only the main rules get the extra target models

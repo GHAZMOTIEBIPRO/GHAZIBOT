@@ -93,7 +93,14 @@ def run(symbols: list[str], count: int, now: datetime, env, pause=time.sleep) ->
             vol_hist.append({(m, b["idx"]): b["v"] for m in cs.RVOL_FRAMES for b in cs.bucket(regular, open_at, m)})
     compact = {k: {"exp_atr": v.get("exp_atr"), "n": v.get("n")} for k, v in cs.summarise(halves["first_half"]).items()}
     compact2 = {k: {"exp_atr": v.get("exp_atr"), "n": v.get("n")} for k, v in cs.summarise(halves["second_half"]).items()}
+    cuts = sorted(x.atr_pct for x in signals)
+    hi = cuts[2 * len(cuts) // 3] if cuts else 0
+    high_vol = {}
+    for half_name, rows in halves.items():
+        for k, v in cs.summarise([x for x in rows if x.atr_pct >= hi]).items():
+            high_vol.setdefault(k, {})[half_name] = v.get("exp_atr")
     return {"status": "OK", "coverage": coverage, "feed": "SIP historical 1-minute (>= 16 minutes old)",
+            "high_vol_tercile_exp_atr_by_half": high_vol,
             "all": cs.summarise(signals), "first_half": compact, "second_half": compact2}
 
 

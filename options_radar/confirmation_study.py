@@ -41,12 +41,17 @@ RVOL_MIN = 1.5
 RETEST_ATR = 0.10
 SLIPPAGE = 0.0002
 STOPS = ("map", "bar")
+# Target models (2026-11-28 follow-up): T1 = first ladder target beyond the entry (live report),
+# T2 = second, R1 = reward equal to risk, EOD = no target, exit at the session close (raw direction).
+TARGET_RULES = ("C5", "V5", "C15", "C30", "C60", "H1F")
+TARGETS = ("T1", "T2", "R1", "EOD")
 
 
 @dataclass
 class Signal:
     rule: str
     stop_model: str
+    target_model: str
     side: str
     minutes_after_open: int
     preconf_atr: float      # how far beyond the trigger the entry already was (ATR units)
@@ -125,15 +130,20 @@ def session_signals(bars_1m: list[dict[str, Any]], open_at: datetime, prior: dic
     def emit(rule: str, side: str, entry: float, at: datetime, bar_stop: float) -> None:
         trigger, map_stop, targets = sides[side]
         sign = 1 if side == "CALL" else -1
-        target = next((t for t in targets if sign * (t - entry) > 0), None)
+        ahead = [t for t in targets if sign * (t - entry) > 0]
         after = [b for b in bars_1m if b["t"] >= at]
         for model, stop in (("map", map_stop), ("bar", bar_stop)):
             if sign * (entry - stop) <= 0:
                 continue  # stop already behind the entry: no defined risk
-            outcome, r, mfe, mae, early_stop = _score(after, side, entry, stop, target, close_price, at)
-            out.append(Signal(rule, model, side, int((at - open_at).total_seconds() // 60),
-                              round(sign * (entry - trigger) / atr14, 4), outcome, r,
-                              r * abs(entry - stop) / atr14, mfe, mae, atr_pct, early_stop))
+            risk = abs(entry - stop)
+            choices = {"T1": ahead[0] if ahead else None}
+            if rule in TARGET_RULES:
+                choices.update(T2=ahead[1] if len(ahead) > 1 else None, R1=entry + sign * risk, EOD=None)
+            for tmodel, target in choices.items():
+                outcome, r, mfe, mae, early_stop = _score(after, side, entry, stop, target, close_price, at)
+                out.append(Signal(rule, model, tmodel, side, int((at - open_at).total_seconds() // 60),
+                                  round(sign * (entry - trigger) / atr14, 4), outcome, r,
+                                  r * risk / atr14, mfe, mae, atr_pct, early_stop))
 
     for side, (trigger, _, _) in sides.items():
         for m in FRAMES:
@@ -199,12 +209,12 @@ def _stats(rows: list[Signal]) -> dict[str, Any]:
 def summarise(signals: list[Signal]) -> dict[str, Any]:
     """Aggregate statistics only (no prices, no symbols), per rule x stop model and by condition."""
     out: dict[str, Any] = {}
-    keys = sorted({(s.rule, s.stop_model) for s in signals})
+    keys = sorted({(s.rule, s.stop_model, s.target_model) for s in signals})
     atr_cuts = sorted(s.atr_pct for s in signals)
     lo = atr_cuts[len(atr_cuts) // 3] if atr_cuts else 0
     hi = atr_cuts[2 * len(atr_cuts) // 3] if atr_cuts else 0
-    for rule, model in keys:
-        rows = [s for s in signals if s.rule == rule and s.stop_model == model]
+    for rule, model, tmodel in keys:
+        rows = [s for s in signals if s.rule == rule and s.stop_model == model and s.target_model == tmodel]
         entry = _stats(rows)
         entry["by_entry_time"] = {name: _stats([s for s in rows if cond(s.minutes_after_open)]).get("exp_atr")
                                   for name, cond in (("first_30m", lambda m: m <= 30),
@@ -213,5 +223,5 @@ def summarise(signals: list[Signal]) -> dict[str, Any]:
         entry["by_volatility"] = {name: _stats([s for s in rows if cond(s.atr_pct)]).get("exp_atr")
                                   for name, cond in (("low", lambda a: a < lo), ("mid", lambda a: lo <= a < hi),
                                                      ("high", lambda a: a >= hi))}
-        out[f"{rule}/{model}"] = entry
+        out[f"{rule}/{model}/{tmodel}"] = entry
     return out
