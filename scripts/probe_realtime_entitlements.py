@@ -118,6 +118,8 @@ def parity(underlying: str, root: str, headers: dict[str, str], now: datetime, s
     print("chain filter diagnostic", underlying, json.dumps(diag))
     for offset in range(8):
         expiry = start + timedelta(days=offset)
+        if datetime.combine(expiry, datetime.min.time(), ny).replace(hour=16) <= now:
+            continue  # this expiry has already settled
         # weeklies are their own underlyings (SPXW, NDXP); root_symbol is not honoured (diagnostic 2026-11-28): filter the date only and pick
         # the root in code (weekly SPXW/NDXP preferred, else the monthly SPX/NDX of that date)
         code, snaps = _paged_chain(underlying, {"expiration_date": expiry.isoformat()}, headers)
