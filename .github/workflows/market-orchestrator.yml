@@ -182,12 +182,13 @@ jobs:
             dispatch_if_stale private-market-scan.yml 150 "Private Market Scan"
           fi
 
-          # Pre-open daily plan (owner's private plan is sent by the session's first run only).
-          # Its 11:47/12:47 UTC crons arrived 6-8 h late: the "morning" copies were made at
-          # 20:02Z (11-17) and 19:37Z (11-18), mid-afternoon in New York. Dispatched here
-          # 08:30-09:20 New York; the crons stay as a backup and a late one only adds an update.
-          if (( $(date -u +%u) <= 5 && ny_hm >= 830 && ny_hm <= 920 )); then
-            dispatch_if_stale daily-plan.yml 240 "Daily Plan (pre-open)"
+          # Pre-open daily plan: two owner-private report slots, EARLY due 08:30 and FINAL due
+          # 09:00 New York (options_radar/premarket_report.py decides the slot, dedupes it and
+          # labels a late send). Its 11:47/12:47 UTC crons arrived 6-14 h late (20:02Z 11-17,
+          # 19:37Z 11-18, 20:19Z/21:40Z 11-27), so the slots are dispatched here; a late cron
+          # lands outside both windows and only adds a dated update, never a message.
+          if (( $(date -u +%u) <= 5 && ((ny_hm >= 830 && ny_hm <= 844) || (ny_hm >= 900 && ny_hm <= 914)) )); then
+            dispatch_if_stale daily-plan.yml 15 "Daily Plan (pre-open report slot)"
           fi
           }
 

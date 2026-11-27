@@ -1,7 +1,8 @@
 # CLAUDE.md — working notes for coding agents
 
 `AGENTS.md` is the engineering contract; this file only records standing decisions and the commands
-that verify work. Progress of the current mission: `docs/PROGRESS.md`.
+that verify work. Progress of the current mission (GHAZI ORACLE V13, spec `docs/ORACLE_MASTER.md`):
+`docs/ORACLE_PROGRESS.md`; earlier missions: `docs/PROGRESS.md`.
 
 ## Standing decisions (do not reopen without new evidence)
 - **Prices.** The only lawful automated bar source is Alpaca (owner-private). It needs:
