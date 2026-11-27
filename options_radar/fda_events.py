@@ -37,12 +37,22 @@ def normalise(name: Any) -> str:
     return re.sub(r"\s+", " ", LEGAL_SUFFIXES.sub(" ", text)).strip()
 
 
-def build_name_index(aliases: dict[str, str],
-                     sponsors: dict[str, list[str]] | None = None) -> dict[str, tuple[str, str]]:
-    """normalised name -> (ticker, method); names that map to two tickers are dropped."""
-    entries = [(name, ticker, "exact_normalised_name") for ticker, name in aliases.items()]
-    entries += [(name, ticker, "reviewed_sponsor_alias")
-                for ticker, names in (sponsors or {}).items() for name in names]
+def listed_issuers(nasdaq_listed: Any) -> dict[str, str]:
+    """ticker -> issuer name for common equities in the NasdaqTrader listed file (no ETFs)."""
+    payload = nasdaq_listed if isinstance(nasdaq_listed, dict) else {}
+    fields = payload.get("fields") or []
+    try:
+        sym_i, name_i, etf_i, eq_i = (fields.index(k) for k in ("symbol", "issuer", "etf", "equity"))
+    except ValueError:
+        return {}
+    out = {}
+    for row in payload.get("rows") or []:
+        if isinstance(row, list) and len(row) > max(sym_i, name_i, etf_i, eq_i) and row[eq_i] == 1 and row[etf_i] == 0:
+            out[str(row[sym_i])] = str(row[name_i])
+    return out
+
+
+def _index(entries: list[tuple[str, str, str]]) -> dict[str, tuple[str, str]]:
     index: dict[str, tuple[str, str]] = {}
     collisions: set[str] = set()
     for name, ticker, method in entries:
@@ -55,6 +65,23 @@ def build_name_index(aliases: dict[str, str],
     for key in collisions:
         index.pop(key, None)
     return index
+
+
+def build_name_index(aliases: dict[str, str], sponsors: dict[str, list[str]] | None = None,
+                     listed: dict[str, str] | None = None) -> dict[str, tuple[str, str]]:
+    """normalised name -> (ticker, method); names that map to two tickers are dropped.
+
+    Precedence: the project's company list and the reviewed sponsor spellings first; the listed
+    issuer registry (NasdaqTrader, every listed common stock) only fills names they do not cover,
+    so a small issuer such as Cogent Biosciences (COGT) matches without a hand-written alias. A
+    registry name that normalises to fewer than 5 characters or to two tickers is not used.
+    """
+    curated = _index([(name, ticker, "exact_normalised_name") for ticker, name in aliases.items()]
+                     + [(name, ticker, "reviewed_sponsor_alias")
+                        for ticker, names in (sponsors or {}).items() for name in names])
+    registry = _index([(name, ticker, "listed_issuer_name") for ticker, name in (listed or {}).items()
+                       if len(normalise(name)) >= 5])
+    return {**registry, **curated}
 
 
 def match_ticker(name: Any, index: dict[str, tuple[str, str]]) -> tuple[str | None, str]:

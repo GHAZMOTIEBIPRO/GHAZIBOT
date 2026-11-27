@@ -43,9 +43,11 @@ def run(symbols: list[str], count: int, now: datetime, env, pause=time.sleep) ->
     for symbol in symbols:
         daily = provider.bars(symbol, "1d", now - timedelta(days=(count + 80) * 2), now)
         minute = provider.bars(symbol, "5m", days[0][0], now)
-        pause(0.5)
+        pause(2.0)  # shared 200 calls/min Basic limit with other private jobs
         if daily.get("status") != "OK" or minute.get("status") != "OK":
             coverage["symbols_failed"] += 1
+            reason = f"daily={daily.get('status')} 5m={minute.get('status')}"
+            coverage.setdefault("failure_reasons", {})[reason] = coverage.get("failure_reasons", {}).get(reason, 0) + 1
             continue
         coverage["symbols_ok"] += 1
         drows = [{"date": b["t"].astimezone(dp_tz()).date().isoformat(), "open": b["o"], "high": b["h"],

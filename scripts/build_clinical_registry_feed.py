@@ -147,10 +147,13 @@ def collect(index: dict, *, now: datetime, fetch: Callable = get_page, max_pages
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    # every listed common stock (NasdaqTrader, kept on bot-state): small sponsors match without aliases
+    parser.add_argument("--listed", type=Path, default=ROOT.parent / "state/runtime/public/data/nasdaq_listed.json")
     args = parser.parse_args()
     aliases = json.loads((ROOT / "data/company_aliases.json").read_text())
     sponsors = json.loads((ROOT / "data/fda_sponsor_aliases.json").read_text())["aliases"]
-    report = collect(_names.build_name_index(aliases, sponsors), now=datetime.now(timezone.utc))
+    listed = _names.listed_issuers(json.loads(args.listed.read_text())) if args.listed.exists() else {}
+    report = collect(_names.build_name_index(aliases, sponsors, listed), now=datetime.now(timezone.utc))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.output.with_suffix(".tmp")
     tmp.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")

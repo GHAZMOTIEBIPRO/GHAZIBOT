@@ -14,6 +14,7 @@ signal per side per session, entry on the close of the bar that completes the ru
   H1F_M15_M5  1H trend filter (close vs EMA20 of completed 1H bars, same side) + a 15m close
          beyond the trigger, then the next 5m bar that trades beyond that 15m bar's extreme
          (entry at that extreme, the activation price)
+T1 is the first ladder target still beyond the entry (a gap past it is not a free hit).
 Outcome on later 5m bars of the same session: T1 first, invalidation first, both inside one bar
 (AMBIGUOUS, never counted as a win), or neither by the close (CLOSE, scored at the close).
 R is measured in units of the entry-to-invalidation distance; a fixed slippage is charged on both
@@ -78,7 +79,7 @@ def _outcome(bars_after: list[dict[str, Any]], side: str, entry: float, stop: fl
         if hit_stop:
             return "STOP", -1.0 - 2 * SLIPPAGE * entry / risk, best / risk
         if hit_t1:
-            return "T1", abs(target - entry) / risk - 2 * SLIPPAGE * entry / risk, best / risk
+            return "T1", (target - entry) * sign / risk - 2 * SLIPPAGE * entry / risk, best / risk
     return "CLOSE", sign * (close_price - entry) / risk - 2 * SLIPPAGE * entry / risk, best / risk
 
 
@@ -92,13 +93,18 @@ def session_signals(day_bars: list[dict[str, Any]], open_at: datetime, prior: di
     close_price = day_bars[-1]["c"]
     frames = {"H1": bucket(day_bars, open_at, 60), "M15": bucket(day_bars, open_at, 15), "M5": bucket(day_bars, open_at, 5)}
     sides = {"CALL": (pdh, pdh - pm.INVALIDATION_ATR * atr14,
-                      (pm._targets(pdh, 1, rng, atr14, (week or {}).get("high")) or [{}])[0].get("value")),
+                      [t["value"] for t in pm._targets(pdh, 1, rng, atr14, (week or {}).get("high"))]),
              "PUT": (pdl, pdl + pm.INVALIDATION_ATR * atr14,
-                     (pm._targets(pdl, -1, rng, atr14, (week or {}).get("low")) or [{}])[0].get("value"))}
+                     [t["value"] for t in pm._targets(pdl, -1, rng, atr14, (week or {}).get("low"))])}
     out: list[Signal] = []
 
     def emit(method: str, side: str, entry: float, at: datetime) -> None:
-        _trigger, stop, target = sides[side]
+        _trigger, stop, targets = sides[side]
+        sign = 1 if side == "CALL" else -1
+        if sign * (entry - stop) <= 0:
+            return  # entry already beyond the invalidation (gap through it): no defined risk, no trade
+        # the first ladder target still ahead of the entry; a gap past all of them has none
+        target = next((t for t in targets if sign * (t - entry) > 0), None)
         later = [b for b in day_bars if b["t"] >= at]
         outcome, r, mfe = _outcome(later, side, entry, stop, target, close_price)
         out.append(Signal(method, side, entry, at, int((at - open_at).total_seconds() // 60), outcome, r, mfe))

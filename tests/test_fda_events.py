@@ -70,3 +70,33 @@ def test_script_keeps_previous_file_when_both_endpoints_fail(monkeypatch, tmp_pa
     monkeypatch.setattr(script, "_get", lambda path, params, attempts=3: [])
     assert script.main() == 0
     assert json.loads(out.read_text())["counts"]["approvals"] == 0
+
+
+LISTED = {"schema": "ghazi.nasdaq_listed.v1",
+          "fields": ["symbol", "issuer", "security", "category", "financial_status", "etf", "equity"],
+          "rows": [["COGT", "Cogent Biosciences, Inc.", "Common Stock", "Q", "N", 0, 1],
+                   ["BBIO", "BridgeBio Pharma, Inc.", "Common Stock", "Q", "N", 0, 1],
+                   ["VRTXX", "Vertex Pharmaceuticals Incorporated", "Common Stock", "Q", "N", 0, 1],
+                   ["AAA", "Acme Therapeutics Inc", "Common Stock", "Q", "N", 0, 1],
+                   ["AAB", "Acme Pharma Corp", "Common Stock", "Q", "N", 0, 1],
+                   ["ETFX", "Cogent Income ETF", "ETF", "G", "N", 1, 0],
+                   ["AB", "AB Inc", "Common Stock", "Q", "N", 0, 1]]}
+
+
+def test_listed_issuers_match_small_sponsors_without_hand_written_aliases():
+    """2026-11 audit: COGT and BBIO events stayed unmatched because only 67 curated names were indexed."""
+    index = fda.build_name_index(ALIASES, {"BMY": ["Bristol-Myers Squibb Co"]}, fda.listed_issuers(LISTED))
+    assert fda.match_ticker("COGENT BIOSCIENCES INC", index) == ("COGT", "listed_issuer_name")
+    assert fda.match_ticker("BridgeBio Pharma, Inc.", index) == ("BBIO", "listed_issuer_name")
+    assert fda.match_ticker("Bristol-Myers Squibb Company", index) == ("BMY", "reviewed_sponsor_alias")
+    # curated names win over the registry; names that normalise to two tickers or too short are not used
+    assert fda.match_ticker("Vertex Pharmaceuticals Inc", index) == ("VRTX", "exact_normalised_name")
+    assert fda.match_ticker("Acme Inc", index) == (None, "unmatched")
+    assert fda.match_ticker("AB Inc", index) == (None, "unmatched")
+    assert "ETFX" not in fda.listed_issuers(LISTED)
+
+
+def test_listed_registry_is_optional():
+    assert fda.listed_issuers(None) == {} and fda.listed_issuers({"rows": [["X"]]}) == {}
+    assert fda.build_name_index(ALIASES) == fda.build_name_index(ALIASES, None, {})
+

@@ -41,6 +41,16 @@ def test_faster_frames_enter_earlier_and_outcomes_are_scored_without_look_ahead(
     assert not [s for s in signals if s.side == "PUT"]
 
 
+def test_gap_past_the_first_target_is_not_a_free_hit():
+    """Regression (first runner run): a gap above T1 was scored as T1 reached with positive R."""
+    path = [113.5, 113.6, 113.4] + [113.5] * 75  # opens above T1 112.72, drifts sideways
+    signals = cs.session_signals(_session(path), OPEN, PRIOR, atr14=4.0, week=None, prior_hours=_hours())
+    m5 = next(s for s in signals if s.method == "M5" and s.side == "CALL")
+    assert m5.outcome != "T1" or m5.r > 0
+    assert m5.outcome in ("CLOSE", "STOP")  # next target 114.0 never reached
+    assert all(s.r <= 1 for s in signals)
+
+
 def test_same_bar_target_and_stop_is_ambiguous_never_a_win():
     path = [105.0] * 5 + [110.4] + [110.4] * 72
     bars = _session(path)
