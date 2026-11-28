@@ -371,6 +371,28 @@ def maps_for(private: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return out
 
 
+def index_forwards(env: dict[str, str], now: datetime) -> dict[str, dict[str, Any]]:
+    """Nearest-expiry SPXW/NDXP implied forwards (private; the report never waits on or fails for them)."""
+    from options_radar import parity_reference as pr
+    from scripts import run_options_hunter as hunter
+
+    headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env.get("ALPACA_SECRET_KEY", "").strip()}
+    out: dict[str, dict[str, Any]] = {}
+    for root in hunter.INDEX_WEEKLIES:
+        try:
+            snaps, _ = hunter.chain(root, (now + timedelta(days=4)).date().isoformat(), headers)
+            expiries = sorted({o["expiry"] for o in (pr.parse_occ(k) for k in snaps) if o and o["expiry"] >= now.astimezone(NY).date()})
+            if not expiries:
+                out[root] = {"status": "UNAVAILABLE"}
+                continue
+            close = datetime.combine(expiries[0], datetime.min.time(), NY).replace(hour=16)
+            years = max((close - now).total_seconds(), 60) / (365 * 86400)
+            out[root] = pr.implied_forward(snaps, root=root, expiry=expiries[0], years_to_expiry=years)
+        except Exception:  # noqa: BLE001 - the reference line degrades, the report still goes
+            out[root] = {"status": "UNAVAILABLE"}
+    return out
+
+
 def fingerprints(maps: dict[str, dict[str, Any]], secret: bytes | None) -> dict[str, str]:
     """Keyed hash per symbol of what a card says (state, position, triggers, targets).
 
@@ -500,7 +522,8 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
     statuses = private.get("fetch_status") or {}
     texts = report.render(maps, slot=slot, now=now, session_date=session_date, index_funds=INDEX_FUNDS,
                           detail_symbols=details, attempted=len(PLAN_SYMBOLS), changed_since_early=changed_note,
-                          fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"))
+                          fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"),
+                          index_forwards=index_forwards(env, now) if env.get("ALPACA_API_KEY") else None)
     albums, charts_status = chart_items(maps, private, charted, now, session_date) if send_album else ([], "NOT_REQUESTED")
     n_text = len(texts)
     outbox: list[tuple[str, Callable[[str], Any]]] = []

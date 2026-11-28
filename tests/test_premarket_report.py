@@ -364,3 +364,20 @@ def test_leadership_uses_relative_strength_and_says_it_is_not_index_weight():
     assert "NVDA +3.20%" in text.split("الأضعف")[0] and "META -1.50%" in text.split("الأضعف")[1]
     assert "عكس اتجاه السوق: META" in text and "لا أوزان مؤشر" in text
     assert report.leadership({"NVDA": maps["NVDA"]}) == []  # no benchmark, no claim
+
+
+def test_index_reference_is_a_labelled_forward_never_the_cash_index():
+    ok = {"status": "OK", "forward": 6012.34, "expiry": "2026-11-30", "quotes_as_of": "2026-11-30T13:25:00+00:00",
+          "half_spread_bp": 0.8, "dispersion_bp": 0.5, "strikes_used": 7}
+    lines = report.index_reference_lines({"SPXW": ok, "NDXP": {"status": "LOW_QUALITY"}})
+    assert "SPX: سعر آجل ضمني ≈ 6,012.34" in lines[0] and "ليس المؤشر النقدي" in lines[0]
+    assert "لا تُشتق منه مستويات نقدية" in lines[0] and "لا يُعتمد" in lines[1] and "6," not in lines[1]
+    assert report.index_reference_lines(None) == []
+
+
+def test_forward_failure_never_blocks_the_report(monkeypatch):
+    from scripts import run_options_hunter as hunter
+
+    monkeypatch.setattr(hunter, "chain", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
+    out = bdp.index_forwards({"ALPACA_API_KEY": "k", "ALPACA_SECRET_KEY": "s"}, datetime(2026, 11, 30, 13, 30, tzinfo=UTC))
+    assert out == {"SPXW": {"status": "UNAVAILABLE"}, "NDXP": {"status": "UNAVAILABLE"}}

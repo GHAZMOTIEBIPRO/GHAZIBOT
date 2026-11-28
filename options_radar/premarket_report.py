@@ -128,9 +128,31 @@ def _pack(blocks: list[str], header: str) -> list[str]:
     return messages
 
 
+INDEX_NAME = {"SPXW": "SPX", "NDXP": "NDX"}
+FORWARD_STATUS_AR = {"OK": "جودة مطابقة مقبولة", "LOW_QUALITY": "جودة مطابقة منخفضة — لا يُعتمد",
+                     "TOO_FEW_VALID_STRIKES": "عروض حديثة غير كافية", "NO_PAIRED_QUOTES": "لا عروض متقابلة",
+                     "UNAVAILABLE": "غير متاح الآن"}
+
+
+def index_reference_lines(forwards: dict[str, dict[str, Any]] | None) -> list[str]:
+    """SPX/NDX as an implied forward from SPXW/NDXP parity: never the cash index, never a level source."""
+    lines = []
+    for root, f in (forwards or {}).items():
+        name = INDEX_NAME.get(root, root)
+        status = f.get("status") or "UNAVAILABLE"
+        if status == "OK" and f.get("forward"):
+            lines.append(f"{name}: سعر آجل ضمني ≈ {f['forward']:,.2f} من تكافؤ عقود {root} لاستحقاق {f['expiry']} "
+                         f"(قيس {when_ar(datetime.fromisoformat(f['quotes_as_of']))}، نصف السبريد {f['half_spread_bp']} نقطة أساس، "
+                         f"التشتت {f['dispersion_bp']} نقطة أساس، {f['strikes_used']} سترايك). مرجع مستقل وليس المؤشر النقدي؛ "
+                         "لا تُشتق منه مستويات نقدية.")
+        else:
+            lines.append(f"{name}: السعر الآجل الضمني — {FORWARD_STATUS_AR.get(status, status)}.")
+    return lines
+
+
 def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: datetime, session_date: str,
            index_funds: tuple[str, ...], detail_symbols: list[str], fetched: int, attempted: int,
-           changed_since_early: int | None = None) -> list[str]:
+           changed_since_early: int | None = None, index_forwards: dict[str, dict[str, Any]] | None = None) -> list[str]:
     late = f" — متأخر {slot['late_minutes']} دقيقة عن موعده" if slot.get("late") else ""
     as_of = sorted({str(m.get("data_as_of")) for m in maps.values() if m.get("data_as_of")})
     scopes = sorted({scope_ar(m.get("feed_scope")) for m in maps.values() if m.get("feed_scope")})
@@ -143,6 +165,7 @@ def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: dateti
         "WATCH مراقبة مشروطة لا توصية؛ لا احتمال نجاح ولا أمر تنفيذ. CONFIRMED لا يُعلن قبل الافتتاح.",
         "الخرائط المرسلة: صناديق المؤشرات وأفضل 3 شركات؛ اطلب أي خريطة أخرى بالأمر /map ثم الرمز.",
         INDEX_BLOCKED_AR,
+        *index_reference_lines(index_forwards),
     ]
     header = "\n".join(rtl_line(x) for x in head)
     rows = [rtl_line("<b>صناديق المؤشرات</b>")] + [row(maps[s]) for s in index_funds if s in maps]
