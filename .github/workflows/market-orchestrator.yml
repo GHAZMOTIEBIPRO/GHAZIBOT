@@ -190,6 +190,11 @@ jobs:
           if (( $(date -u +%u) <= 5 && ((ny_hm >= 830 && ny_hm <= 844) || (ny_hm >= 900 && ny_hm <= 914)) )); then
             dispatch_if_stale daily-plan.yml 15 "Daily Plan (pre-open report slot)"
           fi
+          # Owner-private session cycle after the open (opening update, stage alerts, last hour,
+          # post-close scorecard); the script picks the slot from the XNYS session itself.
+          if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1830 )); then
+            dispatch_if_stale session-tracker.yml 9 "Session tracker"
+          fi
           }
 
           passes="${ORCHESTRATOR_PASSES:-1}"

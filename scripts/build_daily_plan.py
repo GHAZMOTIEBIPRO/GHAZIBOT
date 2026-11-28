@@ -246,6 +246,20 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
     # the last completed sessions, for support/resistance and the chart's observed candles (private only)
     plan["recent_daily"] = [{k: r[k] for k in ("date", "open", "high", "low", "close")}
                             for r in _daily_rows(daily["bars"]) if r["date"] <= str(facts["last_closed_session"])][-20:]
+    if minute["status"] == "OK" and minute.get("feed") == daily.get("feed") and sessions:
+        # intraday tracking inputs (private only): today's regular 5m bars and a time-of-day volume baseline
+        today = [s for s in sessions if s[0].astimezone(NY).date() == now.astimezone(NY).date()]
+        if today:
+            o, c = today[-1]
+            plan["today_5m"] = [b for b in minute["bars"] if o <= b["t"] < c]
+            plan["session_open"] = o.isoformat()
+        prior = [s for s in sessions if not today or s[0] < today[-1][0]][-10:]
+        slots: dict[int, list[float]] = {}
+        for o, c in prior:
+            for b in minute["bars"]:
+                if o <= b["t"] < c:
+                    slots.setdefault(int((b["t"] - o).total_seconds() // 300), []).append(b["v"])
+        plan["vol_baseline_5m"] = {i: sum(v) / len(v) for i, v in slots.items() if v}
     opening = today_open(now)
     if opening is not None and sessions and minute["status"] == "OK" and minute.get("feed") == daily.get("feed"):
         # extended-hours bars after the prior close, completed before the provider's delay boundary

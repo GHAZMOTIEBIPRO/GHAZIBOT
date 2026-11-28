@@ -1,0 +1,64 @@
+name: GHAZI Session tracker (owner-private intraday cycle)
+
+# Opening update, stage-change alerts, last-hour reading and the post-close scorecard
+# (scripts/run_session_tracker.py). Dispatched by the market orchestrator about every 10 minutes
+# 10:00-18:30 New York on weekdays; the script itself checks the XNYS session and its slot.
+# bot-state receives slot statuses, message counts, keyed event hashes and the post-close counts only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghazi-session-tracker
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
+      STATE_DIR: ../state/state/daily_plan
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: main
+          path: app
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: bot-state
+          path: state
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r app/requirements.txt
+      - name: Track the session (owner-private delivery)
+        run: |
+          cd app
+          python -m scripts.run_session_tracker
+      - name: Store slot statuses and event hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd state
+          git config user.name "GHAZI Session Tracker"
+          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
+          git add state/daily_plan/*/session_*.json 2>/dev/null || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "state: session tracker markers [skip ci]"
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
+            git rebase --abort >/dev/null 2>&1 || true
+            sleep $((attempt * 2))
+          done
+          exit 1
