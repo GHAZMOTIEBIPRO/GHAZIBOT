@@ -1,70 +1,32 @@
 {
  "schema": "ghazi.federal_register_feed.v1",
- "generated_at": "2026-11-27T22:16:13.744734+00:00",
+ "generated_at": "2026-11-28T03:23:50.469304+00:00",
  "window_days": 30,
  "source": "Federal Register API (federalregister.gov), U.S. government publication",
  "rights": "U.S. government works are not subject to copyright (17 U.S.C. 105); no API key",
  "documents_by_agency": {
-  "FDA": 49,
-  "FAA": 121,
+  "FDA": 40,
+  "FAA": 115,
   "FTC": 6,
-  "FERC": 134,
-  "NRC": 41,
-  "NHTSA": 11
+  "FERC": 129,
+  "NRC": 40,
+  "NHTSA": 10
  },
  "counts": {
-  "after_noise_filter": 263,
-  "linked": 21,
-  "company_unlinked": 120,
-  "general": 122,
+  "after_noise_filter": 250,
+  "linked": 20,
+  "company_unlinked": 113,
+  "general": 117,
   "by_kind": {
-   "FR_PRIORITY_REVIEW_VOUCHER": 2,
-   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 36,
+   "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE": 35,
    "FR_AIRWORTHINESS_DIRECTIVE": 27,
-   "FR_ENERGY_REGULATORY_FILING": 58,
-   "FR_NUCLEAR_LICENSE_ACTION": 17,
+   "FR_ENERGY_REGULATORY_FILING": 54,
+   "FR_NUCLEAR_LICENSE_ACTION": 16,
    "FR_SPECIAL_CONDITIONS": 1
   }
  },
  "link_policy": "exact normalised name in data/issuer_links.json or data/fda_sponsor_aliases.json; no similarity matching; joint ventures, partly owned and private companies excluded",
  "linked": [
-  {
-   "document_number": "2026-21910",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; ATEBRIOZ (Zilurgisertib)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21910/issuance-of-priority-review-voucher-rare-pediatric-disease-product-atebrioz-zilurgisertib",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "LINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [
-    "Incyte Corporation"
-   ],
-   "links": [
-    {
-     "name": "Incyte Corporation",
-     "ticker": "INCY",
-     "legal_entity": "Incyte Corp",
-     "relation": "REVIEWED_FDA_SPONSOR_ALIAS",
-     "evidence": "data/fda_sponsor_aliases.json (reviewed openFDA sponsor table)",
-     "listed_company": null,
-     "exposure": "DIRECT",
-     "name_basis": "LEGAL_NAME",
-     "interpretation_confidence": "MEDIUM",
-     "confidence_basis": "reviewed sponsor alias table; no runner evidence check of the alias"
-    }
-   ],
-   "unmatched": []
-  },
   {
    "document_number": "2026-24099",
    "date": "2026-11-27",
@@ -791,28 +753,6 @@
   }
  ],
  "company_unlinked": [
-  {
-   "document_number": "2026-21911",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Issuance of Priority Review Voucher; Rare Pediatric Disease Product; EMCITATE (Tiratricol)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21911/issuance-of-priority-review-voucher-rare-pediatric-disease-product-emcitate-tiratricol",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PRIORITY_REVIEW_VOUCHER",
-   "label_ar": "منح قسيمة مراجعة أولوية من FDA",
-   "document_type": "FR_PRIORITY_REVIEW_VOUCHER",
-   "importance": "MEDIUM",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "decision",
-   "companies": [],
-   "links": [],
-   "unmatched": []
-  },
   {
    "document_number": "2026-24137",
    "date": "2026-11-27",
@@ -2202,35 +2142,6 @@
     {
      "name": "BRP-Rotax GmbH & Co KG",
      "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-21932",
-   "date": "2026-10-28",
-   "agency": "FAA",
-   "type": "Proposed Rule",
-   "title": "Airworthiness Directives; Airbus Helicopters",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21932/airworthiness-directives-airbus-helicopters",
-   "effective_on": null,
-   "comments_close_on": "2026-12-14",
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
-   "label_ar": "مقترح توجيه صلاحية طيران (FAA)",
-   "document_type": "FR_PROPOSED_AIRWORTHINESS_DIRECTIVE",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Airbus"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Airbus",
-     "reason": "LISTED_OUTSIDE_US"
     }
    ]
   },
@@ -3715,122 +3626,6 @@
    ]
   },
   {
-   "document_number": "2026-21990",
-   "date": "2026-10-28",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Northern States Power Company; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21990/northern-states-power-company-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Northern States Power Company"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Northern States Power Company",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-21989",
-   "date": "2026-10-28",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "ETC Tiger Pipeline, LLC; Notice of Schedule for the Preparation of an Environmental Assessment for the Franklin Farms Project",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21989/etc-tiger-pipeline-llc-notice-of-schedule-for-the-preparation-of-an-environmental-assessment-for-the",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "ETC Tiger Pipeline, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "ETC Tiger Pipeline, LLC",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-21986",
-   "date": "2026-10-28",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "MountainWest Overthrust Pipeline, LLC; Notice of Schedule for the Preparation of an Environmental Assessment for the Green River West Expansion Project",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21986/mountainwest-overthrust-pipeline-llc-notice-of-schedule-for-the-preparation-of-an-environmental",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "MountainWest Overthrust Pipeline, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "MountainWest Overthrust Pipeline, LLC",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
-   "document_number": "2026-21984",
-   "date": "2026-10-28",
-   "agency": "FERC",
-   "type": "Notice",
-   "title": "Northern States Power Company; Notice of Intent To Prepare an Environmental Assessment",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21984/northern-states-power-company-notice-of-intent-to-prepare-an-environmental-assessment",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_ENERGY_REGULATORY_FILING",
-   "label_ar": "إجراء تنظيمي لدى لجنة تنظيم الطاقة (FERC)",
-   "document_type": "FR_ENERGY_REGULATORY_FILING",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Northern States Power Company"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Northern States Power Company",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
-  },
-  {
    "document_number": "2026-24127",
    "date": "2026-11-27",
    "agency": "NRC",
@@ -4264,35 +4059,6 @@
      "reason": "NOT_IN_REVIEWED_TABLE"
     }
    ]
-  },
-  {
-   "document_number": "2026-21996",
-   "date": "2026-10-28",
-   "agency": "NRC",
-   "type": "Notice",
-   "title": "Global Laser Enrichment, LLC; Paducah Laser Enrichment Facility; Final Environmental Impact Statement",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21996/global-laser-enrichment-llc-paducah-laser-enrichment-facility-final-environmental-impact-statement",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "COMPANY_UNLINKED",
-   "kind": "FR_NUCLEAR_LICENSE_ACTION",
-   "label_ar": "إجراء ترخيص نووي (NRC)",
-   "document_type": "FR_NUCLEAR_LICENSE_ACTION",
-   "importance": "LOW",
-   "importance_basis": "DOCUMENT_TYPE",
-   "potential_impact": "NEEDS_IMPACT_ASSESSMENT",
-   "potential_impact_ar": "يحتاج تقييم الأثر",
-   "group": "status",
-   "companies": [
-    "Global Laser Enrichment, LLC"
-   ],
-   "links": [],
-   "unmatched": [
-    {
-     "name": "Global Laser Enrichment, LLC",
-     "reason": "NOT_IN_REVIEWED_TABLE"
-    }
-   ]
   }
  ],
  "general": [
@@ -4671,39 +4437,6 @@
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-21954",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Individualized Human Genome Editing Products: Considerations for BLA Submission and Postapproval Management; Draft Guidance for Industry; Availability",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21954/individualized-human-genome-editing-products-considerations-for-bla-submission-and-postapproval",
-   "effective_on": null,
-   "comments_close_on": "2026-11-27",
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21953",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Electronic Submission Template for Investigational Device Exemption (IDE) Applications; Draft Guidance for Sponsors and Food and Drug Administration Staff; Availability",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21953/electronic-submission-template-for-investigational-device-exemption-ide-applications-draft-guidance",
-   "effective_on": null,
-   "comments_close_on": "2026-12-28",
-   "status": "GENERAL"
-  },
-  {
-   "document_number": "2026-21909",
-   "date": "2026-10-28",
-   "agency": "FDA",
-   "type": "Notice",
-   "title": "Notice of Approval of Product Under Voucher: Material Threat Medical Countermeasure (MCM) Priority Review Voucher; Bixlenvo (Bictegravir and Lenacapavir)",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21909/notice-of-approval-of-product-under-voucher-material-threat-medical-countermeasure-mcm-priority",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
    "document_number": "2026-24028",
    "date": "2026-11-27",
    "agency": "FAA",
@@ -5056,17 +4789,6 @@
    "status": "GENERAL"
   },
   {
-   "document_number": "2026-21964",
-   "date": "2026-10-28",
-   "agency": "FAA",
-   "type": "Notice",
-   "title": "Notice of Order Designating U.S. Aviation Safety Team (USAST) Information as Protected From Disclosure",
-   "source_url": "https://www.federalregister.gov/documents/2026/10/28/2026-21964/notice-of-order-designating-us-aviation-safety-team-usast-information-as-protected-from-disclosure",
-   "effective_on": null,
-   "comments_close_on": null,
-   "status": "GENERAL"
-  },
-  {
    "document_number": "2026-23714",
    "date": "2026-11-20",
    "agency": "FTC",
@@ -5172,6 +4894,50 @@
    "type": "Notice",
    "title": "Records Governing Off-the-Record Communications; Public Notice",
    "source_url": "https://www.federalregister.gov/documents/2026/11/20/2026-23674/records-governing-off-the-record-communications-public-notice",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23673",
+   "date": "2026-11-20",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Nevada Irrigation District; Notice of Reasonable Period of Time for Water Quality Certification Application",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/20/2026-23673/nevada-irrigation-district-notice-of-reasonable-period-of-time-for-water-quality-certification",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23447",
+   "date": "2026-11-18",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Village of Swanton, Vermont; Notice of Availability of Environmental Assessment",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/18/2026-23447/village-of-swanton-vermont-notice-of-availability-of-environmental-assessment",
+   "effective_on": null,
+   "comments_close_on": null,
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23443",
+   "date": "2026-11-18",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Commission Information Collection Activities (FERC-510); Comment Request; Extension",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/18/2026-23443/commission-information-collection-activities-ferc-510-comment-request-extension",
+   "effective_on": null,
+   "comments_close_on": "2026-12-18",
+   "status": "GENERAL"
+  },
+  {
+   "document_number": "2026-23285",
+   "date": "2026-11-16",
+   "agency": "FERC",
+   "type": "Notice",
+   "title": "Burlington Electric Department; Notice of Application Tendered for Filing With the Commission and Establishing Procedural Schedule for Licensing and Deadline for Submission of Final Amendments",
+   "source_url": "https://www.federalregister.gov/documents/2026/11/16/2026-23285/burlington-electric-department-notice-of-application-tendered-for-filing-with-the-commission-and",
    "effective_on": null,
    "comments_close_on": null,
    "status": "GENERAL"
