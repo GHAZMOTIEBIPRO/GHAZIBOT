@@ -77,7 +77,8 @@ def open_interest(underlying: str, until: str, headers: dict[str, str]) -> dict[
                 break
             for c in body.get("option_contracts") or []:
                 out[str(c.get("symbol"))] = {"open_interest": c.get("open_interest"),
-                                             "open_interest_date": c.get("open_interest_date")}
+                                             "open_interest_date": c.get("open_interest_date"),
+                                             "size": c.get("size")}
             token = body.get("next_page_token")
             if not token:
                 break
@@ -172,9 +173,12 @@ def line(r: dict[str, Any]) -> str:
            "model_black76_forward": "نموذج Black-76 على السعر الآجل الضمني (ليس المؤشر النقدي)"}
     greeks = (f"دلتا {r['delta']:+.2f}، IV {r['iv'] * 100:.0f}% {src.get(r.get('greeks_source'), '')}"
               if r.get("delta") is not None and r.get("iv") else "Greeks غير متاحة")
+    cost = ac.indicative_cost(r)
+    cost_txt = (f"تكلفة إرشادية ≈ ${cost:,.0f} (طلب × {int(r['contract_size'])} سهم)" + (" — ضمن ميزانية 200–300$" if ac.budget_watch(r) else "")
+                if cost else "المضاعف غير معروف: لا تكلفة")
     return rtl_line(f"<b>{r['contract']}</b>{LRM} {ac.CLASS_AR[r['class']]} — عرض/طلب {r['bid']:.2f}/{r['ask']:.2f} "
-                    f"(سبريد {r['spread_pct'] * 100:.0f}%)، حجم {int(r['volume']):,}، {oi}، {greeks}؛ "
-                    f"السبب: {'؛ '.join(r['class_reasons'])}")
+                    f"(سبريد {r['spread_pct'] * 100:.0f}%)، حجم {int(r['volume']):,}، {oi}، {greeks}؛ {cost_txt}؛ "
+                    f"السبب: {'؛ '.join(r['class_reasons'])}؛ سعر إرشادي غير تنفيذي، النية غير معروفة")
 
 
 def render(result: dict[str, Any], now: datetime, only: tuple[str, ...] | None = None) -> list[str]:
@@ -236,7 +240,7 @@ def main() -> int:
         window, prev = rw.previous_success(env, "options-hunter.yml", now, day_start=start - timedelta(hours=8))
         if window == "UNKNOWN":
             print("options hunter: RUN_HISTORY_UNKNOWN: digest skipped (fail safe)")
-            return 0
+            return 1  # not a sent digest: the next run in this window must still send it
         if window == "OK" and prev >= start:
             print("options hunter: digest already sent for this window")
             return 0

@@ -145,3 +145,56 @@ def test_smallcap_new_since_sends_first_stage_and_upgrades_only(monkeypatch):
 def test_pseudo_snapshot_is_what_a_scan_would_have_seen():
     snap = run.pseudo_snapshot(_bars(3, 4.0, 100), {"c": 3.5})
     assert snap["latestTrade"]["p"] == 4.0 and snap["dailyBar"]["v"] == 300 and snap["prevDailyBar"] == {"c": 3.5}
+
+
+class _Routes:
+    """Fake GitHub REST: workflow runs and per-run jobs/steps."""
+
+    def __init__(self, runs, steps):
+        self.runs, self.steps = runs, steps
+
+    def get(self, url, **kw):
+        if url.endswith("/jobs"):
+            rid = url.split("/runs/")[1].split("/")[0]
+            body = {"jobs": [{"steps": self.steps.get(rid, [])}]}
+        else:
+            body = {"workflow_runs": self.runs}
+        return SimpleNamespace(status_code=200, json=lambda: body)
+
+
+def test_window_edges_come_from_the_processing_step_not_the_run_start():
+    runs = [{"id": 7, "event": "workflow_dispatch", "run_started_at": "2026-11-30T16:40:00Z",
+             "updated_at": "2026-11-30T16:43:30Z"}]
+    steps = {"7": [{"name": "Setup", "started_at": "2026-11-30T16:40:05Z"},
+                   {"name": "Work", "started_at": "2026-11-30T16:41:20Z", "completed_at": "2026-11-30T16:42:10Z"}],
+             "9": [{"name": "Work", "started_at": "2026-11-30T16:56:40Z"}]}
+    http = _Routes(runs, steps)
+    day = OPEN - timedelta(hours=8)
+    t = lambda h, m, s=0: datetime(2026, 11, 30, h, m, s, tzinfo=timezone.utc)
+    assert rw.previous_success(ENV, "x.yml", NOW, day_start=day, http=http, step="Work") == ("OK", t(16, 41, 20))
+    assert rw.previous_success(ENV, "x.yml", NOW, day_start=day, http=http, step="Work",
+                               mark="completed_at") == ("OK", t(16, 42, 10))
+    # an unreadable step falls back conservatively: start -> run start, completion -> run update time
+    assert rw.previous_success(ENV, "x.yml", NOW, day_start=day, http=http, step="Gone")[1] == t(16, 40)
+    assert rw.previous_success(ENV, "x.yml", NOW, day_start=day, http=http, step="Gone",
+                               mark="completed_at")[1] == t(16, 43, 30)
+    assert rw.own_step_time(ENV, "Work", NOW, http=http) == t(16, 56, 40)
+
+
+def test_step_names_used_for_the_run_history_exist_in_the_workflows():
+    from scripts import run_session_tracker as rst
+
+    tracker = (ROOT / ".github/workflows/session-tracker.yml").read_text(encoding="utf-8")
+    small = (ROOT / ".github/workflows/smallcap-scan.yml").read_text(encoding="utf-8")
+    assert f"- name: {rst.STEP}\n" in tracker
+    assert "- name: Scan or post-close review (owner-private)\n" in small
+    assert '"Scan or post-close review (owner-private)"' in (ROOT / "scripts/run_smallcap_scan.py").read_text(encoding="utf-8")
+
+
+def test_engines_never_exit_success_without_processing_when_the_history_is_unknown():
+    for name, marker in (("run_smallcap_scan.py", "RUN_HISTORY_UNKNOWN"), ("run_options_hunter.py", "RUN_HISTORY_UNKNOWN")):
+        text = (ROOT / "scripts" / name).read_text(encoding="utf-8")
+        i = text.index(marker)
+        assert "return 1" in text[i:i + 250], name
+    tracker = (ROOT / "scripts/run_session_tracker.py").read_text(encoding="utf-8")
+    assert 'slot = "INTRADAY"' in tracker and 'window == "UNKNOWN":\n        return 1' in tracker

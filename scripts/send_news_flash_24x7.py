@@ -370,6 +370,47 @@ def _action_ar(status: str) -> str:
     }.get(status, "راقب الشارت والفوليوم قبل القرار.")
 
 
+def event_kind(record: dict[str, Any]) -> str:
+    """NEW, UPDATE (an amended filing: 8-K/A, 10-Q/A ...) or FOLLOW_UP (an edit of an earlier alert)."""
+    if record.get("updated_at"):
+        return "FOLLOW_UP"
+    head = str(record.get("headline") or "")
+    if "/A " in head or head.split(" ", 1)[0].endswith("/A") or "amend" in head.lower():
+        return "UPDATE"
+    return "NEW"
+
+
+KIND_AR = {"NEW": "جديد", "UPDATE": "تحديث (إفصاح معدّل)", "FOLLOW_UP": "متابعة"}
+
+
+def _riyadh(value: Any) -> str:
+    t = parse_published(str(value or ""))
+    return t.astimezone(RIYADH).strftime("%H:%M:%S") if t else "غير متاح"
+
+
+def latency_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """P50/P95 seconds: publication -> first seen (detection) and publication -> Telegram accepted.
+
+    Public news times only (no market data); a record without a publication time is not measured.
+    """
+    def pct(values: list[float]) -> dict[str, Any]:
+        xs = sorted(values)
+        if not xs:
+            return {"n": 0}
+        return {"n": len(xs), "p50_s": round(xs[len(xs) // 2], 1), "p95_s": round(xs[min(len(xs) - 1, round(0.95 * (len(xs) - 1)))], 1)}
+
+    detect, accept = [], []
+    for r in records:
+        pub = parse_published(str(r.get("published") or ""))
+        seen = parse_published(str(r.get("first_seen_at") or ""))
+        sent = parse_published(str(r.get("telegram_accepted_at") or ""))
+        if pub and seen:
+            detect.append((seen - pub).total_seconds())
+        if pub and sent:
+            accept.append((sent - pub).total_seconds())
+    return {"publish_to_detect": pct(detect), "publish_to_telegram": pct(accept)}
+
+
 def format_message(record: dict[str, Any]) -> str:
     bias = str(record.get("bias") or "NEUTRAL")
     bias_icon = "🟢" if bias == "POSITIVE" else "🔴" if bias == "NEGATIVE" else "🟡"
@@ -380,14 +421,17 @@ def format_message(record: dict[str, Any]) -> str:
     published_text = published.astimezone(RIYADH).strftime("%Y-%m-%d %H:%M") if published else "غير متاح"
     age = _number(record.get("age_minutes"))
 
+    kind = KIND_AR[event_kind(record)]
     lines = [
-        f"⚡ <b>BLACK BOX NEWS FLASH | {html.escape(str(record.get('symbol') or ''))}</b>",
+        f"⚡ <b>BLACK BOX Ω | {kind} | {html.escape(str(record.get('symbol') or ''))}</b>",
         f"{bias_icon} الخبر: <b>{bias_ar}</b> | {status_icon} <b>{html.escape(status_text)}</b>",
         f"📰 {html.escape(str(record.get('headline') or '')[:520])}",
-        f"⏱ النشر: {published_text} بتوقيت الرياض | العمر: {age:.0f}د",
+        f"⏱ النشر: {published_text} بتوقيت الرياض | أول رصد: {_riyadh(record.get('first_seen_at'))} | العمر عند الرصد: {age:.0f}د",
         f"📡 {html.escape(str(record.get('source') or '')[:120])} | {html.escape(str(record.get('source_class') or ''))}",
     ]
     reaction = record.get("reaction")
+    if not isinstance(reaction, dict):
+        lines.append("💵 رد فعل السعر: غير متاح (لا مصدر أسعار مصرح به في هذا المسار)")
     if isinstance(reaction, dict):
         lines.append(
             "💵 قبل الخبر "
@@ -405,7 +449,7 @@ def format_message(record: dict[str, Any]) -> str:
     url = str(record.get("url") or "").strip()
     if url.startswith("https://"):
         lines.append(f'<a href="{html.escape(url, quote=True)}">فتح الخبر</a>')
-    lines.append("<i>Flash سريع للمعلومة وحركة السعر؛ ليس إثباتًا رسميًا ولا أمر شراء/بيع.</i>")
+    lines.append("<i>الخبر وحده ليس إشارة دخول؛ الأثر المحتمل تصنيف آلي للعنوان لا حكم مالي. ليس أمر شراء/بيع.</i>")
     return "\n".join(lines)
 
 
@@ -447,6 +491,8 @@ def _record_from_event(
         "material_reasons": reasons,
         "source_class": source_class(event),
         "age_minutes": round(age_minutes, 2),
+        "first_seen_at": now.isoformat(),  # this run read it; never used as the publication time
+        "decision_at": now.isoformat(),
         "reaction": reaction,
         "reaction_state": status,
     }
@@ -525,6 +571,7 @@ def run(
         result = send_html_message(format_message(record))
         record["message_id"] = result.message_id
         record["sent_at"] = now.isoformat()
+        record["telegram_accepted_at"] = datetime.now(timezone.utc).isoformat()  # Bot API accepted (not read)
         registry[fp] = record
         new_fingerprints.add(fp)
         sent += 1
@@ -541,6 +588,8 @@ def run(
         )
         current["message_id"] = old_record.get("message_id")
         current["sent_at"] = old_record.get("sent_at")
+        for key in ("first_seen_at", "decision_at", "telegram_accepted_at"):  # the first alert's times stay
+            current[key] = old_record.get(key)
         if not should_edit(old_record, current):
             continue
         message_id = int(old_record.get("message_id") or 0)
@@ -562,6 +611,8 @@ def run(
     state["schema"] = STATE_SCHEMA
     state["events"] = registry
     _save(state_path, state)
+    latency = latency_summary([registry[fp] for fp in new_fingerprints if isinstance(registry.get(fp), dict)])
+    print("News flash latency (public news times only):", json.dumps(latency))
     return {"discovered": len(events), "fresh_material": len(fresh), "sent": sent, "edited": edited}
 
 
