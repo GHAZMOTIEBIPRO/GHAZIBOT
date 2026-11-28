@@ -64,6 +64,8 @@ def rows(snapshots: dict[str, dict[str, Any]], *, today: date, open_interest: di
             "bid": bid, "ask": ask, "mid": round(mid, 4), "spread_pct": round(spread, 4),
             "quote_time": q.get("t"), "volume": volume, "open_interest": oi,
             "open_interest_date": oi_row.get("open_interest_date"),
+            # Shares per contract from the contracts API (adjusted contracts differ); None = unknown, never 100.
+            "contract_size": _f(oi_row.get("size")),
             "vol_to_oi_ratio": round(volume / oi, 3) if oi else None,
             "iv": _f(snap.get("impliedVolatility")), "delta": _f(g.get("delta")), "gamma": _f(g.get("gamma")),
             "theta": _f(g.get("theta")), "vega": _f(g.get("vega")),
@@ -164,6 +166,21 @@ def coverage(snapshots_by_underlying: dict[str, dict[str, Any]], kept: list[dict
             "greeks_by_source": _count(r.get("greeks_source") or "none" for r in kept),
             "eligible": sum(1 for r in kept if eligible(r)),
             "by_dte_bucket": _count(bucket(r["dte"]) or ("expired" if r["dte"] < 0 else "beyond_60") for r in kept)}
+
+
+BUDGET_USD = (200.0, 300.0)  # owner's research budget per contract (indicative ask x real multiplier)
+
+
+def indicative_cost(r: dict[str, Any]) -> float | None:
+    """Ask x shares per contract, when both are known; an indicative quote, not an executable price."""
+    size = r.get("contract_size")
+    return round(r["ask"] * size, 2) if size and r.get("ask") else None
+
+
+def budget_watch(r: dict[str, Any]) -> bool:
+    """In the owner's budget AND eligible AND traded today; a watch flag, never a recommendation."""
+    cost = indicative_cost(r)
+    return bool(cost and BUDGET_USD[0] <= cost <= BUDGET_USD[1] and eligible(r) and r.get("volume", 0) > 0)
 
 
 MAX_ELIGIBLE_SPREAD = 0.25  # relative to mid; wider quotes are listed as seen but never ranked as eligible

@@ -49,3 +49,24 @@ def test_coverage_counts_eligible_and_dte_buckets_and_confirmed_wording():
     assert cov["eligible"] == 1 and cov["with_iv"] == 1 and cov["greeks_by_source"] == {"none": 1, "provider_indicative": 1}
     assert sum(cov["by_dte_bucket"].values()) == 2
     assert "ليس تأكيد دخول" in ac.CLASS_AR["CONFIRMED_BY_AVAILABLE_DATA"]
+
+
+
+def test_indicative_cost_uses_the_real_multiplier_and_budget_watch_needs_eligibility():
+    base = {"ask": 2.5, "contract_size": 100.0, "dte": 1, "spread_pct": 0.08, "volume": 10}
+    assert ac.indicative_cost(base) == 250.0 and ac.budget_watch(base)
+    assert ac.indicative_cost({**base, "contract_size": None}) is None  # unknown multiplier: no cost, never 100
+    assert ac.indicative_cost({**base, "contract_size": 10.0}) == 25.0 and not ac.budget_watch({**base, "contract_size": 10.0})
+    assert not ac.budget_watch({**base, "spread_pct": 0.6})   # too wide to be eligible
+    assert not ac.budget_watch({**base, "volume": 0})         # no trade today
+
+
+def test_contract_line_says_indicative_and_unknown_intent():
+    from scripts import run_options_hunter as h
+
+    r = {"contract": "SPY261130C00600000", "class": "UNUSUAL_ACTIVITY", "bid": 2.4, "ask": 2.5, "spread_pct": 0.04,
+         "volume": 1200, "open_interest": None, "delta": None, "iv": None, "contract_size": 100.0, "dte": 0,
+         "class_reasons": ["synthetic"]}
+    text = h.line(r)
+    assert "تكلفة إرشادية ≈ $250" in text and "ضمن ميزانية" in text and "سعر إرشادي غير تنفيذي" in text
+    assert "النية غير معروفة" in text and "OI غير متاح" in text and "Greeks غير متاحة" in text
