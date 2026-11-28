@@ -104,11 +104,78 @@ def run(symbols: list[str], count: int, now: datetime, env, pause=time.sleep) ->
             "all": cs.summarise(signals), "first_half": compact, "second_half": compact2}
 
 
+# Pre-registered 2026-11-28 before the out-of-sample run (no further rule or parameter changes):
+# the live rule (V5, map stop, T1), its best in-sample variant (V5, structure stop, T2), the old rule
+# (C60, map stop, T1) as the fixed baseline and the plain fast close (C5, map stop, T1).
+PREREGISTERED = ("V5/map/T1", "V5/bar/T2", "C60/map/T1", "C5/map/T1")
+DELAYS = (0, 5, 10, 16)
+
+
+def run_oos(symbols: list[str], count: int, offset: int, now: datetime, env, pause=time.sleep) -> dict:
+    """Sessions [-(count+offset), -offset): never used to choose the rules. Every trade is kept (close exit)."""
+    provider = AlpacaBars(env, now=now)
+    status = provider.status()
+    if status != "READY":
+        return {"status": status}
+    all_days = sessions(now, count + offset + 12)
+    days = all_days[: len(all_days) - offset]  # 12 warm-up sessions (volume baseline, hour EMA), then the study
+    study = set(days[-count:])
+    rules = {k.split("/")[0] for k in PREREGISTERED}
+    by_delay: dict[int, list[cs.Signal]] = {d: [] for d in DELAYS}
+    coverage: dict = {"symbols_ok": 0, "symbols_failed": 0, "sessions": count,
+                      "window": [days[-count][0].date().isoformat(), days[-1][0].date().isoformat()]}
+    for symbol in symbols:
+        daily = provider.bars(symbol, "1d", days[0][0] - timedelta(days=200), days[-1][1])
+        minute = fetch_1m(provider, symbol, days, pause)
+        if daily.get("status") != "OK" or minute.get("status") != "OK":
+            coverage["symbols_failed"] += 1
+            continue
+        coverage["symbols_ok"] += 1
+        drows = [{"date": b["t"].astimezone(NY).date().isoformat(), "open": b["o"], "high": b["h"],
+                  "low": b["l"], "close": b["c"], "volume": b["v"]} for b in daily["bars"]]
+        by_day: dict[str, list[dict]] = {}
+        for b in minute["bars"]:
+            by_day.setdefault(b["t"].astimezone(NY).date().isoformat(), []).append(b)
+        hours_hist: list[dict] = []
+        vol_hist: list[dict[tuple[int, int], float]] = []
+        for open_at, close_at in days:
+            key = open_at.astimezone(NY).date().isoformat()
+            regular = [b for b in by_day.get(key, []) if open_at <= b["t"] < close_at]
+            if (open_at, close_at) in study and len(vol_hist) >= BASELINE_SESSIONS:
+                past = [r for r in drows if r["date"] < key]
+                atr14 = dp.atr(past[-60:]) if len(past) >= 15 else None
+                weekly = dp.weekly_from_daily(past, last_closed_week_end=past[-1]["date"]) if past else []
+                baseline: dict[tuple[int, int], float] = {}
+                for k in {k for v in vol_hist[-BASELINE_SESSIONS:] for k in v}:
+                    vals = [v[k] for v in vol_hist[-BASELINE_SESSIONS:] if k in v]
+                    baseline[k] = sum(vals) / len(vals)
+                if past and atr14:
+                    for delay in DELAYS:
+                        by_delay[delay].extend(cs.session_signals(
+                            regular, open_at, past[-1], atr14, weekly[-1] if weekly else None, hours_hist[-60:],
+                            baseline, entry_delay_min=delay, rules=rules))
+            hours_hist.extend(cs.bucket(regular, open_at, 60))
+            vol_hist.append({(m, b["idx"]): b["v"] for m in cs.RVOL_FRAMES for b in cs.bucket(regular, open_at, m)})
+    results = {}
+    for key in PREREGISTERED:
+        rule, stop, target = key.split("/")
+        results[key] = {f"delay_{d}m": cs.validation_stats(
+            [x for x in by_delay[d] if x.rule == rule and x.stop_model == stop and x.target_model == target],
+            sessions=count * coverage["symbols_ok"]) for d in DELAYS}
+    return {"status": "OK", "mode": "out_of_sample", "preregistered": list(PREREGISTERED), "coverage": coverage,
+            "tests_note": "4 pre-registered rules x 4 delays; about 60 variants were explored in-sample before",
+            "results": results}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sessions", type=int, default=120)
+    parser.add_argument("--oos-offset", type=int, default=0, help="study sessions ending this many sessions ago")
     args = parser.parse_args()
-    result = run([*DETAIL_INDEX_FUNDS, *DETAIL_LEADERS], args.sessions, datetime.now(timezone.utc), os.environ)
+    symbols = [*DETAIL_INDEX_FUNDS, *DETAIL_LEADERS]
+    now = datetime.now(timezone.utc)
+    result = (run_oos(symbols, args.sessions, args.oos_offset, now, os.environ) if args.oos_offset
+              else run(symbols, args.sessions, now, os.environ))
     text = json.dumps(result, indent=1)
     print("Confirmation study (aggregate only):", text)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")

@@ -62,6 +62,8 @@ class Signal:
     mae_r: float
     atr_pct: float          # ATR14 / prior close: volatility of the name
     stopped_within_30m: bool
+    session: str = ""       # session date, for day-level bootstrap (signals within a day are correlated)
+    delay_min: int = 0      # minutes between the rule completing and the entry (data + processing delay)
 
 
 def bucket(bars: list[dict[str, Any]], open_at: datetime, minutes: int, step: int = 1) -> list[dict[str, Any]]:
@@ -112,7 +114,8 @@ def _score(after: list[dict[str, Any]], side: str, entry: float, stop: float, ta
 
 def session_signals(bars_1m: list[dict[str, Any]], open_at: datetime, prior: dict[str, float], atr14: float,
                     week: dict[str, float] | None, prior_hours: list[dict[str, Any]],
-                    volume_baseline: dict[tuple[int, int], float] | None = None) -> list[Signal]:
+                    volume_baseline: dict[tuple[int, int], float] | None = None,
+                    entry_delay_min: int = 0, rules: set[str] | None = None) -> list[Signal]:
     """Every rule x stop-model signal for one session. `volume_baseline[(m, idx)]` = mean prior volume."""
     pdh, pdl = prior["high"], prior["low"]
     rng = pdh - pdl
@@ -128,8 +131,16 @@ def session_signals(bars_1m: list[dict[str, Any]], open_at: datetime, prior: dic
     out: list[Signal] = []
 
     def emit(rule: str, side: str, entry: float, at: datetime, bar_stop: float) -> None:
+        if rules is not None and rule not in rules:
+            return
         trigger, map_stop, targets = sides[side]
         sign = 1 if side == "CALL" else -1
+        if entry_delay_min:
+            # the alert reaches the trader `entry_delay_min` later: enter at the close of that later minute
+            late = next((b for b in bars_1m if b["t"] >= at + timedelta(minutes=entry_delay_min - 1)), None)
+            if late is None:
+                return
+            entry, at = late["c"], late["t"] + timedelta(minutes=1)
         ahead = [t for t in targets if sign * (t - entry) > 0]
         after = [b for b in bars_1m if b["t"] >= at]
         for model, stop in (("map", map_stop), ("bar", bar_stop)):
@@ -143,7 +154,8 @@ def session_signals(bars_1m: list[dict[str, Any]], open_at: datetime, prior: dic
                 outcome, r, mfe, mae, early_stop = _score(after, side, entry, stop, target, close_price, at)
                 out.append(Signal(rule, model, tmodel, side, int((at - open_at).total_seconds() // 60),
                                   round(sign * (entry - trigger) / atr14, 4), outcome, r,
-                                  r * risk / atr14, mfe, mae, atr_pct, early_stop))
+                                  r * risk / atr14, mfe, mae, atr_pct, early_stop,
+                                  open_at.date().isoformat(), entry_delay_min))
 
     for side, (trigger, _, _) in sides.items():
         for m in FRAMES:
@@ -225,3 +237,34 @@ def summarise(signals: list[Signal]) -> dict[str, Any]:
                                                      ("high", lambda a: a >= hi))}
         out[f"{rule}/{model}/{tmodel}"] = entry
     return out
+
+
+def validation_stats(rows: list[Signal], *, sessions: int, resamples: int = 2000, seed: int = 7) -> dict[str, Any]:
+    """Out-of-sample statistics: every trade counted (close exit), day-level bootstrap CI, drawdown in R."""
+    import random
+
+    if not rows:
+        return {"n": 0, "coverage": 0.0}
+    base = _stats(rows)
+    by_day: dict[str, list[float]] = {}
+    for s in rows:
+        by_day.setdefault(s.session, []).append(s.r)
+    days = sorted(by_day)
+    rng = random.Random(seed)
+    means = []
+    for _ in range(resamples):
+        pick = [by_day[days[rng.randrange(len(days))]] for _ in days]
+        flat = [x for d in pick for x in d]
+        means.append(sum(flat) / len(flat))
+    means.sort()
+    equity = peak = dd = 0.0
+    for s in sorted(rows, key=lambda x: (x.session, x.minutes_after_open)):
+        equity += s.r
+        peak = max(peak, equity)
+        dd = min(dd, equity - peak)
+    return {**{k: base[k] for k in ("n", "win_rate", "avg_win_r", "avg_loss_r", "exp_r", "pf", "mfe_r", "mae_r",
+                                     "entry_min", "close", "false_break_30m")},
+            "median_r": round(median(s.r for s in rows), 3), "days_with_signal": len(days),
+            "coverage": round(len(days) / sessions, 3) if sessions else None,
+            "ci95_exp_r": [round(means[int(0.025 * resamples)], 3), round(means[int(0.975 * resamples)], 3)],
+            "max_drawdown_r": round(dd, 2), "cost_bp_per_side": SLIPPAGE * 1e4}

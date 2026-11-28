@@ -102,3 +102,28 @@ def test_target_models_for_the_main_rules():
     assert c5["EOD"].outcome == "CLOSE"  # no target: held to the close
     c3 = {s.target_model for s in signals if s.rule == "C3"}
     assert c3 == {"T1"}  # only the main rules get the extra target models
+
+
+def test_entry_delay_moves_the_entry_later_and_never_earlier():
+    bars = _session(_rally())
+    fast = next(s for s in cs.session_signals(bars, OPEN, PRIOR, 4.0, None, _hours(), rules={"C5"})
+                if s.side == "CALL" and s.stop_model == "map" and s.target_model == "T1")
+    slow = next(s for s in cs.session_signals(bars, OPEN, PRIOR, 4.0, None, _hours(), entry_delay_min=16, rules={"C5"})
+                if s.side == "CALL" and s.stop_model == "map" and s.target_model == "T1")
+    assert slow.minutes_after_open == fast.minutes_after_open + 16 and slow.delay_min == 16
+    assert slow.preconf_atr > fast.preconf_atr  # a later alert has used more of the move
+    assert {s.rule for s in cs.session_signals(bars, OPEN, PRIOR, 4.0, None, _hours(), rules={"C5"})} == {"C5"}
+
+
+def test_validation_counts_every_trade_and_bootstraps_by_day():
+    path = [105.0] * 10 + [110.5] * 5 + [108.0] * 375
+    win = cs.session_signals(_session(_rally()), OPEN, PRIOR, 4.0, None, _hours(), rules={"C3"})
+    loss = cs.session_signals(_session(path), OPEN, PRIOR, 4.0, None, _hours(), rules={"C3"})
+    rows = [s for s in win + loss if s.stop_model == "map"]
+    for i, s in enumerate(rows):
+        s.session = f"2026-11-{i + 1:02d}"
+    v = cs.validation_stats(rows, sessions=10, resamples=200)
+    assert v["n"] == len(rows) and v["days_with_signal"] == len(rows) and v["coverage"] == round(len(rows) / 10, 3)
+    lo, hi = v["ci95_exp_r"]
+    assert lo <= v["exp_r"] <= hi and v["max_drawdown_r"] < 0 and v["cost_bp_per_side"] == 2.0
+    assert cs.validation_stats([], sessions=10) == {"n": 0, "coverage": 0.0}
