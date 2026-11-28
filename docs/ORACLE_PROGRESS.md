@@ -333,3 +333,19 @@ smallcap/options/session (نجاح/فشل) + رسائل تيليجرام نفس�
 2. سجلات iex-stream: P50/P95 للمزود والقرار والإرسال، وانتقال المقاطع.
 3. حالة تشغيلات smallcap وoptions وsession: نجاح، أو فشل إن لم تُقبل أي رسالة. ثم رسائل تيليجرام نفسها.
 4. ثم أولويات P2 المسجلة أعلاه فقط.
+
+
+## COMPETITIVE EDGE Ω (2026-11-28) — فرع `claude/competitive-edge-omega`؛ main لم يتغير
+- **الوثائق:** `docs/COMPETITIVE_EDGE_BASELINE.md`، و`docs/COMPETITIVE_EDGE_RESEARCH.md` (7 مراجع: 4 بصفحة رسمية مقروءة،
+  و3 UNVERIFIED؛ صفر محتوى Telegram)، و`docs/COMPETITIVE_EDGE_VALIDATION.md`، و`docs/COMPETITIVE_EDGE_RELEASE.md`.
+- **#469 (إصلاح معزول إلى main، الدمج بيد المالك):** فقدان أحداث نوافذ الفتحات بعد تسليم الفتحة، وتشغيلات بلا سجل
+  تشغيلات كانت تصبح أساساً للتشغيل التالي، وحدود النافذة من بداية خطوة المعالجة.
+- **على الفرع:**
+  - الأخبار: النوع، وأول رصد، والعمر، وأزمنة القرار والقبول، وP50/P95، وإصلاح وقت نشر Finnhub المجهول؛
+  - العقود: المضاعف الحقيقي، والتكلفة الإرشادية، ووسم الميزانية 200–300$.
+- **NOT_RUN:**
+  - القياس الحي (يحتاج الاثنين)؛
+  - فرضيات PREREGISTRATION_PHASE4 (P3، بعد أدلة القبول الحي)؛
+  - UOption وlightweight-charts (الجلب يحتاج موافقة).
+- **الاستئناف:** بعد الجلسة `python -m scripts.verify_session_day --state ../state --date 2026-11-30`، ثم يُحدّث VALIDATION،
+  ثم يُفتح PR هذا الفرع.
