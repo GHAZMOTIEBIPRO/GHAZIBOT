@@ -27,8 +27,8 @@ ALLOWED_ADDS = {
     "runtime/public/data/oracle_status.json",         # statuses and operational counts
     "state/options_hunter/last_top.json",             # keyed alert tags
     "state/telegram/telegram_commands_offset.json",   # update offset and command statuses
-    "state/smallcaps/*.tags.json",                    # keyed tags and an alert count
-    "state/smallcaps/*.postclose.json",               # detection count and time
+    "state/smallcaps/*.tags.json",                    # sealed fixed-size keyed tags
+    "state/smallcaps/*.postclose.json",               # done flag and time
     "runtime/public/data/alpaca_iex_vcp_health.json",  # health statuses (earlier mission)
     "state/alpaca/vcp_private_delivery.json",         # delivery status (earlier mission)
     "state/opening_fib/sent.json", "state/opening_fib/shadow_sent.json",  # sent markers (earlier mission)
@@ -59,15 +59,31 @@ def test_recover_reads_back_only_with_the_key():
     assert sk.recover(b"other" * 8, tags, ("smallcap", "2026-11-30"), cands) == []
 
 
-def test_smallcap_state_holds_tags_and_a_count_only(tmp_path):
+def test_smallcap_state_is_sealed_fixed_size_and_content_free(tmp_path):
     path = tmp_path / "2026-11-30.tags.json"
     tags = {sk.tag(KEY, "smallcap", "2026-11-30", "AAAA", "CONFIRMED_MOVE", 42)}
-    run.save_tags(path, "2026-11-30", tags, 1, NOW)
+    run.save_tags(path, KEY, "2026-11-30", tags, NOW)
     saved = json.loads(path.read_text())
-    assert set(saved) == {"schema", "day", "tags", "alerts_sent", "updated_at"}
-    assert b"AAAA" not in path.read_bytes() and b"CONFIRMED" not in path.read_bytes()
-    found = run.detections_from_tags(KEY, "2026-11-30", set(saved["tags"]), ["AAAA", "BBBB"])
+    assert set(saved) == {"schema", "day", "updated_at", "key_id", "nonce", "tags"}
+    assert len(saved["tags"]) == sk.SLOTS and b"AAAA" not in path.read_bytes() and b"CONFIRMED" not in path.read_bytes()
+    empty = tmp_path / "empty.tags.json"
+    run.save_tags(empty, KEY, "2026-11-30", set(), NOW)
+    assert len(json.loads(empty.read_text())["tags"]) == sk.SLOTS  # an alert does not change the size
+    real = run.load_tags(path, KEY, "2026-11-30")
+    assert real == tags and run.load_tags(empty, KEY, "2026-11-30") == set()
+    found = run.detections_from_tags(KEY, "2026-11-30", real, ["AAAA", "BBBB"])
     assert found == {"AAAA": {"stage": "CONFIRMED_MOVE", "minute": 42, "top_stage": "CONFIRMED_MOVE"}}
+    assert run.load_tags(path, b"r" * 40, "2026-11-30") is None  # rotated key: unreadable, alerts stay off
+
+
+def test_seal_hides_size_and_rewrites_differ():
+    real = {sk.tag(KEY, "x", i) for i in range(3)}
+    a, b = sk.seal(KEY, "scope", real), sk.seal(KEY, "scope", real)
+    assert len(a["tags"]) == len(b["tags"]) == sk.SLOTS and a["tags"] != b["tags"]  # fresh nonce every write
+    assert sk.unseal(KEY, "scope", a) == real == sk.unseal(KEY, "scope", b)
+    big = {sk.tag(KEY, "y", i) for i in range(300)}
+    assert len(sk.seal(KEY, "scope", big)["tags"]) == 2 * sk.SLOTS
+    assert sk.unseal(KEY, "other-scope", a) != real
 
 
 def test_smallcap_dedupe_and_upgrade_from_tags():
@@ -116,8 +132,8 @@ def test_public_status_has_no_outcome_counts(tmp_path):
     (day / "session_POSTCLOSE.json").write_text(json.dumps({"status": "DELIVERED", "scorecard": {"t1": 3}}))
     small = state / "smallcaps"
     small.mkdir()
-    run.save_tags(small / "2026-11-30.tags.json", "2026-11-30", {"ab"}, 2, NOW)
+    run.save_tags(small / "2026-11-30.tags.json", KEY, "2026-11-30", {"ab"}, NOW)
     out = bos.build(state, tmp_path / "data", NOW)
     text = json.dumps(out)
-    assert "scorecard" not in text and "t1" not in text and "positive" not in text
-    assert out["smallcaps"]["alerts_sent"] == 2 and "tags" not in out["smallcaps"]
+    assert "scorecard" not in text and "t1" not in text and "positive" not in text and "alert" not in text
+    assert out["smallcaps"] == {"day": "2026-11-30", "last_run": NOW.isoformat()}

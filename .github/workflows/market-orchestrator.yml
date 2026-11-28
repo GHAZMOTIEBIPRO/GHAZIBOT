@@ -195,6 +195,10 @@ jobs:
           if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1830 )); then
             dispatch_if_stale session-tracker.yml 9 "Session tracker"
           fi
+          # Session preflight before the first report (settings-check.yml: log-only, sends nothing).
+          if (( $(date -u +%u) <= 5 && ny_hm >= 740 && ny_hm <= 815 )); then
+            dispatch_if_stale settings-check.yml 300 "session preflight"
+          fi
           # Owner-private IEX real-time first look, the whole session in consecutive segments: a dispatch
           # every ~30 minutes queues behind the running segment (concurrency, one pending at most), so
           # the next one starts when the current one ends; after the close a segment exits at once.

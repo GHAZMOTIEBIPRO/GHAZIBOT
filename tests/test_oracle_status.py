@@ -14,10 +14,11 @@ def test_status_reads_markers_and_leaks_no_values(tmp_path):
                                                        "items": {"x": {"status": "DELIVERED"}}}))
     (day / "session_POSTCLOSE.json").write_text(json.dumps({"status": "DELIVERED", "scorecard": {"maps": 14, "t1": 3}}))
     (state / "options_hunter").mkdir(parents=True)
-    (state / "options_hunter" / "last_top.json").write_text(json.dumps({"day": "2026-11-30", "alerted": ["h1", "h2"]}))
+    (state / "options_hunter" / "last_top.json").write_text(json.dumps({"day": "2026-11-30", "updated_at": "2026-11-30T20:00:00+00:00", "tags": ["h1", "h2"]}))
     out = bos.build(state, data, datetime(2026, 11, 30, 22, 0, tzinfo=timezone.utc))
     assert out["day"]["reports"]["EARLY"]["status"] == "DELIVERED" and "scorecard" not in out["day"]
-    assert out["options_hunter"]["material_alerts"] == 2 and out["sec_registry"]["status"] == "NOT_CONFIGURED"
+    assert out["options_hunter"] == {"day": "2026-11-30", "last_run": "2026-11-30T20:00:00+00:00"}
+    assert out["sec_registry"]["status"] == "NOT_CONFIGURED"
     text = json.dumps(out)
     assert "fingerprints" not in text and "NVDA" not in text and "h1" not in text  # nothing symbol-level
     assert all(f["public"] is (f["name"] == "SEC EDGAR") for f in out["feeds"])

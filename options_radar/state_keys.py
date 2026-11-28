@@ -15,11 +15,13 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import secrets
 from collections.abc import Iterable, Mapping
 
 ENV = "GHAZI_STATE_HMAC_KEY"
 MIN_LEN = 32
 SEP = "\x1f"
+SLOTS = 256  # a sealed set always holds a multiple of this many tags
 
 
 def state_key(env: Mapping[str, str]) -> bytes | None:
@@ -46,3 +48,40 @@ def recover(key: bytes, tags: Iterable[str], prefix: tuple, candidates: Iterable
         if h.hexdigest()[:24] in wanted:
             found.append(c)
     return found
+
+
+def key_id(key: bytes) -> str:
+    """A short public check that two jobs use the same key (an HMAC of a constant; reveals nothing)."""
+    return tag(key, "ghazi-key-id-v1")[:8]
+
+
+def seal(key: bytes, scope: str, real: Iterable[str]) -> dict[str, object]:
+    """A fixed-size, content-free public form of a set of tags.
+
+    Owner (PHASE 5): tags and counts must not reveal symbols or private trading states. A bare tag set
+    leaks its size (how many alerts) and, rewritten only when it grows, its timing. A sealed set pads
+    the real tags with keyed decoys to a multiple of SLOTS under a fresh nonce, and callers rewrite it on
+    every run, so its size and its commit times say nothing. Only a key holder can remove the decoys.
+    """
+    real = set(real)
+    nonce = secrets.token_hex(8)
+    size = max(SLOTS, -(-len(real) // SLOTS) * SLOTS)
+    pads: set[str] = set()
+    i = 0
+    while len(pads) < size - len(real):
+        pad = tag(key, "pad", scope, nonce, i)
+        if pad not in real:
+            pads.add(pad)
+        i += 1
+    return {"key_id": key_id(key), "nonce": nonce, "tags": sorted(real | pads)}
+
+
+def unseal(key: bytes, scope: str, sealed: Mapping[str, object] | None) -> set[str] | None:
+    """The real tags of a sealed set; None when it was sealed under another key (rotation: see docs)."""
+    if not sealed or not sealed.get("tags"):
+        return set()
+    if sealed.get("key_id") != key_id(key):
+        return None
+    tags = set(sealed["tags"])  # type: ignore[arg-type]
+    nonce = sealed.get("nonce")
+    return tags - {tag(key, "pad", scope, nonce, i) for i in range(len(tags) + 64)}

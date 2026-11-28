@@ -38,23 +38,26 @@ DATA = "https://data.alpaca.markets"
 ORDER = {s: i for i, s in enumerate(("COMPRESSION", "EARLY_ACTIVITY", "BREAKOUT_WATCH", "CONFIRMED_MOVE", "EXTENDED"))}
 
 
-TAGS_SCHEMA = "ghazi.smallcap_tags.v1"
+TAGS_SCHEMA = "ghazi.smallcap_tags.v2"
 MAX_MINUTE = 400  # a regular session is 390 minutes
 
 
-def load_tags(path: Path) -> dict:
+def load_tags(path: Path, key: bytes, day: str) -> set[str] | None:
+    """Today's real tags; None when today's file was sealed under another key (alerts stay off today)."""
     try:
         d = json.loads(path.read_text())
     except (OSError, ValueError):
-        return {"schema": TAGS_SCHEMA, "tags": [], "alerts_sent": 0}
-    return d if d.get("schema") == TAGS_SCHEMA else {"schema": TAGS_SCHEMA, "tags": [], "alerts_sent": 0}
+        return set()
+    if d.get("schema") != TAGS_SCHEMA or d.get("day") != day:
+        return set()
+    return sk.unseal(key, f"smallcap|{day}", d)
 
 
-def save_tags(path: Path, day: str, tags: set[str], alerts_sent: int, now: datetime) -> None:
-    """Keyed tags and an operational count only: no symbol, stage, price or time of any detection."""
+def save_tags(path: Path, key: bytes, day: str, tags: set[str], now: datetime) -> None:
+    """A sealed, fixed-size tag set rewritten every scan: no symbol, stage, price, time or count leaks."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"schema": TAGS_SCHEMA, "day": day, "tags": sorted(tags),
-                                "alerts_sent": alerts_sent, "updated_at": now.isoformat()}))
+    path.write_text(json.dumps({"schema": TAGS_SCHEMA, "day": day, "updated_at": now.isoformat(),
+                                **sk.seal(key, f"smallcap|{day}", tags)}))
 
 
 def already_alerted(key: bytes, day: str, symbol: str, stage: str, tags: set[str], upto_minute: int) -> bool:
@@ -169,8 +172,10 @@ def main() -> int:
     day_s = open_at.astimezone(NY).date().isoformat()
     key = sk.state_key(env)
     tags_path = args.state_dir / f"{day_s}.tags.json"
-    saved = load_tags(tags_path) if saved_day_ok(tags_path, day_s) else {"tags": [], "alerts_sent": 0}
-    tags = set(saved.get("tags") or [])
+    tags = load_tags(tags_path, key, day_s) if key else set()
+    if tags is None:  # key rotated mid-day: today's tags are unreadable, so nothing may be resent today
+        print("smallcaps: KEY_CHANGED_TODAY: alerts disabled until the next session day")
+        return 0
     if args.mode == "auto":
         args.mode = "postclose" if now >= close_at + timedelta(minutes=20) else "scan"
     symbols = universe(args.state_data)
@@ -193,22 +198,17 @@ def main() -> int:
         return 0
     new = [r for r in candidates if not already_alerted(key, day_s, r["symbol"], r["stage"], tags, minute)][:8]
     if args.dry_run:
-        print("smallcaps dry run: new detections", len(new))
+        print("smallcaps dry run: ok (counts stay private)")
         return 0
-    if not new:
-        return 0
-    results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
-                               send=lambda text, chat: send_html_message(text, chat_id=chat))
-               for t in message(new, now, coverage)]
-    print("smallcaps delivery:", results)
-    if any(r in ("DELIVERED", "UNCONFIRMED") for r in results):  # never resend what may have arrived
-        tags |= {sk.tag(key, "smallcap", day_s, r["symbol"], r["stage"], minute) for r in new}
-        save_tags(tags_path, day_s, tags, int(saved.get("alerts_sent") or 0) + len(new), now)
+    if new:
+        results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
+                                   send=lambda text, chat: send_html_message(text, chat_id=chat))
+                   for t in message(new, now, coverage)]
+        print("smallcaps delivery statuses:", sorted(set(results)))  # no count: counts are market-derived
+        if any(r in ("DELIVERED", "UNCONFIRMED") for r in results):  # never resend what may have arrived
+            tags |= {sk.tag(key, "smallcap", day_s, r["symbol"], r["stage"], minute) for r in new}
+    save_tags(tags_path, key, day_s, tags, now)  # every scan, alert or not: cadence and size reveal nothing
     return 0
-
-
-def saved_day_ok(path: Path, day: str) -> bool:
-    return path.exists() and load_tags(path).get("day") == day
 
 
 def postclose(key: bytes | None, day: str, tags: set[str], symbols: list[str], open_at: datetime,
@@ -225,8 +225,7 @@ def postclose(key: bytes | None, day: str, tags: set[str], symbols: list[str], o
         return 0
     record = detections_from_tags(key, day, tags, symbols)
     if not record:
-        print("smallcaps postclose: no detections recorded")
-        return 0
+        record = {}
     results = {}
     for sym, det in record.items():
         body = _get("/v2/stocks/bars", {"symbols": sym, "timeframe": "1Min", "feed": "iex", "limit": 10000,
@@ -240,6 +239,8 @@ def postclose(key: bytes | None, day: str, tags: set[str], symbols: list[str], o
         det = {**det, "price": by_min[max(before)]}
         results[sym] = {**det, **sc.forward_moves(det["price"], det["minute"], by_min, bars[-1]["c"] if bars else None)}
     lines = [rtl_line("<b>محاسبة الأسهم الصغيرة — من سعر أول رصد</b> (IEX؛ المرجع إغلاق آخر شمعة دقيقة مكتملة قبل الرصد)")]
+    if not results:
+        lines.append(rtl_line("لا رصد مرسل اليوم."))
     for sym, r in results.items():
         lines.append(rtl_line(f"<b>{sym}</b>{LRM} {sc.STAGE_AR[r['stage']]} عند {r['price']:,.2f}: "
                               + "، ".join(f"{k} {v:+.1f}%" if v is not None else f"{k} —" for k, v in r.items()
@@ -250,11 +251,11 @@ def postclose(key: bytes | None, day: str, tags: set[str], symbols: list[str], o
         for text in _pack(lines[1:], lines[0]):
             deliver_private(text, sources=["alpaca_iex"], env=env, get_chat=get_chat,
                             send=lambda t, chat: send_html_message(t, chat_id=chat))
-    counts = {"detections": len(results), "at": now.isoformat()}  # operational count; outcomes stay in Telegram
-    print("smallcaps postclose:", json.dumps(counts))
+    done_record = {"done": True, "at": now.isoformat()}  # no count: detections and outcomes stay in Telegram
+    print("smallcaps postclose: done")
     if not args.dry_run:
         done.parent.mkdir(parents=True, exist_ok=True)
-        done.write_text(json.dumps(counts))  # counts only: once per session day
+        done.write_text(json.dumps(done_record))  # once per session day
     return 0
 
 

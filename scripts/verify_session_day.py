@@ -93,12 +93,13 @@ def main() -> int:
         print(json.dumps({"date": args.date, "verdict": "NO_RECORDS"}))
         return 2
     rows = judge(args.date, day_dir)
-    events = len((_load(day_dir / "session_events.json")).get("sent") or [])
     small = _load(args.state / "state" / "smallcaps" / f"{args.date}.tags.json")
     hunter = _load(args.state / "state" / "options_hunter" / "last_top.json")
-    extra = {"intraday_events_sent": events,
-             "smallcap_alerts_sent": small.get("alerts_sent") if small.get("day") == args.date else 0,
-             "options_alert_tags": len(hunter.get("alerted") or []) if hunter.get("day") == args.date else 0}
+    events = _load(day_dir / "session_events.json")
+    # Event engines: did they run today (last write time)? How many alerts fired is private (Telegram only).
+    extra = {"session_events_last_run": events.get("updated_at"),
+             "smallcaps_last_run": small.get("updated_at") if small.get("day") == args.date else None,
+             "options_hunter_last_run": hunter.get("updated_at") if hunter.get("day") == args.date else None}
     for r in rows:
         print(json.dumps(r, ensure_ascii=False))
     print(json.dumps({"date": args.date, **extra}))

@@ -161,7 +161,9 @@ def answer(command: str, arg: str | None, now, env, state_dir: Path) -> dict[str
         key = sk.state_key(env)
         if key is None:
             return {"text": rtl_line("سجل الأسهم الصغيرة معطّل: أضف السر المستقل GHAZI_STATE_HMAC_KEY.")}
-        tags = set(small.load_tags(state_dir.parent / "smallcaps" / f"{day}.tags.json").get("tags") or [])
+        tags = small.load_tags(state_dir.parent / "smallcaps" / f"{day}.tags.json", key, day)
+        if tags is None:
+            return {"text": rtl_line("تغيّر مفتاح الحالة اليوم: سجل اليوم غير مقروء، والتنبيهات متوقفة حتى الجلسة التالية.")}
         found = small.detections_from_tags(key, day, tags, small.universe(state_dir.parents[1] / "runtime/public/data"))
         if not found:
             return {"text": rtl_line(f"لا رصد مرسل للأسهم الصغيرة في {day} (المسح يعمل في الجلسة كل ~15 دقيقة).")}

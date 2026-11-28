@@ -199,7 +199,7 @@ def test_report_slot_sends_once_records_status_only_and_never_sends_outside_wind
     marker_text = (tmp_path / "report_EARLY.json").read_text()
     marker = json.loads(marker_text)
     assert marker["accepted"] == marker["messages"] == count and marker["telegram_acceptance_is_not_read_receipt"]
-    assert "fingerprints" in marker and marker["fingerprints"] == {}  # no independent state key, no fingerprints
+    assert "fingerprints" in marker and marker["fingerprints"] is None  # no independent state key, no fingerprints
     # the public marker carries no level, price or state derived from the private bars
     assert "trigger" not in marker_text and "WATCH" not in marker_text and "105" not in marker_text.replace(
         "2026-11-30", "")
@@ -307,7 +307,8 @@ def test_final_sends_cards_only_for_changed_symbols(tmp_path):
     joined = "\n".join(texts)
     assert "لا تغيير جوهري" in joined and "تنبيه مبكر: إغلاق 5د" not in joined  # no unchanged cards
     early = json.loads((tmp_path / "report_EARLY.json").read_text())["fingerprints"]
-    assert set(early) == set(bdp.PLAN_SYMBOLS) and all(len(v) == 24 for v in early.values())
+    assert set(early) == {"key_id", "nonce", "tags"} and len(early["tags"]) == 256  # sealed: no symbol keys
+    assert not any(sym in json.dumps(early) for sym in ("NVDA", "QQQ", "AAPL"))
     changed = _private()
     changed["plans"]["NVDA"]["prior_session"]["high"] = 111.0
     texts.clear()

@@ -374,9 +374,9 @@ def maps_for(private: dict[str, Any]) -> dict[str, dict[str, Any]]:
 def fingerprints(maps: dict[str, dict[str, Any]], secret: bytes | None) -> dict[str, str]:
     """Keyed hash per symbol of what a card says (state, position, triggers, targets).
 
-    bot-state is public, so only a keyed tag under the independent GHAZI_STATE_HMAC_KEY is stored
-    (options_radar.state_keys; never the Telegram token): it proves "changed or
-    not" between slots without revealing a state or a level. No secret, no fingerprints.
+    Kept in memory per symbol; bot-state (public) only ever gets them as a sealed, padded set
+    (options_radar.state_keys.seal, independent GHAZI_STATE_HMAC_KEY, never the Telegram token), so the
+    EARLY and FINAL markers cannot be compared to learn which symbol's card changed. No key, none.
     """
     if not secret:
         return {}
@@ -484,15 +484,18 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         return marker
     session_date = facts["today"]["date"]
     maps = maps_for(private)
-    prints = fingerprints(maps, sk.state_key(env))  # no key: no fingerprints, FINAL sends every card
+    key = sk.state_key(env)
+    prints = fingerprints(maps, key)  # no key: no fingerprints, FINAL sends every card
+    scope = f"map|{session_date}"
     details = detail_symbols(maps)
     charted = chart_symbols(maps)
     changed_note = None
     if slot["slot"] == "FINAL":
-        early = (_load(day_dir / "report_EARLY.json") or {}).get("fingerprints") or {}
-        if early and prints:
-            details = [s for s in details if early.get(s) != prints.get(s)]
-            charted = [s for s in charted if early.get(s) != prints.get(s)]
+        sealed = (_load(day_dir / "report_EARLY.json") or {}).get("fingerprints")
+        early = sk.unseal(key, scope, sealed) if key and isinstance(sealed, dict) else None
+        if early and prints:  # unchanged = the same keyed fingerprint is in EARLY's sealed set
+            details = [s for s in details if prints.get(s) not in early]
+            charted = [s for s in charted if prints.get(s) not in early]
             changed_note = len(details)
     statuses = private.get("fetch_status") or {}
     texts = report.render(maps, slot=slot, now=now, session_date=session_date, index_funds=INDEX_FUNDS,
@@ -505,7 +508,7 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         outbox.append((f"{session_date}:{slot['slot']}:text:{index}", lambda chat, t=text: send(t, chat)))
     for index, album in enumerate(albums):
         outbox.append((f"{session_date}:{slot['slot']}:charts:{index}", lambda chat, a=album: send_album(a, chat)))
-    marker.update(fingerprints=prints, charts=charts_status, planned_items=len(outbox), text_messages=n_text,
+    marker.update(fingerprints=sk.seal(key, scope, prints.values()) if prints else None, charts=charts_status, planned_items=len(outbox), text_messages=n_text,
                   map_versions=pm.map_id({"ids": sorted(str(m.get("map_id")) for m in maps.values())}))
     planned = [item_id for item_id, _ in outbox]
     for item_id, action in outbox:

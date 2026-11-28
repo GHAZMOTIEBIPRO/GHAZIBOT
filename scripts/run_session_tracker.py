@@ -120,10 +120,18 @@ def main() -> int:
     day_dir.mkdir(parents=True, exist_ok=True)
     key = sk.state_key(env)
     seen_path = day_dir / "session_events.json"
-    seen = set(json.loads(seen_path.read_text()).get("sent", [])) if seen_path.exists() else set()
+    try:
+        sealed = json.loads(seen_path.read_text()) if seen_path.exists() else {}
+    except ValueError:
+        sealed = {}
+    seen = sk.unseal(key, f"session|{day}", sealed) if key is not None else set()
     if key is None:  # events could not be deduplicated: none are sent, slot reports still are
         print("session tracker: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): intraday events disabled")
         new_events = []
+    elif seen is None:  # key rotated mid-day: nothing may be resent today
+        print("session tracker: KEY_CHANGED_TODAY: intraday events disabled until the next session day")
+        new_events, seen = [], set()
+        key = None
     else:
         new_events = [(s, e) for s, t in tracked.items() for e in t.get("events") or []
                       if event_key(key, day, s, e) not in seen]
@@ -136,13 +144,14 @@ def main() -> int:
                                send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
     if key is not None and new_events and any(r in ("DELIVERED", "UNCONFIRMED") for r in results):
         seen |= {event_key(key, day, s, e) for s, e in new_events}
-        seen_path.write_text(json.dumps({"sent": sorted(seen), "updated_at": now.isoformat()}, indent=1))
+    if key is not None:  # rewritten every run, sealed: its size and timing reveal nothing
+        seen_path.write_text(json.dumps({"updated_at": now.isoformat(), **sk.seal(key, f"session|{day}", seen)}))
     if slot != "INTRADAY":
         status = "DELIVERED" if results and all(r == "DELIVERED" for r in results) else (results[0] if results else "EMPTY")
         marker = {"schema": "ghazi.session_slot_marker.v1", "slot": slot, "status": status, "sent_at": now.isoformat(),
                   "messages": len(texts), "accepted": results.count("DELIVERED")}
         marker_path.write_text(json.dumps(marker, indent=1))
-    print("session tracker:", slot, json.dumps({"messages": len(texts), "results": results, "new_events": len(new_events)}))
+    print("session tracker:", slot, "statuses", sorted(set(results)))  # no counts: event counts are market-derived
     return 0
 
 

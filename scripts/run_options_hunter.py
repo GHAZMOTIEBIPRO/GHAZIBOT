@@ -177,24 +177,32 @@ def main() -> int:
     if key is None:  # alerts could not be deduplicated: none are sent; /options still answers on demand
         print("options hunter: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled")
         return 0
-    alert = {sk.tag(key, "options", r["contract"], r["class"]) for r in top if r["class"] in ALERT_CLASSES}
+    day = now.astimezone(NY).date().isoformat()
+    scope = f"options|{day}"
+    alert = {sk.tag(key, "options", day, r["contract"], r["class"]) for r in top if r["class"] in ALERT_CLASSES}
     state = Path(env.get("STATE_DIR", "../state/state/options_hunter"))
     seen_file = state / "last_top.json"
-    day = now.astimezone(NY).date().isoformat()
-    stored = json.loads(seen_file.read_text()) if seen_file.exists() else {}
-    seen = set(stored.get("alerted", [])) if stored.get("day") == day else set()  # resets each session day
-    fresh_entries = alert - seen
-    if env.get("OPTIONS_HUNTER_DRY_RUN") == "true" or not fresh_entries:
-        print("options hunter: no delivery", json.dumps({"dry_run": env.get("OPTIONS_HUNTER_DRY_RUN") == "true",
-                                                         "new_material_entries": len(fresh_entries)}))
+    try:
+        stored = json.loads(seen_file.read_text()) if seen_file.exists() else {}
+    except ValueError:
+        stored = {}
+    seen = sk.unseal(key, scope, stored) if stored.get("day") == day else set()  # resets each session day
+    if seen is None:  # key rotated mid-day: nothing may be resent today
+        print("options hunter: KEY_CHANGED_TODAY: alerts disabled until the next session day")
         return 0
-    texts = render(result, now, only=ALERT_CLASSES)
-    results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
-                               send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
-    if any(r in ("DELIVERED", "UNCONFIRMED") for r in results):  # never resend what may have arrived
+    fresh_entries = alert - seen
+    dry = env.get("OPTIONS_HUNTER_DRY_RUN") == "true"
+    if fresh_entries and not dry:
+        texts = render(result, now, only=ALERT_CLASSES)
+        results = [deliver_private(t, sources=["alpaca_iex", "alpaca_indicative_options"], env=env, get_chat=get_chat,
+                                   send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
+        print("options hunter delivery statuses:", sorted(set(results)))  # no counts: they are chain-derived
+        if any(r in ("DELIVERED", "UNCONFIRMED") for r in results):  # never resend what may have arrived
+            seen |= alert
+    if not dry:  # rewritten every run, sealed: its size and timing reveal nothing
         state.mkdir(parents=True, exist_ok=True)
-        seen_file.write_text(json.dumps({"day": day, "alerted": sorted(seen | alert), "sent_at": now.isoformat()}))
-    print("options hunter delivery:", results)
+        seen_file.write_text(json.dumps({"day": day, "updated_at": now.isoformat(), **sk.seal(key, scope, seen)}))
+    print("options hunter: done", json.dumps({"dry_run": dry}))
     return 0
 
 

@@ -1,7 +1,7 @@
 """Public status of the owner-private ORACLE pipeline: statuses and counts only (runtime/public/data/oracle_status.json).
 
 Reads bot-state markers that already hold no market values (report and session slot statuses, the post-close
-scorecard counts, the options-hunter alert count, small-cap post-close counts, SEC registry counts, command
+the options-hunter and small-cap last run times (no alert counts), SEC registry counts, command
 statuses) and states each feed's real coverage and delay. No price, level, symbol-level state or contract from
 Alpaca data is copied here: Alpaca data is licensed for the owner's internal use, not for publication.
 """
@@ -53,12 +53,13 @@ def build(state: Path, data: Path, now: datetime) -> dict[str, Any]:
             if m:
                 session[slot] = {k: m.get(k) for k in ("status", "sent_at", "messages")}
         out["day"] = {"date": day.name, "reports": reports, "session": session}  # outcomes stay private
+    # Event-driven engines: last run time only. Alert counts depend on the market (Alpaca-derived), and the
+    # sealed tag files are padded to a fixed size, so nothing here says whether or how often anything fired.
     hunter = _load(state / "options_hunter" / "last_top.json") or {}
-    out["options_hunter"] = {"day": hunter.get("day"), "material_alerts": len(hunter.get("alerted") or []),
-                             "last_sent_at": hunter.get("sent_at")}
+    out["options_hunter"] = {"day": hunter.get("day"), "last_run": hunter.get("updated_at")}
     small = sorted((state / "smallcaps").glob("*.tags.json")) if (state / "smallcaps").exists() else []
-    last = _load(small[-1]) or {} if small else {}
-    out["smallcaps"] = {"day": last.get("day"), "alerts_sent": last.get("alerts_sent"), "updated_at": last.get("updated_at")}
+    last = (_load(small[-1]) or {}) if small else {}
+    out["smallcaps"] = {"day": last.get("day"), "last_run": last.get("updated_at")}
     sec = _load(data / "sec_company_tickers.json") or {}
     out["sec_registry"] = ({"status": "OK", "generated_at": sec.get("generated_at"), **(sec.get("counts") or {})}
                            if sec else {"status": "NOT_CONFIGURED", "reason": "SEC_USER_AGENT secret not set"})
