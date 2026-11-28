@@ -84,7 +84,8 @@ def checks(env: dict[str, str], now: datetime, *, state: Path, get_chat, http=re
         iex = _valid(iex, r, lambda b: "SPY" in b)
         end = (now - timedelta(minutes=20)).isoformat()
         sip, r = _code(http.get, f"{DATA}/v2/stocks/bars", params={"symbols": "SPY", "timeframe": "1Day", "feed": "sip",
-                                                                   "limit": 2, "end": end}, headers=h)
+                                                                   "start": (now - timedelta(days=10)).date().isoformat(),
+                                                                   "limit": 5, "end": end}, headers=h)
         sip = _valid(sip, r, lambda b: bool((b.get("bars") or {}).get("SPY")))
         opt, r = _code(http.get, f"{DATA}/v1beta1/options/snapshots/SPY", params={"feed": "indicative", "limit": 1},
                        headers=h)
