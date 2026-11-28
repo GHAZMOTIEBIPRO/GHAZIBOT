@@ -305,7 +305,7 @@ def test_final_sends_cards_only_for_changed_symbols(tmp_path):
     final = _run(tmp_path, 2, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env)
     assert final["slot"] == "FINAL" and final["status"] == "DELIVERED"
     joined = "\n".join(texts)
-    assert "لا تغيير جوهري" in joined and "تأكيد بإغلاق شمعة ساعة" not in joined  # no unchanged cards
+    assert "لا تغيير جوهري" in joined and "تنبيه مبكر: إغلاق 5د" not in joined  # no unchanged cards
     early = json.loads((tmp_path / "report_EARLY.json").read_text())["fingerprints"]
     assert set(early) == set(bdp.PLAN_SYMBOLS) and all(len(v) == 16 for v in early.values())
     changed = _private()
@@ -352,3 +352,14 @@ def test_default_charts_are_index_funds_and_three_leaders():
     chosen = bdp.chart_symbols(maps)
     assert chosen[:2] == ["SPY", "QQQ"] and len(chosen) == 5 and chosen[2:4] == ["AMD", "NVDA"]
 
+
+
+
+def test_leadership_uses_relative_strength_and_says_it_is_not_index_weight():
+    maps = {s: {"symbol": s, "state": "WAIT", "prior_change_pct": c}
+            for s, c in (("QQQ", 1.0), ("NVDA", 3.2), ("AMD", 2.1), ("MSFT", 0.4), ("META", -1.5), ("AAPL", 0.9))}
+    lines = report.leadership(maps)
+    text = "\n".join(lines)
+    assert "NVDA +3.20%" in text.split("الأضعف")[0] and "META -1.50%" in text.split("الأضعف")[1]
+    assert "عكس اتجاه السوق: META" in text and "لا أوزان مؤشر" in text
+    assert report.leadership({"NVDA": maps["NVDA"]}) == []  # no benchmark, no claim

@@ -96,9 +96,9 @@ def card(m: dict[str, Any]) -> str:
         f"المرجع: {_p(ref['price'])} ({ref['type_ar']}، {html.escape(ref['time_ar'])})",
         (f"الجلسة السابقة {html.escape(str(pd['date']))}: قمة {_p(pd['high'])}، قاع {_p(pd['low'])}، "
         f"إغلاق {_p(pd['close'])}؛ المحور {_p(m['pivot'])}؛ ATR14 {_p(m['atr14'])}"),
-        (f"CALL: محفز {_p(call['trigger'])}، تأكيد بإغلاق شمعة ساعة مكتملة فوقه؛ {_targets(call)}؛ "
+        (f"CALL: محفز {_p(call['trigger'])}، تنبيه مبكر: إغلاق 5د فوقه بحجم ≥1.5× المعتاد، وتأكيد بإغلاق 30د؛ {_targets(call)}؛ "
         f"إبطال {_p(call['invalidation'])}"),
-        (f"PUT: محفز {_p(put['trigger'])}، تأكيد بإغلاق شمعة ساعة مكتملة تحته؛ {_targets(put)}؛ "
+        (f"PUT: محفز {_p(put['trigger'])}، تنبيه مبكر: إغلاق 5د تحته بحجم ≥1.5× المعتاد، وتأكيد بإغلاق 30د؛ {_targets(put)}؛ "
         f"إبطال {_p(put['invalidation'])}"),
         (f"انتظار بين {_p(m['wait_band']['low'])} و{_p(m['wait_band']['high'])}؛ الأفق: الجلسة الحالية؛ "
         f"الأطر المتوافقة {m['aligned_frames']}/4."),
@@ -146,6 +146,7 @@ def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: dateti
     ]
     header = "\n".join(rtl_line(x) for x in head)
     rows = [rtl_line("<b>صناديق المؤشرات</b>")] + [row(maps[s]) for s in index_funds if s in maps]
+    rows += leadership(maps)
     rows += [rtl_line("<b>الأسهم القيادية</b>")] + [row(m) for s, m in maps.items() if s not in index_funds]
     summary = _pack(rows, header)
     cards = [card(maps[s]) for s in detail_symbols if (maps.get(s) or {}).get("state") not in (None, "NO_DATA")]
@@ -172,9 +173,28 @@ def chart_caption(m: dict[str, Any]) -> str:
         return f"{t['name']} {_p(t['value'])}" if t.get("value") else "لا هدف مقاس"
 
     lines = [f"{_sym(m['symbol'])} — {m['state_ar']} — المرجع {_p(m['reference']['price'])}",
-             f"سيناريو CALL: إغلاق ساعة فوق {_p(call['trigger'])} ← {first(call)}؛ إبطال {_p(call['invalidation'])}",
-             f"سيناريو PUT: إغلاق ساعة تحت {_p(put['trigger'])} ← {first(put)}؛ إبطال {_p(put['invalidation'])}",
+             f"سيناريو CALL: إغلاق 5د بحجم مرتفع فوق {_p(call['trigger'])} ← {first(call)}؛ إبطال {_p(call['invalidation'])}",
+             f"سيناريو PUT: إغلاق 5د بحجم مرتفع تحت {_p(put['trigger'])} ← {first(put)}؛ إبطال {_p(put['invalidation'])}",
              "مسار افتراضي مشروط، ليس توصية."]
     text = "\n".join(rtl_line(x) for x in lines)
     check_html(text)
     return text[:1024]
+
+
+def leadership(maps: dict[str, dict[str, Any]], benchmark: str = "QQQ", n: int = 3) -> list[str]:
+    """Who led and who lagged in the prior session relative to the benchmark fund (relative strength,
+    from our own bars). Not an index-weight contribution: no authorized weight source is wired yet."""
+    bench = (maps.get(benchmark) or {}).get("prior_change_pct")
+    rows = [(s, m["prior_change_pct"]) for s, m in maps.items()
+            if m.get("prior_change_pct") is not None and s not in ("SPY", "QQQ", "IWM", "DIA")]
+    if bench is None or not rows:
+        return []
+    rows.sort(key=lambda x: -x[1])
+    lead = "، ".join(f"{s} {c:+.2f}%" for s, c in rows[:n])
+    lag = "، ".join(f"{s} {c:+.2f}%" for s, c in rows[-n:][::-1])
+    against = [s for s, c in rows if (c > 0) != (bench > 0) and abs(c) >= 0.5]
+    lines = [f"<b>القيادة في الجلسة السابقة</b> (مقارنة بـ {benchmark} {bench:+.2f}%؛ قوة نسبية لا أوزان مؤشر):",
+             f"الأقوى: {lead}", f"الأضعف: {lag}"]
+    if against:
+        lines.append("عكس اتجاه السوق: " + "، ".join(against[:6]))
+    return [rtl_line(html.escape(x) if "<b>" not in x else x) for x in lines]

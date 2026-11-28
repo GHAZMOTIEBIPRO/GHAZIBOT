@@ -16,7 +16,10 @@ from datetime import datetime, timedelta
 from typing import Any
 
 RVOL_MIN = 1.5
-CONFIRM_MINUTES = 30  # set from the 1-minute study (docs/ORACLE_PROGRESS.md); 60 was no better and later
+# 1-minute study (14 symbols x 120 sessions, docs/ORACLE_PROGRESS.md): the volume-confirmed 5m close
+# (EARLY_ALERT) was the only rule with positive expectancy in both halves; time-only confirmations
+# (30m, 60m) were negative, so CONFIRMED is informational and 30m is used because 60m was no better.
+CONFIRM_MINUTES = 30
 STAGE_AR = {"BREAKOUT_WATCH": "مراقبة اختراق", "EARLY_ALERT": "تنبيه مبكر (حجم مرتفع)", "CONFIRMED": "تأكيد",
             "T1": "الهدف الأول", "T2": "الهدف الثاني", "T3": "الهدف الثالث", "INVALIDATED": "إبطال",
             "AMBIGUOUS": "هدف وإبطال في شمعة واحدة (ترتيب غير معروف)"}

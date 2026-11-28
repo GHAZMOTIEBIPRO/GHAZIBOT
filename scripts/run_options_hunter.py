@@ -94,7 +94,9 @@ def main() -> int:
         return 0
     headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
     now = datetime.now(timezone.utc)
-    today = now.astimezone(NY).date()
+    now_ny = now.astimezone(NY)
+    # after 16:00 New York today's contracts have settled: DTE counts from the next calendar day
+    today = now_ny.date() + timedelta(days=1 if now_ny.hour >= 16 else 0)
     rows: list[dict[str, Any]] = []
     coverage: dict[str, int] = {}
     for underlying in (*INDEX_WEEKLIES, *UNDERLYINGS):
