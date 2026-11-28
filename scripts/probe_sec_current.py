@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
@@ -23,9 +24,15 @@ def _get(url: str, agent: str) -> bytes:
 
 
 def main() -> int:
-    agent = (os.environ.get("SEC_USER_AGENT") or "").strip() or DEFAULT_SEC_AGENT
+    own = (os.environ.get("SEC_USER_AGENT") or "").strip()
+    agent = own or DEFAULT_SEC_AGENT
     now = datetime.now(timezone.utc)
-    reg = json.loads(_get("https://www.sec.gov/files/company_tickers_exchange.json", agent))
+    try:
+        reg = json.loads(_get("https://www.sec.gov/files/company_tickers_exchange.json", agent))
+    except urllib.error.HTTPError as exc:
+        # 2026-11-28: SEC refused the repository's generic noreply agent (403): a real contact is required
+        print("SEC current probe:", json.dumps({"http": exc.code, "agent": "owner secret" if own else "repo default"}))
+        return 0
     rows = [[t, str(c).zfill(10), n, e] for c, n, t, e in reg["data"] if e and t]
     registry = {"fields": ["ticker", "cik", "name", "exchange"], "rows": rows}
     mapping = scf.cik_map(registry)
