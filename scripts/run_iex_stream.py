@@ -84,8 +84,11 @@ def text_for(alert: dict, map_ids: dict[str, str]) -> str:
     side_ar = "فوق محفز CALL" if alert["side"] == "CALL" else "تحت محفز PUT"
     end = datetime.fromisoformat(alert["bucket_end"])
     late = alert.get("source") != "stream"
+    age_min = round(alert["latency_s"] / 60)
+    title = (f"<b>استدراك متأخر IEX — {alert['symbol']}</b>{LRM} (بعد انقطاع؛ عمره {age_min} دقيقة — ليس فرصة لحظية)"
+             if late else f"<b>رصد أولي لحظي IEX — {alert['symbol']}</b>{LRM}")
     return "\n".join([
-        rtl_line(f"<b>رصد أولي لحظي IEX — {alert['symbol']}</b>{LRM}" + (" (استدراك بعد انقطاع)" if late else "")),
+        rtl_line(title),
         rtl_line(f"إغلاق 5د {alert['close']:,.2f} {side_ar} {alert['trigger']:,.2f} بحجم IEX {alert['rvol_iex']}× المعتاد "
                  f"(شمعة تنتهي {when_ar(end)}، رُصد بعد {alert['latency_s']} ث)."),
         rtl_line(f"المستويات من خريطة ما قبل الافتتاح نفسها (رقم {map_ids.get(alert['symbol'], '—')})؛ لا تُغيَّر أثناء الجلسة."),
@@ -140,6 +143,9 @@ def main() -> int:
             results.append(out)
             if out == "DELIVERED":
                 state.send_latencies.append((datetime.now(timezone.utc) - decided).total_seconds())
+            elif out != "UNCONFIRMED":  # Telegram accepted nothing: the side may alert again on a later bucket
+                with lock:
+                    state.fired.discard((alert["symbol"], alert["side"].lower()))
 
     def feed_rest(start: datetime, *, silent: bool) -> None:
         try:

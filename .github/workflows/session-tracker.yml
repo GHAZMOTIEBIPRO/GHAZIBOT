@@ -3,12 +3,14 @@ name: GHAZI Session tracker (owner-private intraday cycle)
 # Opening update, stage-change alerts, last-hour reading and the post-close scorecard
 # (scripts/run_session_tracker.py). Dispatched by the market orchestrator about every 10 minutes
 # 10:00-18:30 New York on weekdays; the script itself checks the XNYS session and its slot.
-# bot-state receives slot statuses, message counts, keyed event hashes and the post-close counts only.
+# bot-state receives slot statuses and message counts only; intraday events are deduplicated from the run
+# history (stateless; nothing about any event is stored).
 on:
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: ghazi-session-tracker
@@ -25,7 +27,7 @@ jobs:
       ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
       ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      GHAZI_STATE_HMAC_KEY: ${{ secrets.GHAZI_STATE_HMAC_KEY }}
+      GITHUB_TOKEN: ${{ github.token }}  # read-only run history for stateless dedupe (actions: read)
       TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
       STATE_DIR: ../state/state/daily_plan
@@ -52,7 +54,7 @@ jobs:
           cd app
           python -m scripts.build_oracle_status --state ../state/state --data ../state/runtime/public/data \
             --output ../state/runtime/public/data/oracle_status.json
-      - name: Store slot statuses and event hashes
+      - name: Store slot statuses
         shell: bash
         run: |
           set -euo pipefail

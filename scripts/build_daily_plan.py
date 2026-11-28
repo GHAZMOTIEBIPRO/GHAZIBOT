@@ -45,7 +45,6 @@ from options_radar import daily_plan as dp
 from options_radar import ohlcv_quality as quality
 from options_radar import premarket_map as pm
 from options_radar import premarket_report as report
-from options_radar import state_keys as sk
 from options_radar import telegram_market_digest as digest
 from options_radar.bar_aggregation import frames_from_5m
 from options_radar.bar_providers import COVERAGE, AlpacaBars
@@ -393,20 +392,9 @@ def index_forwards(env: dict[str, str], now: datetime) -> dict[str, dict[str, An
     return out
 
 
-def fingerprints(maps: dict[str, dict[str, Any]], secret: bytes | None) -> dict[str, str]:
-    """Keyed hash per symbol of what a card says (state, position, triggers, targets).
-
-    Kept in memory per symbol; bot-state (public) only ever gets them as a sealed, padded set
-    (options_radar.state_keys.seal, independent GHAZI_STATE_HMAC_KEY, never the Telegram token), so the
-    EARLY and FINAL markers cannot be compared to learn which symbol's card changed. No key, none.
-    """
-    if not secret:
-        return {}
-    out = {}
-    for symbol, m in maps.items():
-        core = {k: m.get(k) for k in ("state", "position", "call", "put", "reason")}
-        out[symbol] = sk.tag(secret, "map", symbol, json.dumps(core, sort_keys=True, default=str))
-    return out
+def card_core(m: dict[str, Any]) -> str:
+    """What a card says (state, position, triggers, targets): compared in memory, never stored."""
+    return json.dumps({k: m.get(k) for k in ("state", "position", "call", "put", "reason")}, sort_keys=True, default=str)
 
 
 def chart_symbols(maps: dict[str, dict[str, Any]], limit: int = 3) -> list[str]:
@@ -465,7 +453,8 @@ def _outcome(items: dict[str, dict[str, Any]], planned: list[str]) -> str:
 
 def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetime, day_dir: Path, *,
                     env: Any, get_chat: Callable[[str], Any], send: Callable[[str, str], Any],
-                    send_album: Callable[[list[tuple[bytes, str]], str], Any] | None = None) -> dict[str, Any] | None:
+                    send_album: Callable[[list[tuple[bytes, str]], str], Any] | None = None,
+                    early_private: dict[str, Any] | None = None) -> dict[str, Any] | None:
     """Send the due pre-open report; every message has its own id and its own delivery record.
 
     Marker per slot: state/daily_plan/<date>/report_<SLOT>.json, rewritten after each message so an
@@ -473,7 +462,8 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
     the same window sends only items not yet DELIVERED, never one recorded UNCONFIRMED (the request
     may have reached Telegram), up to MAX_SLOT_ATTEMPTS runs. A window that passed without delivery
     is recorded MISSED and never sent late. FINAL repeats the summary and sends cards and charts
-    only for symbols whose keyed fingerprint changed since EARLY.
+    only for symbols whose card changed since EARLY: the EARLY maps are rebuilt at FINAL from the data
+    as of EARLY's build time (early_private) and compared in memory, so nothing is stored (audit).
     """
     session_today = bool(facts.get("today_is_session"))
     done = set()
@@ -506,18 +496,15 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         return marker
     session_date = facts["today"]["date"]
     maps = maps_for(private)
-    key = sk.state_key(env)
-    prints = fingerprints(maps, key)  # no key: no fingerprints, FINAL sends every card
-    scope = f"map|{session_date}"
     details = detail_symbols(maps)
     charted = chart_symbols(maps)
     changed_note = None
     if slot["slot"] == "FINAL":
-        sealed = (_load(day_dir / "report_EARLY.json") or {}).get("fingerprints")
-        early = sk.unseal(key, scope, sealed) if key and isinstance(sealed, dict) else None
-        if early and prints:  # unchanged = the same keyed fingerprint is in EARLY's sealed set
-            details = [s for s in details if prints.get(s) not in early]
-            charted = [s for s in charted if prints.get(s) not in early]
+        early = maps_for(early_private) if early_private and early_private.get("enabled") else None
+        if early:  # without a rebuilt EARLY, FINAL sends every card (never guesses "unchanged")
+            same = {s for s in maps if s in early and card_core(maps[s]) == card_core(early[s])}
+            details = [s for s in details if s not in same]
+            charted = [s for s in charted if s not in same]
             changed_note = len(details)
     statuses = private.get("fetch_status") or {}
     texts = report.render(maps, slot=slot, now=now, session_date=session_date, index_funds=INDEX_FUNDS,
@@ -531,7 +518,7 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         outbox.append((f"{session_date}:{slot['slot']}:text:{index}", lambda chat, t=text: send(t, chat)))
     for index, album in enumerate(albums):
         outbox.append((f"{session_date}:{slot['slot']}:charts:{index}", lambda chat, a=album: send_album(a, chat)))
-    marker.update(fingerprints=sk.seal(key, scope, prints.values()) if prints else None, charts=charts_status, planned_items=len(outbox), text_messages=n_text,
+    marker.update(built_at=now.isoformat(), charts=charts_status, planned_items=len(outbox), text_messages=n_text,
                   map_versions=pm.map_id({"ids": sorted(str(m.get("map_id")) for m in maps.values())}))
     planned = [item_id for item_id, _ in outbox]
     for item_id, action in outbox:
@@ -627,9 +614,15 @@ def main() -> int:
     if day_dir is not None:
         day_dir.mkdir(parents=True, exist_ok=True)
         from scripts.telegram_transport import get_chat, send_html_message, send_media_group
+        early_private = None
+        due = report.slot_for(now, bool(facts.get("today_is_session")))
+        built = (_load(day_dir / "report_EARLY.json") or {}).get("built_at")
+        if due and due["slot"] == "FINAL" and built:  # rebuild what EARLY saw, from data as of its build time
+            early_private = private_plans(facts, datetime.fromisoformat(built))
         marker = run_report_slot(private, facts, now, day_dir, env=os.environ, get_chat=get_chat,
                                  send=lambda text, chat: send_html_message(text, chat_id=chat),
-                                 send_album=lambda album, chat: send_media_group(album, chat_id=chat))
+                                 send_album=lambda album, chat: send_media_group(album, chat_id=chat),
+                                 early_private=early_private)
         if marker is not None:
             sheet["private_mode"]["delivery"] = marker["status"]
             sheet["private_mode"]["report"] = {k: marker.get(k) for k in ("slot", "status", "late", "late_minutes")}

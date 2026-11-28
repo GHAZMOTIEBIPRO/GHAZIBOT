@@ -111,6 +111,25 @@ def card(m: dict[str, Any]) -> str:
     return "\n".join(rtl_line(x) for x in lines)
 
 
+def pack_items(items: list[tuple[list[str], str]], header: str) -> list[tuple[str, list[str]]]:
+    """Like _pack, but each message keeps the ids of the items it carries (for per-message ledgers)."""
+    out: list[tuple[str, list[str]]] = []
+    current, ids = header, []
+    for item_ids, block in items:
+        candidate = f"{current}\n{block}"
+        if len(candidate) > MAX_CHARS and current != header:
+            out.append((current, ids))
+            candidate, ids = f"{header} (تابع)\n{block}", []
+        current = candidate
+        ids = ids + list(item_ids)
+    out.append((current, ids))
+    for text, _ in out:
+        if len(text) > 4096:
+            raise ValueError("a single block exceeds Telegram's limit")
+        check_html(text)
+    return out
+
+
 def _pack(blocks: list[str], header: str) -> list[str]:
     """Greedy packing of whole blocks; a continuation message repeats a short header."""
     messages, current = [], header

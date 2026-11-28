@@ -152,26 +152,19 @@ def answer(command: str, arg: str | None, now, env, state_dir: Path) -> dict[str
         texts = hunter.render(hunter.hunt(env, now), now)
         return {"text": texts[0]}
     if command == "smallcaps":
-        from options_radar import smallcap_scan as sc
-        from options_radar import state_keys as sk
         from scripts import run_smallcap_scan as small
-        from scripts.build_daily_plan import NY
 
-        day = now.astimezone(NY).date().isoformat()
-        key = sk.state_key(env)
-        if key is None:
-            return {"text": rtl_line("سجل الأسهم الصغيرة معطّل: أضف السر المستقل GHAZI_STATE_HMAC_KEY.")}
-        tags = small.load_tags(state_dir.parent / "smallcaps" / f"{day}.tags.json", key, day)
-        if tags is None:
-            return {"text": rtl_line("تغيّر مفتاح الحالة اليوم: سجل اليوم غير مقروء، والتنبيهات متوقفة حتى الجلسة التالية.")}
-        found = small.detections_from_tags(key, day, tags, small.universe(state_dir.parents[1] / "runtime/public/data"))
-        if not found:
-            return {"text": rtl_line(f"لا رصد مرسل للأسهم الصغيرة في {day} (المسح يعمل في الجلسة كل ~15 دقيقة).")}
-        lines = [rtl_line(f"<b>رصد الأسهم الصغيرة — {day}</b> (Alpaca IEX، أول رصد؛ الأسعار في رسائل التنبيه)")]
-        for sym, det in sorted(found.items(), key=lambda kv: kv[1]["minute"]):
-            lines.append(rtl_line(f"<b>{sym}</b> {sc.STAGE_AR[det['stage']]} بعد {det['minute']} دقيقة من الافتتاح"
-                                  + (f"؛ أعلى مرحلة {sc.STAGE_AR[det['top_stage']]}" if det["top_stage"] != det["stage"] else "")))
-        return {"text": "\n".join(lines)[:3900]}
+        if not env.get("ALPACA_API_KEY"):
+            return {"text": rtl_line("الأسهم الصغيرة: مفاتيح Alpaca غير متاحة لهذا الأمر.")}
+        headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
+        data = state_dir.parents[1] / "runtime/public/data"  # ../state/state/telegram -> ../state
+        result = small.scan(env, now, data, headers)
+        if result is None:
+            return {"text": rtl_line("الأسهم الصغيرة: لا جلسة اليوم.")}
+        top = result["candidates"][:8]
+        small.attach_sec_risk(top, env, data, result["open_at"].date())
+        texts = small.message(top, now, result["coverage"])  # a live reading now; no record of past alerts is kept
+        return {"text": texts[0][:3900]}
     if command == "news":
         from options_radar import sec_current_feed as scf
         from scripts.build_daily_plan import DETAIL_INDEX_FUNDS, DETAIL_LEADERS

@@ -7,8 +7,9 @@ Vol/OI, IV and greeks when Alpaca supplies them, strike concentration -> the exi
 score, best per DTE bucket, and one class (EARLY_WATCH / UNUSUAL_ACTIVITY / CONFIRMED_BY_AVAILABLE_DATA /
 EXTENDED / REJECTED, options_radar.alpaca_chain.classify) with its reasons.
 
-Delivery: the owner's private chat, only when a contract NEWLY enters UNUSUAL_ACTIVITY or CONFIRMED
-(keyed hashes on bot-state) - a rank shuffle sends nothing. The public log carries coverage counts only.
+Delivery: the owner's private chat as scheduled digests (DIGESTS below) of the contracts currently in
+UNUSUAL_ACTIVITY or CONFIRMED_BY_AVAILABLE_DATA; nothing about any alert is stored (no dedupe state).
+The public log carries coverage counts only.
 Messages say "indicative": not an OPRA quote, not an execution price; buyer/seller intent is unknown.
 """
 from __future__ import annotations
@@ -16,7 +17,6 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from statistics import median
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -26,7 +26,7 @@ import requests
 from options_radar import alpaca_chain as ac
 from options_radar import black76 as b76
 from options_radar import parity_reference as pr
-from options_radar import state_keys as sk
+from options_radar import run_window as rw
 from options_radar.output_policy import decide
 from options_radar.telegram_ar import LRM, rtl_line, when_ar
 
@@ -201,6 +201,23 @@ def render(result: dict[str, Any], now: datetime, only: tuple[str, ...] | None =
     return _pack(blocks, "\n".join(head))
 
 
+# Scheduled digests (audit, RELEASE GATE): no dedupe state is stored anywhere, so options alerts are a
+# digest at fixed New York times, always sent (also when nothing qualifies, so neither the message nor
+# the run reveals whether anything did). Each window sends once (run history, options_radar/run_window).
+# /options answers on demand at any time.
+DIGESTS = ((10, 15), (11, 30), (13, 0), (14, 30), (15, 30))
+DIGEST_WINDOW_MIN = 25
+
+
+def digest_window(now: datetime) -> datetime | None:
+    ny = now.astimezone(NY)
+    for h, m in DIGESTS:
+        start = ny.replace(hour=h, minute=m, second=0, microsecond=0)
+        if start <= ny < start + timedelta(minutes=DIGEST_WINDOW_MIN):
+            return start
+    return None
+
+
 def main() -> int:
     from options_radar.output_policy import deliver_private
     from scripts.telegram_transport import get_chat, send_html_message
@@ -210,41 +227,30 @@ def main() -> int:
         print("options hunter: NOT_AUTHORIZED_OR_NO_KEYS")
         return 0
     now = datetime.now(timezone.utc)
+    dry = env.get("OPTIONS_HUNTER_DRY_RUN") == "true"
+    start = digest_window(now)
+    if start is None and not dry:
+        print("options hunter: outside the digest windows")
+        return 0
+    if not dry:
+        window, prev = rw.previous_success(env, "options-hunter.yml", now, day_start=start - timedelta(hours=8))
+        if window == "UNKNOWN":
+            print("options hunter: RUN_HISTORY_UNKNOWN: digest skipped (fail safe)")
+            return 0
+        if window == "OK" and prev >= start:
+            print("options hunter: digest already sent for this window")
+            return 0
     result = hunt(env, now)
-    top = [r for b in result["ranked"].values() for r in b]
     # Public log: coverage and freshness only; classes describe the chain (indicative, Alpaca): Telegram only.
     print("options hunter:", json.dumps({"coverage": result["coverage"], "freshness": result["freshness"]}))
-    key = sk.state_key(env)
-    if key is None:  # alerts could not be deduplicated: none are sent; /options still answers on demand
-        print("options hunter: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled")
+    if dry:
+        print("options hunter: run complete (dry run)")
         return 0
-    day = now.astimezone(NY).date().isoformat()
-    scope = f"options|{day}"
-    alert = {sk.tag(key, "options", day, r["contract"], r["class"]) for r in top if r["class"] in ALERT_CLASSES}
-    state = Path(env.get("STATE_DIR", "../state/state/options_hunter"))
-    seen_file = state / "last_top.json"
-    try:
-        stored = json.loads(seen_file.read_text()) if seen_file.exists() else {}
-    except ValueError:
-        stored = {}
-    seen = sk.unseal(key, scope, stored) if stored.get("day") == day else set()  # resets each session day
-    if seen is None:  # key rotated mid-day: nothing may be resent today
-        print("options hunter: KEY_CHANGED_TODAY: alerts disabled until the next session day")
-        return 0
-    fresh_entries = alert - seen
-    dry = env.get("OPTIONS_HUNTER_DRY_RUN") == "true"
-    if fresh_entries and not dry:
-        texts = render(result, now, only=ALERT_CLASSES)
-        results = [deliver_private(t, sources=["alpaca_iex", "alpaca_indicative_options"], env=env, get_chat=get_chat,
-                                   send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
-        print("options hunter delivery statuses:", sorted(set(results)))  # no counts: they are chain-derived
-        if any(r in ("DELIVERED", "UNCONFIRMED") for r in results):  # never resend what may have arrived
-            seen |= alert
-    if not dry:  # rewritten every run, sealed: its size and timing reveal nothing
-        state.mkdir(parents=True, exist_ok=True)
-        seen_file.write_text(json.dumps({"day": day, "updated_at": now.isoformat(), **sk.seal(key, scope, seen)}))
-    print("options hunter: done", json.dumps({"dry_run": dry}))
-    return 0
+    statuses = rw.send_in_order(render(result, now, only=ALERT_CLASSES), lambda text: deliver_private(
+        text, sources=["alpaca_iex", "alpaca_indicative_options"], env=env, get_chat=get_chat,
+        send=lambda t, chat: send_html_message(t, chat_id=chat)))
+    print("options hunter: digest statuses", ",".join(sorted(set(statuses))))  # always sent: says nothing about the chain
+    return rw.exit_code(statuses)
 
 
 if __name__ == "__main__":

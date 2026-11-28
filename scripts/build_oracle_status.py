@@ -53,13 +53,8 @@ def build(state: Path, data: Path, now: datetime) -> dict[str, Any]:
             if m:
                 session[slot] = {k: m.get(k) for k in ("status", "sent_at", "messages")}
         out["day"] = {"date": day.name, "reports": reports, "session": session}  # outcomes stay private
-    # Event-driven engines: last run time only. Alert counts depend on the market (Alpaca-derived), and the
-    # sealed tag files are padded to a fixed size, so nothing here says whether or how often anything fired.
-    hunter = _load(state / "options_hunter" / "last_top.json") or {}
-    out["options_hunter"] = {"day": hunter.get("day"), "last_run": hunter.get("updated_at")}
-    small = sorted((state / "smallcaps").glob("*.tags.json")) if (state / "smallcaps").exists() else []
-    last = (_load(small[-1]) or {}) if small else {}
-    out["smallcaps"] = {"day": last.get("day"), "last_run": last.get("updated_at")}
+    # Event-driven engines store nothing (stateless dedupe, options_radar/run_window): nothing public here.
+    out["event_engines"] = "NO_STORED_STATE"
     sec = _load(data / "sec_company_tickers.json") or {}
     out["sec_registry"] = ({"status": "OK", "generated_at": sec.get("generated_at"), **(sec.get("counts") or {})}
                            if sec else {"status": "NOT_CONFIGURED", "reason": "SEC_USER_AGENT secret not set"})

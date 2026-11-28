@@ -84,6 +84,4 @@ def test_new_commands_parse_and_confirm_only_resolves_unconfirmed(tmp_path):
     saved = json.loads((day / "report_EARLY.json").read_text())
     assert "1" in out and saved["status"] == "DELIVERED" and saved["items"]["b"]["confirmed_by_owner_at"]
     assert "SEC_USER_AGENT" in tc.answer("news", None, now, {}, tmp_path / "telegram")["text"]
-    assert "GHAZI_STATE_HMAC_KEY" in tc.answer("smallcaps", None, now, {}, tmp_path / "telegram")["text"]
-    keyed = {"GHAZI_STATE_HMAC_KEY": "k" * 40}
-    assert "لا رصد" in tc.answer("smallcaps", None, now, keyed, tmp_path / "state" / "telegram")["text"]
+    assert "مفاتيح Alpaca غير متاحة" in tc.answer("smallcaps", None, now, {}, tmp_path / "state" / "telegram")["text"]

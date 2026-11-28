@@ -5,7 +5,8 @@ Slots (XNYS session of the day, early close aware; times New York):
   LASTHOUR   close - 60 min .. close - 40 min
   POSTCLOSE  close + 20 min .. close + 120 min (the accountability scorecard)
 Between OPENING and LASTHOUR each run sends only NEW stage events (options_radar.session_tracker),
-deduplicated by a keyed hash of symbol/side/stage/date stored on bot-state (no symbol in clear).
+deduplicated statelessly: events whose completed bucket ends after the last successful run's data horizon
+(options_radar/run_window; nothing about any event is stored).
 
 Data: completed Alpaca SIP bars >= 16 minutes old (labelled as delayed, never "live"). Levels are the
 pre-open map's (prior completed session) and never change during the day.
@@ -20,8 +21,8 @@ from typing import Any
 
 from options_radar import premarket_map as pm
 from options_radar import premarket_report as report
+from options_radar import run_window as rw
 from options_radar import session_tracker as st
-from options_radar import state_keys as sk
 from options_radar.telegram_ar import LRM, date_ar, rtl_line, when_ar
 from scripts import build_daily_plan as bdp
 
@@ -40,11 +41,6 @@ def session_slot(now: datetime, open_at: datetime, close_at: datetime) -> str | 
     if open_at + timedelta(minutes=60) <= now < close_at - timedelta(minutes=60):
         return "INTRADAY"
     return None
-
-
-def event_key(key: bytes, day: str, symbol: str, event: dict[str, Any]) -> str:
-    """Keyed tag under the independent state key (options_radar.state_keys); never the Telegram token."""
-    return sk.tag(key, "session", day, symbol, event["side"], event["stage"])
 
 
 def _event_line(symbol: str, e: dict[str, Any]) -> str:
@@ -118,41 +114,33 @@ def main() -> int:
     day = facts["today"]["date"]
     day_dir = state_dir / day
     day_dir.mkdir(parents=True, exist_ok=True)
-    key = sk.state_key(env)
-    seen_path = day_dir / "session_events.json"
-    try:
-        sealed = json.loads(seen_path.read_text()) if seen_path.exists() else {}
-    except ValueError:
-        sealed = {}
-    seen = sk.unseal(key, f"session|{day}", sealed) if key is not None else set()
-    if key is None:  # events could not be deduplicated: none are sent, slot reports still are
-        print("session tracker: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): intraday events disabled")
+    # Stateless dedupe (options_radar/run_window): an event is new when its completed bucket ends after the
+    # data horizon of this workflow's last successful run today and within this run's horizon.
+    window, prev = rw.previous_success(env, "session-tracker.yml", now, day_start=open_at - timedelta(hours=8))
+    upper = rw.data_horizon(now)
+    lower = rw.data_horizon(prev) if window == "OK" else open_at
+    if window == "UNKNOWN":  # run history unreadable: no event alerts (fail safe), slot reports still go
+        print("session tracker: RUN_HISTORY_UNKNOWN: intraday events skipped")
         new_events = []
-    elif seen is None:  # key rotated mid-day: nothing may be resent today
-        print("session tracker: KEY_CHANGED_TODAY: intraday events disabled until the next session day")
-        new_events, seen = [], set()
-        key = None
     else:
         new_events = [(s, e) for s, t in tracked.items() for e in t.get("events") or []
-                      if event_key(key, day, s, e) not in seen]
+                      if lower < datetime.fromisoformat(e["at"]) <= upper]
     marker_path = day_dir / f"session_{slot}.json"
     if slot != "INTRADAY" and marker_path.exists() and json.loads(marker_path.read_text()).get("status") == "DELIVERED":
         print("session tracker:", slot, "already delivered")
         return 0
     texts = build_messages(slot, maps, tracked, new_events, now, day, closes)
-    results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
-                               send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
-    if key is not None and new_events and any(r in ("DELIVERED", "UNCONFIRMED") for r in results):
-        seen |= {event_key(key, day, s, e) for s, e in new_events}
-    if key is not None:  # rewritten every run, sealed: its size and timing reveal nothing
-        seen_path.write_text(json.dumps({"updated_at": now.isoformat(), **sk.seal(key, f"session|{day}", seen)}))
+    results = rw.send_in_order(texts, lambda text: deliver_private(
+        text, sources=["alpaca_iex"], env=env, get_chat=get_chat, send=lambda t, chat: send_html_message(t, chat_id=chat)))
     if slot != "INTRADAY":
-        status = "DELIVERED" if results and all(r == "DELIVERED" for r in results) else (results[0] if results else "EMPTY")
+        status = ("EMPTY" if not results else "DELIVERED" if all(r == "DELIVERED" for r in results)
+                  else next(r for r in results if r != "DELIVERED"))  # a partial delivery is never DELIVERED
         marker = {"schema": "ghazi.session_slot_marker.v1", "slot": slot, "status": status, "sent_at": now.isoformat(),
                   "messages": len(texts), "accepted": results.count("DELIVERED")}
         marker_path.write_text(json.dumps(marker, indent=1))
-    print("session tracker:", slot, "statuses", sorted(set(results)))  # no counts: event counts are market-derived
-    return 0
+    # Scheduled slots are reported; intraday runs print a constant line (whether an event fired stays private).
+    print("session tracker:", slot, ("statuses " + ",".join(sorted(set(results)))) if slot != "INTRADAY" else "run complete")
+    return rw.exit_code(results) if slot == "INTRADAY" else 0
 
 
 if __name__ == "__main__":

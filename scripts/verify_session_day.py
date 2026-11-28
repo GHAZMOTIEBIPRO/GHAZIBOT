@@ -43,6 +43,14 @@ def _both(t: datetime | None) -> str:
     return f"{t.astimezone(NY):%H:%M} NY / {t.astimezone(RIYADH):%H:%M} RUH" if t else "—"
 
 
+# Marker statuses -> acceptance outcome classes (audit: NO_DATA, NO_QUALIFIED_SIGNALS, BLOCKED, DELIVERED,
+# UNCONFIRMED, MISSED are distinct; a partial delivery is never DELIVERED).
+OUTCOME = {"UNCONFIRMED": "UNCONFIRMED", "MISSED": "MISSED", "EMPTY": "NO_QUALIFIED_SIGNALS",
+           "NO_DATA": "NO_DATA", "SEND_FAILED": "SEND_FAILED", "PARTIAL": "PARTIAL",
+           **{k: "BLOCKED" for k in ("DATA_USE_PERMISSION_REQUIRED", "OWNER_CHAT_NOT_CONFIGURED", "DESTINATION_UNVERIFIED",
+                                     "DESTINATION_NOT_PRIVATE", "OWNER_IDENTITY_MISMATCH", "NOT_AUTHORIZED")}}
+
+
 def windows(day: str) -> dict[str, tuple[datetime, datetime]]:
     sched = xcals.get_calendar("XNYS").schedule.loc[day:day]
     if sched.empty:
@@ -72,7 +80,7 @@ def judge(day: str, day_dir: Path) -> list[dict[str, Any]]:
         unconfirmed = sum(1 for i in items.values() if i.get("status") == "UNCONFIRMED")
         status = m.get("status")
         ok = status == "DELIVERED" and last is not None and start - timedelta(minutes=1) <= first and last <= end
-        verdict = "PASS" if ok else ("LATE" if status == "DELIVERED" else str(status or "UNKNOWN"))
+        verdict = "PASS" if ok else ("LATE" if status == "DELIVERED" else OUTCOME.get(str(status), str(status or "UNKNOWN")))
         rows.append({"stage": slot, "verdict": verdict, "status": status, "attempt": m.get("attempt"),
                      "messages": m.get("messages"), "accepted": m.get("accepted"), "unconfirmed": unconfirmed,
                      "first_accepted": _both(first), "last_accepted": _both(last),
@@ -93,13 +101,8 @@ def main() -> int:
         print(json.dumps({"date": args.date, "verdict": "NO_RECORDS"}))
         return 2
     rows = judge(args.date, day_dir)
-    small = _load(args.state / "state" / "smallcaps" / f"{args.date}.tags.json")
-    hunter = _load(args.state / "state" / "options_hunter" / "last_top.json")
-    events = _load(day_dir / "session_events.json")
-    # Event engines: did they run today (last write time)? How many alerts fired is private (Telegram only).
-    extra = {"session_events_last_run": events.get("updated_at"),
-             "smallcaps_last_run": small.get("updated_at") if small.get("day") == args.date else None,
-             "options_hunter_last_run": hunter.get("updated_at") if hunter.get("day") == args.date else None}
+    # Event engines (small caps, options, intraday events) keep their outcomes in private state: owner /status.
+    extra = {"event_engines": "PRIVATE: use /status in Telegram"}
     for r in rows:
         print(json.dumps(r, ensure_ascii=False))
     print(json.dumps({"date": args.date, **extra}))

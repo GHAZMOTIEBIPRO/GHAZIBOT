@@ -17,7 +17,7 @@ def test_status_reads_markers_and_leaks_no_values(tmp_path):
     (state / "options_hunter" / "last_top.json").write_text(json.dumps({"day": "2026-11-30", "updated_at": "2026-11-30T20:00:00+00:00", "tags": ["h1", "h2"]}))
     out = bos.build(state, data, datetime(2026, 11, 30, 22, 0, tzinfo=timezone.utc))
     assert out["day"]["reports"]["EARLY"]["status"] == "DELIVERED" and "scorecard" not in out["day"]
-    assert out["options_hunter"] == {"day": "2026-11-30", "last_run": "2026-11-30T20:00:00+00:00"}
+    assert out["event_engines"] == "NO_STORED_STATE" and "options_hunter" not in out
     assert out["sec_registry"]["status"] == "NOT_CONFIGURED"
     text = json.dumps(out)
     assert "fingerprints" not in text and "NVDA" not in text and "h1" not in text  # nothing symbol-level

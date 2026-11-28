@@ -62,10 +62,8 @@ def test_session_slots_follow_open_and_close_including_early_close():
     assert rst.session_slot(early - timedelta(minutes=50), OPEN, early) == "LASTHOUR"
 
 
-def test_intraday_messages_only_carry_new_events_and_keys_hide_the_symbol():
+def test_intraday_messages_only_carry_new_events():
     e = {"side": "CALL", "stage": "T1", "at": (OPEN + timedelta(minutes=40)).isoformat(), "level": 112.0}
     texts = rst.build_messages("INTRADAY", {"NVDA": MAP}, {}, [("NVDA", e)], OPEN + timedelta(hours=1), "2026-11-30", {})
     assert len(texts) == 1 and "الهدف الأول" in texts[0] and "ليست لحظية" in texts[0]
     assert rst.build_messages("INTRADAY", {"NVDA": MAP}, {}, [], OPEN, "2026-11-30", {}) == []
-    key = rst.event_key(b"s" * 32, "2026-11-30", "NVDA", e)
-    assert len(key) == 24 and "NVDA" not in key and key != rst.event_key(b"o" * 32, "2026-11-30", "NVDA", e)

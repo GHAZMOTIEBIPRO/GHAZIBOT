@@ -199,7 +199,7 @@ def test_report_slot_sends_once_records_status_only_and_never_sends_outside_wind
     marker_text = (tmp_path / "report_EARLY.json").read_text()
     marker = json.loads(marker_text)
     assert marker["accepted"] == marker["messages"] == count and marker["telegram_acceptance_is_not_read_receipt"]
-    assert "fingerprints" in marker and marker["fingerprints"] is None  # no independent state key, no fingerprints
+    assert "fingerprints" not in marker  # nothing derived from the maps is stored
     # the public marker carries no level, price or state derived from the private bars
     assert "trigger" not in marker_text and "WATCH" not in marker_text and "105" not in marker_text.replace(
         "2026-11-30", "")
@@ -299,22 +299,30 @@ def test_ids_are_unique_per_session_slot_and_message(tmp_path):
 
 
 def test_final_sends_cards_only_for_changed_symbols(tmp_path):
-    env = {**ENV, "GHAZI_STATE_HMAC_KEY": "s" * 32}
-    _run(tmp_path, 31, lambda t, c: _Receipt(), env=env)
+    """FINAL rebuilds EARLY's maps from data as of EARLY's build time; nothing is stored (audit)."""
+    _run(tmp_path, 31, lambda t, c: _Receipt())
+    marker = json.loads((tmp_path / "report_EARLY.json").read_text())
+    assert "fingerprints" not in marker and marker["built_at"].startswith("2026-11-30T13:31")
     texts = []
-    final = _run(tmp_path, 2, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env)
+    final = bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 14, 2, tzinfo=UTC), tmp_path, env=ENV,
+                                get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt(),
+                                early_private=_private())
     assert final["slot"] == "FINAL" and final["status"] == "DELIVERED"
     joined = "\n".join(texts)
     assert "لا تغيير جوهري" in joined and "تنبيه مبكر: إغلاق 5د" not in joined  # no unchanged cards
-    early = json.loads((tmp_path / "report_EARLY.json").read_text())["fingerprints"]
-    assert set(early) == {"key_id", "nonce", "tags"} and len(early["tags"]) == 256  # sealed: no symbol keys
-    assert not any(sym in json.dumps(early) for sym in ("NVDA", "QQQ", "AAPL"))
     changed = _private()
     changed["plans"]["NVDA"]["prior_session"]["high"] = 111.0
     texts.clear()
     (tmp_path / "report_FINAL.json").unlink()
-    _run(tmp_path, 3, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env, private=changed)
+    bdp.run_report_slot(changed, _facts(), datetime(2026, 11, 30, 14, 3, tzinfo=UTC), tmp_path, env=ENV,
+                        get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt(),
+                        early_private=_private())
     assert "<b>NVDA</b>" in "\n".join(texts) and ": 1." in "\n".join(texts)
+    texts.clear()
+    (tmp_path / "report_FINAL.json").unlink()
+    bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 14, 4, tzinfo=UTC), tmp_path, env=ENV,
+                        get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt())
+    assert "تنبيه مبكر: إغلاق 5د" in "\n".join(texts)  # no rebuilt EARLY: every card is sent, never assumed unchanged
 
 
 def test_charts_go_out_as_albums_after_the_text(tmp_path):

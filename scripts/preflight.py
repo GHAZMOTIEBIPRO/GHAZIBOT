@@ -4,7 +4,11 @@ Owner (PHASE 5): before any live send, check everything a session depends on. Ri
 from key presence (an attestation is the owner's record, a key is not permission). The log prints status
 words, booleans, HTTP codes, the next session's windows and a key id (an HMAC of a constant) only: no
 value of any secret, no price, no chat id. No message is sent and no synthetic price is ever produced.
-Exit 0 = ready, 1 = something blocks a stage (named), 2 = not a session day ahead within 4 days.
+Readiness is reported per engine (READY / DEGRADED / BLOCKED) and FULL_READY is true only when every
+engine is READY (audit, RELEASE GATE): an exit code 0 or a green CI is never "fully ready". HTTP
+checks also validate the body (a 200 with the wrong content is a failure).
+Exit 0 = the scheduled market reports are READY (others may be degraded, see engines), 1 = the reports
+are blocked, 2 = no session ahead within 5 days.
 """
 from __future__ import annotations
 
@@ -20,7 +24,6 @@ import pandas as pd
 import requests
 
 from options_radar import output_policy as op
-from options_radar import state_keys as sk
 
 NY = ZoneInfo("America/New_York")
 RIYADH = ZoneInfo("Asia/Riyadh")
@@ -69,22 +72,23 @@ def checks(env: dict[str, str], now: datetime, *, state: Path, get_chat, http=re
     out["rights"] = {f"{src}.{use}": right(src, use)
                      for src in ("alpaca_iex", "alpaca_indicative_options")
                      for use in ("fetch", "compute", "telegram_private", "publish_derived", "telegram_public")}
-    key = sk.state_key(env)
     ua = (env.get("SEC_USER_AGENT") or "").strip()
     out["keys"] = {"alpaca": bool(env.get("ALPACA_API_KEY") and env.get("ALPACA_SECRET_KEY")),
                    "telegram_bot": bool(env.get("TELEGRAM_BOT_TOKEN")),
                    "owner_chat": bool(env.get("TELEGRAM_OWNER_CHAT_ID") or env.get("TELEGRAM_OWNER_USERNAME")),
-                   "state_key": key is not None, "state_key_id": sk.key_id(key) if key else None,
                    "sec_user_agent": "@" in ua}
     out["private_chat"] = op.destination_status(env, get_chat)[0] if out["keys"]["telegram_bot"] else "NO_TOKEN"
     if out["keys"]["alpaca"]:
         h = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
-        iex, _ = _code(http.get, f"{DATA}/v2/stocks/snapshots", params={"symbols": "SPY", "feed": "iex"}, headers=h)
+        iex, r = _code(http.get, f"{DATA}/v2/stocks/snapshots", params={"symbols": "SPY", "feed": "iex"}, headers=h)
+        iex = _valid(iex, r, lambda b: "SPY" in b)
         end = (now - timedelta(minutes=20)).isoformat()
-        sip, _ = _code(http.get, f"{DATA}/v2/stocks/bars", params={"symbols": "SPY", "timeframe": "1Day", "feed": "sip",
+        sip, r = _code(http.get, f"{DATA}/v2/stocks/bars", params={"symbols": "SPY", "timeframe": "1Day", "feed": "sip",
                                                                    "limit": 2, "end": end}, headers=h)
-        opt, _ = _code(http.get, f"{DATA}/v1beta1/options/snapshots/SPY", params={"feed": "indicative", "limit": 1},
+        sip = _valid(sip, r, lambda b: bool((b.get("bars") or {}).get("SPY")))
+        opt, r = _code(http.get, f"{DATA}/v1beta1/options/snapshots/SPY", params={"feed": "indicative", "limit": 1},
                        headers=h)
+        opt = _valid(opt, r, lambda b: bool(b.get("snapshots")))
         clock, r = _code(http.get, f"{TRADING}/v2/clock", headers=h)
         skew = None
         if r is not None and r.status_code == 200:
@@ -93,13 +97,55 @@ def checks(env: dict[str, str], now: datetime, *, state: Path, get_chat, http=re
         out["alpaca"] = {"iex_snapshot": iex, "sip_history": sip, "indicative_options": opt, "clock": clock,
                          "clock_skew_s": skew}
     if "@" in ua:
-        code, _ = _code(http.get, SEC_FEED, headers={"User-Agent": ua, "Accept-Encoding": "gzip"})
-        out["sec_current_feed"] = code
+        code, r = _code(http.get, SEC_FEED, headers={"User-Agent": ua, "Accept-Encoding": "gzip"})
+        out["sec_current_feed"] = code if code != 200 or r is None else (200 if "<feed" in r.text[:2000] else "BAD_CONTENT")
     else:
         out["sec_current_feed"] = "NOT_CONFIGURED"
+    out["run_history"] = "OK" if env.get("GITHUB_TOKEN") and env.get("GITHUB_REPOSITORY") else "NO_TOKEN"
     out["schedule"] = schedule(now)
     out["outbox_unconfirmed"] = _unconfirmed(state)
     return out
+
+
+def _valid(code, r, ok) -> int | str:
+    """200 only when the body is what the path should return; otherwise the code or BAD_CONTENT."""
+    if code != 200 or r is None:
+        return code
+    try:
+        return 200 if ok(r.json()) else "BAD_CONTENT"
+    except ValueError:
+        return "BAD_CONTENT"
+
+
+def engines(c: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """READY / DEGRADED / BLOCKED per engine with the reasons; independent engines never block each other."""
+    a, k = c.get("alpaca") or {}, c["keys"]
+    base = []
+    if c["rights"].get("alpaca_iex.telegram_private") != "ALLOWED":
+        base.append("rights: private Alpaca alerts not attested")
+    base += [f"key: {n}" for n in ("alpaca", "telegram_bot", "owner_chat") if not k[n]]
+    if c["private_chat"] != "OK":
+        base.append(f"chat: {c['private_chat']}")
+    base += [f"alpaca {n}: {a.get(n)}" for n in ("iex_snapshot", "sip_history", "clock") if a.get(n) != 200]
+    if abs(a.get("clock_skew_s") or 0) > 5:
+        base.append("clock skew above 5 s")
+    history = [] if c.get("run_history") == "OK" else ["run history unreadable (stateless dedupe needs it)"]
+    sec = [] if c["sec_current_feed"] == 200 else [f"SEC feed {c['sec_current_feed']}"]
+    opt = [] if a.get("indicative_options") == 200 else [f"indicative options {a.get('indicative_options')}"]
+
+    def judge(blocking: list[str], degrading: list[str] = ()) -> dict[str, Any]:
+        status = "BLOCKED" if blocking else "DEGRADED" if degrading else "READY"
+        return {"status": status, "reasons": list(blocking) + list(degrading)}
+
+    return {
+        "premarket_reports": judge(base),
+        "session_tracker": judge(base, [f"intraday events off: {x}" for x in history]),
+        "iex_stream": judge(base, ["stream connection not probed here (first live session)"]),
+        "options_hunter": judge(base + opt + history),
+        "smallcaps": judge(base + history, [f"dilution check off: {x}" for x in sec]),
+        "sec_news": judge(sec),
+        "telegram_commands": judge([x for x in base if not x.startswith("alpaca")]),
+    }
 
 
 def _unconfirmed(state: Path) -> dict[str, int]:
@@ -119,38 +165,19 @@ def _unconfirmed(state: Path) -> dict[str, int]:
     return out
 
 
-def blockers(c: dict[str, Any]) -> list[str]:
-    b = []
-    if c["rights"].get("alpaca_iex.telegram_private") != "ALLOWED":
-        b.append("RIGHTS: owner attestation for private Alpaca alerts")
-    for name in ("alpaca", "telegram_bot", "owner_chat"):
-        if not c["keys"][name]:
-            b.append(f"KEY: {name}")
-    if c["private_chat"] != "OK":
-        b.append(f"CHAT: {c['private_chat']}")
-    for name, code in (c.get("alpaca") or {}).items():
-        if name in ("iex_snapshot", "sip_history", "indicative_options", "clock") and code != 200:
-            b.append(f"ALPACA: {name} {code}")
-    if abs((c.get("alpaca") or {}).get("clock_skew_s") or 0) > 5:
-        b.append("CLOCK: runner vs Alpaca skew above 5 s")
-    if not c["keys"]["state_key"]:
-        b.append("DEGRADED: GHAZI_STATE_HMAC_KEY missing (event alerts off; reports still go)")
-    if c["sec_current_feed"] != 200:
-        b.append(f"DEGRADED: SEC feed {c['sec_current_feed']} (SEC news off)")
-    return b
-
-
 def main() -> int:
     from scripts.telegram_transport import get_chat
 
     now = datetime.now(timezone.utc)
     c = checks(dict(os.environ), now, state=Path(os.environ.get("STATE_DIR", "../state/state")), get_chat=get_chat)
-    b = blockers(c)
+    e = engines(c)
+    full = all(v["status"] == "READY" for v in e.values())
     print("preflight:", json.dumps(c, ensure_ascii=False))
-    print("preflight blockers:", json.dumps(b, ensure_ascii=False))
+    print("preflight engines:", json.dumps(e, ensure_ascii=False))
+    print("preflight FULL_READY:", full)
     if not c["schedule"]:
         return 2
-    return 1 if any(not x.startswith("DEGRADED") for x in b) else 0
+    return 0 if e["premarket_reports"]["status"] == "READY" else 1
 
 
 if __name__ == "__main__":

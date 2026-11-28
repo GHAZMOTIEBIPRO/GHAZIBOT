@@ -1,41 +1,38 @@
-"""Storage rights (owner, PHASE 4): restricted data never reaches public bot-state, logs or artifacts.
+"""Storage rights and delivery semantics (owner, independent audit RELEASE GATE).
 
-bot-state is public. Encryption is not a storage licence, and the Telegram token is a transport
-credential, never a key. Only operational records and keyed tags under an independent secret may be stored.
+Nothing derived from restricted data - prices, levels, stages, detections, tags or counts of them - is
+stored on the public branch or in a cache; dedupe is recomputed from the source data and the run history.
 """
 from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
-from options_radar import state_keys as sk
+from options_radar import run_window as rw
 from scripts import build_oracle_status as bos
 from scripts import run_smallcap_scan as run
 
 ROOT = Path(__file__).resolve().parents[1]
-KEY = b"k" * 40
-NOW = datetime(2026, 11, 30, 15, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 30, 17, 0, tzinfo=timezone.utc)
+OPEN = datetime(2026, 11, 30, 14, 30, tzinfo=timezone.utc)
 
 # Every path a workflow holding the Alpaca secret may commit to bot-state, with what it holds.
 ALLOWED_ADDS = {
     "runtime/public/data/daily_plan.json",            # readiness and counts (main, earlier missions)
     "state/daily_plan",                                # morning.json / update_*.json: statuses and counts
-    "state/daily_plan/*/report_*.json",               # delivery statuses and keyed fingerprints
-    "state/daily_plan/*/session_*.json",              # slot statuses and keyed event tags
-    "runtime/public/data/oracle_status.json",         # statuses and operational counts
-    "state/options_hunter/last_top.json",             # keyed alert tags
+    "state/daily_plan/*/report_*.json",               # scheduled report delivery statuses (no fingerprints)
+    "state/daily_plan/*/session_*.json",              # scheduled slot statuses
+    "runtime/public/data/oracle_status.json",         # statuses only
     "state/telegram/telegram_commands_offset.json",   # update offset and command statuses
-    "state/smallcaps/*.tags.json",                    # sealed fixed-size keyed tags
-    "state/smallcaps/*.postclose.json",               # done flag and time
     "runtime/public/data/alpaca_iex_vcp_health.json",  # health statuses (earlier mission)
     "state/alpaca/vcp_private_delivery.json",         # delivery status (earlier mission)
     "state/opening_fib/sent.json", "state/opening_fib/shadow_sent.json",  # sent markers (earlier mission)
     "runtime/public/data/classical_direction.json",   # SOURCE_TERMS_BLOCKED digest (gated publisher)
 }
-# Artifacts from a job that holds the Alpaca secret value; reviewed: provider-access metadata only.
-ALLOWED_ARTIFACT_WORKFLOWS = {"private-data-access.yml"}
+ALLOWED_ARTIFACT_WORKFLOWS = {"private-data-access.yml"}  # provider-access metadata only (reviewed)
 
 
 def _alpaca_workflows():
@@ -45,56 +42,27 @@ def _alpaca_workflows():
             yield p, text
 
 
-def test_state_key_is_independent_and_never_the_telegram_token():
-    assert sk.state_key({}) is None
-    assert sk.state_key({"TELEGRAM_BOT_TOKEN": "1234:" + "x" * 40}) is None
-    assert sk.state_key({sk.ENV: "short"}) is None
-    assert sk.state_key({sk.ENV: "z" * 32}) == b"z" * 32
+def test_event_engines_commit_nothing_and_use_no_cache():
+    for name in ("smallcap-scan.yml", "options-hunter.yml"):
+        text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+        assert "git add" not in text and "git push" not in text and "actions/cache" not in text, name
+        assert "contents: read" in text and "actions: read" in text, name
+    assert not (ROOT / "options_radar/state_keys.py").exists()
 
 
-def test_recover_reads_back_only_with_the_key():
-    tags = {sk.tag(KEY, "smallcap", "2026-11-30", "AAA", "EARLY_ACTIVITY", 17)}
-    cands = [("AAA", "EARLY_ACTIVITY", m) for m in range(30)] + [("BBB", "EARLY_ACTIVITY", 17)]
-    assert sk.recover(KEY, tags, ("smallcap", "2026-11-30"), cands) == [("AAA", "EARLY_ACTIVITY", 17)]
-    assert sk.recover(b"other" * 8, tags, ("smallcap", "2026-11-30"), cands) == []
+def test_workflows_with_alpaca_keys_commit_only_reviewed_paths():
+    for p, text in _alpaca_workflows():
+        for m in re.finditer(r"git add ([^\n|&;]+)", text):
+            for path in m.group(1).split():
+                if path.startswith("-") or path in ("2>/dev/null", "||", "true"):
+                    continue
+                assert path in ALLOWED_ADDS, f"{p.name} commits {path}: review its storage rights first"
 
 
-def test_smallcap_state_is_sealed_fixed_size_and_content_free(tmp_path):
-    path = tmp_path / "2026-11-30.tags.json"
-    tags = {sk.tag(KEY, "smallcap", "2026-11-30", "AAAA", "CONFIRMED_MOVE", 42)}
-    run.save_tags(path, KEY, "2026-11-30", tags, NOW)
-    saved = json.loads(path.read_text())
-    assert set(saved) == {"schema", "day", "updated_at", "key_id", "nonce", "tags"}
-    assert len(saved["tags"]) == sk.SLOTS and b"AAAA" not in path.read_bytes() and b"CONFIRMED" not in path.read_bytes()
-    empty = tmp_path / "empty.tags.json"
-    run.save_tags(empty, KEY, "2026-11-30", set(), NOW)
-    assert len(json.loads(empty.read_text())["tags"]) == sk.SLOTS  # an alert does not change the size
-    real = run.load_tags(path, KEY, "2026-11-30")
-    assert real == tags and run.load_tags(empty, KEY, "2026-11-30") == set()
-    found = run.detections_from_tags(KEY, "2026-11-30", real, ["AAAA", "BBBB"])
-    assert found == {"AAAA": {"stage": "CONFIRMED_MOVE", "minute": 42, "top_stage": "CONFIRMED_MOVE"}}
-    assert run.load_tags(path, b"r" * 40, "2026-11-30") is None  # rotated key: unreadable, alerts stay off
-
-
-def test_seal_hides_size_and_rewrites_differ():
-    real = {sk.tag(KEY, "x", i) for i in range(3)}
-    a, b = sk.seal(KEY, "scope", real), sk.seal(KEY, "scope", real)
-    assert len(a["tags"]) == len(b["tags"]) == sk.SLOTS and a["tags"] != b["tags"]  # fresh nonce every write
-    assert sk.unseal(KEY, "scope", a) == real == sk.unseal(KEY, "scope", b)
-    big = {sk.tag(KEY, "y", i) for i in range(300)}
-    assert len(sk.seal(KEY, "scope", big)["tags"]) == 2 * sk.SLOTS
-    assert sk.unseal(KEY, "other-scope", a) != real
-
-
-def test_smallcap_dedupe_and_upgrade_from_tags():
-    day = "2026-11-30"
-    tags = {sk.tag(KEY, "smallcap", day, "AAA", "EARLY_ACTIVITY", 20)}
-    assert run.already_alerted(KEY, day, "AAA", "EARLY_ACTIVITY", tags, 60)
-    assert not run.already_alerted(KEY, day, "AAA", "BREAKOUT_WATCH", tags, 60)  # an upgrade is new
-    tags.add(sk.tag(KEY, "smallcap", day, "AAA", "BREAKOUT_WATCH", 50))
-    assert run.already_alerted(KEY, day, "AAA", "EARLY_ACTIVITY", tags, 60)  # a later stage covers it
-    first = run.detections_from_tags(KEY, day, tags, ["AAA"])["AAA"]
-    assert first == {"stage": "EARLY_ACTIVITY", "minute": 20, "top_stage": "BREAKOUT_WATCH"}
+def test_workflows_with_alpaca_keys_upload_no_artifacts():
+    for p, text in _alpaca_workflows():
+        if "upload-artifact" in text:
+            assert p.name in ALLOWED_ARTIFACT_WORKFLOWS, f"{p.name}: artifacts of a public repo are downloadable"
 
 
 def test_no_encryption_at_rest_and_no_token_as_key_anywhere():
@@ -107,33 +75,73 @@ def test_no_encryption_at_rest_and_no_token_as_key_anywhere():
                     assert not re.search(r"hmac|\btag\(|fingerprints\(|encrypt|SC_KEY", line), (p, line)
 
 
-def test_workflows_with_alpaca_keys_commit_only_reviewed_paths():
-    seen = set()
-    for p, text in _alpaca_workflows():
-        for m in re.finditer(r"git add ([^\n|&;]+)", text):
-            for path in m.group(1).split():
-                if path.startswith("-") or path in ("2>/dev/null", "||", "true"):
-                    continue
-                seen.add(path)
-                assert path in ALLOWED_ADDS, f"{p.name} commits {path}: review its storage rights first"
-    assert "state/smallcaps/*.tags.json" in seen
-
-
-def test_workflows_with_alpaca_keys_upload_no_artifacts():
-    for p, text in _alpaca_workflows():
-        if "upload-artifact" in text:
-            assert p.name in ALLOWED_ARTIFACT_WORKFLOWS, f"{p.name}: artifacts of a public repo are downloadable"
-
-
 def test_public_status_has_no_outcome_counts(tmp_path):
     state = tmp_path / "state"
     day = state / "daily_plan" / "2026-11-30"
     day.mkdir(parents=True)
     (day / "session_POSTCLOSE.json").write_text(json.dumps({"status": "DELIVERED", "scorecard": {"t1": 3}}))
-    small = state / "smallcaps"
-    small.mkdir()
-    run.save_tags(small / "2026-11-30.tags.json", KEY, "2026-11-30", {"ab"}, NOW)
     out = bos.build(state, tmp_path / "data", NOW)
     text = json.dumps(out)
-    assert "scorecard" not in text and "t1" not in text and "positive" not in text and "alert" not in text
-    assert out["smallcaps"] == {"day": "2026-11-30", "last_run": NOW.isoformat()}
+    assert "scorecard" not in text and "t1" not in text and "alert" not in text
+    assert out["event_engines"] == "NO_STORED_STATE"
+
+
+class _HTTP:
+    def __init__(self, runs, code=200):
+        self.runs, self.code = runs, code
+
+    def get(self, url, **kw):
+        return SimpleNamespace(status_code=self.code, json=lambda: {"workflow_runs": self.runs})
+
+
+ENV = {"GITHUB_REPOSITORY": "o/r", "GITHUB_TOKEN": "t", "GITHUB_RUN_ID": "9"}
+
+
+def test_previous_success_ignores_this_run_pushes_and_other_days():
+    runs = [{"id": 9, "event": "workflow_dispatch", "run_started_at": "2026-11-30T16:55:00Z"},
+            {"id": 8, "event": "push", "run_started_at": "2026-11-30T16:50:00Z"},
+            {"id": 7, "event": "workflow_dispatch", "run_started_at": "2026-11-30T16:40:00Z"},
+            {"id": 6, "event": "workflow_dispatch", "run_started_at": "2026-11-29T20:00:00Z"}]
+    day = OPEN - timedelta(hours=8)
+    assert rw.previous_success(ENV, "x.yml", NOW, day_start=day, http=_HTTP(runs)) == (
+        "OK", datetime(2026, 11, 30, 16, 40, tzinfo=timezone.utc))
+    assert rw.previous_success(ENV, "x.yml", NOW, day_start=day, http=_HTTP(runs[:2])) == ("NONE_TODAY", None)
+    assert rw.previous_success(ENV, "x.yml", NOW, day_start=day, http=_HTTP([], 403))[0] == "UNKNOWN"
+    assert rw.previous_success({}, "x.yml", NOW, day_start=day)[0] == "UNKNOWN"
+
+
+def test_delivery_semantics_retry_only_when_nothing_was_accepted():
+    sent = []
+    statuses = rw.send_in_order(["a", "b", "c"], lambda t: sent.append(t) or ("SEND_FAILED" if t == "b" else "DELIVERED"))
+    assert sent == ["a", "b"] and statuses == ["DELIVERED", "SEND_FAILED"]  # "c" is not sent after a refusal
+    assert rw.exit_code(statuses) == 0          # "a" arrived: the run succeeds, so "a" is never resent
+    assert rw.exit_code(["SEND_FAILED"]) == 1   # nothing arrived: the run fails, the next run retries it
+    assert rw.exit_code(["UNCONFIRMED"]) == 0   # may have arrived: never resent automatically
+    assert rw.exit_code([]) == 0
+
+
+def test_data_horizon_is_the_last_completed_bucket():
+    assert rw.data_horizon(datetime(2026, 11, 30, 15, 33, 20, tzinfo=timezone.utc)) == datetime(
+        2026, 11, 30, 15, 15, tzinfo=timezone.utc)
+
+
+def _bars(n, price=5.0, vol=2000):
+    return [{"t": (OPEN + timedelta(minutes=i)).isoformat(), "o": price, "h": price * 1.01, "l": price * 0.99,
+             "c": price, "v": vol, "vw": price} for i in range(n)]
+
+
+def test_smallcap_new_since_sends_first_stage_and_upgrades_only(monkeypatch):
+    cands = [{"symbol": "AAA", "stage": "BREAKOUT_WATCH"}, {"symbol": "BBB", "stage": "EARLY_ACTIVITY"},
+             {"symbol": "CCC", "stage": "CONFIRMED_MOVE"}]
+    before = {"AAA": "EARLY_ACTIVITY", "BBB": "EARLY_ACTIVITY", "CCC": "COMPRESSION"}
+    monkeypatch.setattr(run.sc, "evaluate", lambda sym, snap, hist, el: {"stage": before[sym]})
+    fetch = lambda syms, start, end, headers: {s: _bars(10) for s in syms}
+    later = OPEN + timedelta(minutes=390)
+    new = run.new_since(cands, {}, {}, OPEN + timedelta(minutes=60), OPEN, later, {}, fetch=fetch)
+    assert [r["symbol"] for r in new] == ["AAA", "CCC"]  # BBB had the same stage at the previous run
+    assert run.new_since(cands, {}, {}, None, OPEN, later, {}, fetch=fetch) == cands  # first run today
+
+
+def test_pseudo_snapshot_is_what_a_scan_would_have_seen():
+    snap = run.pseudo_snapshot(_bars(3, 4.0, 100), {"c": 3.5})
+    assert snap["latestTrade"]["p"] == 4.0 and snap["dailyBar"]["v"] == 300 and snap["prevDailyBar"] == {"c": 3.5}

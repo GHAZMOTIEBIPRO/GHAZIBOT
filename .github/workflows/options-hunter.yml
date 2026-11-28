@@ -12,7 +12,8 @@ on:
       - ".github/workflows/options-hunter.yml"
 
 permissions:
-  contents: write
+  contents: read
+  actions: read
 
 concurrency:
   group: ghazi-options-hunter
@@ -28,11 +29,10 @@ jobs:
       ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
       ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      GHAZI_STATE_HMAC_KEY: ${{ secrets.GHAZI_STATE_HMAC_KEY }}
+      GITHUB_TOKEN: ${{ github.token }}  # read-only run history for stateless dedupe (actions: read)
       TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
       OPTIONS_HUNTER_DRY_RUN: ${{ github.event_name == 'push' && 'true' || 'false' }}
-      STATE_DIR: ../state/state/options_hunter
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -42,6 +42,7 @@ jobs:
         with:
           ref: bot-state
           path: state
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
@@ -50,21 +51,3 @@ jobs:
         run: |
           cd app
           python -m scripts.run_options_hunter
-      - name: Store the keyed hash of the last top set
-        if: env.OPTIONS_HUNTER_DRY_RUN != 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd state
-          git config user.name "GHAZI Options Hunter"
-          git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          if [[ ! -f state/options_hunter/last_top.json ]]; then exit 0; fi
-          git add state/options_hunter/last_top.json
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "state: options hunter top-set hash [skip ci]"
-          for attempt in 1 2 3 4 5 6 7 8; do
-            if git pull --rebase origin bot-state && git push origin HEAD:bot-state; then exit 0; fi
-            git rebase --abort >/dev/null 2>&1 || true
-            sleep $((attempt * 2 + RANDOM % 5))
-          done
-          exit 1
