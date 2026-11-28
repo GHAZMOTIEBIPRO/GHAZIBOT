@@ -183,14 +183,13 @@ def main() -> int:
                          (open_at - timedelta(days=1)).date().isoformat(), headers)
     rows = [sc.evaluate(s, snaps[s], hist.get(s) or [], elapsed) for s in pre]
     eligible = [r for r in rows if r.get("eligible")]
-    stages = {k: sum(1 for r in eligible if r.get("stage") == k) for k in ORDER}
     coverage = {"universe": len(symbols), "snapshots": len(snaps), "prefiltered": len(pre), "eligible": len(eligible)}
-    print("smallcaps scan:", json.dumps({"coverage": coverage, "stages": stages, "elapsed": round(elapsed, 3)}))
+    # Public log: coverage only. Stage counts describe the market at this minute (Alpaca-derived): Telegram only.
+    print("smallcaps scan:", json.dumps({"coverage": coverage, "elapsed": round(elapsed, 3)}))
     minute = int((now - open_at).total_seconds() // 60)
     candidates = [r for r in sorted(eligible, key=lambda x: -(x.get("score") or 0)) if r.get("stage") in sc.ALERT_STAGES]
     if key is None:
-        print("smallcaps: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled, nothing stored;",
-              "candidates", len(candidates))
+        print("smallcaps: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled, nothing stored")
         return 0
     new = [r for r in candidates if not already_alerted(key, day_s, r["symbol"], r["stage"], tags, minute)][:8]
     if args.dry_run:

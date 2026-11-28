@@ -46,3 +46,8 @@ def test_universe_uses_listed_equities_and_sec_nyse(tmp_path):
     (tmp_path / "sec_company_tickers.json").write_text(json.dumps({"rows": [["BMY", "1", "b", "NYSE"],
                                                                              ["OTCX", "2", "o", "OTC"]]}))
     assert run.universe(tmp_path) == ["BMY", "COGT"]
+
+
+def test_missing_risk_data_blocks_a_confirmed_opportunity():
+    assert "مؤكدة" not in sc.STAGE_AR["CONFIRMED_MOVE"] and "بحثية" in sc.STAGE_AR["CONFIRMED_MOVE"]
+    assert set(sc.UNCHECKED_RISKS) == {"halt_resume", "dilution_sec", "float_shares"}

@@ -26,8 +26,12 @@ from options_radar.microcap_hunter import assess_microcap_candidate
 
 PRICE_MIN, PRICE_MAX = 1.0, 20.0
 MIN_IEX_DOLLAR_VOLUME = 150_000
+# CONFIRMED_MOVE is a price/volume state, never a confirmed opportunity: halts, dilution (SEC shelf/ATM/
+# warrants) and float are not checked on this path, and missing risk data blocks any promotion (owner,
+# PHASE 4). The label says "research watch" and every row carries the unchecked risks.
 STAGE_AR = {"COMPRESSION": "انضغاط", "EARLY_ACTIVITY": "نشاط مبكر", "BREAKOUT_WATCH": "مراقبة اختراق",
-            "CONFIRMED_MOVE": "حركة مؤكدة", "EXTENDED": "ممتد (متأخر)"}
+            "CONFIRMED_MOVE": "حركة قوية — مراقبة بحثية (المخاطر غير مفحوصة)", "EXTENDED": "ممتد (متأخر)"}
+UNCHECKED_RISKS = ("halt_resume", "dilution_sec", "float_shares")
 ALERT_STAGES = ("EARLY_ACTIVITY", "BREAKOUT_WATCH", "CONFIRMED_MOVE")
 
 
@@ -81,7 +85,8 @@ def evaluate(symbol: str, snapshot: dict[str, Any], history: list[dict[str, floa
         levels = {"trigger": round(high20, 2), "invalidation": round(high20 - atr, 2), "atr14": round(atr, 4),
                   "targets": [round(high20 + k * atr, 2) for k in (1, 2, 3)],
                   "method": "trigger = 20-session high; targets +1/+2/+3 ATR14; invalidation trigger - 1 ATR14"}
-    return {**base, "eligible": True, "stage": stage, "stage_ar": STAGE_AR.get(stage), "price": round(price, 4),
+    return {**base, "eligible": True, "stage": stage, "stage_ar": STAGE_AR.get(stage), "opportunity_confirmed": False,
+            "unchecked_risks": list(UNCHECKED_RISKS), "price": round(price, 4),
             "price_time": trade.get("t"), "move_pct": round(move, 2), "rvol_time_adjusted": round(rvol, 2),
             "iex_dollar_volume": round(dollar), "high20": round(high20, 4), "levels": levels,
             "score": scored.score, "assessment": scored.stage, "risk_flags": list(scored.flags),

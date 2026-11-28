@@ -166,9 +166,8 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     result = hunt(env, now)
     top = [r for b in result["ranked"].values() for r in b]
-    classes = {c: sum(1 for r in top if r["class"] == c) for c in ac.CLASS_AR}
-    print("options hunter:", json.dumps({"coverage": result["coverage"], "freshness": result["freshness"],
-                                         "classes_in_top": classes}))
+    # Public log: coverage and freshness only; classes describe the chain (indicative, Alpaca): Telegram only.
+    print("options hunter:", json.dumps({"coverage": result["coverage"], "freshness": result["freshness"]}))
     key = sk.state_key(env)
     if key is None:  # alerts could not be deduplicated: none are sent; /options still answers on demand
         print("options hunter: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled")

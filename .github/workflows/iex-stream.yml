@@ -1,9 +1,12 @@
 name: GHAZI IEX real-time first look (owner-private)
 
-# scripts/run_iex_stream.py: one job per session day, dispatched by the orchestrator at the open, listening
-# to the Alpaca IEX minute-bar stream (free Basic plan: 1 connection, <= 30 symbols) for up to ~6 hours.
-# Alerts: a completed 5m IEX bucket beyond a pre-open map trigger on >= 1.5x IEX volume, labelled partial
-# coverage. Nothing is written to bot-state; the log prints counts and latency P50/P95 only.
+# scripts/run_iex_stream.py: the whole regular session in consecutive segments (a session is 390 minutes,
+# a hosted job at most 360). The orchestrator dispatches every ~30 minutes in the session; this concurrency
+# group runs one segment at a time with at most one pending (free plan: one stream connection, <= 30
+# symbols), so segments never overlap; a later segment replays the missed minutes by REST (silently after a
+# handover) and a REST backfill every minute fills reconnect gaps. Alerts: a completed 5m IEX bucket beyond
+# a pre-open map trigger on >= 1.5x IEX volume, labelled partial coverage. Nothing is written to bot-state;
+# the log prints counts and latency percentiles only.
 on:
   workflow_dispatch:
 
@@ -27,7 +30,7 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
-      IEX_STREAM_MAX_MINUTES: "350"
+      IEX_STREAM_MAX_MINUTES: "345"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:

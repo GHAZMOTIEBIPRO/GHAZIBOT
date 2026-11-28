@@ -44,6 +44,61 @@ def test_latency_summary_and_baseline():
     st = _state()
     for m in range(5):
         _feed(st, m, 99.0, 500, delay=4.0)
-    assert st.latency_summary() == {"alerts": 1, "p50_s": 4.0, "p95_s": 4.0, "max_s": 4.0}
+    summary = st.latency_summary()
+    assert summary["alerts"] == 1 and summary["alert"] == {"n": 1, "p50_s": 4.0, "p95_s": 4.0, "max_s": 4.0}
+    assert summary["feed"]["n"] >= 5 and summary["send"] == {"n": 0}
     bars = [{"t": OPEN + timedelta(minutes=5 * i), "v": 100.0 * (i + 1)} for i in range(3)]
     assert live.baseline_from_bars(bars, [(OPEN, OPEN + timedelta(hours=1))]) == {0: 100.0, 1: 200.0, 2: 300.0}
+
+
+def _aaa_state():
+    from datetime import datetime, timezone
+
+    open_at = datetime(2026, 11, 30, 14, 30, tzinfo=timezone.utc)
+    return open_at, live.LiveState(open_at=open_at, levels={"AAA": {"call": 10.0, "put": 5.0}},
+                                   baseline={"AAA": {0: 100.0}})
+
+
+def _aaa_feed(st, open_at, *, source="stream", silent=False, minutes=range(5)):
+    from datetime import timedelta
+
+    out = []
+    for m in minutes:
+        start = open_at + timedelta(minutes=m)
+        out += st.on_bar("AAA", start, 10, 11, 9.5, 10.5, 40, start + timedelta(minutes=1, seconds=3),
+                         source=source, silent=silent)
+    return out
+
+
+def test_duplicate_bars_never_fire_twice_and_backfill_fills_a_gap():
+    open_at, st = _aaa_state()
+    assert _aaa_feed(st, open_at, minutes=range(4)) == []          # minute 4 lost in a reconnect
+    alerts = _aaa_feed(st, open_at, source="rest", minutes=range(5))  # REST backfill of the window
+    assert len(alerts) == 1 and alerts[0]["source"] == "rest"
+    assert _aaa_feed(st, open_at, minutes=range(5)) == [] and _aaa_feed(st, open_at, source="rest") == []
+    assert st.backfilled_bars == 1 and st.latency_summary()["feed"]["n"] == 9
+
+
+def test_silent_replay_marks_handled_buckets_without_alerting():
+    open_at, st = _aaa_state()
+    assert _aaa_feed(st, open_at, source="rest", silent=True) == []
+    assert ("AAA", "call") in st.fired and st.replayed_fired == 1
+    assert _aaa_feed(st, open_at) == []  # the stream repeating the same bucket stays quiet
+
+
+def test_segments_cover_the_session_without_overlap_or_gap():
+    from datetime import datetime, timedelta, timezone
+
+    from scripts import run_iex_stream as rs
+
+    open_at = datetime(2026, 11, 30, 14, 30, tzinfo=timezone.utc)
+    close_at = open_at + timedelta(minutes=390)
+    first = rs.segment_plan(open_at - timedelta(minutes=2), open_at, close_at, 345)
+    assert first["action"] == "listen" and not first["replay"] and first["stop_at"] == open_at + timedelta(minutes=343)
+    late = rs.segment_plan(open_at + timedelta(minutes=20), open_at, close_at, 345)
+    assert late["replay"] and not late["silent_replay"]  # nothing ran before it: its replay alerts
+    second = rs.segment_plan(first["stop_at"] + timedelta(seconds=40), open_at, close_at, 345)
+    assert second["replay"] and second["silent_replay"] and second["stop_at"] == close_at + timedelta(minutes=1)
+    assert rs.segment_plan(close_at + timedelta(minutes=2), open_at, close_at, 345)["action"] == "exit"
+    early_close = open_at + timedelta(minutes=210)  # 13:00 New York
+    assert rs.segment_plan(open_at, open_at, early_close, 345)["stop_at"] == early_close + timedelta(minutes=1)
