@@ -338,7 +338,6 @@ def fetch_finnhub_news(known_symbols: set[str] | None = None) -> list[NewsEvent]
     token = str(os.getenv("FINNHUB_API_KEY") or "").strip()
     if not token:
         return []
-    now = datetime.now(timezone.utc)
     response = requests.get(FINNHUB_NEWS, params={"category": "general", "token": token}, timeout=TIMEOUT)
     response.raise_for_status()
     payload = response.json() or []
@@ -354,7 +353,8 @@ def fetch_finnhub_news(known_symbols: set[str] | None = None) -> list[NewsEvent]
             if not SYMBOL_RE.fullmatch(symbol):
                 continue
             published_ts = int(_number(article.get("datetime")))
-            published = datetime.fromtimestamp(published_ts, tz=timezone.utc).isoformat() if published_ts > 0 else now.isoformat()
+            # Unknown publication time stays unknown (never the detection time): such items are skipped.
+            published = datetime.fromtimestamp(published_ts, tz=timezone.utc).isoformat() if published_ts > 0 else ""
             events.append(
                 NewsEvent(
                     symbol=symbol,
