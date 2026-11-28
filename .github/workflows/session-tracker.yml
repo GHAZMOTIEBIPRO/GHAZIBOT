@@ -46,6 +46,11 @@ jobs:
         run: |
           cd app
           python -m scripts.run_session_tracker
+      - name: Public ORACLE status (statuses and counts only; single writer of oracle_status.json)
+        run: |
+          cd app
+          python -m scripts.build_oracle_status --state ../state/state --data ../state/runtime/public/data \
+            --output ../state/runtime/public/data/oracle_status.json
       - name: Store slot statuses and event hashes
         shell: bash
         run: |
@@ -53,7 +58,7 @@ jobs:
           cd state
           git config user.name "GHAZI Session Tracker"
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
-          git add state/daily_plan/*/session_*.json 2>/dev/null || true
+          git add state/daily_plan/*/session_*.json runtime/public/data/oracle_status.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "state: session tracker markers [skip ci]"
           for attempt in 1 2 3 4 5 6 7 8; do
