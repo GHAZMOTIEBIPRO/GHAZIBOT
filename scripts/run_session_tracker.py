@@ -78,6 +78,9 @@ def build_messages(slot: str, maps: dict[str, dict], tracked: dict[str, dict], n
     return report._pack(body, "\n".join(head))
 
 
+STEP = "Track the session (owner-private delivery)"  # the workflow step name read from the run history
+
+
 def main() -> int:
     from options_radar.output_policy import deliver_private
     from scripts.telegram_transport import get_chat, send_html_message
@@ -116,8 +119,11 @@ def main() -> int:
     day_dir.mkdir(parents=True, exist_ok=True)
     # Stateless dedupe (options_radar/run_window): an event is new when its completed bucket ends after the
     # data horizon of this workflow's last successful run today and within this run's horizon.
-    window, prev = rw.previous_success(env, "session-tracker.yml", now, day_start=open_at - timedelta(hours=8))
-    upper = rw.data_horizon(now)
+    # Both edges come from the processing step's start (this run and the previous one), so a boundary
+    # bucket is never counted twice or skipped between runs.
+    window, prev = rw.previous_success(env, "session-tracker.yml", now, day_start=open_at - timedelta(hours=8),
+                                       step=STEP)
+    upper = rw.data_horizon(rw.own_step_time(env, STEP, now))
     lower = rw.data_horizon(prev) if window == "OK" else open_at
     if window == "UNKNOWN":  # run history unreadable: no event alerts (fail safe), slot reports still go
         print("session tracker: RUN_HISTORY_UNKNOWN: intraday events skipped")
@@ -127,8 +133,9 @@ def main() -> int:
                       if lower < datetime.fromisoformat(e["at"]) <= upper]
     marker_path = day_dir / f"session_{slot}.json"
     if slot != "INTRADAY" and marker_path.exists() and json.loads(marker_path.read_text()).get("status") == "DELIVERED":
-        print("session tracker:", slot, "already delivered")
-        return 0
+        # The slot report went earlier; this run still covers its event window (an early exit here would
+        # count as a processing run and lose the events in its window).
+        slot = "INTRADAY"
     texts = build_messages(slot, maps, tracked, new_events, now, day, closes)
     results = rw.send_in_order(texts, lambda text: deliver_private(
         text, sources=["alpaca_iex"], env=env, get_chat=get_chat, send=lambda t, chat: send_html_message(t, chat_id=chat)))
@@ -140,6 +147,8 @@ def main() -> int:
         marker_path.write_text(json.dumps(marker, indent=1))
     # Scheduled slots are reported; intraday runs print a constant line (whether an event fired stays private).
     print("session tracker:", slot, ("statuses " + ",".join(sorted(set(results)))) if slot != "INTRADAY" else "run complete")
+    if slot == "INTRADAY" and window == "UNKNOWN":
+        return 1  # nothing processed: never let this run become the next run's baseline
     return rw.exit_code(results) if slot == "INTRADAY" else 0
 
 
