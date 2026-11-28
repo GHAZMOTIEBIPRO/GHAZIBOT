@@ -99,7 +99,8 @@ def test_workflows_with_alpaca_secrets_never_publish_private_data():
                                  "options-hunter.yml",
                                  "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
                                  "probe-realtime-entitlements.yml", "research-confirmation-frames.yml",
-                                 "session-tracker.yml", "settings-check.yml", "telegram-commands.yml"]
+                                 "session-tracker.yml", "settings-check.yml", "smallcap-scan.yml",
+                                 "telegram-commands.yml"]
     # telegram-commands.yml commits only the getUpdates offset (tests/test_telegram_commands.py)
     for name in ("probe-realtime-entitlements.yml", "research-confirmation-frames.yml"):
         text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")

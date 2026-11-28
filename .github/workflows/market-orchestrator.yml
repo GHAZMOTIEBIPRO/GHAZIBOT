@@ -195,6 +195,10 @@ jobs:
           if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1830 )); then
             dispatch_if_stale session-tracker.yml 9 "Session tracker"
           fi
+          # Owner-private small-cap scan every ~15 minutes in the session, post-close review after it.
+          if (( $(date -u +%u) <= 5 && ((ny_hm >= 945 && ny_hm <= 1545) || (ny_hm >= 1625 && ny_hm <= 1700)) )); then
+            dispatch_if_stale smallcap-scan.yml 14 "Small-cap scan"
+          fi
           # Owner-private options hunter on indicative chains, in the regular session only.
           if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1545 )); then
             dispatch_if_stale options-hunter.yml 29 "Options hunter"
