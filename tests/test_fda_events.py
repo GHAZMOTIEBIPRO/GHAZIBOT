@@ -128,3 +128,25 @@ def test_sec_registry_refuses_without_a_declared_user_agent(tmp_path, monkeypatc
     assert sec.main() == 0 and not (tmp_path / "out.json").exists()
     assert "NOT_ATTEMPTED" in capsys.readouterr().out
 
+
+
+def test_entity_graph_permanent_cases_cogt_bbio_bmy():
+    """Permanent identity cases (owner, PHASE 5): acquisitions and renames by date, from official sources."""
+    import json
+    from pathlib import Path
+
+    graph = json.loads((Path(__file__).resolve().parents[1] / "data/entity_graph.json").read_text(encoding="utf-8"))
+    assert all(e["source"].startswith("https://") and e["effective_from"] for e in graph["entities"])
+    assert fda.graph_resolve("Karuna Therapeutics, Inc.", "2026-11-28", graph)[0] == "BMY"
+    assert fda.graph_resolve("Karuna Therapeutics", "2024-03-17", graph)[0] == "KRTX"  # before closing
+    assert fda.graph_resolve("Celgene", "2026-11-28", graph)[0] == "BMY"
+    assert fda.graph_resolve("Eidos Therapeutics", "2026-11-28", graph)[0] == "BBIO"
+    assert fda.graph_resolve("Unum Therapeutics Inc", "2026-11-28", graph) == ("COGT", "entity_graph:renamed:since_2020-10-06")
+    assert fda.graph_resolve("Karuna Health Partners", "2026-11-28", graph) == (None, "unmatched")  # no fuzzy match
+    index = fda.build_name_index({"BMY": "Bristol-Myers Squibb"}, listed={"COGT": "Cogent Biosciences, Inc.",
+                                                                          "BBIO": "BridgeBio Pharma, Inc."},
+                                 graph=graph, as_of="2026-11-28")
+    assert fda.match_ticker("Mirati Therapeutics", index)[0] == "BMY"
+    assert fda.match_ticker("Cogent Biosciences", index)[0] == "COGT"
+    assert fda.match_ticker("Eidos Therapeutics, Inc.", index) == ("BBIO", "entity_graph:acquired_subsidiary:since_2021-01-26")
+    assert fda.match_ticker("Mirati Bio Labs", index) == (None, "unmatched")  # similar text is not a relation

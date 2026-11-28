@@ -24,6 +24,8 @@ from zoneinfo import ZoneInfo
 import requests
 
 from options_radar import alpaca_chain as ac
+from options_radar import black76 as b76
+from options_radar import parity_reference as pr
 from options_radar import state_keys as sk
 from options_radar.output_policy import decide
 from options_radar.telegram_ar import LRM, rtl_line, when_ar
@@ -95,6 +97,38 @@ def underlying_changes(headers: dict[str, str]) -> dict[str, float]:
     return out
 
 
+def model_greeks(rows: list[dict[str, Any]], snaps_by: dict[str, dict], now: datetime) -> dict[str, str]:
+    """Black-76 Greeks on the parity forward for SPXW/NDXP rows the provider left without Greeks, in place.
+
+    Settlement: weeklies are PM-settled at the 16:00 New York close of expiry day, so time to expiry runs
+    to that instant. Rate 0 (0-7 DTE: discounting moves a weekly premium by well under the indicative
+    spread; stated, not hidden). One forward per root/expiry, only when the parity gates pass (status OK).
+    Returns root:expiry -> forward status (log-safe: statuses only, no value).
+    """
+    from datetime import date as _date
+
+    statuses: dict[str, str] = {}
+    for root in INDEX_WEEKLIES:
+        snaps = snaps_by.get(root) or {}
+        for expiry in sorted({r["expiry"] for r in rows if r["root"] == root}):
+            exp_close = datetime.combine(_date.fromisoformat(expiry), datetime.min.time(), NY).replace(hour=16)
+            years = (exp_close - now).total_seconds() / (365 * 86400)
+            if years <= 0:
+                continue
+            fwd = pr.implied_forward(snaps, root=root, expiry=_date.fromisoformat(expiry), years_to_expiry=years)
+            statuses[f"{root}:{expiry}"] = fwd.get("status")
+            if fwd.get("status") != "OK":
+                continue
+            for r in rows:
+                if r["root"] == root and r["expiry"] == expiry and r.get("delta") is None:
+                    g = b76.greeks(premium=r["mid"], forward=fwd["forward"], strike=r["strike"], years=years,
+                                   rate=0.0, call=r["type"] == "CALL")
+                    if g["status"] == "OK":
+                        r.update(iv=g["iv"], delta=g["delta"], gamma=g["gamma"], vega=g["vega"], theta=g["theta"],
+                                 greeks_source=b76.SOURCE, forward_basis="IMPLIED_FORWARD_NOT_CASH_INDEX")
+    return statuses
+
+
 def hunt(env: dict[str, str], now: datetime) -> dict[str, Any]:
     headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
     now_ny = now.astimezone(NY)
@@ -111,7 +145,9 @@ def hunt(env: dict[str, str], now: datetime) -> dict[str, Any]:
         snaps_by[underlying] = snaps
         got = ac.rows(snaps, today=today, open_interest=open_interest(underlying, until, headers), rejects=rejects)
         rows.extend({**r, "underlying": underlying} for r in got)
+    index_forwards = model_greeks(rows, snaps_by, now)
     cover = ac.coverage(snaps_by, rows, rejects, pages)
+    cover["index_forwards"] = index_forwards
     changes = underlying_changes(headers)
     medians: dict[tuple, float] = {}
     for key in {(r["root"], ac.bucket(r["dte"]), r["type"]) for r in rows}:
@@ -132,7 +168,10 @@ def hunt(env: dict[str, str], now: datetime) -> dict[str, Any]:
 
 def line(r: dict[str, Any]) -> str:
     oi = f"OI {int(r['open_interest']):,} ({r['open_interest_date']})" if r.get("open_interest") else "OI غير متاح"
-    greeks = f"دلتا {r['delta']:+.2f}" if r.get("delta") is not None else "بلا Greeks من المزود"
+    src = {"provider_indicative": "من المزود (إرشادية)",
+           "model_black76_forward": "نموذج Black-76 على السعر الآجل الضمني (ليس المؤشر النقدي)"}
+    greeks = (f"دلتا {r['delta']:+.2f}، IV {r['iv'] * 100:.0f}% {src.get(r.get('greeks_source'), '')}"
+              if r.get("delta") is not None and r.get("iv") else "Greeks غير متاحة")
     return rtl_line(f"<b>{r['contract']}</b>{LRM} {ac.CLASS_AR[r['class']]} — عرض/طلب {r['bid']:.2f}/{r['ask']:.2f} "
                     f"(سبريد {r['spread_pct'] * 100:.0f}%)، حجم {int(r['volume']):,}، {oi}، {greeks}؛ "
                     f"السبب: {'؛ '.join(r['class_reasons'])}")
@@ -146,6 +185,8 @@ def render(result: dict[str, Any], now: datetime, only: tuple[str, ...] | None =
     head = [rtl_line(f"<b>صياد العقود — {when_ar(now)}</b>"),
             rtl_line("بيانات Alpaca الإرشادية (indicative) وليست OPRA ولا أسعار تنفيذ؛ OI من الجلسة السابقة؛ "
                      "النشاط مرصود ونية الشراء/البيع غير معروفة. بحث ومراقبة، لا أمر تنفيذ."),
+            rtl_line(f"المؤهل بعد الاستبعاد (سبريد ≤25% وغير منتهٍ): {cover.get('eligible', 0):,} عقدًا؛ "
+                     "العدد حجم مسح لا دليل سيولة."),
             rtl_line(f"التغطية: {cover['unique_two_sided']:,} عقدًا بعرض ثنائي من {cover['contracts_seen']:,} "
                      f"({len(cover['roots'])} جذرًا، {cover['expiries']} استحقاقًا). أحدث عرض: {fresh['newest_quote'] or 'غير متاح'}"
                      + (" — <b>قديم: خارج الجلسة</b>" if stale else ""))]

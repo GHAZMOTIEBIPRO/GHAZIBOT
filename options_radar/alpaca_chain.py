@@ -67,6 +67,7 @@ def rows(snapshots: dict[str, dict[str, Any]], *, today: date, open_interest: di
             "vol_to_oi_ratio": round(volume / oi, 3) if oi else None,
             "iv": _f(snap.get("impliedVolatility")), "delta": _f(g.get("delta")), "gamma": _f(g.get("gamma")),
             "theta": _f(g.get("theta")), "vega": _f(g.get("vega")),
+            "greeks_source": "provider_indicative" if g else None,
             "moneyness": round(occ["strike"] / underlying_price - 1, 4) if underlying_price else None,
             "prev_close": _f((snap.get("prevDailyBar") or {}).get("c")),
             "feed": "indicative", "execution_grade": False,
@@ -121,7 +122,7 @@ def freshness(contract_rows: list[dict[str, Any]], now: datetime) -> dict[str, A
 
 
 CLASS_AR = {"EARLY_WATCH": "مراقبة مبكرة", "UNUSUAL_ACTIVITY": "نشاط غير اعتيادي",
-            "CONFIRMED_BY_AVAILABLE_DATA": "مؤكد بالبيانات المتاحة", "EXTENDED": "ممتد (متأخر)", "REJECTED": "مرفوض"}
+            "CONFIRMED_BY_AVAILABLE_DATA": "نشاط مؤكد إرشادياً (ليس تأكيد دخول)", "EXTENDED": "ممتد (متأخر)", "REJECTED": "مرفوض"}
 
 
 def classify(r: dict[str, Any], *, bucket_median_volume: float, underlying_change_pct: float | None,
@@ -158,4 +159,23 @@ def coverage(snapshots_by_underlying: dict[str, dict[str, Any]], kept: list[dict
             "roots": sorted({r["root"] for r in kept}), "expiries": len({(r["root"], r["expiry"]) for r in kept}),
             "pages": pages, "rejects": dict(sorted(rejects.items())),
             "with_open_interest": sum(1 for r in kept if r.get("open_interest") is not None),
-            "with_volume": sum(1 for r in kept if r["volume"] > 0)}
+            "with_volume": sum(1 for r in kept if r["volume"] > 0),
+            "with_iv": sum(1 for r in kept if r.get("iv") is not None),
+            "greeks_by_source": _count(r.get("greeks_source") or "none" for r in kept),
+            "eligible": sum(1 for r in kept if eligible(r)),
+            "by_dte_bucket": _count(bucket(r["dte"]) for r in kept)}
+
+
+MAX_ELIGIBLE_SPREAD = 0.25  # relative to mid; wider quotes are listed as seen but never ranked as eligible
+
+
+def eligible(r: dict[str, Any]) -> bool:
+    """Two-sided (already), not expired, a spread a person could plausibly trade at (indicative!)."""
+    return r["dte"] >= 0 and r["spread_pct"] <= MAX_ELIGIBLE_SPREAD
+
+
+def _count(values) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for v in values:
+        out[str(v)] = out.get(str(v), 0) + 1
+    return dict(sorted(out.items()))

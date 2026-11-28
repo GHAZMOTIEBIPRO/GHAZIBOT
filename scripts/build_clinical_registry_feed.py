@@ -163,7 +163,10 @@ def main() -> int:
     sponsors = json.loads((ROOT / "data/fda_sponsor_aliases.json").read_text())["aliases"]
     listed = _names.registry_issuers(json.loads(args.listed.read_text()) if args.listed.exists() else None,
                                      json.loads(args.sec_registry.read_text()) if args.sec_registry.exists() else None)
-    report = collect(_names.build_name_index(aliases, sponsors, listed), now=datetime.now(timezone.utc))
+    graph = json.loads((ROOT / "data/entity_graph.json").read_text(encoding="utf-8"))
+    now = datetime.now(timezone.utc)
+    index = _names.build_name_index(aliases, sponsors, listed, graph=graph, as_of=now.date().isoformat())
+    report = collect(index, now=now)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.output.with_suffix(".tmp")
     tmp.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
