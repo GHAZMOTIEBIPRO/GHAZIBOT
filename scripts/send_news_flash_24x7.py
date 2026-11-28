@@ -430,6 +430,8 @@ def format_message(record: dict[str, Any]) -> str:
         f"📡 {html.escape(str(record.get('source') or '')[:120])} | {html.escape(str(record.get('source_class') or ''))}",
     ]
     reaction = record.get("reaction")
+    if not isinstance(reaction, dict):
+        lines.append("💵 رد فعل السعر: غير متاح (لا مصدر أسعار مصرح به في هذا المسار)")
     if isinstance(reaction, dict):
         lines.append(
             "💵 قبل الخبر "
@@ -447,8 +449,6 @@ def format_message(record: dict[str, Any]) -> str:
     url = str(record.get("url") or "").strip()
     if url.startswith("https://"):
         lines.append(f'<a href="{html.escape(url, quote=True)}">فتح الخبر</a>')
-    if not isinstance(reaction, dict):
-        lines.append("💵 رد فعل السعر: غير متاح (لا مصدر أسعار مصرح به في هذا المسار)")
     lines.append("<i>الخبر وحده ليس إشارة دخول؛ الأثر المحتمل تصنيف آلي للعنوان لا حكم مالي. ليس أمر شراء/بيع.</i>")
     return "\n".join(lines)
 
