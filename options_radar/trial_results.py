@@ -69,3 +69,40 @@ def interpret(study: dict[str, Any]) -> dict[str, Any]:
     verdict = ("NO_POSTED_ANALYSIS" if not any_sig else
                "PRIMARY_SIGNIFICANT_PER_POSTED_ANALYSIS" if any(any_sig) else "PRIMARY_NOT_SIGNIFICANT_PER_POSTED_ANALYSIS")
     return {**base, "status": verdict, "primary": primary}
+
+
+VERDICT_AR = {
+    "PRIMARY_SIGNIFICANT_PER_POSTED_ANALYSIS": "الهدف الأساسي دال إحصائياً وفق التحليل المنشور في السجل",
+    "PRIMARY_NOT_SIGNIFICANT_PER_POSTED_ANALYSIS": "الهدف الأساسي غير دال إحصائياً وفق التحليل المنشور في السجل",
+    "PRIMARY_CI_INCLUDES_NO_EFFECT": "فترة الثقة للهدف الأساسي تشمل «لا أثر»: لا تُعلن دلالة إحصائية ولا نجاح",
+    "PRIMARY_CI_EXCLUDES_NO_EFFECT": "فترة الثقة تستبعد «لا أثر» دون قيمة p منشورة: راجع التصميم قبل أي حكم",
+    "NO_POSTED_ANALYSIS": "نتائج منشورة بلا تحليل إحصائي للهدف الأساسي",
+    "NO_RESULTS_POSTED": "لا نتائج منشورة",
+}
+
+
+def summary(result: dict[str, Any]) -> dict[str, Any]:
+    """Compact, template-ready facts of the first primary analysis; never a financial or clinical inference."""
+    first = next((a | {"endpoint": o.get("title"), "time_frame": o.get("time_frame")}
+                  for o in result.get("primary") or [] for a in o.get("analyses") or []), None)
+    out = {"status": result.get("status"), "verdict_ar": VERDICT_AR.get(str(result.get("status")), ""),
+           "results_first_posted": result.get("results_first_posted"), "financial_effect": "NOT_INFERRED"}
+    if first:
+        out.update({k: first.get(k) for k in ("endpoint", "time_frame", "estimate_type", "estimate", "ci", "ci_percent",
+                                              "p_value_as_posted", "method")})
+    return out
+
+
+def line_ar(s: dict[str, Any]) -> str:
+    """One Arabic line: endpoint, estimate, CI, p as posted, verdict (digits kept as posted)."""
+    parts = []
+    if s.get("endpoint"):
+        parts.append(f"الهدف الأساسي: {str(s['endpoint'])[:90]}")
+    if s.get("estimate") is not None:
+        ci = s.get("ci") or [None, None]
+        ci_txt = f"، فترة ثقة {s.get('ci_percent') or ''}% {ci[0]}–{ci[1]}" if ci[0] is not None else ""
+        parts.append(f"{s.get('estimate_type') or 'تقدير'} {s['estimate']}{ci_txt}")
+    parts.append(f"p: {s['p_value_as_posted']}" if s.get("p_value_as_posted") else "p: غير منشورة")
+    if s.get("results_first_posted"):
+        parts.append(f"نُشرت {s['results_first_posted']}")
+    return "؛ ".join(parts) + f". {s.get('verdict_ar', '')}. لا يُستنتج أثر مالي."

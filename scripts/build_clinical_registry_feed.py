@@ -21,6 +21,9 @@ ROOT = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location("registry_name_index", ROOT / "options_radar/fda_events.py")
 _names = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_names)
+_tspec = importlib.util.spec_from_file_location("trial_results", ROOT / "options_radar/trial_results.py")
+trial_results = importlib.util.module_from_spec(_tspec)
+_tspec.loader.exec_module(trial_results)
 SCHEMA = "ghazi.clinical_registry_feed.v1"
 API = "https://clinicaltrials.gov/api/v2/studies"
 ATTRIBUTION = "Courtesy of the U.S. National Library of Medicine"
@@ -59,7 +62,7 @@ def study_event(study: Any, index: dict, *, start: date, end: date) -> dict | No
     updated_day, results_day = _day(updated.get("date")), _day(results.get("date"))
     if updated_day is None or not start <= updated_day <= end:
         return None
-    kind, importance = "TRIAL_REGISTRY_UPDATE", "LOW"
+    kind, importance, interpretation = "TRIAL_REGISTRY_UPDATE", "LOW", {}
     label = "تحديث سجل دراسة؛ لا يثبت نتيجة إيجابية أو سلبية"
     event_day = updated_day
     if (study.get("hasResults") is True and results.get("type") == "ACTUAL"
@@ -67,6 +70,9 @@ def study_event(study: Any, index: dict, *, start: date, end: date) -> dict | No
         kind, importance = "TRIAL_RESULTS_POSTED", "MEDIUM"
         label = "نُشرت نتائج في السجل؛ اتجاه النتيجة لم يُقيّم"
         event_day = results_day
+        interpretation = trial_results.summary(trial_results.interpret(study))
+        if interpretation.get("endpoint"):
+            label = "نُشرت نتائج في السجل: " + trial_results.line_ar(interpretation)
     elif status.get("overallStatus") in {"TERMINATED", "SUSPENDED", "WITHDRAWN"}:
         kind, importance = "TRIAL_STATUS_REVIEW", "MEDIUM"
         label = "سجل محدّث يحمل حالة إيقاف/تعليق/سحب؛ تاريخ تغير الحالة وسببه غير مثبتين"
@@ -78,6 +84,7 @@ def study_event(study: Any, index: dict, *, start: date, end: date) -> dict | No
         "match_method": method, "lead_sponsor": str(sponsor.get("name"))[:120],
         "registry_status": str(status.get("overallStatus") or "UNKNOWN")[:50],
         "outcome_direction": "NOT_INFERRED", "official_registry_only": True,
+        **({"result_interpretation": interpretation} if kind == "TRIAL_RESULTS_POSTED" else {}),
     }
 
 

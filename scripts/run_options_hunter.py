@@ -1,6 +1,7 @@
 """Owner-private options hunter on the Alpaca indicative chains (research and watch, never execution).
 
-Underlyings: SPXW and NDXP weeklies (0-7 DTE), SPY and QQQ, and the owner's leaders (0-60 DTE).
+Underlyings: SPXW and NDXP weeklies (0-7 DTE), SPY and QQQ, the owner's leaders (GOOG and GOOGL as two
+classes) and batch 2 (IWM and the secondary list), 0-60 DTE.
 Per contract: two-sided indicative quote, spread, day volume, prior-session open interest (Trading API),
 Vol/OI, IV and greeks when Alpaca supplies them, strike concentration -> the existing option_explosion
 score, best per DTE bucket, and one class (EARLY_WATCH / UNUSUAL_ACTIVITY / CONFIRMED_BY_AVAILABLE_DATA /
@@ -31,7 +32,11 @@ NY = ZoneInfo("America/New_York")
 DATA = "https://data.alpaca.markets"
 TRADING = ("https://paper-api.alpaca.markets", "https://api.alpaca.markets")
 INDEX_WEEKLIES = ("SPXW", "NDXP")
-UNDERLYINGS = ("SPY", "QQQ", "NVDA", "TSLA", "AMD", "MU", "MSFT", "META", "GOOGL", "AAPL", "AMZN", "AVGO", "BABA")
+CORE = ("SPY", "QQQ", "NVDA", "TSLA", "AMD", "MU", "MSFT", "META", "GOOG", "GOOGL", "AAPL", "AMZN", "AVGO", "BABA")
+# Batch 2 (owner, PHASE 4: expand in batches within quota): the most liquid remaining ETF and the existing
+# secondary list. GOOG and GOOGL are separate share classes with separate chains, never merged.
+BATCH_2 = ("IWM", "NFLX", "PLTR", "JPM", "COST", "ORCL", "QCOM", "XOM")
+UNDERLYINGS = (*CORE, *BATCH_2)
 ALERT_CLASSES = ("UNUSUAL_ACTIVITY", "CONFIRMED_BY_AVAILABLE_DATA")
 
 
