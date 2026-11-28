@@ -27,10 +27,10 @@ BUSINESS_WIRE_RSS = os.getenv(
 GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
 TIMEOUT = 18
 SYMBOL_RE = re.compile(r"\b[A-Z][A-Z0-9.-]{0,6}\b")
-HALT_REASON_RE = re.compile(r"\b(T1|T2|T5|T6|T8|T12|LUDP|H10|H11|M1|M2|MWC1|MWC2|MWC3)\b", re.I)
+HALT_REASON_RE = re.compile(r"\b(T1|T2|T5|T6|T8|T12|LUDP|H10|H11|M1|M2|MWC1|MWC2|MWC3)\b", re.IGNORECASE)
 EXCHANGE_TICKER_RE = re.compile(
     r"\b(?:NASDAQ|NYSE|NYSE\s+AMERICAN|NYSEAMERICAN|AMEX|CBOE|OTCQX|OTCQB)\s*[:\-]\s*([A-Z][A-Z0-9.\-]{0,6})\b",
-    re.I,
+    re.IGNORECASE,
 )
 _BULLISH_NEWS = (
     "approval", "approved", "positive results", "record revenue", "raises guidance",
@@ -370,6 +370,22 @@ def fetch_finnhub_news(known_symbols: set[str] | None = None) -> list[NewsEvent]
     return events
 
 
+def fetch_sec_current_filings(known_symbols: set[str] | None = None) -> list[NewsEvent]:
+    """Official SEC EDGAR latest filings (8-K/6-K/offerings); needs SEC_USER_AGENT, else empty."""
+    from options_radar.sec_current_feed import fetch
+
+    out = []
+    for e in fetch():
+        if known_symbols and e["symbol"] not in known_symbols:
+            continue
+        label = "، ".join(e["items_ar"]) or e["form_ar"]
+        out.append(NewsEvent(symbol=e["symbol"], headline=f"{e['form']} {e['company']}: {label}",
+                             source=e["source"], url=e["url"] or "", published=e["published"] or "",
+                             relevance=0.9 if e["items"] or e["form"] != "8-K" else 0.6, sentiment=0.0,
+                             provider="sec_current_feed"))
+    return out
+
+
 def collect_fast_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
     events: list[NewsEvent] = []
     # Keyless feeds come first so the bot remains multi-source even when no API
@@ -377,6 +393,7 @@ def collect_fast_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
     # not independent confirmation; the deep stock path still requires official
     # SEC/FDA/primary-source evidence before proving a catalyst.
     fetchers = (
+        fetch_sec_current_filings,  # official and earliest; empty without SEC_USER_AGENT
         fetch_globenewswire_news,
         fetch_businesswire_news,
         fetch_prnewswire_news,
@@ -392,7 +409,7 @@ def collect_fast_news(known_symbols: set[str] | None = None) -> list[NewsEvent]:
             print(f"Fast news provider skipped: {fetcher.__name__}: {type(exc).__name__}: {exc}")
         except (ET.ParseError, ValueError) as exc:
             print(f"Fast news parse skipped: {fetcher.__name__}: {type(exc).__name__}: {exc}")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - one provider never blocks the others
             print(f"Fast news provider degraded: {fetcher.__name__}: {type(exc).__name__}: {exc}")
     deduped: dict[tuple[str, str], NewsEvent] = {}
     for event in events:

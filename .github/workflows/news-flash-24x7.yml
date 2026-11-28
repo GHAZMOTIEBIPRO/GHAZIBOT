@@ -40,6 +40,8 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      # SEC EDGAR latest-filings feed (options_radar/sec_current_feed.py); fetched only when set
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
       NEWS_FLASH_MAX_AGE_MINUTES: "60"
       NEWS_FLASH_UPDATE_WINDOW_MINUTES: "240"
       NEWS_FLASH_MAX_NEW_ALERTS: "5"

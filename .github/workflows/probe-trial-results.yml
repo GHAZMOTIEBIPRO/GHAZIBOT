@@ -12,6 +12,8 @@ on:
     paths:
       - "options_radar/trial_results.py"
       - "scripts/probe_trial_results.py"
+      - "scripts/probe_sec_current.py"
+      - "options_radar/sec_current_feed.py"
       - ".github/workflows/probe-trial-results.yml"
 
 permissions:
@@ -32,3 +34,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python -m scripts.probe_trial_results $IDS
+      - name: SEC latest-filings feed and COGT/BBIO first-source timing (public SEC data)
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python -m scripts.probe_sec_current
