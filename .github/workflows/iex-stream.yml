@@ -1,0 +1,40 @@
+name: GHAZI IEX real-time first look (owner-private)
+
+# scripts/run_iex_stream.py: one job per session day, dispatched by the orchestrator at the open, listening
+# to the Alpaca IEX minute-bar stream (free Basic plan: 1 connection, <= 30 symbols) for up to ~6 hours.
+# Alerts: a completed 5m IEX bucket beyond a pre-open map trigger on >= 1.5x IEX volume, labelled partial
+# coverage. Nothing is written to bot-state; the log prints counts and latency P50/P95 only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghazi-iex-stream
+  cancel-in-progress: false
+
+jobs:
+  listen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
+      IEX_STREAM_MAX_MINUTES: "350"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-stream.txt
+      - name: Listen to the IEX stream (owner-private alerts)
+        run: python -m scripts.run_iex_stream

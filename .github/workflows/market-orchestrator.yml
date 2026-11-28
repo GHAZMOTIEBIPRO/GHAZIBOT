@@ -195,6 +195,10 @@ jobs:
           if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1830 )); then
             dispatch_if_stale session-tracker.yml 9 "Session tracker"
           fi
+          # Owner-private IEX real-time first look: one long-running job per session day from the open.
+          if (( $(date -u +%u) <= 5 && ny_hm >= 928 && ny_hm <= 945 )); then
+            dispatch_if_stale iex-stream.yml 400 "IEX real-time first look"
+          fi
           # Owner-private small-cap scan every ~15 minutes in the session, post-close review after it.
           if (( $(date -u +%u) <= 5 && ((ny_hm >= 945 && ny_hm <= 1545) || (ny_hm >= 1625 && ny_hm <= 1700)) )); then
             dispatch_if_stale smallcap-scan.yml 14 "Small-cap scan"
