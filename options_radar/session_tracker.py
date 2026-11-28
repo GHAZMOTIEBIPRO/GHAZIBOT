@@ -19,6 +19,9 @@ RVOL_MIN = 1.5
 # 1-minute study (14 symbols x 120 sessions, docs/ORACLE_PROGRESS.md): the volume-confirmed 5m close
 # (EARLY_ALERT) was the only rule with positive expectancy in both halves; time-only confirmations
 # (30m, 60m) were negative, so CONFIRMED is informational and 30m is used because 60m was no better.
+# Pre-registered out-of-sample check (run 46111059622, 2025-12-15..2026-06-08): V5 +0.004R, 95 % CI
+# [-0.065, +0.071]; with a 16-minute delay -0.074R. No rule has a proven edge: the stages are attention
+# states, never entry signals.
 CONFIRM_MINUTES = 30
 STAGE_AR = {"BREAKOUT_WATCH": "مراقبة اختراق", "EARLY_ALERT": "تنبيه مبكر (حجم مرتفع)", "CONFIRMED": "تأكيد",
             "T1": "الهدف الأول", "T2": "الهدف الثاني", "T3": "الهدف الثالث", "INVALIDATED": "إبطال",

@@ -57,7 +57,8 @@ def _event_line(symbol: str, e: dict[str, Any]) -> str:
 def build_messages(slot: str, maps: dict[str, dict], tracked: dict[str, dict], new_events: list[tuple[str, dict]],
                    now: datetime, day: str, closes: dict[str, float]) -> list[str]:
     head = [rtl_line(f"<b>{SLOT_AR[slot]} — {date_ar(day)}</b>"),
-            rtl_line(f"أُعدّ {when_ar(now)}؛ شموع مكتملة متأخرة 16 دقيقة على الأقل (ليست لحظية). المستويات ثابتة من خريطة ما قبل الافتتاح.")]
+            rtl_line(f"أُعدّ {when_ar(now)}؛ شموع مكتملة متأخرة 16 دقيقة على الأقل (ليست لحظية). المستويات ثابتة من خريطة ما قبل الافتتاح."),
+            rtl_line("المراحل للانتباه والمتابعة؛ لم يثبت لأي قاعدة اختراق عائد موجب خارج العينة. ليست توصية.")]
     if slot == "INTRADAY":
         if not new_events:
             return []
