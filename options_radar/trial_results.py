@@ -4,7 +4,8 @@ For each primary outcome: title, posted statistical analyses (method, p-value as
 and value, confidence interval) and whether the posted p-value is below the analysis' own stated
 significance threshold when one is given (else 0.05, labelled as the default). A p-value under the
 threshold is "statistically significant per the posted analysis" - not "trial success", not a price
-direction. No posted results -> status NO_RESULTS_POSTED with the dates that are known.
+direction. No p-value but a ratio estimate with its CI (hazard/odds/risk ratio) -> whether the CI includes 1
+(the no-effect value). No posted results -> status NO_RESULTS_POSTED with the dates that are known.
 """
 from __future__ import annotations
 
@@ -44,7 +45,15 @@ def interpret(study: dict[str, Any]) -> dict[str, Any]:
             if m:
                 threshold = float(m.group(1))
             below = None if p is None else (p < threshold if op in ("=", "<", "<=") else False)
+            ci_null = None
+            if any(k in str(a.get("paramType") or "") for k in ("Ratio", "ratio")):
+                try:
+                    lo, hi = float(a.get("ciLowerLimit")), float(a.get("ciUpperLimit"))
+                    ci_null = lo <= 1.0 <= hi  # a ratio's no-effect value is 1
+                except (TypeError, ValueError):
+                    ci_null = None
             analyses.append({"method": a.get("statisticalMethod"), "p_value_as_posted": a.get("pValue"),
+                             "ci_includes_no_effect": ci_null,
                              "estimate_type": a.get("paramType"), "estimate": a.get("paramValue"),
                              "ci": [a.get("ciLowerLimit"), a.get("ciUpperLimit")], "ci_percent": a.get("ciPctValue"),
                              "threshold": threshold, "threshold_basis": "stated" if m else "default 0.05",
@@ -52,6 +61,11 @@ def interpret(study: dict[str, Any]) -> dict[str, Any]:
         primary.append({"title": om.get("title"), "time_frame": om.get("timeFrame"), "analyses": analyses})
     any_sig = [a["significant_per_posted_analysis"] for o in primary for a in o["analyses"]
                if a["significant_per_posted_analysis"] is not None]
+    ci_flags = [a["ci_includes_no_effect"] for o in primary for a in o["analyses"] if a["ci_includes_no_effect"] is not None]
+    if not any_sig and ci_flags:
+        # no p-value posted: the posted confidence interval is the only evidence
+        verdict = ("PRIMARY_CI_INCLUDES_NO_EFFECT" if all(ci_flags) else "PRIMARY_CI_EXCLUDES_NO_EFFECT")
+        return {**base, "status": verdict, "primary": primary}
     verdict = ("NO_POSTED_ANALYSIS" if not any_sig else
                "PRIMARY_SIGNIFICANT_PER_POSTED_ANALYSIS" if any(any_sig) else "PRIMARY_NOT_SIGNIFICANT_PER_POSTED_ANALYSIS")
     return {**base, "status": verdict, "primary": primary}

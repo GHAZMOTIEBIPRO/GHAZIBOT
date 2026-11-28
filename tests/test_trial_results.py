@@ -33,3 +33,13 @@ def test_stated_threshold_and_inequality_p_values():
 def test_no_results_posted():
     out = interpret(_study(has=False))
     assert out["status"] == "NO_RESULTS_POSTED" and out["source"].endswith("NCT05136677")
+
+
+def test_without_p_value_the_ratio_ci_decides_wording():
+    """NCT05136677 as posted 2026-11-27: OS hazard ratio 0.62, 95 % CI 0.36-1.07, no p-value."""
+    study = _study(p=None)
+    analysis = study["resultsSection"]["outcomeMeasuresModule"]["outcomeMeasures"][0]["analyses"][0]
+    analysis.update(paramValue="0.62", ciLowerLimit="0.36", ciUpperLimit="1.07")
+    out = interpret(study)
+    assert out["status"] == "PRIMARY_CI_INCLUDES_NO_EFFECT"
+    assert out["primary"][0]["analyses"][0]["ci_includes_no_effect"] is True
