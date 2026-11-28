@@ -46,3 +46,32 @@ def test_strike_cluster_and_freshness():
     assert all(r["strike_cluster_score"] == 100.0 for r in calls0)
     f = ac.freshness(rows, datetime(2026, 11, 30, 15, 10, tzinfo=timezone.utc))
     assert f["age_s"] == 600.0
+
+
+def test_rejects_are_counted_by_reason_and_coverage_is_reported():
+    rejects = {}
+    kept = ac.rows(CHAIN, today=TODAY, rejects=rejects)
+    assert rejects == {"zero_bid": 1, "crossed": 1}
+    cov = ac.coverage({"SPY": CHAIN}, kept, rejects, {"SPY": 1})
+    assert cov["contracts_seen"] == 6 and cov["unique_two_sided"] == 4 and cov["two_sided_share"] == round(4 / 6, 3)
+    assert cov["roots"] == ["SPXW", "SPY"] and cov["rejects"] == rejects
+
+
+def _row(**kw):
+    base = {"contract": "X", "type": "CALL", "spread_pct": 0.05, "volume": 1000, "vol_to_oi_ratio": None, "mid": 1.0,
+            "prev_close": 0.9}
+    return {**base, **kw}
+
+
+def test_classes_need_activity_direction_and_freshness():
+    kw = {"bucket_median_volume": 100.0, "quote_age_s": 30, "in_session": True}
+    assert ac.classify(_row(volume=600), underlying_change_pct=None, **kw)[0] == "UNUSUAL_ACTIVITY"
+    assert ac.classify(_row(volume=600), underlying_change_pct=0.8, **kw)[0] == "CONFIRMED_BY_AVAILABLE_DATA"
+    assert ac.classify(_row(volume=600, type="PUT"), underlying_change_pct=0.8, **kw)[0] == "UNUSUAL_ACTIVITY"
+    assert ac.classify(_row(volume=250), underlying_change_pct=None, **kw)[0] == "EARLY_WATCH"
+    assert ac.classify(_row(volume=150), underlying_change_pct=None, **kw)[0] == "REJECTED"
+    assert ac.classify(_row(mid=2.0, prev_close=0.9), underlying_change_pct=None, **kw)[0] == "EXTENDED"
+    stale = {**kw, "quote_age_s": 3600}
+    assert ac.classify(_row(volume=600), underlying_change_pct=None, **stale)[0] == "REJECTED"
+    off = {**kw, "quote_age_s": 3600, "in_session": False}
+    assert ac.classify(_row(volume=600), underlying_change_pct=None, **off)[0] == "UNUSUAL_ACTIVITY"

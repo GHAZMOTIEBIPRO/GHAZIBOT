@@ -2,12 +2,13 @@
 
 Underlyings: SPXW and NDXP weeklies (0-7 DTE), SPY and QQQ, and the owner's leaders (0-60 DTE).
 Per contract: two-sided indicative quote, spread, day volume, prior-session open interest (Trading API),
-Vol/OI, IV and greeks when Alpaca supplies them, strike concentration -> the existing
-option_explosion score, best per DTE bucket (0DTE, 1DTE, 2-7, 8-30, 31-60).
+Vol/OI, IV and greeks when Alpaca supplies them, strike concentration -> the existing option_explosion
+score, best per DTE bucket, and one class (EARLY_WATCH / UNUSUAL_ACTIVITY / CONFIRMED_BY_AVAILABLE_DATA /
+EXTENDED / REJECTED, options_radar.alpaca_chain.classify) with its reasons.
 
-Delivery: the owner's private chat only, and only when the top set changed since the last message
-(keyed hash on bot-state). The public log carries counts and freshness only. Messages say "indicative"
-and give the quote time: an indicative quote is not an OPRA quote and not an execution price.
+Delivery: the owner's private chat, only when a contract NEWLY enters UNUSUAL_ACTIVITY or CONFIRMED
+(keyed hashes on bot-state) - a rank shuffle sends nothing. The public log carries coverage counts only.
+Messages say "indicative": not an OPRA quote, not an execution price; buyer/seller intent is unknown.
 """
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from statistics import median
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -31,6 +33,7 @@ DATA = "https://data.alpaca.markets"
 TRADING = ("https://paper-api.alpaca.markets", "https://api.alpaca.markets")
 INDEX_WEEKLIES = ("SPXW", "NDXP")
 UNDERLYINGS = ("SPY", "QQQ", "NVDA", "TSLA", "AMD", "MU", "MSFT", "META", "GOOGL", "AAPL", "AMZN", "AVGO", "BABA")
+ALERT_CLASSES = ("UNUSUAL_ACTIVITY", "CONFIRMED_BY_AVAILABLE_DATA")
 
 
 def _get(url: str, params: dict[str, Any], headers: dict[str, str]) -> tuple[int, Any]:
@@ -41,18 +44,19 @@ def _get(url: str, params: dict[str, Any], headers: dict[str, str]) -> tuple[int
         return -1, None
 
 
-def chain(underlying: str, until: str, headers: dict[str, str]) -> dict[str, Any]:
-    snaps, token = {}, None
+def chain(underlying: str, until: str, headers: dict[str, str]) -> tuple[dict[str, Any], int]:
+    snaps, token, pages = {}, None, 0
     for _ in range(15):
         params = {"feed": "indicative", "limit": 1000, "expiration_date_lte": until, **({"page_token": token} if token else {})}
         code, body = _get(f"{DATA}/v1beta1/options/snapshots/{underlying}", params, headers)
         if code != 200 or not isinstance(body, dict):
             break
+        pages += 1
         snaps.update(body.get("snapshots") or {})
         token = body.get("next_page_token")
         if not token:
             break
-    return snaps
+    return snaps, pages
 
 
 def open_interest(underlying: str, until: str, headers: dict[str, str]) -> dict[str, dict[str, Any]]:
@@ -76,12 +80,80 @@ def open_interest(underlying: str, until: str, headers: dict[str, str]) -> dict[
     return out
 
 
+def underlying_changes(headers: dict[str, str]) -> dict[str, float]:
+    """Day change % of the equity underlyings from IEX snapshots (index weeklies: none, never substituted)."""
+    code, body = _get(f"{DATA}/v2/stocks/snapshots", {"symbols": ",".join(UNDERLYINGS), "feed": "iex"}, headers)
+    out = {}
+    for sym, v in (body or {}).items() if code == 200 else []:
+        price, prev = (v.get("latestTrade") or {}).get("p"), (v.get("prevDailyBar") or {}).get("c")
+        if price and prev:
+            out[sym] = (price / prev - 1) * 100
+    return out
+
+
+def hunt(env: dict[str, str], now: datetime) -> dict[str, Any]:
+    headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
+    now_ny = now.astimezone(NY)
+    # after 16:00 New York today's contracts have settled: DTE counts from the next calendar day
+    today = now_ny.date() + timedelta(days=1 if now_ny.hour >= 16 else 0)
+    in_session = now_ny.weekday() < 5 and (9, 30) <= (now_ny.hour, now_ny.minute) < (16, 0)
+    rows: list[dict[str, Any]] = []
+    snaps_by: dict[str, dict] = {}
+    pages: dict[str, int] = {}
+    rejects: dict[str, int] = {}
+    for underlying in (*INDEX_WEEKLIES, *UNDERLYINGS):
+        until = (today + timedelta(days=7 if underlying in INDEX_WEEKLIES else 60)).isoformat()
+        snaps, pages[underlying] = chain(underlying, until, headers)
+        snaps_by[underlying] = snaps
+        got = ac.rows(snaps, today=today, open_interest=open_interest(underlying, until, headers), rejects=rejects)
+        rows.extend({**r, "underlying": underlying} for r in got)
+    cover = ac.coverage(snaps_by, rows, rejects, pages)
+    changes = underlying_changes(headers)
+    medians: dict[tuple, float] = {}
+    for key in {(r["root"], ac.bucket(r["dte"]), r["type"]) for r in rows}:
+        vols = [r["volume"] for r in rows if (r["root"], ac.bucket(r["dte"]), r["type"]) == key and r["volume"] > 0]
+        medians[key] = median(vols) if vols else 0.0
+    ranked = ac.rank(rows)
+    for items in ranked.values():
+        for r in items:
+            try:
+                age = (now - datetime.fromisoformat(str(r["quote_time"]).replace("Z", "+00:00"))).total_seconds()
+            except ValueError:
+                age = None
+            r["class"], r["class_reasons"] = ac.classify(
+                r, bucket_median_volume=medians.get((r["root"], ac.bucket(r["dte"]), r["type"]), 0.0),
+                underlying_change_pct=changes.get(r["underlying"]), quote_age_s=age, in_session=in_session)
+    return {"ranked": ranked, "coverage": cover, "freshness": ac.freshness(rows, now), "in_session": in_session}
+
+
 def line(r: dict[str, Any]) -> str:
     oi = f"OI {int(r['open_interest']):,} ({r['open_interest_date']})" if r.get("open_interest") else "OI غير متاح"
     greeks = f"دلتا {r['delta']:+.2f}" if r.get("delta") is not None else "بلا Greeks من المزود"
-    return rtl_line(f"<b>{r['contract']}</b>{LRM} {r['type']} {r['strike']:g} — عرض/طلب {r['bid']:.2f}/{r['ask']:.2f} "
-                    f"(سبريد {r['spread_pct'] * 100:.0f}%)، حجم {int(r['volume']):,}، {oi}، {greeks}، "
-                    f"تقييم {r['score']} ({r['label']})")
+    return rtl_line(f"<b>{r['contract']}</b>{LRM} {ac.CLASS_AR[r['class']]} — عرض/طلب {r['bid']:.2f}/{r['ask']:.2f} "
+                    f"(سبريد {r['spread_pct'] * 100:.0f}%)، حجم {int(r['volume']):,}، {oi}، {greeks}؛ "
+                    f"السبب: {'؛ '.join(r['class_reasons'])}")
+
+
+def render(result: dict[str, Any], now: datetime, only: tuple[str, ...] | None = None) -> list[str]:
+    from options_radar.premarket_report import _pack
+
+    fresh, cover = result["freshness"], result["coverage"]
+    stale = fresh["age_s"] is None or fresh["age_s"] > 900
+    head = [rtl_line(f"<b>صياد العقود — {when_ar(now)}</b>"),
+            rtl_line("بيانات Alpaca الإرشادية (indicative) وليست OPRA ولا أسعار تنفيذ؛ OI من الجلسة السابقة؛ "
+                     "النشاط مرصود ونية الشراء/البيع غير معروفة. بحث ومراقبة، لا أمر تنفيذ."),
+            rtl_line(f"التغطية: {cover['unique_two_sided']:,} عقدًا بعرض ثنائي من {cover['contracts_seen']:,} "
+                     f"({len(cover['roots'])} جذرًا، {cover['expiries']} استحقاقًا). أحدث عرض: {fresh['newest_quote'] or 'غير متاح'}"
+                     + (" — <b>قديم: خارج الجلسة</b>" if stale else ""))]
+    blocks = []
+    for name, items in result["ranked"].items():
+        chosen = [r for r in items if not only or r["class"] in only]
+        if chosen:
+            blocks.append(rtl_line(f"<b>{name}</b>"))
+            blocks.extend(line(r) for r in chosen)
+    if not blocks:
+        blocks.append(rtl_line("لا عقود مؤهلة بنشاط جوهري الآن."))
+    return _pack(blocks, "\n".join(head))
 
 
 def main() -> int:
@@ -92,54 +164,31 @@ def main() -> int:
     if not decide("alpaca_iex", "fetch", env).allowed or not env.get("ALPACA_API_KEY"):
         print("options hunter: NOT_AUTHORIZED_OR_NO_KEYS")
         return 0
-    headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env["ALPACA_SECRET_KEY"].strip()}
     now = datetime.now(timezone.utc)
-    now_ny = now.astimezone(NY)
-    # after 16:00 New York today's contracts have settled: DTE counts from the next calendar day
-    today = now_ny.date() + timedelta(days=1 if now_ny.hour >= 16 else 0)
-    rows: list[dict[str, Any]] = []
-    coverage: dict[str, int] = {}
-    for underlying in (*INDEX_WEEKLIES, *UNDERLYINGS):
-        days = 7 if underlying in INDEX_WEEKLIES else 60
-        until = (today + timedelta(days=days)).isoformat()
-        snaps = chain(underlying, until, headers)
-        got = ac.rows(snaps, today=today, open_interest=open_interest(underlying, until, headers))
-        coverage[underlying] = len(got)
-        rows.extend({**r, "underlying": underlying} for r in got)
-    ranked = ac.rank(rows)
-    fresh = ac.freshness(rows, now)
-    print("options hunter:", json.dumps({"two_sided_contracts": coverage, "freshness": fresh,
-                                         "ranked_per_bucket": {b: len(v) for b, v in ranked.items()}}))
-    top = [r for b in ranked.values() for r in b]
-    if not top or env.get("OPTIONS_HUNTER_DRY_RUN") == "true":
-        print("options hunter: no delivery (dry run or nothing ranked)",
-              json.dumps({"labels": [r["label"] for r in top], "blockers": sorted({x for r in top for x in r["blockers"]}),
-                          "unavailable": sorted({x for r in top for x in (r.get("unavailable_inputs") or [])})}))
-        return 0
+    result = hunt(env, now)
+    top = [r for b in result["ranked"].values() for r in b]
+    classes = {c: sum(1 for r in top if r["class"] == c) for c in ac.CLASS_AR}
+    print("options hunter:", json.dumps({"coverage": result["coverage"], "freshness": result["freshness"],
+                                         "classes_in_top": classes}))
+    secret = env.get("TELEGRAM_BOT_TOKEN", "").encode()
+    alert = {hmac.new(secret, f"{r['contract']}|{r['class']}".encode(), hashlib.sha256).hexdigest()[:16]
+             for r in top if r["class"] in ALERT_CLASSES}
     state = Path(env.get("STATE_DIR", "../state/state/options_hunter"))
-    state.mkdir(parents=True, exist_ok=True)
-    key = hmac.new(env.get("TELEGRAM_BOT_TOKEN", "").encode(),
-                   "|".join(sorted(r["contract"] for r in top)).encode(), hashlib.sha256).hexdigest()[:16]
     seen_file = state / "last_top.json"
-    if seen_file.exists() and json.loads(seen_file.read_text()).get("key") == key:
-        print("options hunter: top set unchanged; nothing sent")
+    day = now.astimezone(NY).date().isoformat()
+    stored = json.loads(seen_file.read_text()) if seen_file.exists() else {}
+    seen = set(stored.get("alerted", [])) if stored.get("day") == day else set()  # resets each session day
+    fresh_entries = alert - seen
+    if env.get("OPTIONS_HUNTER_DRY_RUN") == "true" or not fresh_entries:
+        print("options hunter: no delivery", json.dumps({"dry_run": env.get("OPTIONS_HUNTER_DRY_RUN") == "true",
+                                                         "new_material_entries": len(fresh_entries)}))
         return 0
-    stale = fresh["age_s"] is None or fresh["age_s"] > 900
-    head = [rtl_line(f"<b>صياد العقود — {when_ar(now)}</b>"),
-            rtl_line("بيانات Alpaca الإرشادية (indicative) وليست OPRA؛ الصفقات متأخرة 15 دقيقة؛ OI من الجلسة السابقة؛ "
-                     "Vol/OI سياق لا دليل فتح مراكز. بحث ومراقبة، لا أمر تنفيذ."),
-            rtl_line(f"أحدث عرض: {fresh['newest_quote'] or 'غير متاح'}" + (" — <b>قديم: خارج الجلسة</b>" if stale else ""))]
-    blocks = []
-    for name, items in ranked.items():
-        if items:
-            blocks.append(rtl_line(f"<b>{name}</b>"))
-            blocks.extend(line(r) for r in items)
-    from options_radar.premarket_report import _pack
-    texts = _pack(blocks, "\n".join(head))
+    texts = render(result, now, only=ALERT_CLASSES)
     results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
                                send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
     if all(r == "DELIVERED" for r in results):
-        seen_file.write_text(json.dumps({"key": key, "sent_at": now.isoformat(), "messages": len(texts)}))
+        state.mkdir(parents=True, exist_ok=True)
+        seen_file.write_text(json.dumps({"day": day, "alerted": sorted(seen | alert), "sent_at": now.isoformat()}))
     print("options hunter delivery:", results)
     return 0
 

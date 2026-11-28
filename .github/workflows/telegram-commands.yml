@@ -4,7 +4,8 @@ name: GHAZI Telegram commands (owner only)
 # first step peeks with the system Python and no install; without a pending owner message the job
 # ends there (scripts/telegram_commands.py). Answers /map /stock /levels /market /status /help
 # with the same engines as the scheduled report; owner-private delivery only. The only file written
-# to bot-state is the next getUpdates offset with per-command statuses (no symbol, price or text).
+# to bot-state is the next getUpdates offset with per-command statuses (no symbol, price or text),
+# and a /confirm status change on today's report marker.
 on:
   workflow_dispatch:
 
@@ -28,6 +29,8 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      SMALLCAP_RECORD_KEY: ${{ secrets.SMALLCAP_RECORD_KEY }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -69,6 +72,7 @@ jobs:
           git config user.email "GHAZMOTIEBIPRO@users.noreply.github.com"
           if [[ ! -f state/telegram/telegram_commands_offset.json ]]; then exit 0; fi
           git add state/telegram/telegram_commands_offset.json
+          git add state/daily_plan/*/report_*.json 2>/dev/null || true  # /confirm (statuses only)
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "state: telegram command offset [skip ci]"
           for attempt in 1 2 3 4 5 6 7 8; do

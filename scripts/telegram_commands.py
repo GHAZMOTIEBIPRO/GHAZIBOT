@@ -31,10 +31,13 @@ from pathlib import Path
 from typing import Any
 
 MAX_COMMANDS = 5
-COMMANDS = ("map", "stock", "levels", "market", "status", "help")
+COMMANDS = ("map", "stock", "levels", "market", "status", "confirm", "options", "smallcaps", "news", "help")
 SYMBOL = re.compile(r"^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$")
 HELP_AR = ("الأوامر المتاحة (للمالك فقط):\n/map رمز — الخريطة السعرية\n/stock رمز — البطاقة التفصيلية\n"
            "/levels رمز — المستويات\n/market — ملخص المؤشرات والقياديين\n/status — حالة تقارير اليوم\n"
+           "/options — أفضل العقود المؤهلة مع سبب الترشيح والرفض\n/smallcaps — رصد الأسهم الصغيرة اليوم\n"
+           "/news — آخر إفصاحات SEC الرسمية للرموز المتابعة\n"
+           "/confirm EARLY أو FINAL — تأكيد وصول رسائل سُجلت «غير مؤكدة» (لا إعادة إرسال تلقائية)\n"
            "الرد خلال دقائق (تشغيل مجدول كل ~5 دقائق)، والأسعار من شموع مكتملة متأخرة 16 دقيقة على الأقل.")
 
 
@@ -48,6 +51,8 @@ def parse(text: Any) -> tuple[str, str | None] | None:
         return ("help", None)
     arg = parts[1].upper() if len(parts) > 1 else None
     if name in ("map", "stock", "levels") and (not arg or not SYMBOL.fullmatch(arg)):
+        return ("help", None)
+    if name == "confirm" and arg not in ("EARLY", "FINAL"):
         return ("help", None)
     return (name, arg)
 
@@ -119,8 +124,57 @@ def answer(command: str, arg: str | None, now, env, state_dir: Path) -> dict[str
         for slot in ("EARLY", "FINAL"):
             path = plans_dir / f"report_{slot}.json"
             marker = json.loads(path.read_text()) if path.exists() else {}
+            pending = [k for k, v in (marker.get("items") or {}).items() if v.get("status") == "UNCONFIRMED"]
+            if pending:
+                lines.append(f"{slot}: {len(pending)} رسالة غير مؤكدة — راجع المحادثة ثم أرسل /confirm {slot}")
             lines.append(f"{slot}: {marker.get('status', 'لا سجل')}" + (" (متأخر)" if marker.get("late") else ""))
         return {"text": "\n".join(rtl_line(x) for x in lines)}
+    if command == "confirm":
+        from scripts.build_daily_plan import NY
+
+        day = now.astimezone(NY).date().isoformat()
+        path = state_dir.parent / "daily_plan" / day / f"report_{arg}.json"
+        marker = json.loads(path.read_text()) if path.exists() else {}
+        changed = 0
+        for item in (marker.get("items") or {}).values():
+            if item.get("status") == "UNCONFIRMED":
+                item.update(status="DELIVERED", confirmed_by_owner_at=now.isoformat())
+                changed += 1
+        if changed:
+            marker["status"] = "DELIVERED" if all(v.get("status") == "DELIVERED" for v in marker["items"].values()) \
+                else marker.get("status")
+            path.write_text(json.dumps(marker, indent=1), encoding="utf-8")
+        return {"text": rtl_line(f"{arg}: أُكّد وصول {changed} رسالة بتأكيدك.") if changed
+                else rtl_line(f"{arg}: لا رسائل غير مؤكدة اليوم.")}
+    if command == "options":
+        from scripts import run_options_hunter as hunter
+
+        texts = hunter.render(hunter.hunt(env, now), now)
+        return {"text": texts[0]}
+    if command == "smallcaps":
+        from scripts import run_smallcap_scan as small
+        from scripts.build_daily_plan import NY
+
+        day = now.astimezone(NY).date().isoformat()
+        record = small.load_encrypted(state_dir.parent / "smallcaps" / f"{day}.json.enc", small._key(env))
+        if not record:
+            return {"text": rtl_line(f"لا رصد مسجل للأسهم الصغيرة في {day} (المسح يعمل في الجلسة كل ~15 دقيقة).")}
+        lines = [rtl_line(f"<b>رصد الأسهم الصغيرة — {day}</b> (Alpaca IEX، أول رصد)")]
+        for sym, det in record.items():
+            lines.append(rtl_line(f"<b>{sym}</b> {det['stage']} عند {det['price']:,.2f} ({det['at'][11:16]} UTC)"))
+        return {"text": "\n".join(lines)[:3900]}
+    if command == "news":
+        from options_radar import sec_current_feed as scf
+        from scripts.build_daily_plan import DETAIL_INDEX_FUNDS, DETAIL_LEADERS
+
+        if "@" not in (env.get("SEC_USER_AGENT") or ""):
+            return {"text": rtl_line("مصدر SEC الرسمي غير مفعّل: أضف السر SEC_USER_AGENT (اسم وبريد حقيقي).")}
+        watch = {*DETAIL_INDEX_FUNDS, *DETAIL_LEADERS}
+        events = [e for e in scf.fetch(env) if e["symbol"] in watch][:10]
+        if not events:
+            return {"text": rtl_line("لا إفصاحات SEC جديدة للرموز المتابعة في آخر 100 قيد لكل نوع.")}
+        return {"text": "\n".join(rtl_line(f"<b>{e['symbol']}</b> {e['form']} — {'، '.join(e['items_ar']) or e['form_ar']} "
+                                             f"(نُشر {e['published'] or 'غير معروف'}) {e['url'] or ''}") for e in events)}
     if command == "market":
         from scripts import build_daily_plan as bdp
         facts = bdp.calendar_facts(now)

@@ -29,16 +29,29 @@ def _f(x: Any) -> float | None:
 
 
 def rows(snapshots: dict[str, dict[str, Any]], *, today: date, open_interest: dict[str, dict[str, Any]] | None = None,
-         underlying_price: float | None = None) -> list[dict[str, Any]]:
+         underlying_price: float | None = None, rejects: dict[str, int] | None = None) -> list[dict[str, Any]]:
     out = []
+    rejects = rejects if rejects is not None else {}
+
+    def reject(reason: str) -> None:
+        rejects[reason] = rejects.get(reason, 0) + 1
+
     for symbol, snap in (snapshots or {}).items():
         occ = parse_occ(symbol)
         if not occ or not isinstance(snap, dict):
+            reject("unparsed_symbol")
             continue
         q, bar, g = snap.get("latestQuote") or {}, snap.get("dailyBar") or {}, snap.get("greeks") or {}
         bid, ask = _f(q.get("bp")), _f(q.get("ap"))
-        if bid is None or ask is None or not (0 < bid <= ask):
-            continue  # one-sided, zero-bid or crossed: not a usable quote
+        if bid is None or ask is None:
+            reject("no_quote")
+            continue
+        if bid <= 0:
+            reject("zero_bid")
+            continue
+        if bid > ask:
+            reject("crossed")
+            continue
         mid = (bid + ask) / 2
         spread = (ask - bid) / mid
         oi_row = (open_interest or {}).get(symbol) or {}
@@ -55,6 +68,7 @@ def rows(snapshots: dict[str, dict[str, Any]], *, today: date, open_interest: di
             "iv": _f(snap.get("impliedVolatility")), "delta": _f(g.get("delta")), "gamma": _f(g.get("gamma")),
             "theta": _f(g.get("theta")), "vega": _f(g.get("vega")),
             "moneyness": round(occ["strike"] / underlying_price - 1, 4) if underlying_price else None,
+            "prev_close": _f((snap.get("prevDailyBar") or {}).get("c")),
             "feed": "indicative", "execution_grade": False,
         })
     return out
@@ -104,3 +118,44 @@ def freshness(contract_rows: list[dict[str, Any]], now: datetime) -> dict[str, A
     newest = max(stamps) if stamps else None
     return {"newest_quote": newest.isoformat() if newest else None,
             "age_s": round((now - newest).total_seconds(), 1) if newest else None}
+
+
+CLASS_AR = {"EARLY_WATCH": "مراقبة مبكرة", "UNUSUAL_ACTIVITY": "نشاط غير اعتيادي",
+            "CONFIRMED_BY_AVAILABLE_DATA": "مؤكد بالبيانات المتاحة", "EXTENDED": "ممتد (متأخر)", "REJECTED": "مرفوض"}
+
+
+def classify(r: dict[str, Any], *, bucket_median_volume: float, underlying_change_pct: float | None,
+             quote_age_s: float | None, in_session: bool) -> tuple[str, list[str]]:
+    """One class per contract with its reasons. Observed activity only: buyer/seller intent is unknown."""
+    reasons: list[str] = []
+    if r["spread_pct"] > MAX_SPREAD:
+        return "REJECTED", ["spread above 25 % of mid"]
+    if in_session and (quote_age_s is None or quote_age_s > 900):
+        return "REJECTED", ["quote older than 15 minutes in session"]
+    if r.get("prev_close") and r["mid"] >= 2 * r["prev_close"]:
+        return "EXTENDED", ["mid already >= 2x the prior close: the move has happened"]
+    rel = r["volume"] / bucket_median_volume if bucket_median_volume else 0.0
+    voi = r.get("vol_to_oi_ratio")
+    unusual = (voi is not None and voi >= 1.5) or rel >= 5
+    if unusual:
+        reasons.append(f"Vol/OI {voi}" if voi is not None and voi >= 1.5 else f"volume {rel:.1f}x bucket median")
+        direction = 1 if r["type"] == "CALL" else -1
+        if (underlying_change_pct is not None and direction * underlying_change_pct > 0.3
+                and r["spread_pct"] <= 0.10):
+            return "CONFIRMED_BY_AVAILABLE_DATA", [*reasons, f"underlying {underlying_change_pct:+.2f}% in the same direction"]
+        return "UNUSUAL_ACTIVITY", reasons
+    if (voi is not None and voi >= 0.5) or rel >= 2:
+        return "EARLY_WATCH", [f"Vol/OI {voi}" if voi is not None and voi >= 0.5 else f"volume {rel:.1f}x bucket median"]
+    return "REJECTED", ["activity not above the bucket's normal level"]
+
+
+def coverage(snapshots_by_underlying: dict[str, dict[str, Any]], kept: list[dict[str, Any]],
+             rejects: dict[str, int], pages: dict[str, int]) -> dict[str, Any]:
+    """What the scan really covered: unique contracts, roots, expiries, pages, two-sided share, rejects."""
+    total = sum(len(v) for v in snapshots_by_underlying.values())
+    return {"contracts_seen": total, "unique_two_sided": len({r["contract"] for r in kept}),
+            "two_sided_share": round(len(kept) / total, 3) if total else None,
+            "roots": sorted({r["root"] for r in kept}), "expiries": len({(r["root"], r["expiry"]) for r in kept}),
+            "pages": pages, "rejects": dict(sorted(rejects.items())),
+            "with_open_interest": sum(1 for r in kept if r.get("open_interest") is not None),
+            "with_volume": sum(1 for r in kept if r["volume"] > 0)}

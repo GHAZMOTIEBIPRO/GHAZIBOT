@@ -65,3 +65,23 @@ def test_command_workflow_and_orchestrator_peek():
     assert all("pending" in str(st.get("if", "")) for st in steps[peek + 1:])  # nothing installed when idle
     central = (ROOT / ".github/workflows/market-orchestrator.yml").read_text(encoding="utf-8")
     assert "dispatch_if_stale telegram-commands.yml 9" in central and "TELEGRAM_BOT_TOKEN" not in central
+
+
+def test_new_commands_parse_and_confirm_only_resolves_unconfirmed(tmp_path):
+    from datetime import datetime, timezone
+
+    assert tc.parse("/options") == ("options", None) and tc.parse("/smallcaps") == ("smallcaps", None)
+    assert tc.parse("/news") == ("news", None) and tc.parse("/confirm early") == ("confirm", "EARLY")
+    assert tc.parse("/confirm X") == ("help", None)
+    now = datetime(2026, 11, 30, 15, 0, tzinfo=timezone.utc)
+    day = tmp_path / "daily_plan" / "2026-11-30"
+    day.mkdir(parents=True)
+    marker = {"status": "UNCONFIRMED", "items": {"a": {"status": "DELIVERED"}, "b": {"status": "UNCONFIRMED"}}}
+    (day / "report_EARLY.json").write_text(json.dumps(marker))
+    status = tc.answer("status", None, now, {}, tmp_path / "telegram")["text"]
+    assert "/confirm EARLY" in status
+    out = tc.answer("confirm", "EARLY", now, {}, tmp_path / "telegram")["text"]
+    saved = json.loads((day / "report_EARLY.json").read_text())
+    assert "1" in out and saved["status"] == "DELIVERED" and saved["items"]["b"]["confirmed_by_owner_at"]
+    assert "SEC_USER_AGENT" in tc.answer("news", None, now, {}, tmp_path / "telegram")["text"]
+    assert "لا رصد" in tc.answer("smallcaps", None, now, {}, tmp_path / "telegram")["text"]
