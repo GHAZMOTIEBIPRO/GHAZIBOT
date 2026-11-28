@@ -12,7 +12,8 @@ open) plus an alert count. The scan and the post-close review recompute the prei
 universe, and the post-close review refetches the minute bars from Alpaca at run time; the detection price
 is the close of the last completed IEX minute bar before the detection (not the snapshot trade price).
 Without the key no tags are kept, so no alert is sent (it could not be deduplicated) and the post-close
-review is skipped. Halts, dilution and float are NOT checked here and say so.
+review is skipped. Dilution and shares outstanding come from SEC (options_radar/smallcap_risk, real UA
+only); float and halts stay UNKNOWN on this path and say so.
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ import exchange_calendars as xcals
 import pandas as pd
 import requests
 
+from options_radar import smallcap_risk as risk
 from options_radar import smallcap_scan as sc
 from options_radar import state_keys as sk
 from options_radar.output_policy import decide
@@ -129,7 +131,7 @@ def message(rows: list[dict], now: datetime, coverage: dict) -> list[str]:
 
     head = "\n".join([rtl_line(f"<b>رادار الأسهم الصغيرة — {when_ar(now)}</b>"),
                       rtl_line(f"Alpaca IEX (منصة واحدة، حجم جزئي؛ RVOL مقارن بحجم IEX نفسه). الكون {coverage['universe']}، "
-                               f"مؤهل {coverage['eligible']}. التوقفات والتخفيف والأسهم الحرة غير مفحوصة هنا. ليست توصية.")])
+                               f"مؤهل {coverage['eligible']}. مراقبة بحثية: لا فرصة مؤكدة ما دامت المخاطر غير مفحوصة. ليست توصية.")])
     blocks = []
     for r in rows:
         lv = r.get("levels") or {}
@@ -137,6 +139,8 @@ def message(rows: list[dict], now: datetime, coverage: dict) -> list[str]:
         blocks.append(rtl_line(f"<b>{r['symbol']}</b>{LRM} {r['stage_ar']} — {r['price']:,.2f} ({r['move_pct']:+.1f}%) "
                                f"RVOL≈{r['rvol_time_adjusted']} — محفز {lv.get('trigger', 0):,.2f}؛ {tg}؛ "
                                f"إبطال {lv.get('invalidation', 0):,.2f}" + (f" — ⚠ {', '.join(r['risk_flags'])}" if r['risk_flags'] else "")))
+        if r.get("sec_risk"):
+            blocks.append(rtl_line("SEC: " + risk.line_ar(r["sec_risk"])))
     if not blocks:
         blocks.append(rtl_line("لا مرشحين جدد بهذه المعايير الآن."))
     return _pack(blocks, head)
@@ -197,6 +201,7 @@ def main() -> int:
         print("smallcaps: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled, nothing stored")
         return 0
     new = [r for r in candidates if not already_alerted(key, day_s, r["symbol"], r["stage"], tags, minute)][:8]
+    attach_sec_risk(new, env, args.state_data, open_at.date())
     if args.dry_run:
         print("smallcaps dry run: ok (counts stay private)")
         return 0
@@ -209,6 +214,24 @@ def main() -> int:
             tags |= {sk.tag(key, "smallcap", day_s, r["symbol"], r["stage"], minute) for r in new}
     save_tags(tags_path, key, day_s, tags, now)  # every scan, alert or not: cadence and size reveal nothing
     return 0
+
+
+def attach_sec_risk(rows: list[dict], env: dict, state_data: Path, as_of) -> None:
+    """Official SEC dilution/share context for the (at most 8) new candidates; UNKNOWN without a real UA.
+
+    Actual-issuance filings move a candidate behind the others (supported opportunities first).
+    """
+    from options_radar import sec_current_feed as scf
+
+    ua = (env.get("SEC_USER_AGENT") or "").strip()
+    reg = state_data / "sec_company_tickers.json"
+    ciks = {t: c for c, t in scf.cik_map(json.loads(reg.read_text()) if reg.exists() else None,
+                                          Path(__file__).resolve().parents[1] / "data/sec_cik_map.json").items()}
+    for r in rows:
+        subs, facts = risk.fetch(ciks.get(r["symbol"], ""), ua) if "@" in ua else (None, None)
+        r["sec_risk"] = risk.assess(subs, facts, as_of=as_of)
+        time.sleep(0.25)  # SEC fair access: well under 10 requests per second
+    rows.sort(key=lambda r: r["sec_risk"]["dilution"] == "ACTUAL_ISSUANCE_LIKELY")
 
 
 def postclose(key: bytes | None, day: str, tags: set[str], symbols: list[str], open_at: datetime,

@@ -163,7 +163,7 @@ def coverage(snapshots_by_underlying: dict[str, dict[str, Any]], kept: list[dict
             "with_iv": sum(1 for r in kept if r.get("iv") is not None),
             "greeks_by_source": _count(r.get("greeks_source") or "none" for r in kept),
             "eligible": sum(1 for r in kept if eligible(r)),
-            "by_dte_bucket": _count(bucket(r["dte"]) for r in kept)}
+            "by_dte_bucket": _count(bucket(r["dte"]) or ("expired" if r["dte"] < 0 else "beyond_60") for r in kept)}
 
 
 MAX_ELIGIBLE_SPREAD = 0.25  # relative to mid; wider quotes are listed as seen but never ranked as eligible
