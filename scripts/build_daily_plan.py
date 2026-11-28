@@ -43,6 +43,8 @@ import pandas as pd
 from options_radar import analysis_card as card
 from options_radar import daily_plan as dp
 from options_radar import ohlcv_quality as quality
+from options_radar import premarket_map as pm
+from options_radar import premarket_report as report
 from options_radar import telegram_market_digest as digest
 from options_radar.bar_aggregation import frames_from_5m
 from options_radar.bar_providers import COVERAGE, AlpacaBars
@@ -196,6 +198,17 @@ def _private_volume_context(daily_q: dict[str, Any], minute_q: dict[str, Any],
     return context
 
 
+def today_open(now: datetime) -> datetime | None:
+    """Today's XNYS regular open when it is still ahead (pre-open), else None."""
+    cal = xcals.get_calendar("XNYS")
+    day = now.astimezone(NY).date().isoformat()
+    sched = cal.schedule.loc[day:day]
+    if sched.empty:
+        return None
+    opening = pd.Timestamp(sched.iloc[0]["open"]).to_pydatetime()
+    return opening if now < opening else None
+
+
 def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessions: list[tuple[datetime, datetime]],
                        now: datetime, closes: dict[str, datetime] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     """One symbol: ~2 years of daily bars (a real weekly frame) and 30 sessions of 5-minute bars.
@@ -227,6 +240,11 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
     plan["quality_checks"] = {"daily": quality.summary(daily_q), "5m": quality.summary(minute_q)}
     plan["liquidity_context"] = _private_volume_context(daily_q, minute_q, intraday, now)
     plan["volume_scope"] = meta["volume_scope"]
+    opening = today_open(now)
+    if opening is not None and sessions and minute["status"] == "OK" and minute.get("feed") == daily.get("feed"):
+        # extended-hours bars after the prior close, completed before the provider's delay boundary
+        plan["premarket"] = pm.premarket_reference(minute["bars"], session_open=opening, prior_close_at=sessions[-1][1],
+                                                   usable_until=now - timedelta(minutes=16))
     status["quality"] = {"daily": daily_q["status"], "5m": minute_q["status"]}
     return plan, status
 
@@ -276,11 +294,16 @@ def readiness(private: dict[str, Any], catalysts: list[Any], macro: dict[str, An
 def frames_status(private: dict[str, Any]) -> dict[str, Any]:
     available = {f for p in (private.get("plans") or {}).values() if p.get("available")
                  for f in p.get("frames_available") or []}
+    # name the feed the bars actually came from (SIP history is the default; IEX only on refusal)
+    feeds = sorted({f for s in (private.get("fetch_status") or {}).values() if isinstance(s, dict)
+                    for f in s.get("feeds") or []})
+    feed_label = "/".join(f.upper() for f in feeds) or "unknown feed"
     status = {}
     for frame in FRAMES:
         status[frame] = {"public": "UNAVAILABLE",
                          "private_owner": "AVAILABLE" if frame in available else "UNAVAILABLE",
-                         "reason": ("Alpaca IEX bars: owner's internal use only, not redistributed" if frame in available
+                         "reason": (f"Alpaca {feed_label} bars: owner's internal use only, not redistributed"
+                                    if frame in available
                                     else "no free source verified yet for computing and redistributing prices publicly; owner-private frames need Alpaca keys and"
                                          " ALPACA_INTERNAL_DATA_USE_AUTHORIZED" if not private.get("enabled")
                                     else "not enough completed bars for this frame")}
@@ -305,6 +328,80 @@ def options_status(data_dir: Path | None) -> str:
 def cards_for(private: dict[str, Any], watch: Any, now: datetime, opt_status: str) -> dict[str, Any]:
     return {sym: card.build_card(plan, news=symbol_news(watch, sym, now), options_status=opt_status)
             for sym, plan in (private.get("plans") or {}).items()}
+
+
+MAX_SLOT_ATTEMPTS = 3
+
+
+def maps_for(private: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Every planned symbol in PLAN_SYMBOLS order, including those not fetched (a row with the reason)."""
+    plans, cards = private.get("plans") or {}, private.get("cards") or {}
+    out = {}
+    for symbol in PLAN_SYMBOLS:
+        if symbol not in plans:
+            out[symbol] = {"schema": pm.SCHEMA, "symbol": symbol, "state": "NO_DATA",
+                           "reason": "not fetched within the run's time budget"}
+            continue
+        plan = plans[symbol]
+        out[symbol] = pm.build_map(cards.get(symbol) or {}, plan, premarket=plan.get("premarket"))
+    return out
+
+
+def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetime, day_dir: Path, *,
+                    env: Any, get_chat: Callable[[str], Any], send: Callable[[str, str], Any]) -> dict[str, Any] | None:
+    """Send the due pre-open report once; record the outcome (statuses and counts only).
+
+    Marker per slot: state/daily_plan/<date>/report_<slot>.json. A DELIVERED or PARTIAL marker is
+    never sent again; a send with nothing accepted may be retried inside the same window up to
+    MAX_SLOT_ATTEMPTS.
+    A window that passed with no delivery is recorded as MISSED and never sent late.
+    """
+    session_today = bool(facts.get("today_is_session"))
+    done = set()
+    for path in day_dir.glob("report_*.json"):
+        saved = _load(path) or {}
+        if saved.get("status") in ("DELIVERED", "MISSED"):
+            done.add(str(saved.get("slot")))
+    for name in report.missed_slots(now, session_today, done):
+        missed = day_dir / f"report_{name}.json"
+        earlier = _load(missed) or {}  # a failed attempt keeps its details
+        missed.write_text(json.dumps(
+            {"schema": "ghazi.premarket_report_marker.v1", **earlier, "slot": name, "status": "MISSED",
+             "last_attempt_status": earlier.get("status"), "recorded_at": now.isoformat(),
+             "late": True, "late_minutes": None}, indent=1), encoding="utf-8")
+    slot = report.slot_for(now, session_today)
+    if slot is None:
+        return None
+    path = day_dir / f"report_{slot['slot']}.json"
+    previous = _load(path) or {}
+    if previous.get("status") in ("DELIVERED", "PARTIAL"):
+        # PARTIAL is final too: resending would duplicate the messages Telegram already accepted
+        return previous
+    attempt = int(previous.get("attempt") or 0) + 1
+    if attempt > MAX_SLOT_ATTEMPTS:
+        return previous
+    base = {"schema": "ghazi.premarket_report_marker.v1", **slot, "attempt": attempt, "recorded_at": now.isoformat()}
+    if not private.get("enabled") or not any(p.get("available") for p in (private.get("plans") or {}).values()):
+        marker = {**base, "status": "NO_PRIVATE_DATA", "reason": private.get("reason"), "messages": 0, "accepted": 0}
+    else:
+        maps = maps_for(private)
+        details = pm.rank_details(maps, pinned=("SPY", "QQQ"))
+        statuses = private.get("fetch_status") or {}
+        texts = report.render(maps, slot=slot, now=now, session_date=facts["today"]["date"], index_funds=INDEX_FUNDS,
+                              detail_symbols=details, attempted=len(PLAN_SYMBOLS),
+                              fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"))
+        results = [deliver_private(text, sources=["alpaca_iex"], env=env, get_chat=get_chat, send=send)
+                   for text in texts]
+        accepted = results.count("DELIVERED")
+        status = ("DELIVERED" if accepted == len(results) else "PARTIAL" if accepted
+                  else next((r for r in results if r != "DELIVERED"), "SEND_FAILED"))
+        # bot-state is public: statuses and counts of messages only, no states or values derived from private bars
+        marker = {**base, "status": status, "sent_at": now.isoformat(), "messages": len(results), "accepted": accepted,
+                  "telegram_acceptance_is_not_read_receipt": True,
+                  # hashes of the private maps (no values): a later changed map is a new version
+                  "map_versions": pm.map_id({"ids": sorted(str(m.get("map_id")) for m in maps.values())})}
+    path.write_text(json.dumps(marker, indent=1), encoding="utf-8")
+    return marker
 
 
 def private_message(private: dict[str, Any], facts: dict[str, Any]) -> str:
@@ -380,26 +477,22 @@ def main() -> int:
                   _load(args.data_dir / "macro_regimes.json"), private,
                   (_load(args.data_dir / "nasdaq_listed.json"), _load(args.data_dir / "symbol_directory.json")))
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
     session_date = (facts.get("today") or {}).get("date")
-    morning_run = False
-    if session_date:
-        day_dir = args.morning_dir / session_date
-        morning = day_dir / "morning.json"
+    day_dir = args.morning_dir / session_date if session_date else None
+    if day_dir is not None:
         day_dir.mkdir(parents=True, exist_ok=True)
-        if not morning.exists():  # the morning copy is never rewritten
-            morning.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
-            morning_run = True
-        else:  # later runs add dated updates beside it
-            (day_dir / f"update_{now.strftime('%H%MZ')}.json").write_text(
-                json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
-    # one private message per session (the morning run); updates stay in the dated copies
-    if morning_run and private.get("enabled") and any(p.get("available") for p in private["plans"].values()):
         from scripts.telegram_transport import get_chat, send_html_message
-        delivered = deliver_private(private_message(private, facts), sources=["alpaca_iex"], env=os.environ,
-                                    get_chat=get_chat, send=lambda text, chat: send_html_message(text, chat_id=chat))
-        sheet["private_mode"]["delivery"] = delivered
-        args.output.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
+        marker = run_report_slot(private, facts, now, day_dir, env=os.environ, get_chat=get_chat,
+                                 send=lambda text, chat: send_html_message(text, chat_id=chat))
+        if marker is not None:
+            sheet["private_mode"]["delivery"] = marker["status"]
+            sheet["private_mode"]["report"] = {k: marker.get(k) for k in ("slot", "status", "late", "late_minutes")}
+    args.output.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
+    if day_dir is not None:
+        # written after any send, so the stored copy carries the real delivery status
+        morning = day_dir / "morning.json"
+        target = morning if not morning.exists() else day_dir / f"update_{now.strftime('%H%MZ')}.json"
+        target.write_text(json.dumps(sheet, ensure_ascii=False, indent=1), encoding="utf-8")
     if args.private_output and private.get("enabled") and decide("alpaca_iex", "store_private", os.environ).allowed:
         args.private_output.write_text(json.dumps(private, ensure_ascii=False, default=str), encoding="utf-8")
     # counts and statuses only: no symbol-level private values in the (public) log
