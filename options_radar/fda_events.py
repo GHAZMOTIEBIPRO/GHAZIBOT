@@ -37,12 +37,34 @@ def normalise(name: Any) -> str:
     return re.sub(r"\s+", " ", LEGAL_SUFFIXES.sub(" ", text)).strip()
 
 
-def build_name_index(aliases: dict[str, str],
-                     sponsors: dict[str, list[str]] | None = None) -> dict[str, tuple[str, str]]:
-    """normalised name -> (ticker, method); names that map to two tickers are dropped."""
-    entries = [(name, ticker, "exact_normalised_name") for ticker, name in aliases.items()]
-    entries += [(name, ticker, "reviewed_sponsor_alias")
-                for ticker, names in (sponsors or {}).items() for name in names]
+def listed_issuers(nasdaq_listed: Any) -> dict[str, str]:
+    """ticker -> issuer name for common equities in the NasdaqTrader listed file (no ETFs)."""
+    payload = nasdaq_listed if isinstance(nasdaq_listed, dict) else {}
+    fields = payload.get("fields") or []
+    try:
+        sym_i, name_i, etf_i, eq_i = (fields.index(k) for k in ("symbol", "issuer", "etf", "equity"))
+    except ValueError:
+        return {}
+    out = {}
+    for row in payload.get("rows") or []:
+        if isinstance(row, list) and len(row) > max(sym_i, name_i, etf_i, eq_i) and row[eq_i] == 1 and row[etf_i] == 0:
+            out[str(row[sym_i])] = str(row[name_i])
+    return out
+
+
+def registry_issuers(nasdaq_listed: Any = None, sec_registry: Any = None) -> dict[str, str]:
+    """ticker -> issuer name from both registries: SEC (all U.S. exchanges) then NasdaqTrader on top."""
+    out: dict[str, str] = {}
+    sec = sec_registry if isinstance(sec_registry, dict) else {}
+    if sec.get("fields") == ["ticker", "cik", "name", "exchange"]:
+        for row in sec.get("rows") or []:
+            if isinstance(row, list) and len(row) == 4:
+                out[str(row[0])] = str(row[2])
+    out.update(listed_issuers(nasdaq_listed))
+    return out
+
+
+def _index(entries: list[tuple[str, str, str]]) -> dict[str, tuple[str, str]]:
     index: dict[str, tuple[str, str]] = {}
     collisions: set[str] = set()
     for name, ticker, method in entries:
@@ -55,6 +77,46 @@ def build_name_index(aliases: dict[str, str],
     for key in collisions:
         index.pop(key, None)
     return index
+
+
+def graph_resolve(name: Any, on: str, graph: dict | None) -> tuple[str | None, str]:
+    """Dated parent/subsidiary/rename resolution from data/entity_graph.json (official sources only).
+
+    On or after effective_from a name resolves to the parent (or the renamed issuer); before it, to the
+    ticker it had then. Exact normalised names only; similarity alone never creates a relation.
+    """
+    key = normalise(name)
+    for e in (graph or {}).get("entities") or []:
+        if key and key in {normalise(n) for n in (e["name"], *(e.get("aliases") or []))}:
+            if on >= e["effective_from"]:
+                return e["ticker_after"], f"entity_graph:{e['relation']}:since_{e['effective_from']}"
+            return e.get("ticker_before"), f"entity_graph:before_{e['relation']}_{e['effective_from']}"
+    return None, "unmatched"
+
+
+def build_name_index(aliases: dict[str, str], sponsors: dict[str, list[str]] | None = None,
+                     listed: dict[str, str] | None = None, graph: dict | None = None,
+                     as_of: str | None = None) -> dict[str, tuple[str, str]]:
+    """normalised name -> (ticker, method); names that map to two tickers are dropped.
+
+    Precedence: the project's company list and the reviewed sponsor spellings first; the listed
+    issuer registry (NasdaqTrader, every listed common stock) only fills names they do not cover,
+    so a small issuer such as Cogent Biosciences (COGT) matches without a hand-written alias. A
+    registry name that normalises to fewer than 5 characters or to two tickers is not used.
+    """
+    curated = _index([(name, ticker, "exact_normalised_name") for ticker, name in aliases.items()]
+                     + [(name, ticker, "reviewed_sponsor_alias")
+                        for ticker, names in (sponsors or {}).items() for name in names])
+    registry = _index([(name, ticker, "listed_issuer_name") for ticker, name in (listed or {}).items()
+                       if len(normalise(name)) >= 5])
+    related: dict[str, tuple[str, str]] = {}
+    if graph and as_of:  # acquisitions and renames as of the event date beat a stale registry name
+        for e in graph.get("entities") or []:
+            for n in (e["name"], *(e.get("aliases") or [])):
+                ticker, method = graph_resolve(n, as_of, graph)
+                if ticker:
+                    related[normalise(n)] = (ticker, method)
+    return {**registry, **related, **curated}
 
 
 def match_ticker(name: Any, index: dict[str, tuple[str, str]]) -> tuple[str | None, str]:

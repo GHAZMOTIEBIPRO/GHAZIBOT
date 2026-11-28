@@ -10,6 +10,7 @@ on:
       - "options_radar/telegram_market_digest.py"
       - "options_radar/premarket_map.py"
       - "options_radar/premarket_report.py"
+      - "options_radar/price_map_chart.py"
       - "options_radar/volume_liquidity.py"
       - "scripts/build_daily_plan.py"
       - ".github/workflows/daily-plan.yml"
@@ -59,7 +60,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install project dependencies (package import needs them)
-        run: pip install -r app/requirements.txt
+        # charts are optional: if this install fails the text report is still sent
+        run: |
+          pip install -r app/requirements.txt
+          pip install -r app/requirements-charts.txt || echo "::warning title=Charts unavailable::matplotlib install failed"
       # This workflow is the only writer of daily_plan.json and state/daily_plan/.
       # Owner-private plans (Alpaca, no redistribution) go to the runner's temp
       # directory only and are never committed.

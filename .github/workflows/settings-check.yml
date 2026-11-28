@@ -9,6 +9,7 @@ on:
     branches: [main, "ccr-**"]
     paths:
       - "scripts/check_settings.py"
+      - "scripts/preflight.py"
       - "scripts/verify_free_market_sources.py"
       - ".github/workflows/settings-check.yml"
       - ".github/actions/resolve-telegram-broadcast/**"
@@ -26,6 +27,7 @@ jobs:
     timeout-minutes: 5
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}  # read-only: run-history access check
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       TELEGRAM_CHAT_ID_SECRET_SET: ${{ secrets.TELEGRAM_CHAT_ID != '' }}
       TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
@@ -85,3 +87,15 @@ jobs:
         run: >-
           python -m scripts.verify_free_market_sources
           --output "$RUNNER_TEMP/ghazi_free_source_health.json"
+      - name: Read-only bot-state (outbox review only)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: bot-state
+          path: state
+          persist-credentials: false
+      - run: pip install -r app/requirements.txt
+      - name: Session preflight (rights, keys, private chat, data, schedule, clocks, outbox; sends nothing)
+        env:
+          PYTHONPATH: app
+          STATE_DIR: state/state
+        run: python -m scripts.preflight || test $? -eq 2

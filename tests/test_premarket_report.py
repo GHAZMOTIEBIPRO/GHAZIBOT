@@ -199,8 +199,12 @@ def test_report_slot_sends_once_records_status_only_and_never_sends_outside_wind
     marker_text = (tmp_path / "report_EARLY.json").read_text()
     marker = json.loads(marker_text)
     assert marker["accepted"] == marker["messages"] == count and marker["telegram_acceptance_is_not_read_receipt"]
+    assert "fingerprints" not in marker  # nothing derived from the maps is stored
     # the public marker carries no level, price or state derived from the private bars
-    assert "110" not in marker_text and "trigger" not in marker_text and "WATCH" not in marker_text
+    assert "trigger" not in marker_text and "WATCH" not in marker_text and "105" not in marker_text.replace(
+        "2026-11-30", "")
+    floats = [v for v in json.loads(marker_text).values() if isinstance(v, float)]
+    assert floats == []
     final = run(datetime(2026, 11, 30, 14, 12, tzinfo=UTC))  # 09:12: FINAL, 12 minutes late
     assert final["slot"] == "FINAL" and final["late"] is True and final["late_minutes"] == 12
     assert run(datetime(2026, 11, 30, 15, 0, tzinfo=UTC)) is None  # after the open: nothing sent
@@ -227,22 +231,107 @@ def test_failed_send_is_retried_in_the_window_but_bounded(tmp_path):
     assert out["status"] == "SEND_FAILED" and out["attempt"] == bdp.MAX_SLOT_ATTEMPTS
 
 
-def test_partial_delivery_is_final_so_accepted_messages_are_never_duplicated(tmp_path):
-    sent = []
+def _run(tmp_path, minute, send, hour=13, album=None, env=None, private=None):
+    return bdp.run_report_slot(private or _private(), _facts(), datetime(2026, 11, 30, hour, minute, tzinfo=UTC),
+                               tmp_path, env=env or ENV, get_chat=lambda _: {"type": "private"}, send=send,
+                               send_album=album)
+
+
+def test_partial_delivery_resends_only_the_undelivered_items(tmp_path):
+    sent, broken = [], [True]
 
     def flaky(text, chat):
         sent.append(text)
-        if len(sent) > 1:
-            raise RuntimeError("network")
+        if broken[0] and len(sent) > 1:
+            raise RuntimeError("telegram 400")
         return _Receipt()
 
-    first = bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 13, 31, tzinfo=UTC), tmp_path,
-                                env=ENV, get_chat=lambda _: {"type": "private"}, send=flaky)
-    assert first["status"] == "PARTIAL" and first["accepted"] == 1
-    count = len(sent)
-    again = bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 13, 36, tzinfo=UTC), tmp_path,
-                                env=ENV, get_chat=lambda _: {"type": "private"}, send=flaky)
-    assert again["status"] == "PARTIAL" and len(sent) == count
+    first = _run(tmp_path, 31, flaky)
+    assert first["status"] == "PARTIAL" and first["accepted"] == 1 and first["messages"] >= 2
+    delivered = [k for k, v in first["items"].items() if v["status"] == "DELIVERED"]
+    broken[0] = False
+    again = _run(tmp_path, 36, flaky)
+    assert again["status"] == "DELIVERED"
+    # the item already accepted was not sent again
+    assert len(sent) == 2 * first["messages"] - 1 and delivered == [k for k in first["items"] if k.endswith(":text:0")]
+
+
+def test_unconfirmed_item_is_never_resent_automatically(tmp_path):
+    import requests
+
+    calls = []
+
+    def timeout(text, chat):
+        calls.append(text)
+        if len(calls) == 1:
+            raise requests.ReadTimeout("read timed out")
+        return _Receipt()
+
+    first = _run(tmp_path, 31, timeout)
+    assert first["items"][next(iter(first["items"]))]["status"] == "UNCONFIRMED"
+    assert first["status"] == "UNCONFIRMED"
+    assert _run(tmp_path, 36, timeout)["status"] == "UNCONFIRMED" and len(calls) == first["messages"]
+
+
+def test_interrupted_run_leaves_a_record_per_message(tmp_path):
+    sent = []
+
+    def dies(text, chat):
+        if sent:
+            raise SystemExit("runner cancelled")  # not caught by the policy layer
+        sent.append(text)
+        return _Receipt()
+
+    try:
+        _run(tmp_path, 31, dies)
+    except SystemExit:
+        pass
+    marker = json.loads((tmp_path / "report_EARLY.json").read_text())
+    assert [v["status"] for v in marker["items"].values()] == ["DELIVERED"]
+    resumed = _run(tmp_path, 36, lambda text, chat: sent.append(text) or _Receipt())
+    assert resumed["status"] == "DELIVERED" and len(sent) == resumed["messages"]  # first one not repeated
+
+
+def test_ids_are_unique_per_session_slot_and_message(tmp_path):
+    out = _run(tmp_path, 31, lambda t, c: _Receipt())
+    assert all(k.startswith("2026-11-30:EARLY:text:") for k in out["items"])
+    assert len(set(out["items"])) == out["messages"] == out["text_messages"]
+
+
+def test_final_sends_cards_only_for_changed_symbols(tmp_path):
+    """FINAL rebuilds EARLY's maps from data as of EARLY's build time; nothing is stored (audit)."""
+    _run(tmp_path, 31, lambda t, c: _Receipt())
+    marker = json.loads((tmp_path / "report_EARLY.json").read_text())
+    assert "fingerprints" not in marker and marker["built_at"].startswith("2026-11-30T13:31")
+    texts = []
+    final = bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 14, 2, tzinfo=UTC), tmp_path, env=ENV,
+                                get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt(),
+                                early_private=_private())
+    assert final["slot"] == "FINAL" and final["status"] == "DELIVERED"
+    joined = "\n".join(texts)
+    assert "لا تغيير جوهري" in joined and "تنبيه مبكر: إغلاق 5د" not in joined  # no unchanged cards
+    changed = _private()
+    changed["plans"]["NVDA"]["prior_session"]["high"] = 111.0
+    texts.clear()
+    (tmp_path / "report_FINAL.json").unlink()
+    bdp.run_report_slot(changed, _facts(), datetime(2026, 11, 30, 14, 3, tzinfo=UTC), tmp_path, env=ENV,
+                        get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt(),
+                        early_private=_private())
+    assert "<b>NVDA</b>" in "\n".join(texts) and ": 1." in "\n".join(texts)
+    texts.clear()
+    (tmp_path / "report_FINAL.json").unlink()
+    bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 14, 4, tzinfo=UTC), tmp_path, env=ENV,
+                        get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt())
+    assert "تنبيه مبكر: إغلاق 5د" in "\n".join(texts)  # no rebuilt EARLY: every card is sent, never assumed unchanged
+
+
+def test_charts_go_out_as_albums_after_the_text(tmp_path):
+    albums = []
+    out = _run(tmp_path, 31, lambda t, c: _Receipt(), album=lambda a, c: albums.append(a) or _Receipt())
+    assert out["charts"] == "OK" and out["status"] == "DELIVERED"
+    assert [k.split(":")[2] for k in out["items"]][-1] == "charts" and len(albums) == 1
+    png, caption = albums[0][0]
+    assert png[:8] == b"\x89PNG\r\n\x1a\n" and len(caption) <= 1024 and "سيناريو CALL" in caption
 
 
 def test_every_planned_symbol_gets_a_map_row_even_when_not_fetched():
@@ -250,3 +339,53 @@ def test_every_planned_symbol_gets_a_map_row_even_when_not_fetched():
     assert list(maps) == list(bdp.PLAN_SYMBOLS)
     assert maps["MSFT"]["state"] == "NO_DATA" and "time budget" in maps["MSFT"]["reason"]
     assert maps["NVDA"]["state"] == "CALL_WATCH"
+
+
+def test_every_chart_level_is_printed_in_the_card_text():
+    """Text and image come from one map: each line drawn on the chart carries the same number in the card."""
+    from options_radar import price_map_chart as chart
+
+    plan = _plan("NVDA", week_high=112.0)
+    plan["recent_daily"] = [{"date": f"2026-11-{d:02d}", "open": 99.0, "high": 115.0 - d * 0.1, "low": 90.0 + d * 0.1,
+                             "close": 100.0} for d in range(1, 21)]
+    m = pm.build_map(_card(plan, "UP"), plan)
+    text = report.card(m)
+    assert m["levels_sr"]  # support and resistance exist for this plan
+    for level in chart.levels(m):
+        assert f"{level['value']:,.2f}" in text, level
+
+
+def test_default_charts_are_index_funds_and_three_leaders():
+    maps = {s: pm.build_map(_card(_plan(s), "UP" if s in ("NVDA", "AMD") else None), _plan(s))
+            for s in ("SPY", "QQQ", "NVDA", "AMD", "MSFT", "META", "AAPL")}
+    chosen = bdp.chart_symbols(maps)
+    assert chosen[:2] == ["SPY", "QQQ"] and len(chosen) == 5 and chosen[2:4] == ["AMD", "NVDA"]
+
+
+
+
+def test_leadership_uses_relative_strength_and_says_it_is_not_index_weight():
+    maps = {s: {"symbol": s, "state": "WAIT", "prior_change_pct": c}
+            for s, c in (("QQQ", 1.0), ("NVDA", 3.2), ("AMD", 2.1), ("MSFT", 0.4), ("META", -1.5), ("AAPL", 0.9))}
+    lines = report.leadership(maps)
+    text = "\n".join(lines)
+    assert "NVDA +3.20%" in text.split("الأضعف")[0] and "META -1.50%" in text.split("الأضعف")[1]
+    assert "عكس اتجاه السوق: META" in text and "لا أوزان مؤشر" in text
+    assert report.leadership({"NVDA": maps["NVDA"]}) == []  # no benchmark, no claim
+
+
+def test_index_reference_is_a_labelled_forward_never_the_cash_index():
+    ok = {"status": "OK", "forward": 6012.34, "expiry": "2026-11-30", "quotes_as_of": "2026-11-30T13:25:00+00:00",
+          "half_spread_bp": 0.8, "dispersion_bp": 0.5, "strikes_used": 7}
+    lines = report.index_reference_lines({"SPXW": ok, "NDXP": {"status": "LOW_QUALITY"}})
+    assert "SPX: سعر آجل ضمني ≈ 6,012.34" in lines[0] and "ليس المؤشر النقدي" in lines[0]
+    assert "لا تُشتق منه مستويات نقدية" in lines[0] and "لا يُعتمد" in lines[1] and "6," not in lines[1]
+    assert report.index_reference_lines(None) == []
+
+
+def test_forward_failure_never_blocks_the_report(monkeypatch):
+    from scripts import run_options_hunter as hunter
+
+    monkeypatch.setattr(hunter, "chain", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
+    out = bdp.index_forwards({"ALPACA_API_KEY": "k", "ALPACA_SECRET_KEY": "s"}, datetime(2026, 11, 30, 13, 30, tzinfo=UTC))
+    assert out == {"SPXW": {"status": "UNAVAILABLE"}, "NDXP": {"status": "UNAVAILABLE"}}

@@ -116,6 +116,39 @@ def private_chat_ok(chat: Any) -> bool:
     return isinstance(chat, dict) and chat.get("type") == "private"
 
 
+def _ambiguous(exc: BaseException) -> bool:
+    """True when the request may have reached Telegram (outcome unknown)."""
+    try:
+        import requests
+    except ImportError:  # pragma: no cover - requests is a runtime dependency
+        return False
+    if isinstance(exc, requests.ConnectTimeout):
+        return False
+    # no connection was ever made (DNS, refused): nothing reached Telegram
+    if any(marker in repr(exc) for marker in ("NameResolutionError", "NewConnectionError", "Failed to establish")):
+        return False
+    return isinstance(exc, (requests.ReadTimeout, requests.ConnectionError))
+
+
+def destination_status(env: Mapping[str, str], get_chat: Callable[[str], Any]) -> tuple[str, str]:
+    """The owner's private chat check of deliver_private, without sending (also used by the preflight)."""
+    chat_id = (env.get("TELEGRAM_OWNER_CHAT_ID") or "").strip()
+    username = (env.get("TELEGRAM_OWNER_USERNAME") or "").strip().lstrip("@").lower()
+    if not chat_id and username:
+        chat_id = (env.get("TELEGRAM_CHAT_ID") or "").strip()
+    if not chat_id:
+        return "OWNER_CHAT_NOT_CONFIGURED", ""
+    try:
+        chat = get_chat(chat_id)
+    except Exception:  # noqa: BLE001 - destination unverified means no send
+        return "DESTINATION_UNVERIFIED", chat_id
+    if not private_chat_ok(chat):
+        return "DESTINATION_NOT_PRIVATE", chat_id
+    if username and str(chat.get("username") or "").lower() != username:
+        return "OWNER_IDENTITY_MISMATCH", chat_id
+    return "OK", chat_id
+
+
 def deliver_private(text: str, *, sources: list[str], env: Mapping[str, str],
                     get_chat: Callable[[str], Any], send: Callable[[str, str], Any]) -> str:
     """Send to the owner's own one-to-one chat only; never to a group or channel.
@@ -133,23 +166,14 @@ def deliver_private(text: str, *, sources: list[str], env: Mapping[str, str],
     decision = decide_all(sources, "telegram_private", env)
     if not decision.allowed:
         return "DENIED_BY_POLICY"
-    chat_id = (env.get("TELEGRAM_OWNER_CHAT_ID") or "").strip()
-    username = (env.get("TELEGRAM_OWNER_USERNAME") or "").strip().lstrip("@").lower()
-    if not chat_id and username:
-        chat_id = (env.get("TELEGRAM_CHAT_ID") or "").strip()
-    if not chat_id:
-        return "OWNER_CHAT_NOT_CONFIGURED"
-    try:
-        chat = get_chat(chat_id)
-    except Exception:  # noqa: BLE001 - destination unverified means no send
-        return "DESTINATION_UNVERIFIED"
-    if not private_chat_ok(chat):
-        return "DESTINATION_NOT_PRIVATE"
-    if username and str(chat.get("username") or "").lower() != username:
-        return "OWNER_IDENTITY_MISMATCH"
+    status, chat_id = destination_status(env, get_chat)
+    if status != "OK":
+        return status
     try:
         receipt = send(text, chat_id)
-    except Exception:  # noqa: BLE001 - reported as status only (no URL/token in logs)
-        return "SEND_FAILED"
+    except Exception as exc:  # noqa: BLE001 - reported as status only (no URL/token in logs)
+        # After the POST left, a read timeout or dropped connection may hide an accepted
+        # message: UNCONFIRMED, never resent automatically. A connect timeout sent nothing.
+        return "UNCONFIRMED" if _ambiguous(exc) else "SEND_FAILED"
     message_id = getattr(receipt, "message_id", None)
     return "DELIVERED" if type(message_id) is int and message_id > 0 else "UNCONFIRMED"

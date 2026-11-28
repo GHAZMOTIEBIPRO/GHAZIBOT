@@ -11,7 +11,7 @@
   const FILES = { plan: "daily_plan.json", macro: "public_macro.json", catalysts: "catalyst_watchlist.json",
     directory: "symbol_directory.json", options: "options_analytics.json", fr: "federal_register.json",
     agenda: "week_agenda.json", scorecards: "platform_scorecards.json", sources: "source_log.json",
-    liquidity: "liquidity_monitor.json", attention: "wiki_attention.json" };
+    liquidity: "liquidity_monitor.json", attention: "wiki_attention.json", oracle: "oracle_status.json" };
   const NASDAQ_FILE = "nasdaq_listed.json";   // ~5,600 rows: loaded only when search or a view needs it
   const SYMBOL_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
   const WATCH_KEY = "ghazi.watchlist.v1";      // same key as the previous page, so saved lists carry over
@@ -29,8 +29,11 @@
     { symbol: "IWM", name: "صندوق يتتبع راسل 2000", cftc: "RTY" },
   ];
   // Shown first in the leaders tab while the directory supplies names and sectors.
-  const CORE_LEADERS = ["NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "AVGO", "TSLA", "BRK.B", "JPM", "LLY", "XOM"];
-  const FALLBACK_NAMES = { NVDA: "Nvidia", AAPL: "Apple", MSFT: "Microsoft", AMZN: "Amazon", GOOGL: "Alphabet",
+  // The owner's leaders (2026-11-28). GOOG and GOOGL are two share classes of one company; BABA is an ADR
+  // shown as standalone context, not as an S&P 500 / Nasdaq-100 member.
+  const CORE_LEADERS = ["NVDA", "TSLA", "AMD", "MU", "MSFT", "META", "GOOG", "GOOGL", "AAPL", "AMZN", "AVGO", "BABA"];
+  const FALLBACK_NAMES = { AMD: "AMD", MU: "Micron", GOOG: "Alphabet (فئة C)", BABA: "Alibaba (ADR — ليس مكونًا في المؤشرين)",
+    NVDA: "Nvidia", AAPL: "Apple", MSFT: "Microsoft", AMZN: "Amazon", GOOGL: "Alphabet (فئة A)",
     META: "Meta Platforms", AVGO: "Broadcom", TSLA: "Tesla", "BRK.B": "Berkshire Hathaway", JPM: "JPMorgan Chase",
     LLY: "Eli Lilly", XOM: "ExxonMobil" };
 
@@ -918,6 +921,40 @@
     for (const [term, text] of GLOSSARY) dl.append(el("dt", null, term), el("dd", null, text));
     gl.append(dl); extra.append(gl);
   }
+  // ORACLE status: delivery statuses and counts only (Alpaca values are the owner's and never published).
+  const ORACLE_WORD = { DELIVERED: "سُلّم", PARTIAL: "سُلّم جزئيًا", UNCONFIRMED: "غير مؤكد", MISSED: "فات موعده",
+    SENDING: "قيد الإرسال", NO_PRIVATE_DATA: "لا بيانات خاصة", SEND_FAILED: "فشل الإرسال", OK: "يعمل",
+    NOT_CONFIGURED: "غير مُفعّل" };
+  function oracleCard(o) {
+    const card = section("حالة أوراكل (للمالك)");
+    if (!o) { card.append(el("p", "gr-muted", "لم يُنشر ملف الحالة بعد.")); return card; }
+    const ul = el("ul", "gr-glossary");
+    const d = o.day || {};
+    const slot = (name, label) => {
+      const r = (d.reports || {})[name] || (d.session || {})[name];
+      ul.append(el("li", null, `${label}: ${r ? (ORACLE_WORD[r.status] || r.status) + (r.late ? " — متأخر" : "") : "لا سجل"}`));
+    };
+    ul.append(el("li", null, `اليوم: ${day(d.date) || "—"}`));
+    slot("EARLY", "التقرير المبكر 08:30 نيويورك"); slot("FINAL", "التقرير النهائي 09:00");
+    slot("OPENING", "تحديث الافتتاح"); slot("LASTHOUR", "الساعة الأخيرة"); slot("POSTCLOSE", "محاسبة الإغلاق");
+    const sc = d.scorecard;
+    if (sc) ul.append(el("li", null, `المحاسبة: ${n(sc.maps)} خريطة، تجاوز محفز ${n(sc.triggered)}، T1 ${n(sc.t1)}، إبطال ${n(sc.invalidated)}، ` +
+      `اتجاه المراقبة صحيح ${n(sc.watch_direction_right)} من ${n(sc.watch_calls)} (يوم واحد، ليس احتمالًا).`));
+    const oh = o.options_hunter || {};
+    ul.append(el("li", null, `صياد العقود: ${n(oh.material_alerts || 0)} تنبيهًا جوهريًا ${oh.day ? "في " + day(oh.day) : ""}`));
+    const sm = o.smallcaps || {};
+    if (sm.day) ul.append(el("li", null, `الأسهم الصغيرة ${day(sm.day)}: ${n(sm.detections || 0)} رصدًا، إيجابي بعد 30 دقيقة ${n(sm.positive_after_30m || 0)}`));
+    const sec = o.sec_registry || {};
+    ul.append(el("li", null, `سجل SEC: ${ORACLE_WORD[sec.status] || sec.status || "—"}${sec.rows ? " — " + n(sec.rows) + " ورقة" : ""}`));
+    card.append(ul);
+    const feeds = el("details", "gr-note-more");
+    feeds.append(el("summary", null, "مصادر البيانات وتأخيرها"));
+    const fl = el("dl", "gr-glossary");
+    for (const f of o.feeds || []) fl.append(el("dt", null, f.name), el("dd", null, `${f.use} — التأخير: ${f.delay} — التغطية: ${f.coverage}`));
+    feeds.append(fl);
+    card.append(feeds, el("p", "gr-muted", o.note_ar || ""));
+    return card;
+  }
   function renderTab() {
     const list = $("gr-list"), tools = $("gr-list-tools"), note = $("gr-list-note"), extra = $("gr-extra");
     $("gr-list-title").textContent = TAB_TITLES[state.tab];
@@ -939,6 +976,7 @@
       const vix = el("p", "gr-muted"); vix.textContent = "VIX النقدي غير متاح في الأدوات المجانية · ";
       const a = el("a", null, "افتحه على TradingView ↗"); a.href = "https://www.tradingview.com/symbols/CBOE-VIX/"; a.target = "_blank"; a.rel = "noopener";
       vix.append(a); extra.append(vix);
+      extra.append(oracleCard(state.data.oracle));
     } else if (state.tab === "leaders") {
       const sectors = directory && directory.sectors ? Object.keys(directory.sectors) : [];
       const sectorAr = new Map(((directory && directory.symbols) || []).map((r) => [r.sector, r.sector_ar]));

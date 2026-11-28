@@ -1,0 +1,49 @@
+name: GHAZI Research — confirmation timeframes (aggregate only)
+
+# Owner question 2026-11-28: 1H close vs 15m confirmation vs 5m activation for day trading / 0DTE.
+# Owner-authorized Alpaca history is read on the runner; only method statistics (counts, rates,
+# R, minutes after the open) are printed. No symbol, price, level or bar is written anywhere.
+on:
+  workflow_dispatch:
+    inputs:
+      sessions:
+        description: "Number of past XNYS sessions to study"
+        default: "120"
+      oos_offset:
+        description: "Out-of-sample: study sessions ending this many sessions ago (0 = in-sample study)"
+        default: "120"
+  push:
+    paths:
+      - "options_radar/confirmation_study.py"
+      - "scripts/research_confirmation_frames.py"
+      - ".github/workflows/research-confirmation-frames.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghazi-research-confirmation-frames
+  cancel-in-progress: true
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
+      SESSIONS: ${{ github.event.inputs.sessions || '120' }}
+      OOS_OFFSET: ${{ github.event.inputs.oos_offset || '120' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Run the study (statistics only)
+        run: python -m scripts.research_confirmation_frames --sessions "$SESSIONS" --oos-offset "$OOS_OFFSET"

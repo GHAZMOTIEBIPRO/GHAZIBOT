@@ -6,7 +6,8 @@ regular sessions) plus, when the provider returned them, completed extended-hour
 
 - reference price and its type/time (pre-market last completed 5m bar, else the prior
   session close) - never a live quote;
-- CALL side: trigger = prior-day high, confirmation = a completed hourly close above it,
+- CALL side: trigger = prior-day high; early alert = a completed 5m close above it on >= 1.5x volume,
+  confirmation (informational) = a completed 30m close above it - chosen from the 1-minute study,
   invalidation = trigger - 0.25 x ATR14, targets T1/T2/T3 picked from measured candidates;
 - PUT side: the mirror on the prior-day low;
 - WAIT band: between the two triggers;
@@ -32,6 +33,7 @@ import math
 from datetime import datetime
 from typing import Any
 
+from options_radar.telegram_ar import NEW_YORK, clock_ar, day_month_ar
 from options_radar.telegram_market_digest import assess
 
 SCHEMA = "ghazi.premarket_map.v1"
@@ -48,6 +50,8 @@ METHOD_AR = {
     "measured_move": "حركة مقاسة بمدى الجلسة السابقة",
     "atr_1": "ATR14 واحد بعد المحفز",
 }
+REF_AR = {"PREMARKET_LAST_COMPLETED_5M": "آخر شمعة 5د مكتملة قبل الافتتاح",
+          "PRIOR_SESSION_CLOSE": "إغلاق الجلسة السابقة"}
 STATE_AR = {"CALL_WATCH": "مراقبة CALL", "PUT_WATCH": "مراقبة PUT", "WAIT": "انتظار", "NO_DATA": "لا بيانات"}
 
 
@@ -100,6 +104,20 @@ def premarket_reference(bars_5m: list[dict[str, Any]], *, session_open: datetime
             "volume": float(sum(float(b.get("v") or 0) for b in rows)), "bars": len(rows)}
 
 
+def support_resistance(recent: list[dict[str, Any]] | None, call_trigger: float, put_trigger: float,
+                       lookback: int = 20) -> dict[str, Any]:
+    """Range extremes of the last `lookback` completed sessions, kept only beyond the triggers."""
+    rows = [r for r in (recent or [])[-lookback:] if _num(r.get("high")) and _num(r.get("low"))]
+    out: dict[str, Any] = {}
+    if len(rows) >= 5:
+        high, low = max(r["high"] for r in rows), min(r["low"] for r in rows)
+        if high > call_trigger:
+            out["resistance"] = {"value": _r(high), "basis": f"{len(rows)}-session high", "basis_ar": f"قمة {len(rows)} جلسة"}
+        if low < put_trigger:
+            out["support"] = {"value": _r(low), "basis": f"{len(rows)}-session low", "basis_ar": f"قاع {len(rows)} جلسة"}
+    return out
+
+
 def build_map(card: dict[str, Any], plan: dict[str, Any], *, premarket: dict[str, Any] | None = None) -> dict[str, Any]:
     """One symbol's map from its analysis card and plan; NO_DATA with a reason when it cannot be built."""
     symbol = str(plan.get("symbol") or card.get("symbol") or "")
@@ -125,10 +143,13 @@ def build_map(card: dict[str, Any], plan: dict[str, Any], *, premarket: dict[str
     state = ("CALL_WATCH" if bias == "UP" and aligned == 4 else "PUT_WATCH" if bias == "DOWN" and aligned == 4
              else "WAIT")
     if premarket and _num(premarket.get("price")) is not None:
+        start = datetime.fromisoformat(premarket["bar_start"])
         ref = {"price": premarket["price"], "type": "PREMARKET_LAST_COMPLETED_5M", "time": premarket["bar_start"],
-               "gap_pct": _r((premarket["price"] / pdc - 1) * 100)}
+               "time_ar": f"شمعة {clock_ar(start, NEW_YORK)} نيويورك", "gap_pct": _r((premarket["price"] / pdc - 1) * 100)}
     else:
-        ref = {"price": _r(pdc), "type": "PRIOR_SESSION_CLOSE", "time": prior.get("date"), "gap_pct": None}
+        ref = {"price": _r(pdc), "type": "PRIOR_SESSION_CLOSE", "time": prior.get("date"),
+               "time_ar": f"جلسة {day_month_ar(str(prior.get('date')))}", "gap_pct": None}
+    ref["type_ar"] = REF_AR[ref["type"]]
     price = ref["price"]
     position = "ABOVE_CALL_TRIGGER" if price > pdh else "BELOW_PUT_TRIGGER" if price < pdl else "INSIDE_WAIT_BAND"
     frames = ((card.get("interpretation") or {}).get("frames") or {})
@@ -138,13 +159,15 @@ def build_map(card: dict[str, Any], plan: dict[str, Any], *, premarket: dict[str
         "reference": ref, "position": position,
         "prior_day": {"date": prior.get("date"), "high": _r(pdh), "low": _r(pdl), "close": _r(pdc)},
         "pivot": _r((pdh + pdl + pdc) / 3), "atr14": _r(atr14),
-        "call": {"trigger": _r(pdh), "confirmation": "completed 1H close above the trigger",
+        "prior_change_pct": prior.get("change_pct"),
+        "call": {"trigger": _r(pdh), "confirmation": "early alert: completed 5m close above the trigger with volume >= 1.5x its time-of-day baseline; informational confirmation: completed 30m close above",
                  "invalidation": _r(pdh - INVALIDATION_ATR * atr14),
                  "targets": _targets(pdh, 1, rng, atr14, _num(week.get("high")))},
-        "put": {"trigger": _r(pdl), "confirmation": "completed 1H close below the trigger",
+        "put": {"trigger": _r(pdl), "confirmation": "early alert: completed 5m close below the trigger with volume >= 1.5x its time-of-day baseline; informational confirmation: completed 30m close below",
                 "invalidation": _r(pdl + INVALIDATION_ATR * atr14),
                 "targets": _targets(pdl, -1, rng, atr14, _num(week.get("low")))},
         "wait_band": {"low": _r(pdl), "high": _r(pdh)},
+        "levels_sr": support_resistance(plan.get("recent_daily"), pdh, pdl),
         "frames": {k: (frames.get(k) or {}).get("trend") for k in ("weekly", "daily", "4h", "1h", "15m", "5m")},
         "aligned_frames": aligned, "horizon": "current session",
         "distance_atr": _r(min(abs(price - pdh), abs(price - pdl)) / atr14),

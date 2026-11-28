@@ -70,7 +70,7 @@ def _parse(rows: Any) -> list[dict[str, Any]] | None:
 class AlpacaBars:
     name = "alpaca"
     rights_source = "alpaca_iex"  # Alpaca market data under the account holder's data agreement
-    TIMEFRAMES: ClassVar[dict[str, str]] = {"5m": "5Min", "1d": "1Day"}
+    TIMEFRAMES: ClassVar[dict[str, str]] = {"1m": "1Min", "5m": "5Min", "1d": "1Day"}
 
     def __init__(self, env: Mapping[str, str], session: Any = requests, now: datetime | None = None):
         self.env, self.session = env, session
