@@ -1,0 +1,38 @@
+name: GHAZI Probe — realtime entitlements (metadata only)
+
+# Runtime entitlement of the owner's Alpaca account: IEX real-time stock snapshots, latest SIP,
+# indicative option chains for SPY/QQQ (ETF) and SPX/NDX (index). Statuses, counts and timestamp
+# ages only; no price, strike or contract symbol is printed.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe_realtime_entitlements.py"
+      - ".github/workflows/probe-realtime-entitlements.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghazi-probe-realtime-entitlements
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Probe (metadata only)
+        run: python -m scripts.probe_realtime_entitlements

@@ -55,13 +55,16 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     parser.add_argument("--aliases", default=str(ROOT / "data" / "company_aliases.json"))
     parser.add_argument("--sponsors", default=str(ROOT / "data" / "fda_sponsor_aliases.json"))
+    parser.add_argument("--listed", default=str(ROOT.parent / "state" / "runtime/public/data/nasdaq_listed.json"))
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
     end = now.date()
     start = end - timedelta(days=WINDOW_DAYS)
     span = f"[{start:%Y%m%d}+TO+{end:%Y%m%d}]"
     sponsors = json.loads(Path(args.sponsors).read_text(encoding="utf-8")).get("aliases", {})
-    index = fda.build_name_index(json.loads(Path(args.aliases).read_text(encoding="utf-8")), sponsors)
+    listed_path = Path(args.listed)
+    listed = fda.listed_issuers(json.loads(listed_path.read_text(encoding="utf-8"))) if listed_path.exists() else {}
+    index = fda.build_name_index(json.loads(Path(args.aliases).read_text(encoding="utf-8")), sponsors, listed)
     errors: dict[str, str] = {}
     approvals: list[dict] = []
     recalls: list[dict] = []

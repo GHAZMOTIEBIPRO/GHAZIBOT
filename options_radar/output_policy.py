@@ -116,6 +116,20 @@ def private_chat_ok(chat: Any) -> bool:
     return isinstance(chat, dict) and chat.get("type") == "private"
 
 
+def _ambiguous(exc: BaseException) -> bool:
+    """True when the request may have reached Telegram (outcome unknown)."""
+    try:
+        import requests
+    except ImportError:  # pragma: no cover - requests is a runtime dependency
+        return False
+    if isinstance(exc, requests.ConnectTimeout):
+        return False
+    # no connection was ever made (DNS, refused): nothing reached Telegram
+    if any(marker in repr(exc) for marker in ("NameResolutionError", "NewConnectionError", "Failed to establish")):
+        return False
+    return isinstance(exc, (requests.ReadTimeout, requests.ConnectionError))
+
+
 def deliver_private(text: str, *, sources: list[str], env: Mapping[str, str],
                     get_chat: Callable[[str], Any], send: Callable[[str, str], Any]) -> str:
     """Send to the owner's own one-to-one chat only; never to a group or channel.
@@ -149,7 +163,9 @@ def deliver_private(text: str, *, sources: list[str], env: Mapping[str, str],
         return "OWNER_IDENTITY_MISMATCH"
     try:
         receipt = send(text, chat_id)
-    except Exception:  # noqa: BLE001 - reported as status only (no URL/token in logs)
-        return "SEND_FAILED"
+    except Exception as exc:  # noqa: BLE001 - reported as status only (no URL/token in logs)
+        # After the POST left, a read timeout or dropped connection may hide an accepted
+        # message: UNCONFIRMED, never resent automatically. A connect timeout sent nothing.
+        return "UNCONFIRMED" if _ambiguous(exc) else "SEND_FAILED"
     message_id = getattr(receipt, "message_id", None)
     return "DELIVERED" if type(message_id) is int and message_id > 0 else "UNCONFIRMED"

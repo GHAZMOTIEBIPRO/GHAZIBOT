@@ -20,6 +20,13 @@ def _names(path: Path) -> set[str]:
     return out
 
 
+def test_chart_library_is_only_for_the_daily_plan():
+    assert "matplotlib" not in _names(ROOT / "requirements.txt")
+    assert _names(ROOT / "requirements-charts.txt") == {"matplotlib"}
+    assert "requirements-charts.txt" in (ROOT / ".github/workflows/daily-plan.yml").read_text(encoding="utf-8")
+    assert (ROOT / "assets/fonts/NotoSansArabic-Regular.ttf").exists() and (ROOT / "assets/fonts/OFL.txt").exists()
+
+
 def test_runtime_requirements_exclude_gated_and_ui_packages():
     runtime = _names(ROOT / "requirements.txt")
     assert not runtime & {"yfinance", "yahooquery", "streamlit"}

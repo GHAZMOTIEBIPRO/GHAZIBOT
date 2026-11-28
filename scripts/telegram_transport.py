@@ -228,3 +228,52 @@ def get_chat(chat_id: str, token: str | None = None, timeout: int = 12) -> dict[
     if not isinstance(payload, dict) or payload.get("ok") is not True or not isinstance(payload.get("result"), dict):
         raise RuntimeError("Telegram getChat rejected")
     return {"type": payload["result"].get("type")}
+
+
+def send_media_group(
+    photos: list[tuple[bytes, str]],
+    *,
+    token: str | None = None,
+    chat_id: str | None = None,
+    max_attempts: int = 3,
+    timeout: int = 60,
+) -> TelegramSendResult:
+    """Send 1-10 PNG images as one album; each item is (png bytes, HTML caption <= 1024 chars).
+
+    Same retry rule as send_html_message: only explicit 429/5xx answers are retried; a transport
+    error after the POST is raised (the album may already be delivered). The returned message_id
+    is the first message of the album.
+    """
+    import json as _json
+
+    bot_token, destination = _credentials(token, chat_id)
+    if not 1 <= len(photos) <= 10:
+        raise ValueError("an album holds 1 to 10 photos")
+    media, files = [], {}
+    for index, (png, caption) in enumerate(photos):
+        if not png or len(caption) > 1024:
+            raise ValueError("empty photo or caption over 1024 characters")
+        name = f"p{index}"
+        files[name] = (f"{name}.png", png, "image/png")
+        media.append({"type": "photo", "media": f"attach://{name}", "caption": caption, "parse_mode": "HTML"})
+    response: requests.Response | None = None
+    for attempt in range(max_attempts):
+        response = requests.post(
+            _telegram_url(bot_token, "sendMediaGroup"),
+            data={"chat_id": destination, "media": _json.dumps(media, ensure_ascii=False)},
+            files=files,
+            timeout=timeout,
+        )
+        if response.status_code in _RETRYABLE_STATUS and attempt + 1 < max_attempts:
+            time.sleep(_retry_after_seconds(response, attempt))
+            continue
+        response.raise_for_status()
+        body: Any = response.json()
+        if not isinstance(body, dict) or body.get("ok") is not True or not isinstance(body.get("result"), list):
+            raise RuntimeError("Telegram rejected album")
+        first = body["result"][0] if body["result"] else {}
+        return TelegramSendResult(message_id=_message_id({"result": first}), attempts=attempt + 1)
+    if response is None:
+        raise RuntimeError("Telegram request did not execute")
+    response.raise_for_status()
+    raise RuntimeError("Telegram album exhausted retries")

@@ -28,6 +28,8 @@ Owner-private mode (provider -> compute -> output policy -> sink):
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import json
 import os
 import time
@@ -50,6 +52,7 @@ from options_radar.bar_aggregation import frames_from_5m
 from options_radar.bar_providers import COVERAGE, AlpacaBars
 from options_radar.focus_universe import FOCUS_STOCKS, SECONDARY_STOCKS
 from options_radar.output_policy import decide, deliver_private
+from options_radar.telegram_ar import clock_ar, day_month_ar
 from options_radar.volume_liquidity import liquidity_context
 
 NY = ZoneInfo("America/New_York")
@@ -240,6 +243,9 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
     plan["quality_checks"] = {"daily": quality.summary(daily_q), "5m": quality.summary(minute_q)}
     plan["liquidity_context"] = _private_volume_context(daily_q, minute_q, intraday, now)
     plan["volume_scope"] = meta["volume_scope"]
+    # the last completed sessions, for support/resistance and the chart's observed candles (private only)
+    plan["recent_daily"] = [{k: r[k] for k in ("date", "open", "high", "low", "close")}
+                            for r in _daily_rows(daily["bars"]) if r["date"] <= str(facts["last_closed_session"])][-20:]
     opening = today_open(now)
     if opening is not None and sessions and minute["status"] == "OK" and minute.get("feed") == daily.get("feed"):
         # extended-hours bars after the prior close, completed before the provider's delay boundary
@@ -331,6 +337,11 @@ def cards_for(private: dict[str, Any], watch: Any, now: datetime, opt_status: st
 
 
 MAX_SLOT_ATTEMPTS = 3
+MARKER_SCHEMA = "ghazi.premarket_report_marker.v2"
+# owner's list for detailed cards (2026-11-28): index funds, then these leaders
+DETAIL_INDEX_FUNDS = ("SPY", "QQQ")
+DETAIL_LEADERS = ("NVDA", "TSLA", "AMD", "MU", "MSFT", "META", "GOOG", "GOOGL", "AAPL", "AMZN",
+                  "AVGO", "BABA")
 
 
 def maps_for(private: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -347,14 +358,75 @@ def maps_for(private: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return out
 
 
-def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetime, day_dir: Path, *,
-                    env: Any, get_chat: Callable[[str], Any], send: Callable[[str, str], Any]) -> dict[str, Any] | None:
-    """Send the due pre-open report once; record the outcome (statuses and counts only).
+def fingerprints(maps: dict[str, dict[str, Any]], secret: str) -> dict[str, str]:
+    """Keyed hash per symbol of what a card says (state, position, triggers, targets).
 
-    Marker per slot: state/daily_plan/<date>/report_<slot>.json. A DELIVERED or PARTIAL marker is
-    never sent again; a send with nothing accepted may be retried inside the same window up to
-    MAX_SLOT_ATTEMPTS.
-    A window that passed with no delivery is recorded as MISSED and never sent late.
+    bot-state is public, so only an HMAC under a runner secret is stored: it proves "changed or
+    not" between slots without revealing a state or a level. No secret, no fingerprints.
+    """
+    if not secret:
+        return {}
+    out = {}
+    for symbol, m in maps.items():
+        core = {k: m.get(k) for k in ("state", "position", "call", "put", "reason")}
+        digest_ = hmac.new(secret.encode(), json.dumps(core, sort_keys=True, default=str).encode(), hashlib.sha256)
+        out[symbol] = digest_.hexdigest()[:16]
+    return out
+
+
+def detail_symbols(maps: dict[str, dict[str, Any]]) -> list[str]:
+    """Owner's fixed list (index funds + DETAIL_LEADERS) first, then up to five other WATCH names."""
+    fixed = [s for s in (*DETAIL_INDEX_FUNDS, *DETAIL_LEADERS) if (maps.get(s) or {}).get("state") not in (None, "NO_DATA")]
+    others = pm.rank_details({s: m for s, m in maps.items() if s not in fixed}, pinned=())
+    return fixed + others
+
+
+def chart_items(maps: dict[str, dict[str, Any]], private: dict[str, Any], symbols: list[str], now: datetime,
+                session_date: str) -> tuple[list[list[tuple[bytes, str]]], str]:
+    """PNG albums (<= 10 each). Charts are optional: any failure leaves the text untouched."""
+    try:
+        from options_radar import price_map_chart as chart
+    except ImportError:
+        return [], "CHARTS_LIBRARY_MISSING"
+    photos = []
+    for symbol in symbols:
+        m = maps[symbol]
+        plan = (private.get("plans") or {}).get(symbol) or {}
+        try:
+            png = chart.render_png(
+                m, plan.get("recent_daily"), title_ar=f"{symbol} — الخريطة السعرية قبل الافتتاح",
+                footer_ar=f"Alpaca SIP متأخر 16 دقيقة على الأقل — شموع حتى {day_month_ar(str(m.get('data_as_of')))}"
+                          f" — أُعدّت {clock_ar(now, NY)} نيويورك")
+        except Exception:  # noqa: BLE001, S112 - one bad chart never blocks the report
+            continue
+        photos.append((png, report.chart_caption(m)))
+    albums = [photos[i:i + 10] for i in range(0, len(photos), 10)]
+    return albums, "OK" if photos else "NO_CHARTS"
+
+
+def _outcome(items: dict[str, dict[str, Any]], planned: list[str]) -> str:
+    """Over every planned item: one not yet attempted keeps the slot open (SENDING)."""
+    statuses = [(items.get(i) or {}).get("status") for i in planned]
+    if any(s is None for s in statuses):
+        return "PARTIAL" if "DELIVERED" in statuses else "SENDING"
+    if statuses and all(s == "DELIVERED" for s in statuses):
+        return "DELIVERED"
+    if "UNCONFIRMED" in statuses and not any(s not in ("DELIVERED", "UNCONFIRMED") for s in statuses):
+        return "UNCONFIRMED"
+    return "PARTIAL" if "DELIVERED" in statuses else next((s for s in statuses if s), "NOT_SENT")
+
+
+def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetime, day_dir: Path, *,
+                    env: Any, get_chat: Callable[[str], Any], send: Callable[[str, str], Any],
+                    send_album: Callable[[list[tuple[bytes, str]], str], Any] | None = None) -> dict[str, Any] | None:
+    """Send the due pre-open report; every message has its own id and its own delivery record.
+
+    Marker per slot: state/daily_plan/<date>/report_<SLOT>.json, rewritten after each message so an
+    interrupted run leaves an exact record. Item ids are `<date>:<slot>:<kind>:<n>`; a later run in
+    the same window sends only items not yet DELIVERED, never one recorded UNCONFIRMED (the request
+    may have reached Telegram), up to MAX_SLOT_ATTEMPTS runs. A window that passed without delivery
+    is recorded MISSED and never sent late. FINAL repeats the summary and sends cards and charts
+    only for symbols whose keyed fingerprint changed since EARLY.
     """
     session_today = bool(facts.get("today_is_session"))
     done = set()
@@ -366,7 +438,7 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         missed = day_dir / f"report_{name}.json"
         earlier = _load(missed) or {}  # a failed attempt keeps its details
         missed.write_text(json.dumps(
-            {"schema": "ghazi.premarket_report_marker.v1", **earlier, "slot": name, "status": "MISSED",
+            {"schema": MARKER_SCHEMA, **earlier, "slot": name, "status": "MISSED",
              "last_attempt_status": earlier.get("status"), "recorded_at": now.isoformat(),
              "late": True, "late_minutes": None}, indent=1), encoding="utf-8")
     slot = report.slot_for(now, session_today)
@@ -374,32 +446,52 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         return None
     path = day_dir / f"report_{slot['slot']}.json"
     previous = _load(path) or {}
-    if previous.get("status") in ("DELIVERED", "PARTIAL"):
-        # PARTIAL is final too: resending would duplicate the messages Telegram already accepted
+    if previous.get("status") in ("DELIVERED", "UNCONFIRMED"):
         return previous
     attempt = int(previous.get("attempt") or 0) + 1
     if attempt > MAX_SLOT_ATTEMPTS:
         return previous
-    base = {"schema": "ghazi.premarket_report_marker.v1", **slot, "attempt": attempt, "recorded_at": now.isoformat()}
+    marker = {"schema": MARKER_SCHEMA, **slot, "attempt": attempt, "recorded_at": now.isoformat(),
+              "telegram_acceptance_is_not_read_receipt": True, "items": dict(previous.get("items") or {})}
     if not private.get("enabled") or not any(p.get("available") for p in (private.get("plans") or {}).values()):
-        marker = {**base, "status": "NO_PRIVATE_DATA", "reason": private.get("reason"), "messages": 0, "accepted": 0}
-    else:
-        maps = maps_for(private)
-        details = pm.rank_details(maps, pinned=("SPY", "QQQ"))
-        statuses = private.get("fetch_status") or {}
-        texts = report.render(maps, slot=slot, now=now, session_date=facts["today"]["date"], index_funds=INDEX_FUNDS,
-                              detail_symbols=details, attempted=len(PLAN_SYMBOLS),
-                              fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"))
-        results = [deliver_private(text, sources=["alpaca_iex"], env=env, get_chat=get_chat, send=send)
-                   for text in texts]
-        accepted = results.count("DELIVERED")
-        status = ("DELIVERED" if accepted == len(results) else "PARTIAL" if accepted
-                  else next((r for r in results if r != "DELIVERED"), "SEND_FAILED"))
-        # bot-state is public: statuses and counts of messages only, no states or values derived from private bars
-        marker = {**base, "status": status, "sent_at": now.isoformat(), "messages": len(results), "accepted": accepted,
-                  "telegram_acceptance_is_not_read_receipt": True,
-                  # hashes of the private maps (no values): a later changed map is a new version
-                  "map_versions": pm.map_id({"ids": sorted(str(m.get("map_id")) for m in maps.values())})}
+        marker.update(status="NO_PRIVATE_DATA", reason=private.get("reason"))
+        path.write_text(json.dumps(marker, indent=1), encoding="utf-8")
+        return marker
+    session_date = facts["today"]["date"]
+    maps = maps_for(private)
+    prints = fingerprints(maps, str(env.get("TELEGRAM_BOT_TOKEN") or ""))
+    details = detail_symbols(maps)
+    changed_note = None
+    if slot["slot"] == "FINAL":
+        early = (_load(day_dir / "report_EARLY.json") or {}).get("fingerprints") or {}
+        if early and prints:
+            details = [s for s in details if early.get(s) != prints.get(s)]
+            changed_note = len(details)
+    statuses = private.get("fetch_status") or {}
+    texts = report.render(maps, slot=slot, now=now, session_date=session_date, index_funds=INDEX_FUNDS,
+                          detail_symbols=details, attempted=len(PLAN_SYMBOLS), changed_since_early=changed_note,
+                          fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"))
+    albums, charts_status = chart_items(maps, private, details, now, session_date) if send_album else ([], "NOT_REQUESTED")
+    n_text = len(texts)
+    outbox: list[tuple[str, Callable[[str], Any]]] = []
+    for index, text in enumerate(texts):
+        outbox.append((f"{session_date}:{slot['slot']}:text:{index}", lambda chat, t=text: send(t, chat)))
+    for index, album in enumerate(albums):
+        outbox.append((f"{session_date}:{slot['slot']}:charts:{index}", lambda chat, a=album: send_album(a, chat)))
+    marker.update(fingerprints=prints, charts=charts_status, planned_items=len(outbox), text_messages=n_text,
+                  map_versions=pm.map_id({"ids": sorted(str(m.get("map_id")) for m in maps.values())}))
+    planned = [item_id for item_id, _ in outbox]
+    for item_id, action in outbox:
+        if marker["items"].get(item_id, {}).get("status") in ("DELIVERED", "UNCONFIRMED"):
+            continue
+        result = deliver_private(item_id, sources=["alpaca_iex"], env=env, get_chat=get_chat,
+                                 send=lambda _text, chat, act=action: act(chat))
+        marker["items"][item_id] = {"status": result, "at": now.isoformat()}
+        marker["status"] = _outcome(marker["items"], planned)
+        path.write_text(json.dumps(marker, indent=1), encoding="utf-8")  # one record per message
+    marker["status"] = _outcome(marker["items"], planned)
+    marker["accepted"] = sum(1 for i in planned if (marker["items"].get(i) or {}).get("status") == "DELIVERED")
+    marker["messages"] = len(planned)
     path.write_text(json.dumps(marker, indent=1), encoding="utf-8")
     return marker
 
@@ -481,9 +573,10 @@ def main() -> int:
     day_dir = args.morning_dir / session_date if session_date else None
     if day_dir is not None:
         day_dir.mkdir(parents=True, exist_ok=True)
-        from scripts.telegram_transport import get_chat, send_html_message
+        from scripts.telegram_transport import get_chat, send_html_message, send_media_group
         marker = run_report_slot(private, facts, now, day_dir, env=os.environ, get_chat=get_chat,
-                                 send=lambda text, chat: send_html_message(text, chat_id=chat))
+                                 send=lambda text, chat: send_html_message(text, chat_id=chat),
+                                 send_album=lambda album, chat: send_media_group(album, chat_id=chat))
         if marker is not None:
             sheet["private_mode"]["delivery"] = marker["status"]
             sheet["private_mode"]["report"] = {k: marker.get(k) for k in ("slot", "status", "late", "late_minutes")}
