@@ -195,6 +195,10 @@ jobs:
           if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1830 )); then
             dispatch_if_stale session-tracker.yml 9 "Session tracker"
           fi
+          # Owner-private options hunter on indicative chains, in the regular session only.
+          if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1545 )); then
+            dispatch_if_stale options-hunter.yml 29 "Options hunter"
+          fi
           }
 
           passes="${ORCHESTRATOR_PASSES:-1}"

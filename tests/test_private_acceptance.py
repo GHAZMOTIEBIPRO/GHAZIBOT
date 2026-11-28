@@ -96,6 +96,7 @@ def test_workflows_with_alpaca_secrets_never_publish_private_data():
     # metadata (statuses, counts, ages) or method statistics only - checked below
     assert sorted(with_keys) == ["alpaca-iex-vcp-private.yml", "alpaca-private-probe.yml", "daily-plan.yml",
                                  "opening-fib-daily.yml", "opening-fib-history.yml", "opening-fib-shadow.yml",
+                                 "options-hunter.yml",
                                  "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
                                  "probe-realtime-entitlements.yml", "research-confirmation-frames.yml",
                                  "session-tracker.yml", "settings-check.yml", "telegram-commands.yml"]
