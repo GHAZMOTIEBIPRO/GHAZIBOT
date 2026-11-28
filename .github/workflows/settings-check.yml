@@ -69,7 +69,7 @@ jobs:
       POLYGON_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.POLYGON_NON_DISPLAY_USE_AUTHORIZED }}
       FRED_AUTOMATION_APPROVED: ${{ vars.FRED_AUTOMATION_APPROVED }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: app
           persist-credentials: false
@@ -88,7 +88,7 @@ jobs:
           python -m scripts.verify_free_market_sources
           --output "$RUNNER_TEMP/ghazi_free_source_health.json"
       - name: Read-only bot-state (outbox review only)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: bot-state
           path: state
