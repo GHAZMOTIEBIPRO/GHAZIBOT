@@ -32,7 +32,7 @@ jobs:
       TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
       SMALLCAP_RECORD_KEY: ${{ secrets.SMALLCAP_RECORD_KEY }}
-      DRY_RUN: ${{ github.event_name == 'push' && '--dry-run' || '' }}
+      SCAN_ARGS: ${{ github.event_name == 'push' && 'scan --dry-run' || 'auto' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -49,7 +49,7 @@ jobs:
       - name: Scan or post-close review (owner-private)
         run: |
           cd app
-          python -m scripts.run_smallcap_scan auto $DRY_RUN
+          python -m scripts.run_smallcap_scan $SCAN_ARGS
       - name: Store the encrypted first-detection record
         if: github.event_name != 'push'
         shell: bash
