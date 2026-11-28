@@ -196,10 +196,13 @@ def main() -> int:
     # Public log: operational coverage only. Filter and stage counts describe the market (Alpaca-derived).
     print("smallcaps scan:", json.dumps({"universe": result["coverage"]["universe"],
                                          "snapshots": result["coverage"]["snapshots"]}))
-    window, prev = rw.previous_success(env, "smallcap-scan.yml", now, day_start=result["open_at"] - timedelta(hours=8))
+    # The previous scan's stage is rebuilt at its step's COMPLETION (after its snapshot), never earlier:
+    # a stage reached within those seconds is then treated as seen (a rare miss, never a duplicate).
+    window, prev = rw.previous_success(env, "smallcap-scan.yml", now, day_start=result["open_at"] - timedelta(hours=8),
+                                       step="Scan or post-close review (owner-private)", mark="completed_at")
     if window == "UNKNOWN" and not args.dry_run:
         print("smallcaps: RUN_HISTORY_UNKNOWN: alerts skipped (fail safe)")
-        return 0
+        return 1  # nothing processed: never this run as the next baseline
     new = new_since(result["candidates"], result["snaps"], result["hist"], prev, result["open_at"],
                     result["close_at"], headers)[:8]
     attach_sec_risk(new, env, args.state_data, result["open_at"].date())

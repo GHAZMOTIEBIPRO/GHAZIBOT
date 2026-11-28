@@ -236,7 +236,7 @@ def main() -> int:
         window, prev = rw.previous_success(env, "options-hunter.yml", now, day_start=start - timedelta(hours=8))
         if window == "UNKNOWN":
             print("options hunter: RUN_HISTORY_UNKNOWN: digest skipped (fail safe)")
-            return 0
+            return 1  # not a sent digest: the next run in this window must still send it
         if window == "OK" and prev >= start:
             print("options hunter: digest already sent for this window")
             return 0
