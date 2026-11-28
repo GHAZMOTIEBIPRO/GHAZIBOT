@@ -67,5 +67,5 @@ def test_intraday_messages_only_carry_new_events_and_keys_hide_the_symbol():
     texts = rst.build_messages("INTRADAY", {"NVDA": MAP}, {}, [("NVDA", e)], OPEN + timedelta(hours=1), "2026-11-30", {})
     assert len(texts) == 1 and "الهدف الأول" in texts[0] and "ليست لحظية" in texts[0]
     assert rst.build_messages("INTRADAY", {"NVDA": MAP}, {}, [], OPEN, "2026-11-30", {}) == []
-    key = rst.event_key("secret", "2026-11-30", "NVDA", e)
-    assert len(key) == 16 and "NVDA" not in key and key != rst.event_key("other", "2026-11-30", "NVDA", e)
+    key = rst.event_key(b"s" * 32, "2026-11-30", "NVDA", e)
+    assert len(key) == 24 and "NVDA" not in key and key != rst.event_key(b"o" * 32, "2026-11-30", "NVDA", e)

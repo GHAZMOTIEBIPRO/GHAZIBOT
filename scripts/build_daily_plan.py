@@ -28,8 +28,6 @@ Owner-private mode (provider -> compute -> output policy -> sink):
 from __future__ import annotations
 
 import argparse
-import hashlib
-import hmac
 import json
 import os
 import time
@@ -47,6 +45,7 @@ from options_radar import daily_plan as dp
 from options_radar import ohlcv_quality as quality
 from options_radar import premarket_map as pm
 from options_radar import premarket_report as report
+from options_radar import state_keys as sk
 from options_radar import telegram_market_digest as digest
 from options_radar.bar_aggregation import frames_from_5m
 from options_radar.bar_providers import COVERAGE, AlpacaBars
@@ -372,10 +371,11 @@ def maps_for(private: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return out
 
 
-def fingerprints(maps: dict[str, dict[str, Any]], secret: str) -> dict[str, str]:
+def fingerprints(maps: dict[str, dict[str, Any]], secret: bytes | None) -> dict[str, str]:
     """Keyed hash per symbol of what a card says (state, position, triggers, targets).
 
-    bot-state is public, so only an HMAC under a runner secret is stored: it proves "changed or
+    bot-state is public, so only a keyed tag under the independent GHAZI_STATE_HMAC_KEY is stored
+    (options_radar.state_keys; never the Telegram token): it proves "changed or
     not" between slots without revealing a state or a level. No secret, no fingerprints.
     """
     if not secret:
@@ -383,8 +383,7 @@ def fingerprints(maps: dict[str, dict[str, Any]], secret: str) -> dict[str, str]
     out = {}
     for symbol, m in maps.items():
         core = {k: m.get(k) for k in ("state", "position", "call", "put", "reason")}
-        digest_ = hmac.new(secret.encode(), json.dumps(core, sort_keys=True, default=str).encode(), hashlib.sha256)
-        out[symbol] = digest_.hexdigest()[:16]
+        out[symbol] = sk.tag(secret, "map", symbol, json.dumps(core, sort_keys=True, default=str))
     return out
 
 
@@ -485,7 +484,7 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         return marker
     session_date = facts["today"]["date"]
     maps = maps_for(private)
-    prints = fingerprints(maps, str(env.get("TELEGRAM_BOT_TOKEN") or ""))
+    prints = fingerprints(maps, sk.state_key(env))  # no key: no fingerprints, FINAL sends every card
     details = detail_symbols(maps)
     charted = chart_symbols(maps)
     changed_note = None

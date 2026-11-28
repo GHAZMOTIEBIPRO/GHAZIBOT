@@ -12,8 +12,6 @@ pre-open map's (prior completed session) and never change during the day.
 """
 from __future__ import annotations
 
-import hashlib
-import hmac
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -23,6 +21,7 @@ from typing import Any
 from options_radar import premarket_map as pm
 from options_radar import premarket_report as report
 from options_radar import session_tracker as st
+from options_radar import state_keys as sk
 from options_radar.telegram_ar import LRM, date_ar, rtl_line, when_ar
 from scripts import build_daily_plan as bdp
 
@@ -43,9 +42,9 @@ def session_slot(now: datetime, open_at: datetime, close_at: datetime) -> str | 
     return None
 
 
-def event_key(secret: str, day: str, symbol: str, event: dict[str, Any]) -> str:
-    raw = f"{day}|{symbol}|{event['side']}|{event['stage']}".encode()
-    return hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()[:16]
+def event_key(key: bytes, day: str, symbol: str, event: dict[str, Any]) -> str:
+    """Keyed tag under the independent state key (options_radar.state_keys); never the Telegram token."""
+    return sk.tag(key, "session", day, symbol, event["side"], event["stage"])
 
 
 def _event_line(symbol: str, e: dict[str, Any]) -> str:
@@ -119,11 +118,15 @@ def main() -> int:
     day = facts["today"]["date"]
     day_dir = state_dir / day
     day_dir.mkdir(parents=True, exist_ok=True)
-    secret = env.get("TELEGRAM_BOT_TOKEN", "")
+    key = sk.state_key(env)
     seen_path = day_dir / "session_events.json"
     seen = set(json.loads(seen_path.read_text()).get("sent", [])) if seen_path.exists() else set()
-    new_events = [(s, e) for s, t in tracked.items() for e in t.get("events") or []
-                  if event_key(secret, day, s, e) not in seen]
+    if key is None:  # events could not be deduplicated: none are sent, slot reports still are
+        print("session tracker: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): intraday events disabled")
+        new_events = []
+    else:
+        new_events = [(s, e) for s, t in tracked.items() for e in t.get("events") or []
+                      if event_key(key, day, s, e) not in seen]
     marker_path = day_dir / f"session_{slot}.json"
     if slot != "INTRADAY" and marker_path.exists() and json.loads(marker_path.read_text()).get("status") == "DELIVERED":
         print("session tracker:", slot, "already delivered")
@@ -131,15 +134,13 @@ def main() -> int:
     texts = build_messages(slot, maps, tracked, new_events, now, day, closes)
     results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
                                send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
-    if texts and all(r == "DELIVERED" for r in results):
-        seen |= {event_key(secret, day, s, e) for s, e in new_events}
+    if key is not None and new_events and any(r in ("DELIVERED", "UNCONFIRMED") for r in results):
+        seen |= {event_key(key, day, s, e) for s, e in new_events}
         seen_path.write_text(json.dumps({"sent": sorted(seen), "updated_at": now.isoformat()}, indent=1))
     if slot != "INTRADAY":
         status = "DELIVERED" if results and all(r == "DELIVERED" for r in results) else (results[0] if results else "EMPTY")
         marker = {"schema": "ghazi.session_slot_marker.v1", "slot": slot, "status": status, "sent_at": now.isoformat(),
                   "messages": len(texts), "accepted": results.count("DELIVERED")}
-        if slot == "POSTCLOSE":
-            marker["scorecard"] = st.scorecard(maps, tracked, closes)  # counts only
         marker_path.write_text(json.dumps(marker, indent=1))
     print("session tracker:", slot, json.dumps({"messages": len(texts), "results": results, "new_events": len(new_events)}))
     return 0

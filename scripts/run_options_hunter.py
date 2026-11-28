@@ -12,8 +12,6 @@ Messages say "indicative": not an OPRA quote, not an execution price; buyer/sell
 """
 from __future__ import annotations
 
-import hashlib
-import hmac
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -25,6 +23,7 @@ from zoneinfo import ZoneInfo
 import requests
 
 from options_radar import alpaca_chain as ac
+from options_radar import state_keys as sk
 from options_radar.output_policy import decide
 from options_radar.telegram_ar import LRM, rtl_line, when_ar
 
@@ -170,9 +169,11 @@ def main() -> int:
     classes = {c: sum(1 for r in top if r["class"] == c) for c in ac.CLASS_AR}
     print("options hunter:", json.dumps({"coverage": result["coverage"], "freshness": result["freshness"],
                                          "classes_in_top": classes}))
-    secret = env.get("TELEGRAM_BOT_TOKEN", "").encode()
-    alert = {hmac.new(secret, f"{r['contract']}|{r['class']}".encode(), hashlib.sha256).hexdigest()[:16]
-             for r in top if r["class"] in ALERT_CLASSES}
+    key = sk.state_key(env)
+    if key is None:  # alerts could not be deduplicated: none are sent; /options still answers on demand
+        print("options hunter: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled")
+        return 0
+    alert = {sk.tag(key, "options", r["contract"], r["class"]) for r in top if r["class"] in ALERT_CLASSES}
     state = Path(env.get("STATE_DIR", "../state/state/options_hunter"))
     seen_file = state / "last_top.json"
     day = now.astimezone(NY).date().isoformat()
@@ -186,7 +187,7 @@ def main() -> int:
     texts = render(result, now, only=ALERT_CLASSES)
     results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
                                send=lambda text, chat: send_html_message(text, chat_id=chat)) for t in texts]
-    if all(r == "DELIVERED" for r in results):
+    if any(r in ("DELIVERED", "UNCONFIRMED") for r in results):  # never resend what may have arrived
         state.mkdir(parents=True, exist_ok=True)
         seen_file.write_text(json.dumps({"day": day, "alerted": sorted(seen | alert), "sent_at": now.isoformat()}))
     print("options hunter delivery:", results)

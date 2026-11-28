@@ -52,13 +52,13 @@ def build(state: Path, data: Path, now: datetime) -> dict[str, Any]:
             m = _load(day / f"session_{slot}.json") or {}
             if m:
                 session[slot] = {k: m.get(k) for k in ("status", "sent_at", "messages")}
-        scorecard = (_load(day / "session_POSTCLOSE.json") or {}).get("scorecard")
-        out["day"] = {"date": day.name, "reports": reports, "session": session, "scorecard": scorecard}
+        out["day"] = {"date": day.name, "reports": reports, "session": session}  # outcomes stay private
     hunter = _load(state / "options_hunter" / "last_top.json") or {}
     out["options_hunter"] = {"day": hunter.get("day"), "material_alerts": len(hunter.get("alerted") or []),
                              "last_sent_at": hunter.get("sent_at")}
-    small = sorted((state / "smallcaps").glob("*.postclose.json")) if (state / "smallcaps").exists() else []
-    out["smallcaps"] = {"day": small[-1].name[:10], **(_load(small[-1]) or {})} if small else {"day": None}
+    small = sorted((state / "smallcaps").glob("*.tags.json")) if (state / "smallcaps").exists() else []
+    last = _load(small[-1]) or {} if small else {}
+    out["smallcaps"] = {"day": last.get("day"), "alerts_sent": last.get("alerts_sent"), "updated_at": last.get("updated_at")}
     sec = _load(data / "sec_company_tickers.json") or {}
     out["sec_registry"] = ({"status": "OK", "generated_at": sec.get("generated_at"), **(sec.get("counts") or {})}
                            if sec else {"status": "NOT_CONFIGURED", "reason": "SEC_USER_AGENT secret not set"})

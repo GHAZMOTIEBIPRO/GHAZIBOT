@@ -27,10 +27,10 @@ jobs:
       ALPACA_BARS_FEED: ${{ vars.ALPACA_BARS_FEED || 'sip' }}
       ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      GHAZI_STATE_HMAC_KEY: ${{ secrets.GHAZI_STATE_HMAC_KEY }}
       TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
-      SMALLCAP_RECORD_KEY: ${{ secrets.SMALLCAP_RECORD_KEY }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:

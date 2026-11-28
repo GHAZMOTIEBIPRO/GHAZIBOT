@@ -199,7 +199,7 @@ def test_report_slot_sends_once_records_status_only_and_never_sends_outside_wind
     marker_text = (tmp_path / "report_EARLY.json").read_text()
     marker = json.loads(marker_text)
     assert marker["accepted"] == marker["messages"] == count and marker["telegram_acceptance_is_not_read_receipt"]
-    assert "fingerprints" in marker and marker["fingerprints"] == {}  # no runner secret, no fingerprints
+    assert "fingerprints" in marker and marker["fingerprints"] == {}  # no independent state key, no fingerprints
     # the public marker carries no level, price or state derived from the private bars
     assert "trigger" not in marker_text and "WATCH" not in marker_text and "105" not in marker_text.replace(
         "2026-11-30", "")
@@ -299,7 +299,7 @@ def test_ids_are_unique_per_session_slot_and_message(tmp_path):
 
 
 def test_final_sends_cards_only_for_changed_symbols(tmp_path):
-    env = {**ENV, "TELEGRAM_BOT_TOKEN": "secret"}
+    env = {**ENV, "GHAZI_STATE_HMAC_KEY": "s" * 32}
     _run(tmp_path, 31, lambda t, c: _Receipt(), env=env)
     texts = []
     final = _run(tmp_path, 2, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env)
@@ -307,7 +307,7 @@ def test_final_sends_cards_only_for_changed_symbols(tmp_path):
     joined = "\n".join(texts)
     assert "لا تغيير جوهري" in joined and "تنبيه مبكر: إغلاق 5د" not in joined  # no unchanged cards
     early = json.loads((tmp_path / "report_EARLY.json").read_text())["fingerprints"]
-    assert set(early) == set(bdp.PLAN_SYMBOLS) and all(len(v) == 16 for v in early.values())
+    assert set(early) == set(bdp.PLAN_SYMBOLS) and all(len(v) == 24 for v in early.values())
     changed = _private()
     changed["plans"]["NVDA"]["prior_session"]["high"] = 111.0
     texts.clear()

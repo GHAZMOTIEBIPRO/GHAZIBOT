@@ -46,6 +46,9 @@ CANON: dict[str, tuple[str, str, str, str]] = {
     "ALPACA_BARS_FEED": ("variable", "private", "bar_providers.AlpacaBars", "optional: sip (default) or iex"),
     "ALPACA_HISTORICAL_SIP_INTERNAL_AUTHORIZED": ("variable", "private", "alpaca_vcp_private",
                                                  "optional: SIP history in the VCP research"),
+    "GHAZI_STATE_HMAC_KEY": ("secret", "private", "options_radar.state_keys (keyed tags on bot-state)",
+                             ("dedupe of private alerts (small caps, options, session events, FINAL changes); "
+                              "independent of every other secret, at least 32 characters")),
     "FINRA_API_CLIENT_ID": ("secret", "private", "finra_short_volume_private", "optional: FINRA short-sale volume"),
     "FINRA_API_CLIENT_SECRET": ("secret", "private", "finra_short_volume_private", "optional: FINRA short-sale volume"),
     "FINRA_API_AUTOMATION_APPROVED": ("variable", "private", "finra_short_volume_private, source_permissions",

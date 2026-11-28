@@ -1,20 +1,24 @@
-"""Owner-private small-cap early-move scan on Alpaca IEX data; first detections recorded encrypted.
+"""Owner-private small-cap early-move scan on Alpaca IEX data; nothing restricted is stored.
 
 Modes (auto = postclose from close + 20 minutes, else scan):
   scan       (regular session 09:45-15:45 New York) snapshots of the listed universe -> stages
              (options_radar.smallcap_scan) -> Telegram for a first detection or a stage upgrade only.
   postclose  forward moves 5/15/30/60 minutes and at the close from each first-detection price.
 Universe: NasdaqTrader listed equities and, once built, the SEC registrant list (NYSE, NYSE American).
-First-detection records (symbol, stage, price, time) are private derived data: written only as
-state/smallcaps/<date>.json.enc (openssl AES-256-CBC, PBKDF2, key from the runner secret). The public
-log and bot-state carry counts only. Halts, dilution and float are NOT checked here and say so.
+Storage (owner, PHASE 4): detections are Alpaca-derived, so no record of symbol, stage, price or time
+is written anywhere, encrypted or not. bot-state holds only state/smallcaps/<date>.tags.json: keyed tags
+(options_radar.state_keys, independent secret GHAZI_STATE_HMAC_KEY) of (symbol, stage, minute after the
+open) plus an alert count. The scan and the post-close review recompute the preimages from the listed
+universe, and the post-close review refetches the minute bars from Alpaca at run time; the detection price
+is the close of the last completed IEX minute bar before the detection (not the snapshot trade price).
+Without the key no tags are kept, so no alert is sent (it could not be deduplicated) and the post-close
+review is skipped. Halts, dilution and float are NOT checked here and say so.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
-import subprocess
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,6 +29,7 @@ import pandas as pd
 import requests
 
 from options_radar import smallcap_scan as sc
+from options_radar import state_keys as sk
 from options_radar.output_policy import decide
 from options_radar.telegram_ar import LRM, rtl_line, when_ar
 
@@ -33,22 +38,43 @@ DATA = "https://data.alpaca.markets"
 ORDER = {s: i for i, s in enumerate(("COMPRESSION", "EARLY_ACTIVITY", "BREAKOUT_WATCH", "CONFIRMED_MOVE", "EXTENDED"))}
 
 
-def _key(env: dict[str, str]) -> str:
-    return env.get("SMALLCAP_RECORD_KEY") or env.get("TELEGRAM_BOT_TOKEN") or ""
+TAGS_SCHEMA = "ghazi.smallcap_tags.v1"
+MAX_MINUTE = 400  # a regular session is 390 minutes
 
 
-def save_encrypted(path: Path, payload: dict, key: str) -> None:
+def load_tags(path: Path) -> dict:
+    try:
+        d = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {"schema": TAGS_SCHEMA, "tags": [], "alerts_sent": 0}
+    return d if d.get("schema") == TAGS_SCHEMA else {"schema": TAGS_SCHEMA, "tags": [], "alerts_sent": 0}
+
+
+def save_tags(path: Path, day: str, tags: set[str], alerts_sent: int, now: datetime) -> None:
+    """Keyed tags and an operational count only: no symbol, stage, price or time of any detection."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["openssl", "enc", "-aes-256-cbc", "-pbkdf2", "-salt", "-pass", "env:SC_KEY", "-out", str(path)],
-                   input=json.dumps(payload).encode(), check=True, env={**os.environ, "SC_KEY": key})
+    path.write_text(json.dumps({"schema": TAGS_SCHEMA, "day": day, "tags": sorted(tags),
+                                "alerts_sent": alerts_sent, "updated_at": now.isoformat()}))
 
 
-def load_encrypted(path: Path, key: str) -> dict:
-    if not path.exists() or not key:
-        return {}
-    out = subprocess.run(["openssl", "enc", "-d", "-aes-256-cbc", "-pbkdf2", "-pass", "env:SC_KEY", "-in", str(path)],
-                         capture_output=True, check=False, env={**os.environ, "SC_KEY": key})
-    return json.loads(out.stdout) if out.returncode == 0 and out.stdout else {}
+def already_alerted(key: bytes, day: str, symbol: str, stage: str, tags: set[str], upto_minute: int) -> bool:
+    """True when this symbol was already alerted today at this stage or a later one."""
+    later = [s for s in ORDER if ORDER[s] >= ORDER[stage] and s in sc.ALERT_STAGES]
+    cands = [(symbol, s, m) for s in later for m in range(min(upto_minute, MAX_MINUTE) + 1)]
+    return bool(sk.recover(key, tags, ("smallcap", day), cands))
+
+
+def detections_from_tags(key: bytes, day: str, tags: set[str], symbols: list[str]) -> dict[str, dict]:
+    """First detection (earliest minute) and the highest stage per symbol, recomputed from the keyed tags."""
+    cands = ((sym, st, m) for sym in symbols for st in sc.ALERT_STAGES for m in range(MAX_MINUTE + 1))
+    out: dict[str, dict] = {}
+    for sym, st, m in sk.recover(key, tags, ("smallcap", day), cands):
+        d = out.setdefault(sym, {"stage": st, "minute": m, "top_stage": st})
+        if m < d["minute"]:
+            d.update(stage=st, minute=m)
+        if ORDER[st] > ORDER[d["top_stage"]]:
+            d["top_stage"] = st
+    return out
 
 
 def universe(state_data: Path) -> list[str]:
@@ -140,13 +166,16 @@ def main() -> int:
     open_at = pd.Timestamp(sched.iloc[0]["open"]).to_pydatetime()
     close_at = pd.Timestamp(sched.iloc[0]["close"]).to_pydatetime()
     elapsed = min(max((now - open_at) / (close_at - open_at), 0.0), 1.0)
-    record_path = args.state_dir / f"{open_at.astimezone(NY).date().isoformat()}.json.enc"
-    record = load_encrypted(record_path, _key(env))
+    day_s = open_at.astimezone(NY).date().isoformat()
+    key = sk.state_key(env)
+    tags_path = args.state_dir / f"{day_s}.tags.json"
+    saved = load_tags(tags_path) if saved_day_ok(tags_path, day_s) else {"tags": [], "alerts_sent": 0}
+    tags = set(saved.get("tags") or [])
     if args.mode == "auto":
         args.mode = "postclose" if now >= close_at + timedelta(minutes=20) else "scan"
-    if args.mode == "postclose":
-        return postclose(record, open_at, close_at, headers, env, args, now)
     symbols = universe(args.state_data)
+    if args.mode == "postclose":
+        return postclose(key, day_s, tags, symbols, open_at, close_at, headers, env, args, now)
     snaps = snapshots(symbols, headers)
     pre = [s for s, v in snaps.items() if sc.PRICE_MIN <= ((v.get("latestTrade") or {}).get("p") or 0) <= sc.PRICE_MAX
            and ((v.get("dailyBar") or {}).get("v") or 0) * ((v.get("latestTrade") or {}).get("p") or 0) >= sc.MIN_IEX_DOLLAR_VOLUME]
@@ -157,41 +186,45 @@ def main() -> int:
     stages = {k: sum(1 for r in eligible if r.get("stage") == k) for k in ORDER}
     coverage = {"universe": len(symbols), "snapshots": len(snaps), "prefiltered": len(pre), "eligible": len(eligible)}
     print("smallcaps scan:", json.dumps({"coverage": coverage, "stages": stages, "elapsed": round(elapsed, 3)}))
-    new = []
-    for r in sorted(eligible, key=lambda x: -(x.get("score") or 0)):
-        if r.get("stage") not in sc.ALERT_STAGES:
-            continue
-        seen = record.get(r["symbol"])
-        if seen and ORDER[seen["stage"]] >= ORDER[r["stage"]]:
-            continue  # already reported at this stage or later
-        new.append(r)
-        if not seen:
-            record[r["symbol"]] = {"stage": r["stage"], "price": r["price"], "at": now.isoformat(),
-                                   "minute": int((now - open_at).total_seconds() // 60)}
-        else:
-            seen["stage"] = r["stage"]
-    new = new[:8]
+    minute = int((now - open_at).total_seconds() // 60)
+    candidates = [r for r in sorted(eligible, key=lambda x: -(x.get("score") or 0)) if r.get("stage") in sc.ALERT_STAGES]
+    if key is None:
+        print("smallcaps: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): alerts disabled, nothing stored;",
+              "candidates", len(candidates))
+        return 0
+    new = [r for r in candidates if not already_alerted(key, day_s, r["symbol"], r["stage"], tags, minute)][:8]
     if args.dry_run:
         print("smallcaps dry run: new detections", len(new))
         return 0
-    if new:
-        results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
-                                   send=lambda text, chat: send_html_message(text, chat_id=chat))
-                   for t in message(new, now, coverage)]
-        print("smallcaps delivery:", results)
-    if _key(env):
-        save_encrypted(record_path, record, _key(env))
+    if not new:
+        return 0
+    results = [deliver_private(t, sources=["alpaca_iex"], env=env, get_chat=get_chat,
+                               send=lambda text, chat: send_html_message(text, chat_id=chat))
+               for t in message(new, now, coverage)]
+    print("smallcaps delivery:", results)
+    if any(r in ("DELIVERED", "UNCONFIRMED") for r in results):  # never resend what may have arrived
+        tags |= {sk.tag(key, "smallcap", day_s, r["symbol"], r["stage"], minute) for r in new}
+        save_tags(tags_path, day_s, tags, int(saved.get("alerts_sent") or 0) + len(new), now)
     return 0
 
 
-def postclose(record: dict, open_at: datetime, close_at: datetime, headers: dict, env: dict, args, now) -> int:
+def saved_day_ok(path: Path, day: str) -> bool:
+    return path.exists() and load_tags(path).get("day") == day
+
+
+def postclose(key: bytes | None, day: str, tags: set[str], symbols: list[str], open_at: datetime,
+              close_at: datetime, headers: dict, env: dict, args, now) -> int:
     from options_radar.output_policy import deliver_private
     from scripts.telegram_transport import get_chat, send_html_message
 
-    done = args.state_dir / f"{open_at.astimezone(NY).date().isoformat()}.postclose.json"
+    done = args.state_dir / f"{day}.postclose.json"
     if done.exists():
         print("smallcaps postclose: already done today")
         return 0
+    if key is None:
+        print("smallcaps postclose: STATE_KEY_MISSING (GHAZI_STATE_HMAC_KEY): skipped")
+        return 0
+    record = detections_from_tags(key, day, tags, symbols)
     if not record:
         print("smallcaps postclose: no detections recorded")
         return 0
@@ -202,8 +235,12 @@ def postclose(record: dict, open_at: datetime, close_at: datetime, headers: dict
         bars = (body.get("bars") or {}).get(sym) or []
         by_min = {int((datetime.fromisoformat(b["t"].replace("Z", "+00:00")) - open_at).total_seconds() // 60): b["c"]
                   for b in bars}
+        before = [m for m in by_min if m < det["minute"]]
+        if not before:
+            continue  # no completed bar before the detection: no reference price
+        det = {**det, "price": by_min[max(before)]}
         results[sym] = {**det, **sc.forward_moves(det["price"], det["minute"], by_min, bars[-1]["c"] if bars else None)}
-    lines = [rtl_line("<b>محاسبة الأسهم الصغيرة — من سعر أول رصد</b> (IEX)")]
+    lines = [rtl_line("<b>محاسبة الأسهم الصغيرة — من سعر أول رصد</b> (IEX؛ المرجع إغلاق آخر شمعة دقيقة مكتملة قبل الرصد)")]
     for sym, r in results.items():
         lines.append(rtl_line(f"<b>{sym}</b>{LRM} {sc.STAGE_AR[r['stage']]} عند {r['price']:,.2f}: "
                               + "، ".join(f"{k} {v:+.1f}%" if v is not None else f"{k} —" for k, v in r.items()
@@ -214,8 +251,7 @@ def postclose(record: dict, open_at: datetime, close_at: datetime, headers: dict
         for text in _pack(lines[1:], lines[0]):
             deliver_private(text, sources=["alpaca_iex"], env=env, get_chat=get_chat,
                             send=lambda t, chat: send_html_message(t, chat_id=chat))
-    positive = sum(1 for r in results.values() if (r.get("30m") or 0) > 0)
-    counts = {"detections": len(results), "positive_after_30m": positive, "at": now.isoformat()}
+    counts = {"detections": len(results), "at": now.isoformat()}  # operational count; outcomes stay in Telegram
     print("smallcaps postclose:", json.dumps(counts))
     if not args.dry_run:
         done.parent.mkdir(parents=True, exist_ok=True)
