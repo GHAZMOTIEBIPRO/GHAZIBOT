@@ -94,11 +94,14 @@ def test_workflows_with_alpaca_secrets_never_publish_private_data():
     # opening-fib-history.yml (2026-11-19): manual, read-only, aggregate report to the owner's chat only
     # probe-realtime-entitlements.yml / research-confirmation-frames.yml (2026-11-28): read-only, they print
     # metadata (statuses, counts, ages) or method statistics only - checked below
-    assert sorted(with_keys) == ["alpaca-iex-vcp-private.yml", "alpaca-private-probe.yml", "daily-plan.yml",
+    assert sorted(with_keys) == ["alpaca-iex-vcp-private.yml", "alpaca-private-probe.yml", "daily-plan.yml", "iex-stream.yml",
                                  "opening-fib-daily.yml", "opening-fib-history.yml", "opening-fib-shadow.yml",
+                                 "options-hunter.yml",
                                  "private-acceptance.yml", "private-data-access.yml", "private-market-scan.yml",
                                  "probe-realtime-entitlements.yml", "research-confirmation-frames.yml",
-                                 "settings-check.yml"]
+                                 "session-tracker.yml", "settings-check.yml", "smallcap-scan.yml",
+                                 "telegram-commands.yml"]
+    # telegram-commands.yml commits only the getUpdates offset (tests/test_telegram_commands.py)
     for name in ("probe-realtime-entitlements.yml", "research-confirmation-frames.yml"):
         text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
         assert yaml.safe_load(text)["permissions"] == {"contents": "read"} and "git " not in text

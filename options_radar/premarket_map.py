@@ -6,7 +6,8 @@ regular sessions) plus, when the provider returned them, completed extended-hour
 
 - reference price and its type/time (pre-market last completed 5m bar, else the prior
   session close) - never a live quote;
-- CALL side: trigger = prior-day high, confirmation = a completed hourly close above it,
+- CALL side: trigger = prior-day high; early alert = a completed 5m close above it on >= 1.5x volume,
+  confirmation (informational) = a completed 30m close above it - chosen from the 1-minute study,
   invalidation = trigger - 0.25 x ATR14, targets T1/T2/T3 picked from measured candidates;
 - PUT side: the mirror on the prior-day low;
 - WAIT band: between the two triggers;
@@ -158,10 +159,11 @@ def build_map(card: dict[str, Any], plan: dict[str, Any], *, premarket: dict[str
         "reference": ref, "position": position,
         "prior_day": {"date": prior.get("date"), "high": _r(pdh), "low": _r(pdl), "close": _r(pdc)},
         "pivot": _r((pdh + pdl + pdc) / 3), "atr14": _r(atr14),
-        "call": {"trigger": _r(pdh), "confirmation": "completed 1H close above the trigger",
+        "prior_change_pct": prior.get("change_pct"),
+        "call": {"trigger": _r(pdh), "confirmation": "early alert: completed 5m close above the trigger with volume >= 1.5x its time-of-day baseline; informational confirmation: completed 30m close above",
                  "invalidation": _r(pdh - INVALIDATION_ATR * atr14),
                  "targets": _targets(pdh, 1, rng, atr14, _num(week.get("high")))},
-        "put": {"trigger": _r(pdl), "confirmation": "completed 1H close below the trigger",
+        "put": {"trigger": _r(pdl), "confirmation": "early alert: completed 5m close below the trigger with volume >= 1.5x its time-of-day baseline; informational confirmation: completed 30m close below",
                 "invalidation": _r(pdl + INVALIDATION_ATR * atr14),
                 "targets": _targets(pdl, -1, rng, atr14, _num(week.get("low")))},
         "wait_band": {"low": _r(pdl), "high": _r(pdh)},

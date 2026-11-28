@@ -52,6 +52,18 @@ def listed_issuers(nasdaq_listed: Any) -> dict[str, str]:
     return out
 
 
+def registry_issuers(nasdaq_listed: Any = None, sec_registry: Any = None) -> dict[str, str]:
+    """ticker -> issuer name from both registries: SEC (all U.S. exchanges) then NasdaqTrader on top."""
+    out: dict[str, str] = {}
+    sec = sec_registry if isinstance(sec_registry, dict) else {}
+    if sec.get("fields") == ["ticker", "cik", "name", "exchange"]:
+        for row in sec.get("rows") or []:
+            if isinstance(row, list) and len(row) == 4:
+                out[str(row[0])] = str(row[2])
+    out.update(listed_issuers(nasdaq_listed))
+    return out
+
+
 def _index(entries: list[tuple[str, str, str]]) -> dict[str, tuple[str, str]]:
     index: dict[str, tuple[str, str]] = {}
     collisions: set[str] = set()
@@ -67,8 +79,24 @@ def _index(entries: list[tuple[str, str, str]]) -> dict[str, tuple[str, str]]:
     return index
 
 
+def graph_resolve(name: Any, on: str, graph: dict | None) -> tuple[str | None, str]:
+    """Dated parent/subsidiary/rename resolution from data/entity_graph.json (official sources only).
+
+    On or after effective_from a name resolves to the parent (or the renamed issuer); before it, to the
+    ticker it had then. Exact normalised names only; similarity alone never creates a relation.
+    """
+    key = normalise(name)
+    for e in (graph or {}).get("entities") or []:
+        if key and key in {normalise(n) for n in (e["name"], *(e.get("aliases") or []))}:
+            if on >= e["effective_from"]:
+                return e["ticker_after"], f"entity_graph:{e['relation']}:since_{e['effective_from']}"
+            return e.get("ticker_before"), f"entity_graph:before_{e['relation']}_{e['effective_from']}"
+    return None, "unmatched"
+
+
 def build_name_index(aliases: dict[str, str], sponsors: dict[str, list[str]] | None = None,
-                     listed: dict[str, str] | None = None) -> dict[str, tuple[str, str]]:
+                     listed: dict[str, str] | None = None, graph: dict | None = None,
+                     as_of: str | None = None) -> dict[str, tuple[str, str]]:
     """normalised name -> (ticker, method); names that map to two tickers are dropped.
 
     Precedence: the project's company list and the reviewed sponsor spellings first; the listed
@@ -81,7 +109,14 @@ def build_name_index(aliases: dict[str, str], sponsors: dict[str, list[str]] | N
                         for ticker, names in (sponsors or {}).items() for name in names])
     registry = _index([(name, ticker, "listed_issuer_name") for ticker, name in (listed or {}).items()
                        if len(normalise(name)) >= 5])
-    return {**registry, **curated}
+    related: dict[str, tuple[str, str]] = {}
+    if graph and as_of:  # acquisitions and renames as of the event date beat a stale registry name
+        for e in graph.get("entities") or []:
+            for n in (e["name"], *(e.get("aliases") or [])):
+                ticker, method = graph_resolve(n, as_of, graph)
+                if ticker:
+                    related[normalise(n)] = (ticker, method)
+    return {**registry, **related, **curated}
 
 
 def match_ticker(name: Any, index: dict[str, tuple[str, str]]) -> tuple[str | None, str]:

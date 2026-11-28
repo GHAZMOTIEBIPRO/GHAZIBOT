@@ -96,14 +96,38 @@ def card(m: dict[str, Any]) -> str:
         f"المرجع: {_p(ref['price'])} ({ref['type_ar']}، {html.escape(ref['time_ar'])})",
         (f"الجلسة السابقة {html.escape(str(pd['date']))}: قمة {_p(pd['high'])}، قاع {_p(pd['low'])}، "
         f"إغلاق {_p(pd['close'])}؛ المحور {_p(m['pivot'])}؛ ATR14 {_p(m['atr14'])}"),
-        (f"CALL: محفز {_p(call['trigger'])}، تأكيد بإغلاق شمعة ساعة مكتملة فوقه؛ {_targets(call)}؛ "
+        (f"CALL: محفز {_p(call['trigger'])}، تنبيه مبكر: إغلاق 5د فوقه بحجم ≥1.5× المعتاد، وتأكيد بإغلاق 30د؛ {_targets(call)}؛ "
         f"إبطال {_p(call['invalidation'])}"),
-        (f"PUT: محفز {_p(put['trigger'])}، تأكيد بإغلاق شمعة ساعة مكتملة تحته؛ {_targets(put)}؛ "
+        (f"PUT: محفز {_p(put['trigger'])}، تنبيه مبكر: إغلاق 5د تحته بحجم ≥1.5× المعتاد، وتأكيد بإغلاق 30د؛ {_targets(put)}؛ "
         f"إبطال {_p(put['invalidation'])}"),
         (f"انتظار بين {_p(m['wait_band']['low'])} و{_p(m['wait_band']['high'])}؛ الأفق: الجلسة الحالية؛ "
         f"الأطر المتوافقة {m['aligned_frames']}/4."),
     ]
+    sr = m.get("levels_sr") or {}
+    parts = [f"{word} {_p(sr[key]['value'])} ({sr[key]['basis_ar']})"
+             for key, word in (("resistance", "مقاومة"), ("support", "دعم")) if sr.get(key)]
+    if parts:
+        lines.append("، ".join(parts))
     return "\n".join(rtl_line(x) for x in lines)
+
+
+def pack_items(items: list[tuple[list[str], str]], header: str) -> list[tuple[str, list[str]]]:
+    """Like _pack, but each message keeps the ids of the items it carries (for per-message ledgers)."""
+    out: list[tuple[str, list[str]]] = []
+    current, ids = header, []
+    for item_ids, block in items:
+        candidate = f"{current}\n{block}"
+        if len(candidate) > MAX_CHARS and current != header:
+            out.append((current, ids))
+            candidate, ids = f"{header} (تابع)\n{block}", []
+        current = candidate
+        ids = ids + list(item_ids)
+    out.append((current, ids))
+    for text, _ in out:
+        if len(text) > 4096:
+            raise ValueError("a single block exceeds Telegram's limit")
+        check_html(text)
+    return out
 
 
 def _pack(blocks: list[str], header: str) -> list[str]:
@@ -123,9 +147,31 @@ def _pack(blocks: list[str], header: str) -> list[str]:
     return messages
 
 
+INDEX_NAME = {"SPXW": "SPX", "NDXP": "NDX"}
+FORWARD_STATUS_AR = {"OK": "جودة مطابقة مقبولة", "LOW_QUALITY": "جودة مطابقة منخفضة — لا يُعتمد",
+                     "TOO_FEW_VALID_STRIKES": "عروض حديثة غير كافية", "NO_PAIRED_QUOTES": "لا عروض متقابلة",
+                     "UNAVAILABLE": "غير متاح الآن"}
+
+
+def index_reference_lines(forwards: dict[str, dict[str, Any]] | None) -> list[str]:
+    """SPX/NDX as an implied forward from SPXW/NDXP parity: never the cash index, never a level source."""
+    lines = []
+    for root, f in (forwards or {}).items():
+        name = INDEX_NAME.get(root, root)
+        status = f.get("status") or "UNAVAILABLE"
+        if status == "OK" and f.get("forward"):
+            lines.append(f"{name}: سعر آجل ضمني ≈ {f['forward']:,.2f} من تكافؤ عقود {root} لاستحقاق {f['expiry']} "
+                         f"(قيس {when_ar(datetime.fromisoformat(f['quotes_as_of']))}، نصف السبريد {f['half_spread_bp']} نقطة أساس، "
+                         f"التشتت {f['dispersion_bp']} نقطة أساس، {f['strikes_used']} سترايك). مرجع مستقل وليس المؤشر النقدي؛ "
+                         "لا تُشتق منه مستويات نقدية.")
+        else:
+            lines.append(f"{name}: السعر الآجل الضمني — {FORWARD_STATUS_AR.get(status, status)}.")
+    return lines
+
+
 def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: datetime, session_date: str,
            index_funds: tuple[str, ...], detail_symbols: list[str], fetched: int, attempted: int,
-           changed_since_early: int | None = None) -> list[str]:
+           changed_since_early: int | None = None, index_forwards: dict[str, dict[str, Any]] | None = None) -> list[str]:
     late = f" — متأخر {slot['late_minutes']} دقيقة عن موعده" if slot.get("late") else ""
     as_of = sorted({str(m.get("data_as_of")) for m in maps.values() if m.get("data_as_of")})
     scopes = sorted({scope_ar(m.get("feed_scope")) for m in maps.values() if m.get("feed_scope")})
@@ -136,10 +182,13 @@ def render(maps: dict[str, dict[str, Any]], *, slot: dict[str, Any], now: dateti
         (f"المصدر: Alpaca ({html.escape('; '.join(scopes) or 'غير مسمى')})؛ استخدام شخصي فقط. "
         f"التغطية: {fetched}/{attempted} رمزًا."),
         "WATCH مراقبة مشروطة لا توصية؛ لا احتمال نجاح ولا أمر تنفيذ. CONFIRMED لا يُعلن قبل الافتتاح.",
+        "الخرائط المرسلة: صناديق المؤشرات وأفضل 3 شركات؛ اطلب أي خريطة أخرى بالأمر /map ثم الرمز.",
         INDEX_BLOCKED_AR,
+        *index_reference_lines(index_forwards),
     ]
     header = "\n".join(rtl_line(x) for x in head)
     rows = [rtl_line("<b>صناديق المؤشرات</b>")] + [row(maps[s]) for s in index_funds if s in maps]
+    rows += leadership(maps)
     rows += [rtl_line("<b>الأسهم القيادية</b>")] + [row(m) for s, m in maps.items() if s not in index_funds]
     summary = _pack(rows, header)
     cards = [card(maps[s]) for s in detail_symbols if (maps.get(s) or {}).get("state") not in (None, "NO_DATA")]
@@ -166,9 +215,28 @@ def chart_caption(m: dict[str, Any]) -> str:
         return f"{t['name']} {_p(t['value'])}" if t.get("value") else "لا هدف مقاس"
 
     lines = [f"{_sym(m['symbol'])} — {m['state_ar']} — المرجع {_p(m['reference']['price'])}",
-             f"سيناريو CALL: إغلاق ساعة فوق {_p(call['trigger'])} ← {first(call)}؛ إبطال {_p(call['invalidation'])}",
-             f"سيناريو PUT: إغلاق ساعة تحت {_p(put['trigger'])} ← {first(put)}؛ إبطال {_p(put['invalidation'])}",
+             f"سيناريو CALL: إغلاق 5د بحجم مرتفع فوق {_p(call['trigger'])} ← {first(call)}؛ إبطال {_p(call['invalidation'])}",
+             f"سيناريو PUT: إغلاق 5د بحجم مرتفع تحت {_p(put['trigger'])} ← {first(put)}؛ إبطال {_p(put['invalidation'])}",
              "مسار افتراضي مشروط، ليس توصية."]
     text = "\n".join(rtl_line(x) for x in lines)
     check_html(text)
     return text[:1024]
+
+
+def leadership(maps: dict[str, dict[str, Any]], benchmark: str = "QQQ", n: int = 3) -> list[str]:
+    """Who led and who lagged in the prior session relative to the benchmark fund (relative strength,
+    from our own bars). Not an index-weight contribution: no authorized weight source is wired yet."""
+    bench = (maps.get(benchmark) or {}).get("prior_change_pct")
+    rows = [(s, m["prior_change_pct"]) for s, m in maps.items()
+            if m.get("prior_change_pct") is not None and s not in ("SPY", "QQQ", "IWM", "DIA")]
+    if bench is None or not rows:
+        return []
+    rows.sort(key=lambda x: -x[1])
+    lead = "، ".join(f"{s} {c:+.2f}%" for s, c in rows[:n])
+    lag = "، ".join(f"{s} {c:+.2f}%" for s, c in rows[-n:][::-1])
+    against = [s for s, c in rows if (c > 0) != (bench > 0) and abs(c) >= 0.5]
+    lines = [f"<b>القيادة في الجلسة السابقة</b> (مقارنة بـ {benchmark} {bench:+.2f}%؛ قوة نسبية لا أوزان مؤشر):",
+             f"الأقوى: {lead}", f"الأضعف: {lag}"]
+    if against:
+        lines.append("عكس اتجاه السوق: " + "، ".join(against[:6]))
+    return [rtl_line(html.escape(x) if "<b>" not in x else x) for x in lines]

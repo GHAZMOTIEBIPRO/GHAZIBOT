@@ -190,6 +190,30 @@ jobs:
           if (( $(date -u +%u) <= 5 && ((ny_hm >= 830 && ny_hm <= 844) || (ny_hm >= 900 && ny_hm <= 914)) )); then
             dispatch_if_stale daily-plan.yml 15 "Daily Plan (pre-open report slot)"
           fi
+          # Owner-private session cycle after the open (opening update, stage alerts, last hour,
+          # post-close scorecard); the script picks the slot from the XNYS session itself.
+          if (( $(date -u +%u) <= 5 && ny_hm >= 1000 && ny_hm <= 1830 )); then
+            dispatch_if_stale session-tracker.yml 9 "Session tracker"
+          fi
+          # Session preflight before the first report (settings-check.yml: log-only, sends nothing).
+          if (( $(date -u +%u) <= 5 && ny_hm >= 740 && ny_hm <= 815 )); then
+            dispatch_if_stale settings-check.yml 300 "session preflight"
+          fi
+          # Owner-private IEX real-time first look, the whole session in consecutive segments: a dispatch
+          # every ~30 minutes queues behind the running segment (concurrency, one pending at most), so
+          # the next one starts when the current one ends; after the close a segment exits at once.
+          if (( $(date -u +%u) <= 5 && ny_hm >= 928 && ny_hm <= 1545 )); then
+            dispatch_if_stale iex-stream.yml 29 "IEX real-time first look (segments)"
+          fi
+          # Owner-private small-cap scan every ~15 minutes in the session (no post-close record: nothing is stored).
+          if (( $(date -u +%u) <= 5 && ny_hm >= 945 && ny_hm <= 1545 )); then
+            dispatch_if_stale smallcap-scan.yml 14 "Small-cap scan"
+          fi
+          # Owner-private options digests (scripts/run_options_hunter.py DIGESTS), one per window.
+          in_digest=$(( (ny_hm >= 1015 && ny_hm <= 1035) || (ny_hm >= 1130 && ny_hm <= 1150) || (ny_hm >= 1300 && ny_hm <= 1320) || (ny_hm >= 1430 && ny_hm <= 1450) || (ny_hm >= 1530 && ny_hm <= 1550) ))
+          if (( $(date -u +%u) <= 5 && in_digest )); then
+            dispatch_if_stale options-hunter.yml 30 "Options digest"
+          fi
           }
 
           passes="${ORCHESTRATOR_PASSES:-1}"
@@ -210,6 +234,10 @@ jobs:
             dispatch_pass || echo "::warning title=Dispatch pass failed::pass ${pass}"
             python3 scripts/relay_dependent_workflows.py --repo "$GITHUB_REPOSITORY" \
               || echo "::warning title=Relay pass failed::pass ${pass}"
+            # Owner Telegram commands (/map /stock /market ...): the orchestrator holds no Telegram
+            # secret, so it only wakes the command job; that job peeks first and stops in seconds
+            # when nothing is pending.
+            dispatch_if_stale telegram-commands.yml 9 "Telegram commands"
             # Owner-private opening Fib + shadow: their own crons arrived ~9h late on
             # 2026-11-16. Reads only date markers; the runners still decide delivery.
             python3 scripts/private_schedule_rescue.py --repo "$GITHUB_REPOSITORY" \

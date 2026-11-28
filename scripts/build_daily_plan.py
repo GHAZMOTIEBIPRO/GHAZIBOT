@@ -28,8 +28,6 @@ Owner-private mode (provider -> compute -> output policy -> sink):
 from __future__ import annotations
 
 import argparse
-import hashlib
-import hmac
 import json
 import os
 import time
@@ -246,6 +244,20 @@ def plan_from_provider(provider: Any, symbol: str, facts: dict[str, Any], sessio
     # the last completed sessions, for support/resistance and the chart's observed candles (private only)
     plan["recent_daily"] = [{k: r[k] for k in ("date", "open", "high", "low", "close")}
                             for r in _daily_rows(daily["bars"]) if r["date"] <= str(facts["last_closed_session"])][-20:]
+    if minute["status"] == "OK" and minute.get("feed") == daily.get("feed") and sessions:
+        # intraday tracking inputs (private only): today's regular 5m bars and a time-of-day volume baseline
+        today = [s for s in sessions if s[0].astimezone(NY).date() == now.astimezone(NY).date()]
+        if today:
+            o, c = today[-1]
+            plan["today_5m"] = [b for b in minute["bars"] if o <= b["t"] < c]
+            plan["session_open"] = o.isoformat()
+        prior = [s for s in sessions if not today or s[0] < today[-1][0]][-10:]
+        slots: dict[int, list[float]] = {}
+        for o, c in prior:
+            for b in minute["bars"]:
+                if o <= b["t"] < c:
+                    slots.setdefault(int((b["t"] - o).total_seconds() // 300), []).append(b["v"])
+        plan["vol_baseline_5m"] = {i: sum(v) / len(v) for i, v in slots.items() if v}
     opening = today_open(now)
     if opening is not None and sessions and minute["status"] == "OK" and minute.get("feed") == daily.get("feed"):
         # extended-hours bars after the prior close, completed before the provider's delay boundary
@@ -358,20 +370,43 @@ def maps_for(private: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return out
 
 
-def fingerprints(maps: dict[str, dict[str, Any]], secret: str) -> dict[str, str]:
-    """Keyed hash per symbol of what a card says (state, position, triggers, targets).
+def index_forwards(env: dict[str, str], now: datetime) -> dict[str, dict[str, Any]]:
+    """Nearest-expiry SPXW/NDXP implied forwards (private; the report never waits on or fails for them)."""
+    from options_radar import parity_reference as pr
+    from scripts import run_options_hunter as hunter
 
-    bot-state is public, so only an HMAC under a runner secret is stored: it proves "changed or
-    not" between slots without revealing a state or a level. No secret, no fingerprints.
-    """
-    if not secret:
-        return {}
-    out = {}
-    for symbol, m in maps.items():
-        core = {k: m.get(k) for k in ("state", "position", "call", "put", "reason")}
-        digest_ = hmac.new(secret.encode(), json.dumps(core, sort_keys=True, default=str).encode(), hashlib.sha256)
-        out[symbol] = digest_.hexdigest()[:16]
+    headers = {"APCA-API-KEY-ID": env["ALPACA_API_KEY"].strip(), "APCA-API-SECRET-KEY": env.get("ALPACA_SECRET_KEY", "").strip()}
+    out: dict[str, dict[str, Any]] = {}
+    for root in hunter.INDEX_WEEKLIES:
+        try:
+            snaps, _ = hunter.chain(root, (now + timedelta(days=4)).date().isoformat(), headers)
+            expiries = sorted({o["expiry"] for o in (pr.parse_occ(k) for k in snaps) if o and o["expiry"] >= now.astimezone(NY).date()})
+            if not expiries:
+                out[root] = {"status": "UNAVAILABLE"}
+                continue
+            close = datetime.combine(expiries[0], datetime.min.time(), NY).replace(hour=16)
+            years = max((close - now).total_seconds(), 60) / (365 * 86400)
+            out[root] = pr.implied_forward(snaps, root=root, expiry=expiries[0], years_to_expiry=years)
+        except Exception:  # noqa: BLE001 - the reference line degrades, the report still goes
+            out[root] = {"status": "UNAVAILABLE"}
     return out
+
+
+def card_core(m: dict[str, Any]) -> str:
+    """What a card says (state, position, triggers, targets): compared in memory, never stored."""
+    return json.dumps({k: m.get(k) for k in ("state", "position", "call", "put", "reason")}, sort_keys=True, default=str)
+
+
+def chart_symbols(maps: dict[str, dict[str, Any]], limit: int = 3) -> list[str]:
+    """Default images (owner, 2026-11-28): the index funds, then the `limit` leaders most worth watching.
+
+    Leaders are ranked WATCH first, then by distance to the nearer trigger in ATR. Every other chart
+    is available on request (/map SYMBOL). SPX/NDX have no licensed price map yet, so none is drawn.
+    """
+    funds = [s for s in DETAIL_INDEX_FUNDS if (maps.get(s) or {}).get("state") not in (None, "NO_DATA")]
+    leaders = [m for s, m in maps.items() if s not in DETAIL_INDEX_FUNDS and m.get("state") not in (None, "NO_DATA")]
+    leaders.sort(key=lambda m: (m["state"] not in ("CALL_WATCH", "PUT_WATCH"), m.get("distance_atr", 99), m["symbol"]))
+    return funds + [m["symbol"] for m in leaders[:limit]]
 
 
 def detail_symbols(maps: dict[str, dict[str, Any]]) -> list[str]:
@@ -418,7 +453,8 @@ def _outcome(items: dict[str, dict[str, Any]], planned: list[str]) -> str:
 
 def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetime, day_dir: Path, *,
                     env: Any, get_chat: Callable[[str], Any], send: Callable[[str, str], Any],
-                    send_album: Callable[[list[tuple[bytes, str]], str], Any] | None = None) -> dict[str, Any] | None:
+                    send_album: Callable[[list[tuple[bytes, str]], str], Any] | None = None,
+                    early_private: dict[str, Any] | None = None) -> dict[str, Any] | None:
     """Send the due pre-open report; every message has its own id and its own delivery record.
 
     Marker per slot: state/daily_plan/<date>/report_<SLOT>.json, rewritten after each message so an
@@ -426,7 +462,8 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
     the same window sends only items not yet DELIVERED, never one recorded UNCONFIRMED (the request
     may have reached Telegram), up to MAX_SLOT_ATTEMPTS runs. A window that passed without delivery
     is recorded MISSED and never sent late. FINAL repeats the summary and sends cards and charts
-    only for symbols whose keyed fingerprint changed since EARLY.
+    only for symbols whose card changed since EARLY: the EARLY maps are rebuilt at FINAL from the data
+    as of EARLY's build time (early_private) and compared in memory, so nothing is stored (audit).
     """
     session_today = bool(facts.get("today_is_session"))
     done = set()
@@ -459,26 +496,29 @@ def run_report_slot(private: dict[str, Any], facts: dict[str, Any], now: datetim
         return marker
     session_date = facts["today"]["date"]
     maps = maps_for(private)
-    prints = fingerprints(maps, str(env.get("TELEGRAM_BOT_TOKEN") or ""))
     details = detail_symbols(maps)
+    charted = chart_symbols(maps)
     changed_note = None
     if slot["slot"] == "FINAL":
-        early = (_load(day_dir / "report_EARLY.json") or {}).get("fingerprints") or {}
-        if early and prints:
-            details = [s for s in details if early.get(s) != prints.get(s)]
+        early = maps_for(early_private) if early_private and early_private.get("enabled") else None
+        if early:  # without a rebuilt EARLY, FINAL sends every card (never guesses "unchanged")
+            same = {s for s in maps if s in early and card_core(maps[s]) == card_core(early[s])}
+            details = [s for s in details if s not in same]
+            charted = [s for s in charted if s not in same]
             changed_note = len(details)
     statuses = private.get("fetch_status") or {}
     texts = report.render(maps, slot=slot, now=now, session_date=session_date, index_funds=INDEX_FUNDS,
                           detail_symbols=details, attempted=len(PLAN_SYMBOLS), changed_since_early=changed_note,
-                          fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"))
-    albums, charts_status = chart_items(maps, private, details, now, session_date) if send_album else ([], "NOT_REQUESTED")
+                          fetched=sum(1 for s in statuses.values() if isinstance(s, dict) and s.get("daily") == "OK"),
+                          index_forwards=index_forwards(env, now) if env.get("ALPACA_API_KEY") else None)
+    albums, charts_status = chart_items(maps, private, charted, now, session_date) if send_album else ([], "NOT_REQUESTED")
     n_text = len(texts)
     outbox: list[tuple[str, Callable[[str], Any]]] = []
     for index, text in enumerate(texts):
         outbox.append((f"{session_date}:{slot['slot']}:text:{index}", lambda chat, t=text: send(t, chat)))
     for index, album in enumerate(albums):
         outbox.append((f"{session_date}:{slot['slot']}:charts:{index}", lambda chat, a=album: send_album(a, chat)))
-    marker.update(fingerprints=prints, charts=charts_status, planned_items=len(outbox), text_messages=n_text,
+    marker.update(built_at=now.isoformat(), charts=charts_status, planned_items=len(outbox), text_messages=n_text,
                   map_versions=pm.map_id({"ids": sorted(str(m.get("map_id")) for m in maps.values())}))
     planned = [item_id for item_id, _ in outbox]
     for item_id, action in outbox:
@@ -574,9 +614,15 @@ def main() -> int:
     if day_dir is not None:
         day_dir.mkdir(parents=True, exist_ok=True)
         from scripts.telegram_transport import get_chat, send_html_message, send_media_group
+        early_private = None
+        due = report.slot_for(now, bool(facts.get("today_is_session")))
+        built = (_load(day_dir / "report_EARLY.json") or {}).get("built_at")
+        if due and due["slot"] == "FINAL" and built:  # rebuild what EARLY saw, from data as of its build time
+            early_private = private_plans(facts, datetime.fromisoformat(built))
         marker = run_report_slot(private, facts, now, day_dir, env=os.environ, get_chat=get_chat,
                                  send=lambda text, chat: send_html_message(text, chat_id=chat),
-                                 send_album=lambda album, chat: send_media_group(album, chat_id=chat))
+                                 send_album=lambda album, chat: send_media_group(album, chat_id=chat),
+                                 early_private=early_private)
         if marker is not None:
             sheet["private_mode"]["delivery"] = marker["status"]
             sheet["private_mode"]["report"] = {k: marker.get(k) for k in ("slot", "status", "late", "late_minutes")}

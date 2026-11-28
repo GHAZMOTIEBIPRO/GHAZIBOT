@@ -100,3 +100,53 @@ def test_listed_registry_is_optional():
     assert fda.listed_issuers(None) == {} and fda.listed_issuers({"rows": [["X"]]}) == {}
     assert fda.build_name_index(ALIASES) == fda.build_name_index(ALIASES, None, {})
 
+
+def test_sec_registry_adds_nyse_issuers_and_drops_ambiguous_share_classes():
+    from datetime import datetime, timezone
+
+    from scripts import build_sec_registry as sec
+
+    payload = {"fields": ["cik", "name", "ticker", "exchange"],
+               "data": [[14272, "BRISTOL MYERS SQUIBB CO", "BMY", "NYSE"],
+                        [1652044, "Alphabet Inc.", "GOOGL", "Nasdaq"], [1652044, "Alphabet Inc.", "GOOG", "Nasdaq"],
+                        [99, "Pink Sheet Corp", "PNKS", "OTC"], [5, "Cogent Biosciences, Inc.", "COGT", "Nasdaq"]]}
+    built = sec.build(payload, datetime(2026, 11, 28, tzinfo=timezone.utc))
+    assert built["fields"] == ["ticker", "cik", "name", "exchange"] and built["counts"]["rows"] == 4
+    assert "PNKS" not in {r[0] for r in built["rows"]}
+    issuers = fda.registry_issuers(LISTED, built)
+    index = fda.build_name_index({}, None, issuers)
+    assert fda.match_ticker("Bristol-Myers Squibb Company", index) == ("BMY", "listed_issuer_name")
+    assert fda.match_ticker("Alphabet Inc", index) == (None, "unmatched")  # two share classes: no guess
+    assert fda.match_ticker("Cogent Biosciences", index)[0] == "COGT"
+
+
+def test_sec_registry_refuses_without_a_declared_user_agent(tmp_path, monkeypatch, capsys):
+    from scripts import build_sec_registry as sec
+
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+    monkeypatch.setattr(sys, "argv", ["x", "--output", str(tmp_path / "out.json")])
+    assert sec.main() == 0 and not (tmp_path / "out.json").exists()
+    assert "NOT_ATTEMPTED" in capsys.readouterr().out
+
+
+
+def test_entity_graph_permanent_cases_cogt_bbio_bmy():
+    """Permanent identity cases (owner, PHASE 5): acquisitions and renames by date, from official sources."""
+    import json
+    from pathlib import Path
+
+    graph = json.loads((Path(__file__).resolve().parents[1] / "data/entity_graph.json").read_text(encoding="utf-8"))
+    assert all(e["source"].startswith("https://") and e["effective_from"] for e in graph["entities"])
+    assert fda.graph_resolve("Karuna Therapeutics, Inc.", "2026-11-28", graph)[0] == "BMY"
+    assert fda.graph_resolve("Karuna Therapeutics", "2024-03-17", graph)[0] == "KRTX"  # before closing
+    assert fda.graph_resolve("Celgene", "2026-11-28", graph)[0] == "BMY"
+    assert fda.graph_resolve("Eidos Therapeutics", "2026-11-28", graph)[0] == "BBIO"
+    assert fda.graph_resolve("Unum Therapeutics Inc", "2026-11-28", graph) == ("COGT", "entity_graph:renamed:since_2020-10-06")
+    assert fda.graph_resolve("Karuna Health Partners", "2026-11-28", graph) == (None, "unmatched")  # no fuzzy match
+    index = fda.build_name_index({"BMY": "Bristol-Myers Squibb"}, listed={"COGT": "Cogent Biosciences, Inc.",
+                                                                          "BBIO": "BridgeBio Pharma, Inc."},
+                                 graph=graph, as_of="2026-11-28")
+    assert fda.match_ticker("Mirati Therapeutics", index)[0] == "BMY"
+    assert fda.match_ticker("Cogent Biosciences", index)[0] == "COGT"
+    assert fda.match_ticker("Eidos Therapeutics, Inc.", index) == ("BBIO", "entity_graph:acquired_subsidiary:since_2021-01-26")
+    assert fda.match_ticker("Mirati Bio Labs", index) == (None, "unmatched")  # similar text is not a relation

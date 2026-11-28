@@ -1,0 +1,25 @@
+{
+  "schema": "ghazi.entity_graph.v1",
+  "updated": "2026-11-28",
+  "rule": "Only relations with an official source (SEC filing or the company's own release) and an effective date. A name resolves to the parent only on or after effective_from; before it, to the former ticker. Text similarity alone never creates a relation.",
+  "entities": [
+    {"name": "Celgene Corporation", "aliases": ["Celgene"], "relation": "acquired_subsidiary",
+     "ticker_after": "BMY", "ticker_before": "CELG", "effective_from": "2019-11-20",
+     "source": "https://www.sec.gov/Archives/edgar/data/14272/000114036119021048/form8k.htm"},
+    {"name": "Mirati Therapeutics, Inc.", "aliases": ["Mirati Therapeutics", "Mirati"], "relation": "acquired_subsidiary",
+     "ticker_after": "BMY", "ticker_before": "MRTX", "effective_from": "2024-01-23",
+     "source": "https://www.sec.gov/Archives/edgar/data/14272/000001427224000096/Financial_Report.xlsx"},
+    {"name": "RayzeBio, Inc.", "aliases": ["RayzeBio"], "relation": "acquired_subsidiary",
+     "ticker_after": "BMY", "ticker_before": "RYZB", "effective_from": "2024-02-26",
+     "source": "https://www.sec.gov/Archives/edgar/data/14272/000001427224000147/Financial_Report.xlsx"},
+    {"name": "Karuna Therapeutics, Inc.", "aliases": ["Karuna Therapeutics", "Karuna"], "relation": "acquired_subsidiary",
+     "ticker_after": "BMY", "ticker_before": "KRTX", "effective_from": "2024-03-18",
+     "source": "https://www.sec.gov/Archives/edgar/data/14272/000001427225000091/bmy-20250331.htm"},
+    {"name": "Eidos Therapeutics, Inc.", "aliases": ["Eidos Therapeutics"], "relation": "acquired_subsidiary",
+     "ticker_after": "BBIO", "ticker_before": "EIDX", "effective_from": "2021-01-26",
+     "source": "https://www.sec.gov/Archives/edgar/data/1731831/000119312521017109/d118113d8k.htm"},
+    {"name": "Unum Therapeutics Inc.", "aliases": ["Unum Therapeutics"], "relation": "renamed",
+     "ticker_after": "COGT", "ticker_before": "UMRX", "effective_from": "2020-10-06",
+     "source": "https://www.sec.gov/Archives/edgar/data/1622229/000119312520263412/d14737d8k.htm"}
+  ]
+}

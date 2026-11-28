@@ -199,7 +199,7 @@ def test_report_slot_sends_once_records_status_only_and_never_sends_outside_wind
     marker_text = (tmp_path / "report_EARLY.json").read_text()
     marker = json.loads(marker_text)
     assert marker["accepted"] == marker["messages"] == count and marker["telegram_acceptance_is_not_read_receipt"]
-    assert "fingerprints" in marker and marker["fingerprints"] == {}  # no runner secret, no fingerprints
+    assert "fingerprints" not in marker  # nothing derived from the maps is stored
     # the public marker carries no level, price or state derived from the private bars
     assert "trigger" not in marker_text and "WATCH" not in marker_text and "105" not in marker_text.replace(
         "2026-11-30", "")
@@ -299,21 +299,30 @@ def test_ids_are_unique_per_session_slot_and_message(tmp_path):
 
 
 def test_final_sends_cards_only_for_changed_symbols(tmp_path):
-    env = {**ENV, "TELEGRAM_BOT_TOKEN": "secret"}
-    _run(tmp_path, 31, lambda t, c: _Receipt(), env=env)
+    """FINAL rebuilds EARLY's maps from data as of EARLY's build time; nothing is stored (audit)."""
+    _run(tmp_path, 31, lambda t, c: _Receipt())
+    marker = json.loads((tmp_path / "report_EARLY.json").read_text())
+    assert "fingerprints" not in marker and marker["built_at"].startswith("2026-11-30T13:31")
     texts = []
-    final = _run(tmp_path, 2, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env)
+    final = bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 14, 2, tzinfo=UTC), tmp_path, env=ENV,
+                                get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt(),
+                                early_private=_private())
     assert final["slot"] == "FINAL" and final["status"] == "DELIVERED"
     joined = "\n".join(texts)
-    assert "لا تغيير جوهري" in joined and "تأكيد بإغلاق شمعة ساعة" not in joined  # no unchanged cards
-    early = json.loads((tmp_path / "report_EARLY.json").read_text())["fingerprints"]
-    assert set(early) == set(bdp.PLAN_SYMBOLS) and all(len(v) == 16 for v in early.values())
+    assert "لا تغيير جوهري" in joined and "تنبيه مبكر: إغلاق 5د" not in joined  # no unchanged cards
     changed = _private()
     changed["plans"]["NVDA"]["prior_session"]["high"] = 111.0
     texts.clear()
     (tmp_path / "report_FINAL.json").unlink()
-    _run(tmp_path, 3, lambda t, c: texts.append(t) or _Receipt(), hour=14, env=env, private=changed)
+    bdp.run_report_slot(changed, _facts(), datetime(2026, 11, 30, 14, 3, tzinfo=UTC), tmp_path, env=ENV,
+                        get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt(),
+                        early_private=_private())
     assert "<b>NVDA</b>" in "\n".join(texts) and ": 1." in "\n".join(texts)
+    texts.clear()
+    (tmp_path / "report_FINAL.json").unlink()
+    bdp.run_report_slot(_private(), _facts(), datetime(2026, 11, 30, 14, 4, tzinfo=UTC), tmp_path, env=ENV,
+                        get_chat=lambda c: {"type": "private"}, send=lambda t, c: texts.append(t) or _Receipt())
+    assert "تنبيه مبكر: إغلاق 5د" in "\n".join(texts)  # no rebuilt EARLY: every card is sent, never assumed unchanged
 
 
 def test_charts_go_out_as_albums_after_the_text(tmp_path):
@@ -330,3 +339,53 @@ def test_every_planned_symbol_gets_a_map_row_even_when_not_fetched():
     assert list(maps) == list(bdp.PLAN_SYMBOLS)
     assert maps["MSFT"]["state"] == "NO_DATA" and "time budget" in maps["MSFT"]["reason"]
     assert maps["NVDA"]["state"] == "CALL_WATCH"
+
+
+def test_every_chart_level_is_printed_in_the_card_text():
+    """Text and image come from one map: each line drawn on the chart carries the same number in the card."""
+    from options_radar import price_map_chart as chart
+
+    plan = _plan("NVDA", week_high=112.0)
+    plan["recent_daily"] = [{"date": f"2026-11-{d:02d}", "open": 99.0, "high": 115.0 - d * 0.1, "low": 90.0 + d * 0.1,
+                             "close": 100.0} for d in range(1, 21)]
+    m = pm.build_map(_card(plan, "UP"), plan)
+    text = report.card(m)
+    assert m["levels_sr"]  # support and resistance exist for this plan
+    for level in chart.levels(m):
+        assert f"{level['value']:,.2f}" in text, level
+
+
+def test_default_charts_are_index_funds_and_three_leaders():
+    maps = {s: pm.build_map(_card(_plan(s), "UP" if s in ("NVDA", "AMD") else None), _plan(s))
+            for s in ("SPY", "QQQ", "NVDA", "AMD", "MSFT", "META", "AAPL")}
+    chosen = bdp.chart_symbols(maps)
+    assert chosen[:2] == ["SPY", "QQQ"] and len(chosen) == 5 and chosen[2:4] == ["AMD", "NVDA"]
+
+
+
+
+def test_leadership_uses_relative_strength_and_says_it_is_not_index_weight():
+    maps = {s: {"symbol": s, "state": "WAIT", "prior_change_pct": c}
+            for s, c in (("QQQ", 1.0), ("NVDA", 3.2), ("AMD", 2.1), ("MSFT", 0.4), ("META", -1.5), ("AAPL", 0.9))}
+    lines = report.leadership(maps)
+    text = "\n".join(lines)
+    assert "NVDA +3.20%" in text.split("الأضعف")[0] and "META -1.50%" in text.split("الأضعف")[1]
+    assert "عكس اتجاه السوق: META" in text and "لا أوزان مؤشر" in text
+    assert report.leadership({"NVDA": maps["NVDA"]}) == []  # no benchmark, no claim
+
+
+def test_index_reference_is_a_labelled_forward_never_the_cash_index():
+    ok = {"status": "OK", "forward": 6012.34, "expiry": "2026-11-30", "quotes_as_of": "2026-11-30T13:25:00+00:00",
+          "half_spread_bp": 0.8, "dispersion_bp": 0.5, "strikes_used": 7}
+    lines = report.index_reference_lines({"SPXW": ok, "NDXP": {"status": "LOW_QUALITY"}})
+    assert "SPX: سعر آجل ضمني ≈ 6,012.34" in lines[0] and "ليس المؤشر النقدي" in lines[0]
+    assert "لا تُشتق منه مستويات نقدية" in lines[0] and "لا يُعتمد" in lines[1] and "6," not in lines[1]
+    assert report.index_reference_lines(None) == []
+
+
+def test_forward_failure_never_blocks_the_report(monkeypatch):
+    from scripts import run_options_hunter as hunter
+
+    monkeypatch.setattr(hunter, "chain", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
+    out = bdp.index_forwards({"ALPACA_API_KEY": "k", "ALPACA_SECRET_KEY": "s"}, datetime(2026, 11, 30, 13, 30, tzinfo=UTC))
+    assert out == {"SPXW": {"status": "UNAVAILABLE"}, "NDXP": {"status": "UNAVAILABLE"}}

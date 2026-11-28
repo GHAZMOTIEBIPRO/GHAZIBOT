@@ -1,0 +1,54 @@
+name: GHAZI Small-cap scan (owner-private, Alpaca IEX)
+
+# scripts/run_smallcap_scan.py: listed-universe IEX snapshots -> stages -> the owner's private chat for a
+# first alert stage or an upgrade since this workflow's last successful run (stateless dedupe from the run
+# history; nothing about any detection is stored anywhere, bot-state included). Dispatched by the
+# orchestrator; a push runs a dry run (coverage counts only).
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "options_radar/smallcap_scan.py"
+      - "scripts/run_smallcap_scan.py"
+      - ".github/workflows/smallcap-scan.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ghazi-smallcap-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      ALPACA_INTERNAL_DATA_USE_AUTHORIZED: ${{ vars.ALPACA_INTERNAL_DATA_USE_AUTHORIZED || 'false' }}
+      ALPACA_PRIVATE_ALERTS_AUTHORIZED: ${{ vars.ALPACA_PRIVATE_ALERTS_AUTHORIZED || 'false' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}  # read-only run history for stateless dedupe (actions: read)
+      TELEGRAM_OWNER_CHAT_ID: ${{ secrets.TELEGRAM_OWNER_CHAT_ID }}
+      TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
+      SCAN_ARGS: ${{ github.event_name == 'push' && 'scan --dry-run' || 'auto' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: app
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: bot-state
+          path: state
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r app/requirements.txt
+      - name: Scan or post-close review (owner-private)
+        run: |
+          cd app
+          python -m scripts.run_smallcap_scan $SCAN_ARGS
