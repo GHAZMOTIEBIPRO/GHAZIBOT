@@ -48,12 +48,12 @@ jobs:
       TELEGRAM_OWNER_USERNAME: ${{ vars.TELEGRAM_OWNER_USERNAME }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           path: app
           persist-credentials: false
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: bot-state
           path: state
@@ -97,7 +97,7 @@ jobs:
       TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED: ${{ vars.TWELVE_DATA_NON_DISPLAY_USE_AUTHORIZED || 'false' }}
       DATA_TERMS_CONFIRMED: ${{ vars.DATA_TERMS_CONFIRMED || '' }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           path: app
